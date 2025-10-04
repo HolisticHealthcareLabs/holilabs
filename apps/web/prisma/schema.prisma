@@ -1,0 +1,557 @@
+// Holi Labs Healthcare Platform - Database Schema
+// Blockchain-Ready | HIPAA-Compliant | Web3-Compatible
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USERS & AUTHENTICATION (Non-PHI - Can also use Supabase)
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  supabaseId    String?   @unique // Link to Supabase Auth
+
+  // Blockchain fields
+  walletAddress String?   @unique // Future: Web3 login
+  publicKey     String?
+
+  // Profile
+  firstName     String
+  lastName      String
+  role          UserRole  @default(CLINICIAN)
+  specialty     String?
+  licenseNumber String?
+
+  // Security
+  mfaEnabled    Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  patients      Patient[]
+  auditLogs     AuditLog[]
+  prescriptions Prescription[]
+  appointments  Appointment[]
+
+  @@index([email])
+  @@index([walletAddress])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  CLINICIAN
+  NURSE
+  STAFF
+}
+
+// ============================================================================
+// PATIENTS (PHI - Encrypted at rest)
+// ============================================================================
+
+model Patient {
+  id                String    @id @default(cuid())
+
+  // Blockchain fields - CRITICAL for Web3 pivot
+  blockchainId      String?   @unique  // Future: Patient's wallet address
+  dataHash          String?              // Hash of critical patient data
+  lastHashUpdate    DateTime?
+
+  // Personal Info (ENCRYPTED in production)
+  firstName         String    @db.Text
+  lastName          String    @db.Text
+  dateOfBirth       DateTime
+  gender            String?
+
+  // Contact (ENCRYPTED)
+  email             String?   @db.Text
+  phone             String?   @db.Text
+  address           String?   @db.Text
+  city              String?
+  state             String?
+  postalCode        String?
+  country           String    @default("MX")
+
+  // Medical Record Number
+  mrn               String    @unique  // Internal MRN
+  externalMrn       String?              // External system MRN
+
+  // De-identification
+  tokenId           String    @unique  // Public-facing token (e.g., PT-892a-4f3e-b1c2)
+  ageBand           String?              // e.g., "30-39" for de-identified reports
+  region            String?              // e.g., "SP" (São Paulo)
+
+  // Metadata
+  isActive          Boolean   @default(true)
+  assignedClinicianId String?
+  assignedClinician User?     @relation(fields: [assignedClinicianId], references: [id])
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  medications       Medication[]
+  appointments      Appointment[]
+  consents          Consent[]
+  documents         Document[]
+  clinicalNotes     ClinicalNote[]
+  prescriptions     Prescription[]
+
+  @@index([mrn])
+  @@index([tokenId])
+  @@index([blockchainId])
+  @@index([assignedClinicianId])
+  @@map("patients")
+}
+
+// ============================================================================
+// MEDICATIONS
+// ============================================================================
+
+model Medication {
+  id                String    @id @default(cuid())
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Blockchain fields
+  prescriptionHash  String?   // Hash for blockchain verification
+
+  // Medication details
+  name              String
+  genericName       String?
+  dose              String    // e.g., "500mg"
+  frequency         String    // e.g., "2x/día", "BID"
+  route             String?   // e.g., "oral", "IV"
+  instructions      String?   @db.Text
+
+  // Dates
+  startDate         DateTime  @default(now())
+  endDate           DateTime?
+
+  // Status
+  isActive          Boolean   @default(true)
+
+  // Prescriber
+  prescribedBy      String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([isActive])
+  @@map("medications")
+}
+
+// ============================================================================
+// PRESCRIPTIONS (E-Prescribing)
+// ============================================================================
+
+model Prescription {
+  id                String    @id @default(cuid())
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  clinicianId       String
+  clinician         User      @relation(fields: [clinicianId], references: [id])
+
+  // Blockchain fields - CRITICAL for tamper-proof prescriptions
+  prescriptionHash  String    @unique  // SHA-256 hash of prescription data
+  txHash            String?              // Blockchain transaction hash (future)
+  blockTimestamp    DateTime?
+
+  // Prescription content
+  medications       Json      // Array of { drug, dose, frequency, duration }
+  instructions      String?   @db.Text
+  diagnosis         String?   @db.Text
+
+  // Electronic signature
+  signatureMethod   String    // "pin" or "signature_pad"
+  signatureData     String    @db.Text  // Encrypted signature or PIN hash
+  signedAt          DateTime  @default(now())
+
+  // Status
+  status            PrescriptionStatus @default(PENDING)
+  sentToPharmacy    Boolean   @default(false)
+  pharmacyId        String?
+
+  // Audit
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([clinicianId])
+  @@index([prescriptionHash])
+  @@index([txHash])
+  @@map("prescriptions")
+}
+
+enum PrescriptionStatus {
+  PENDING
+  SIGNED
+  SENT
+  FILLED
+  CANCELLED
+}
+
+// ============================================================================
+// CONSENTS (Blockchain-Ready)
+// ============================================================================
+
+model Consent {
+  id                String    @id @default(cuid())
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Blockchain fields - CRITICAL for immutable proof
+  consentHash       String    @unique  // SHA-256 of consent content + signature
+  txHash            String?              // Blockchain transaction hash (future)
+  blockTimestamp    DateTime?
+
+  // Consent details
+  type              ConsentType
+  title             String
+  content           String    @db.Text  // Full consent text
+  version           String    @default("1.0")
+
+  // Signature
+  signatureData     String    @db.Text  // Base64 signature image or digital signature
+  signedAt          DateTime
+  witnessName       String?
+  witnessSignature  String?   @db.Text
+
+  // Status
+  isActive          Boolean   @default(true)
+  revokedAt         DateTime?
+  revokedReason     String?   @db.Text
+
+  // Audit
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([consentHash])
+  @@index([txHash])
+  @@map("consents")
+}
+
+enum ConsentType {
+  GENERAL_CONSULTATION
+  TELEHEALTH
+  DATA_RESEARCH
+  SURGERY
+  PROCEDURE
+  PHOTOGRAPHY
+  CUSTOM
+}
+
+// ============================================================================
+// APPOINTMENTS (Calendar Integration)
+// ============================================================================
+
+model Appointment {
+  id                String    @id @default(cuid())
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  clinicianId       String
+  clinician         User      @relation(fields: [clinicianId], references: [id])
+
+  // Appointment details
+  title             String
+  description       String?   @db.Text
+
+  // Date/Time
+  startTime         DateTime
+  endTime           DateTime
+  timezone          String    @default("America/Mexico_City")
+
+  // Calendar integration
+  googleEventId     String?   @unique
+  outlookEventId    String?   @unique
+  calendarSyncedAt  DateTime?
+
+  // Type
+  type              AppointmentType @default(IN_PERSON)
+  meetingUrl        String?          // For telehealth
+
+  // Status
+  status            AppointmentStatus @default(SCHEDULED)
+
+  // Reminders
+  reminderSent      Boolean   @default(false)
+  reminderSentAt    DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([clinicianId])
+  @@index([startTime])
+  @@index([status])
+  @@map("appointments")
+}
+
+enum AppointmentType {
+  IN_PERSON
+  TELEHEALTH
+  PHONE
+  HOME_VISIT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ============================================================================
+// DOCUMENTS (De-identified, OCR processed)
+// ============================================================================
+
+model Document {
+  id                String    @id @default(cuid())
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Blockchain fields
+  documentHash      String    @unique  // SHA-256 of original document
+  deidentifiedHash  String?              // Hash of de-identified version
+  txHash            String?              // Future: blockchain storage proof
+
+  // File details
+  fileName          String
+  fileType          String    // e.g., "pdf", "jpg", "docx"
+  fileSize          Int       // bytes
+
+  // Storage (Supabase Storage or S3)
+  storageUrl        String    @db.Text  // Encrypted, de-identified version
+  originalStorageUrl String?  @db.Text  // Original (highly restricted access)
+
+  // Processing
+  documentType      DocumentType
+  ocrText           String?   @db.Text  // Extracted text (de-identified)
+  entities          Json?                // Extracted medical entities
+
+  // De-identification
+  isDeidentified    Boolean   @default(false)
+  phiDetected       Int       @default(0)
+  deidentifiedAt    DateTime?
+
+  // Metadata
+  uploadedBy        String?
+  processingStatus  ProcessingStatus @default(PENDING)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([documentHash])
+  @@index([processingStatus])
+  @@map("documents")
+}
+
+enum DocumentType {
+  LAB_RESULTS
+  IMAGING
+  CONSULTATION_NOTES
+  DISCHARGE_SUMMARY
+  PRESCRIPTION
+  INSURANCE
+  CONSENT_FORM
+  OTHER
+}
+
+enum ProcessingStatus {
+  PENDING
+  UPLOADING
+  PROCESSING
+  DEIDENTIFYING
+  EXTRACTING
+  SYNCHRONIZED
+  FAILED
+}
+
+// ============================================================================
+// CLINICAL NOTES (SOAP Notes, etc.)
+// ============================================================================
+
+model ClinicalNote {
+  id                String    @id @default(cuid())
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Blockchain fields
+  noteHash          String    @unique
+  txHash            String?
+
+  // Note content
+  type              NoteType  @default(PROGRESS)
+  subjective        String?   @db.Text  // S in SOAP
+  objective         String?   @db.Text  // O in SOAP
+  assessment        String?   @db.Text  // A in SOAP
+  plan              String?   @db.Text  // P in SOAP
+
+  // Additional
+  chiefComplaint    String?   @db.Text
+  diagnosis         String[]
+
+  // Author
+  authorId          String
+  signedAt          DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([authorId])
+  @@map("clinical_notes")
+}
+
+enum NoteType {
+  PROGRESS
+  CONSULTATION
+  ADMISSION
+  DISCHARGE
+  PROCEDURE
+  FOLLOW_UP
+}
+
+// ============================================================================
+// TOKEN MAPS (For Re-identification - HIGHLY SECURED)
+// ============================================================================
+
+model TokenMap {
+  id                String    @id @default(cuid())
+
+  // Encrypted mapping
+  encryptedMap      String    @db.Text  // AES-256 encrypted token->original mapping
+  mapHash           String    @unique   // Hash for verification
+
+  // Metadata
+  recordType        String    // "patient", "document", etc.
+  recordId          String
+
+  // Access control
+  createdBy         String
+  accessCount       Int       @default(0)
+  lastAccessedAt    DateTime?
+
+  // Expiration (for temporary de-identification)
+  expiresAt         DateTime?
+
+  createdAt         DateTime  @default(now())
+
+  @@index([recordId])
+  @@index([mapHash])
+  @@map("token_maps")
+}
+
+// ============================================================================
+// AUDIT LOGS (Compliance - HIPAA requirement)
+// ============================================================================
+
+model AuditLog {
+  id                String    @id @default(cuid())
+
+  // Who
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id])
+  userEmail         String?
+  ipAddress         String
+  userAgent         String?   @db.Text
+
+  // What
+  action            AuditAction
+  resource          String    // e.g., "Patient", "Prescription"
+  resourceId        String
+
+  // Details
+  details           Json?     // Additional context
+  dataHash          String?   // Hash of data accessed/modified
+
+  // Result
+  success           Boolean   @default(true)
+  errorMessage      String?   @db.Text
+
+  // When
+  timestamp         DateTime  @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  PRINT
+  DEIDENTIFY
+  REIDENTIFY
+  PRESCRIBE
+  SIGN
+  REVOKE
+}
+
+// ============================================================================
+// BLOCKCHAIN TRANSACTIONS (Future)
+// ============================================================================
+
+model BlockchainTransaction {
+  id                String    @id @default(cuid())
+
+  // Transaction details
+  txHash            String    @unique
+  blockNumber       BigInt?
+  network           String    @default("polygon-mainnet") // or "ethereum", "base"
+
+  // What was recorded
+  recordType        String    // "consent", "prescription", "document"
+  recordId          String
+  dataHash          String    // The hash that was recorded on-chain
+
+  // Contract details
+  contractAddress   String
+  functionCalled    String
+  gasUsed           BigInt?
+  gasCost           String?   // in native token
+
+  // Status
+  status            TxStatus  @default(PENDING)
+  confirmations     Int       @default(0)
+
+  // Timestamps
+  submittedAt       DateTime  @default(now())
+  confirmedAt       DateTime?
+
+  @@index([txHash])
+  @@index([recordId])
+  @@index([status])
+  @@map("blockchain_transactions")
+}
+
+enum TxStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  REVERTED
+}
