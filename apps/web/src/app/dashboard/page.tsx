@@ -1,172 +1,106 @@
 'use client';
 
-import { useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import PatientSearch from '@/components/PatientSearch';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+
+  const handleSelectPatient = (patientId: string) => {
+    router.push(`/dashboard/patients/${patientId}`);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation - Dentalink inspired */}
-      <header className="bg-primary text-white shadow-md">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary font-bold">
-                V
+    <DashboardLayout>
+      <div className="p-4 md:p-8">
+        <h2 className="text-3xl font-bold text-gray-800 mb-6">Doctor's Dashboard</h2>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Patients</p>
+                <p className="text-3xl font-bold text-primary">127</p>
               </div>
-              <h1 className="text-xl font-bold">VidaBanq</h1>
+              <svg className="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+              </svg>
             </div>
-
-            {/* Global Search */}
-            <div className="flex-1 max-w-2xl mx-8">
-              <input
-                type="text"
-                placeholder="Buscar paciente por dni, nombre, apellido..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
-              />
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">AI Consultations</p>
+                <p className="text-3xl font-bold text-primary">38</p>
+              </div>
+              <svg className="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-2 0c0 .993-.241 1.929-.668 2.754l-1.524-1.525a3.997 3.997 0 00.078-2.183l1.562-1.562C15.802 8.249 16 9.1 16 10zm-5.165 3.913l1.58 1.58A5.98 5.98 0 0110 16a5.976 5.976 0 01-2.516-.552l1.562-1.562a4.006 4.006 0 001.789.027zm-4.677-2.796a4.002 4.002 0 01-.041-2.08l-.08.08-1.53-1.533A5.98 5.98 0 004 10c0 .954.223 1.856.619 2.657l1.54-1.54zm1.088-6.45A5.974 5.974 0 0110 4c.954 0 1.856.223 2.657.619l-1.54 1.54a4.002 4.002 0 00-2.346.033L7.246 4.668zM12 10a2 2 0 11-4 0 2 2 0 014 0z" clipRule="evenodd" />
+              </svg>
             </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Documents Uploaded</p>
+                <p className="text-3xl font-bold text-primary">284</p>
+              </div>
+              <svg className="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
 
-            {/* User Menu */}
+        {/* Patient Search Section */}
+        <div className="mb-8">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Find Patients</h3>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <PatientSearch onSelectPatient={handleSelectPatient} showMostViewed={true} />
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Link href="/dashboard/upload" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <div className="flex items-center space-x-4">
-              <button className="hover:bg-primary/80 px-3 py-2 rounded">
-                🔔 Novedades
-              </button>
-              <button className="hover:bg-primary/80 px-3 py-2 rounded">
-                ⚙️ Configuración
-              </button>
-              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-primary font-bold">
-                A
+              <svg className="w-10 h-10 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <div>
+                <h4 className="font-bold text-gray-800">Upload Document</h4>
+                <p className="text-sm text-gray-600">Add new patient files</p>
               </div>
             </div>
-          </div>
+          </Link>
+
+          <Link href="/dashboard/ai" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <div className="flex items-center space-x-4">
+              <svg className="w-10 h-10 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <h4 className="font-bold text-gray-800">AI Assistant</h4>
+                <p className="text-sm text-gray-600">Chat with AI about patients</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/patients" className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <div className="flex items-center space-x-4">
+              <svg className="w-10 h-10 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <div>
+                <h4 className="font-bold text-gray-800">All Patients</h4>
+                <p className="text-sm text-gray-600">View full patient list</p>
+              </div>
+            </div>
+          </Link>
         </div>
-
-        {/* Main Navigation Tabs */}
-        <div className="bg-primary/90 border-t border-white/20">
-          <div className="container mx-auto px-4">
-            <nav className="flex space-x-6">
-              <Link href="/dashboard" className="px-4 py-3 text-white border-b-2 border-white font-semibold">
-                📊 Panel
-              </Link>
-              <Link href="/dashboard/patients" className="px-4 py-3 text-white/80 hover:text-white hover:bg-primary/80 transition">
-                👥 Pacientes
-              </Link>
-              <Link href="/dashboard/upload" className="px-4 py-3 text-white/80 hover:text-white hover:bg-primary/80 transition">
-                📤 Subir Datos
-              </Link>
-              <Link href="/dashboard/ai" className="px-4 py-3 text-white/80 hover:text-white hover:bg-primary/80 transition">
-                🤖 IA
-              </Link>
-              <Link href="/dashboard/admin" className="px-4 py-3 text-white/80 hover:text-white hover:bg-primary/80 transition">
-                🔧 Administración
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Overview Dashboard */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {/* Recent Uploads */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Subidas Recientes</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                <div>
-                  <div className="font-medium">dataset-2025-01.csv</div>
-                  <div className="text-sm text-gray-500">Hace 2 horas</div>
-                </div>
-                <div className="text-green-600">✓</div>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                <div>
-                  <div className="font-medium">imaging-study.dcm</div>
-                  <div className="text-sm text-gray-500">Hace 5 horas</div>
-                </div>
-                <div className="text-green-600">✓</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Pending AI Jobs */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">IA Pendientes</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded">
-                <div>
-                  <div className="font-medium">Análisis Clínico #4321</div>
-                  <div className="text-sm text-gray-500">Paciente: [TOKEN-892]</div>
-                </div>
-                <div className="text-blue-600">⏳</div>
-              </div>
-              <button className="w-full py-2 border-2 border-dashed border-gray-300 rounded text-gray-500 hover:border-primary hover:text-primary transition">
-                + Nuevo Análisis IA
-              </button>
-            </div>
-          </div>
-
-          {/* Compliance Alerts */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Alertas de Cumplimiento</h3>
-            <div className="space-y-3">
-              <div className="p-3 bg-green-50 border border-green-200 rounded">
-                <div className="font-medium text-green-800">✓ Auditoría Aprobada</div>
-                <div className="text-sm text-green-600">Todos los sistemas OK</div>
-              </div>
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <div className="font-medium text-yellow-800">⚠ Uso de ε: 7.2/10</div>
-                <div className="text-sm text-yellow-600">Acercándose al límite</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* DP Usage Chart */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Uso de Privacidad Diferencial (ε)</h3>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded">
-            <div className="text-center text-gray-500">
-              <div className="text-4xl mb-2">📊</div>
-              <div>Gráfico de uso de ε por organización</div>
-              <div className="text-sm">(Implementar con Chart.js o Recharts)</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Cost Estimate Widget */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Estimación de Costos</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 bg-blue-50 rounded">
-              <div className="text-sm text-gray-600">Almacenamiento</div>
-              <div className="text-2xl font-bold text-blue-600">$45.20</div>
-              <div className="text-sm text-gray-500">/ mes</div>
-            </div>
-            <div className="p-4 bg-green-50 rounded">
-              <div className="text-sm text-gray-600">Egreso de Datos</div>
-              <div className="text-2xl font-bold text-green-600">$12.80</div>
-              <div className="text-sm text-gray-500">/ mes</div>
-            </div>
-            <div className="p-4 bg-purple-50 rounded">
-              <div className="text-sm text-gray-600">Total Estimado</div>
-              <div className="text-2xl font-bold text-purple-600">$58.00</div>
-              <div className="text-sm text-gray-500">/ mes</div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* Floating AI Chat Button - Dentalink inspired */}
-      <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-primary/90 transition">
-        🤖
-      </button>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

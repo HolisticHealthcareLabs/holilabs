@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import PatientSearch from '@/components/PatientSearch';
 import Image from 'next/image';
+import confetti from 'canvas-confetti';
 
 // Same 3 patients from AI page
 const PATIENTS = [
@@ -25,6 +27,15 @@ export default function UploadPage() {
     condition: '',
   });
   const [isDragging, setIsDragging] = useState(false);
+
+  const handleSelectPatient = (patientId: string) => {
+    const patient = PATIENTS.find(p => p.id === patientId);
+    if (patient) {
+      setSelectedPatient(patient);
+      setIsNewPatient(false);
+      setStep('upload');
+    }
+  };
 
   const handleFileUpload = (file: File) => {
     setUploadedFile(file);
@@ -49,79 +60,117 @@ export default function UploadPage() {
     }
   };
 
+  const triggerConfetti = () => {
+    // Fire confetti from multiple angles
+    const count = 200;
+    const defaults = {
+      origin: { y: 0.7 },
+      zIndex: 9999,
+    };
+
+    function fire(particleRatio: number, opts: any) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio),
+        colors: ['#38F2AE', '#014751', '#6D4751', '#EAECF2'],
+      });
+    }
+
+    fire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+    });
+
+    fire(0.2, {
+      spread: 60,
+    });
+
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8,
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2,
+    });
+
+    fire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+    });
+  };
+
   const handleAssignToWallet = () => {
     // In production: Upload to MinIO, de-identify, link to patient token
     setStep('confirm');
     setTimeout(() => {
-      alert(`✅ Documento asignado a la billetera digital de ${selectedPatient?.name || 'nuevo paciente'}!`);
-      // Reset
-      setStep('select');
-      setSelectedPatient(null);
-      setUploadedFile(null);
-      setIsNewPatient(false);
+      // Trigger confetti celebration
+      triggerConfetti();
+
+      // Show success message
+      setTimeout(() => {
+        alert(`✅ Documento asignado exitosamente a la billetera digital de ${selectedPatient?.name || 'nuevo paciente'}!`);
+        // Reset
+        setStep('select');
+        setSelectedPatient(null);
+        setUploadedFile(null);
+        setIsNewPatient(false);
+      }, 500);
     }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Nav */}
-      <header className="bg-primary text-white shadow-md">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard" className="flex items-center space-x-3">
-                <Image src="/logos/holi-light.svg" alt="Holi Labs" width={40} height={40} className="h-10 w-auto" />
-                <span className="text-xl font-bold">VidaBanq</span>
-              </Link>
-              <span className="text-sm opacity-80">/ Subir Datos</span>
+    <DashboardLayout>
+      <div className="p-4 md:p-8">
+        <h2 className="text-3xl font-bold text-gray-800 mb-6">Upload Document</h2>
+
+        {/* Progress Stepper */}
+        <div className="bg-white border border-gray-200 rounded-lg mb-8">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between max-w-2xl mx-auto">
+              <div className={`flex items-center ${step === 'select' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                  step === 'select' ? 'bg-primary text-white' : 'bg-gray-200'
+                }`}>
+                  1
+                </div>
+                <span className="hidden md:inline">Seleccionar Paciente</span>
+              </div>
+              <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
+              <div className={`flex items-center ${step === 'upload' || step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                  step === 'upload' || step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
+                }`}>
+                  2
+                </div>
+                <span className="hidden md:inline">Subir Documento</span>
+              </div>
+              <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
+              <div className={`flex items-center ${step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                  step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
+                }`}>
+                  3
+                </div>
+                <span className="hidden md:inline">Asignar a Billetera</span>
+              </div>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Progress Stepper */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between max-w-2xl mx-auto">
-            <div className={`flex items-center ${step === 'select' ? 'text-primary font-bold' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                step === 'select' ? 'bg-primary text-white' : 'bg-gray-200'
-              }`}>
-                1
-              </div>
-              <span>Seleccionar Paciente</span>
-            </div>
-            <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
-            <div className={`flex items-center ${step === 'upload' || step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                step === 'upload' || step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
-              }`}>
-                2
-              </div>
-              <span>Subir Documento</span>
-            </div>
-            <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
-            <div className={`flex items-center ${step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
-              }`}>
-                3
-              </div>
-              <span>Asignar a Billetera</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
+        {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           {/* Step 1: Select Patient */}
           {step === 'select' && (
             <div className="bg-white rounded-lg shadow-md p-8">
               <h2 className="text-2xl font-bold mb-6">Seleccionar o Crear Paciente</h2>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <button
                   onClick={() => {
                     setIsNewPatient(true);
@@ -144,25 +193,7 @@ export default function UploadPage() {
                   <div className="flex-1 h-0.5 bg-gray-200" />
                 </div>
 
-                {PATIENTS.map((patient) => (
-                  <button
-                    key={patient.id}
-                    onClick={() => {
-                      setSelectedPatient(patient);
-                      setIsNewPatient(false);
-                      setStep('upload');
-                    }}
-                    className="w-full p-6 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-blue-50 transition text-left"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="text-4xl">{patient.emoji}</div>
-                      <div>
-                        <div className="font-bold text-lg">{patient.name}</div>
-                        <div className="text-sm text-gray-600">{patient.age} años · ID: {patient.id}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                <PatientSearch onSelectPatient={handleSelectPatient} showMostViewed={true} />
               </div>
             </div>
           )}
@@ -328,6 +359,6 @@ export default function UploadPage() {
           )}
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
