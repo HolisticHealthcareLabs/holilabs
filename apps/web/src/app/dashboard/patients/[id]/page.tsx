@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
+import EPrescribingDrawer from '@/components/patient/EPrescribingDrawer';
+import ConsentManager from '@/components/patient/ConsentManager';
+import SchedulingModal from '@/components/patient/SchedulingModal';
+import DataIngestion from '@/components/patient/DataIngestion';
 
 type Tab = 'personal' | 'clinical' | 'history' | 'documents' | 'consents' | 'ai';
 
@@ -11,16 +14,34 @@ export default function PatientProfile() {
   const params = useParams();
   const patientId = params.id as string;
   const [activeTab, setActiveTab] = useState<Tab>('clinical');
+  const [isRxDrawerOpen, setIsRxDrawerOpen] = useState(false);
+  const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
+  const [aiContext, setAiContext] = useState<string>('Banda de edad 30-39, Diabetes tipo 2, Medicación activa.');
 
   // Mock data - in production, fetch from API
   const patient = {
     id: patientId,
+    firstName: 'María',
+    lastName: 'González García',
     tokenId: 'PT-892a-4f3e-b1c2',
     age: '30-39',
     lastVisit: '2025-Q1',
     region: 'SP',
     alerts: ['Diabetes'],
-    medications: ['Metformina'],
+    medications: [
+      { id: '1', name: 'Metformina', dose: '500mg', frequency: '2x/día' },
+      { id: '2', name: 'Enalapril', dose: '10mg', frequency: '1x/día' },
+    ],
+  };
+
+  const fullName = `${patient.firstName} ${patient.lastName}`.trim();
+  const displayName = fullName || `Paciente ${patient.tokenId}`;
+
+  const handleContextUpdate = (metadata: any) => {
+    // Update AI context with new data
+    const timestamp = new Date().toLocaleString('es-ES');
+    const newContext = `Contexto actualizado [${timestamp}]: ${aiContext} Nuevos datos: ${metadata.dataType} (${metadata.metrics.map((m: any) => `${m.code} ${m.value}${m.unit}`).join(', ')})`;
+    setAiContext(newContext);
   };
 
   return (
@@ -37,9 +58,9 @@ export default function PatientProfile() {
             {/* Patient Info */}
             <div className="flex-1">
               <div className="flex items-center space-x-4 mb-2">
-                <h1 className="text-2xl font-bold">Paciente {patient.tokenId}</h1>
+                <h1 className="text-2xl font-bold">{displayName}</h1>
                 <span className="px-3 py-1 bg-white/20 rounded-full text-sm">
-                  ID: {patientId.substring(0, 8)}
+                  ID: {patient.tokenId}
                 </span>
               </div>
               <div className="text-sm opacity-90">
@@ -48,18 +69,21 @@ export default function PatientProfile() {
                 <span>Región: {patient.region}</span>
               </div>
 
-              {/* Medical Alerts */}
+              {/* Medical Alerts - Interactive Pills */}
               <div className="mt-3 flex space-x-3">
-                <div className="bg-yellow-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
+                <button className="bg-yellow-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-yellow-600 transition shadow-sm hover:shadow-md">
                   <span>⚠️</span>
                   <span>Alertas médicas:</span>
                   <span>{patient.alerts.join(', ')}</span>
-                </div>
-                <div className="bg-green-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
+                </button>
+                <button
+                  onClick={() => setIsRxDrawerOpen(true)}
+                  className="bg-green-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-green-600 transition shadow-sm hover:shadow-md"
+                >
                   <span>💊</span>
                   <span>Medicamentos:</span>
-                  <span>{patient.medications.join(', ')}</span>
-                </div>
+                  <span>{patient.medications.map(m => m.name).join(', ')}</span>
+                </button>
               </div>
             </div>
 
@@ -71,7 +95,10 @@ export default function PatientProfile() {
               >
                 💼 Billetera Digital
               </Link>
-              <button className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded transition">
+              <button
+                onClick={() => setIsSchedulingOpen(true)}
+                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded transition"
+              >
                 📄 Dar cita
               </button>
               <button className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded transition">
@@ -197,8 +224,11 @@ export default function PatientProfile() {
                   <h3 className="font-semibold text-lg mb-2">Medicamentos Actuales</h3>
                   <div className="p-4 bg-gray-50 rounded">
                     <ul className="list-disc list-inside space-y-1">
-                      <li>Metformina 500mg - 2x/día</li>
-                      <li>Enalapril 10mg - 1x/día</li>
+                      {patient.medications.map((med) => (
+                        <li key={med.id}>
+                          {med.name} {med.dose} - {med.frequency}
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -244,6 +274,8 @@ export default function PatientProfile() {
             </div>
           )}
 
+          {activeTab === 'consents' && <ConsentManager />}
+
           {activeTab === 'ai' && (
             <div>
               <h2 className="text-xl font-bold mb-4">🤖 Asistente de IA Clínica</h2>
@@ -258,12 +290,17 @@ export default function PatientProfile() {
                 </p>
               </div>
 
+              {/* Data Ingestion Component */}
+              <div className="mb-8">
+                <DataIngestion patientId={patientId} onContextUpdate={handleContextUpdate} />
+              </div>
+
               {/* Model Selection */}
               <div className="mb-6">
                 <label className="block font-medium mb-2">Seleccionar Modelo LLM</label>
                 <select className="w-full p-2 border border-gray-300 rounded">
+                  <option>Claude 3.5 Sonnet (Anthropic)</option>
                   <option>GPT-4 (OpenAI)</option>
-                  <option>Claude 3 (Anthropic)</option>
                   <option>Gemini Pro (Google)</option>
                   <option>Local Clinical Model</option>
                 </select>
@@ -278,7 +315,8 @@ export default function PatientProfile() {
                   <div className="bg-blue-50 p-3 rounded-lg max-w-xl">
                     <p className="text-sm font-medium text-blue-900 mb-1">Sistema</p>
                     <p className="text-sm">
-                      Contexto del paciente cargado: Banda de edad 30-39, Diabetes tipo 2, Medicación activa.
+                      {aiContext}
+                      {'\n\n'}
                       ¿En qué puedo ayudarte?
                     </p>
                   </div>
@@ -315,6 +353,19 @@ export default function PatientProfile() {
       <button className="fixed bottom-6 right-6 w-14 h-14 bg-primary rounded-full shadow-lg flex items-center justify-center text-white text-2xl hover:bg-primary/90 transition">
         💬
       </button>
+
+      {/* E-Prescribing Drawer */}
+      <EPrescribingDrawer
+        isOpen={isRxDrawerOpen}
+        onClose={() => setIsRxDrawerOpen(false)}
+        currentMedications={patient.medications}
+      />
+
+      {/* Scheduling Modal */}
+      <SchedulingModal
+        isOpen={isSchedulingOpen}
+        onClose={() => setIsSchedulingOpen(false)}
+      />
     </div>
   );
 }
