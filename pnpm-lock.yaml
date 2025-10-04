@@ -129,6 +129,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+      resend:
+        specifier: ^6.1.2
+        version: 6.1.2
       tailwind-merge:
         specifier: ^2.2.0
         version: 2.6.0
@@ -4090,6 +4093,16 @@ packages:
   /require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
+    dev: false
+
+  /resend@6.1.2:
+    resolution: {integrity: sha512-C9Q+YkRe57P8MQlkHG3yatSR/B6sqBGA06Ri2DveJfkz9Vm16182FC/iHB0K6IAfmqZ4yRrFebFw1EPuktLtSg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@react-email/render': '*'
+    peerDependenciesMeta:
+      '@react-email/render':
+        optional: true
     dev: false
 
   /resolve-pkg-maps@1.0.0:
