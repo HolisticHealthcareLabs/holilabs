@@ -1,0 +1,20 @@
+{
+  "care": {
+    "date": "YEAR_OR_QUARTER",
+    "geo": "ZIP3_OR_STATE",
+    "age": "BAND_10Y",
+    "description": "Clinical care mode: balanced precision for treatment decisions"
+  },
+  "research": {
+    "date": "YEAR",
+    "geo": "STATE_ONLY",
+    "age": "BAND_10Y",
+    "description": "Research mode: reduced precision for privacy protection"
+  },
+  "admin": {
+    "date": "YEAR_OR_QUARTER",
+    "geo": "STATE_ONLY",
+    "age": "BAND_10Y",
+    "description": "Administrative mode: minimal precision for operations"
+  }
+}

@@ -1,0 +1,76 @@
+version: MVP-1.2
+country: MX
+compliance_framework: LFPDPPP
+
+redaction:
+  mode: HIPAA_SAFE_HARBOR
+  identifiers:
+    - NAME
+    - ADDRESS_EXCEPT_STATE
+    - PHONE
+    - FAX
+    - EMAIL
+    - SSN  # CURP in Mexico
+    - MRN
+    - ACCOUNT
+    - CERT_LICENSE
+    - VEHICLE
+    - DEVICE
+    - URL_IP
+    - BIOMETRICS
+    - FULL_FACE_PHOTO
+    - ALL_DATES_EXCEPT_YEAR
+    - GEO_SUBSTATE
+
+generalization:
+  age_bands:
+    - "0-9"
+    - "10-19"
+    - "20-29"
+    - "30-39"
+    - "40-49"
+    - "50-59"
+    - "60-69"
+    - "70-79"
+    - "80-89"
+    - "90+"
+  dates: YEAR_OR_QUARTER
+  geo: ZIP3_OR_STATE
+
+text_nlp:
+  locales:
+    - es
+    - en
+    - pt
+  min_confidence: 0.95
+  fallback: REDACT
+
+dicom_profiles:
+  CT:
+    scrub_tags: SAFE_HARBOR
+    preserve_windowing: true
+  MR:
+    scrub_tags: SAFE_HARBOR
+  US:
+    scrub_tags: SAFE_HARBOR
+    burn_in_removal: true
+  XR:
+    scrub_tags: SAFE_HARBOR
+
+ocr:
+  enabled: true
+  adversarial:
+    - rotate
+    - low_dpi
+    - noise
+
+dp_exports:
+  enabled: true
+  epsilon_default: 1.0
+  delta_default: 1.0e-5
+  composition: ADVANCED
+  cooldown_minutes: 60
+
+data_residency:
+  region: us-south-1  # Mexico City
+  bucket_prefix: deid-mx

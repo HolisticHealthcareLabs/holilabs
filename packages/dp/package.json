@@ -1,0 +1,19 @@
+{
+  "name": "@vidabanq/dp",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "pdfkit": "^0.14.0"
+  },
+  "devDependencies": {
+    "@types/pdfkit": "^0.13.3",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}

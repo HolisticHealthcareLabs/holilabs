@@ -1,0 +1,333 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+
+// Same 3 patients from AI page
+const PATIENTS = [
+  { id: 'pt-001', name: 'María González', age: '45-54', emoji: '👩' },
+  { id: 'pt-002', name: 'Carlos Silva', age: '60-69', emoji: '👨' },
+  { id: 'pt-003', name: 'Ana Rodríguez', age: '30-39', emoji: '👩‍🦰' },
+];
+
+type UploadStep = 'select' | 'upload' | 'assign' | 'confirm';
+
+export default function UploadPage() {
+  const [step, setStep] = useState<UploadStep>('select');
+  const [selectedPatient, setSelectedPatient] = useState<typeof PATIENTS[0] | null>(null);
+  const [isNewPatient, setIsNewPatient] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [newPatientData, setNewPatientData] = useState({
+    firstName: '',
+    lastName: '',
+    birthYear: '',
+    condition: '',
+  });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileUpload = (file: File) => {
+    setUploadedFile(file);
+    setStep('assign');
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleAssignToWallet = () => {
+    // In production: Upload to MinIO, de-identify, link to patient token
+    setStep('confirm');
+    setTimeout(() => {
+      alert(`✅ Documento asignado a la billetera digital de ${selectedPatient?.name || 'nuevo paciente'}!`);
+      // Reset
+      setStep('select');
+      setSelectedPatient(null);
+      setUploadedFile(null);
+      setIsNewPatient(false);
+    }, 2000);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Nav */}
+      <header className="bg-primary text-white shadow-md">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link href="/dashboard" className="flex items-center space-x-3">
+                <Image src="/logos/holi-light.svg" alt="Holi Labs" width={40} height={40} className="h-10 w-auto" />
+                <span className="text-xl font-bold">VidaBanq</span>
+              </Link>
+              <span className="text-sm opacity-80">/ Subir Datos</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Progress Stepper */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between max-w-2xl mx-auto">
+            <div className={`flex items-center ${step === 'select' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                step === 'select' ? 'bg-primary text-white' : 'bg-gray-200'
+              }`}>
+                1
+              </div>
+              <span>Seleccionar Paciente</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
+            <div className={`flex items-center ${step === 'upload' || step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                step === 'upload' || step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
+              }`}>
+                2
+              </div>
+              <span>Subir Documento</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
+            <div className={`flex items-center ${step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
+              }`}>
+                3
+              </div>
+              <span>Asignar a Billetera</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Step 1: Select Patient */}
+          {step === 'select' && (
+            <div className="bg-white rounded-lg shadow-md p-8">
+              <h2 className="text-2xl font-bold mb-6">Seleccionar o Crear Paciente</h2>
+
+              <div className="space-y-4">
+                <button
+                  onClick={() => {
+                    setIsNewPatient(true);
+                    setStep('upload');
+                  }}
+                  className="w-full p-6 border-2 border-dashed border-primary rounded-lg hover:bg-blue-50 transition text-left"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-4xl">➕</div>
+                    <div>
+                      <div className="font-bold text-lg text-primary">Crear Nuevo Paciente</div>
+                      <div className="text-sm text-gray-600">Registrar un nuevo paciente y asignar documento</div>
+                    </div>
+                  </div>
+                </button>
+
+                <div className="my-6 flex items-center">
+                  <div className="flex-1 h-0.5 bg-gray-200" />
+                  <span className="px-4 text-gray-500">o seleccionar existente</span>
+                  <div className="flex-1 h-0.5 bg-gray-200" />
+                </div>
+
+                {PATIENTS.map((patient) => (
+                  <button
+                    key={patient.id}
+                    onClick={() => {
+                      setSelectedPatient(patient);
+                      setIsNewPatient(false);
+                      setStep('upload');
+                    }}
+                    className="w-full p-6 border-2 border-gray-200 rounded-lg hover:border-primary hover:bg-blue-50 transition text-left"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="text-4xl">{patient.emoji}</div>
+                      <div>
+                        <div className="font-bold text-lg">{patient.name}</div>
+                        <div className="text-sm text-gray-600">{patient.age} años · ID: {patient.id}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Upload Document */}
+          {step === 'upload' && (
+            <div className="bg-white rounded-lg shadow-md p-8">
+              <h2 className="text-2xl font-bold mb-2">Subir Documento</h2>
+              <p className="text-gray-600 mb-6">
+                {isNewPatient ? 'Nuevo paciente' : `Para ${selectedPatient?.name}`}
+              </p>
+
+              {isNewPatient && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-bold mb-3">Datos del Nuevo Paciente</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Nombre"
+                      value={newPatientData.firstName}
+                      onChange={(e) => setNewPatientData({ ...newPatientData, firstName: e.target.value })}
+                      className="px-3 py-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Apellido"
+                      value={newPatientData.lastName}
+                      onChange={(e) => setNewPatientData({ ...newPatientData, lastName: e.target.value })}
+                      className="px-3 py-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Año de Nacimiento"
+                      value={newPatientData.birthYear}
+                      onChange={(e) => setNewPatientData({ ...newPatientData, birthYear: e.target.value })}
+                      className="px-3 py-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Condición Principal"
+                      value={newPatientData.condition}
+                      onChange={(e) => setNewPatientData({ ...newPatientData, condition: e.target.value })}
+                      className="px-3 py-2 border rounded"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* DocuSign-style Drop Zone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-4 border-dashed rounded-lg p-12 text-center transition ${
+                  isDragging ? 'border-primary bg-blue-50' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
+                }`}
+              >
+                <div className="text-6xl mb-4">📄</div>
+                <h3 className="text-xl font-bold mb-2">Arrastra tu documento aquí</h3>
+                <p className="text-gray-600 mb-4">o</p>
+                <label className="inline-block px-6 py-3 bg-primary text-white rounded-lg cursor-pointer hover:bg-primary/90">
+                  <input
+                    type="file"
+                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                    className="hidden"
+                    accept=".pdf,.jpg,.png,.dicom,.csv"
+                  />
+                  Seleccionar Archivo
+                </label>
+                <p className="text-sm text-gray-500 mt-4">
+                  Formatos soportados: PDF, DICOM, CSV, JPG, PNG · Máx: 100MB
+                </p>
+              </div>
+
+              {uploadedFile && (
+                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">✓</div>
+                    <div>
+                      <div className="font-bold">{uploadedFile.name}</div>
+                      <div className="text-sm text-gray-600">
+                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6 flex space-x-2">
+                <button
+                  onClick={() => setStep('select')}
+                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  ← Atrás
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Assign to Wallet */}
+          {step === 'assign' && (
+            <div className="bg-white rounded-lg shadow-md p-8">
+              <h2 className="text-2xl font-bold mb-6">Confirmar Asignación a Billetera Digital</h2>
+
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-bold mb-2">📄 Documento</h3>
+                  <p>{uploadedFile?.name}</p>
+                  <p className="text-sm text-gray-600">{(uploadedFile!.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <h3 className="font-bold mb-2">
+                    {isNewPatient ? '👤 Nuevo Paciente' : `${selectedPatient?.emoji} Paciente`}
+                  </h3>
+                  <p className="font-medium">
+                    {isNewPatient
+                      ? `${newPatientData.firstName} ${newPatientData.lastName}`
+                      : selectedPatient?.name}
+                  </p>
+                  {!isNewPatient && <p className="text-sm text-gray-600">ID: {selectedPatient?.id}</p>}
+                </div>
+
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h3 className="font-bold text-yellow-900 mb-2">🔒 Proceso de Des-identificación</h3>
+                  <ol className="text-sm text-yellow-800 space-y-1 ml-4 list-decimal">
+                    <li>Supresión de 18 identificadores HIPAA</li>
+                    <li>Pseudonimización con token criptográfico</li>
+                    <li>Generalización de datos sensibles</li>
+                    <li>Almacenamiento cifrado en MinIO</li>
+                    <li>Auditoría inmutable registrada</li>
+                  </ol>
+                </div>
+
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setStep('upload')}
+                    className="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50"
+                  >
+                    ← Atrás
+                  </button>
+                  <button
+                    onClick={handleAssignToWallet}
+                    className="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-bold"
+                  >
+                    Asignar a Billetera Digital →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Confirmation */}
+          {step === 'confirm' && (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <div className="text-6xl mb-4">⏳</div>
+              <h2 className="text-2xl font-bold mb-2">Procesando...</h2>
+              <p className="text-gray-600">Des-identificando y asignando a billetera digital</p>
+              <div className="mt-6">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

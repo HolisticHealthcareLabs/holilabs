@@ -1,0 +1,19 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Buscar"
+  },
+  "nav": {
+    "dashboard": "Painel",
+    "patients": "Pacientes",
+    "upload": "Enviar Dados",
+    "ai": "IA",
+    "admin": "Administração"
+  }
+}

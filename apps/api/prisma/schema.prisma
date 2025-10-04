@@ -1,0 +1,220 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "audit"]
+}
+
+enum UserRole {
+  CLINICIAN
+  RESEARCHER
+  ADMIN
+
+  @@schema("public")
+}
+
+enum ConsentState {
+  ACTIVE
+  REVOKED
+  EXPIRED
+
+  @@schema("public")
+}
+
+enum ConsentPurpose {
+  CARE
+  RESEARCH
+  ADMIN
+
+  @@schema("public")
+}
+
+enum ExportStatus {
+  PENDING
+  APPROVED
+  DENIED
+  COMPLETED
+
+  @@schema("public")
+}
+
+model Org {
+  id                String         @id @default(uuid())
+  name              String
+  countryCode       String         @map("country_code") @db.VarChar(2)
+  dpEpsilonBudget   Decimal        @map("dp_epsilon_budget") @db.Decimal(10, 6) @default(10.0)
+  createdAt         DateTime       @default(now()) @map("created_at")
+  users             User[]
+  patientTokens     PatientToken[]
+  datasets          Dataset[]
+  auditEvents       AuditEvent[]
+  consents          Consent[]
+  exportRequests    ExportRequest[]
+  modelRuns         ModelRun[]
+  subjectIndices    SubjectIndex[]
+
+  @@map("orgs")
+  @@schema("public")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String       @map("password_hash")
+  role         UserRole
+  orgId        String       @map("org_id")
+  mfaEnabled   Boolean      @default(false) @map("mfa_enabled")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  org          Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  auditEvents  AuditEvent[]
+
+  @@index([orgId])
+  @@map("users")
+  @@schema("public")
+}
+
+model PatientToken {
+  id             String         @id @default(uuid())
+  orgId          String         @map("org_id")
+  pointerHash    String         @unique @map("pointer_hash")
+  storageUri     String?        @map("storage_uri")
+  policyVersion  String         @map("policy_version")
+  consentState   ConsentState   @default(ACTIVE) @map("consent_state")
+  recordVersion  Int            @default(1) @map("record_version")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  datasets       Dataset[]
+  consents       Consent[]
+  exportRequests ExportRequest[]
+  subjectIndices SubjectIndex[]
+
+  @@index([orgId])
+  @@index([pointerHash])
+  @@map("patient_tokens")
+  @@schema("public")
+}
+
+model SubjectIndex {
+  id             String       @id @default(uuid())
+  patientTokenId String       @map("patient_token_id")
+  orgId          String       @map("org_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  patientToken   PatientToken @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+  org            Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  exportRequests ExportRequest[]
+
+  @@index([orgId])
+  @@index([patientTokenId])
+  @@map("subject_indices")
+  @@schema("public")
+}
+
+model Dataset {
+  id             String         @id @default(uuid())
+  orgId          String         @map("org_id")
+  patientTokenId String         @map("patient_token_id")
+  s3Key          String         @map("s3_key")
+  sha256         String
+  policyVersion  String         @map("policy_version")
+  dpEnabled      Boolean        @default(false) @map("dp_enabled")
+  dpEpsilon      Decimal?       @map("dp_epsilon") @db.Decimal(10, 6)
+  dpDelta        Decimal?       @map("dp_delta") @db.Decimal(20, 10)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  patientToken   PatientToken   @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+  exportRequests ExportRequest[]
+  modelRuns      ModelRun[]
+
+  @@index([orgId])
+  @@index([patientTokenId])
+  @@index([sha256])
+  @@map("datasets")
+  @@schema("public")
+}
+
+model AuditEvent {
+  id        BigInt   @id @default(autoincrement())
+  ts        DateTime @default(now()) @db.Timestamptz
+  orgId     String   @map("org_id")
+  userId    String?  @map("user_id")
+  eventType String   @map("event_type")
+  payload   Json
+  prevHash  Bytes?   @map("prev_hash")
+  rowHash   Bytes    @map("row_hash")
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([eventType])
+  @@index([ts])
+  @@map("audit_events")
+  @@schema("audit")
+}
+
+model Consent {
+  id             String          @id @default(uuid())
+  orgId          String          @map("org_id")
+  patientTokenId String          @map("patient_token_id")
+  purpose        ConsentPurpose
+  dataClasses    String[]        @map("data_classes")
+  retentionDays  Int             @map("retention_days")
+  state          ConsentState
+  policyRef      String          @map("policy_ref")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  patientToken   PatientToken    @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([patientTokenId])
+  @@index([purpose])
+  @@map("consents")
+  @@schema("public")
+}
+
+model ExportRequest {
+  id             String       @id @default(uuid())
+  orgId          String       @map("org_id")
+  datasetId      String       @map("dataset_id")
+  subjectId      String       @map("subject_id")
+  patientTokenId String       @map("patient_token_id")
+  epsilon        Decimal      @db.Decimal(10, 6)
+  delta          Decimal      @db.Decimal(20, 10)
+  status         ExportStatus @default(PENDING)
+  receiptHash    Bytes?       @map("receipt_hash")
+  cooldownUntil  DateTime?    @map("cooldown_until") @db.Timestamptz
+  createdAt      DateTime     @default(now()) @map("created_at")
+  org            Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  dataset        Dataset      @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  subject        SubjectIndex @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  patientToken   PatientToken @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([datasetId])
+  @@index([subjectId])
+  @@index([patientTokenId])
+  @@index([status])
+  @@map("export_requests")
+  @@schema("public")
+}
+
+model ModelRun {
+  id            String   @id @default(uuid())
+  orgId         String   @map("org_id")
+  datasetId     String   @map("dataset_id")
+  modelId       String   @map("model_id")
+  modelHash     String   @map("model_hash")
+  guardrailLog  Json     @map("guardrail_log")
+  createdAt     DateTime @default(now()) @map("created_at")
+  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  dataset       Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([datasetId])
+  @@index([modelId])
+  @@map("model_runs")
+  @@schema("public")
+}
