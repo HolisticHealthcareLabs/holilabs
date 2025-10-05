@@ -13,12 +13,16 @@ interface EPrescribingDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   currentMedications: Medication[];
+  patientId: string;
+  clinicianId: string;
 }
 
 export default function EPrescribingDrawer({
   isOpen,
   onClose,
   currentMedications,
+  patientId,
+  clinicianId,
 }: EPrescribingDrawerProps) {
   const [commandInput, setCommandInput] = useState('');
   const [parsedPrescription, setParsedPrescription] = useState<any>(null);
@@ -90,14 +94,58 @@ export default function EPrescribingDrawer({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    // Simulate submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Prepare medications array from parsed prescription
+      const medications = parsedPrescription
+        ? [
+            {
+              name: parsedPrescription.drug,
+              dose: parsedPrescription.dose,
+              frequency: parsedPrescription.frequency,
+              instructions: commandInput,
+            },
+          ]
+        : [];
 
-    // Show success toast
-    alert('✅ Recetas firmadas y enviadas exitosamente');
+      // Create prescription via API
+      const response = await fetch('/api/prescriptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId,
+          clinicianId,
+          medications,
+          instructions: commandInput,
+          signatureMethod: signingMethod,
+          signatureData: signingMethod === 'pin' ? pin : signature,
+        }),
+      });
 
-    setIsSubmitting(false);
-    onClose();
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create prescription');
+      }
+
+      // Success
+      alert('✅ Receta firmada y enviada exitosamente');
+
+      // Reset form
+      setCommandInput('');
+      setParsedPrescription(null);
+      setPin('');
+      setSignature('');
+      clearSignature();
+
+      onClose();
+    } catch (error: any) {
+      console.error('Error creating prescription:', error);
+      alert('❌ Error al crear receta: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isValid = signingMethod === 'pin' ? pin.length >= 4 : signature.length > 0;

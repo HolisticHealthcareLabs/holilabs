@@ -422,6 +422,8 @@ export default function PatientProfile() {
         isOpen={isRxDrawerOpen}
         onClose={() => setIsRxDrawerOpen(false)}
         currentMedications={patient?.medications || []}
+        patientId={patientId}
+        clinicianId={patient?.assignedClinicianId || ''}
       />
 
       {/* Scheduling Modal */}
