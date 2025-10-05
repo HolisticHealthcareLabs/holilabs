@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import EPrescribingDrawer from '@/components/patient/EPrescribingDrawer';
@@ -16,26 +16,41 @@ export default function PatientProfile() {
   const [activeTab, setActiveTab] = useState<Tab>('clinical');
   const [isRxDrawerOpen, setIsRxDrawerOpen] = useState(false);
   const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
-  const [aiContext, setAiContext] = useState<string>('Banda de edad 30-39, Diabetes tipo 2, Medicación activa.');
+  const [aiContext, setAiContext] = useState<string>('Cargando contexto del paciente...');
 
-  // Mock data - in production, fetch from API
-  const patient = {
-    id: patientId,
-    firstName: 'María',
-    lastName: 'González García',
-    tokenId: 'PT-892a-4f3e-b1c2',
-    age: '30-39',
-    lastVisit: '2025-Q1',
-    region: 'SP',
-    alerts: ['Diabetes'],
-    medications: [
-      { id: '1', name: 'Metformina', dose: '500mg', frequency: '2x/día' },
-      { id: '2', name: 'Enalapril', dose: '10mg', frequency: '1x/día' },
-    ],
-  };
+  // Real data from API
+  const [patient, setPatient] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fullName = `${patient.firstName} ${patient.lastName}`.trim();
-  const displayName = fullName || `Paciente ${patient.tokenId}`;
+  // Fetch patient data from API
+  useEffect(() => {
+    async function fetchPatient() {
+      try {
+        const response = await fetch(`/api/patients/${patientId}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setPatient(data.data);
+
+          // Build AI context from real data
+          const age = new Date().getFullYear() - new Date(data.data.dateOfBirth).getFullYear();
+          const ageBand = data.data.ageBand || `${Math.floor(age / 10) * 10}-${Math.floor(age / 10) * 10 + 9}`;
+          const medList = data.data.medications?.map((m: any) => m.name).join(', ') || 'Ninguna';
+
+          setAiContext(`Banda de edad ${ageBand}, Medicación activa: ${medList}`);
+        } else {
+          setError(data.error || 'Failed to load patient');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Network error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPatient();
+  }, [patientId]);
 
   const handleContextUpdate = (metadata: any) => {
     // Update AI context with new data
@@ -43,6 +58,40 @@ export default function PatientProfile() {
     const newContext = `Contexto actualizado [${timestamp}]: ${aiContext} Nuevos datos: ${metadata.dataType} (${metadata.metrics.map((m: any) => `${m.code} ${m.value}${m.unit}`).join(', ')})`;
     setAiContext(newContext);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4" />
+          <h3 className="text-xl font-bold text-gray-800">Cargando paciente...</h3>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !patient) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-8">
+          <div className="text-6xl mb-4">❌</div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">Error al cargar paciente</h3>
+          <p className="text-gray-600 mb-4">{error || 'Paciente no encontrado'}</p>
+          <Link
+            href="/dashboard/patients"
+            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition"
+          >
+            Volver a pacientes
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const fullName = `${patient.firstName} ${patient.lastName}`.trim();
+  const displayName = fullName || `Paciente ${patient.tokenId}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,26 +113,32 @@ export default function PatientProfile() {
                 </span>
               </div>
               <div className="text-sm opacity-90">
-                <span className="mr-4">Banda de edad: {patient.age}</span>
-                <span className="mr-4">Última visita: {patient.lastVisit}</span>
-                <span>Región: {patient.region}</span>
+                <span className="mr-4">Banda de edad: {patient.ageBand || 'N/A'}</span>
+                <span className="mr-4">
+                  Última visita: {patient.appointments?.[0]?.startTime ? new Date(patient.appointments[0].startTime).toLocaleDateString('es-ES') : 'N/A'}
+                </span>
+                <span>Región: {patient.region || patient.state || 'N/A'}</span>
               </div>
 
               {/* Medical Alerts - Interactive Pills */}
               <div className="mt-3 flex space-x-3">
-                <button className="bg-yellow-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-yellow-600 transition shadow-sm hover:shadow-md">
-                  <span>⚠️</span>
-                  <span>Alertas médicas:</span>
-                  <span>{patient.alerts.join(', ')}</span>
-                </button>
-                <button
-                  onClick={() => setIsRxDrawerOpen(true)}
-                  className="bg-green-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-green-600 transition shadow-sm hover:shadow-md"
-                >
-                  <span>💊</span>
-                  <span>Medicamentos:</span>
-                  <span>{patient.medications.map(m => m.name).join(', ')}</span>
-                </button>
+                {patient.medications && patient.medications.length > 0 && (
+                  <button
+                    onClick={() => setIsRxDrawerOpen(true)}
+                    className="bg-green-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-green-600 transition shadow-sm hover:shadow-md"
+                  >
+                    <span>💊</span>
+                    <span>Medicamentos:</span>
+                    <span>{patient.medications.slice(0, 2).map((m: any) => m.name).join(', ')}</span>
+                    {patient.medications.length > 2 && <span>+{patient.medications.length - 2}</span>}
+                  </button>
+                )}
+                {patient.appointments && patient.appointments.length > 0 && (
+                  <button className="bg-blue-500 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1 hover:bg-blue-600 transition shadow-sm hover:shadow-md">
+                    <span>📅</span>
+                    <span>Próxima cita: {new Date(patient.appointments[0].startTime).toLocaleDateString('es-ES')}</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -193,15 +248,19 @@ export default function PatientProfile() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Banda de Edad</label>
-                  <div className="p-2 bg-gray-50 rounded">{patient.age}</div>
+                  <div className="p-2 bg-gray-50 rounded">{patient.ageBand || 'N/A'}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Región</label>
-                  <div className="p-2 bg-gray-50 rounded">{patient.region}</div>
+                  <div className="p-2 bg-gray-50 rounded">{patient.region || patient.state || 'N/A'}</div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Última Visita</label>
-                  <div className="p-2 bg-gray-50 rounded">{patient.lastVisit}</div>
+                  <div className="p-2 bg-gray-50 rounded">
+                    {patient.appointments?.[0]?.startTime
+                      ? new Date(patient.appointments[0].startTime).toLocaleDateString('es-ES')
+                      : 'N/A'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -223,13 +282,17 @@ export default function PatientProfile() {
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Medicamentos Actuales</h3>
                   <div className="p-4 bg-gray-50 rounded">
-                    <ul className="list-disc list-inside space-y-1">
-                      {patient.medications.map((med) => (
-                        <li key={med.id}>
-                          {med.name} {med.dose} - {med.frequency}
-                        </li>
-                      ))}
-                    </ul>
+                    {patient.medications && patient.medications.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1">
+                        {patient.medications.map((med: any) => (
+                          <li key={med.id}>
+                            {med.name} {med.dose} - {med.frequency}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-500">No hay medicamentos activos registrados.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -358,7 +421,7 @@ export default function PatientProfile() {
       <EPrescribingDrawer
         isOpen={isRxDrawerOpen}
         onClose={() => setIsRxDrawerOpen(false)}
-        currentMedications={patient.medications}
+        currentMedications={patient?.medications || []}
       />
 
       {/* Scheduling Modal */}
