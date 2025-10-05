@@ -44,6 +44,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           action: 'LOGIN',
           resource: 'Auth',
+          resourceId: data.user?.id || 'N/A',
           userEmail: email,
         }),
       });

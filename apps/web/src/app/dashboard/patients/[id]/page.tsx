@@ -7,6 +7,7 @@ import EPrescribingDrawer from '@/components/patient/EPrescribingDrawer';
 import ConsentManager from '@/components/patient/ConsentManager';
 import SchedulingModal from '@/components/patient/SchedulingModal';
 import DataIngestion from '@/components/patient/DataIngestion';
+import ClinicalNotesEditor from '@/components/patient/ClinicalNotesEditor';
 
 type Tab = 'personal' | 'clinical' | 'history' | 'documents' | 'consents' | 'ai';
 
@@ -16,6 +17,7 @@ export default function PatientProfile() {
   const [activeTab, setActiveTab] = useState<Tab>('clinical');
   const [isRxDrawerOpen, setIsRxDrawerOpen] = useState(false);
   const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
+  const [isClinicalNotesOpen, setIsClinicalNotesOpen] = useState(false);
   const [aiContext, setAiContext] = useState<string>('Cargando contexto del paciente...');
 
   // Real data from API
@@ -303,8 +305,11 @@ export default function PatientProfile() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Historial Clínico</h2>
-                <button className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 transition">
-                  + Nueva Evolución
+                <button
+                  onClick={() => setIsClinicalNotesOpen(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white rounded-lg hover:shadow-lg transition font-bold"
+                >
+                  📝 Nueva Nota Clínica
                 </button>
               </div>
 
@@ -431,6 +436,21 @@ export default function PatientProfile() {
         isOpen={isSchedulingOpen}
         onClose={() => setIsSchedulingOpen(false)}
       />
+
+      {/* Clinical Notes Editor */}
+      {isClinicalNotesOpen && (
+        <ClinicalNotesEditor
+          patientId={patientId}
+          clinicianId={patient?.assignedClinicianId || ''}
+          patientName={displayName}
+          onClose={() => setIsClinicalNotesOpen(false)}
+          onSave={() => {
+            setIsClinicalNotesOpen(false);
+            // Refresh patient data to show new note
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
