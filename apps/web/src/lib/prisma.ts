@@ -22,10 +22,14 @@ const CONNECTION_TIMEOUT = parseInt(process.env.DB_TIMEOUT || '10000', 10); // 1
  * Create Prisma Client instance (lazy initialization)
  * Only instantiates when DATABASE_URL is available (runtime, not build time)
  */
-function createPrismaClient() {
+function createPrismaClient(): PrismaClient | null {
   // Skip initialization during build if DATABASE_URL is missing
+  // This allows Next.js to build static pages without a database
   if (!process.env.DATABASE_URL) {
-    console.warn('⚠️  DATABASE_URL not set - Prisma client will not be initialized');
+    // During build (when this is expected), just log a warning
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️  DATABASE_URL not set - Prisma client will not be initialized');
+    }
     return null;
   }
 
@@ -44,26 +48,39 @@ function createPrismaClient() {
 }
 
 // Lazy initialization - only create client when first accessed
-export const prisma = (globalForPrisma.prisma ?? createPrismaClient()) as PrismaClient;
+const prismaClient = globalForPrisma.prisma ?? createPrismaClient();
+
+// Create a proxy that throws helpful errors if Prisma is not initialized
+export const prisma = new Proxy(prismaClient as PrismaClient, {
+  get(target, prop) {
+    if (target === null) {
+      throw new Error(
+        'Prisma client not initialized: DATABASE_URL environment variable is not set. ' +
+        'Please configure DATABASE_URL in your environment variables.'
+      );
+    }
+    return (target as any)[prop];
+  },
+});
 
 // Configure connection pool via environment variable
 // Add to .env: DATABASE_URL="postgresql://...?connection_limit=10&pool_timeout=10"
 
-if (process.env.NODE_ENV !== 'production' && prisma) {
-  globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== 'production' && prismaClient) {
+  globalForPrisma.prisma = prismaClient;
 }
 
 // Graceful shutdown
-if (process.env.NODE_ENV === 'production' && prisma) {
+if (process.env.NODE_ENV === 'production' && prismaClient) {
   process.on('SIGTERM', async () => {
     console.log('SIGTERM received, closing database connections...');
-    await prisma.$disconnect();
+    await prismaClient.$disconnect();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
     console.log('SIGINT received, closing database connections...');
-    await prisma.$disconnect();
+    await prismaClient.$disconnect();
     process.exit(0);
   });
 }

@@ -38,6 +38,17 @@ export async function GET() {
     version: process.env.npm_package_version || '1.0.0',
   };
 
+  // If Prisma client is not initialized (DATABASE_URL not set), return basic health check
+  if (!prisma) {
+    return NextResponse.json(
+      {
+        ...healthStatus,
+        error: 'DATABASE_URL not configured',
+      },
+      { status: 200 }
+    );
+  }
+
   try {
     // Check database connection
     const dbStartTime = Date.now();
