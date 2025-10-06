@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { csrfProtection } from '@/lib/security/csrf';
+import { handlePreflight, applyCorsHeaders } from './cors';
+import { getOrCreateRequestId, REQUEST_ID_HEADER } from '@/lib/request-id';
 
 // ============================================================================
 // TYPES
@@ -20,6 +22,7 @@ export type ApiHandler = (
 
 export interface ApiContext {
   params?: Record<string, string>;
+  requestId?: string; // Request ID for tracing
   user?: {
     id: string;
     email: string;
@@ -414,26 +417,44 @@ export function createProtectedRoute(
     skipCsrf?: boolean; // Option to disable CSRF for specific routes (e.g., GET-only)
   }
 ) {
-  const middlewares: Middleware[] = [requireAuth()];
+  return async (request: NextRequest, context: ApiContext) => {
+    // Generate or extract request ID
+    const requestId = getOrCreateRequestId(request.headers);
+    context.requestId = requestId;
 
-  // Add CSRF protection by default for all protected routes (skip only if explicitly disabled)
-  if (!options?.skipCsrf) {
-    middlewares.push(csrfProtection());
-  }
+    // Handle CORS preflight
+    const preflightResponse = handlePreflight(request);
+    if (preflightResponse) {
+      preflightResponse.headers.set(REQUEST_ID_HEADER, requestId);
+      return preflightResponse;
+    }
 
-  if (options?.rateLimit) {
-    middlewares.push(rateLimit(options.rateLimit));
-  }
+    const middlewares: Middleware[] = [requireAuth()];
 
-  if (options?.roles) {
-    middlewares.push(requireRole(...options.roles));
-  }
+    // Add CSRF protection by default for all protected routes (skip only if explicitly disabled)
+    if (!options?.skipCsrf) {
+      middlewares.push(csrfProtection());
+    }
 
-  if (options?.audit) {
-    middlewares.push(withAuditLog(options.audit.action, options.audit.resource));
-  }
+    if (options?.rateLimit) {
+      middlewares.push(rateLimit(options.rateLimit));
+    }
 
-  return withErrorHandling(compose(...middlewares)(handler));
+    if (options?.roles) {
+      middlewares.push(requireRole(...options.roles));
+    }
+
+    if (options?.audit) {
+      middlewares.push(withAuditLog(options.audit.action, options.audit.resource));
+    }
+
+    const composedHandler = withErrorHandling(compose(...middlewares)(handler));
+    const response = await composedHandler(request, context);
+
+    // Apply request ID and CORS headers to response
+    response.headers.set(REQUEST_ID_HEADER, requestId);
+    return applyCorsHeaders(request, response);
+  };
 }
 
 /**
@@ -445,11 +466,29 @@ export function createPublicRoute(
     rateLimit?: RateLimitConfig;
   }
 ) {
-  const middlewares: Middleware[] = [];
+  return async (request: NextRequest, context: ApiContext) => {
+    // Generate or extract request ID
+    const requestId = getOrCreateRequestId(request.headers);
+    context.requestId = requestId;
 
-  if (options?.rateLimit) {
-    middlewares.push(rateLimit(options.rateLimit));
-  }
+    // Handle CORS preflight
+    const preflightResponse = handlePreflight(request);
+    if (preflightResponse) {
+      preflightResponse.headers.set(REQUEST_ID_HEADER, requestId);
+      return preflightResponse;
+    }
 
-  return withErrorHandling(compose(...middlewares)(handler));
+    const middlewares: Middleware[] = [];
+
+    if (options?.rateLimit) {
+      middlewares.push(rateLimit(options.rateLimit));
+    }
+
+    const composedHandler = withErrorHandling(compose(...middlewares)(handler));
+    const response = await composedHandler(request, context);
+
+    // Apply request ID and CORS headers to response
+    response.headers.set(REQUEST_ID_HEADER, requestId);
+    return applyCorsHeaders(request, response);
+  };
 }
