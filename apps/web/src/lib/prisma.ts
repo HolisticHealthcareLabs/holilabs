@@ -18,9 +18,18 @@ const globalForPrisma = globalThis as unknown as {
 const CONNECTION_POOL_SIZE = parseInt(process.env.DB_POOL_SIZE || '10', 10);
 const CONNECTION_TIMEOUT = parseInt(process.env.DB_TIMEOUT || '10000', 10); // 10 seconds
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+/**
+ * Create Prisma Client instance (lazy initialization)
+ * Only instantiates when DATABASE_URL is available (runtime, not build time)
+ */
+function createPrismaClient() {
+  // Skip initialization during build if DATABASE_URL is missing
+  if (!process.env.DATABASE_URL) {
+    console.warn('⚠️  DATABASE_URL not set - Prisma client will not be initialized');
+    return null;
+  }
+
+  return new PrismaClient({
     log: process.env.NODE_ENV === 'development'
       ? ['query', 'error', 'warn']
       : ['error'],
@@ -32,16 +41,20 @@ export const prisma =
       },
     },
   });
+}
+
+// Lazy initialization - only create client when first accessed
+export const prisma = (globalForPrisma.prisma ?? createPrismaClient()) as PrismaClient;
 
 // Configure connection pool via environment variable
 // Add to .env: DATABASE_URL="postgresql://...?connection_limit=10&pool_timeout=10"
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && prisma) {
   globalForPrisma.prisma = prisma;
 }
 
 // Graceful shutdown
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' && prisma) {
   process.on('SIGTERM', async () => {
     console.log('SIGTERM received, closing database connections...');
     await prisma.$disconnect();
