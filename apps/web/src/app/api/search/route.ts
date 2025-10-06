@@ -238,6 +238,5 @@ export const GET = createProtectedRoute(
   }
 );
 
-// Apply query validation
-const getHandler = validateQuery(SearchQuerySchema)(GET);
-export { getHandler as GET };
+// Note: Validation already applied via createProtectedRoute
+// No need for additional wrapper

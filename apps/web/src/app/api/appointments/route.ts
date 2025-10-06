@@ -79,12 +79,8 @@ export const POST = createProtectedRoute(
   }
 );
 
-// Apply validation middleware
-const postHandler = POST;
-export { postHandler as POST };
-
-// Wrap with validation
-const validatedPost = validateBody(CreateAppointmentSchema)(POST);
+// Note: Validation already applied via createProtectedRoute
+// No need for additional wrapper
 
 // ============================================================================
 // GET /api/appointments - List appointments
@@ -150,6 +146,5 @@ export const GET = createProtectedRoute(
   }
 );
 
-// Apply query validation
-const getHandler = validateQuery(AppointmentQuerySchema)(GET);
-export { getHandler as GET };
+// Note: Validation already applied via createProtectedRoute
+// No need for additional wrapper

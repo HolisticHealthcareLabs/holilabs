@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { chat, buildPatientContext, ChatMessage } from '@/lib/ai/chat';
 import { prisma } from '@/lib/prisma';
+import { sanitizeAIInput } from '@/lib/security/input-sanitization';
 
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
@@ -28,6 +29,21 @@ export const POST = createProtectedRoute(
           { status: 400 }
         );
       }
+
+      // Sanitize all user messages to prevent prompt injection
+      const sanitizedMessages = messages.map((msg) => {
+        if (msg.role === 'user') {
+          return {
+            ...msg,
+            content: sanitizeAIInput(msg.content, {
+              maxLength: 10000,
+              allowHtml: false,
+              removeUrls: false, // Allow URLs in medical context
+            }),
+          };
+        }
+        return msg;
+      });
 
       // Build patient context if patientId provided
       let patientContext = '';
@@ -50,15 +66,15 @@ export const POST = createProtectedRoute(
           });
 
           // Prepend patient context to first user message
-          if (messages.length > 0 && messages[0].role === 'user') {
-            messages[0].content = `${patientContext}\n\n${messages[0].content}`;
+          if (sanitizedMessages.length > 0 && sanitizedMessages[0].role === 'user') {
+            sanitizedMessages[0].content = `${patientContext}\n\n${sanitizedMessages[0].content}`;
           }
         }
       }
 
-      // Send to AI
+      // Send to AI with sanitized messages
       const response = await chat({
-        messages: messages as ChatMessage[],
+        messages: sanitizedMessages as ChatMessage[],
         provider,
         temperature,
       });

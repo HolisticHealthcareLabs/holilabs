@@ -15,6 +15,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import WelcomeModal from '@/components/onboarding/WelcomeModal';
+import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist';
 
 interface DashboardStats {
   totalPatients: number;
@@ -128,6 +130,10 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Onboarding Components */}
+      <WelcomeModal />
+      <OnboardingChecklist />
+
       {/* Top Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-6 py-4">

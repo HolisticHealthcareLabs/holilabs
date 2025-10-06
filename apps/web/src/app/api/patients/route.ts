@@ -5,29 +5,56 @@
  * POST /api/patients - Create new patient
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 
 /**
  * GET /api/patients
  * List patients with pagination and filtering
+ * SECURITY: Enforces tenant isolation - users can only access their own patients
  */
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const { searchParams } = new URL(request.url);
 
-    // Pagination
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const skip = (page - 1) * limit;
+      // Pagination
+      const page = parseInt(searchParams.get('page') || '1');
+      const limit = parseInt(searchParams.get('limit') || '10');
+      const skip = (page - 1) * limit;
 
-    // Filters
-    const search = searchParams.get('search') || '';
-    const isActive = searchParams.get('isActive');
+      // Filters
+      const search = searchParams.get('search') || '';
+      const isActive = searchParams.get('isActive');
+      const requestedClinicianId = searchParams.get('clinicianId');
 
-    // Build where clause
-    const where: any = {};
+      // ===================================================================
+      // SECURITY: TENANT ISOLATION - CRITICAL FOR HIPAA COMPLIANCE
+      // ===================================================================
+      // Prevent clinicians from accessing other clinicians' patients
+      let clinicianId = context.user.id;
+
+      if (requestedClinicianId && requestedClinicianId !== context.user.id) {
+        // Only ADMIN can query other clinicians' patients
+        if (context.user.role !== 'ADMIN') {
+          return NextResponse.json(
+            {
+              error: 'Forbidden',
+              message: 'You cannot access other clinicians\' patients',
+            },
+            { status: 403 }
+          );
+        }
+        // ADMIN approved - use requested clinician ID
+        clinicianId = requestedClinicianId;
+      }
+
+      // Build where clause with tenant isolation
+      const where: any = {
+        clinicianId, // CRITICAL: Always filter by clinician
+      };
 
     if (search) {
       where.OR = [
@@ -86,24 +113,29 @@ export async function GET(request: Request) {
       prisma.patient.count({ where }),
     ]);
 
-    return NextResponse.json({
-      success: true,
-      data: patients,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    });
-  } catch (error: any) {
-    console.error('Error fetching patients:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch patients', details: error.message },
-      { status: 500 }
-    );
+      return NextResponse.json({
+        success: true,
+        data: patients,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } catch (error: any) {
+      console.error('Error fetching patients:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch patients' },
+        { status: 500 }
+      );
+    }
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
   }
-}
+);
 
 /**
  * POST /api/patients

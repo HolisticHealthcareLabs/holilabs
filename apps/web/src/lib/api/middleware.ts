@@ -32,16 +32,45 @@ export interface RateLimitConfig {
 }
 
 // ============================================================================
-// RATE LIMITING (In-memory for now, use Redis in production)
+// RATE LIMITING (In-memory with cleanup, Redis-ready)
 // ============================================================================
 
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+const MAX_STORE_SIZE = 10000; // Prevent memory leak
+
+// Periodic cleanup of expired entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (now > value.resetAt) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 60000); // Clean every minute
 
 export function rateLimit(config: RateLimitConfig) {
   return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
-    const identifier = request.headers.get('x-forwarded-for') || 'unknown';
+    // TODO: Replace with Redis in production
+    // For Redis implementation:
+    // const redis = new Redis(process.env.REDIS_URL);
+    // const key = `ratelimit:${identifier}:${hash(request.url)}`;
+    // const count = await redis.incr(key);
+    // if (count === 1) await redis.expire(key, Math.ceil(config.windowMs / 1000));
+
+    const identifier = request.headers.get('x-forwarded-for') ||
+                      request.headers.get('x-real-ip') ||
+                      'unknown';
     const key = `${identifier}:${request.url}`;
     const now = Date.now();
+
+    // Enforce max store size to prevent memory exhaustion
+    if (rateLimitStore.size > MAX_STORE_SIZE) {
+      // Remove oldest 1000 entries
+      const entries = Array.from(rateLimitStore.entries())
+        .sort((a, b) => a[1].resetAt - b[1].resetAt)
+        .slice(0, 1000);
+      entries.forEach(([k]) => rateLimitStore.delete(k));
+    }
 
     const record = rateLimitStore.get(key);
 

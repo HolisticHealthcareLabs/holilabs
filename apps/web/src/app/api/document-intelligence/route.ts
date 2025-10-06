@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import pdfParse from 'pdf-parse';
+// Temporarily disable pdf-parse due to build issues
+// import pdfParse from 'pdf-parse';
 import { Deidentifier } from '@/lib/deid/deidentifier';
 import { summarizeClinicalDocument } from '@/lib/ai/claude';
 
@@ -44,17 +45,23 @@ export async function POST(request: Request) {
       }
 
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const pdfData = await pdfParse(buffer);
-        extractedText = pdfData.text;
+        // TODO: Re-enable PDF parsing after fixing build issues
+        // const arrayBuffer = await file.arrayBuffer();
+        // const buffer = Buffer.from(arrayBuffer);
+        // const pdfData = await pdfParse(buffer);
+        // extractedText = pdfData.text;
 
-        if (!extractedText || extractedText.trim().length === 0) {
-          return NextResponse.json(
-            { error: 'No text could be extracted from PDF' },
-            { status: 400 }
-          );
-        }
+        return NextResponse.json(
+          { error: 'PDF parsing temporarily disabled. Please provide text directly.' },
+          { status: 501 }
+        );
+
+        // if (!extractedText || extractedText.trim().length === 0) {
+        //   return NextResponse.json(
+        //     { error: 'No text could be extracted from PDF' },
+        //     { status: 400 }
+        //   );
+        // }
       } catch (error: any) {
         console.error('PDF parsing error:', error);
         return NextResponse.json(
