@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     const user = await prisma.user.create({
       data: {
         email: body.email,
+        supabaseId: body.supabaseId, // Link to Supabase auth
         firstName: body.firstName,
         lastName: body.lastName,
         role: body.role,

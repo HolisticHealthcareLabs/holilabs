@@ -76,6 +76,7 @@ export default function SignupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
+          supabaseId: authData.user.id, // Link to Supabase auth
           firstName: formData.firstName,
           lastName: formData.lastName,
           role: 'CLINICIAN',
