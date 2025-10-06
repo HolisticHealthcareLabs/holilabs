@@ -41,6 +41,7 @@ model User {
   auditLogs     AuditLog[]
   prescriptions Prescription[]
   appointments  Appointment[]
+  calendarIntegrations CalendarIntegration[]
 
   @@index([email])
   @@index([walletAddress])
@@ -554,4 +555,49 @@ enum TxStatus {
   CONFIRMED
   FAILED
   REVERTED
+}
+
+// ============================================================================
+// CALENDAR INTEGRATIONS (OAuth for Google, Microsoft, Apple)
+// ============================================================================
+
+model CalendarIntegration {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Provider
+  provider          CalendarProvider
+  providerAccountId String    // OAuth provider's user ID
+
+  // OAuth tokens (ENCRYPTED in production)
+  accessToken       String    @db.Text
+  refreshToken      String?   @db.Text
+  tokenExpiresAt    DateTime?
+  scope             String[]
+
+  // Calendar details
+  calendarId        String?   // Primary calendar ID
+  calendarName      String?
+  calendarEmail     String?
+
+  // Sync status
+  lastSyncAt        DateTime?
+  syncEnabled       Boolean   @default(true)
+  syncErrors        Int       @default(0)
+
+  // Metadata
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@index([provider])
+  @@map("calendar_integrations")
+}
+
+enum CalendarProvider {
+  GOOGLE
+  MICROSOFT
+  APPLE
 }

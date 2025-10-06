@@ -157,15 +157,16 @@ export const GET = createProtectedRoute(
       case 'clinical_notes_count':
         const notes = await prisma.clinicalNote.count({
           where: {
-            ...(clinicianId ? { clinicianId } : {}),
+            ...(clinicianId ? { authorId: clinicianId } : {}),
             createdAt: { gte: startDate, lte: endDate },
           },
         });
 
+        // @ts-ignore - Prisma groupBy type inference issue with spread operator
         const byType = await prisma.clinicalNote.groupBy({
-          by: ['noteType'],
+          by: ['type'] as ['type'],
           where: {
-            ...(clinicianId ? { clinicianId } : {}),
+            ...(clinicianId && { authorId: clinicianId }),
             createdAt: { gte: startDate, lte: endDate },
           },
           _count: true,
@@ -174,8 +175,8 @@ export const GET = createProtectedRoute(
         result = {
           metric: 'clinical_notes_count',
           total: notes,
-          byType: byType.reduce((acc: any, item) => {
-            acc[item.noteType] = item._count;
+          byType: byType.reduce((acc: any, item: any) => {
+            acc[item.type] = item._count;
             return acc;
           }, {}),
           period: { startDate, endDate },
@@ -270,6 +271,7 @@ export const GET = createProtectedRoute(
   {
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    skipCsrf: true, // GET requests don't need CSRF protection
   }
 );
 

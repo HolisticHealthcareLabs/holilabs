@@ -100,6 +100,22 @@ export default function PatientProfile() {
       {/* Header with patient info banner - Dentalink style */}
       <div className="bg-gradient-to-r from-primary to-blue-600 text-white shadow-lg">
         <div className="container mx-auto px-4 py-6">
+          {/* Back Button */}
+          <Link
+            href="/dashboard/patients"
+            className="inline-flex items-center space-x-2 text-white/90 hover:text-white transition-colors mb-4 group"
+          >
+            <svg
+              className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="font-medium">Regresar a Pacientes</span>
+          </Link>
+
           <div className="flex items-start space-x-4">
             {/* Patient Avatar */}
             <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-4xl backdrop-blur">

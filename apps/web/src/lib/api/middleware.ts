@@ -4,9 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { csrfProtection } from '@/lib/security/csrf';
 
 // ============================================================================
 // TYPES
@@ -41,7 +42,8 @@ const MAX_STORE_SIZE = 10000; // Prevent memory leak
 // Periodic cleanup of expired entries
 setInterval(() => {
   const now = Date.now();
-  for (const [key, value] of rateLimitStore.entries()) {
+  const entries = Array.from(rateLimitStore.entries());
+  for (const [key, value] of entries) {
     if (now > value.resetAt) {
       rateLimitStore.delete(key);
     }
@@ -132,7 +134,7 @@ export function rateLimit(config: RateLimitConfig) {
 export function requireAuth() {
   return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
     try {
-      const supabase = await createServerClient();
+      const supabase = createClient();
       const {
         data: { user },
         error,
@@ -375,7 +377,7 @@ export function withAuditLog(action: string, resource: string) {
             userId: context.user?.id,
             userEmail: context.user?.email || 'anonymous',
             ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-            action,
+            action: action as any, // Cast to avoid type error with string
             resource,
             resourceId: context.params?.id || 'N/A',
             success: response.status < 400,
@@ -401,7 +403,7 @@ export function withAuditLog(action: string, resource: string) {
 // ============================================================================
 
 /**
- * Create a protected API route with authentication, rate limiting, and error handling
+ * Create a protected API route with authentication, rate limiting, CSRF protection, and error handling
  */
 export function createProtectedRoute(
   handler: ApiHandler,
@@ -409,9 +411,15 @@ export function createProtectedRoute(
     roles?: UserRole[];
     rateLimit?: RateLimitConfig;
     audit?: { action: string; resource: string };
+    skipCsrf?: boolean; // Option to disable CSRF for specific routes (e.g., GET-only)
   }
 ) {
   const middlewares: Middleware[] = [requireAuth()];
+
+  // Add CSRF protection by default for all protected routes (skip only if explicitly disabled)
+  if (!options?.skipCsrf) {
+    middlewares.push(csrfProtection());
+  }
 
   if (options?.rateLimit) {
     middlewares.push(rateLimit(options.rateLimit));

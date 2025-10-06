@@ -134,6 +134,7 @@ export const GET = createProtectedRoute(
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 60 },
+    skipCsrf: true, // GET requests don't need CSRF protection
   }
 );
 

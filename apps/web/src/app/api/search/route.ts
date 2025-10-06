@@ -130,12 +130,6 @@ export const GET = createProtectedRoute(
               tokenId: true,
             },
           },
-          clinician: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
         },
         take: type === 'all' ? 5 : limit,
         skip: offset,
@@ -145,10 +139,10 @@ export const GET = createProtectedRoute(
       results.results.clinicalNotes = clinicalNotes.map((n) => ({
         id: n.id,
         type: 'clinical_note',
-        noteType: n.noteType,
+        noteType: n.type,
         chiefComplaint: n.chiefComplaint,
         patient: `${n.patient.firstName} ${n.patient.lastName}`,
-        clinician: `Dr. ${n.clinician.firstName} ${n.clinician.lastName}`,
+        authorId: n.authorId,
         createdAt: n.createdAt,
         url: `/dashboard/patients/${n.patientId}`,
       }));
@@ -235,6 +229,7 @@ export const GET = createProtectedRoute(
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 60 },
+    skipCsrf: true, // GET requests don't need CSRF protection
   }
 );
 
