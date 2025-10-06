@@ -25,8 +25,11 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 # Copy source code
 COPY . .
 
-# Build the web app
+# Generate Prisma Client
 WORKDIR /app/apps/web
+RUN pnpm prisma generate
+
+# Build the web app
 RUN pnpm build
 
 FROM base AS runner
