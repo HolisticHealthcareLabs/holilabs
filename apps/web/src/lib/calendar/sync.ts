@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { decryptToken, encryptToken } from './token-encryption';
 
 interface CalendarEvent {
   id: string;
@@ -28,9 +29,20 @@ export async function syncGoogleCalendar(userId: string) {
   }
 
   try {
+    // Decrypt tokens for use
+    const accessToken = decryptToken(integration.accessToken);
+    const refreshToken = integration.refreshToken ? decryptToken(integration.refreshToken) : null;
+
     // Refresh token if expired
     if (integration.tokenExpiresAt && new Date() > integration.tokenExpiresAt) {
-      await refreshGoogleToken(integration.id, integration.refreshToken!);
+      await refreshGoogleToken(integration.id, refreshToken!);
+      // Re-fetch integration to get new access token
+      const updatedIntegration = await prisma.calendarIntegration.findUnique({
+        where: { id: integration.id },
+      });
+      if (updatedIntegration) {
+        integration.accessToken = updatedIntegration.accessToken;
+      }
     }
 
     // Fetch appointments from Holi Labs database
@@ -69,7 +81,7 @@ export async function syncGoogleCalendar(userId: string) {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${integration.accessToken}`,
+            Authorization: `Bearer ${decryptToken(integration.accessToken)}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(eventData),
@@ -127,7 +139,7 @@ async function refreshGoogleToken(integrationId: string, refreshToken: string) {
     await prisma.calendarIntegration.update({
       where: { id: integrationId },
       data: {
-        accessToken: data.access_token,
+        accessToken: encryptToken(data.access_token),
         tokenExpiresAt: expiresAt,
       },
     });
@@ -148,9 +160,20 @@ export async function syncMicrosoftCalendar(userId: string) {
   }
 
   try {
+    // Decrypt tokens for use
+    const accessToken = decryptToken(integration.accessToken);
+    const refreshToken = integration.refreshToken ? decryptToken(integration.refreshToken) : null;
+
     // Refresh token if expired
     if (integration.tokenExpiresAt && new Date() > integration.tokenExpiresAt) {
-      await refreshMicrosoftToken(integration.id, integration.refreshToken!);
+      await refreshMicrosoftToken(integration.id, refreshToken!);
+      // Re-fetch integration to get new access token
+      const updatedIntegration = await prisma.calendarIntegration.findUnique({
+        where: { id: integration.id },
+      });
+      if (updatedIntegration) {
+        integration.accessToken = updatedIntegration.accessToken;
+      }
     }
 
     // Fetch appointments from Holi Labs database
@@ -197,7 +220,7 @@ export async function syncMicrosoftCalendar(userId: string) {
         {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${integration.accessToken}`,
+            Authorization: `Bearer ${decryptToken(integration.accessToken)}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(eventData),
@@ -258,8 +281,8 @@ async function refreshMicrosoftToken(integrationId: string, refreshToken: string
     await prisma.calendarIntegration.update({
       where: { id: integrationId },
       data: {
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token || undefined,
+        accessToken: encryptToken(data.access_token),
+        refreshToken: data.refresh_token ? encryptToken(data.refresh_token) : undefined,
         tokenExpiresAt: expiresAt,
       },
     });

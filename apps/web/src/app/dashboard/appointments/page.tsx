@@ -6,7 +6,7 @@
  * para gestionar citas de pacientes directamente en la app
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -21,7 +21,7 @@ interface CalendarIntegration {
   calendarName?: string;
 }
 
-export default function AppointmentsPage() {
+function AppointmentsContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [selectedProvider, setSelectedProvider] = useState<CalendarProvider | null>(null);
@@ -493,5 +493,13 @@ export default function AppointmentsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AppointmentsPage() {
+  return (
+    <Suspense fallback={<div className="p-6">Cargando...</div>}>
+      <AppointmentsContent />
+    </Suspense>
   );
 }

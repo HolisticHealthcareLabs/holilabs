@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { encryptToken } from '@/lib/calendar/token-encryption';
 
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
@@ -54,7 +55,7 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // Store the connection (encrypt password in production!)
+      // Store the connection with encrypted password
       await prisma.calendarIntegration.upsert({
         where: {
           userId_provider: {
@@ -66,7 +67,7 @@ export const POST = createProtectedRoute(
           userId: context.user.id,
           provider: 'APPLE',
           providerAccountId: appleId,
-          accessToken: appPassword, // In production: ENCRYPT THIS!
+          accessToken: encryptToken(appPassword),
           refreshToken: null,
           tokenExpiresAt: null, // App passwords don't expire
           scope: ['caldav'],
@@ -76,7 +77,7 @@ export const POST = createProtectedRoute(
           lastSyncAt: new Date(),
         },
         update: {
-          accessToken: appPassword, // In production: ENCRYPT THIS!
+          accessToken: encryptToken(appPassword),
           lastSyncAt: new Date(),
           syncEnabled: true,
           syncErrors: 0,

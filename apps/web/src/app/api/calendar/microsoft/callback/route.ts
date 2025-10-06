@@ -7,6 +7,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { encryptToken } from '@/lib/calendar/token-encryption';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,8 +87,8 @@ export async function GET(request: NextRequest) {
         userId: state,
         provider: 'MICROSOFT',
         providerAccountId: profile.id,
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
+        accessToken: encryptToken(tokenData.access_token),
+        refreshToken: tokenData.refresh_token ? encryptToken(tokenData.refresh_token) : null,
         tokenExpiresAt: expiresAt,
         scope: tokenData.scope.split(' '),
         calendarId: calendar.id || 'primary',
@@ -94,8 +97,8 @@ export async function GET(request: NextRequest) {
         lastSyncAt: new Date(),
       },
       update: {
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token || undefined,
+        accessToken: encryptToken(tokenData.access_token),
+        refreshToken: tokenData.refresh_token ? encryptToken(tokenData.refresh_token) : undefined,
         tokenExpiresAt: expiresAt,
         scope: tokenData.scope.split(' '),
         calendarId: calendar.id || 'primary',
