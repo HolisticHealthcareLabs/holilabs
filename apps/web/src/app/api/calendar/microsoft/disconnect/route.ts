@@ -9,6 +9,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
+
 export const DELETE = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {

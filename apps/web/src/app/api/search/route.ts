@@ -10,6 +10,10 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute, validateQuery } from '@/lib/api/middleware';
 import { SearchQuerySchema } from '@/lib/api/schemas';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
+
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     const { query, type, limit, offset } = context.validatedQuery;

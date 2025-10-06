@@ -10,6 +10,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { validateBody, validateQuery } from '@/lib/api/middleware';
+
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
 import {
   CreateAppointmentSchema,
   AppointmentQuerySchema,

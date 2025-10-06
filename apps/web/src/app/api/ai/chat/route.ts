@@ -11,6 +11,10 @@ import { chat, buildPatientContext, ChatMessage } from '@/lib/ai/chat';
 import { prisma } from '@/lib/prisma';
 import { sanitizeAIInput } from '@/lib/security/input-sanitization';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
+
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {

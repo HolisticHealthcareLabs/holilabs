@@ -7,6 +7,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/users
  * Create new user profile (called after Supabase signup)

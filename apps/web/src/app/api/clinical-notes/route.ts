@@ -10,6 +10,10 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
+
 /**
  * POST /api/clinical-notes
  * Create new clinical note with blockchain hash

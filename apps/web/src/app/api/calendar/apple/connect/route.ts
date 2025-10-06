@@ -10,6 +10,10 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { encryptToken } from '@/lib/calendar/token-encryption';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
+
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {

@@ -89,5 +89,9 @@ export function validateEnv(): Env {
 /**
  * Get validated environment variables
  * Safe to use after validateEnv() has been called
+ *
+ * NOTE: Do NOT auto-call validateEnv() at module load time!
+ * This causes build failures because DATABASE_URL isn't available during build.
+ * Instead, call validateEnv() at runtime in middleware or route handlers.
  */
-export const env = validateEnv();
+// export const env = validateEnv(); // REMOVED - causes build failure

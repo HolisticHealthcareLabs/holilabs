@@ -10,6 +10,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
+
 /**
  * GET /api/patients/[id]
  * Get detailed patient information

@@ -10,6 +10,10 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 
+// Force dynamic rendering - prevents build-time evaluation
+export const dynamic = 'force-dynamic';
+
+
 /**
  * GET /api/patients
  * List patients with pagination and filtering
