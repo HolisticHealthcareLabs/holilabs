@@ -28,7 +28,7 @@ export const POST = createProtectedRoute(
     const validated = context.validatedBody;
 
     // Create appointment
-    const appointment = await prisma.appointment.create({
+    const appointment = await prisma!.appointment.create({
       data: {
         patientId: validated.patientId,
         clinicianId: validated.clinicianId,

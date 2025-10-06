@@ -48,20 +48,18 @@ function createPrismaClient(): PrismaClient | null {
 }
 
 // Lazy initialization - only create client when first accessed
-const prismaClient = globalForPrisma.prisma ?? createPrismaClient();
+let prismaClient = globalForPrisma.prisma ?? createPrismaClient();
 
-// Create a proxy that throws helpful errors if Prisma is not initialized
-export const prisma = new Proxy(prismaClient as PrismaClient, {
-  get(target, prop) {
-    if (target === null) {
-      throw new Error(
-        'Prisma client not initialized: DATABASE_URL environment variable is not set. ' +
-        'Please configure DATABASE_URL in your environment variables.'
-      );
-    }
-    return (target as any)[prop];
-  },
-});
+// Export prisma client with runtime check wrapper
+// During build, this will be null (expected)
+// At runtime, if DATABASE_URL is set, re-initialize
+export const prisma = (() => {
+  // If we're at runtime (not build) and DATABASE_URL is NOW available but wasn't during build
+  if (!prismaClient && process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    prismaClient = createPrismaClient();
+  }
+  return prismaClient;
+})() as PrismaClient | null;
 
 // Configure connection pool via environment variable
 // Add to .env: DATABASE_URL="postgresql://...?connection_limit=10&pool_timeout=10"
