@@ -149,7 +149,7 @@ export default function LoginPage() {
           <p className="text-xs font-medium text-blue-900 mb-2">Demo:</p>
           <p className="text-xs text-blue-800">
             Email: doctor@holilabs.com<br />
-            Password: demo123456
+            Password: 123456789
           </p>
         </div>
       </div>

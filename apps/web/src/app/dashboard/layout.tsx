@@ -38,6 +38,7 @@ export default function DashboardLayout({
     { name: 'Panel', href: '/dashboard', icon: '📊', emoji: '📊' },
     { name: 'Pacientes', href: '/dashboard/patients', icon: '👥', emoji: '👥' },
     { name: 'Citas', href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
+    { name: 'AI Scribe', href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️' },
     { name: 'Documentos', href: '/dashboard/upload', icon: '📄', emoji: '📄' },
     { name: 'IA Asistente', href: '/dashboard/ai', icon: '🤖', emoji: '🤖' },
     { name: 'Análisis', href: '/dashboard/doc-intelligence', icon: '🧠', emoji: '🧠' },
@@ -73,7 +74,7 @@ export default function DashboardLayout({
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
                 H
               </div>
-              <span className="font-bold text-xl text-gray-900 hidden lg:block">
+              <span className="font-bold text-xl text-gray-900">
                 Holi Labs
               </span>
             </Link>
@@ -102,12 +103,10 @@ export default function DashboardLayout({
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  {/* Emoji - siempre visible */}
                   <span className="text-xl flex-shrink-0">{item.emoji}</span>
-                  {/* Texto - oculto en pantallas pequeñas */}
-                  <span className="hidden lg:block">{item.name}</span>
+                  <span>{item.name}</span>
                   {item.badge && (
-                    <span className="ml-auto hidden lg:flex items-center justify-center min-w-[1.5rem] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full">
+                    <span className="ml-auto flex items-center justify-center min-w-[1.5rem] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full">
                       {item.badge}
                     </span>
                   )}
@@ -122,7 +121,7 @@ export default function DashboardLayout({
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
                 {user?.email?.[0].toUpperCase()}
               </div>
-              <div className="hidden lg:block flex-1 min-w-0">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">
                   Dr. {user?.email?.split('@')[0]}
                 </p>
@@ -134,7 +133,7 @@ export default function DashboardLayout({
               className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
             >
               <span className="text-lg">🚪</span>
-              <span className="hidden lg:inline">Cerrar Sesión</span>
+              <span>Cerrar Sesión</span>
             </button>
           </div>
         </div>

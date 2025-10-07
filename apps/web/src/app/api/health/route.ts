@@ -11,7 +11,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, checkDatabaseHealth } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,7 @@ export async function GET() {
   try {
     // If Prisma client is not initialized (DATABASE_URL not set), return basic health check
     if (!prisma) {
+      logger.warn({ event: 'health_check_no_db' }, 'Health check: No database configured');
       return NextResponse.json(
         {
           ...healthStatus,
@@ -50,17 +52,27 @@ export async function GET() {
       );
     }
 
-    // Check database connection
-    const dbStartTime = Date.now();
-    await prisma.$queryRaw`SELECT 1`;
-    const dbLatency = Date.now() - dbStartTime;
+    // Check database connection using health check function
+    const dbHealth = await checkDatabaseHealth();
 
-    healthStatus.services.database = true;
-    healthStatus.services.databaseLatency = dbLatency;
+    healthStatus.services.database = dbHealth.healthy;
+    healthStatus.services.databaseLatency = dbHealth.latency;
 
-    // If database is slow (>1000ms), mark as unhealthy
-    if (dbLatency > 1000) {
+    logger.info({
+      event: 'health_check',
+      dbLatency: dbHealth.latency,
+      dbHealthy: dbHealth.healthy,
+      uptime: healthStatus.uptime,
+    }, 'Health check completed');
+
+    // If database is unhealthy or slow (>1000ms), mark as unhealthy
+    if (!dbHealth.healthy || (dbHealth.latency && dbHealth.latency > 1000)) {
       healthStatus.status = 'unhealthy';
+      logger.warn({
+        event: 'health_check_slow_db',
+        dbLatency: dbHealth.latency,
+        error: dbHealth.error,
+      }, 'Database is unhealthy or slow');
       return NextResponse.json(healthStatus, { status: 503 });
     }
 
@@ -70,6 +82,11 @@ export async function GET() {
     // Database connection failed
     healthStatus.status = 'unhealthy';
     healthStatus.services.database = false;
+
+    logger.error({
+      event: 'health_check_failed',
+      err: error,
+    }, 'Health check failed - database connection error');
 
     return NextResponse.json(
       {

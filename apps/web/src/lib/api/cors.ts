@@ -1,25 +1,55 @@
 /**
  * CORS Configuration - Industry-Grade
  *
- * Whitelist specific origins only (never use '*' in production)
- * Protects against cross-site request forgery and data theft
+ * Security Features:
+ * - Whitelist specific origins only (never use '*' in production)
+ * - Protects against CSRF and XSS attacks
+ * - Strict security headers
+ * - Configurable via environment variables
+ *
+ * OWASP Best Practices:
+ * - Never use wildcard (*) in production
+ * - Always validate origin header
+ * - Use credentials only with specific origins
+ * - Set appropriate cache times for preflight
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * Allowed origins - UPDATE THIS LIST with your actual domains
+ * Add multiple origins for staging, production, custom domains
  */
 const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-  'https://holilabs-iwp6y.ondigitalocean.app',
-  'https://your-custom-domain.com', // Add your custom domain here
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://holilabs-lwp6y.ondigitalocean.app', // DigitalOcean app URL
+  // Add your custom domains here:
+  // 'https://holilabs.io',
+  // 'https://www.holilabs.io',
+  // 'https://app.holilabs.io',
 ];
 
-// Remove localhost in production
+/**
+ * Get allowed origins based on environment
+ * Removes localhost in production for security
+ */
 const getAllowedOrigins = (): string[] => {
   if (process.env.NODE_ENV === 'production') {
-    return ALLOWED_ORIGINS.filter((origin) => !origin.includes('localhost'));
+    const origins = ALLOWED_ORIGINS.filter((origin) => !origin.includes('localhost'));
+
+    // Log allowed origins on startup (once)
+    if (!global.__corsOriginsLogged) {
+      logger.info({
+        event: 'cors_config',
+        allowedOrigins: origins.length,
+      }, 'CORS allowed origins configured');
+      (global as any).__corsOriginsLogged = true;
+    }
+
+    return origins;
   }
   return ALLOWED_ORIGINS;
 };
@@ -37,6 +67,15 @@ export function corsHeaders(request: NextRequest): Headers {
   // Only allow whitelisted origins
   if (origin && allowedOrigins.includes(origin)) {
     headers.set('Access-Control-Allow-Origin', origin);
+
+    // Log blocked origins in production (potential security issue)
+  } else if (origin && process.env.NODE_ENV === 'production') {
+    logger.warn({
+      event: 'cors_origin_blocked',
+      origin,
+      allowedOrigins: allowedOrigins.length,
+      requestUrl: request.url,
+    }, 'Blocked cross-origin request from unauthorized origin');
   } else if (allowedOrigins.length === 1) {
     // If only one origin, allow it (common for single-domain apps)
     headers.set('Access-Control-Allow-Origin', allowedOrigins[0]);

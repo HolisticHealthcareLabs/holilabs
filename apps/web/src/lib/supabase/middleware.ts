@@ -6,6 +6,7 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
@@ -19,10 +20,11 @@ export async function updateSession(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables:', {
+    logger.warn({
+      event: 'supabase_config_missing',
       url: supabaseUrl ? 'set' : 'missing',
       key: supabaseAnonKey ? 'set' : 'missing',
-    });
+    }, 'Missing Supabase environment variables');
     // Return response without Supabase auth check
     return response;
   }

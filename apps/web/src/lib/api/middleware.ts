@@ -10,6 +10,9 @@ import { z } from 'zod';
 import { csrfProtection } from '@/lib/security/csrf';
 import { handlePreflight, applyCorsHeaders } from './cors';
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from '@/lib/request-id';
+import { logger, createLogger, logError } from '@/lib/logger';
+import { applySecurityHeaders } from './security-headers';
+import { Redis } from '@upstash/redis';
 
 // ============================================================================
 // TYPES
@@ -36,14 +39,37 @@ export interface RateLimitConfig {
 }
 
 // ============================================================================
-// RATE LIMITING (In-memory with cleanup, Redis-ready)
+// RATE LIMITING (Redis-backed with in-memory fallback)
 // ============================================================================
 
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-const MAX_STORE_SIZE = 10000; // Prevent memory leak
+// Initialize Redis client (only if credentials are available)
+let redis: Redis | null = null;
 
-// Periodic cleanup of expired entries
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  logger.info({
+    event: 'redis_client_init',
+    enabled: true,
+  }, 'Redis rate limiting enabled');
+} else {
+  logger.warn({
+    event: 'redis_client_init',
+    enabled: false,
+    reason: 'Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN',
+  }, 'Redis not configured - falling back to in-memory rate limiting');
+}
+
+// In-memory fallback (for development or when Redis is unavailable)
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+const MAX_STORE_SIZE = 10000;
+
+// Cleanup for in-memory store
 setInterval(() => {
+  if (redis) return; // Skip if using Redis
   const now = Date.now();
   const entries = Array.from(rateLimitStore.entries());
   for (const [key, value] of entries) {
@@ -51,26 +77,89 @@ setInterval(() => {
       rateLimitStore.delete(key);
     }
   }
-}, 60000); // Clean every minute
+}, 60000);
 
 export function rateLimit(config: RateLimitConfig) {
   return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
-    // TODO: Replace with Redis in production
-    // For Redis implementation:
-    // const redis = new Redis(process.env.REDIS_URL);
-    // const key = `ratelimit:${identifier}:${hash(request.url)}`;
-    // const count = await redis.incr(key);
-    // if (count === 1) await redis.expire(key, Math.ceil(config.windowMs / 1000));
-
     const identifier = request.headers.get('x-forwarded-for') ||
                       request.headers.get('x-real-ip') ||
                       'unknown';
-    const key = `${identifier}:${request.url}`;
-    const now = Date.now();
 
-    // Enforce max store size to prevent memory exhaustion
+    // Hash the URL to keep keys short
+    const urlHash = Buffer.from(request.url).toString('base64').slice(0, 20);
+    const key = `ratelimit:${identifier}:${urlHash}`;
+    const now = Date.now();
+    const windowSeconds = Math.ceil(config.windowMs / 1000);
+
+    const log = createLogger({ requestId: context.requestId, identifier });
+
+    // ========================================================================
+    // REDIS IMPLEMENTATION (Production)
+    // ========================================================================
+    if (redis) {
+      try {
+        const count = await redis.incr(key);
+
+        // Set expiration on first request
+        if (count === 1) {
+          await redis.expire(key, windowSeconds);
+        }
+
+        const remaining = Math.max(0, config.maxRequests - count);
+        const resetAt = now + (config.windowMs);
+
+        if (count > config.maxRequests) {
+          const ttl = await redis.ttl(key);
+          const resetIn = ttl > 0 ? ttl : windowSeconds;
+
+          log.warn({
+            event: 'rate_limit_exceeded',
+            maxRequests: config.maxRequests,
+            currentCount: count,
+            resetIn,
+            url: request.url,
+            backend: 'redis',
+          }, 'Rate limit exceeded (Redis)');
+
+          return NextResponse.json(
+            {
+              error: 'Rate limit exceeded',
+              retryAfter: resetIn,
+            },
+            {
+              status: 429,
+              headers: {
+                'Retry-After': resetIn.toString(),
+                'X-RateLimit-Limit': config.maxRequests.toString(),
+                'X-RateLimit-Remaining': '0',
+                'X-RateLimit-Reset': Math.ceil(resetAt / 1000).toString(),
+              },
+            }
+          );
+        }
+
+        const response = await next();
+
+        response.headers.set('X-RateLimit-Limit', config.maxRequests.toString());
+        response.headers.set('X-RateLimit-Remaining', remaining.toString());
+        response.headers.set('X-RateLimit-Reset', Math.ceil(resetAt / 1000).toString());
+
+        return response;
+      } catch (error) {
+        log.error({
+          ...logError(error),
+          event: 'redis_rate_limit_error',
+        }, 'Redis rate limiting failed - falling back to in-memory');
+        // Fall through to in-memory implementation
+      }
+    }
+
+    // ========================================================================
+    // IN-MEMORY FALLBACK (Development or Redis failure)
+    // ========================================================================
+
+    // Enforce max store size
     if (rateLimitStore.size > MAX_STORE_SIZE) {
-      // Remove oldest 1000 entries
       const entries = Array.from(rateLimitStore.entries())
         .sort((a, b) => a[1].resetAt - b[1].resetAt)
         .slice(0, 1000);
@@ -87,7 +176,6 @@ export function rateLimit(config: RateLimitConfig) {
     const current = rateLimitStore.get(key);
 
     if (!current) {
-      // First request in window
       rateLimitStore.set(key, {
         count: 1,
         resetAt: now + config.windowMs,
@@ -96,8 +184,16 @@ export function rateLimit(config: RateLimitConfig) {
     }
 
     if (current.count >= config.maxRequests) {
-      // Rate limit exceeded
       const resetIn = Math.ceil((current.resetAt - now) / 1000);
+
+      log.warn({
+        event: 'rate_limit_exceeded',
+        maxRequests: config.maxRequests,
+        resetIn,
+        url: request.url,
+        backend: 'in-memory',
+      }, 'Rate limit exceeded (in-memory)');
+
       return NextResponse.json(
         {
           error: 'Rate limit exceeded',
@@ -115,13 +211,11 @@ export function rateLimit(config: RateLimitConfig) {
       );
     }
 
-    // Increment count
     current.count++;
     rateLimitStore.set(key, current);
 
     const response = await next();
 
-    // Add rate limit headers
     response.headers.set('X-RateLimit-Limit', config.maxRequests.toString());
     response.headers.set('X-RateLimit-Remaining', (config.maxRequests - current.count).toString());
     response.headers.set('X-RateLimit-Reset', current.resetAt.toString());
@@ -172,7 +266,9 @@ export function requireAuth() {
 
       return next();
     } catch (error) {
-      console.error('Auth middleware error:', error);
+      const log = createLogger({ requestId: context.requestId });
+      log.error(logError(error), 'Authentication middleware error');
+
       return NextResponse.json(
         { error: 'Authentication failed' },
         { status: 500 }
@@ -286,10 +382,34 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
 
 export function withErrorHandling(handler: ApiHandler) {
   return async (request: NextRequest, context: ApiContext) => {
+    const startTime = Date.now();
+    const log = createLogger({
+      requestId: context.requestId,
+      method: request.method,
+      url: request.url,
+    });
+
     try {
-      return await handler(request, context);
+      log.info('API request started');
+      const response = await handler(request, context);
+      const duration = Date.now() - startTime;
+
+      log.info({
+        event: 'api_request_completed',
+        status: response.status,
+        duration,
+      }, 'API request completed');
+
+      return response;
     } catch (error: any) {
-      console.error('API Error:', error);
+      const duration = Date.now() - startTime;
+
+      log.error({
+        ...logError(error),
+        event: 'api_error',
+        duration,
+        errorCode: error.code,
+      }, 'API request failed');
 
       // Prisma errors
       if (error.code === 'P2002') {
@@ -374,6 +494,8 @@ export function withAuditLog(action: string, resource: string) {
 
     // Log async (don't block response)
     (async () => {
+      const log = createLogger({ requestId: context.requestId, userId: context.user?.id });
+
       try {
         await prisma.auditLog.create({
           data: {
@@ -392,8 +514,15 @@ export function withAuditLog(action: string, resource: string) {
             },
           },
         });
+
+        log.info({
+          event: 'audit_log_created',
+          action,
+          resource,
+          success: response.status < 400,
+        }, 'Audit log created');
       } catch (error) {
-        console.error('Audit log error:', error);
+        log.error(logError(error), 'Failed to create audit log');
       }
     })();
 
@@ -449,11 +578,14 @@ export function createProtectedRoute(
     }
 
     const composedHandler = withErrorHandling(compose(...middlewares)(handler));
-    const response = await composedHandler(request, context);
+    let response = await composedHandler(request, context);
 
-    // Apply request ID and CORS headers to response
+    // Apply request ID, CORS, and security headers to response
     response.headers.set(REQUEST_ID_HEADER, requestId);
-    return applyCorsHeaders(request, response);
+    response = applyCorsHeaders(request, response);
+    response = applySecurityHeaders(response);
+
+    return response;
   };
 }
 
@@ -485,10 +617,13 @@ export function createPublicRoute(
     }
 
     const composedHandler = withErrorHandling(compose(...middlewares)(handler));
-    const response = await composedHandler(request, context);
+    let response = await composedHandler(request, context);
 
-    // Apply request ID and CORS headers to response
+    // Apply request ID, CORS, and security headers to response
     response.headers.set(REQUEST_ID_HEADER, requestId);
-    return applyCorsHeaders(request, response);
+    response = applyCorsHeaders(request, response);
+    response = applySecurityHeaders(response);
+
+    return response;
   };
 }

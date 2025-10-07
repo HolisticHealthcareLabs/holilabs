@@ -42,6 +42,8 @@ model User {
   prescriptions Prescription[]
   appointments  Appointment[]
   calendarIntegrations CalendarIntegration[]
+  scribeSessions ScribeSession[]
+  soapNotes     SOAPNote[]
 
   @@index([email])
   @@index([walletAddress])
@@ -106,6 +108,8 @@ model Patient {
   documents         Document[]
   clinicalNotes     ClinicalNote[]
   prescriptions     Prescription[]
+  scribeSessions    ScribeSession[]
+  soapNotes         SOAPNote[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -290,6 +294,9 @@ model Appointment {
   // Reminders
   reminderSent      Boolean   @default(false)
   reminderSentAt    DateTime?
+
+  // Relations
+  scribeSessions    ScribeSession[]
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -600,4 +607,163 @@ enum CalendarProvider {
   GOOGLE
   MICROSOFT
   APPLE
+}
+
+// ============================================================================
+// AI SCRIBE (World-Class Medical Transcription & SOAP Generation)
+// ============================================================================
+
+model ScribeSession {
+  id                String    @id @default(cuid())
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  clinicianId       String
+  clinician         User      @relation(fields: [clinicianId], references: [id])
+
+  // Session metadata
+  appointmentId     String?
+  appointment       Appointment? @relation(fields: [appointmentId], references: [id])
+
+  // Recording details
+  audioFileUrl      String?   @db.Text
+  audioFileName     String?
+  audioDuration     Int       @default(0)  // seconds
+  audioFormat       String    @default("webm")
+  audioSize         Int?      // bytes
+
+  // Processing
+  status            ScribeStatus @default(RECORDING)
+  processingStartedAt DateTime?
+  processingCompletedAt DateTime?
+  processingError   String?   @db.Text
+
+  // AI Model
+  transcriptionModel String?  @default("whisper-1")
+  soapModel         String?   @default("claude-3-5-sonnet-20250219")
+
+  // Relations
+  transcription     Transcription?
+  soapNote          SOAPNote?
+
+  // Metadata
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([clinicianId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("scribe_sessions")
+}
+
+enum ScribeStatus {
+  RECORDING
+  PAUSED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Transcription {
+  id                String    @id @default(cuid())
+  sessionId         String    @unique
+  session           ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Raw transcript
+  rawText           String    @db.Text
+
+  // Speaker diarization
+  segments          Json      // Array of { speaker, text, startTime, endTime, confidence }
+  speakerCount      Int       @default(2)
+
+  // Quality metrics
+  confidence        Float     @default(0)  // 0-1
+  wordCount         Int       @default(0)
+  durationSeconds   Int
+
+  // Processing metadata
+  model             String    @default("whisper-1")
+  language          String    @default("es")  // Spanish by default
+  processingTime    Int?      // milliseconds
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([sessionId])
+  @@map("transcriptions")
+}
+
+model SOAPNote {
+  id                String    @id @default(cuid())
+  sessionId         String    @unique
+  session           ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  patientId         String
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  clinicianId       String
+  clinician         User      @relation(fields: [clinicianId], references: [id])
+
+  // Blockchain fields - CRITICAL for tamper-proof notes
+  noteHash          String    @unique
+  txHash            String?
+
+  // SOAP structure
+  subjective        String    @db.Text
+  subjectiveConfidence Float  @default(0)
+
+  objective         String    @db.Text
+  objectiveConfidence Float   @default(0)
+
+  assessment        String    @db.Text
+  assessmentConfidence Float  @default(0)
+
+  plan              String    @db.Text
+  planConfidence    Float     @default(0)
+
+  // Additional clinical data
+  chiefComplaint    String?   @db.Text
+  vitalSigns        Json?     // { bp, hr, temp, rr, spo2, weight }
+  diagnoses         Json      // Array of { icd10Code, description, isPrimary }
+  procedures        Json?     // Array of { cptCode, description }
+  medications       Json?     // Array of medication changes
+
+  // Quality & editing
+  overallConfidence Float     @default(0)  // 0-1
+  wasEdited         Boolean   @default(false)
+  editCount         Int       @default(0)
+  editHistory       Json?     // Array of { field, oldValue, newValue, editedAt, editedBy }
+
+  // Signature
+  signedAt          DateTime?
+  signedBy          String?
+  signatureMethod   String?   // "pin" or "digital"
+
+  // AI metadata
+  model             String    @default("claude-3-5-sonnet-20250219")
+  tokensUsed        Int?
+  processingTime    Int?      // milliseconds
+
+  // Status
+  status            SOAPStatus @default(DRAFT)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([clinicianId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("soap_notes")
+}
+
+enum SOAPStatus {
+  DRAFT
+  PENDING_REVIEW
+  SIGNED
+  AMENDED
+  ADDENDUM
 }
