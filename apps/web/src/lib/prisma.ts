@@ -17,6 +17,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { logger } from '@/lib/logger';
+import { encryptPHI, decryptPHI } from '@/lib/security/encryption';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -147,6 +148,82 @@ function createPrismaClient(): PrismaClient | null {
       event: 'database_warning',
       message: e.message,
     }, 'Database warning');
+  });
+
+  // ============================================================================
+  // PHI ENCRYPTION MIDDLEWARE (HIPAA Compliance)
+  // ============================================================================
+  // Automatically encrypt/decrypt PHI fields on Patient model
+
+  client.$use(async (params, next) => {
+    // Fields that contain PHI and need encryption
+    const phiFields = ['firstName', 'lastName', 'email', 'phone', 'address'];
+
+    // ENCRYPT on write operations
+    if (params.model === 'Patient') {
+      if (params.action === 'create' || params.action === 'update' || params.action === 'upsert') {
+        const data = params.action === 'upsert' ? params.args.create : params.args.data;
+
+        if (data) {
+          for (const field of phiFields) {
+            if (data[field] !== undefined && data[field] !== null) {
+              try {
+                data[field] = encryptPHI(data[field]);
+              } catch (error) {
+                logger.error({ event: 'phi_encryption_failed', field, err: error }, 'Failed to encrypt PHI field');
+                throw error;
+              }
+            }
+          }
+
+          // Also encrypt update data in upsert
+          if (params.action === 'upsert' && params.args.update) {
+            for (const field of phiFields) {
+              if (params.args.update[field] !== undefined && params.args.update[field] !== null) {
+                try {
+                  params.args.update[field] = encryptPHI(params.args.update[field]);
+                } catch (error) {
+                  logger.error({ event: 'phi_encryption_failed', field, err: error }, 'Failed to encrypt PHI field');
+                  throw error;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Execute the query
+    const result = await next(params);
+
+    // DECRYPT on read operations
+    if (params.model === 'Patient' && result) {
+      const decryptPatient = (patient: any) => {
+        if (!patient) return patient;
+
+        for (const field of phiFields) {
+          if (patient[field]) {
+            try {
+              patient[field] = decryptPHI(patient[field]);
+            } catch (error) {
+              logger.error({ event: 'phi_decryption_failed', field, err: error }, 'Failed to decrypt PHI field');
+              // Don't throw - return encrypted value to prevent data loss
+            }
+          }
+        }
+        return patient;
+      };
+
+      if (Array.isArray(result)) {
+        // findMany
+        result.forEach(decryptPatient);
+      } else if (result) {
+        // findUnique, findFirst, create, update
+        decryptPatient(result);
+      }
+    }
+
+    return result;
   });
 
   return client;

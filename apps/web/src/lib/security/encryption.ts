@@ -184,6 +184,121 @@ export function maskSensitiveString(value: string, showLast: number = 4): string
 }
 
 // ============================================================================
+// PHI FIELD ENCRYPTION (Simple format for database fields)
+// ============================================================================
+
+/**
+ * Encrypt PHI field (returns base64 string for easy storage)
+ * Format: iv:authTag:encrypted (all base64)
+ */
+export function encryptPHI(plaintext: string | null): string | null {
+  if (!plaintext) return plaintext;
+
+  try {
+    const key = getEncryptionKey();
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+
+    let encrypted = cipher.update(plaintext, 'utf8', 'base64');
+    encrypted += cipher.final('base64');
+
+    const authTag = cipher.getAuthTag();
+
+    // Format: iv:authTag:encryptedData
+    return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
+  } catch (error: any) {
+    console.error('PHI encryption error:', error.message);
+    throw new Error('Failed to encrypt PHI');
+  }
+}
+
+/**
+ * Decrypt PHI field
+ * Expects format: iv:authTag:encryptedData (all base64)
+ */
+export function decryptPHI(ciphertext: string | null): string | null {
+  if (!ciphertext) return ciphertext;
+
+  // If doesn't contain colons, assume it's not encrypted (legacy/migration data)
+  if (!ciphertext.includes(':')) {
+    return ciphertext;
+  }
+
+  try {
+    const key = getEncryptionKey();
+    const parts = ciphertext.split(':');
+
+    if (parts.length !== 3) {
+      throw new Error('Invalid encrypted PHI format');
+    }
+
+    const iv = Buffer.from(parts[0], 'base64');
+    const authTag = Buffer.from(parts[1], 'base64');
+    const encrypted = parts[2];
+
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    let decrypted = decipher.update(encrypted, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return decrypted;
+  } catch (error: any) {
+    console.error('PHI decryption error:', error.message);
+    throw new Error('Failed to decrypt PHI');
+  }
+}
+
+/**
+ * Encrypt file buffer (for audio/documents)
+ * Returns buffer with iv:authTag:encrypted
+ */
+export function encryptBuffer(buffer: Buffer): Buffer {
+  try {
+    const key = getEncryptionKey();
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+
+    const encrypted = Buffer.concat([
+      cipher.update(buffer),
+      cipher.final(),
+    ]);
+
+    const authTag = cipher.getAuthTag();
+
+    // Format: iv (16 bytes) + authTag (16 bytes) + encrypted data
+    return Buffer.concat([iv, authTag, encrypted]);
+  } catch (error: any) {
+    console.error('Buffer encryption error:', error.message);
+    throw new Error('Failed to encrypt buffer');
+  }
+}
+
+/**
+ * Decrypt file buffer
+ */
+export function decryptBuffer(encryptedBuffer: Buffer): Buffer {
+  try {
+    const key = getEncryptionKey();
+
+    const iv = encryptedBuffer.subarray(0, IV_LENGTH);
+    const authTag = encryptedBuffer.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
+    const encrypted = encryptedBuffer.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
+
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    return Buffer.concat([
+      decipher.update(encrypted),
+      decipher.final(),
+    ]);
+  } catch (error: any) {
+    console.error('Buffer decryption error:', error.message);
+    throw new Error('Failed to decrypt buffer');
+  }
+}
+
+// ============================================================================
 // TESTING
 // ============================================================================
 

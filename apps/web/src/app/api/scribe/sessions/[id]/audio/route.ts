@@ -9,6 +9,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
+import { encryptBuffer } from '@/lib/security/encryption';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,18 +84,31 @@ export const POST = createProtectedRoute(
       const arrayBuffer = await audioFile.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
+      // SECURITY: Encrypt audio file before upload (HIPAA requirement)
+      let finalBuffer: Buffer;
+      try {
+        finalBuffer = encryptBuffer(buffer);
+      } catch (error: any) {
+        console.error('Audio encryption error:', error);
+        return NextResponse.json(
+          { error: 'Failed to encrypt audio file', message: error.message },
+          { status: 500 }
+        );
+      }
+
       // Generate unique filename
       const timestamp = Date.now();
       const hash = createHash('md5').update(buffer).digest('hex').substring(0, 8);
       const extension = audioFile.name.split('.').pop() || 'webm';
-      const fileName = `scribe/${session.patientId}/${sessionId}_${timestamp}_${hash}.${extension}`;
+      const fileName = `scribe/${session.patientId}/${sessionId}_${timestamp}_${hash}.${extension}.encrypted`;
 
-      // Upload to Supabase Storage
+      // Upload encrypted audio to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('medical-recordings') // Bucket name
-        .upload(fileName, buffer, {
-          contentType: audioFile.type,
+        .from('medical-recordings') // Bucket name (must be PRIVATE)
+        .upload(fileName, finalBuffer, {
+          contentType: 'application/octet-stream', // Encrypted files are binary
           cacheControl: '3600',
+          upsert: false,
         });
 
       if (uploadError) {
@@ -105,34 +119,39 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // Get public URL (or signed URL for private bucket)
-      const { data: urlData } = supabase.storage
+      // SECURITY: Generate signed URL (private bucket - expires in 24 hours)
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('medical-recordings')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 86400); // 24 hours
+
+      if (urlError) {
+        console.error('Failed to create signed URL:', urlError);
+        return NextResponse.json(
+          { error: 'Failed to generate secure audio URL' },
+          { status: 500 }
+        );
+      }
 
       // Update session with audio details
       const updatedSession = await prisma.scribeSession.update({
         where: { id: sessionId },
         data: {
-          audioFileUrl: urlData.publicUrl,
+          audioFileUrl: urlData.signedUrl,
           audioFileName: fileName,
           audioDuration: duration,
           audioFormat: extension,
-          audioSize: audioFile.size,
+          audioSize: finalBuffer.length, // Encrypted size
           status: 'PROCESSING',
           processingStartedAt: new Date(),
         },
       });
 
-      // TODO: Trigger transcription job (background job or webhook)
-      // For now, return success and client will call finalize endpoint
-
       return NextResponse.json({
         success: true,
         data: {
           sessionId: updatedSession.id,
-          audioUrl: updatedSession.audioFileUrl,
           status: updatedSession.status,
+          // Don't return audio URL to client - only server should access
         },
       });
     } catch (error: any) {

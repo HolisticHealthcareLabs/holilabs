@@ -8,15 +8,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { createHash } from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+import { decryptBuffer } from '@/lib/security/encryption';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
 
-// Initialize Anthropic client
+// Initialize AI clients
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Initialize Supabase for storage access
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 /**
  * POST /api/scribe/sessions/:id/finalize
@@ -66,36 +79,111 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // STEP 1: Transcribe audio using OpenAI Whisper
-      // NOTE: In production, you'd fetch the audio from storage and send to Whisper API
-      // For now, we'll simulate transcription or expect it to be provided
-      const body = await request.json();
-      const { transcriptText, segments } = body;
-
-      if (!transcriptText) {
+      // STEP 1: Download encrypted audio from Supabase Storage
+      if (!session.audioFileName) {
         return NextResponse.json(
-          { error: 'Transcript text is required (for MVP)' },
+          { error: 'No audio file available for transcription' },
           { status: 400 }
+        );
+      }
+
+      // Download encrypted audio file
+      const { data: encryptedAudioData, error: downloadError } = await supabase.storage
+        .from('medical-recordings')
+        .download(session.audioFileName);
+
+      if (downloadError || !encryptedAudioData) {
+        console.error('Failed to download audio:', downloadError);
+        return NextResponse.json(
+          { error: 'Failed to retrieve audio file' },
+          { status: 500 }
+        );
+      }
+
+      // Convert Blob to Buffer and decrypt
+      const encryptedBuffer = Buffer.from(await encryptedAudioData.arrayBuffer());
+      let audioBuffer: Buffer;
+
+      try {
+        audioBuffer = decryptBuffer(encryptedBuffer);
+      } catch (error: any) {
+        console.error('Failed to decrypt audio:', error);
+        return NextResponse.json(
+          { error: 'Failed to decrypt audio file' },
+          { status: 500 }
+        );
+      }
+
+      // STEP 2: Transcribe audio using OpenAI Whisper (server-side)
+      if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json(
+          { error: 'OpenAI API key not configured. Cannot transcribe audio.' },
+          { status: 500 }
+        );
+      }
+
+      let transcriptText: string;
+      let segments: any[] = [];
+      const transcribeStartTime = Date.now();
+
+      try {
+        // Create a File object from buffer (convert Buffer to Uint8Array for web compatibility)
+        const audioArray = new Uint8Array(audioBuffer);
+        const audioFile = new File(
+          [audioArray],
+          `audio.${session.audioFormat || 'webm'}`,
+          { type: `audio/${session.audioFormat || 'webm'}` }
+        );
+
+        // Transcribe with Whisper
+        const transcription = await openai.audio.transcriptions.create({
+          file: audioFile,
+          model: 'whisper-1',
+          language: 'es', // Spanish
+          response_format: 'verbose_json', // Get detailed output
+          timestamp_granularities: ['segment'],
+        });
+
+        transcriptText = transcription.text;
+
+        // Extract segments for speaker diarization (basic)
+        if (transcription.segments && Array.isArray(transcription.segments)) {
+          segments = transcription.segments.map((seg: any, idx: number) => ({
+            speaker: idx % 2 === 0 ? 'Doctor' : 'Paciente', // Simple alternating
+            text: seg.text,
+            startTime: seg.start,
+            endTime: seg.end,
+            confidence: 0.9, // Whisper doesn't provide per-segment confidence
+          }));
+        }
+
+        console.log(`Transcription completed in ${Date.now() - transcribeStartTime}ms`);
+      } catch (error: any) {
+        console.error('Whisper transcription error:', error);
+        return NextResponse.json(
+          { error: 'Failed to transcribe audio', message: error.message },
+          { status: 500 }
         );
       }
 
       // Create transcription record
       const wordCount = transcriptText.split(/\s+/).length;
-      const transcription = await prisma.transcription.create({
+      const transcriptionRecord = await prisma.transcription.create({
         data: {
           sessionId,
           rawText: transcriptText,
-          segments: segments || [],
+          segments: segments,
           speakerCount: 2,
-          confidence: 0.92, // Default for MVP
+          confidence: 0.92,
           wordCount,
           durationSeconds: session.audioDuration,
           model: 'whisper-1',
           language: 'es',
+          processingTime: Date.now() - transcribeStartTime,
         },
       });
 
-      // STEP 2: Generate SOAP note using Claude
+      // STEP 3: Generate SOAP note using Claude
       const soapNote = await generateSOAPNote(
         transcriptText,
         session.patient,
@@ -156,9 +244,9 @@ export const POST = createProtectedRoute(
         data: {
           sessionId,
           transcription: {
-            id: transcription.id,
-            wordCount: transcription.wordCount,
-            confidence: transcription.confidence,
+            id: transcriptionRecord.id,
+            wordCount: transcriptionRecord.wordCount,
+            confidence: transcriptionRecord.confidence,
           },
           soapNote: {
             id: soapNoteRecord.id,
