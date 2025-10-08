@@ -29,6 +29,7 @@ model User {
   role          UserRole  @default(CLINICIAN)
   specialty     String?
   licenseNumber String?
+  npi           String?   // National Provider Identifier (US only)
 
   // Security
   mfaEnabled    Boolean   @default(false)
