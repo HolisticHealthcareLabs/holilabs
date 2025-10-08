@@ -18,18 +18,34 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
 
-// Initialize AI clients
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
+// Initialize AI clients (lazy-loaded to avoid build-time errors)
+function getGenAI() {
+  if (!process.env.GOOGLE_AI_API_KEY) {
+    throw new Error('GOOGLE_AI_API_KEY is not configured');
+  }
+  return new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
+}
 
-const assemblyai = new AssemblyAI({
-  apiKey: process.env.ASSEMBLYAI_API_KEY || '',
-});
+function getAssemblyAI() {
+  if (!process.env.ASSEMBLYAI_API_KEY) {
+    throw new Error('ASSEMBLYAI_API_KEY is not configured');
+  }
+  return new AssemblyAI({
+    apiKey: process.env.ASSEMBLYAI_API_KEY,
+  });
+}
 
-// Initialize Supabase for storage access
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase for storage access (lazy-loaded)
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error('Supabase configuration is missing. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.');
+  }
+
+  return createClient(url, key);
+}
 
 /**
  * POST /api/scribe/sessions/:id/finalize
@@ -88,6 +104,7 @@ export const POST = createProtectedRoute(
       }
 
       // Download encrypted audio file
+      const supabase = getSupabaseClient();
       const { data: encryptedAudioData, error: downloadError } = await supabase.storage
         .from('medical-recordings')
         .download(session.audioFileName);
@@ -127,6 +144,9 @@ export const POST = createProtectedRoute(
       const transcribeStartTime = Date.now();
 
       try {
+        // Initialize AssemblyAI client
+        const assemblyai = getAssemblyAI();
+
         // Detect language from patient locale (Portuguese or Spanish)
         const languageCode = session.patient.country === 'BR' ? 'pt' : 'es';
 
@@ -439,6 +459,7 @@ ${transcript}
 Responde SOLO con el JSON válido, sin texto adicional.`;
 
   // Initialize Gemini 2.0 Flash model
+  const genAI = getGenAI();
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.0-flash',
     generationConfig: {
