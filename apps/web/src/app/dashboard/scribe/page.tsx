@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import TranscriptViewer from '@/components/scribe/TranscriptViewer';
 import SOAPNoteEditor from '@/components/scribe/SOAPNoteEditor';
+import AudioWaveform from '@/components/scribe/AudioWaveform';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,7 @@ export default function AIScribePage() {
   const [soapNote, setSoapNote] = useState<any>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -95,6 +97,7 @@ export default function AIScribePage() {
 
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setAudioStream(stream); // Store for waveform visualization
 
       // Create media recorder
       const mediaRecorder = new MediaRecorder(stream, {
@@ -221,6 +224,7 @@ export default function AIScribePage() {
     if (mediaRecorderRef.current.stream) {
       mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
     }
+    setAudioStream(null); // Clear stream for waveform
   };
 
   // Reset for new recording
@@ -437,6 +441,15 @@ export default function AIScribePage() {
                     {formatDuration(recordingDuration)}
                   </div>
                 )}
+              </div>
+
+              {/* Audio Waveform Visualization (Abridge-style) */}
+              <div className="mb-6">
+                <AudioWaveform
+                  stream={audioStream}
+                  isRecording={recordingState === 'recording'}
+                  className="h-32"
+                />
               </div>
 
               {/* Recording Controls */}

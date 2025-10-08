@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  getTemplatesByLanguage,
+  type SOAPTemplate,
+} from '@/lib/templates/soap-templates';
 
 interface Diagnosis {
   icd10Code: string;
@@ -74,6 +78,8 @@ export default function SOAPNoteEditor({
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'pt'>('es');
 
   // ICD-10 validation regex
   const validateICD10 = (code: string): boolean => {
@@ -118,6 +124,20 @@ export default function SOAPNoteEditor({
     setIsEditing(false);
   };
 
+  const applyTemplate = (template: SOAPTemplate) => {
+    setEditedNote({
+      chiefComplaint: template.chiefComplaint,
+      subjective: template.subjective,
+      objective: template.objective,
+      assessment: template.assessment,
+      plan: template.plan,
+    });
+    setIsEditing(true);
+    setShowTemplates(false);
+  };
+
+  const templates = getTemplatesByLanguage(selectedLanguage);
+
   return (
     <div className="space-y-6">
       {/* Overall Confidence Banner */}
@@ -131,6 +151,76 @@ export default function SOAPNoteEditor({
           </div>
           <span className="text-2xl font-bold">{Math.round(note.overallConfidence * 100)}%</span>
         </div>
+      </div>
+
+      {/* Template Library (Nuance DAX Feature) */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h3 className="text-lg font-bold text-purple-900 flex items-center">
+              <span className="mr-2">📋</span>
+              Biblioteca de Plantillas
+            </h3>
+            <p className="text-sm text-purple-700">
+              Ahorra 3-5 minutos usando plantillas pre-configuradas
+            </p>
+          </div>
+          <button
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-semibold"
+          >
+            {showTemplates ? 'Ocultar' : 'Ver Plantillas'}
+          </button>
+        </div>
+
+        {showTemplates && (
+          <div className="mt-4 space-y-3">
+            {/* Language Selector */}
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setSelectedLanguage('es')}
+                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                  selectedLanguage === 'es'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-purple-700 border border-purple-300 hover:bg-purple-50'
+                }`}
+              >
+                🇲🇽 Español
+              </button>
+              <button
+                onClick={() => setSelectedLanguage('pt')}
+                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                  selectedLanguage === 'pt'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-purple-700 border border-purple-300 hover:bg-purple-50'
+                }`}
+              >
+                🇧🇷 Português
+              </button>
+            </div>
+
+            {/* Template Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {templates.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => applyTemplate(template)}
+                  className="text-left p-4 bg-white border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:shadow-md transition-all"
+                >
+                  <div className="font-bold text-purple-900 mb-1">{template.name}</div>
+                  {template.specialty && (
+                    <div className="text-xs text-purple-600 bg-purple-100 inline-block px-2 py-1 rounded-full mb-2">
+                      {template.specialty}
+                    </div>
+                  )}
+                  <div className="text-sm text-gray-600 line-clamp-2">
+                    {template.chiefComplaint}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Chief Complaint */}
