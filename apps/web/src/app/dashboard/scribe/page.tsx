@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import TranscriptViewer from '@/components/scribe/TranscriptViewer';
+import SOAPNoteEditor from '@/components/scribe/SOAPNoteEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +16,14 @@ interface Patient {
   dateOfBirth: string;
 }
 
+interface TranscriptSegment {
+  speaker: string;
+  text: string;
+  startTime: number;
+  endTime: number;
+  confidence: number;
+}
+
 type RecordingState = 'idle' | 'recording' | 'paused' | 'processing' | 'completed';
 
 export default function AIScribePage() {
@@ -22,7 +32,7 @@ export default function AIScribePage() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [transcript, setTranscript] = useState('');
+  const [transcriptSegments, setTranscriptSegments] = useState<TranscriptSegment[]>([]);
   const [soapNote, setSoapNote] = useState<any>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,43 +176,37 @@ export default function AIScribePage() {
           throw new Error('Failed to upload audio');
         }
 
-        // Simulate transcription (in production, use Whisper API)
-        const mockTranscript = `Doctor: Buenos días, ¿cómo se siente hoy?
-Paciente: Buenos días doctor. Tengo dolor de cabeza desde hace 3 días.
-Doctor: ¿El dolor es constante o viene y va?
-Paciente: Es constante, sobre todo en la mañana.
-Doctor: ¿Ha tomado algún medicamento?
-Paciente: Sí, paracetamol pero no me ha ayudado mucho.
-Doctor: Entiendo. Voy a examinarle. Presión arterial 120/80, temperatura 36.8. Todo normal.
-Paciente: ¿Qué puede ser doctor?
-Doctor: Parece ser cefalea tensional. Le voy a recetar un analgésico más fuerte y le recomiendo descanso.`;
-
-        setTranscript(mockTranscript);
-
-        // Finalize session and generate SOAP
+        // Finalize session and generate SOAP (triggers real AssemblyAI + Gemini processing)
         const finalizeResponse = await fetch(`/api/scribe/sessions/${sessionId}/finalize`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transcriptText: mockTranscript,
-            segments: [
-              { speaker: 'Doctor', text: 'Buenos días, ¿cómo se siente hoy?', startTime: 0, endTime: 2 },
-              { speaker: 'Paciente', text: 'Buenos días doctor. Tengo dolor de cabeza desde hace 3 días.', startTime: 2, endTime: 6 },
-            ],
-          }),
         });
 
         if (!finalizeResponse.ok) {
-          throw new Error('Failed to generate SOAP note');
+          const errorData = await finalizeResponse.json();
+          throw new Error(errorData.error || 'Failed to generate SOAP note');
         }
 
         const finalizeData = await finalizeResponse.json();
 
-        // Load the SOAP note
-        const noteResponse = await fetch(`/api/scribe/notes/${finalizeData.data.soapNote.id}`);
-        if (noteResponse.ok) {
-          const noteData = await noteResponse.json();
-          setSoapNote(noteData.data);
+        // Load the full SOAP note with transcription data
+        if (finalizeData.data?.soapNote?.id) {
+          const noteResponse = await fetch(`/api/scribe/notes/${finalizeData.data.soapNote.id}`);
+          if (noteResponse.ok) {
+            const noteData = await noteResponse.json();
+            setSoapNote(noteData.data);
+          }
+        }
+
+        // Load the transcription with segments
+        if (finalizeData.data?.transcription?.id) {
+          const transcriptResponse = await fetch(`/api/scribe/sessions/${sessionId}`);
+          if (transcriptResponse.ok) {
+            const sessionData = await transcriptResponse.json();
+            if (sessionData.data?.transcription?.segments) {
+              setTranscriptSegments(sessionData.data.transcription.segments);
+            }
+          }
         }
 
         setRecordingState('completed');
@@ -223,10 +227,55 @@ Doctor: Parece ser cefalea tensional. Le voy a recetar un analgésico más fuert
   const resetRecording = () => {
     setRecordingState('idle');
     setRecordingDuration(0);
-    setTranscript('');
+    setTranscriptSegments([]);
     setSoapNote(null);
     setSessionId(null);
     audioChunksRef.current = [];
+  };
+
+  // Save SOAP note edits
+  const handleSaveNote = async (updatedNote: Partial<any>) => {
+    if (!soapNote?.id) return;
+
+    try {
+      const response = await fetch(`/api/scribe/notes/${soapNote.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedNote),
+      });
+
+      if (response.ok) {
+        const updatedData = await response.json();
+        setSoapNote(updatedData.data);
+      }
+    } catch (error) {
+      console.error('Error saving note:', error);
+      alert('Error al guardar los cambios');
+    }
+  };
+
+  // Sign and finalize SOAP note
+  const handleSignNote = async () => {
+    if (!soapNote?.id) return;
+
+    const confirmed = confirm('¿Está seguro de firmar y finalizar esta nota? No podrá editarla después.');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/scribe/notes/${soapNote.id}/sign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const signedData = await response.json();
+        setSoapNote(signedData.data);
+        alert('✅ Nota firmada exitosamente con hash blockchain');
+      }
+    } catch (error) {
+      console.error('Error signing note:', error);
+      alert('Error al firmar la nota');
+    }
   };
 
   // Format duration
@@ -423,108 +472,46 @@ Doctor: Parece ser cefalea tensional. Le voy a recetar un analgésico más fuert
                 )}
               </div>
 
-              {/* Live Transcript */}
-              {transcript && (
+              {/* Live Transcript with Speaker Diarization */}
+              {transcriptSegments.length > 0 && (
                 <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Transcripción</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 max-h-[400px] overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono">
-                      {transcript}
-                    </pre>
-                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                    <span className="mr-2">🎙️</span>
+                    Transcripción con Identificación de Hablantes
+                  </h3>
+                  <TranscriptViewer segments={transcriptSegments} />
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Column 3: SOAP Note Preview */}
+        {/* Column 3: SOAP Note Editor */}
         <div className="lg:col-span-4">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-green-500 to-teal-600">
-              <h2 className="text-lg font-bold text-white">Nota SOAP</h2>
+              <h2 className="text-lg font-bold text-white flex items-center">
+                <span className="mr-2">📝</span>
+                Nota SOAP Generada por IA
+              </h2>
             </div>
-            <div className="p-6">
+            <div className="p-6 max-h-[800px] overflow-y-auto">
               {!soapNote ? (
                 <div className="text-center text-gray-500 py-12">
-                  <div className="text-6xl mb-4">📝</div>
-                  <p>La nota SOAP aparecerá aquí después de finalizar la grabación</p>
+                  <div className="text-6xl mb-4">🤖</div>
+                  <p className="text-lg font-medium mb-2">
+                    La nota SOAP aparecerá aquí después de finalizar la grabación
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Generada automáticamente con AssemblyAI + Gemini 2.0 Flash
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {/* Chief Complaint */}
-                  {soapNote.chiefComplaint && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase">Motivo de Consulta</h3>
-                      </div>
-                      <p className="text-gray-900">{soapNote.chiefComplaint}</p>
-                    </div>
-                  )}
-
-                  {/* Subjective */}
-                  <div className="border-l-4 border-blue-500 pl-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-bold text-blue-700 uppercase">Subjetivo (S)</h3>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                        {Math.round(soapNote.subjectiveConfidence * 100)}%
-                      </span>
-                    </div>
-                    <p className="text-gray-900 whitespace-pre-wrap">{soapNote.subjective}</p>
-                  </div>
-
-                  {/* Objective */}
-                  <div className="border-l-4 border-green-500 pl-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-bold text-green-700 uppercase">Objetivo (O)</h3>
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                        {Math.round(soapNote.objectiveConfidence * 100)}%
-                      </span>
-                    </div>
-                    <p className="text-gray-900 whitespace-pre-wrap">{soapNote.objective}</p>
-                  </div>
-
-                  {/* Assessment */}
-                  <div className="border-l-4 border-purple-500 pl-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-bold text-purple-700 uppercase">Evaluación (A)</h3>
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                        {Math.round(soapNote.assessmentConfidence * 100)}%
-                      </span>
-                    </div>
-                    <p className="text-gray-900 whitespace-pre-wrap">{soapNote.assessment}</p>
-                    {soapNote.diagnoses && soapNote.diagnoses.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {soapNote.diagnoses.map((dx: any, idx: number) => (
-                          <div key={idx} className="text-sm bg-purple-50 p-2 rounded">
-                            <span className="font-mono font-bold text-purple-700">{dx.icd10Code}</span>
-                            <span className="text-gray-700"> - {dx.description}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Plan */}
-                  <div className="border-l-4 border-orange-500 pl-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-bold text-orange-700 uppercase">Plan (P)</h3>
-                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
-                        {Math.round(soapNote.planConfidence * 100)}%
-                      </span>
-                    </div>
-                    <p className="text-gray-900 whitespace-pre-wrap">{soapNote.plan}</p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="pt-6 border-t border-gray-200">
-                    <button
-                      className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-teal-700 transition-all shadow-lg"
-                    >
-                      Firmar y Guardar
-                    </button>
-                  </div>
-                </div>
+                <SOAPNoteEditor
+                  note={soapNote}
+                  onSave={handleSaveNote}
+                  onSign={handleSignNote}
+                />
               )}
             </div>
           </div>
