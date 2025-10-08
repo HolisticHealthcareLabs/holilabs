@@ -7,8 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import Anthropic from '@anthropic-ai/sdk';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AssemblyAI } from 'assemblyai';
 import { createHash } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { decryptBuffer } from '@/lib/security/encryption';
@@ -19,12 +19,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
 
 // Initialize AI clients
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const assemblyai = new AssemblyAI({
+  apiKey: process.env.ASSEMBLYAI_API_KEY || '',
 });
 
 // Initialize Supabase for storage access
@@ -116,10 +114,10 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // STEP 2: Transcribe audio using OpenAI Whisper (server-side)
-      if (!process.env.OPENAI_API_KEY) {
+      // STEP 2: Transcribe audio using AssemblyAI (server-side)
+      if (!process.env.ASSEMBLYAI_API_KEY) {
         return NextResponse.json(
-          { error: 'OpenAI API key not configured. Cannot transcribe audio.' },
+          { error: 'AssemblyAI API key not configured. Cannot transcribe audio.' },
           { status: 500 }
         );
       }
@@ -129,39 +127,53 @@ export const POST = createProtectedRoute(
       const transcribeStartTime = Date.now();
 
       try {
-        // Create a File object from buffer (convert Buffer to Uint8Array for web compatibility)
-        const audioArray = new Uint8Array(audioBuffer);
-        const audioFile = new File(
-          [audioArray],
-          `audio.${session.audioFormat || 'webm'}`,
-          { type: `audio/${session.audioFormat || 'webm'}` }
-        );
+        // Detect language from patient locale (Portuguese or Spanish)
+        const languageCode = session.patient.country === 'BR' ? 'pt' : 'es';
 
-        // Transcribe with Whisper
-        const transcription = await openai.audio.transcriptions.create({
-          file: audioFile,
-          model: 'whisper-1',
-          language: 'es', // Spanish
-          response_format: 'verbose_json', // Get detailed output
-          timestamp_granularities: ['segment'],
+        // Upload audio buffer directly to AssemblyAI
+        const uploadResponse = await assemblyai.files.upload(audioBuffer);
+
+        // Start transcription with medical-grade features
+        const transcript = await assemblyai.transcripts.transcribe({
+          audio: uploadResponse,
+          language_code: languageCode as any, // 'pt' for Portuguese, 'es' for Spanish
+          speaker_labels: true, // Enable speaker diarization
+          redact_pii: true, // Enable PHI redaction (HIPAA compliance)
+          redact_pii_policies: [
+            'medical_condition',
+            'medical_process',
+            'drug',
+            'person_name',
+            'phone_number',
+            'date_of_birth',
+            'location',
+          ],
+          punctuate: true,
+          format_text: true,
         });
 
-        transcriptText = transcription.text;
+        // Check for errors
+        if (transcript.status === 'error') {
+          throw new Error(transcript.error || 'Transcription failed');
+        }
 
-        // Extract segments for speaker diarization (basic)
-        if (transcription.segments && Array.isArray(transcription.segments)) {
-          segments = transcription.segments.map((seg: any, idx: number) => ({
-            speaker: idx % 2 === 0 ? 'Doctor' : 'Paciente', // Simple alternating
-            text: seg.text,
-            startTime: seg.start,
-            endTime: seg.end,
-            confidence: 0.9, // Whisper doesn't provide per-segment confidence
+        transcriptText = transcript.text || '';
+
+        // Extract segments with speaker diarization
+        if (transcript.utterances && Array.isArray(transcript.utterances)) {
+          segments = transcript.utterances.map((utterance: any) => ({
+            speaker: utterance.speaker === 'A' ? 'Doctor' : 'Paciente',
+            text: utterance.text,
+            startTime: utterance.start / 1000, // Convert ms to seconds
+            endTime: utterance.end / 1000,
+            confidence: utterance.confidence || 0.95,
           }));
         }
 
-        console.log(`Transcription completed in ${Date.now() - transcribeStartTime}ms`);
+        console.log(`AssemblyAI transcription completed in ${Date.now() - transcribeStartTime}ms`);
+        console.log(`Language: ${languageCode}, Words: ${transcript.words?.length || 0}`);
       } catch (error: any) {
-        console.error('Whisper transcription error:', error);
+        console.error('AssemblyAI transcription error:', error);
         return NextResponse.json(
           { error: 'Failed to transcribe audio', message: error.message },
           { status: 500 }
@@ -170,17 +182,18 @@ export const POST = createProtectedRoute(
 
       // Create transcription record
       const wordCount = transcriptText.split(/\s+/).length;
+      const languageCode = session.patient.country === 'BR' ? 'pt' : 'es';
       const transcriptionRecord = await prisma.transcription.create({
         data: {
           sessionId,
           rawText: transcriptText,
           segments: segments,
-          speakerCount: 2,
-          confidence: 0.92,
+          speakerCount: segments.length > 0 ? new Set(segments.map(s => s.speaker)).size : 2,
+          confidence: segments.length > 0 ? segments.reduce((sum, s) => sum + s.confidence, 0) / segments.length : 0.95,
           wordCount,
           durationSeconds: session.audioDuration,
-          model: 'whisper-1',
-          language: 'es',
+          model: 'assemblyai-best',
+          language: languageCode,
           processingTime: Date.now() - transcribeStartTime,
         },
       });
@@ -283,7 +296,7 @@ export const POST = createProtectedRoute(
           procedures: validatedSOAPData.procedures,
           medications: validatedSOAPData.medications,
           overallConfidence: validatedSOAPData.overallConfidence,
-          model: 'claude-3-5-sonnet-20250219',
+          model: 'gemini-2.0-flash',
           tokensUsed: soapNote.tokensUsed,
           processingTime: soapNote.processingTime,
           status: 'DRAFT',
@@ -340,7 +353,7 @@ export const POST = createProtectedRoute(
 );
 
 /**
- * Generate SOAP note from transcript using Claude
+ * Generate SOAP note from transcript using Gemini 2.0 Flash
  */
 async function generateSOAPNote(
   transcript: string,
@@ -354,7 +367,10 @@ async function generateSOAPNote(
     (Date.now() - new Date(patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
   );
 
-  const prompt = `Eres un asistente médico experto en documentación clínica. Tu tarea es analizar la siguiente transcripción de una consulta médica y generar una nota SOAP (Subjetivo, Objetivo, Evaluación, Plan) completa y precisa.
+  // Detect language based on patient country
+  const language = patient.country === 'BR' ? 'portugués' : 'español';
+
+  const prompt = `Eres un asistente médico experto en documentación clínica. Tu tarea es analizar la siguiente transcripción de una consulta médica y generar una nota SOAP (Subjetivo, Objetivo, Evaluación, Plan) completa y precisa en ${language}.
 
 **Información del Paciente:**
 - Nombre: ${patient.firstName} ${patient.lastName}
@@ -369,7 +385,7 @@ async function generateSOAPNote(
 ${transcript}
 
 **Instrucciones:**
-1. Genera una nota SOAP completa en español
+1. Genera una nota SOAP completa en ${language}
 2. Extrae el motivo de consulta principal (chief complaint)
 3. Identifica diagnósticos con códigos ICD-10 si es posible
 4. Sugiere procedimientos o estudios necesarios con códigos CPT si aplica
@@ -422,23 +438,25 @@ ${transcript}
 
 Responde SOLO con el JSON válido, sin texto adicional.`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 4096,
-    temperature: 0.3, // Low temperature for consistent medical documentation
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
+  // Initialize Gemini 2.0 Flash model
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    generationConfig: {
+      temperature: 0.3, // Low temperature for consistent medical documentation
+      maxOutputTokens: 4096,
+      responseMimeType: 'application/json', // Force JSON output
+    },
   });
 
-  const processingTime = Date.now() - startTime;
-  const tokensUsed = message.usage.input_tokens + message.usage.output_tokens;
+  const result = await model.generateContent(prompt);
+  const response = result.response;
+  const responseText = response.text();
 
-  // Parse JSON response
-  const responseText = message.content[0].type === 'text' ? message.content[0].text : '';
+  const processingTime = Date.now() - startTime;
+
+  // Gemini usage metadata
+  const usageMetadata = response.usageMetadata;
+  const tokensUsed = (usageMetadata?.promptTokenCount || 0) + (usageMetadata?.candidatesTokenCount || 0);
 
   // Extract JSON from response (handle potential markdown wrapping)
   let jsonText = responseText.trim();

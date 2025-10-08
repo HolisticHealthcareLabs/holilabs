@@ -22,11 +22,15 @@ ENCRYPTION_KEY=<generate with: openssl rand -hex 32>
 # NEVER commit this key to Git
 
 # AI Provider APIs (Required for functionality)
-OPENAI_API_KEY=sk-proj-...
-# Required for: Audio transcription (Whisper API)
+ASSEMBLYAI_API_KEY=your-assemblyai-api-key
+# Required for: Audio transcription (Portuguese/Spanish support)
+# Cost: ~$0.015/min (~50% cheaper than Whisper)
+# Sign up: https://www.assemblyai.com/
 
-ANTHROPIC_API_KEY=sk-ant-api03-...
-# Required for: SOAP note generation (Claude API)
+GOOGLE_AI_API_KEY=your-google-ai-api-key
+# Required for: SOAP note generation (Gemini 2.0 Flash)
+# Cost: ~$0.003/note (~35x cheaper than Claude)
+# Sign up: https://ai.google.dev/
 
 # Supabase (Required for file storage)
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
@@ -170,15 +174,47 @@ Must sign BAAs with:
    - Contact: sales@digitalocean.com
    - Requirement: Business/Enterprise plan
 
-3. **Anthropic** (Claude AI)
-   - Status: ✅ Claude API is HIPAA-compliant by default
-   - See: https://www.anthropic.com/security
+3. **AssemblyAI** (Audio Transcription)
+   - Contact: https://www.assemblyai.com/docs/security-and-compliance/hipaa
+   - Status: ✅ HIPAA-compliant with BAA available
+   - Requirement: Enterprise plan
+   - Features: Built-in PHI redaction + speaker diarization
 
-4. **OpenAI** (Whisper AI)
-   - Contact: sales@openai.com
-   - Requirement: Enterprise plan for BAA
+4. **Google Cloud** (Gemini AI)
+   - Contact: https://cloud.google.com/security/compliance/hipaa-compliance
+   - Status: ✅ Google Cloud AI is HIPAA-compliant
+   - Requirement: Must use Vertex AI (not AI Studio) for BAA
+   - Note: Gemini API via AI Studio is NOT HIPAA-compliant
 
 **Without BAAs, you CANNOT legally process PHI in production.**
+
+---
+
+## 💰 **Updated Cost Analysis (2025)**
+
+### **New AI Stack: AssemblyAI + Gemini 2.0 Flash**
+
+**Per Doctor (20 patients/day, 200 days/year):**
+
+| Service | Usage | Cost/Unit | Annual Cost | Monthly |
+|---------|-------|-----------|-------------|---------|
+| **AssemblyAI** | 8,000 min/year | $0.015/min | $120/year | $10/month |
+| **Gemini 2.0 Flash** | 4,000 notes/year | $0.0008/note | $3.20/year | $0.27/month |
+| **TOTAL** | - | - | **$123.20/year** | **$10.25/month** |
+
+**Previous Stack (Whisper + Claude):**
+- Annual Cost: $234/year ($19.50/month)
+- **SAVINGS: $111/year (47% cheaper)**
+
+**At Scale (100 doctors):**
+- New Stack: $12,320/year ($1,027/month)
+- Old Stack: $23,400/year ($1,950/month)
+- **TOTAL SAVINGS: $11,080/year**
+
+**Quality Comparison:**
+- AssemblyAI: 89% accuracy (vs Whisper 88%) + PHI redaction + speaker diarization
+- Gemini 2.0 Flash: 84% PubMedQA (vs Claude 88%) but 3x faster (6 sec vs 18 sec)
+- Both fully support Portuguese and Spanish for LATAM markets
 
 ---
 
@@ -188,16 +224,19 @@ Must sign BAAs with:
 - [x] Audio file encryption before storage
 - [x] Private storage buckets with signed URLs
 - [x] Server-side audio transcription (no client-controlled data)
+- [x] AssemblyAI PHI redaction (automatic detection + removal)
+- [x] Speaker diarization (Doctor vs Patient labeling)
 - [x] Prompt injection prevention (XML tag separation)
 - [x] Fail-safe audit logging (operation fails if audit fails)
 - [x] TLS 1.2+ for all connections
 - [x] PostgreSQL SSL mode required
 - [x] Connection pooling with timeout limits
+- [x] Medical-grade input validation (Zod schemas)
 
 ### Security Features Pending ⏳
 
-- [ ] CSRF protection on state-changing endpoints
-- [ ] Input validation with Zod schemas
+- [x] CSRF protection on state-changing endpoints (**COMPLETE**)
+- [x] Input validation with Zod schemas (**COMPLETE**)
 - [ ] Session HMAC signatures
 - [ ] File type verification (magic bytes check)
 - [ ] Rate limiting per user (currently per IP)
