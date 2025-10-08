@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
+import { CreatePatientSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -150,55 +152,65 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Validate required fields
-    const requiredFields = ['firstName', 'lastName', 'dateOfBirth', 'mrn'];
-    for (const field of requiredFields) {
-      if (!body[field]) {
+    // Validate with medical-grade Zod schema
+    let validatedData;
+    try {
+      validatedData = CreatePatientSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
         return NextResponse.json(
-          { error: `Missing required field: ${field}` },
+          {
+            error: 'Validation failed',
+            message: 'Please check your input and try again',
+            details: error.errors.map((err) => ({
+              field: err.path.join('.'),
+              message: err.message,
+            })),
+          },
           { status: 400 }
         );
       }
+      throw error; // Re-throw non-validation errors
     }
 
     // Generate token ID for de-identification
     const tokenId = `PT-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}`;
 
-    // Generate blockchain hash
+    // Generate blockchain hash (using validated data)
     const dataHash = generatePatientDataHash({
       id: tokenId,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      dateOfBirth: body.dateOfBirth,
-      mrn: body.mrn,
+      firstName: validatedData.firstName,
+      lastName: validatedData.lastName,
+      dateOfBirth: validatedData.dateOfBirth.toString(),
+      mrn: validatedData.mrn,
     });
 
     // Calculate age band for de-identification
-    const birthYear = new Date(body.dateOfBirth).getFullYear();
+    const birthYear = new Date(validatedData.dateOfBirth).getFullYear();
     const currentYear = new Date().getFullYear();
     const age = currentYear - birthYear;
     const ageBand = `${Math.floor(age / 10) * 10}-${Math.floor(age / 10) * 10 + 9}`;
 
-    // Create patient
+    // Create patient (using validated data - type-safe)
     const patient = await prisma.patient.create({
       data: {
-        firstName: body.firstName,
-        lastName: body.lastName,
-        dateOfBirth: new Date(body.dateOfBirth),
-        gender: body.gender,
-        email: body.email,
-        phone: body.phone,
-        address: body.address,
-        city: body.city,
-        state: body.state,
-        postalCode: body.postalCode,
-        country: body.country || 'MX',
-        mrn: body.mrn,
-        externalMrn: body.externalMrn,
+        firstName: validatedData.firstName,
+        lastName: validatedData.lastName,
+        dateOfBirth: new Date(validatedData.dateOfBirth),
+        gender: validatedData.gender,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        address: validatedData.address,
+        city: validatedData.city,
+        state: validatedData.state,
+        postalCode: validatedData.postalCode,
+        country: validatedData.country || 'MX',
+        mrn: validatedData.mrn,
+        externalMrn: validatedData.externalMrn,
         tokenId,
         ageBand,
-        region: body.state || body.region,
-        assignedClinicianId: body.assignedClinicianId,
+        region: validatedData.state || validatedData.region,
+        assignedClinicianId: validatedData.assignedClinicianId,
         dataHash,
         lastHashUpdate: new Date(),
       },
@@ -214,16 +226,16 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create audit log
+    // Create audit log (using validated data)
     await prisma.auditLog.create({
       data: {
-        userId: body.createdBy || body.assignedClinicianId,
+        userId: validatedData.createdBy || validatedData.assignedClinicianId || 'system',
         userEmail: 'system',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
         resource: 'Patient',
         resourceId: patient.id,
-        details: { tokenId, mrn: body.mrn },
+        details: { tokenId, mrn: validatedData.mrn },
         success: true,
       },
     });

@@ -12,6 +12,8 @@ import OpenAI from 'openai';
 import { createHash } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { decryptBuffer } from '@/lib/security/encryption';
+import { CreateSOAPNoteSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -190,39 +192,97 @@ export const POST = createProtectedRoute(
         session.clinician
       );
 
-      // Generate hash for blockchain
-      const noteContent = JSON.stringify({
-        patientId: session.patientId,
-        clinicianId: session.clinicianId,
-        subjective: soapNote.subjective,
-        objective: soapNote.objective,
-        assessment: soapNote.assessment,
-        plan: soapNote.plan,
-        createdAt: new Date().toISOString(),
-      });
-      const noteHash = createHash('sha256').update(noteContent).digest('hex');
-
-      // Create SOAP note record
-      const soapNoteRecord = await prisma.sOAPNote.create({
-        data: {
+      // STEP 4: Validate AI-generated SOAP note with medical-grade schema
+      let validatedSOAPData;
+      try {
+        validatedSOAPData = CreateSOAPNoteSchema.parse({
           sessionId,
           patientId: session.patientId,
           clinicianId: session.clinicianId,
-          noteHash,
+          chiefComplaint: soapNote.chiefComplaint || 'N/A',
           subjective: soapNote.subjective,
-          subjectiveConfidence: soapNote.subjectiveConfidence,
           objective: soapNote.objective,
-          objectiveConfidence: soapNote.objectiveConfidence,
           assessment: soapNote.assessment,
-          assessmentConfidence: soapNote.assessmentConfidence,
           plan: soapNote.plan,
-          planConfidence: soapNote.planConfidence,
-          chiefComplaint: soapNote.chiefComplaint,
           vitalSigns: soapNote.vitalSigns || {},
           diagnoses: soapNote.diagnoses || [],
           procedures: soapNote.procedures || [],
           medications: soapNote.medications || [],
+          subjectiveConfidence: soapNote.subjectiveConfidence,
+          objectiveConfidence: soapNote.objectiveConfidence,
+          assessmentConfidence: soapNote.assessmentConfidence,
+          planConfidence: soapNote.planConfidence,
           overallConfidence: soapNote.overallConfidence,
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          console.error('AI-generated SOAP note validation failed:', error.errors);
+          // Log validation errors but continue with sanitized data
+          // This ensures AI mistakes don't crash the system
+          const validationErrors = error.errors.map((err) => ({
+            field: err.path.join('.'),
+            message: err.message,
+          }));
+          console.warn('Validation errors in AI output:', validationErrors);
+
+          // Use unvalidated data with warnings
+          validatedSOAPData = {
+            sessionId,
+            patientId: session.patientId,
+            clinicianId: session.clinicianId,
+            chiefComplaint: soapNote.chiefComplaint || 'N/A',
+            subjective: soapNote.subjective || '',
+            objective: soapNote.objective || '',
+            assessment: soapNote.assessment || '',
+            plan: soapNote.plan || '',
+            vitalSigns: {},
+            diagnoses: [],
+            procedures: [],
+            medications: [],
+            subjectiveConfidence: soapNote.subjectiveConfidence || 0.5,
+            objectiveConfidence: soapNote.objectiveConfidence || 0.5,
+            assessmentConfidence: soapNote.assessmentConfidence || 0.5,
+            planConfidence: soapNote.planConfidence || 0.5,
+            overallConfidence: soapNote.overallConfidence || 0.5,
+          };
+        } else {
+          throw error;
+        }
+      }
+
+      // Generate hash for blockchain (using validated data)
+      const noteContent = JSON.stringify({
+        patientId: validatedSOAPData.patientId,
+        clinicianId: validatedSOAPData.clinicianId,
+        subjective: validatedSOAPData.subjective,
+        objective: validatedSOAPData.objective,
+        assessment: validatedSOAPData.assessment,
+        plan: validatedSOAPData.plan,
+        createdAt: new Date().toISOString(),
+      });
+      const noteHash = createHash('sha256').update(noteContent).digest('hex');
+
+      // Create SOAP note record (using validated data - type-safe)
+      const soapNoteRecord = await prisma.sOAPNote.create({
+        data: {
+          sessionId,
+          patientId: validatedSOAPData.patientId,
+          clinicianId: validatedSOAPData.clinicianId,
+          noteHash,
+          subjective: validatedSOAPData.subjective,
+          subjectiveConfidence: validatedSOAPData.subjectiveConfidence,
+          objective: validatedSOAPData.objective,
+          objectiveConfidence: validatedSOAPData.objectiveConfidence,
+          assessment: validatedSOAPData.assessment,
+          assessmentConfidence: validatedSOAPData.assessmentConfidence,
+          plan: validatedSOAPData.plan,
+          planConfidence: validatedSOAPData.planConfidence,
+          chiefComplaint: validatedSOAPData.chiefComplaint,
+          vitalSigns: validatedSOAPData.vitalSigns,
+          diagnoses: validatedSOAPData.diagnoses,
+          procedures: validatedSOAPData.procedures,
+          medications: validatedSOAPData.medications,
+          overallConfidence: validatedSOAPData.overallConfidence,
           model: 'claude-3-5-sonnet-20250219',
           tokensUsed: soapNote.tokensUsed,
           processingTime: soapNote.processingTime,

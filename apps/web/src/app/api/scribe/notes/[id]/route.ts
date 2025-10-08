@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
+import { UpdateSOAPNoteSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +89,27 @@ export const PATCH = createProtectedRoute(
       const noteId = context.params.id;
       const body = await request.json();
 
+      // Validate with medical-grade Zod schema
+      let validatedData;
+      try {
+        validatedData = UpdateSOAPNoteSchema.parse(body);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return NextResponse.json(
+            {
+              error: 'Validation failed',
+              message: 'Please check your input and try again',
+              details: error.errors.map((err) => ({
+                field: err.path.join('.'),
+                message: err.message,
+              })),
+            },
+            { status: 400 }
+          );
+        }
+        throw error;
+      }
+
       // Verify note belongs to this clinician
       const existingNote = await prisma.sOAPNote.findFirst({
         where: {
@@ -128,29 +151,29 @@ export const PATCH = createProtectedRoute(
       ];
 
       for (const field of editableFields) {
-        if (body[field] !== undefined && body[field] !== (existingNote as any)[field]) {
+        if (validatedData[field] !== undefined && validatedData[field] !== (existingNote as any)[field]) {
           newEdits.push({
             field,
             oldValue: (existingNote as any)[field],
-            newValue: body[field],
+            newValue: validatedData[field],
             editedAt: new Date().toISOString(),
             editedBy: context.user.id,
           });
         }
       }
 
-      // Update note with edit tracking
+      // Update note with edit tracking (using validated data - type-safe)
       const updateData: any = {};
 
-      if (body.subjective !== undefined) updateData.subjective = body.subjective;
-      if (body.objective !== undefined) updateData.objective = body.objective;
-      if (body.assessment !== undefined) updateData.assessment = body.assessment;
-      if (body.plan !== undefined) updateData.plan = body.plan;
-      if (body.chiefComplaint !== undefined) updateData.chiefComplaint = body.chiefComplaint;
-      if (body.diagnoses !== undefined) updateData.diagnoses = body.diagnoses;
-      if (body.procedures !== undefined) updateData.procedures = body.procedures;
-      if (body.medications !== undefined) updateData.medications = body.medications;
-      if (body.vitalSigns !== undefined) updateData.vitalSigns = body.vitalSigns;
+      if (validatedData.subjective !== undefined) updateData.subjective = validatedData.subjective;
+      if (validatedData.objective !== undefined) updateData.objective = validatedData.objective;
+      if (validatedData.assessment !== undefined) updateData.assessment = validatedData.assessment;
+      if (validatedData.plan !== undefined) updateData.plan = validatedData.plan;
+      if (validatedData.chiefComplaint !== undefined) updateData.chiefComplaint = validatedData.chiefComplaint;
+      if (validatedData.diagnoses !== undefined) updateData.diagnoses = validatedData.diagnoses;
+      if (validatedData.procedures !== undefined) updateData.procedures = validatedData.procedures;
+      if (validatedData.medications !== undefined) updateData.medications = validatedData.medications;
+      if (validatedData.vitalSigns !== undefined) updateData.vitalSigns = validatedData.vitalSigns;
 
       if (newEdits.length > 0) {
         updateData.wasEdited = true;
@@ -158,15 +181,15 @@ export const PATCH = createProtectedRoute(
         updateData.editHistory = [...editHistory, ...newEdits];
       }
 
-      // Regenerate hash if content changed
-      if (body.subjective || body.objective || body.assessment || body.plan) {
+      // Regenerate hash if content changed (using validated data)
+      if (validatedData.subjective || validatedData.objective || validatedData.assessment || validatedData.plan) {
         const noteContent = JSON.stringify({
           patientId: existingNote.patientId,
           clinicianId: existingNote.clinicianId,
-          subjective: body.subjective || existingNote.subjective,
-          objective: body.objective || existingNote.objective,
-          assessment: body.assessment || existingNote.assessment,
-          plan: body.plan || existingNote.plan,
+          subjective: validatedData.subjective || existingNote.subjective,
+          objective: validatedData.objective || existingNote.objective,
+          assessment: validatedData.assessment || existingNote.assessment,
+          plan: validatedData.plan || existingNote.plan,
           updatedAt: new Date().toISOString(),
         });
         updateData.noteHash = createHash('sha256').update(noteContent).digest('hex');

@@ -10,6 +10,8 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';
 import { encryptBuffer } from '@/lib/security/encryption';
+import { AudioUploadSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,22 +64,30 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // Validate file type (webm, mp3, wav, m4a)
-      const allowedTypes = ['audio/webm', 'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/x-m4a'];
-      if (!allowedTypes.includes(audioFile.type)) {
-        return NextResponse.json(
-          { error: 'Invalid audio format. Supported: webm, mp3, wav, m4a' },
-          { status: 400 }
-        );
-      }
-
-      // Validate file size (max 100MB)
-      const maxSize = 100 * 1024 * 1024; // 100MB
-      if (audioFile.size > maxSize) {
-        return NextResponse.json(
-          { error: 'Audio file too large. Maximum size: 100MB' },
-          { status: 400 }
-        );
+      // Validate audio metadata with Zod schema
+      let validatedMetadata;
+      try {
+        validatedMetadata = AudioUploadSchema.parse({
+          duration,
+          fileSize: audioFile.size,
+          mimeType: audioFile.type,
+          fileName: audioFile.name,
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return NextResponse.json(
+            {
+              error: 'Validation failed',
+              message: 'Invalid audio file or metadata',
+              details: error.errors.map((err) => ({
+                field: err.path.join('.'),
+                message: err.message,
+              })),
+            },
+            { status: 400 }
+          );
+        }
+        throw error;
       }
 
       // Convert File to Buffer
@@ -132,13 +142,13 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // Update session with audio details
+      // Update session with audio details (using validated metadata)
       const updatedSession = await prisma.scribeSession.update({
         where: { id: sessionId },
         data: {
           audioFileUrl: urlData.signedUrl,
           audioFileName: fileName,
-          audioDuration: duration,
+          audioDuration: validatedMetadata.duration,
           audioFormat: extension,
           audioSize: finalBuffer.length, // Encrypted size
           status: 'PROCESSING',
