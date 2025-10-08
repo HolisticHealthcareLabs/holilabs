@@ -518,6 +518,7 @@ enum AuditAction {
   PRESCRIBE
   SIGN
   REVOKE
+  NOTIFY  // WhatsApp/Email/SMS notifications
 }
 
 // ============================================================================

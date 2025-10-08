@@ -1,0 +1,72 @@
+{
+  "expo": {
+    "name": "Holi Labs AI Scribe",
+    "slug": "holi-labs-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A3758"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.holilabs.aiscribe",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app needs access to your microphone to record patient consultations.",
+        "NSCameraUsageDescription": "This app needs access to your camera to capture patient documents.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to save and share documents.",
+        "NSFaceIDUsageDescription": "Use Face ID to securely access your medical records."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A3758"
+      },
+      "package": "com.holilabs.aiscribe",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Holi Labs to record audio for patient consultations."
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-project-id"
+      },
+      "SUPABASE_URL": "https://yyteqajwjjrubiktornb.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dGVxYWp3ampydWJpa3Rvcm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2ODE4MTksImV4cCI6MjA3NTI1NzgxOX0.b4FmPeZniO4D5Xm3_F10svynPBZYwKtJwDcBP94qq-4",
+      "API_URL": "https://holilabs-lwp6y.ondigitalocean.app/api",
+      "API_TIMEOUT": "30000",
+      "ANTHROPIC_API_KEY": ""
+    }
+  }
+}

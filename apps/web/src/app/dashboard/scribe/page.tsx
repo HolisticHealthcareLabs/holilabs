@@ -278,6 +278,32 @@ export default function AIScribePage() {
     }
   };
 
+  // Send WhatsApp notification to patient
+  const handleNotifyPatient = async () => {
+    if (!soapNote?.id) return;
+
+    const confirmed = confirm('¿Enviar esta nota al paciente por WhatsApp?');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`/api/scribe/notes/${soapNote.id}/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`✅ WhatsApp enviado exitosamente a ${data.data.sentTo}`);
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Error: ${errorData.error || 'No se pudo enviar WhatsApp'}`);
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp:', error);
+      alert('Error al enviar WhatsApp al paciente');
+    }
+  };
+
   // Format duration
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -511,6 +537,7 @@ export default function AIScribePage() {
                   note={soapNote}
                   onSave={handleSaveNote}
                   onSign={handleSignNote}
+                  onNotifyPatient={handleNotifyPatient}
                 />
               )}
             </div>

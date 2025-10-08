@@ -53,6 +53,7 @@ interface SOAPNoteEditorProps {
   note: SOAPNote;
   onSave: (updatedNote: Partial<SOAPNote>) => void;
   onSign: () => void;
+  onNotifyPatient?: () => void;
   readOnly?: boolean;
 }
 
@@ -60,6 +61,7 @@ export default function SOAPNoteEditor({
   note,
   onSave,
   onSign,
+  onNotifyPatient,
   readOnly = false,
 }: SOAPNoteEditorProps) {
   const [editedNote, setEditedNote] = useState<Partial<SOAPNote>>({
@@ -384,28 +386,41 @@ export default function SOAPNoteEditor({
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-6 border-t border-gray-200 flex items-center space-x-3">
+      <div className="pt-6 border-t border-gray-200 space-y-3">
         {!readOnly && (
           <>
             {!isEditing ? (
               <>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  disabled={note.status === 'SIGNED'}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ✏️ Editar Nota
-                </button>
-                <button
-                  onClick={onSign}
-                  disabled={note.status === 'SIGNED'}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-teal-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ✅ Firmar y Finalizar
-                </button>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    disabled={note.status === 'SIGNED'}
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ✏️ Editar Nota
+                  </button>
+                  <button
+                    onClick={onSign}
+                    disabled={note.status === 'SIGNED'}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-teal-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ✅ Firmar y Finalizar
+                  </button>
+                </div>
+
+                {/* WhatsApp Notification Button */}
+                {onNotifyPatient && note.status === 'SIGNED' && (
+                  <button
+                    onClick={onNotifyPatient}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-green-400 to-green-600 text-white font-bold rounded-lg hover:from-green-500 hover:to-green-700 transition-all shadow-lg flex items-center justify-center space-x-2"
+                  >
+                    <span>📱</span>
+                    <span>Enviar al Paciente vía WhatsApp</span>
+                  </button>
+                )}
               </>
             ) : (
-              <>
+              <div className="flex items-center space-x-3">
                 <button
                   onClick={handleCancel}
                   disabled={isSaving}
@@ -420,13 +435,13 @@ export default function SOAPNoteEditor({
                 >
                   {isSaving ? 'Guardando...' : '💾 Guardar Cambios'}
                 </button>
-              </>
+              </div>
             )}
           </>
         )}
 
         {note.status === 'SIGNED' && (
-          <div className="flex-1 text-center py-3 bg-green-100 text-green-700 font-bold rounded-lg border border-green-300">
+          <div className="text-center py-3 bg-green-100 text-green-700 font-bold rounded-lg border border-green-300">
             ✅ Nota Firmada y Finalizada
           </div>
         )}
