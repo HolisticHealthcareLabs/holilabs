@@ -8,12 +8,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { AssemblyAI } from 'assemblyai';
 import { createHash } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { decryptBuffer } from '@/lib/security/encryption';
 import { CreateSOAPNoteSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
+import { transcribeAudioWithDeepgram } from '@/lib/transcription/deepgram';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -26,14 +26,6 @@ function getGenAI() {
   return new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
 }
 
-function getAssemblyAI() {
-  if (!process.env.ASSEMBLYAI_API_KEY) {
-    throw new Error('ASSEMBLYAI_API_KEY is not configured');
-  }
-  return new AssemblyAI({
-    apiKey: process.env.ASSEMBLYAI_API_KEY,
-  });
-}
 
 // Initialize Supabase for storage access (lazy-loaded)
 function getSupabaseClient() {
@@ -131,69 +123,33 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // STEP 2: Transcribe audio using AssemblyAI (server-side)
-      if (!process.env.ASSEMBLYAI_API_KEY) {
+      // STEP 2: Transcribe audio using Deepgram (74% cheaper than AssemblyAI)
+      if (!process.env.DEEPGRAM_API_KEY) {
         return NextResponse.json(
-          { error: 'AssemblyAI API key not configured. Cannot transcribe audio.' },
+          { error: 'Deepgram API key not configured. Cannot transcribe audio.' },
           { status: 500 }
         );
       }
 
       let transcriptText: string;
       let segments: any[] = [];
+      let transcriptionResult: any;
       const transcribeStartTime = Date.now();
 
       try {
-        // Initialize AssemblyAI client
-        const assemblyai = getAssemblyAI();
-
         // Detect language from patient locale (Portuguese or Spanish)
         const languageCode = session.patient.country === 'BR' ? 'pt' : 'es';
 
-        // Upload audio buffer directly to AssemblyAI
-        const uploadResponse = await assemblyai.files.upload(audioBuffer);
+        // Transcribe with Deepgram
+        transcriptionResult = await transcribeAudioWithDeepgram(audioBuffer, languageCode);
 
-        // Start transcription with medical-grade features
-        const transcript = await assemblyai.transcripts.transcribe({
-          audio: uploadResponse,
-          language_code: languageCode as any, // 'pt' for Portuguese, 'es' for Spanish
-          speaker_labels: true, // Enable speaker diarization
-          redact_pii: true, // Enable PHI redaction (HIPAA compliance)
-          redact_pii_policies: [
-            'medical_condition',
-            'medical_process',
-            'drug',
-            'person_name',
-            'phone_number',
-            'date_of_birth',
-            'location',
-          ],
-          punctuate: true,
-          format_text: true,
-        });
+        transcriptText = transcriptionResult.text;
+        segments = transcriptionResult.segments;
 
-        // Check for errors
-        if (transcript.status === 'error') {
-          throw new Error(transcript.error || 'Transcription failed');
-        }
-
-        transcriptText = transcript.text || '';
-
-        // Extract segments with speaker diarization
-        if (transcript.utterances && Array.isArray(transcript.utterances)) {
-          segments = transcript.utterances.map((utterance: any) => ({
-            speaker: utterance.speaker === 'A' ? 'Doctor' : 'Paciente',
-            text: utterance.text,
-            startTime: utterance.start / 1000, // Convert ms to seconds
-            endTime: utterance.end / 1000,
-            confidence: utterance.confidence || 0.95,
-          }));
-        }
-
-        console.log(`AssemblyAI transcription completed in ${Date.now() - transcribeStartTime}ms`);
-        console.log(`Language: ${languageCode}, Words: ${transcript.words?.length || 0}`);
+        console.log(`✅ Deepgram transcription completed in ${transcriptionResult.processingTimeMs}ms`);
+        console.log(`   Confidence: ${(transcriptionResult.confidence * 100).toFixed(1)}%, Speakers: ${transcriptionResult.speakerCount}`);
       } catch (error: any) {
-        console.error('AssemblyAI transcription error:', error);
+        console.error('❌ Deepgram transcription error:', error);
         return NextResponse.json(
           { error: 'Failed to transcribe audio', message: error.message },
           { status: 500 }
@@ -202,19 +158,18 @@ export const POST = createProtectedRoute(
 
       // Create transcription record
       const wordCount = transcriptText.split(/\s+/).length;
-      const languageCode = session.patient.country === 'BR' ? 'pt' : 'es';
       const transcriptionRecord = await prisma.transcription.create({
         data: {
           sessionId,
           rawText: transcriptText,
           segments: segments,
-          speakerCount: segments.length > 0 ? new Set(segments.map(s => s.speaker)).size : 2,
-          confidence: segments.length > 0 ? segments.reduce((sum, s) => sum + s.confidence, 0) / segments.length : 0.95,
+          speakerCount: transcriptionResult.speakerCount,
+          confidence: transcriptionResult.confidence,
           wordCount,
-          durationSeconds: session.audioDuration,
-          model: 'assemblyai-best',
-          language: languageCode,
-          processingTime: Date.now() - transcribeStartTime,
+          durationSeconds: transcriptionResult.durationSeconds,
+          model: 'deepgram-nova-2',
+          language: transcriptionResult.language,
+          processingTime: transcriptionResult.processingTimeMs,
         },
       });
 
