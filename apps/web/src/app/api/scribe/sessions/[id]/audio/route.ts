@@ -15,11 +15,19 @@ import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-// Initialize Supabase client for storage
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client for storage (lazy-loaded to avoid build-time errors)
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error('Supabase configuration is missing. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.');
+  }
+
+  return createClient(url, key);
+}
+
+// Remove module-level initialization - now using lazy-loaded function
 
 /**
  * POST /api/scribe/sessions/:id/audio
@@ -111,6 +119,9 @@ export const POST = createProtectedRoute(
       const hash = createHash('md5').update(buffer).digest('hex').substring(0, 8);
       const extension = audioFile.name.split('.').pop() || 'webm';
       const fileName = `scribe/${session.patientId}/${sessionId}_${timestamp}_${hash}.${extension}.encrypted`;
+
+      // Initialize Supabase client
+      const supabase = getSupabaseClient();
 
       // Upload encrypted audio to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
