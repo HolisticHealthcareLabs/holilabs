@@ -59,7 +59,7 @@ export const GET = createProtectedRoute(
 
       // Build where clause with tenant isolation
       const where: any = {
-        clinicianId, // CRITICAL: Always filter by clinician
+        assignedClinicianId: clinicianId, // CRITICAL: Always filter by clinician
       };
 
     if (search) {

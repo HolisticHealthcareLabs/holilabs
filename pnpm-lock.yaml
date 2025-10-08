@@ -193,6 +193,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.65.0
         version: 0.65.0(zod@3.25.76)
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
       '@logtail/node':
         specifier: ^0.5.6
         version: 0.5.6
@@ -229,6 +232,9 @@ importers:
       '@upstash/redis':
         specifier: ^1.35.5
         version: 1.35.5
+      assemblyai:
+        specifier: ^4.16.1
+        version: 4.16.1
       canvas-confetti:
         specifier: ^1.9.3
         version: 1.9.3
@@ -2938,6 +2944,11 @@ packages:
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
     dependencies:
       tslib: 2.8.1
+    dev: false
+
+  /@google/generative-ai@0.24.1:
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
+    engines: {node: '>=18.0.0'}
     dev: false
 
   /@graphql-typed-document-node/core@3.2.0(graphql@15.8.0):
@@ -6210,6 +6221,16 @@ packages:
 
   /asap@2.0.6:
     resolution: {integrity: sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==}
+
+  /assemblyai@4.16.1:
+    resolution: {integrity: sha512-gpcR1cIkCeJdV5RJN7Na4BTwfF6pHauIMQ+Hz2szdlQ+KY/rpsxdYa0ox0mBhrnqNR5YFctGJVvQUaTp9k3fPw==}
+    engines: {node: '>=18'}
+    dependencies:
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
 
   /assertion-error@1.1.0:
     resolution: {integrity: sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==}
