@@ -7,6 +7,9 @@
 import { NextResponse } from 'next/server';
 import { generateCsrfToken } from '@/lib/security/csrf';
 
+// Force dynamic rendering - don't try to generate at build time
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const token = generateCsrfToken();
 
