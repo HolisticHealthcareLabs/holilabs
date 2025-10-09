@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import TranscriptViewer from '@/components/scribe/TranscriptViewer';
 import SOAPNoteEditor from '@/components/scribe/SOAPNoteEditor';
 import AudioWaveform from '@/components/scribe/AudioWaveform';
+import VoiceActivityDetector from '@/components/scribe/VoiceActivityDetector';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,8 @@ export default function AIScribePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
+  const [smartAutoPauseEnabled, setSmartAutoPauseEnabled] = useState(true);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -145,6 +148,19 @@ export default function AIScribePage() {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
       setRecordingState('recording');
+    }
+  };
+
+  // VAD: Handle voice activity changes
+  const handleVoiceActivity = (isActive: boolean) => {
+    setIsVoiceActive(isActive);
+  };
+
+  // VAD: Handle silence detection (auto-pause)
+  const handleSilenceDetected = (silenceDurationMs: number) => {
+    if (smartAutoPauseEnabled && recordingState === 'recording') {
+      console.log(`Smart pause triggered after ${silenceDurationMs}ms of silence`);
+      pauseRecording();
     }
   };
 
@@ -444,13 +460,49 @@ export default function AIScribePage() {
               </div>
 
               {/* Audio Waveform Visualization (Abridge-style) */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <AudioWaveform
                   stream={audioStream}
                   isRecording={recordingState === 'recording'}
                   className="h-32"
                 />
               </div>
+
+              {/* Voice Activity Detection (Nuance DAX-style) */}
+              <div className="mb-6">
+                <VoiceActivityDetector
+                  stream={audioStream}
+                  isRecording={recordingState === 'recording'}
+                  onVoiceActivity={handleVoiceActivity}
+                  onSilenceDetected={handleSilenceDetected}
+                  silenceThresholdMs={smartAutoPauseEnabled ? 5000 : Infinity}
+                  volumeThreshold={30}
+                />
+              </div>
+
+              {/* Smart Auto-Pause Toggle */}
+              {(recordingState === 'recording' || recordingState === 'paused') && (
+                <div className="mb-6 flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4">
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">Pausa Automática Inteligente</p>
+                    <p className="text-sm text-gray-600">
+                      Pausa automáticamente tras 5 segundos de silencio
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSmartAutoPauseEnabled(!smartAutoPauseEnabled)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      smartAutoPauseEnabled ? 'bg-green-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        smartAutoPauseEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
 
               {/* Recording Controls */}
               <div className="flex items-center justify-center space-x-4 mb-6">
