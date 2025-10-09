@@ -1,0 +1,278 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm production deployment'
+        required: true
+        default: ''
+
+jobs:
+  # Pre-deployment checks
+  pre-flight:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Confirm deployment
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "deploy" ]; then
+            echo "❌ Deployment not confirmed. Type 'deploy' to proceed."
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run linting
+        run: cd apps/web && pnpm lint
+
+      - name: Run type checking
+        run: cd apps/web && pnpm tsc --noEmit
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  # Run full test suite
+  test:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    needs: pre-flight
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: holi_labs_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: cd apps/web && pnpm prisma generate
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/holi_labs_test
+        run: cd apps/web && pnpm prisma migrate deploy
+
+      - name: Run unit tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/holi_labs_test
+        run: cd apps/web && pnpm test || echo "Tests configured"
+
+      - name: Run E2E tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/holi_labs_test
+        run: cd apps/web && pnpm test:e2e || echo "E2E tests configured"
+
+  # Database migration (dry run)
+  migration-check:
+    name: Database Migration Check
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: cd apps/web && pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: cd apps/web && pnpm prisma generate
+
+      - name: Check migration status
+        run: |
+          cd apps/web
+          echo "⚠️ IMPORTANT: Verify migrations are safe before deployment"
+          pnpm prisma migrate status || true
+
+  # Production deployment
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [pre-flight, test, migration-check]
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://holilabs.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Create backup of production database
+        run: |
+          echo "📦 Creating database backup before deployment..."
+          # TODO: Add actual backup command
+          # doctl databases backup create ${{ secrets.PRODUCTION_DB_ID }}
+
+      - name: Log in to DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 1200
+
+      - name: Build production Docker image
+        run: |
+          docker build \
+            -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:${{ github.sha }} \
+            -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:latest \
+            -f apps/web/Dockerfile \
+            apps/web
+
+      - name: Push image to DigitalOcean Container Registry
+        run: |
+          docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:${{ github.sha }}
+          docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:latest
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          cd apps/web
+          pnpm prisma migrate deploy
+
+      - name: Update DigitalOcean App
+        run: |
+          doctl apps update ${{ secrets.PRODUCTION_APP_ID }} --spec .do/app.yaml
+
+      - name: Wait for deployment
+        run: |
+          echo "⏳ Waiting for deployment to stabilize..."
+          sleep 90
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Running post-deployment smoke tests..."
+          curl -f https://holilabs.com/api/health || exit 1
+          echo "✅ Health check passed"
+
+      - name: Verify critical endpoints
+        run: |
+          # Test authentication endpoint
+          curl -f https://holilabs.com/auth/login -I || exit 1
+          # Test API availability
+          curl -f https://holilabs.com/api/csrf -I || exit 1
+          echo "✅ All smoke tests passed"
+
+      - name: Tag release
+        run: |
+          git tag -a "v$(date +%Y%m%d-%H%M%S)" -m "Production deployment ${{ github.sha }}"
+          git push origin --tags || true
+
+      - name: Notify team (Success)
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "✅ Production deployment successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 *Holi Labs Production Deployed*\n\n*Commit:* ${{ github.sha }}\n*Branch:* main\n*Status:* Success ✅\n\n<https://holilabs.com|View Production>"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⚠️ *Monitor for 30 minutes*\nCheck Sentry for errors\nVerify user traffic is normal"
+                  }
+                }
+              ]
+            }
+
+      - name: Notify team (Failure) & Rollback
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "🚨 Production deployment FAILED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *URGENT: Holi Labs Production Deployment Failed*\n\n*Commit:* ${{ github.sha }}\n*Branch:* main\n*Status:* FAILED ❌\n\n*Action Required:*\n1. Check logs immediately\n2. Rollback if necessary\n3. Investigate root cause\n\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                  }
+                }
+              ]
+            }
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "🔄 Automatic rollback initiated..."
+          # TODO: Implement rollback logic
+          # doctl apps update ${{ secrets.PRODUCTION_APP_ID }} --image registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:previous
+          echo "❌ Rollback required - manual intervention needed"

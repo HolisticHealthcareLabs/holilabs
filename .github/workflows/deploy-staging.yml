@@ -1,0 +1,92 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to DigitalOcean Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: https://staging.holilabs.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DigitalOcean Container Registry
+        run: doctl registry login --expiry-seconds 1200
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs-staging:${{ github.sha }} \
+            -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs-staging:latest \
+            -f apps/web/Dockerfile \
+            apps/web
+
+      - name: Push image to DigitalOcean Container Registry
+        run: |
+          docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs-staging:${{ github.sha }}
+          docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs-staging:latest
+
+      - name: Update DigitalOcean App
+        run: |
+          doctl apps update ${{ secrets.STAGING_APP_ID }} --spec .do/app-staging.yaml
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deployment to complete..."
+          sleep 60
+
+      - name: Run smoke tests
+        run: |
+          curl -f https://staging.holilabs.com/api/health || exit 1
+          echo "✅ Staging deployment successful"
+
+      - name: Notify team
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "✅ Staging deployment successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 *Holi Labs Staging Deployed*\n\n*Commit:* ${{ github.sha }}\n*Branch:* develop\n*Status:* Success\n\n<https://staging.holilabs.com|View Staging>"
+                  }
+                }
+              ]
+            }
+
+      - name: Notify team on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "❌ Staging deployment failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *Holi Labs Staging Deployment Failed*\n\n*Commit:* ${{ github.sha }}\n*Branch:* develop\n\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                  }
+                }
+              ]
+            }
