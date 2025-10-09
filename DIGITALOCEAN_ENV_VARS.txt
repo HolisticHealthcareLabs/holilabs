@@ -1,0 +1,146 @@
+# ============================================================================
+# DigitalOcean Environment Variables Setup
+# Copy these to: DigitalOcean App Platform → Settings → Environment Variables
+# ============================================================================
+
+# 1. CRITICAL SECRETS (Generate new values - see below)
+# ------------------------------------------------------------------------------
+NEXTAUTH_SECRET=<GENERATE_WITH_openssl_rand_base64_32>
+SESSION_SECRET=<GENERATE_WITH_openssl_rand_hex_32>
+
+# 2. DATABASE
+# ------------------------------------------------------------------------------
+DATABASE_URL=<YOUR_DIGITALOCEAN_DATABASE_CONNECTION_STRING>
+# Example format:
+# DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
+
+# 3. SUPABASE (Authentication + Storage)
+# ------------------------------------------------------------------------------
+NEXT_PUBLIC_SUPABASE_URL=https://yyteqajwjjrubiktornb.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dGVxYWp3ampydWJpa3Rvcm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2ODE4MTksImV4cCI6MjA3NTI1NzgxOX0.b4FmPeZniO4D5Xm3_F10svynPBZYwKtJwDcBP94qq-4
+SUPABASE_SERVICE_ROLE_KEY=<GET_FROM_SUPABASE_DASHBOARD>
+
+# 4. AI SERVICES (ROTATE THESE - EXPOSED IN CHAT)
+# ------------------------------------------------------------------------------
+ASSEMBLYAI_API_KEY=<ROTATE_IMMEDIATELY>
+GOOGLE_AI_API_KEY=<ROTATE_IMMEDIATELY>
+
+# 5. EMAIL SERVICE
+# ------------------------------------------------------------------------------
+RESEND_API_KEY=<ROTATE_IMMEDIATELY>
+
+# 6. DE-IDENTIFICATION SECRET
+# ------------------------------------------------------------------------------
+DEID_SECRET=<GENERATE_WITH_openssl_rand_base64_64>
+
+# 7. ENCRYPTION KEY
+# ------------------------------------------------------------------------------
+ENCRYPTION_KEY=<GENERATE_WITH_openssl_rand_hex_32>
+
+# 8. MONITORING (Optional but recommended)
+# ------------------------------------------------------------------------------
+LOGTAIL_SOURCE_TOKEN=<GET_FROM_BETTERSTACK_AFTER_SIGNUP>
+SENTRY_DSN=<GET_FROM_SENTRY_AFTER_SIGNUP>
+NEXT_PUBLIC_SENTRY_DSN=<SAME_AS_SENTRY_DSN>
+
+# 9. REDIS (Optional - for rate limiting)
+# ------------------------------------------------------------------------------
+UPSTASH_REDIS_REST_URL=<GET_FROM_UPSTASH_AFTER_SIGNUP>
+UPSTASH_REDIS_REST_TOKEN=<GET_FROM_UPSTASH_AFTER_SIGNUP>
+
+# 10. PUSH NOTIFICATIONS (Optional - after VAPID setup)
+# ------------------------------------------------------------------------------
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<FROM_npx_web-push_generate-vapid-keys>
+VAPID_PRIVATE_KEY=<FROM_npx_web-push_generate-vapid-keys>
+VAPID_SUBJECT=mailto:admin@your-domain.com
+
+# 11. SYSTEM
+# ------------------------------------------------------------------------------
+NODE_ENV=production
+NEXT_TELEMETRY_DISABLED=1
+
+# ============================================================================
+# HOW TO GENERATE SECRETS
+# ============================================================================
+
+# NEXTAUTH_SECRET:
+openssl rand -base64 32
+
+# SESSION_SECRET:
+openssl rand -hex 32
+
+# DEID_SECRET:
+openssl rand -base64 64
+
+# ENCRYPTION_KEY:
+openssl rand -hex 32
+
+# VAPID KEYS (for push notifications):
+npx web-push generate-vapid-keys
+
+# ============================================================================
+# HOW TO ADD TO DIGITALOCEAN
+# ============================================================================
+
+# Method 1: Via Web UI
+# 1. Go to: https://cloud.digitalocean.com/apps
+# 2. Select app: holi-labs
+# 3. Go to: Settings → Environment Variables
+# 4. Click: Edit
+# 5. Click: Bulk Editor
+# 6. Paste all variables (format: KEY=value)
+# 7. Click: Save
+# 8. App will automatically redeploy
+
+# Method 2: Via CLI
+# 1. Install doctl: brew install doctl (macOS)
+# 2. Authenticate: doctl auth init
+# 3. Get app ID: doctl apps list
+# 4. Update env vars: doctl apps update <app-id> --env "KEY=value"
+
+# ============================================================================
+# CRITICAL: ROTATE THESE API KEYS IMMEDIATELY
+# ============================================================================
+
+# These keys were exposed in the conversation and MUST be rotated:
+
+# 1. ASSEMBLYAI_API_KEY
+#    Go to: https://www.assemblyai.com/app/account
+#    Settings → API Keys → Revoke old key → Generate new key
+
+# 2. GOOGLE_AI_API_KEY
+#    Go to: https://console.cloud.google.com/apis/credentials
+#    API Keys → Delete old key → Create new key → Restrict to AI Studio API
+
+# 3. RESEND_API_KEY
+#    Go to: https://resend.com/api-keys
+#    Revoke old key → Create new key
+
+# 4. SUPABASE_SERVICE_ROLE_KEY
+#    Go to: https://supabase.com/dashboard/project/yyteqajwjjrubiktornb/settings/api
+#    Copy service_role key (starts with eyJhbGci...)
+
+# ============================================================================
+# VERIFICATION CHECKLIST
+# ============================================================================
+
+# After setting all variables, verify:
+# [ ] No trailing spaces in values
+# [ ] No quotes around values (unless needed for special chars)
+# [ ] All placeholders replaced with real values
+# [ ] Secrets rotated (especially exposed ones)
+# [ ] DATABASE_URL points to correct environment
+# [ ] Supabase URL and keys match your project
+
+# ============================================================================
+# TESTING
+# ============================================================================
+
+# After deployment, test:
+curl https://your-app.ondigitalocean.app/api/health
+curl https://your-app.ondigitalocean.app/api/csrf
+
+# Expected responses:
+# /api/health: {"status":"ok"}
+# /api/csrf: {"success":true,"token":"..."}
+
