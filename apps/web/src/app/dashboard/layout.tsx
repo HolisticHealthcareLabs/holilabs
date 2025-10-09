@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import NotificationPrompt from '@/components/NotificationPrompt';
 
 interface NavItem {
   name: string;
@@ -167,6 +168,9 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      {/* Notification Permission Prompt */}
+      <NotificationPrompt />
     </div>
   );
 }
