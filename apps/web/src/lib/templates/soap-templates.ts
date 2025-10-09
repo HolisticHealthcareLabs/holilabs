@@ -186,6 +186,155 @@ export const spanishTemplates: SOAPTemplate[] = [
       },
     ],
   },
+  {
+    id: 'es-gynecology-checkup',
+    name: 'Control Ginecológico Anual',
+    specialty: 'Gynecology',
+    language: 'es',
+    chiefComplaint: 'Control ginecológico de rutina',
+    subjective:
+      'Paciente acude para control ginecológico anual. Ciclos menstruales regulares cada 28-30 días. Niega sangrado intermenstrual, dismenorrea severa o dispareunia. Última citología hace 1 año sin alteraciones.',
+    objective:
+      'Examen físico: Mamas simétricas, sin masas palpables. Abdomen blando, no doloroso. Especuloscopia: cérvix rosado, sin lesiones. Tacto vaginal bimanual: útero en anteroversión, móvil, no doloroso. Anexos no palpables.',
+    assessment: 'Salud ginecológica normal. Sin hallazgos patológicos.',
+    plan: '1. Citología cervical (Papanicolau)\n2. Ultrasonido pélvico transvaginal\n3. Mamografía (si >40 años)\n4. Reforzar autoexamen mamario mensual\n5. Control anual\n6. Planificación familiar según deseo',
+    diagnoses: [
+      {
+        icd10Code: 'Z01.419',
+        description: 'Examen ginecológico de rutina sin hallazgos anormales',
+        isPrimary: true,
+      },
+    ],
+    procedures: [
+      {
+        cptCode: '99395',
+        description: 'Preventive medicine visit, adult (18-39 years)',
+      },
+    ],
+  },
+  {
+    id: 'es-dermatology-acne',
+    name: 'Acné Vulgar',
+    specialty: 'Dermatology',
+    language: 'es',
+    chiefComplaint: 'Lesiones acneicas en rostro',
+    subjective:
+      'Paciente refiere aparición de lesiones acneicas en rostro desde hace 6 meses. Empeoran con estrés y periodo menstrual. Ha usado limpiadores faciales de venta libre sin mejoría significativa.',
+    objective:
+      'Examen dermatológico: Rostro con comedones abiertos y cerrados en zona T. Pápulas y pústulas eritematosas en mejillas y frente. Algunas lesiones inflamatorias. Sin nódulos ni quistes. Piel de tipo graso.',
+    assessment: 'Acné vulgar grado II (moderado).',
+    plan: '1. Tretinoína 0.05% crema por las noches\n2. Peróxido de benzoilo 5% gel por las mañanas\n3. Limpieza facial suave 2 veces al día\n4. Protector solar no comedogénico diario\n5. Evitar manipulación de lesiones\n6. Control en 6 semanas',
+    diagnoses: [
+      {
+        icd10Code: 'L70.0',
+        description: 'Acné vulgar',
+        isPrimary: true,
+      },
+    ],
+    medications: [
+      {
+        action: 'prescribe',
+        name: 'Tretinoína',
+        dose: '0.05%',
+        frequency: 'aplicar por las noches',
+        duration: '3 meses',
+      },
+      {
+        action: 'prescribe',
+        name: 'Peróxido de benzoilo',
+        dose: '5%',
+        frequency: 'aplicar por las mañanas',
+        duration: '3 meses',
+      },
+    ],
+  },
+  {
+    id: 'es-psychiatry-anxiety',
+    name: 'Trastorno de Ansiedad Generalizada',
+    specialty: 'Psychiatry',
+    language: 'es',
+    chiefComplaint: 'Ansiedad y preocupación excesiva',
+    subjective:
+      'Paciente refiere ansiedad persistente durante los últimos 6 meses. Preocupación excesiva por múltiples aspectos de su vida cotidiana. Dificultad para controlar la preocupación. Asocia tensión muscular, fatiga, dificultad para concentrarse e insomnio de conciliación.',
+    objective:
+      'Paciente alerta, orientado en persona, tiempo y espacio. Ansioso durante la entrevista. Discurso coherente y organizado. Afecto concordante con estado de ánimo ansioso. Sin ideas suicidas, homicidas ni síntomas psicóticos. Insight y juicio preservados.',
+    assessment:
+      'Trastorno de ansiedad generalizada (F41.1). Impacto moderado en funcionamiento social y laboral.',
+    plan: '1. Iniciar sertralina 50mg/día\n2. Psicoterapia cognitivo-conductual\n3. Técnicas de relajación y mindfulness\n4. Higiene del sueño\n5. Ejercicio regular 30 min/día\n6. Control en 2 semanas (evaluar tolerancia y eficacia)',
+    diagnoses: [
+      {
+        icd10Code: 'F41.1',
+        description: 'Trastorno de ansiedad generalizada',
+        isPrimary: true,
+      },
+    ],
+    medications: [
+      {
+        action: 'prescribe',
+        name: 'Sertralina',
+        dose: '50mg',
+        frequency: 'cada 24 horas',
+        duration: '3 meses',
+      },
+    ],
+  },
+  {
+    id: 'es-cardiology-chest-pain',
+    name: 'Dolor Torácico Atípico',
+    specialty: 'Cardiology',
+    language: 'es',
+    chiefComplaint: 'Dolor torácico',
+    subjective:
+      'Paciente refiere dolor torácico intermitente desde hace 1 semana. Dolor punzante en hemitórax izquierdo, no irradiado, que dura segundos. No relacionado con esfuerzo físico. Niega disnea, palpitaciones, síncope o diaforesis.',
+    objective:
+      'PA: 130/80 mmHg, FC: 76 lpm regular. Auscultación cardíaca: ruidos rítmicos, sin soplos. Auscultación pulmonar sin alteraciones. Pulsos periféricos palpables y simétricos. Sin edemas.',
+    assessment:
+      'Dolor torácico atípico. Bajo riesgo cardiovascular. Probable origen musculoesquelético.',
+    plan: '1. Electrocardiograma (descartar isquemia)\n2. Troponinas seriadas\n3. Radiografía de tórax\n4. Ibuprofeno 400mg c/8h PRN dolor\n5. Modificación de factores de riesgo\n6. Control en 1 semana con resultados',
+    diagnoses: [
+      {
+        icd10Code: 'R07.89',
+        description: 'Dolor torácico, otro',
+        isPrimary: true,
+      },
+    ],
+    procedures: [
+      {
+        cptCode: '93000',
+        description: 'Electrocardiogram, routine ECG with interpretation',
+      },
+    ],
+  },
+  {
+    id: 'es-orthopedics-sprain',
+    name: 'Esguince de Tobillo',
+    specialty: 'Orthopedics',
+    language: 'es',
+    chiefComplaint: 'Dolor e inflamación de tobillo',
+    subjective:
+      'Paciente refiere torcedura de tobillo derecho hace 2 días tras caída. Escuchó "chasquido". Dolor intenso inicial, ahora moderado. Inflamación y dificultad para caminar. Ha aplicado hielo intermitentemente.',
+    objective:
+      'Tobillo derecho: edema moderado en región maleolar lateral. Equimosis leve. Dolor a la palpación del ligamento peroneoastragalino anterior. Prueba de cajón anterior positiva. Sin deformidad ósea evidente. Movilidad activa limitada por dolor.',
+    assessment:
+      'Esguince de tobillo derecho grado II (ruptura parcial del ligamento lateral externo).',
+    plan: '1. Radiografía de tobillo (descartar fractura)\n2. RICE: Reposo, hielo 20 min c/4h, compresión con vendaje elástico, elevación\n3. Ibuprofeno 600mg c/8h x 5 días\n4. Muletas para descarga de peso\n5. Bota ortopédica o tobillera estabilizadora\n6. Fisioterapia en 1 semana\n7. Control en 7 días',
+    diagnoses: [
+      {
+        icd10Code: 'S93.401A',
+        description: 'Esguince de ligamento no especificado del tobillo derecho, encuentro inicial',
+        isPrimary: true,
+      },
+    ],
+    medications: [
+      {
+        action: 'prescribe',
+        name: 'Ibuprofeno',
+        dose: '600mg',
+        frequency: 'cada 8 horas',
+        duration: '5 días',
+      },
+    ],
+  },
 ];
 
 /**
