@@ -59,10 +59,12 @@ Sentry.init({
 
     // Remove sensitive query params
     if (event.request?.query_string) {
-      event.request.query_string = event.request.query_string
-        .replace(/token=[^&]*/g, 'token=[REDACTED]')
-        .replace(/key=[^&]*/g, 'key=[REDACTED]')
-        .replace(/secret=[^&]*/g, 'secret=[REDACTED]');
+      if (typeof event.request.query_string === 'string') {
+        event.request.query_string = event.request.query_string
+          .replace(/token=[^&]*/g, 'token=[REDACTED]')
+          .replace(/key=[^&]*/g, 'key=[REDACTED]')
+          .replace(/secret=[^&]*/g, 'secret=[REDACTED]');
+      }
     }
 
     // Don't send errors from browser extensions
