@@ -25,20 +25,20 @@ Sentry.init({
   replaysSessionSampleRate: 0.1, // 10% of sessions
   replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
 
+  // Trace propagation targets
+  tracePropagationTargets: [
+    'localhost',
+    /^https:\/\/.*\.holilabs\.com/,
+    /^https:\/\/.*\.ondigitalocean\.app/,
+  ],
+
   integrations: [
     Sentry.replayIntegration({
       // Mask all text and input content for privacy
       maskAllText: true,
       blockAllMedia: true,
     }),
-    Sentry.browserTracingIntegration({
-      // Trace navigation and interactions
-      tracePropagationTargets: [
-        'localhost',
-        /^https:\/\/.*\.holilabs\.com/,
-        /^https:\/\/.*\.ondigitalocean\.app/,
-      ],
-    }),
+    Sentry.browserTracingIntegration(),
   ],
 
   // Filter out sensitive data
