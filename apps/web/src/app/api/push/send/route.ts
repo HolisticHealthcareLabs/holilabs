@@ -78,13 +78,13 @@ export const POST = createProtectedRoute(
       // Validate notification data
       const notification = NotificationSchema.parse(body);
 
-      // TODO: After adding PushSubscription to schema, uncomment this:
-      /*
       // Get subscriptions for target user(s)
+      const { prisma } = await import('@/lib/prisma');
+
       const subscriptions = await prisma.pushSubscription.findMany({
         where: notification.userId
-          ? { userId: notification.userId }
-          : {}, // Send to all if no userId specified
+          ? { userId: notification.userId, isActive: true }
+          : { isActive: true }, // Send to all active subscriptions if no userId specified
       });
 
       if (subscriptions.length === 0) {
@@ -99,10 +99,7 @@ export const POST = createProtectedRoute(
         subscriptions.map(async (sub) => {
           const pushSubscription = {
             endpoint: sub.endpoint,
-            keys: {
-              p256dh: sub.p256dh,
-              auth: sub.auth,
-            },
+            keys: sub.keys as { p256dh: string; auth: string },
           };
 
           const payload = JSON.stringify({
@@ -118,18 +115,38 @@ export const POST = createProtectedRoute(
 
           try {
             await webpush.sendNotification(pushSubscription, payload);
+
+            // Update last used timestamp
+            await prisma.pushSubscription.update({
+              where: { id: sub.id },
+              data: {
+                lastUsedAt: new Date(),
+                failedDeliveries: 0,
+              },
+            });
+
             return { success: true, endpoint: sub.endpoint };
           } catch (error: any) {
             logger.error({
               event: 'push_notification_failed',
               endpoint: sub.endpoint,
               error: error.message,
+              statusCode: error.statusCode,
             });
 
-            // If subscription is invalid (410 Gone), remove it
+            // If subscription is invalid (410 Gone), mark as inactive
             if (error.statusCode === 410) {
-              await prisma.pushSubscription.delete({
+              await prisma.pushSubscription.update({
                 where: { id: sub.id },
+                data: { isActive: false },
+              });
+            } else {
+              // Increment failed delivery counter
+              await prisma.pushSubscription.update({
+                where: { id: sub.id },
+                data: {
+                  failedDeliveries: { increment: 1 },
+                },
               });
             }
 
@@ -138,7 +155,7 @@ export const POST = createProtectedRoute(
         })
       );
 
-      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const successful = results.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
       const failed = results.length - successful;
 
       logger.info({
@@ -153,20 +170,6 @@ export const POST = createProtectedRoute(
         success: true,
         message: `Push notifications sent: ${successful} successful, ${failed} failed`,
         stats: { total: results.length, successful, failed },
-      });
-      */
-
-      // TEMPORARY: Return mock response until PushSubscription is added to schema
-      logger.info({
-        event: 'push_notification_requested',
-        title: notification.title,
-        userId: notification.userId || 'all',
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: 'Push notification endpoint ready (add PushSubscription to schema to enable)',
-        notification,
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {

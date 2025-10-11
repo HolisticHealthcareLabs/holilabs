@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs');
+
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -136,6 +138,8 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   experimental: {
     typedRoutes: false,
+    // Enable instrumentation for Sentry
+    instrumentationHook: true,
   },
   output: 'standalone',
   webpack: (config, { isServer }) => {
@@ -150,4 +154,31 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
+// Sentry configuration options
+const sentryWebpackPluginOptions = {
+  // Suppress source map upload logs
+  silent: true,
+
+  // Organization and project for Sentry
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Auth token for uploading source maps
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Only upload source maps in production builds
+  disableServerWebpackPlugin: process.env.NODE_ENV !== 'production',
+  disableClientWebpackPlugin: process.env.NODE_ENV !== 'production',
+
+  // Hide source maps from public (only upload to Sentry)
+  hideSourceMaps: true,
+
+  // Automatically tree-shake Sentry logger statements in production
+  disableLogger: true,
+};
+
+// Export config with both PWA and Sentry
+module.exports = withSentryConfig(
+  withPWA(nextConfig),
+  sentryWebpackPluginOptions
+);

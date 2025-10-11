@@ -1,14 +1,24 @@
 /**
- * Next.js Middleware for Authentication
- * 
- * Protects dashboard routes and manages Supabase sessions
+ * Next.js Middleware for Authentication and Security
+ *
+ * Protects dashboard routes, manages Supabase sessions, and applies security headers
  */
 
 import { type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
+import { applySecurityHeaders, handleCORSPreflight } from '@/lib/security-headers';
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    return handleCORSPreflight();
+  }
+
+  // Update session and get response
+  const response = await updateSession(request);
+
+  // Apply security headers to all responses
+  return applySecurityHeaders(response);
 }
 
 export const config = {

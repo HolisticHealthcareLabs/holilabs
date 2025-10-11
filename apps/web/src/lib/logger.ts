@@ -22,6 +22,10 @@ import pino from 'pino';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Detect if we're in a React Server Component context (App Router)
+// In RSC, pino-pretty transport causes worker thread issues
+const isRSC = typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs';
+
 // TODO: Re-enable Logtail after fixing webpack bundling issues
 // Temporarily disabled to allow build to complete
 let logtail: any = null;
@@ -48,7 +52,8 @@ const pinoConfig: pino.LoggerOptions = {
   },
 
   // Format output based on environment
-  ...(isDevelopment && {
+  // IMPORTANT: Disable pino-pretty transport in RSC context to avoid worker thread errors
+  ...(isDevelopment && !isRSC && {
     transport: {
       target: 'pino-pretty',
       options: {

@@ -34,54 +34,51 @@ export const POST = createProtectedRoute(
       // Validate subscription data
       const subscription = SubscriptionSchema.parse(body);
 
-      // Store subscription in database (you'll need to add this table to schema.prisma)
-      // For now, we'll log it and return success
-      logger.info({
-        event: 'push_subscription_received',
-        userId: context.user.id,
-        endpoint: subscription.endpoint,
-      });
+      // Get device info
+      const userAgent = request.headers.get('user-agent') || undefined;
+      const deviceName = getDeviceName(userAgent);
+      const platform = getPlatform(userAgent);
 
-      // TODO: Add to Prisma schema:
-      // model PushSubscription {
-      //   id        String   @id @default(uuid())
-      //   userId    String
-      //   endpoint  String   @unique
-      //   p256dh    String
-      //   auth      String
-      //   expirationTime Int?
-      //   createdAt DateTime @default(now())
-      //   updatedAt DateTime @updatedAt
-      //   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-      // }
-
-      // Temporary: Store in memory or skip for now
-      // In production, uncomment this after adding to schema:
-      /*
+      // Store subscription in database
       const savedSubscription = await prisma.pushSubscription.upsert({
         where: {
           endpoint: subscription.endpoint,
         },
         update: {
-          p256dh: subscription.keys.p256dh,
-          auth: subscription.keys.auth,
-          expirationTime: subscription.expirationTime,
-          updatedAt: new Date(),
+          userId: context.user.id,
+          userType: 'CLINICIAN',
+          keys: subscription.keys,
+          userAgent,
+          platform,
+          deviceName,
+          isActive: true,
+          failedDeliveries: 0,
+          lastUsedAt: new Date(),
         },
         create: {
           userId: context.user.id,
+          userType: 'CLINICIAN',
           endpoint: subscription.endpoint,
-          p256dh: subscription.keys.p256dh,
-          auth: subscription.keys.auth,
-          expirationTime: subscription.expirationTime,
+          keys: subscription.keys,
+          userAgent,
+          platform,
+          deviceName,
+          isActive: true,
+          enabledTypes: [],
         },
       });
-      */
+
+      logger.info({
+        event: 'push_subscription_saved',
+        userId: context.user.id,
+        endpoint: subscription.endpoint,
+        subscriptionId: savedSubscription.id,
+      });
 
       return NextResponse.json({
         success: true,
         message: 'Push subscription saved successfully',
-        // data: savedSubscription,
+        data: { id: savedSubscription.id },
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -126,15 +123,16 @@ export const DELETE = createProtectedRoute(
         );
       }
 
-      // TODO: Uncomment after adding to schema
-      /*
-      await prisma.pushSubscription.deleteMany({
+      // Delete subscription from database
+      await prisma.pushSubscription.updateMany({
         where: {
           userId: context.user.id,
           endpoint,
         },
+        data: {
+          isActive: false,
+        },
       });
-      */
 
       logger.info({
         event: 'push_subscription_deleted',
@@ -159,3 +157,39 @@ export const DELETE = createProtectedRoute(
     }
   }
 );
+
+/**
+ * Get device name from user agent
+ */
+function getDeviceName(userAgent: string | undefined): string | undefined {
+  if (!userAgent) return undefined;
+
+  let browser = 'Unknown Browser';
+  let os = 'Unknown OS';
+
+  // Browser detection
+  if (userAgent.includes('Chrome')) browser = 'Chrome';
+  else if (userAgent.includes('Firefox')) browser = 'Firefox';
+  else if (userAgent.includes('Safari')) browser = 'Safari';
+  else if (userAgent.includes('Edge')) browser = 'Edge';
+
+  // OS detection
+  if (userAgent.includes('Windows')) os = 'Windows';
+  else if (userAgent.includes('Mac')) os = 'macOS';
+  else if (userAgent.includes('Linux')) os = 'Linux';
+  else if (userAgent.includes('Android')) os = 'Android';
+  else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) os = 'iOS';
+
+  return `${browser} on ${os}`;
+}
+
+/**
+ * Get platform from user agent
+ */
+function getPlatform(userAgent: string | undefined): string | undefined {
+  if (!userAgent) return undefined;
+
+  if (userAgent.includes('Mobile')) return 'mobile';
+  if (userAgent.includes('Tablet')) return 'tablet';
+  return 'web';
+}
