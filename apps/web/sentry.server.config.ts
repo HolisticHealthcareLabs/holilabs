@@ -24,9 +24,6 @@ Sentry.init({
   integrations: [
     // Prisma integration for database query tracing
     Sentry.prismaIntegration(),
-
-    // Node.js profiling
-    Sentry.nodeProfilingIntegration(),
   ],
 
   // Profile 10% of transactions in production
@@ -74,12 +71,14 @@ Sentry.init({
 
       // Sanitize query strings
       if (event.request.query_string) {
-        event.request.query_string = event.request.query_string
-          .replace(/token=[^&]*/g, 'token=[REDACTED]')
-          .replace(/key=[^&]*/g, 'key=[REDACTED]')
-          .replace(/secret=[^&]*/g, 'secret=[REDACTED]')
-          .replace(/password=[^&]*/g, 'password=[REDACTED]')
-          .replace(/apikey=[^&]*/g, 'apikey=[REDACTED]');
+        if (typeof event.request.query_string === 'string') {
+          event.request.query_string = event.request.query_string
+            .replace(/token=[^&]*/g, 'token=[REDACTED]')
+            .replace(/key=[^&]*/g, 'key=[REDACTED]')
+            .replace(/secret=[^&]*/g, 'secret=[REDACTED]')
+            .replace(/password=[^&]*/g, 'password=[REDACTED]')
+            .replace(/apikey=[^&]*/g, 'apikey=[REDACTED]');
+        }
       }
 
       // Sanitize request body
