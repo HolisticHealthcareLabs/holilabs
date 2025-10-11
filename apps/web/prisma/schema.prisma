@@ -59,6 +59,382 @@ enum UserRole {
 }
 
 // ============================================================================
+// PATIENT AUTHENTICATION (Separate from PHI Patient records)
+// ============================================================================
+
+model PatientUser {
+  id                String    @id @default(cuid())
+  patientId         String    @unique
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Contact (for authentication)
+  email             String    @unique
+  phone             String?   @unique
+
+  // Verification status
+  emailVerifiedAt   DateTime?
+  phoneVerifiedAt   DateTime?
+
+  // Security
+  mfaEnabled        Boolean   @default(false)
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+  loginAttempts     Int       @default(0)
+  lockedUntil       DateTime?
+
+  // Metadata
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  magicLinks        MagicLink[]
+  otpCodes          OTPCode[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([patientId])
+  @@map("patient_users")
+}
+
+model MagicLink {
+  id                String      @id @default(cuid())
+  patientUserId     String
+  patientUser       PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
+
+  // Token details
+  token             String      @unique @default(cuid())
+  tokenHash         String      @unique  // SHA-256 hash of token for lookup
+
+  // Expiration
+  expiresAt         DateTime
+  usedAt            DateTime?
+
+  // Security
+  ipAddress         String?
+  userAgent         String?     @db.Text
+
+  // Metadata
+  createdAt         DateTime    @default(now())
+
+  @@index([token])
+  @@index([tokenHash])
+  @@index([patientUserId])
+  @@index([expiresAt])
+  @@map("magic_links")
+}
+
+model OTPCode {
+  id                String      @id @default(cuid())
+  patientUserId     String
+  patientUser       PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
+
+  // Code details
+  code              String      // 6-digit code
+  codeHash          String      @unique  // SHA-256 hash
+
+  // Expiration (10 minutes)
+  expiresAt         DateTime
+  usedAt            DateTime?
+
+  // Security
+  attempts          Int         @default(0)
+  maxAttempts       Int         @default(3)
+
+  // Delivery
+  sentVia           OTPChannel  @default(SMS)
+  recipientPhone    String?
+  recipientEmail    String?
+
+  // Metadata
+  createdAt         DateTime    @default(now())
+
+  @@index([codeHash])
+  @@index([patientUserId])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+enum OTPChannel {
+  SMS
+  EMAIL
+  WHATSAPP
+}
+
+// ============================================================================
+// MESSAGING (Clinician ↔ Patient Communication)
+// ============================================================================
+
+model Message {
+  id                String      @id @default(cuid())
+
+  // Sender/Recipient (polymorphic)
+  fromUserId        String
+  fromUserType      UserType
+  toUserId          String
+  toUserType        UserType
+
+  // Always link to patient for context
+  patientId         String
+  patient           Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Content
+  subject           String?
+  body              String      @db.Text
+
+  // Attachments
+  attachments       Json?       // Array of { fileName, fileUrl, fileType, fileSize }
+
+  // Threading
+  parentMessageId   String?
+  parentMessage     Message?    @relation("MessageThread", fields: [parentMessageId], references: [id], onDelete: SetNull)
+  replies           Message[]   @relation("MessageThread")
+
+  // Status
+  readAt            DateTime?
+  archivedAt        DateTime?
+
+  // Note: No direct FK relations due to polymorphic nature
+  // Use fromUserId + fromUserType to lookup sender
+  // Use toUserId + toUserType to lookup recipient
+
+  // Metadata
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([patientId])
+  @@index([readAt])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+enum UserType {
+  CLINICIAN
+  PATIENT
+}
+
+// ============================================================================
+// NOTIFICATIONS (Real-time Updates)
+// ============================================================================
+
+model Notification {
+  id                String      @id @default(cuid())
+
+  // Recipient (polymorphic - clinician or patient)
+  recipientId       String
+  recipientType     UserType
+
+  // Notification details
+  type              NotificationType
+  title             String
+  message           String      @db.Text
+
+  // Action/Link
+  actionUrl         String?     @db.Text  // e.g., "/portal/appointments/123"
+  actionLabel       String?     // e.g., "View Appointment"
+
+  // Related resources
+  resourceType      String?     // e.g., "Appointment", "Message", "Document"
+  resourceId        String?
+
+  // Status
+  isRead            Boolean     @default(false)
+  readAt            DateTime?
+
+  // Delivery channels
+  deliveredInApp    Boolean     @default(false)
+  deliveredEmail    Boolean     @default(false)
+  deliveredSMS      Boolean     @default(false)
+
+  emailSentAt       DateTime?
+  smsSentAt         DateTime?
+
+  // Priority
+  priority          NotificationPriority @default(NORMAL)
+
+  // Expiration (auto-delete old notifications)
+  expiresAt         DateTime?
+
+  // Metadata
+  metadata          Json?       // Additional context
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([recipientId, recipientType])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([type])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_RESCHEDULED
+  NEW_MESSAGE
+  MESSAGE_REPLY
+  NEW_DOCUMENT
+  DOCUMENT_SHARED
+  NEW_PRESCRIPTION
+  PRESCRIPTION_READY
+  LAB_RESULT_AVAILABLE
+  MEDICATION_REMINDER
+  CONSULTATION_COMPLETED
+  SOAP_NOTE_READY
+  CONSENT_REQUIRED
+  PAYMENT_DUE
+  PAYMENT_RECEIVED
+  SYSTEM_ALERT
+  SECURITY_ALERT
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ============================================================================
+// HEALTH METRICS (Patient Self-Reported Data)
+// ============================================================================
+
+model HealthMetric {
+  id                String      @id @default(cuid())
+  patientId         String
+  patient           Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Metric details
+  metricType        MetricType
+  value             Json        // Flexible structure based on metric type
+  unit              String?     // e.g., "kg", "mmHg", "mg/dL"
+
+  // Timing
+  recordedAt        DateTime    // When the measurement was taken
+
+  // Source
+  source            MetricSource @default(PATIENT_MANUAL)
+  deviceName        String?     // e.g., "Apple Watch", "Omron BP Monitor"
+
+  // Context
+  notes             String?     @db.Text
+  tags              String[]    // e.g., ["fasting", "morning", "post-meal"]
+
+  // Quality
+  isOutOfRange      Boolean     @default(false)
+  flaggedForReview  Boolean     @default(false)
+  reviewedAt        DateTime?
+  reviewedBy        String?     // User ID
+
+  // Metadata
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([patientId])
+  @@index([metricType])
+  @@index([recordedAt])
+  @@index([flaggedForReview])
+  @@map("health_metrics")
+}
+
+enum MetricType {
+  WEIGHT
+  HEIGHT
+  BLOOD_PRESSURE
+  HEART_RATE
+  TEMPERATURE
+  BLOOD_GLUCOSE
+  OXYGEN_SATURATION
+  STEPS
+  SLEEP_HOURS
+  PAIN_LEVEL
+  MOOD
+  MEDICATION_ADHERENCE
+  CUSTOM
+}
+
+enum MetricSource {
+  PATIENT_MANUAL
+  CLINICIAN_MEASURED
+  DEVICE_SYNC
+  SMART_SCALE
+  FITNESS_TRACKER
+  BLOOD_PRESSURE_MONITOR
+  GLUCOMETER
+  APPLE_HEALTH
+  GOOGLE_FIT
+}
+
+// ============================================================================
+// DOCUMENT SHARING (Patient-Controlled Access)
+// ============================================================================
+
+model DocumentShare {
+  id                String      @id @default(cuid())
+  patientId         String
+  patient           Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // What's being shared
+  documentType      ShareableType
+  documentId        String      // ID of the SOAP note, prescription, document, etc.
+  documentIds       String[]    // Allow sharing multiple items at once
+
+  // Access control
+  shareToken        String      @unique @default(cuid())
+  shareTokenHash    String      @unique  // SHA-256 for lookup
+
+  // Recipient
+  recipientEmail    String?
+  recipientPhone    String?
+  recipientName     String?
+  purpose           String?     @db.Text  // Why are they sharing it?
+
+  // Expiration
+  expiresAt         DateTime?
+  accessCount       Int         @default(0)
+  maxAccesses       Int?        // Optional limit
+
+  // Access tracking
+  accessedAt        DateTime?
+  lastAccessedAt    DateTime?
+  accessIpAddresses String[]    // Track all IPs that accessed
+
+  // Permissions
+  allowDownload     Boolean     @default(true)
+  requirePassword   Boolean     @default(false)
+  passwordHash      String?     // If password protection is enabled
+
+  // Status
+  isActive          Boolean     @default(true)
+  revokedAt         DateTime?
+  revokedBy         String?     // PatientUser ID
+
+  // Metadata
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([shareToken])
+  @@index([shareTokenHash])
+  @@index([patientId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("document_shares")
+}
+
+enum ShareableType {
+  SOAP_NOTE
+  PRESCRIPTION
+  LAB_RESULT
+  IMAGING
+  DOCUMENT
+  MEDICAL_RECORD_BUNDLE
+}
+
+// ============================================================================
 // PATIENTS (PHI - Encrypted at rest)
 // ============================================================================
 
@@ -103,6 +479,7 @@ model Patient {
   updatedAt         DateTime  @updatedAt
 
   // Relations
+  patientUser       PatientUser?
   medications       Medication[]
   appointments      Appointment[]
   consents          Consent[]
@@ -111,6 +488,9 @@ model Patient {
   prescriptions     Prescription[]
   scribeSessions    ScribeSession[]
   soapNotes         SOAPNote[]
+  messages          Message[]
+  healthMetrics     HealthMetric[]
+  documentShares    DocumentShare[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -768,4 +1148,42 @@ enum SOAPStatus {
   SIGNED
   AMENDED
   ADDENDUM
+}
+
+// ============================================================================
+// PUSH NOTIFICATIONS (Web Push API)
+// ============================================================================
+
+model PushSubscription {
+  id                String    @id @default(cuid())
+
+  // Owner (polymorphic - clinician or patient)
+  userId            String
+  userType          UserType
+
+  // Push subscription details (from browser)
+  endpoint          String    @db.Text  @unique
+  keys              Json      // { p256dh, auth } from PushSubscription
+
+  // Device/Browser info
+  userAgent         String?   @db.Text
+  platform          String?   // e.g., "web", "android", "ios"
+  deviceName        String?   // e.g., "Chrome on MacOS"
+
+  // Status
+  isActive          Boolean   @default(true)
+  failedDeliveries  Int       @default(0)  // Track failed attempts
+  lastUsedAt        DateTime  @default(now())
+
+  // Preferences
+  enabledTypes      String[]  // Array of NotificationType to receive
+
+  // Metadata
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId, userType])
+  @@index([endpoint])
+  @@index([isActive])
+  @@map("push_subscriptions")
 }

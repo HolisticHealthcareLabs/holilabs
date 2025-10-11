@@ -29,6 +29,23 @@ const envSchema = z.object({
     message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required for authentication',
   }),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  SUPABASE_CLIENT_ID: z.string().optional(),
+  SUPABASE_CLIENT_SECRET: z.string().optional(),
+
+  // Cloud Storage (S3/Cloudflare R2) - Optional
+  R2_ENDPOINT: z.string().url().optional(),
+  R2_REGION: z.string().optional(),
+  R2_BUCKET: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_PUBLIC_URL: z.string().url().optional(),
+  // AWS S3 (alternative to R2)
+  S3_ENDPOINT: z.string().url().optional(),
+  AWS_REGION: z.string().optional(),
+  S3_BUCKET: z.string().optional(),
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_PUBLIC_URL: z.string().url().optional(),
 
   // Encryption (CRITICAL - for OAuth tokens)
   ENCRYPTION_KEY: z.string().length(64, {
@@ -38,12 +55,21 @@ const envSchema = z.object({
   // Application URL
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
 
-  // Security
+  // Security - CRITICAL in production
   NEXTAUTH_SECRET: z.string().min(32, {
     message: 'NEXTAUTH_SECRET must be at least 32 characters. Generate with: openssl rand -base64 32',
   }).optional(),
+  SESSION_SECRET: z.string().min(32, {
+    message: 'SESSION_SECRET must be at least 32 characters (used for patient sessions)',
+  }).optional(),
+  ENCRYPTION_MASTER_KEY: z.string().min(32, {
+    message: 'ENCRYPTION_MASTER_KEY must be at least 32 characters (for file encryption)',
+  }).optional(),
   CSRF_SECRET: z.string().optional(),
   DEID_SECRET: z.string().min(16).optional(),
+
+  // CORS Configuration
+  ALLOWED_ORIGINS: z.string().optional(), // Comma-separated list
 
   // Calendar OAuth (Optional)
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -62,6 +88,8 @@ const envSchema = z.object({
   // Monitoring (Optional)
   NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),
+  SENTRY_ORG: z.string().optional(),
+  SENTRY_PROJECT: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.string().url().default('https://app.posthog.com'),
 
@@ -151,8 +179,20 @@ export function validateEnv(options?: {
         warnings.push('ENCRYPTION_KEY not set - OAuth tokens will NOT be encrypted (security risk!)');
       }
 
-      if (!env.NEXTAUTH_SECRET) {
-        warnings.push('NEXTAUTH_SECRET not set - sessions may not be secure');
+      if (!env.NEXTAUTH_SECRET && !env.SESSION_SECRET) {
+        warnings.push('NEXTAUTH_SECRET/SESSION_SECRET not set - sessions WILL NOT be secure (CRITICAL!)');
+      }
+
+      if (!env.ENCRYPTION_MASTER_KEY) {
+        warnings.push('ENCRYPTION_MASTER_KEY not set - file encryption will NOT work (CRITICAL!)');
+      }
+
+      if (!env.R2_ACCESS_KEY_ID && !env.AWS_ACCESS_KEY_ID) {
+        warnings.push('Cloud storage (R2/S3) not configured - files will be stored locally (NOT production-ready)');
+      }
+
+      if (!env.ALLOWED_ORIGINS) {
+        warnings.push('ALLOWED_ORIGINS not set - CORS may block legitimate requests');
       }
 
       if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {

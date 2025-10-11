@@ -1,0 +1,275 @@
+/**
+ * Patient Documents API
+ *
+ * GET /api/portal/documents
+ * Fetch all documents for authenticated patient
+ *
+ * POST /api/portal/documents
+ * Upload a new document
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { requirePatientSession } from '@/lib/auth/patient-session';
+import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
+import { z } from 'zod';
+
+// Query parameters schema
+const DocumentsQuerySchema = z.object({
+  type: z.enum(['LAB_RESULT', 'IMAGING', 'PRESCRIPTION', 'INSURANCE', 'CONSENT', 'OTHER']).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+// Create document schema
+const CreateDocumentSchema = z.object({
+  title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
+  description: z.string().optional(),
+  type: z.enum(['LAB_RESULT', 'IMAGING', 'PRESCRIPTION', 'INSURANCE', 'CONSENT', 'OTHER']).default('OTHER'),
+  fileUrl: z.string().url('URL del archivo inválida'),
+  mimeType: z.string().default('application/pdf'),
+  fileSize: z.number().int().positive('El tamaño del archivo debe ser mayor a 0'),
+});
+
+export async function GET(request: NextRequest) {
+  try {
+    // Authenticate patient
+    const session = await requirePatientSession();
+
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const queryValidation = DocumentsQuerySchema.safeParse({
+      type: searchParams.get('type'),
+      limit: searchParams.get('limit'),
+    });
+
+    if (!queryValidation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Parámetros de consulta inválidos',
+          details: queryValidation.error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { type, limit } = queryValidation.data;
+
+    // Build filter conditions
+    const where: any = {
+      patientId: session.patientId,
+    };
+
+    if (type) {
+      where.type = type;
+    }
+
+    // Fetch documents
+    const documents = await prisma.document.findMany({
+      where,
+      include: {
+        uploadedByUser: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: {
+        uploadedAt: 'desc',
+      },
+      take: limit,
+    });
+
+    // Group by type
+    const documentsByType = documents.reduce(
+      (acc, doc) => {
+        if (!acc[doc.type]) {
+          acc[doc.type] = [];
+        }
+        acc[doc.type].push(doc);
+        return acc;
+      },
+      {} as Record<string, typeof documents>
+    );
+
+    // Calculate total size
+    const totalSize = documents.reduce((sum, doc) => sum + doc.fileSize, 0);
+
+    logger.info({
+      event: 'patient_documents_fetched',
+      patientId: session.patientId,
+      patientUserId: session.userId,
+      count: documents.length,
+      totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          documents,
+          summary: {
+            total: documents.length,
+            totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+            byType: Object.keys(documentsByType).reduce(
+              (acc, type) => {
+                acc[type] = documentsByType[type].length;
+                return acc;
+              },
+              {} as Record<string, number>
+            ),
+          },
+          documentsByType,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    // Check if it's an auth error
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No autorizado. Por favor, inicia sesión.',
+        },
+        { status: 401 }
+      );
+    }
+
+    logger.error({
+      event: 'patient_documents_fetch_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Error al cargar documentos.',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Authenticate patient
+    const session = await requirePatientSession();
+
+    // Parse and validate request body
+    const body = await request.json();
+    const validation = CreateDocumentSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Datos inválidos',
+          details: validation.error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { title, description, type, fileUrl, mimeType, fileSize } = validation.data;
+
+    // Get patient to link document
+    const patient = await prisma.patient.findUnique({
+      where: { id: session.patientId },
+      select: { id: true },
+    });
+
+    if (!patient) {
+      return NextResponse.json(
+        { success: false, error: 'Paciente no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Create document record
+    const document = await prisma.document.create({
+      data: {
+        patientId: session.patientId,
+        title,
+        description,
+        type,
+        fileUrl,
+        mimeType,
+        fileSize,
+        uploadedByUserId: session.userId,
+        uploadedAt: new Date(),
+      },
+      include: {
+        uploadedByUser: {
+          select: {
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        userEmail: session.email,
+        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+        action: 'CREATE',
+        resource: 'Document',
+        resourceId: document.id,
+        success: true,
+        metadata: {
+          type,
+          fileSize,
+        },
+      },
+    });
+
+    logger.info({
+      event: 'document_uploaded',
+      patientId: session.patientId,
+      patientUserId: session.userId,
+      documentId: document.id,
+      type,
+      fileSize,
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Documento subido correctamente.',
+        data: document,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    // Check if it's an auth error
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No autorizado. Por favor, inicia sesión.',
+        },
+        { status: 401 }
+      );
+    }
+
+    logger.error({
+      event: 'document_upload_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Error al subir documento.',
+      },
+      { status: 500 }
+    );
+  }
+}

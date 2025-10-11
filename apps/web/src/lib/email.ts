@@ -1,0 +1,338 @@
+/**
+ * Email Notification Service (Resend)
+ *
+ * Simple, reliable email delivery for healthcare notifications
+ */
+
+import { Resend } from 'resend';
+import logger from './logger';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Holi Labs <notificaciones@holilabs.com>';
+const REPLY_TO = process.env.RESEND_REPLY_TO || 'soporte@holilabs.com';
+
+export interface SendEmailOptions {
+  to: string | string[];
+  subject: string;
+  html?: string;
+  text?: string;
+  replyTo?: string;
+  tags?: { name: string; value: string }[];
+}
+
+/**
+ * Send email via Resend
+ */
+export async function sendEmail(options: SendEmailOptions) {
+  try {
+    const { to, subject, html, text, replyTo = REPLY_TO, tags } = options;
+
+    // Validate required fields
+    if (!to || (!html && !text)) {
+      throw new Error('Email requires recipient and content (html or text)');
+    }
+
+    // Check if Resend is configured
+    if (!process.env.RESEND_API_KEY) {
+      logger.warn({
+        event: 'email_send_skipped',
+        reason: 'RESEND_API_KEY not configured',
+        to: Array.isArray(to) ? to.join(', ') : to,
+      });
+      return { success: false, error: 'Email service not configured' };
+    }
+
+    // Send email
+    const response = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      text,
+      replyTo,
+      tags,
+    });
+
+    logger.info({
+      event: 'email_sent',
+      to: Array.isArray(to) ? to.join(', ') : to,
+      subject,
+      emailId: response.data?.id,
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    logger.error({
+      event: 'email_send_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+    });
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send email',
+    };
+  }
+}
+
+/**
+ * Send appointment reminder email
+ */
+export async function sendAppointmentReminderEmail(
+  patientEmail: string,
+  patientName: string,
+  appointmentDate: Date,
+  clinicianName: string,
+  appointmentType: string
+) {
+  const dateStr = appointmentDate.toLocaleDateString('es-MX', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return sendEmail({
+    to: patientEmail,
+    subject: `Recordatorio: Cita con ${clinicianName}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🗓️ Recordatorio de Cita</h1>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola <strong>${patientName}</strong>,</p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          Este es un recordatorio de tu próxima cita médica:
+        </p>
+
+        <div style="background: #f3f4f6; border-left: 4px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 8px 0; color: #1f2937;"><strong>📅 Fecha:</strong> ${dateStr}</p>
+          <p style="margin: 8px 0; color: #1f2937;"><strong>👨‍⚕️ Médico:</strong> ${clinicianName}</p>
+          <p style="margin: 8px 0; color: #1f2937;"><strong>🏥 Tipo:</strong> ${appointmentType}</p>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          Por favor, llega 10 minutos antes de tu cita.
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}/portal/appointments"
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Ver Mis Citas
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}" style="color: #10b981; text-decoration: none;">Holi Labs</a> - Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${patientName},
+
+Este es un recordatorio de tu próxima cita médica:
+
+📅 Fecha: ${dateStr}
+👨‍⚕️ Médico: ${clinicianName}
+🏥 Tipo: ${appointmentType}
+
+Por favor, llega 10 minutos antes de tu cita.
+
+Ver mis citas: ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}/portal/appointments
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'appointment_reminder' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}
+
+/**
+ * Send new message notification email
+ */
+export async function sendNewMessageEmail(
+  recipientEmail: string,
+  recipientName: string,
+  senderName: string,
+  messagePreview: string,
+  messageUrl: string
+) {
+  return sendEmail({
+    to: recipientEmail,
+    subject: `Nuevo mensaje de ${senderName}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">💬 Nuevo Mensaje</h1>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola <strong>${recipientName}</strong>,</p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          <strong>${senderName}</strong> te ha enviado un mensaje:
+        </p>
+
+        <div style="background: #f3f4f6; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0; color: #1f2937; font-style: italic;">"${messagePreview}..."</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${messageUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Leer Mensaje
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}" style="color: #3b82f6; text-decoration: none;">Holi Labs</a> - Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${recipientName},
+
+${senderName} te ha enviado un mensaje:
+
+"${messagePreview}..."
+
+Leer mensaje: ${messageUrl}
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'new_message' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}
+
+/**
+ * Send consultation completed email
+ */
+export async function sendConsultationCompletedEmail(
+  patientEmail: string,
+  patientName: string,
+  clinicianName: string,
+  consultationUrl: string
+) {
+  return sendEmail({
+    to: patientEmail,
+    subject: 'Consulta completada - Notas disponibles',
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">✅ Consulta Completada</h1>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola <strong>${patientName}</strong>,</p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          Tu consulta con <strong>${clinicianName}</strong> ha sido completada.
+        </p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          Las notas médicas y el plan de tratamiento ya están disponibles en tu portal de paciente.
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${consultationUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Ver Notas Médicas
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}" style="color: #10b981; text-decoration: none;">Holi Labs</a> - Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${patientName},
+
+Tu consulta con ${clinicianName} ha sido completada.
+
+Las notas médicas y el plan de tratamiento ya están disponibles en tu portal de paciente.
+
+Ver notas: ${consultationUrl}
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'consultation_completed' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}
+
+/**
+ * Send new document notification email
+ */
+export async function sendNewDocumentEmail(
+  patientEmail: string,
+  patientName: string,
+  documentTitle: string,
+  documentUrl: string
+) {
+  return sendEmail({
+    to: patientEmail,
+    subject: `Nuevo documento: ${documentTitle}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">📄 Nuevo Documento</h1>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola <strong>${patientName}</strong>,</p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          Se ha subido un nuevo documento a tu historial médico:
+        </p>
+
+        <div style="background: #f3f4f6; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0; color: #1f2937; font-weight: 600;">${documentTitle}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${documentUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Ver Documento
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}" style="color: #8b5cf6; text-decoration: none;">Holi Labs</a> - Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${patientName},
+
+Se ha subido un nuevo documento a tu historial médico:
+
+${documentTitle}
+
+Ver documento: ${documentUrl}
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'new_document' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}

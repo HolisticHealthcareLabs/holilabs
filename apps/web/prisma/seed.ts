@@ -58,6 +58,20 @@ async function main() {
 
   console.log('✅ Created patient:', patient.tokenId);
 
+  // Create PatientUser for authentication (NEW - for patient portal login)
+  const patientUser = await prisma.patientUser.upsert({
+    where: { email: 'maria.gonzalez@example.com' },
+    update: {},
+    create: {
+      email: 'maria.gonzalez@example.com',
+      patientId: patient.id,
+      emailVerifiedAt: new Date(),
+      mfaEnabled: false,
+    },
+  });
+
+  console.log('✅ Created patient user for login:', patientUser.email);
+
   // Create medications
   const medications = await prisma.medication.createMany({
     data: [
@@ -123,11 +137,14 @@ async function main() {
   console.log('📊 Summary:');
   console.log(`   - 1 Clinician (${clinician.email})`);
   console.log(`   - 1 Patient (${patient.tokenId})`);
+  console.log(`   - 1 Patient User (${patientUser.email})`);
   console.log(`   - 2 Medications`);
   console.log(`   - 1 Appointment`);
   console.log(`   - 1 Audit Log`);
   console.log('\n💡 Test the app:');
-  console.log(`   Visit: http://localhost:3000/dashboard/patients/${patient.id}`);
+  console.log(`   - Clinician Dashboard: http://localhost:3000/dashboard/patients/${patient.id}`);
+  console.log(`   - Patient Portal Login: http://localhost:3000/portal/login`);
+  console.log(`   - Use email: ${patientUser.email}`);
 }
 
 main()

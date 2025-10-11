@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import NotificationPrompt from '@/components/NotificationPrompt';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
+import GlobalSearch from '@/components/search/GlobalSearch';
 
 interface NavItem {
   name: string;
@@ -39,6 +41,7 @@ export default function DashboardLayout({
     { name: 'Panel', href: '/dashboard', icon: '📊', emoji: '📊' },
     { name: 'Pacientes', href: '/dashboard/patients', icon: '👥', emoji: '👥' },
     { name: 'Citas', href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
+    { name: 'Mensajes', href: '/dashboard/messages', icon: '💬', emoji: '💬' },
     { name: 'AI Scribe', href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️' },
     { name: 'Documentos', href: '/dashboard/upload', icon: '📄', emoji: '📄' },
     { name: 'IA Asistente', href: '/dashboard/ai', icon: '🤖', emoji: '🤖' },
@@ -159,7 +162,18 @@ export default function DashboardLayout({
               </div>
               <span className="font-bold text-lg text-gray-900">Holi Labs</span>
             </div>
-            <div className="w-6" /> {/* Spacer for centering */}
+            <div className="flex items-center gap-2">
+              <GlobalSearch />
+              <NotificationCenter />
+            </div>
+          </div>
+        </header>
+
+        {/* Desktop Header */}
+        <header className="hidden lg:block bg-white border-b border-gray-200 sticky top-0 z-30">
+          <div className="flex items-center justify-end h-16 px-6 gap-4">
+            <GlobalSearch />
+            <NotificationCenter />
           </div>
         </header>
 
