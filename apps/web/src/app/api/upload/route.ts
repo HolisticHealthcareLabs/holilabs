@@ -118,9 +118,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Configure Next.js to handle large files
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Configure route segment to handle large files
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes for large file uploads
