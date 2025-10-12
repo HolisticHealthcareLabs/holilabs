@@ -59,7 +59,7 @@ export async function GET(
         form: {
           id: formInstance.id,
           status: formInstance.status,
-          progress: formInstance.progress,
+          progressPercent: formInstance.progressPercent,
           responses: formInstance.responses,
           signatureDataUrl: formInstance.signatureDataUrl,
           completedAt: formInstance.completedAt,

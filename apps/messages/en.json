@@ -1,0 +1,30 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome"
+  },
+  "patients": {
+    "title": "Patients",
+    "addPatient": "Add Patient",
+    "noPatients": "No patients registered"
+  },
+  "forms": {
+    "title": "Forms",
+    "sendForm": "Send Form",
+    "noForms": "No forms"
+  }
+}

@@ -150,33 +150,30 @@ export async function GET(request: NextRequest) {
       // Try to get diagnoses from clinical notes
       const notes = await prisma.clinicalNote.findMany({
         where: { createdAt: { gte: startDate } },
-        select: { diagnoses: true },
+        select: { diagnosis: true },
       });
 
-      const diagnosesMap: Record<string, { name: string; count: number }> = {};
+      const diagnosisMap: Record<string, number> = {};
 
-      notes.forEach((note: any) => {
-        if (note.diagnoses && Array.isArray(note.diagnoses)) {
-          note.diagnoses.forEach((diag: any) => {
-            if (diag.icdCode && diag.icdName) {
-              if (diagnosesMap[diag.icdCode]) {
-                diagnosesMap[diag.icdCode].count++;
+      notes.forEach((note) => {
+        if (note.diagnosis && Array.isArray(note.diagnosis)) {
+          note.diagnosis.forEach((diag: string) => {
+            if (diag && diag.trim()) {
+              if (diagnosisMap[diag]) {
+                diagnosisMap[diag]++;
               } else {
-                diagnosesMap[diag.icdCode] = {
-                  name: diag.icdName,
-                  count: 1,
-                };
+                diagnosisMap[diag] = 1;
               }
             }
           });
         }
       });
 
-      Object.entries(diagnosesMap).forEach(([code, data]) => {
+      Object.entries(diagnosisMap).forEach(([name, count]) => {
         topDiagnoses.push({
-          code,
-          name: data.name,
-          count: data.count,
+          code: name.substring(0, 10).toUpperCase(),
+          name,
+          count,
         });
       });
 

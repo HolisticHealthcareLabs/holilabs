@@ -86,7 +86,7 @@ export async function GET(
         data: {
           formInstanceId: formInstance.id,
           event: 'VIEWED',
-          performedBy: 'patient',
+          userType: 'patient',
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           userAgent: request.headers.get('user-agent') || 'unknown',
           metadata: {},
@@ -102,10 +102,10 @@ export async function GET(
           template: formInstance.template,
           patient: formInstance.patient,
           status: formInstance.status,
-          progress: formInstance.progress,
           responses: formInstance.responses,
           expiresAt: formInstance.expiresAt,
-          customMessage: formInstance.customMessage,
+          currentStepIndex: formInstance.currentStepIndex,
+          progressPercent: formInstance.progressPercent,
         },
       },
       { status: 200 }
@@ -153,7 +153,7 @@ export async function POST(
       where: { id: formInstance.id },
       data: {
         responses,
-        progress,
+        progressPercent: progress,
         status: progress > 0 ? 'IN_PROGRESS' : formInstance.status,
       },
     });
@@ -162,8 +162,8 @@ export async function POST(
     await prisma.formAuditLog.create({
       data: {
         formInstanceId: formInstance.id,
-        event: 'PROGRESS_UPDATED',
-        performedBy: 'patient',
+        event: 'PROGRESS_SAVED',
+        userType: 'patient',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         metadata: { progress },

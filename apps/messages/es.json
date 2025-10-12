@@ -1,0 +1,30 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "welcome": "Bienvenido"
+  },
+  "patients": {
+    "title": "Pacientes",
+    "addPatient": "Agregar Paciente",
+    "noPatients": "No hay pacientes registrados"
+  },
+  "forms": {
+    "title": "Formularios",
+    "sendForm": "Enviar Formulario",
+    "noForms": "No hay formularios"
+  }
+}

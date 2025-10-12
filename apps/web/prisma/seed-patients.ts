@@ -116,7 +116,7 @@ async function generatePatient(locale: 'en' | 'es' | 'pt', clinicianId: string, 
   dateOfBirth.setFullYear(dateOfBirth.getFullYear() - age);
 
   const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${index}@example.com`;
-  const phone = faker.phone.number('###-###-####');
+  const phone = faker.phone.number();
   const mrn = generateMRN();
   const tokenId = `PT-${faker.string.alphanumeric(4)}-${faker.string.alphanumeric(4)}-${faker.string.alphanumeric(4)}`.toLowerCase();
 
@@ -215,15 +215,19 @@ async function generatePatient(locale: 'en' | 'es' | 'pt', clinicianId: string, 
 
   // Create consent record
   const consentData = {
-    patientId: patient.id,
-    type: 'GENERAL_CONSULTATION',
+    type: 'GENERAL_CONSULTATION' as const,
     title: 'General Medical Treatment Consent',
     content: 'I consent to medical treatment and care as deemed necessary by my healthcare provider.',
   };
   await prisma.consent.create({
     data: {
-      ...consentData,
-      consentHash: generateDataHash(consentData),
+      patient: {
+        connect: { id: patient.id }
+      },
+      type: consentData.type,
+      title: consentData.title,
+      content: consentData.content,
+      consentHash: generateDataHash({ ...consentData, patientId: patient.id }),
       signatureData: `${fullName}`,
       signedAt: new Date(),
       isActive: true,
