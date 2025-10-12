@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendFormNotificationEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -90,9 +91,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send email notification to patient
-    // For now, we'll just return the access URL
+    // Send email notification to patient
     const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/portal/forms/${accessToken}`;
+
+    try {
+      await sendFormNotificationEmail(
+        patient.email,
+        `${patient.firstName} ${patient.lastName}`,
+        template.title,
+        publicUrl,
+        expiresAtDate,
+        message || undefined,
+        undefined // TODO: Get clinician name from session
+      );
+    } catch (emailError) {
+      console.error('Error sending email notification:', emailError);
+      // Continue even if email fails - form was created successfully
+    }
 
     return NextResponse.json(
       {
@@ -100,7 +115,7 @@ export async function POST(request: NextRequest) {
         formInstanceId: formInstance.id,
         accessToken,
         publicUrl,
-        message: 'Form sent successfully. Email notification will be sent to the patient.',
+        message: 'Form sent successfully. Email notification sent to patient.',
       },
       { status: 201 }
     );

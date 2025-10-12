@@ -6,17 +6,24 @@ import Link from 'next/link';
 interface SentForm {
   id: string;
   patient: {
+    id: string;
     firstName: string;
     lastName: string;
+    email: string;
   };
   template: {
+    id: string;
     title: string;
+    category: string;
   };
   status: string;
   progress: number;
+  accessToken: string;
   sentAt: string;
-  viewedAt?: string;
-  completedAt?: string;
+  viewedAt?: string | null;
+  completedAt?: string | null;
+  expiresAt: string;
+  customMessage?: string | null;
 }
 
 export default function SentFormsPage() {
@@ -255,13 +262,27 @@ export default function SentFormsPage() {
                       {formatDate(form.sentAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center gap-2">
-                        <button className="text-blue-600 hover:text-blue-800 transition-colors font-medium">
-                          Ver
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => {
+                            const url = `${window.location.origin}/portal/forms/${form.accessToken}`;
+                            navigator.clipboard.writeText(url);
+                            alert('Enlace copiado al portapapeles');
+                          }}
+                          className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                          title="Copiar enlace"
+                        >
+                          🔗
                         </button>
-                        <button className="text-gray-600 hover:text-gray-800 transition-colors font-medium">
-                          Reenviar
-                        </button>
+                        {(form.status === 'SIGNED' || form.status === 'COMPLETED') && (
+                          <Link
+                            href={`/dashboard/forms/responses/${form.id}`}
+                            className="text-green-600 hover:text-green-800 transition-colors font-medium"
+                            title="Ver respuestas"
+                          >
+                            👁️
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

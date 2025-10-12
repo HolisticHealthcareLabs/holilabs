@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendFormCompletionEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,12 @@ export async function POST(
     const formInstance = await prisma.formInstance.findUnique({
       where: { accessToken: token },
       include: {
+        patient: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
         template: {
           select: {
             title: true,
@@ -88,6 +95,31 @@ export async function POST(
         },
       },
     });
+
+    // Send completion email to clinician
+    try {
+      const formResponseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/forms/responses/${formInstance.id}`;
+
+      // TODO: Get clinician email from session/database
+      // For now, we'll log that the email would be sent
+      console.log('Would send form completion email for:', {
+        patient: `${formInstance.patient.firstName} ${formInstance.patient.lastName}`,
+        form: formInstance.template.title,
+        url: formResponseUrl,
+      });
+
+      // Uncomment when clinician email is available:
+      // await sendFormCompletionEmail(
+      //   clinicianEmail,
+      //   `${formInstance.patient.firstName} ${formInstance.patient.lastName}`,
+      //   formInstance.template.title,
+      //   updatedForm.completedAt || new Date(),
+      //   formResponseUrl
+      // );
+    } catch (emailError) {
+      console.error('Error sending completion email:', emailError);
+      // Continue even if email fails
+    }
 
     return NextResponse.json(
       {
