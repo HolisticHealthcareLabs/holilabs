@@ -507,3 +507,78 @@ Holi Labs - Atención médica digital`,
     ],
   });
 }
+
+/**
+ * Send magic link email for patient authentication
+ */
+export async function sendMagicLinkEmail(
+  email: string,
+  patientName: string,
+  magicLinkUrl: string,
+  expiresAt: Date
+) {
+  const expiryTime = expiresAt.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return sendEmail({
+    to: email,
+    subject: '🔐 Tu enlace de acceso a Holi Labs',
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🔐 Acceso a tu Portal</h1>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola ${patientName},</p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          Haz clic en el botón de abajo para acceder de forma segura a tu portal de paciente:
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${magicLinkUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            🔓 Acceder a mi Portal →
+          </a>
+        </div>
+
+        <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 16px; margin: 20px 0;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            ⏰ <strong>Este enlace expira a las ${expiryTime}</strong> (15 minutos). Si no lo solicitaste, puedes ignorar este correo.
+          </p>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6;">
+          Por seguridad, este enlace solo puede usarse una vez y expira en 15 minutos.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}" style="color: #3b82f6; text-decoration: none;">Holi Labs</a> - Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${patientName},
+
+Haz clic en el siguiente enlace para acceder de forma segura a tu portal de paciente:
+
+${magicLinkUrl}
+
+⏰ Este enlace expira a las ${expiryTime} (15 minutos).
+
+Por seguridad, este enlace solo puede usarse una vez y expira en 15 minutos.
+
+Si no solicitaste este acceso, puedes ignorar este correo.
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'magic_link' },
+      { name: 'category', value: 'authentication' },
+    ],
+  });
+}
