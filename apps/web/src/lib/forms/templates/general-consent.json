@@ -1,0 +1,118 @@
+{
+  "title": "General Medical Consent Form",
+  "description": "Standard consent for medical treatment and care",
+  "category": "CONSENT",
+  "estimatedMinutes": 5,
+  "version": 1,
+  "fields": [
+    {
+      "id": "patient_acknowledgment",
+      "type": "heading",
+      "label": "Patient Acknowledgment and Consent",
+      "description": "Please read carefully and initial each section"
+    },
+    {
+      "id": "treatment_consent",
+      "type": "checkbox",
+      "label": "I consent to medical treatment",
+      "description": "I voluntarily consent to such medical and healthcare services as may be deemed necessary or advisable",
+      "required": true,
+      "validation": {
+        "required": "You must consent to receive treatment"
+      }
+    },
+    {
+      "id": "privacy_notice",
+      "type": "checkbox",
+      "label": "I have received the Notice of Privacy Practices",
+      "description": "I acknowledge that I have been offered a copy of the practice's Notice of Privacy Practices",
+      "required": true
+    },
+    {
+      "id": "financial_responsibility",
+      "type": "checkbox",
+      "label": "I understand my financial responsibility",
+      "description": "I understand that I am financially responsible for all charges whether or not they are covered by insurance",
+      "required": true
+    },
+    {
+      "id": "assignment_of_benefits",
+      "type": "checkbox",
+      "label": "Assignment of insurance benefits",
+      "description": "I assign and authorize direct payment to the provider of any insurance benefits otherwise payable to me",
+      "required": false
+    },
+    {
+      "id": "photo_id_verification",
+      "type": "checkbox",
+      "label": "Photo ID verification",
+      "description": "I understand I may be asked to show photo identification for verification purposes",
+      "required": true
+    },
+    {
+      "id": "telehealth_consent",
+      "type": "checkbox",
+      "label": "Telehealth services consent (optional)",
+      "description": "I consent to receive healthcare services via telehealth/telemedicine when appropriate",
+      "required": false
+    },
+    {
+      "id": "patient_name",
+      "type": "text",
+      "label": "Patient Full Name",
+      "placeholder": "Enter your full legal name",
+      "required": true,
+      "autofill": "patient.fullName"
+    },
+    {
+      "id": "patient_dob",
+      "type": "date",
+      "label": "Date of Birth",
+      "required": true,
+      "autofill": "patient.dateOfBirth"
+    },
+    {
+      "id": "legal_representative",
+      "type": "conditional",
+      "condition": {
+        "field": "is_minor_or_guardian",
+        "value": true
+      },
+      "fields": [
+        {
+          "id": "representative_name",
+          "type": "text",
+          "label": "Legal Representative Name",
+          "description": "If signing on behalf of a minor or as legal guardian",
+          "required": false
+        },
+        {
+          "id": "relationship",
+          "type": "select",
+          "label": "Relationship to Patient",
+          "options": [
+            {"value": "parent", "label": "Parent"},
+            {"value": "legal_guardian", "label": "Legal Guardian"},
+            {"value": "healthcare_proxy", "label": "Healthcare Proxy"},
+            {"value": "power_of_attorney", "label": "Power of Attorney"}
+          ],
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "signature",
+      "type": "signature",
+      "label": "Patient Signature",
+      "description": "By signing below, I acknowledge that I have read and agree to the above statements",
+      "required": true
+    },
+    {
+      "id": "signature_date",
+      "type": "date",
+      "label": "Date",
+      "required": true,
+      "autofill": "today"
+    }
+  ]
+}
