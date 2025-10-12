@@ -45,6 +45,8 @@ model User {
   calendarIntegrations CalendarIntegration[]
   scribeSessions ScribeSession[]
   soapNotes     SOAPNote[]
+  formTemplates FormTemplate[]
+  formInstances FormInstance[]
 
   @@index([email])
   @@index([walletAddress])
@@ -491,6 +493,7 @@ model Patient {
   messages          Message[]
   healthMetrics     HealthMetric[]
   documentShares    DocumentShare[]
+  formInstances     FormInstance[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -1188,4 +1191,179 @@ model PushSubscription {
   @@index([endpoint])
   @@index([isActive])
   @@map("push_subscriptions")
+}
+
+// ============================================================================
+// FORMS SYSTEM - Patient Forms & Consents
+// ============================================================================
+
+model FormTemplate {
+  id                String        @id @default(cuid())
+
+  // Template info
+  title             String
+  description       String?       @db.Text
+  category          FormCategory
+  isBuiltIn         Boolean       @default(false)  // Pre-built vs custom
+  isActive          Boolean       @default(true)
+
+  // Template content (JSON structure or file reference)
+  structure         Json?         // For drag-and-drop forms { fields: [...], logic: {...} }
+  fileUrl           String?       // For uploaded PDF/DOCX templates
+  fileType          String?       // "pdf", "docx", "json"
+
+  // Creator (if custom template)
+  createdBy         String?
+  clinician         User?         @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  // Usage tracking
+  usageCount        Int           @default(0)
+
+  // Metadata
+  version           Int           @default(1)
+  tags              String[]      // ["consent", "hipaa", "intake", etc]
+  estimatedMinutes  Int?          // How long to fill out
+
+  // Timestamps
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  formInstances     FormInstance[]
+
+  @@index([category])
+  @@index([isBuiltIn])
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("form_templates")
+}
+
+enum FormCategory {
+  CONSENT                 // General consent forms
+  HIPAA_AUTHORIZATION    // HIPAA release forms
+  MEDICAL_HISTORY        // Health history intake
+  TREATMENT_CONSENT      // Specific treatment consent
+  FINANCIAL_AGREEMENT    // Payment/billing forms
+  INSURANCE_INFORMATION  // Insurance details
+  REFERRAL              // Referral forms
+  CUSTOM                // Custom uploaded forms
+}
+
+model FormInstance {
+  id                String            @id @default(cuid())
+
+  // Template reference
+  templateId        String
+  template          FormTemplate      @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  // Assignment
+  patientId         String
+  patient           Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  assignedBy        String
+  assignedByUser    User              @relation(fields: [assignedBy], references: [id], onDelete: Restrict)
+
+  // Status tracking
+  status            FormStatus        @default(PENDING)
+  sentAt            DateTime          @default(now())
+  viewedAt          DateTime?
+  startedAt         DateTime?         // When patient started filling
+  completedAt       DateTime?
+  signedAt          DateTime?
+
+  // Submission data
+  responses         Json?             // Structured form responses
+  submittedData     Json?             // Full submission payload
+
+  // E-signature
+  signatureDataUrl  String?           @db.Text  // Base64 signature image
+  signatureIp       String?
+  signedUserAgent   String?           @db.Text
+
+  // File attachments (if patient uploads documents)
+  attachments       String[]          // Array of Document IDs
+
+  // Access control
+  accessToken       String            @unique  // Unique link token for patient access
+  accessTokenHash   String            @unique  // SHA-256 hash for lookup
+  expiresAt         DateTime?
+
+  // Reminders
+  remindersSent     Int               @default(0)
+  lastReminderAt    DateTime?
+
+  // Progress tracking
+  progressPercent   Int               @default(0)
+  currentStepIndex  Int               @default(0)
+
+  // Audit trail
+  dataHash          String?           // SHA-256 of final submission
+  ipAddress         String?
+
+  // Metadata
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  auditTrail        FormAuditLog[]
+
+  @@index([patientId])
+  @@index([assignedBy])
+  @@index([status])
+  @@index([accessToken])
+  @@index([accessTokenHash])
+  @@index([completedAt])
+  @@map("form_instances")
+}
+
+enum FormStatus {
+  PENDING         // Sent, not opened
+  VIEWED          // Patient opened the form
+  IN_PROGRESS     // Patient started filling
+  COMPLETED       // Submitted but not signed
+  SIGNED          // Fully completed with signature
+  EXPIRED         // Link expired
+  REVOKED         // Clinician revoked access
+}
+
+model FormAuditLog {
+  id                String        @id @default(cuid())
+
+  formInstanceId    String
+  formInstance      FormInstance  @relation(fields: [formInstanceId], references: [id], onDelete: Cascade)
+
+  // Event details
+  event             FormAuditEvent
+  description       String?       @db.Text
+
+  // Actor (patient or clinician)
+  userId            String?       // PatientUser or User ID
+  userType          String?       // "patient" or "clinician"
+
+  // Context
+  ipAddress         String?
+  userAgent         String?       @db.Text
+  metadata          Json?
+
+  // Timestamp
+  createdAt         DateTime      @default(now())
+
+  @@index([formInstanceId])
+  @@index([event])
+  @@index([createdAt])
+  @@map("form_audit_logs")
+}
+
+enum FormAuditEvent {
+  SENT              // Form sent to patient
+  VIEWED            // Patient opened form
+  STARTED           // Patient started filling
+  PROGRESS_SAVED    // Auto-save progress
+  SUBMITTED         // Patient submitted form
+  SIGNED            // E-signature added
+  REMINDER_SENT     // Reminder email/SMS sent
+  EXPIRED           // Form link expired
+  REVOKED           // Clinician revoked form
+  UPDATED           // Clinician updated form
+  DOWNLOADED        // PDF downloaded
 }

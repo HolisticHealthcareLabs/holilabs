@@ -1,0 +1,304 @@
+{
+  "title": "New Patient Medical History",
+  "description": "Comprehensive medical history intake form for new patients",
+  "category": "MEDICAL_HISTORY",
+  "estimatedMinutes": 15,
+  "version": 1,
+  "fields": [
+    {
+      "id": "demographics",
+      "type": "section",
+      "label": "Personal Information"
+    },
+    {
+      "id": "full_name",
+      "type": "text",
+      "label": "Full Legal Name",
+      "required": true,
+      "autofill": "patient.fullName"
+    },
+    {
+      "id": "preferred_name",
+      "type": "text",
+      "label": "Preferred Name (if different)",
+      "required": false
+    },
+    {
+      "id": "date_of_birth",
+      "type": "date",
+      "label": "Date of Birth",
+      "required": true,
+      "autofill": "patient.dateOfBirth"
+    },
+    {
+      "id": "gender",
+      "type": "select",
+      "label": "Sex Assigned at Birth",
+      "required": true,
+      "options": [
+        {"value": "M", "label": "Male"},
+        {"value": "F", "label": "Female"},
+        {"value": "intersex", "label": "Intersex"}
+      ]
+    },
+    {
+      "id": "gender_identity",
+      "type": "select",
+      "label": "Gender Identity",
+      "required": false,
+      "options": [
+        {"value": "male", "label": "Male"},
+        {"value": "female", "label": "Female"},
+        {"value": "transgender_male", "label": "Transgender Male"},
+        {"value": "transgender_female", "label": "Transgender Female"},
+        {"value": "non_binary", "label": "Non-binary"},
+        {"value": "prefer_not_to_say", "label": "Prefer not to say"},
+        {"value": "other", "label": "Other/Self-describe"}
+      ]
+    },
+    {
+      "id": "chief_complaint",
+      "type": "section",
+      "label": "Reason for Visit"
+    },
+    {
+      "id": "primary_concern",
+      "type": "textarea",
+      "label": "What brings you in today?",
+      "placeholder": "Describe your main health concern or reason for this visit",
+      "required": true,
+      "rows": 4
+    },
+    {
+      "id": "current_medications",
+      "type": "section",
+      "label": "Current Medications"
+    },
+    {
+      "id": "taking_medications",
+      "type": "radio",
+      "label": "Are you currently taking any medications?",
+      "required": true,
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"}
+      ]
+    },
+    {
+      "id": "medications_list",
+      "type": "conditional",
+      "condition": {"field": "taking_medications", "value": "yes"},
+      "fields": [
+        {
+          "id": "medications",
+          "type": "textarea",
+          "label": "List all current medications (including over-the-counter and supplements)",
+          "placeholder": "Include name, dosage, and frequency\ne.g., Metformin 500mg twice daily",
+          "required": false,
+          "rows": 6
+        }
+      ]
+    },
+    {
+      "id": "allergies_section",
+      "type": "section",
+      "label": "Allergies"
+    },
+    {
+      "id": "has_allergies",
+      "type": "radio",
+      "label": "Do you have any known allergies?",
+      "required": true,
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No known allergies"}
+      ]
+    },
+    {
+      "id": "allergies_list",
+      "type": "conditional",
+      "condition": {"field": "has_allergies", "value": "yes"},
+      "fields": [
+        {
+          "id": "allergies",
+          "type": "textarea",
+          "label": "List all allergies and reactions",
+          "placeholder": "Include medication allergies, food allergies, environmental allergies\ne.g., Penicillin - rash",
+          "required": false,
+          "rows": 4
+        }
+      ]
+    },
+    {
+      "id": "medical_history",
+      "type": "section",
+      "label": "Medical History"
+    },
+    {
+      "id": "chronic_conditions",
+      "type": "checkbox_group",
+      "label": "Do you have any of the following conditions? (check all that apply)",
+      "required": false,
+      "options": [
+        {"value": "diabetes", "label": "Diabetes"},
+        {"value": "hypertension", "label": "High Blood Pressure"},
+        {"value": "heart_disease", "label": "Heart Disease"},
+        {"value": "asthma", "label": "Asthma/COPD"},
+        {"value": "cancer", "label": "Cancer (current or past)"},
+        {"value": "kidney_disease", "label": "Kidney Disease"},
+        {"value": "liver_disease", "label": "Liver Disease"},
+        {"value": "thyroid", "label": "Thyroid Disorder"},
+        {"value": "mental_health", "label": "Depression/Anxiety/Mental Health"},
+        {"value": "arthritis", "label": "Arthritis"},
+        {"value": "stroke", "label": "Stroke/TIA"},
+        {"value": "seizures", "label": "Seizures/Epilepsy"}
+      ]
+    },
+    {
+      "id": "other_conditions",
+      "type": "textarea",
+      "label": "Other medical conditions not listed above",
+      "required": false,
+      "rows": 3
+    },
+    {
+      "id": "surgical_history",
+      "type": "section",
+      "label": "Surgical History"
+    },
+    {
+      "id": "had_surgery",
+      "type": "radio",
+      "label": "Have you had any surgeries or procedures?",
+      "required": true,
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"}
+      ]
+    },
+    {
+      "id": "surgeries_list",
+      "type": "conditional",
+      "condition": {"field": "had_surgery", "value": "yes"},
+      "fields": [
+        {
+          "id": "surgeries",
+          "type": "textarea",
+          "label": "List surgeries with approximate dates",
+          "placeholder": "e.g., Appendectomy - 2015\nKnee arthroscopy - 2020",
+          "required": false,
+          "rows": 4
+        }
+      ]
+    },
+    {
+      "id": "family_history",
+      "type": "section",
+      "label": "Family Medical History"
+    },
+    {
+      "id": "family_conditions",
+      "type": "checkbox_group",
+      "label": "Do any blood relatives have the following? (check all that apply)",
+      "required": false,
+      "options": [
+        {"value": "heart_disease", "label": "Heart Disease"},
+        {"value": "diabetes", "label": "Diabetes"},
+        {"value": "cancer", "label": "Cancer"},
+        {"value": "hypertension", "label": "High Blood Pressure"},
+        {"value": "stroke", "label": "Stroke"},
+        {"value": "mental_illness", "label": "Mental Illness"},
+        {"value": "substance_abuse", "label": "Substance Abuse"},
+        {"value": "other", "label": "Other significant conditions"}
+      ]
+    },
+    {
+      "id": "family_details",
+      "type": "textarea",
+      "label": "Please provide details about family medical history",
+      "placeholder": "Specify which relatives and conditions\ne.g., Father - Type 2 Diabetes",
+      "required": false,
+      "rows": 3
+    },
+    {
+      "id": "social_history",
+      "type": "section",
+      "label": "Social History"
+    },
+    {
+      "id": "tobacco_use",
+      "type": "select",
+      "label": "Tobacco Use",
+      "required": true,
+      "options": [
+        {"value": "never", "label": "Never"},
+        {"value": "former", "label": "Former smoker"},
+        {"value": "current", "label": "Current smoker"}
+      ]
+    },
+    {
+      "id": "alcohol_use",
+      "type": "select",
+      "label": "Alcohol Use",
+      "required": true,
+      "options": [
+        {"value": "none", "label": "None"},
+        {"value": "occasional", "label": "Occasional (1-2 drinks/week)"},
+        {"value": "moderate", "label": "Moderate (3-7 drinks/week)"},
+        {"value": "heavy", "label": "Heavy (8+ drinks/week)"}
+      ]
+    },
+    {
+      "id": "exercise",
+      "type": "select",
+      "label": "Exercise Frequency",
+      "required": false,
+      "options": [
+        {"value": "none", "label": "No regular exercise"},
+        {"value": "1_2_weekly", "label": "1-2 times per week"},
+        {"value": "3_4_weekly", "label": "3-4 times per week"},
+        {"value": "5plus_weekly", "label": "5+ times per week"}
+      ]
+    },
+    {
+      "id": "women_health",
+      "type": "section",
+      "label": "Women's Health (if applicable)"
+    },
+    {
+      "id": "is_pregnant",
+      "type": "radio",
+      "label": "Are you currently pregnant or think you might be?",
+      "required": false,
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "na", "label": "Not applicable"}
+      ]
+    },
+    {
+      "id": "signature_section",
+      "type": "section",
+      "label": "Certification"
+    },
+    {
+      "id": "accuracy_statement",
+      "type": "info",
+      "label": "Accuracy Statement",
+      "description": "I certify that the information provided above is accurate and complete to the best of my knowledge."
+    },
+    {
+      "id": "signature",
+      "type": "signature",
+      "label": "Patient Signature",
+      "required": true
+    },
+    {
+      "id": "signature_date",
+      "type": "date",
+      "label": "Date",
+      "required": true,
+      "autofill": "today"
+    }
+  ]
+}

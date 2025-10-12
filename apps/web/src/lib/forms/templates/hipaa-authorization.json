@@ -1,0 +1,291 @@
+{
+  "title": "HIPAA Authorization for Release of Health Information",
+  "description": "Authorization to release protected health information under HIPAA",
+  "category": "HIPAA_AUTHORIZATION",
+  "estimatedMinutes": 8,
+  "version": 1,
+  "fields": [
+    {
+      "id": "header",
+      "type": "heading",
+      "label": "Authorization for Release of Health Information",
+      "description": "This form authorizes the release of your protected health information as described below"
+    },
+    {
+      "id": "patient_info_section",
+      "type": "section",
+      "label": "Patient Information"
+    },
+    {
+      "id": "patient_name",
+      "type": "text",
+      "label": "Patient Full Name",
+      "required": true,
+      "autofill": "patient.fullName"
+    },
+    {
+      "id": "patient_dob",
+      "type": "date",
+      "label": "Date of Birth",
+      "required": true,
+      "autofill": "patient.dateOfBirth"
+    },
+    {
+      "id": "patient_address",
+      "type": "textarea",
+      "label": "Patient Address",
+      "placeholder": "Street, City, State, ZIP",
+      "required": true,
+      "rows": 3
+    },
+    {
+      "id": "patient_phone",
+      "type": "tel",
+      "label": "Phone Number",
+      "required": true,
+      "pattern": "[0-9]{3}-[0-9]{3}-[0-9]{4}",
+      "placeholder": "555-123-4567"
+    },
+    {
+      "id": "release_section",
+      "type": "section",
+      "label": "Information to be Released"
+    },
+    {
+      "id": "information_types",
+      "type": "checkbox_group",
+      "label": "Select the type(s) of information to be released",
+      "description": "Check all that apply",
+      "required": true,
+      "options": [
+        {"value": "complete_medical_record", "label": "Complete Medical Record"},
+        {"value": "lab_results", "label": "Laboratory Results"},
+        {"value": "x_rays", "label": "X-Ray/Imaging Reports"},
+        {"value": "prescriptions", "label": "Prescription Records"},
+        {"value": "immunizations", "label": "Immunization Records"},
+        {"value": "consultation_notes", "label": "Consultation/Progress Notes"},
+        {"value": "operative_reports", "label": "Operative Reports"},
+        {"value": "discharge_summary", "label": "Discharge Summary"}
+      ]
+    },
+    {
+      "id": "sensitive_information",
+      "type": "checkbox_group",
+      "label": "Sensitive Information (optional - requires explicit consent)",
+      "description": "Federal and state laws provide special protections for certain types of health information",
+      "required": false,
+      "options": [
+        {"value": "hiv_aids", "label": "HIV/AIDS Testing/Treatment"},
+        {"value": "mental_health", "label": "Mental Health Records"},
+        {"value": "substance_abuse", "label": "Drug/Alcohol Treatment"},
+        {"value": "genetic_testing", "label": "Genetic Testing Information"}
+      ]
+    },
+    {
+      "id": "date_range_section",
+      "type": "section",
+      "label": "Date Range of Information"
+    },
+    {
+      "id": "date_range_option",
+      "type": "radio",
+      "label": "Time period for records",
+      "required": true,
+      "options": [
+        {"value": "all", "label": "All records"},
+        {"value": "date_range", "label": "Specific date range"},
+        {"value": "specific_dates", "label": "Records from specific dates of service"}
+      ]
+    },
+    {
+      "id": "date_range",
+      "type": "conditional",
+      "condition": {
+        "field": "date_range_option",
+        "value": "date_range"
+      },
+      "fields": [
+        {
+          "id": "start_date",
+          "type": "date",
+          "label": "From Date",
+          "required": false
+        },
+        {
+          "id": "end_date",
+          "type": "date",
+          "label": "To Date",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "specific_dates_text",
+      "type": "conditional",
+      "condition": {
+        "field": "date_range_option",
+        "value": "specific_dates"
+      },
+      "fields": [
+        {
+          "id": "specific_dates_list",
+          "type": "textarea",
+          "label": "List Specific Dates",
+          "placeholder": "e.g., 01/15/2024, 03/22/2024",
+          "required": false,
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "id": "recipient_section",
+      "type": "section",
+      "label": "Release Information To"
+    },
+    {
+      "id": "recipient_name",
+      "type": "text",
+      "label": "Name of Person/Organization",
+      "placeholder": "Provider name, insurance company, etc.",
+      "required": true
+    },
+    {
+      "id": "recipient_address",
+      "type": "textarea",
+      "label": "Address",
+      "placeholder": "Street, City, State, ZIP",
+      "required": true,
+      "rows": 3
+    },
+    {
+      "id": "recipient_fax",
+      "type": "tel",
+      "label": "Fax Number (if applicable)",
+      "required": false,
+      "pattern": "[0-9]{3}-[0-9]{3}-[0-9]{4}"
+    },
+    {
+      "id": "purpose_section",
+      "type": "section",
+      "label": "Purpose of Release"
+    },
+    {
+      "id": "release_purpose",
+      "type": "select",
+      "label": "Purpose of this release",
+      "required": true,
+      "options": [
+        {"value": "my_request", "label": "At my personal request"},
+        {"value": "continued_care", "label": "Continued medical care"},
+        {"value": "insurance", "label": "Insurance/billing purposes"},
+        {"value": "legal", "label": "Legal purposes"},
+        {"value": "disability", "label": "Disability determination"},
+        {"value": "workers_comp", "label": "Workers' compensation"},
+        {"value": "other", "label": "Other (specify below)"}
+      ]
+    },
+    {
+      "id": "purpose_other",
+      "type": "conditional",
+      "condition": {
+        "field": "release_purpose",
+        "value": "other"
+      },
+      "fields": [
+        {
+          "id": "purpose_description",
+          "type": "textarea",
+          "label": "Please describe the purpose",
+          "required": false,
+          "rows": 2
+        }
+      ]
+    },
+    {
+      "id": "expiration_section",
+      "type": "section",
+      "label": "Expiration of Authorization"
+    },
+    {
+      "id": "expiration_type",
+      "type": "radio",
+      "label": "This authorization expires",
+      "required": true,
+      "options": [
+        {"value": "one_year", "label": "One year from date of signature"},
+        {"value": "upon_completion", "label": "Upon completion of specified purpose"},
+        {"value": "specific_date", "label": "On a specific date"}
+      ]
+    },
+    {
+      "id": "expiration_date",
+      "type": "conditional",
+      "condition": {
+        "field": "expiration_type",
+        "value": "specific_date"
+      },
+      "fields": [
+        {
+          "id": "expiration_date_value",
+          "type": "date",
+          "label": "Expiration Date",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "acknowledgments_section",
+      "type": "section",
+      "label": "Patient Acknowledgments"
+    },
+    {
+      "id": "right_to_revoke",
+      "type": "info",
+      "label": "Right to Revoke",
+      "description": "I understand that I have the right to revoke this authorization at any time by notifying the provider in writing. I understand that revocation is not effective to the extent that action has already been taken in reliance on this authorization."
+    },
+    {
+      "id": "redisclosure_warning",
+      "type": "info",
+      "label": "Re-disclosure Warning",
+      "description": "I understand that information used or disclosed pursuant to this authorization may be subject to re-disclosure by the recipient and may no longer be protected by federal or state privacy regulations."
+    },
+    {
+      "id": "no_conditioning",
+      "type": "info",
+      "label": "No Conditioning of Treatment",
+      "description": "I understand that my treatment, payment, enrollment, or eligibility for benefits will not be conditioned on whether I sign this authorization."
+    },
+    {
+      "id": "acknowledgment_checkbox",
+      "type": "checkbox",
+      "label": "I have read and understand the above statements",
+      "required": true
+    },
+    {
+      "id": "signature_section",
+      "type": "section",
+      "label": "Signature"
+    },
+    {
+      "id": "signature",
+      "type": "signature",
+      "label": "Patient or Legal Representative Signature",
+      "required": true
+    },
+    {
+      "id": "signature_date",
+      "type": "date",
+      "label": "Date",
+      "required": true,
+      "autofill": "today"
+    },
+    {
+      "id": "representative_capacity",
+      "type": "text",
+      "label": "If signed by legal representative, state relationship to patient",
+      "placeholder": "e.g., Parent, Guardian, Power of Attorney",
+      "required": false
+    }
+  ]
+}
