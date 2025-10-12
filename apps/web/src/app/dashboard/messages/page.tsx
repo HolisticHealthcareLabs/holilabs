@@ -40,8 +40,12 @@ interface Message {
 }
 
 export default function ClinicianMessagesPage() {
-  const { data: session, status } = useSession();
+  const sessionData = useSession();
   const router = useRouter();
+
+  // Handle case where useSession returns undefined during build
+  const session = sessionData?.data ?? null;
+  const status = sessionData?.status ?? 'loading';
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
