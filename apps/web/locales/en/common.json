@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "patients": "Patients",
+    "appointments": "Appointments",
+    "medications": "Medications",
+    "forms": "Forms",
+    "settings": "Settings",
+    "logout": "Sign Out"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "stats": {
+      "totalPatients": "Total Patients",
+      "activeAppointments": "Active Appointments",
+      "pendingForms": "Pending Forms",
+      "recentActivity": "Recent Activity"
+    },
+    "quickActions": "Quick Actions",
+    "todaySchedule": "Today's Schedule"
+  },
+  "patients": {
+    "title": "Patients",
+    "search": "Search patients...",
+    "addNew": "New Patient",
+    "viewAll": "View All",
+    "details": "Patient Details",
+    "demographics": "Demographics",
+    "medicalHistory": "Medical History",
+    "medications": "Medications",
+    "allergies": "Allergies",
+    "appointments": "Appointments",
+    "documents": "Documents"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "schedule": "Schedule",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "newAppointment": "New Appointment",
+    "status": {
+      "scheduled": "Scheduled",
+      "confirmed": "Confirmed",
+      "checkedIn": "Checked In",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "noShow": "No Show"
+    }
+  },
+  "forms": {
+    "title": "Forms",
+    "sendForm": "Send Form",
+    "templates": "Templates",
+    "sent": "Sent Forms",
+    "draft": "Draft",
+    "pending": "Pending",
+    "completed": "Completed",
+    "signed": "Signed"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "print": "Print",
+    "download": "Download",
+    "upload": "Upload"
+  },
+  "medical": {
+    "bloodPressure": "Blood Pressure",
+    "heartRate": "Heart Rate",
+    "temperature": "Temperature",
+    "respiratoryRate": "Respiratory Rate",
+    "oxygenSaturation": "Oxygen Saturation",
+    "weight": "Weight",
+    "height": "Height",
+    "bmi": "BMI",
+    "diagnosis": "Diagnosis",
+    "treatment": "Treatment",
+    "prescription": "Prescription",
+    "dosage": "Dosage",
+    "frequency": "Frequency"
+  }
+}

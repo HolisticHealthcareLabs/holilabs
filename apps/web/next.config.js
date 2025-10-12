@@ -134,6 +134,9 @@ const withPWA = require('next-pwa')({
   ],
 });
 
+const createNextIntlPlugin = require('next-intl/plugin');
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -177,8 +180,8 @@ const sentryWebpackPluginOptions = {
   disableLogger: true,
 };
 
-// Export config with both PWA and Sentry
+// Export config with next-intl, PWA and Sentry
 module.exports = withSentryConfig(
-  withPWA(nextConfig),
+  withNextIntl(withPWA(nextConfig)),
   sentryWebpackPluginOptions
 );

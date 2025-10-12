@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import GlobalSearch from '@/components/search/GlobalSearch';
+import LanguageSelector from '@/components/LanguageSelector';
 
 interface NavItem {
   name: string;
@@ -163,6 +164,7 @@ export default function DashboardLayout({
               <span className="font-bold text-lg text-gray-900">Holi Labs</span>
             </div>
             <div className="flex items-center gap-2">
+              <LanguageSelector currentLocale="en" />
               <GlobalSearch />
               <NotificationCenter />
             </div>
@@ -172,6 +174,7 @@ export default function DashboardLayout({
         {/* Desktop Header */}
         <header className="hidden lg:block bg-white border-b border-gray-200 sticky top-0 z-30">
           <div className="flex items-center justify-end h-16 px-6 gap-4">
+            <LanguageSelector currentLocale="en" />
             <GlobalSearch />
             <NotificationCenter />
           </div>

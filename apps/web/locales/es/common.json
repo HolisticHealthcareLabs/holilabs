@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "dashboard": "Tablero",
+    "patients": "Pacientes",
+    "appointments": "Citas",
+    "medications": "Medicamentos",
+    "forms": "Formularios",
+    "settings": "Configuración",
+    "logout": "Cerrar Sesión"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "evening": "Buenas noches"
+    },
+    "stats": {
+      "totalPatients": "Total de Pacientes",
+      "activeAppointments": "Citas Activas",
+      "pendingForms": "Formularios Pendientes",
+      "recentActivity": "Actividad Reciente"
+    },
+    "quickActions": "Acciones Rápidas",
+    "todaySchedule": "Agenda de Hoy"
+  },
+  "patients": {
+    "title": "Pacientes",
+    "search": "Buscar pacientes...",
+    "addNew": "Nuevo Paciente",
+    "viewAll": "Ver Todos",
+    "details": "Detalles del Paciente",
+    "demographics": "Demografía",
+    "medicalHistory": "Historia Médica",
+    "medications": "Medicamentos",
+    "allergies": "Alergias",
+    "appointments": "Citas",
+    "documents": "Documentos"
+  },
+  "appointments": {
+    "title": "Citas",
+    "schedule": "Agenda",
+    "upcoming": "Próximas",
+    "past": "Pasadas",
+    "newAppointment": "Nueva Cita",
+    "status": {
+      "scheduled": "Programada",
+      "confirmed": "Confirmada",
+      "checkedIn": "Registrado",
+      "inProgress": "En Progreso",
+      "completed": "Completada",
+      "cancelled": "Cancelada",
+      "noShow": "No Asistió"
+    }
+  },
+  "forms": {
+    "title": "Formularios",
+    "sendForm": "Enviar Formulario",
+    "templates": "Plantillas",
+    "sent": "Formularios Enviados",
+    "draft": "Borrador",
+    "pending": "Pendiente",
+    "completed": "Completado",
+    "signed": "Firmado"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "success": "Éxito",
+    "confirm": "Confirmar",
+    "yes": "Sí",
+    "no": "No",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "print": "Imprimir",
+    "download": "Descargar",
+    "upload": "Subir"
+  },
+  "medical": {
+    "bloodPressure": "Presión Arterial",
+    "heartRate": "Frecuencia Cardíaca",
+    "temperature": "Temperatura",
+    "respiratoryRate": "Frecuencia Respiratoria",
+    "oxygenSaturation": "Saturación de Oxígeno",
+    "weight": "Peso",
+    "height": "Altura",
+    "bmi": "IMC",
+    "diagnosis": "Diagnóstico",
+    "treatment": "Tratamiento",
+    "prescription": "Receta",
+    "dosage": "Dosis",
+    "frequency": "Frecuencia"
+  }
+}
