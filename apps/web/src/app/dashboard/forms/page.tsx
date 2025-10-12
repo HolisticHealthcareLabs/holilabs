@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import SendFormModal from '@/components/forms/SendFormModal';
 
 interface FormTemplate {
   id: string;
@@ -20,6 +21,8 @@ export default function FormsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+  const [showSendModal, setShowSendModal] = useState(false);
 
   useEffect(() => {
     fetchTemplates();
@@ -281,7 +284,13 @@ export default function FormsPage() {
 
               {/* Actions */}
               <div className="flex items-center gap-2">
-                <button className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-lg shadow-blue-600/30">
+                <button
+                  onClick={() => {
+                    setSelectedTemplate(template);
+                    setShowSendModal(true);
+                  }}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-lg shadow-blue-600/30"
+                >
                   📤 Enviar
                 </button>
                 <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
@@ -292,6 +301,19 @@ export default function FormsPage() {
           ))}
         </div>
       )}
+
+      {/* Send Form Modal */}
+      <SendFormModal
+        isOpen={showSendModal}
+        onClose={() => {
+          setShowSendModal(false);
+          setSelectedTemplate(null);
+        }}
+        template={selectedTemplate || undefined}
+        onSuccess={() => {
+          fetchTemplates(); // Refresh to update usage counts
+        }}
+      />
     </div>
   );
 }
