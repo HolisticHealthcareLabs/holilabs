@@ -1,287 +1,320 @@
-/**
- * Seed Script - Generate 10 Synthetic Patients
- * For demo purposes only
- */
-
 import { PrismaClient } from '@prisma/client';
+import { faker } from '@faker-js/faker';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-const SYNTHETIC_PATIENTS = [
-  {
-    firstName: 'María',
-    lastName: 'González López',
-    dateOfBirth: new Date('1985-03-15'),
-    gender: 'Femenino',
-    email: 'maria.gonzalez@example.com',
-    phone: '+52 55 1234 5678',
-    address: 'Av. Paseo de la Reforma 123',
-    city: 'Ciudad de México',
-    state: 'CDMX',
-    postalCode: '06500',
-    country: 'MX',
-  },
-  {
-    firstName: 'Juan',
-    lastName: 'Rodríguez Martínez',
-    dateOfBirth: new Date('1978-07-22'),
-    gender: 'Masculino',
-    email: 'juan.rodriguez@example.com',
-    phone: '+52 33 2345 6789',
-    address: 'Av. Chapultepec 456',
-    city: 'Guadalajara',
-    state: 'Jalisco',
-    postalCode: '44100',
-    country: 'MX',
-  },
-  {
-    firstName: 'Ana',
-    lastName: 'Hernández Silva',
-    dateOfBirth: new Date('1992-11-08'),
-    gender: 'Femenino',
-    email: 'ana.hernandez@example.com',
-    phone: '+52 81 3456 7890',
-    address: 'Av. Constitución 789',
-    city: 'Monterrey',
-    state: 'Nuevo León',
-    postalCode: '64000',
-    country: 'MX',
-  },
-  {
-    firstName: 'Carlos',
-    lastName: 'López Ramírez',
-    dateOfBirth: new Date('1965-05-30'),
-    gender: 'Masculino',
-    email: 'carlos.lopez@example.com',
-    phone: '+52 55 4567 8901',
-    address: 'Calle Insurgentes 234',
-    city: 'Ciudad de México',
-    state: 'CDMX',
-    postalCode: '03100',
-    country: 'MX',
-  },
-  {
-    firstName: 'Laura',
-    lastName: 'Martínez Pérez',
-    dateOfBirth: new Date('1988-09-12'),
-    gender: 'Femenino',
-    email: 'laura.martinez@example.com',
-    phone: '+52 55 5678 9012',
-    address: 'Av. Universidad 567',
-    city: 'Ciudad de México',
-    state: 'CDMX',
-    postalCode: '04510',
-    country: 'MX',
-  },
-  {
-    firstName: 'Miguel',
-    lastName: 'García Torres',
-    dateOfBirth: new Date('1995-01-25'),
-    gender: 'Masculino',
-    email: 'miguel.garcia@example.com',
-    phone: '+52 33 6789 0123',
-    address: 'Av. Américas 890',
-    city: 'Guadalajara',
-    state: 'Jalisco',
-    postalCode: '44630',
-    country: 'MX',
-  },
-  {
-    firstName: 'Sofia',
-    lastName: 'Sánchez Morales',
-    dateOfBirth: new Date('1982-04-18'),
-    gender: 'Femenino',
-    email: 'sofia.sanchez@example.com',
-    phone: '+52 81 7890 1234',
-    address: 'Av. San Pedro 345',
-    city: 'Monterrey',
-    state: 'Nuevo León',
-    postalCode: '66230',
-    country: 'MX',
-  },
-  {
-    firstName: 'Diego',
-    lastName: 'Fernández Castro',
-    dateOfBirth: new Date('1970-12-03'),
-    gender: 'Masculino',
-    email: 'diego.fernandez@example.com',
-    phone: '+52 55 8901 2345',
-    address: 'Av. Revolución 678',
-    city: 'Ciudad de México',
-    state: 'CDMX',
-    postalCode: '01030',
-    country: 'MX',
-  },
-  {
-    firstName: 'Valentina',
-    lastName: 'Jiménez Ruiz',
-    dateOfBirth: new Date('1998-06-14'),
-    gender: 'Femenino',
-    email: 'valentina.jimenez@example.com',
-    phone: '+52 33 9012 3456',
-    address: 'Av. Patria 901',
-    city: 'Guadalajara',
-    state: 'Jalisco',
-    postalCode: '45030',
-    country: 'MX',
-  },
-  {
-    firstName: 'Roberto',
-    lastName: 'Díaz Vargas',
-    dateOfBirth: new Date('1975-08-27'),
-    gender: 'Masculino',
-    email: 'roberto.diaz@example.com',
-    phone: '+52 81 0123 4567',
-    address: 'Av. Garza Sada 123',
-    city: 'Monterrey',
-    state: 'Nuevo León',
-    postalCode: '64849',
-    country: 'MX',
-  },
+// Medical data banks
+const CHRONIC_CONDITIONS = [
+  'Type 2 Diabetes Mellitus',
+  'Essential Hypertension',
+  'Asthma',
+  'Hyperlipidemia',
+  'Osteoarthritis',
+  'Chronic Kidney Disease Stage 3',
+  'Hypothyroidism',
+  'Gastroesophageal Reflux Disease',
+  'Chronic Obstructive Pulmonary Disease',
+  'Anxiety Disorder',
+  'Major Depressive Disorder',
+  'Migraine',
 ];
 
+const COMMON_ALLERGIES = [
+  'Penicillin - Rash',
+  'Sulfa drugs - Hives',
+  'Shellfish - Anaphylaxis',
+  'Peanuts - Throat swelling',
+  'Latex - Contact dermatitis',
+  'Bee stings - Anaphylaxis',
+  'Ibuprofen - Stomach upset',
+  'Codeine - Nausea',
+  'Aspirin - Breathing difficulty',
+];
+
+const COMMON_MEDICATIONS = [
+  { name: 'Metformin', dosage: '500mg', frequency: 'twice daily with meals' },
+  { name: 'Lisinopril', dosage: '10mg', frequency: 'once daily' },
+  { name: 'Atorvastatin', dosage: '20mg', frequency: 'once daily at bedtime' },
+  { name: 'Levothyroxine', dosage: '75mcg', frequency: 'once daily before breakfast' },
+  { name: 'Omeprazole', dosage: '20mg', frequency: 'once daily before breakfast' },
+  { name: 'Albuterol inhaler', dosage: '90mcg', frequency: 'as needed for wheezing' },
+  { name: 'Sertraline', dosage: '50mg', frequency: 'once daily' },
+  { name: 'Amlodipine', dosage: '5mg', frequency: 'once daily' },
+  { name: 'Gabapentin', dosage: '300mg', frequency: 'three times daily' },
+  { name: 'Aspirin', dosage: '81mg', frequency: 'once daily' },
+];
+
+const VISIT_REASONS = [
+  'Annual physical examination',
+  'Follow-up for chronic condition management',
+  'Acute upper respiratory infection',
+  'Blood pressure check',
+  'Medication refill',
+  'Lab results review',
+  'Preventive care and health maintenance',
+  'Joint pain evaluation',
+];
+
+// Locale-specific name banks
+const NAMES = {
+  en: {
+    male: ['James', 'John', 'Michael', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Christopher', 'Daniel'],
+    female: ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen'],
+    surnames: ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'],
+  },
+  es: {
+    male: ['José', 'Luis', 'Carlos', 'Juan', 'Miguel', 'Pedro', 'Francisco', 'Antonio', 'Manuel', 'Alejandro'],
+    female: ['María', 'Carmen', 'Ana', 'Isabel', 'Lucía', 'Rosa', 'Teresa', 'Gabriela', 'Sofía', 'Elena'],
+    surnames: ['García', 'Rodríguez', 'González', 'Fernández', 'López', 'Martínez', 'Sánchez', 'Pérez', 'Gómez', 'Hernández'],
+  },
+  pt: {
+    male: ['João', 'José', 'Carlos', 'Paulo', 'Pedro', 'Lucas', 'Miguel', 'Rafael', 'Daniel', 'Bruno'],
+    female: ['Maria', 'Ana', 'Beatriz', 'Sofia', 'Julia', 'Laura', 'Camila', 'Gabriela', 'Isabela', 'Mariana'],
+    surnames: ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Costa'],
+  },
+};
+
+// Helper functions
 function generateMRN(): string {
-  // Generate unique MRN like MRN-2024-001234
-  const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 900000) + 100000;
-  return `MRN-${year}-${random}`;
+  return `PT-${faker.string.alphanumeric(4)}-${faker.string.alphanumeric(4)}-${faker.string.alphanumeric(4)}`.toUpperCase();
 }
 
-function generateTokenId(): string {
-  // Generate token like PT-a1b2-c3d4-e5f6
-  const chars = '0123456789abcdef';
-  const segments = [4, 4, 4];
-  return 'PT-' + segments.map(len => {
-    return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  }).join('-');
+function generateDataHash(patientData: any): string {
+  return crypto.createHash('sha256').update(JSON.stringify(patientData)).digest('hex');
 }
 
-function getAgeBand(dateOfBirth: Date): string {
-  const today = new Date();
-  const age = today.getFullYear() - dateOfBirth.getFullYear();
-  const decade = Math.floor(age / 10) * 10;
-  return `${decade}-${decade + 9}`;
+function selectRandom<T>(array: T[]): T {
+  return array[Math.floor(Math.random() * array.length)];
 }
 
-function getRegion(state: string): string {
-  const regionMap: Record<string, string> = {
-    'CDMX': 'CDMX',
-    'Jalisco': 'JAL',
-    'Nuevo León': 'NL',
+function selectMultipleRandom<T>(array: T[], count: number): T[] {
+  const shuffled = [...array].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
+// Main patient generator
+async function generatePatient(locale: 'en' | 'es' | 'pt', clinicianId: string, index: number) {
+  const gender = Math.random() > 0.5 ? 'M' : 'F';
+  const nameList = gender === 'M' ? NAMES[locale].male : NAMES[locale].female;
+  const firstName = selectRandom(nameList);
+  const lastName = selectRandom(NAMES[locale].surnames);
+  const fullName = `${firstName} ${lastName}`;
+
+  // Age distribution: 20% pediatric (0-17), 60% adult (18-64), 20% elderly (65+)
+  let age: number;
+  const ageCategory = Math.random();
+  if (ageCategory < 0.2) {
+    age = faker.number.int({ min: 1, max: 17 }); // Pediatric
+  } else if (ageCategory < 0.8) {
+    age = faker.number.int({ min: 18, max: 64 }); // Adult
+  } else {
+    age = faker.number.int({ min: 65, max: 88 }); // Elderly
+  }
+
+  const dateOfBirth = new Date();
+  dateOfBirth.setFullYear(dateOfBirth.getFullYear() - age);
+
+  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}.${index}@example.com`;
+  const phone = faker.phone.number('###-###-####');
+  const mrn = generateMRN();
+  const tokenId = `PT-${faker.string.alphanumeric(4)}-${faker.string.alphanumeric(4)}-${faker.string.alphanumeric(4)}`.toLowerCase();
+
+  // Generate medical history based on age
+  const conditions: string[] = [];
+  const medications: Array<{ name: string; dosage: string; frequency: string }> = [];
+  
+  if (age >= 40) {
+    // Adults more likely to have chronic conditions
+    const conditionCount = faker.number.int({ min: 0, max: 3 });
+    const selectedConditions = selectMultipleRandom(CHRONIC_CONDITIONS, conditionCount);
+    conditions.push(...selectedConditions);
+
+    // Add medications for conditions
+    if (conditions.includes('Type 2 Diabetes Mellitus')) {
+      medications.push(COMMON_MEDICATIONS[0]); // Metformin
+    }
+    if (conditions.includes('Essential Hypertension')) {
+      medications.push(COMMON_MEDICATIONS[1]); // Lisinopril
+      medications.push(COMMON_MEDICATIONS[7]); // Amlodipine
+    }
+    if (conditions.includes('Hyperlipidemia')) {
+      medications.push(COMMON_MEDICATIONS[2]); // Atorvastatin
+    }
+    if (conditions.includes('Hypothyroidism')) {
+      medications.push(COMMON_MEDICATIONS[3]); // Levothyroxine
+    }
+    if (conditions.includes('Gastroesophageal Reflux Disease')) {
+      medications.push(COMMON_MEDICATIONS[4]); // Omeprazole
+    }
+    if (conditions.includes('Asthma') || conditions.includes('Chronic Obstructive Pulmonary Disease')) {
+      medications.push(COMMON_MEDICATIONS[5]); // Albuterol
+    }
+    if (conditions.includes('Anxiety Disorder') || conditions.includes('Major Depressive Disorder')) {
+      medications.push(COMMON_MEDICATIONS[6]); // Sertraline
+    }
+  }
+
+  // Allergies (40% of patients have at least one)
+  const allergies: string[] = [];
+  if (Math.random() < 0.4) {
+    const allergyCount = faker.number.int({ min: 1, max: 2 });
+    allergies.push(...selectMultipleRandom(COMMON_ALLERGIES, allergyCount));
+  }
+
+  const patientData = {
+    fullName,
+    dateOfBirth,
+    gender,
+    email,
+    phone,
+    mrn,
+    conditions,
+    medications,
+    allergies,
   };
-  return regionMap[state] || 'MX';
+
+  const dataHash = generateDataHash(patientData);
+
+  // Create patient
+  const patient = await prisma.patient.create({
+    data: {
+      mrn,
+      tokenId,
+      firstName,
+      lastName,
+      dateOfBirth,
+      gender,
+      email,
+      phone,
+      address: faker.location.streetAddress(),
+      city: faker.location.city(),
+      state: faker.location.state({ abbreviated: true }),
+      postalCode: faker.location.zipCode(),
+      dataHash,
+      isActive: true,
+    },
+  });
+
+  console.log(`✅ Created patient ${index + 1}/30: ${fullName} (${locale.toUpperCase()}, ${age}yo)`);
+
+  // Create medications
+  for (const med of medications) {
+    await prisma.medication.create({
+      data: {
+        patientId: patient.id,
+        name: med.name,
+        dose: med.dosage,
+        frequency: med.frequency,
+        prescribedBy: clinicianId,
+        startDate: faker.date.past({ years: 2 }),
+        isActive: true,
+      },
+    });
+  }
+
+  // Create consent record
+  const consentData = {
+    patientId: patient.id,
+    type: 'GENERAL_CONSULTATION',
+    title: 'General Medical Treatment Consent',
+    content: 'I consent to medical treatment and care as deemed necessary by my healthcare provider.',
+  };
+  await prisma.consent.create({
+    data: {
+      ...consentData,
+      consentHash: generateDataHash(consentData),
+      signatureData: `${fullName}`,
+      signedAt: new Date(),
+      isActive: true,
+    },
+  });
+
+  // 60% chance of having an upcoming or recent appointment
+  if (Math.random() < 0.6) {
+    const appointmentDate = faker.date.soon({ days: 14 });
+    const visitReason = selectRandom(VISIT_REASONS);
+    const endTime = new Date(appointmentDate);
+    endTime.setMinutes(endTime.getMinutes() + 30);
+
+    await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        clinicianId,
+        title: visitReason,
+        startTime: appointmentDate,
+        endTime,
+        status: appointmentDate > new Date() ? 'SCHEDULED' : 'COMPLETED',
+        description: appointmentDate > new Date() ? null : 'Patient doing well. Continue current treatment plan.',
+      },
+    });
+  }
+
+  // Create patient user for portal access
+  await prisma.patientUser.create({
+    data: {
+      email,
+      phone,
+      patientId: patient.id,
+    },
+  });
+
+  return patient;
 }
 
+// Main execution
 async function main() {
-  console.log('🌱 Seeding database with 10 synthetic patients...\n');
+  console.log('🌱 Seeding synthetic patient data...\n');
 
-  // Get the first clinician to assign patients to
+  // Find first clinician
   const clinician = await prisma.user.findFirst({
     where: { role: 'CLINICIAN' },
   });
 
   if (!clinician) {
-    console.log('⚠️  No clinician found. Please create a clinician user first.');
-    return;
+    console.error('❌ No clinician found. Please run the main seed first.');
+    process.exit(1);
   }
 
-  console.log(`✅ Found clinician: ${clinician.firstName} ${clinician.lastName} (${clinician.email})\n`);
+  console.log(`📋 Using clinician: ${clinician.email}\n`);
 
-  for (let i = 0; i < SYNTHETIC_PATIENTS.length; i++) {
-    const patientData = SYNTHETIC_PATIENTS[i];
-    const mrn = generateMRN();
-    const tokenId = generateTokenId();
-    const ageBand = getAgeBand(patientData.dateOfBirth);
-    const region = getRegion(patientData.state);
+  // Distribution: 10 English, 15 Spanish, 5 Portuguese
+  let patientIndex = 0;
 
-    try {
-      const patient = await prisma.patient.create({
-        data: {
-          ...patientData,
-          mrn,
-          tokenId,
-          ageBand,
-          region,
-          assignedClinicianId: clinician.id,
-          isActive: true,
-        },
-      });
-
-      console.log(`✅ Created patient ${i + 1}/10: ${patient.firstName} ${patient.lastName}`);
-      console.log(`   MRN: ${patient.mrn} | Token: ${patient.tokenId}`);
-      console.log(`   Age Band: ${patient.ageBand} | Region: ${patient.region}\n`);
-
-      // Create a sample medication for some patients
-      if (i % 3 === 0) {
-        const medications = [
-          { name: 'Metformina', dose: '850mg', frequency: '2x/día', route: 'oral' },
-          { name: 'Losartán', dose: '50mg', frequency: '1x/día', route: 'oral' },
-          { name: 'Atorvastatina', dose: '20mg', frequency: '1x/día en la noche', route: 'oral' },
-        ];
-
-        const med = medications[Math.floor(Math.random() * medications.length)];
-
-        await prisma.medication.create({
-          data: {
-            patientId: patient.id,
-            name: med.name,
-            dose: med.dose,
-            frequency: med.frequency,
-            route: med.route,
-            instructions: 'Tomar con alimentos',
-            prescribedBy: clinician.email,
-            isActive: true,
-          },
-        });
-
-        console.log(`   💊 Added medication: ${med.name}\n`);
-      }
-
-      // Create upcoming appointments for some patients
-      if (i % 2 === 0) {
-        const daysAhead = Math.floor(Math.random() * 30) + 1;
-        const appointmentDate = new Date();
-        appointmentDate.setDate(appointmentDate.getDate() + daysAhead);
-        appointmentDate.setHours(9 + Math.floor(Math.random() * 8), 0, 0, 0);
-
-        const endTime = new Date(appointmentDate);
-        endTime.setMinutes(endTime.getMinutes() + 30);
-
-        await prisma.appointment.create({
-          data: {
-            patientId: patient.id,
-            clinicianId: clinician.id,
-            title: 'Consulta de seguimiento',
-            description: 'Revisión de resultados de laboratorio y ajuste de tratamiento',
-            startTime: appointmentDate,
-            endTime: endTime,
-            timezone: 'America/Mexico_City',
-            type: Math.random() > 0.5 ? 'IN_PERSON' : 'TELEHEALTH',
-            status: 'SCHEDULED',
-          },
-        });
-
-        console.log(`   📅 Created appointment: ${appointmentDate.toLocaleDateString('es-MX')}\n`);
-      }
-    } catch (error: any) {
-      console.error(`❌ Error creating patient ${i + 1}:`, error.message);
-    }
+  // English patients (10)
+  console.log('🇺🇸 Creating English-speaking patients...');
+  for (let i = 0; i < 10; i++) {
+    await generatePatient('en', clinician.id, patientIndex++);
   }
 
-  console.log('\n🎉 Successfully seeded 10 synthetic patients!\n');
-  console.log('📊 Summary:');
-  const patientCount = await prisma.patient.count();
-  const medicationCount = await prisma.medication.count();
-  const appointmentCount = await prisma.appointment.count();
+  // Spanish patients (15)
+  console.log('\n🇲🇽 Creating Spanish-speaking patients...');
+  for (let i = 0; i < 15; i++) {
+    await generatePatient('es', clinician.id, patientIndex++);
+  }
 
-  console.log(`   Patients: ${patientCount}`);
-  console.log(`   Medications: ${medicationCount}`);
-  console.log(`   Appointments: ${appointmentCount}`);
+  // Portuguese patients (5)
+  console.log('\n🇧🇷 Creating Portuguese-speaking patients...');
+  for (let i = 0; i < 5; i++) {
+    await generatePatient('pt', clinician.id, patientIndex++);
+  }
+
+  console.log('\n✅ Successfully created 30 synthetic patients!');
+  console.log('   - 10 English-speaking');
+  console.log('   - 15 Spanish-speaking');
+  console.log('   - 5 Portuguese-speaking');
+  console.log('\n📊 Patients have realistic:');
+  console.log('   - Medical histories');
+  console.log('   - Medications');
+  console.log('   - Allergies');
+  console.log('   - Appointments');
+  console.log('   - Consent records');
+  console.log('   - Portal access credentials');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding failed:', e);
+    console.error('❌ Error seeding patients:', e);
     process.exit(1);
   })
   .finally(async () => {
