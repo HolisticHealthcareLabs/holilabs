@@ -19,7 +19,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Record {
+// TODO: Renamed from 'Record' to avoid conflict with TypeScript's built-in Record type
+interface MedicalRecord {
   id: string;
   subjective: string;
   objective: string;
@@ -65,7 +66,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function MedicalRecordsList() {
-  const [records, setRecords] = useState<Record[]>([]);
+  const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

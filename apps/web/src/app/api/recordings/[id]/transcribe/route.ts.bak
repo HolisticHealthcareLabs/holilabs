@@ -52,12 +52,14 @@ export async function POST(
     const { audioUrl, generateSOAP } = validation.data;
 
     // Get recording session
-    const recording = await prisma.scribeSession.findUnique({
+    const recording = await prisma.recordingSession.findUnique({
       where: { id: recordingId },
       include: {
         appointment: {
           include: {
-            clinician: true, // TODO: Fixed - clinician is already a User, no nested 'user' relation exists
+            clinician: {
+              include: { user: true },
+            },
           },
         },
         patient: {
@@ -66,9 +68,8 @@ export async function POST(
             lastName: true,
             dateOfBirth: true,
             gender: true,
-            // TODO: allergies and chronicConditions fields don't exist in Patient model
-            // allergies: true,
-            // chronicConditions: true,
+            allergies: true,
+            chronicConditions: true,
           },
         },
       },
@@ -82,7 +83,7 @@ export async function POST(
     }
 
     // Verify ownership
-    if (recording.appointment.clinician.id !== session.user.id) {
+    if (recording.appointment.clinician.user.id !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para transcribir esta grabación' },
         { status: 403 }
@@ -105,10 +106,10 @@ export async function POST(
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // Update status to processing (transcribing)
-    await prisma.scribeSession.update({
+    // Update status to transcribing
+    await prisma.recordingSession.update({
       where: { id: recordingId },
-      data: { status: 'PROCESSING' }, // TODO: Changed from TRANSCRIBING to PROCESSING (valid enum value)
+      data: { status: 'TRANSCRIBING' },
     });
 
     // Download audio file
@@ -152,8 +153,9 @@ export async function POST(
 Paciente: ${recording.patient.firstName} ${recording.patient.lastName}
 Edad: ${new Date().getFullYear() - new Date(recording.patient.dateOfBirth).getFullYear()} años
 Género: ${recording.patient.gender === 'M' ? 'Masculino' : recording.patient.gender === 'F' ? 'Femenino' : 'Otro'}
+Alergias: ${recording.patient.allergies?.join(', ') || 'Ninguna'}
+Condiciones crónicas: ${recording.patient.chronicConditions?.join(', ') || 'Ninguna'}
 `.trim();
-      // TODO: Allergies and chronic conditions removed - fields don't exist in Patient model
 
       const soapPrompt = `Eres un médico experto. A partir de la siguiente transcripción de una consulta médica, genera notas clínicas estructuradas en formato SOAP (Subjetivo, Objetivo, Análisis, Plan).
 
@@ -207,52 +209,42 @@ Responde en formato JSON con esta estructura:
     }
 
     // Update recording with transcript and AI-generated data
-    // TODO: audioUrl, transcript, aiGeneratedNotes fields don't exist in ScribeSession
-    // These should be stored in separate Transcription and SOAPNote models
-    const updatedRecording = await prisma.scribeSession.update({
+    const updatedRecording = await prisma.recordingSession.update({
       where: { id: recordingId },
       data: {
         status: 'COMPLETED',
-        audioFileUrl: audioUrl, // TODO: Changed from audioUrl to audioFileUrl
-        // transcript: transcript, // TODO: Should be in Transcription model
-        // aiGeneratedNotes: soapNotes ? JSON.stringify(soapNotes) : null, // TODO: Should be in SOAPNote model
+        audioUrl,
+        transcript,
+        aiGeneratedNotes: soapNotes ? JSON.stringify(soapNotes) : null,
       },
     });
 
     // Auto-create clinical note if SOAP was generated
-    // TODO: ClinicalNote schema doesn't match - needs noteHash, authorId (not clinicianId)
-    // Commenting out for now to allow build to pass
     let clinicalNote = null;
-    // if (soapNotes && diagnosis) {
-    //   const crypto = require('crypto');
-    //   const noteHash = crypto.createHash('sha256')
-    //     .update(JSON.stringify({ soapNotes, diagnosis, recordingId }))
-    //     .digest('hex');
-    //
-    //   clinicalNote = await prisma.clinicalNote.create({
-    //     data: {
-    //       patientId: recording.patientId,
-    //       authorId: recording.appointment.clinicianId, // TODO: Changed from clinicianId to authorId
-    //       // appointmentId: recording.appointmentId, // TODO: Field doesn't exist
-    //       type: 'FOLLOW_UP', // TODO: Changed from noteType to type
-    //       chiefComplaint: diagnosis.substring(0, 200),
-    //       subjective: soapNotes.subjective,
-    //       objective: soapNotes.objective,
-    //       assessment: soapNotes.assessment,
-    //       plan: soapNotes.plan,
-    //       diagnosis: icd10Codes, // TODO: Changed from diagnoses to diagnosis
-    //       noteHash, // TODO: Required field
-    //       // status: 'DRAFT', // TODO: Field doesn't exist
-    //       // source: 'AI_GENERATED', // TODO: Field doesn't exist
-    //     },
-    //   });
-    //
-    //   logger.info({
-    //     event: 'clinical_note_auto_created',
-    //     recordingId,
-    //     clinicalNoteId: clinicalNote.id,
-    //   });
-    // }
+    if (soapNotes && diagnosis) {
+      clinicalNote = await prisma.clinicalNote.create({
+        data: {
+          patientId: recording.patientId,
+          clinicianId: recording.appointment.clinicianId,
+          appointmentId: recording.appointmentId,
+          noteType: 'FOLLOW_UP',
+          chiefComplaint: diagnosis.substring(0, 200),
+          subjective: soapNotes.subjective,
+          objective: soapNotes.objective,
+          assessment: soapNotes.assessment,
+          plan: soapNotes.plan,
+          diagnoses: icd10Codes,
+          status: 'DRAFT',
+          source: 'AI_GENERATED',
+        },
+      });
+
+      logger.info({
+        event: 'clinical_note_auto_created',
+        recordingId,
+        clinicalNoteId: clinicalNote.id,
+      });
+    }
 
     // Create audit log
     await prisma.auditLog.create({
@@ -264,7 +256,7 @@ Responde en formato JSON con esta estructura:
         resource: 'RecordingSession',
         resourceId: recordingId,
         success: true,
-        details: {
+        metadata: {
           transcriptionLength: transcript.length,
           soapGenerated: !!soapNotes,
           clinicalNoteCreated: !!clinicalNote,
@@ -303,7 +295,7 @@ Responde en formato JSON con esta estructura:
 
     // Update recording status to failed
     try {
-      await prisma.scribeSession.update({
+      await prisma.recordingSession.update({
         where: { id: params.id },
         data: { status: 'FAILED' },
       });

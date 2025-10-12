@@ -28,12 +28,14 @@ export async function POST(
     const recordingId = params.id;
 
     // Get recording session
-    const recording = await prisma.scribeSession.findUnique({
+    const recording = await prisma.recordingSession.findUnique({
       where: { id: recordingId },
       include: {
         appointment: {
           include: {
-            clinician: true, // TODO: Fixed - clinician is already a User, no nested 'user' relation exists
+            clinician: {
+              include: { user: true },
+            },
           },
         },
       },
@@ -47,7 +49,7 @@ export async function POST(
     }
 
     // Verify ownership
-    if (recording.appointment.clinician.id !== session.user.id) {
+    if (recording.appointment.clinician.user.id !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para detener esta grabación' },
         { status: 403 }
@@ -71,7 +73,7 @@ export async function POST(
     const durationSeconds = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
 
     // Update recording session
-    const updatedRecording = await prisma.scribeSession.update({
+    const updatedRecording = await prisma.recordingSession.update({
       where: { id: recordingId },
       data: {
         status: 'PROCESSING',
@@ -103,7 +105,7 @@ export async function POST(
         resource: 'RecordingSession',
         resourceId: recordingId,
         success: true,
-        details: {
+        metadata: {
           status: 'stopped',
           durationSeconds,
         },

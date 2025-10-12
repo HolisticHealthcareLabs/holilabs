@@ -12,18 +12,22 @@ import { authOptions } from './auth';
 import { getPatientSession } from './auth/patient-session';
 import crypto from 'crypto';
 
+// TODO: Updated to match Prisma AuditAction enum - removed VIEW, ACCESS_DENIED, PASSWORD_RESET, CONSENT_GRANTED, CONSENT_REVOKED
 export type AuditAction =
-  | 'VIEW'
   | 'CREATE'
+  | 'READ'
   | 'UPDATE'
   | 'DELETE'
-  | 'EXPORT'
   | 'LOGIN'
   | 'LOGOUT'
-  | 'ACCESS_DENIED'
-  | 'PASSWORD_RESET'
-  | 'CONSENT_GRANTED'
-  | 'CONSENT_REVOKED';
+  | 'EXPORT'
+  | 'PRINT'
+  | 'DEIDENTIFY'
+  | 'REIDENTIFY'
+  | 'PRESCRIBE'
+  | 'SIGN'
+  | 'REVOKE'
+  | 'NOTIFY';
 
 export interface AuditLogData {
   action: AuditAction;
@@ -145,7 +149,8 @@ export async function createAuditLog(
 
     // Create data hash if sensitive data is involved
     let dataHash: string | undefined;
-    if (data.details && (data.action === 'VIEW' || data.action === 'EXPORT')) {
+    // TODO: Changed 'VIEW' to 'READ' to match Prisma enum
+    if (data.details && (data.action === 'READ' || data.action === 'EXPORT')) {
       dataHash = createDataHash(data.details);
     }
 
@@ -199,7 +204,7 @@ export async function auditView(
 ): Promise<void> {
   return createAuditLog(
     {
-      action: 'VIEW',
+      action: 'READ', // TODO: Changed from 'VIEW' to 'READ' to match Prisma enum
       resource,
       resourceId,
       details,
@@ -297,12 +302,14 @@ export async function auditAccessDenied(
   reason: string,
   request?: NextRequest
 ): Promise<void> {
+  // TODO: Changed from 'ACCESS_DENIED' to 'READ' with success: false
+  // ACCESS_DENIED is not in Prisma enum, using READ to track access attempt
   return createAuditLog(
     {
-      action: 'ACCESS_DENIED',
+      action: 'READ',
       resource,
       resourceId,
-      details: { reason },
+      details: { reason, accessDenied: true },
       success: false,
     },
     request

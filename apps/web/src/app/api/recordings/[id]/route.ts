@@ -28,7 +28,8 @@ export async function GET(
     const recordingId = params.id;
 
     // Fetch recording with all related data
-    const recording = await prisma.recordingSession.findUnique({
+    // TODO: recordingSession model doesn't exist - using scribeSession instead
+    const recording = await prisma.scribeSession.findUnique({
       where: { id: recordingId },
       include: {
         appointment: {
@@ -42,7 +43,8 @@ export async function GET(
         patient: {
           select: {
             id: true,
-            patientId: true,
+            // TODO: patientId field doesn't exist - using mrn instead
+            mrn: true,
             firstName: true,
             lastName: true,
           },

@@ -49,7 +49,9 @@ export async function POST(request: NextRequest) {
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
       include: {
-        clinician: true, // TODO: Fixed - clinician is already a User, no nested 'user' relation exists
+        clinician: {
+          include: { user: true },
+        },
         patient: true,
       },
     });
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (appointment.clinician.id !== session.user.id) {
+    if (appointment.clinician.user.id !== session.user.id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para grabar esta cita' },
         { status: 403 }
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already an active recording for this appointment
-    const existingRecording = await prisma.scribeSession.findFirst({
+    const existingRecording = await prisma.recordingSession.findFirst({
       where: {
         appointmentId,
         status: 'RECORDING',
@@ -87,11 +89,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new recording session
-    const recording = await prisma.scribeSession.create({
+    const recording = await prisma.recordingSession.create({
       data: {
         appointmentId,
         patientId,
-        clinicianId: appointment.clinicianId, // TODO: Added required clinicianId field
         status: 'RECORDING',
         startedAt: new Date(),
       },
@@ -106,8 +107,7 @@ export async function POST(request: NextRequest) {
           select: {
             firstName: true,
             lastName: true,
-            // TODO: patientId field doesn't exist on Patient model, using id instead
-            id: true,
+            patientId: true,
           },
         },
       },
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
         resource: 'RecordingSession',
         resourceId: recording.id,
         success: true,
-        details: {
+        metadata: {
           appointmentId,
           patientId,
         },

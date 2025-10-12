@@ -1013,6 +1013,8 @@ model ScribeSession {
   audioDuration     Int       @default(0)  // seconds
   audioFormat       String    @default("webm")
   audioSize         Int?      // bytes
+  startedAt         DateTime?
+  endedAt           DateTime?
 
   // Processing
   status            ScribeStatus @default(RECORDING)

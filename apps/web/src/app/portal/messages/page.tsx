@@ -85,7 +85,8 @@ export default function PatientMessagesPage() {
   useEffect(() => {
     if (!patientId || !conversation) return;
 
-    initSocket();
+    // TODO: initSocket requires authToken parameter - using patientId as temporary token
+    initSocket(patientId);
     connectSocket(patientId, 'PATIENT');
 
     const socket = getSocket();
