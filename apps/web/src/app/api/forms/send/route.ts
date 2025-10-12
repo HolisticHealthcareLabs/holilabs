@@ -15,6 +15,10 @@ function generateAccessToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
+function generateDataHash(data: any): string {
+  return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -59,12 +63,13 @@ export async function POST(request: NextRequest) {
       data: {
         patientId,
         templateId,
+        assignedBy: 'system', // TODO: Get from session
         status: 'PENDING',
-        progress: 0,
+        progressPercent: 0,
         accessToken,
+        accessTokenHash: generateDataHash({ token: accessToken }),
         sentAt: new Date(),
         expiresAt: expiresAtDate,
-        customMessage: message || null,
         responses: {},
       },
     });
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
       data: {
         formInstanceId: formInstance.id,
         event: 'SENT',
-        performedBy: 'clinician', // TODO: Get from session
+        userType: 'clinician', // TODO: Get from session
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         metadata: {

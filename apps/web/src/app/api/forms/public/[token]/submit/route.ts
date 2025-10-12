@@ -77,7 +77,7 @@ export async function POST(
         signatureDataUrl,
         status: 'SIGNED',
         completedAt: new Date(),
-        progress: 100,
+        progressPercent: 100,
       },
     });
 
@@ -86,7 +86,7 @@ export async function POST(
       data: {
         formInstanceId: formInstance.id,
         event: 'SUBMITTED',
-        performedBy: 'patient',
+        userType: 'patient',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         metadata: {
