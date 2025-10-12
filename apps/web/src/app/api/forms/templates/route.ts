@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { FormCategory } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
 
-    const where = category && category !== 'all' ? { category, isActive: true } : { isActive: true };
+    const where = category && category !== 'all' ? { category: category as FormCategory, isActive: true } : { isActive: true };
 
     const templates = await prisma.formTemplate.findMany({
       where,

@@ -127,15 +127,7 @@ export async function POST(request: NextRequest) {
         documentHash: fileHash,
         storageUrl: storageKey,
         documentType: documentType as any,
-        status: 'PROCESSING',
         uploadedBy: 'clinician', // TODO: Get from session
-        uploadedAt: new Date(),
-        tags: [category],
-        metadata: {
-          originalName: file.name,
-          mimeType: file.type,
-          encrypted: true,
-        },
       },
     });
 
@@ -143,12 +135,12 @@ export async function POST(request: NextRequest) {
     await prisma.auditLog.create({
       data: {
         userId: 'system', // TODO: Get from session
-        action: 'DOCUMENT_UPLOAD',
-        resourceType: 'Document',
+        action: 'CREATE',
+        resource: 'Document',
         resourceId: document.id,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
-        metadata: {
+        details: {
           patientId,
           fileName: file.name,
           fileSize: file.size,
@@ -166,7 +158,7 @@ export async function POST(request: NextRequest) {
           size: document.fileSize,
           type: document.fileType,
           category,
-          uploadedAt: document.uploadedAt,
+          uploadedAt: document.createdAt,
         },
       },
       { status: 201 }
