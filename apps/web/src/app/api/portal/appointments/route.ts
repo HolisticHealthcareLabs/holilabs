@@ -15,8 +15,9 @@ import logger from '@/lib/logger';
 import { z } from 'zod';
 
 // Query parameters schema
+// TODO: RESCHEDULED status doesn't exist in AppointmentStatus enum
 const AppointmentsQuerySchema = z.object({
-  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED']).optional(),
+  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS']).optional(),
   upcoming: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
@@ -71,8 +72,9 @@ export async function GET(request: NextRequest) {
         where.startTime = {
           gte: new Date(),
         };
+        // TODO: RESCHEDULED status doesn't exist - using SCHEDULED and CONFIRMED
         where.status = {
-          in: ['SCHEDULED', 'RESCHEDULED'],
+          in: ['SCHEDULED', 'CONFIRMED'],
         };
       } else {
         where.OR = [
@@ -95,13 +97,14 @@ export async function GET(request: NextRequest) {
             licenseNumber: true,
           },
         },
-        recordingSessions: {
-          select: {
-            id: true,
-            audioDuration: true,
-            status: true,
-          },
-        },
+        // TODO: recordingSessions relation doesn't exist in Prisma schema yet
+        // recordingSessions: {
+        //   select: {
+        //     id: true,
+        //     audioDuration: true,
+        //     status: true,
+        //   },
+        // },
       },
       orderBy: {
         startTime: 'desc',
@@ -111,9 +114,10 @@ export async function GET(request: NextRequest) {
 
     // Separate into upcoming and past
     const now = new Date();
+    // TODO: RESCHEDULED status doesn't exist - using SCHEDULED and CONFIRMED
     const upcomingAppointments = appointments.filter(
       (apt) =>
-        apt.startTime >= now && ['SCHEDULED', 'RESCHEDULED'].includes(apt.status)
+        apt.startTime >= now && ['SCHEDULED', 'CONFIRMED'].includes(apt.status)
     );
     const pastAppointments = appointments.filter(
       (apt) =>
@@ -196,6 +200,9 @@ export async function POST(request: NextRequest) {
     const { reason, preferredDate, preferredTime, type, notes, urgency } =
       validation.data;
 
+    // Map VIRTUAL to TELEHEALTH for Prisma schema compatibility
+    const appointmentType = type === 'VIRTUAL' ? 'TELEHEALTH' : type;
+
     // Get patient's assigned clinician
     const patient = await prisma.patient.findUnique({
       where: { id: session.patientId },
@@ -246,9 +253,10 @@ export async function POST(request: NextRequest) {
         description: notes || `Solicitud de ${type === 'VIRTUAL' ? 'consulta virtual' : type === 'PHONE' ? 'consulta telefónica' : 'consulta presencial'}`,
         startTime: appointmentStart,
         endTime: appointmentEnd,
-        type,
+        type: appointmentType,
         status: 'SCHEDULED', // Set to SCHEDULED - clinic will confirm
-        urgency,
+        // TODO: urgency field doesn't exist in Prisma schema yet
+        // urgency,
       },
       include: {
         clinician: {
@@ -271,7 +279,7 @@ export async function POST(request: NextRequest) {
         resource: 'Appointment',
         resourceId: appointment.id,
         success: true,
-        metadata: {
+        details: {
           preferredTime,
           urgency,
         },

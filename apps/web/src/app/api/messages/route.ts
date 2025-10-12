@@ -215,10 +215,9 @@ export async function POST(request: NextRequest) {
     // Send notification
     await notifyNewMessage(
       toUserId,
-      toUserType === 'CLINICIAN' ? 'clinician' : 'patient',
+      toUserType === 'CLINICIAN' ? 'CLINICIAN' : 'PATIENT',
       fromUserName,
-      messageBody,
-      patientId
+      message.id
     );
 
     logger.info({

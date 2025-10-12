@@ -149,14 +149,14 @@ export async function search(options: SearchOptions): Promise<SearchResult[]> {
           description:
             userType === 'clinician'
               ? `Paciente: ${doc.patient.firstName} ${doc.patient.lastName}`
-              : doc.type,
+              : doc.documentType, // TODO: Changed from doc.type to doc.documentType (actual field name)
           date: doc.createdAt,
           url:
             userType === 'clinician'
               ? `/dashboard/patients/${doc.patientId}#documents`
               : `/portal/documents`,
           metadata: {
-            type: doc.type,
+            type: doc.documentType, // TODO: Changed from doc.type to doc.documentType
             fileSize: doc.fileSize,
           },
         }))

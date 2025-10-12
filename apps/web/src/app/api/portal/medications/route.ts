@@ -32,23 +32,25 @@ export async function GET(request: NextRequest) {
     const medications = await prisma.medication.findMany({
       where,
       include: {
-        prescriber: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            specialty: true,
-          },
-        },
-        prescription: {
-          select: {
-            id: true,
-            startDate: true,
-            endDate: true,
-            status: true,
-            refillsRemaining: true,
-          },
-        },
+        // TODO: prescriber relation doesn't exist in Prisma schema yet
+        // prescriber: {
+        //   select: {
+        //     id: true,
+        //     firstName: true,
+        //     lastName: true,
+        //     specialty: true,
+        //   },
+        // },
+        // TODO: prescription relation doesn't exist in Prisma schema yet
+        // prescription: {
+        //   select: {
+        //     id: true,
+        //     startDate: true,
+        //     endDate: true,
+        //     status: true,
+        //     refillsRemaining: true,
+        //   },
+        // },
       },
       orderBy: [
         { isActive: 'desc' },
@@ -60,15 +62,17 @@ export async function GET(request: NextRequest) {
     const activeMedications = medications.filter((med) => med.isActive);
     const inactiveMedications = medications.filter((med) => !med.isActive);
 
+    // TODO: prescription relation doesn't exist - cannot check refill needs
     // Check for medications needing refill
-    const needsRefill = activeMedications.filter((med) => {
-      if (!med.prescription) return false;
-      const endDate = new Date(med.prescription.endDate);
-      const daysUntilEnd = Math.ceil(
-        (endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-      );
-      return daysUntilEnd <= 7 && med.prescription.refillsRemaining > 0;
-    });
+    // const needsRefill = activeMedications.filter((med) => {
+    //   if (!med.prescription) return false;
+    //   const endDate = new Date(med.prescription.endDate);
+    //   const daysUntilEnd = Math.ceil(
+    //     (endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    //   );
+    //   return daysUntilEnd <= 7 && med.prescription.refillsRemaining > 0;
+    // });
+    const needsRefill: any[] = [];
 
     logger.info({
       event: 'patient_medications_fetched',

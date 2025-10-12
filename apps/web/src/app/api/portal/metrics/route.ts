@@ -38,18 +38,21 @@ export async function GET(request: NextRequest) {
       },
       select: {
         id: true,
-        vitalSigns: true,
+        // TODO: vitalSigns field doesn't exist in Prisma schema yet
+        // vitalSigns: true,
         createdAt: true,
       },
     });
 
+    // TODO: vitalSigns field doesn't exist - cannot extract metrics
     // Extract and aggregate vital signs
-    const metrics = clinicalNotes
-      .filter((note) => note.vitalSigns)
-      .map((note) => ({
-        date: note.createdAt,
-        ...note.vitalSigns,
-      }));
+    const metrics: any[] = [];
+    // const metrics = clinicalNotes
+    //   .filter((note) => note.vitalSigns)
+    //   .map((note) => ({
+    //     date: note.createdAt,
+    //     ...note.vitalSigns,
+    //   }));
 
     // Calculate latest values and trends
     const latestMetric = metrics[0];

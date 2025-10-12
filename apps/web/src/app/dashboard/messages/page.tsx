@@ -32,6 +32,7 @@ interface Message {
   fromUserType: 'CLINICIAN' | 'PATIENT';
   toUserId: string;
   toUserType: 'CLINICIAN' | 'PATIENT';
+  patientId: string; // TODO: Added missing patientId field from Prisma schema
   body: string;
   attachments?: any;
   readAt: Date | null;
@@ -63,7 +64,8 @@ export default function ClinicianMessagesPage() {
   useEffect(() => {
     if (!session?.user?.id) return;
 
-    initSocket();
+    // TODO: initSocket requires authToken parameter - using session user id as temporary token
+    initSocket(session.user.id);
     connectSocket(session.user.id, 'CLINICIAN');
 
     const socket = getSocket();

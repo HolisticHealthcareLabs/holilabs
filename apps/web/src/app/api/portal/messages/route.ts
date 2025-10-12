@@ -36,11 +36,12 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true,
             specialty: true,
-            user: {
-              select: {
-                profilePictureUrl: true,
-              },
-            },
+            // TODO: user relation doesn't exist in Prisma schema yet
+            // user: {
+            //   select: {
+            //     profilePictureUrl: true,
+            //   },
+            // },
           },
         },
       },
@@ -158,11 +159,12 @@ export async function POST(request: NextRequest) {
         assignedClinician: {
           select: {
             id: true,
-            user: {
-              select: {
-                id: true,
-              },
-            },
+            // TODO: user relation doesn't exist in Prisma schema yet
+            // user: {
+            //   select: {
+            //     id: true,
+            //   },
+            // },
           },
         },
       },
@@ -196,7 +198,7 @@ export async function POST(request: NextRequest) {
       type,
       sentAt: new Date().toISOString(),
       senderId: session.userId,
-      receiverId: patient.assignedClinician.user.id,
+      receiverId: patient.assignedClinicianId, // Using clinicianId directly since user relation doesn't exist
       isRead: false,
     };
 
@@ -210,7 +212,7 @@ export async function POST(request: NextRequest) {
         resource: 'Message',
         resourceId: message.id,
         success: true,
-        metadata: {
+        details: {
           type,
           contentLength: content.length,
         },

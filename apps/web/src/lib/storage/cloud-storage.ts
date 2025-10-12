@@ -7,7 +7,8 @@
 
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+import { randomBytes, createCipheriv, createDecipheriv, CipherGCM, DecipherGCM } from 'crypto';
+import path from 'path';
 import sharp from 'sharp';
 import logger from '../logger';
 
@@ -112,8 +113,8 @@ function encryptBuffer(buffer: Buffer): {
   // Derive encryption key from master key + salt
   const key = deriveKey(ENCRYPTION_CONFIG.masterKey, salt);
 
-  // Create cipher
-  const cipher = createCipheriv(ENCRYPTION_CONFIG.algorithm, key, iv);
+  // Create cipher (cast to CipherGCM for GCM mode)
+  const cipher = createCipheriv(ENCRYPTION_CONFIG.algorithm, key, iv) as CipherGCM;
 
   // Encrypt
   const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
@@ -136,8 +137,8 @@ function decryptBuffer(
   // Derive decryption key from master key + salt
   const key = deriveKey(ENCRYPTION_CONFIG.masterKey, salt);
 
-  // Create decipher
-  const decipher = createDecipheriv(ENCRYPTION_CONFIG.algorithm, key, iv);
+  // Create decipher (cast to DecipherGCM for GCM mode)
+  const decipher = createDecipheriv(ENCRYPTION_CONFIG.algorithm, key, iv) as DecipherGCM;
   decipher.setAuthTag(authTag);
 
   // Decrypt

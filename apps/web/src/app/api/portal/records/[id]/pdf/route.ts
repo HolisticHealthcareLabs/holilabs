@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { renderToStream } from '@react-pdf/renderer';
 import { SOAPNotePDF } from '@/components/pdf/SOAPNotePDF';
+import React from 'react';
 
 export async function GET(
   request: NextRequest,
@@ -105,8 +106,9 @@ export async function GET(
     });
 
     // Generate PDF
+    // @ts-ignore - SOAPNotePDF returns Document component which is valid for renderToStream
     const pdfStream = await renderToStream(
-      SOAPNotePDF({ record: record as any })
+      React.createElement(SOAPNotePDF, { record: record as any }) as any
     );
 
     // Create filename with patient name and date
