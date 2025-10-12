@@ -71,6 +71,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.3.8",
+    "react-signature-canvas": "1.1.0-alpha.2",
     "resend": "^6.1.2",
     "sharp": "^0.34.4",
     "simple-peer": "^9.11.1",
