@@ -7,16 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
-import { cookies } from 'next/headers';
+import { createPatientSession } from '@/lib/auth/patient-session';
 
 export const dynamic = 'force-dynamic';
 
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-function generateSessionToken(): string {
-  return crypto.randomBytes(32).toString('hex');
 }
 
 export async function POST(request: NextRequest) {
@@ -93,34 +89,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generate session token
-    const sessionToken = generateSessionToken();
-    const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-    // Set session cookie
-    cookies().set('patient_session', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: sessionExpiry,
-      path: '/',
-    });
-
-    // Store session in cookie (in production, use Redis or database)
-    const sessionData = {
-      patientUserId: magicLink.patientUser.id,
-      patientId: magicLink.patientUser.patient.id,
-      email: magicLink.patientUser.email,
-      expiresAt: sessionExpiry.toISOString(),
-    };
-
-    cookies().set('patient_session_data', JSON.stringify(sessionData), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: sessionExpiry,
-      path: '/',
-    });
+    // Create patient session with JWT
+    await createPatientSession(
+      magicLink.patientUser.id,
+      magicLink.patientUser.patient.id,
+      magicLink.patientUser.email,
+      false // rememberMe = false for magic links
+    );
 
     return NextResponse.json(
       {

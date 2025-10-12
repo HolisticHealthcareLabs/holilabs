@@ -5,51 +5,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { getPatientSession, getCurrentPatient } from '@/lib/auth/patient-session';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get session data from cookie
-    const sessionDataCookie = cookies().get('patient_session_data');
+    // Get current session
+    const session = await getPatientSession();
 
-    if (!sessionDataCookie) {
+    if (!session) {
       return NextResponse.json(
         { error: 'No active session' },
         { status: 401 }
       );
     }
 
-    const sessionData = JSON.parse(sessionDataCookie.value);
-
-    // Check if session expired
-    if (new Date() > new Date(sessionData.expiresAt)) {
-      return NextResponse.json(
-        { error: 'Session expired' },
-        { status: 401 }
-      );
-    }
-
-    // Fetch fresh patient data
-    const patientUser = await prisma.patientUser.findUnique({
-      where: { id: sessionData.patientUserId },
-      include: {
-        patient: {
-          select: {
-            id: true,
-            mrn: true,
-            firstName: true,
-            lastName: true,
-            dateOfBirth: true,
-            gender: true,
-            email: true,
-            phone: true,
-          },
-        },
-      },
-    });
+    // Get patient data
+    const patientUser = await getCurrentPatient();
 
     if (!patientUser) {
       return NextResponse.json(
@@ -65,9 +38,18 @@ export async function GET(request: NextRequest) {
           patientUserId: patientUser.id,
           patientId: patientUser.patient.id,
           email: patientUser.email,
-          expiresAt: sessionData.expiresAt,
+          expiresAt: new Date(session.expiresAt).toISOString(),
         },
-        patient: patientUser.patient,
+        patient: {
+          id: patientUser.patient.id,
+          mrn: patientUser.patient.mrn,
+          firstName: patientUser.patient.firstName,
+          lastName: patientUser.patient.lastName,
+          dateOfBirth: patientUser.patient.dateOfBirth,
+          gender: patientUser.patient.gender,
+          email: patientUser.patient.email,
+          phone: patientUser.patient.phone,
+        },
       },
       { status: 200 }
     );

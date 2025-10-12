@@ -28,7 +28,7 @@ function VerifyContent() {
       }
 
       try {
-        const response = await fetch('/api/auth/patient/magic-link/verify', {
+        const response = await fetch('/api/portal/auth/magic-link/verify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
