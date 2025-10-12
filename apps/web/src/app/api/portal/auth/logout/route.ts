@@ -5,15 +5,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { clearPatientSession } from '@/lib/auth/patient-session';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear session cookies
-    cookies().delete('patient_session');
-    cookies().delete('patient_session_data');
+    // Clear patient session
+    await clearPatientSession();
 
     return NextResponse.json(
       {
