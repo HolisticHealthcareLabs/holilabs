@@ -336,3 +336,174 @@ Holi Labs - Atención médica digital`,
     ],
   });
 }
+
+/**
+ * Send form notification email to patient
+ */
+export async function sendFormNotificationEmail(
+  patientEmail: string,
+  patientName: string,
+  formTitle: string,
+  formUrl: string,
+  expiresAt: Date,
+  customMessage?: string,
+  clinicianName?: string
+) {
+  const expirationDate = expiresAt.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  return sendEmail({
+    to: patientEmail,
+    subject: `📋 Nuevo formulario: ${formTitle}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">📋 Nuevo Formulario</h1>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola <strong>${patientName}</strong>,</p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          ${clinicianName ? `El Dr./Dra. ${clinicianName}` : 'Su proveedor de salud'} le ha enviado un formulario para completar.
+        </p>
+
+        ${
+          customMessage
+            ? `
+        <div style="background: #f0f4ff; border-left: 4px solid #667eea; border-radius: 8px; padding: 16px; margin: 20px 0;">
+          <p style="margin: 0; color: #4a5568;"><strong>Mensaje de su médico:</strong></p>
+          <p style="margin: 8px 0 0 0; color: #4a5568;">${customMessage}</p>
+        </div>
+        `
+            : ''
+        }
+
+        <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 8px 0; color: #1f2937;"><strong>📄 Formulario:</strong> ${formTitle}</p>
+          <p style="margin: 8px 0; color: #1f2937;"><strong>⏰ Vence:</strong> ${expirationDate}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${formUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Completar Formulario →
+          </a>
+        </div>
+
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 20px 0;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            ⚠️ <strong>Importante:</strong> Este formulario expira el <strong>${expirationDate}</strong>.
+          </p>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin: 20px 0; text-align: center;">
+          <p style="margin: 0; color: #166534; font-size: 14px;">
+            🔒 Sus datos están protegidos con cifrado de grado empresarial y cumplimiento HIPAA
+          </p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}" style="color: #667eea; text-decoration: none;">Holi Labs</a> - Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola ${patientName},
+
+${clinicianName ? `El Dr./Dra. ${clinicianName}` : 'Su proveedor de salud'} le ha enviado un formulario para completar.
+
+${customMessage ? `Mensaje: ${customMessage}\n\n` : ''}📄 Formulario: ${formTitle}
+⏰ Vence: ${expirationDate}
+
+Completar formulario: ${formUrl}
+
+⚠️ Importante: Este formulario expira el ${expirationDate}.
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'form_notification' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}
+
+/**
+ * Send form completion notification email to clinician
+ */
+export async function sendFormCompletionEmail(
+  clinicianEmail: string,
+  patientName: string,
+  formTitle: string,
+  completedAt: Date,
+  formResponseUrl: string
+) {
+  const completionDate = completedAt.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return sendEmail({
+    to: clinicianEmail,
+    subject: `✅ Formulario completado: ${patientName} - ${formTitle}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 16px; padding: 30px; margin-bottom: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">✅ Formulario Completado</h1>
+        </div>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">Hola Doctor/a,</p>
+
+        <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+          El paciente <strong>${patientName}</strong> ha completado el formulario <strong>${formTitle}</strong>.
+        </p>
+
+        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 8px 0; color: #166534;"><strong>👤 Paciente:</strong> ${patientName}</p>
+          <p style="margin: 8px 0; color: #166534;"><strong>📋 Formulario:</strong> ${formTitle}</p>
+          <p style="margin: 8px 0; color: #166534;"><strong>🕐 Completado:</strong> ${completionDate}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${formResponseUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Ver Respuestas →
+          </a>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+
+        <p style="font-size: 14px; color: #6b7280; text-align: center;">
+          Este es un correo automático. Por favor no responder.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.holilabs.com'}" style="color: #10b981; text-decoration: none;">Holi Labs</a> - Atención médica digital
+        </p>
+      </div>
+    `,
+    text: `Hola Doctor/a,
+
+El paciente ${patientName} ha completado el formulario ${formTitle}.
+
+👤 Paciente: ${patientName}
+📋 Formulario: ${formTitle}
+🕐 Completado: ${completionDate}
+
+Ver respuestas: ${formResponseUrl}
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'form_completion' },
+      { name: 'category', value: 'transactional' },
+    ],
+  });
+}
