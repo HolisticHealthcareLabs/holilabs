@@ -52,7 +52,7 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/patient/magic-link/send', {
+      const response = await fetch('/api/portal/auth/magic-link/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/patient/otp/send', {
+      const response = await fetch('/api/portal/auth/otp/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/patient/otp/verify', {
+      const response = await fetch('/api/portal/auth/otp/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
