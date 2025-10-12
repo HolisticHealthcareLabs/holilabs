@@ -42,6 +42,7 @@ export default function DashboardLayout({
     { name: 'Panel', href: '/dashboard', icon: '📊', emoji: '📊' },
     { name: 'Pacientes', href: '/dashboard/patients', icon: '👥', emoji: '👥' },
     { name: 'Citas', href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
+    { name: 'Formularios', href: '/dashboard/forms', icon: '📝', emoji: '📝' },
     { name: 'Mensajes', href: '/dashboard/messages', icon: '💬', emoji: '💬' },
     { name: 'AI Scribe', href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️' },
     { name: 'Documentos', href: '/dashboard/upload', icon: '📄', emoji: '📄' },
