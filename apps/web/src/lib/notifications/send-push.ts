@@ -70,11 +70,12 @@ export async function sendPushNotification({
 
     const results = await Promise.allSettled(
       subscriptions.map(async (subscription) => {
+        const keys = subscription.keys as { p256dh: string; auth: string };
         const pushSubscription = {
           endpoint: subscription.endpoint,
           keys: {
-            p256dh: subscription.p256dh,
-            auth: subscription.auth,
+            p256dh: keys.p256dh,
+            auth: keys.auth,
           },
         };
 
