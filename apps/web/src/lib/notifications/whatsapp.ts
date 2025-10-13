@@ -220,6 +220,43 @@ export async function notifyAppointmentReminder({
 }
 
 /**
+ * Send appointment CONFIRMATION with magic link (for automated reminders)
+ * This is the main function used by the cron job
+ */
+export async function sendAppointmentConfirmationWhatsApp(
+  patientPhone: string,
+  patientName: string,
+  dateTime: string,
+  clinicianName: string,
+  confirmationUrl: string,
+  language: 'pt' | 'es' = 'es'
+): Promise<boolean> {
+  try {
+    const client = getTwilioClient();
+    const fromNumber = getTwilioWhatsAppNumber();
+    const toNumber = formatWhatsAppNumber(patientPhone);
+
+    const messages = {
+      pt: `🏥 *Confirme sua Consulta*\n\nOlá ${patientName}!\n\nVocê tem consulta amanhã:\n👨‍⚕️ ${clinicianName}\n📅 ${dateTime}\n\n*Por favor, confirme sua presença:*\n${confirmationUrl}\n\n✅ Confirmar\n📅 Reagendar\n❌ Cancelar\n\n_Link válido por 24 horas_\n\n*Holi Labs - Saúde Digital*`,
+      es: `🏥 *Confirma tu Cita Médica*\n\n¡Hola ${patientName}!\n\nTienes una cita mañana:\n👨‍⚕️ ${clinicianName}\n📅 ${dateTime}\n\n*Por favor, confirma tu asistencia:*\n${confirmationUrl}\n\n✅ Confirmar\n📅 Reagendar\n❌ Cancelar\n\n_Enlace válido por 24 horas_\n\n*Holi Labs - Salud Digital*`,
+    };
+
+    const message = await client.messages.create({
+      from: fromNumber,
+      to: toNumber,
+      body: messages[language],
+    });
+
+    console.log('✅ WhatsApp confirmation sent:', message.sid);
+    return true;
+  } catch (error: any) {
+    console.error('❌ WhatsApp confirmation failed:', error);
+    // Don't throw - let other channels try
+    return false;
+  }
+}
+
+/**
  * Send test results notification
  */
 export async function notifyTestResults({
