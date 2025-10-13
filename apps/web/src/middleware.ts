@@ -44,11 +44,15 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Skip locale handling for API routes, static files, etc.
+  // Skip locale handling for API routes, static files, auth, portal, dashboard, etc.
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/auth') ||
+    pathname.startsWith('/portal') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/shared') ||
+    pathname === '/' ||
     pathname.includes('.')
   ) {
     const response = await updateSession(request);
@@ -82,9 +86,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - auth routes (login, signup)
-     * - api routes (handled separately)
+     * - Files with extensions (images, etc.)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public|auth|api).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\..*|public).*)',
   ],
 };
