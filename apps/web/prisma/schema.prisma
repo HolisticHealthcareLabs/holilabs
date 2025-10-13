@@ -350,6 +350,7 @@ enum MetricType {
   HEART_RATE
   TEMPERATURE
   BLOOD_GLUCOSE
+  GLUCOSE  // Alias for BLOOD_GLUCOSE for API compatibility
   OXYGEN_SATURATION
   STEPS
   SLEEP_HOURS
@@ -357,6 +358,7 @@ enum MetricType {
   MOOD
   MEDICATION_ADHERENCE
   CUSTOM
+  OTHER  // Alias for CUSTOM for API compatibility
 }
 
 enum MetricSource {
@@ -929,7 +931,8 @@ enum AuditAction {
   PRESCRIBE
   SIGN
   REVOKE
-  NOTIFY  // WhatsApp/Email/SMS notifications
+  NOTIFY          // WhatsApp/Email/SMS notifications
+  DOCUMENT_UPLOADED  // Document upload action
 }
 
 // ============================================================================

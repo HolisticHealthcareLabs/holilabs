@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.userId,
         action: 'DOCUMENT_UPLOADED',
-        resourceType: 'DOCUMENT',
+        resource: 'DOCUMENT',
         resourceId: document.id,
         details: {
           fileName: file.name,
