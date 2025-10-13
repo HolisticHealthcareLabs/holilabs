@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { parse, addMinutes, format } from 'date-fns';
 import { es } from 'date-fns/locale';
