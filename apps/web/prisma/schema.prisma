@@ -679,6 +679,22 @@ model Appointment {
   reminderSent      Boolean   @default(false)
   reminderSentAt    DateTime?
 
+  // Confirmation system
+  confirmationStatus    ConfirmationStatus @default(PENDING)
+  confirmationToken     String?            @unique
+  confirmationSentAt    DateTime?
+  confirmedAt           DateTime?
+  confirmationMethod    String?            // 'sms', 'email', 'push', 'whatsapp'
+
+  // Reschedule requests
+  rescheduleRequested   Boolean            @default(false)
+  rescheduleRequestedAt DateTime?
+  rescheduleReason      String?            @db.Text
+  rescheduleNewTime     DateTime?
+  rescheduleApproved    Boolean?           // null = pending, true = approved, false = rejected
+  rescheduleApprovedAt  DateTime?
+  rescheduleApprovedBy  String?            // User ID who approved
+
   // Relations
   scribeSessions    ScribeSession[]
 
@@ -689,6 +705,8 @@ model Appointment {
   @@index([clinicianId])
   @@index([startTime])
   @@index([status])
+  @@index([confirmationToken])
+  @@index([confirmationStatus])
   @@map("appointments")
 }
 
@@ -707,6 +725,15 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
   NO_SHOW
+}
+
+enum ConfirmationStatus {
+  PENDING           // Reminder not sent yet
+  SENT              // Reminder sent, waiting for response
+  CONFIRMED         // Patient confirmed
+  RESCHEDULE_REQUESTED  // Patient requested reschedule
+  CANCELLED_BY_PATIENT  // Patient cancelled
+  NO_RESPONSE       // Patient didn't respond
 }
 
 // ============================================================================
