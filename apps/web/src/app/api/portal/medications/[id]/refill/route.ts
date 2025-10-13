@@ -44,7 +44,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: 'Datos inv·lidos',
+          error: 'Datos inv√°lidos',
           details: validation.error.errors,
         },
         { status: 400 }
@@ -85,7 +85,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: 'No tienes permiso para solicitar renovaciÛn de este medicamento.',
+          error: 'No tienes permiso para solicitar renovaci√≥n de este medicamento.',
         },
         { status: 403 }
       );
@@ -96,7 +96,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: 'No puedes solicitar renovaciÛn de un medicamento inactivo.',
+          error: 'No puedes solicitar renovaci√≥n de un medicamento inactivo.',
         },
         { status: 400 }
       );
@@ -143,7 +143,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: true,
-        message: 'Solicitud de renovaciÛn enviada. Tu mÈdico la revisar· pronto.',
+        message: 'Solicitud de renovaci√≥n enviada. Tu m√©dico la revisar√° pronto.',
         data: refillRequest,
       },
       { status: 201 }
@@ -154,7 +154,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesiÛn.',
+          error: 'No autorizado. Por favor, inicia sesi√≥n.',
         },
         { status: 401 }
       );
@@ -168,7 +168,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-        error: 'Error al solicitar renovaciÛn.',
+        error: 'Error al solicitar renovaci√≥n.',
       },
       { status: 500 }
     );

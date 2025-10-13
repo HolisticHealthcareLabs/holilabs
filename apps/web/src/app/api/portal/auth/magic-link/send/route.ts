@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { sendMagicLinkEmail } from '@/lib/email';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,12 @@ function hashToken(token: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting - 5 requests per minute for auth endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'auth');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const { email } = body;

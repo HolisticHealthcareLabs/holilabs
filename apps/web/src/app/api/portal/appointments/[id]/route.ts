@@ -104,7 +104,7 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesiÛn.',
+          error: 'No autorizado. Por favor, inicia sesi√≥n.',
         },
         { status: 401 }
       );
@@ -200,7 +200,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           success: false,
-          error: 'Esta cita ya est· cancelada.',
+          error: 'Esta cita ya est√° cancelada.',
         },
         { status: 400 }
       );
@@ -221,7 +221,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           success: false,
-          error: 'No puedes cancelar una cita que ya pasÛ.',
+          error: 'No puedes cancelar una cita que ya pas√≥.',
         },
         { status: 400 }
       );
@@ -282,7 +282,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesiÛn.',
+          error: 'No autorizado. Por favor, inicia sesi√≥n.',
         },
         { status: 401 }
       );

@@ -1,0 +1,22 @@
+HOLI LABS - LABORATORIO CLÍNICO
+Resultados de Análisis
+
+Paciente: María González García
+Fecha: 2025-10-13
+Médico Solicitante: Dr. Juan Pérez
+
+QUÍMICA SANGUÍNEA:
+- Glucosa: 95 mg/dL (Normal: 70-100)
+- Colesterol Total: 180 mg/dL (Normal: <200)
+- Triglicéridos: 120 mg/dL (Normal: <150)
+- Creatinina: 0.9 mg/dL (Normal: 0.6-1.2)
+
+HEMOGRAMA COMPLETO:
+- Hemoglobina: 14.2 g/dL (Normal: 12-16)
+- Leucocitos: 7,500 /µL (Normal: 4,000-11,000)
+- Plaquetas: 250,000 /µL (Normal: 150,000-450,000)
+
+CONCLUSIÓN: Todos los valores dentro de rangos normales.
+
+Dr. Roberto Méndez - Laboratorio Clínico Holi Labs
+Lic. LAB-2025-001

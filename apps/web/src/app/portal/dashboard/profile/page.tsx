@@ -90,7 +90,7 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
-    if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+    if (!confirm('ï¿½Estï¿½s seguro de que deseas cerrar sesiï¿½n?')) {
       return;
     }
 
@@ -102,13 +102,13 @@ export default function ProfilePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Error al cerrar sesión');
+        throw new Error('Error al cerrar sesiï¿½n');
       }
 
       // Redirect to login
       router.push('/portal/login');
     } catch (err) {
-      alert('Error al cerrar sesión');
+      alert('Error al cerrar sesiï¿½n');
       setLoggingOut(false);
     }
   };
@@ -170,7 +170,7 @@ export default function ProfilePage() {
             =d Mi Perfil
           </h1>
           <p className="text-gray-600">
-            Información personal y configuración de cuenta
+            Informaciï¿½n personal y configuraciï¿½n de cuenta
           </p>
         </div>
 
@@ -195,10 +195,10 @@ export default function ProfilePage() {
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">
-                Información Personal
+                Informaciï¿½n Personal
               </h3>
               <button
-                onClick={() => alert('Función de edición próximamente')}
+                onClick={() => alert('Funciï¿½n de ediciï¿½n prï¿½ximamente')}
                 className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <PencilIcon className="h-4 w-4" />
@@ -213,7 +213,7 @@ export default function ProfilePage() {
                   <IdentificationIcon className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Número de Registro Médico</p>
+                  <p className="text-sm text-gray-600 mb-1">Nï¿½mero de Registro Mï¿½dico</p>
                   <p className="font-semibold text-gray-900">{profile.patient.mrn}</p>
                 </div>
               </div>
@@ -224,7 +224,7 @@ export default function ProfilePage() {
                   <EnvelopeIcon className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Correo Electrónico</p>
+                  <p className="text-sm text-gray-600 mb-1">Correo Electrï¿½nico</p>
                   <p className="font-semibold text-gray-900">
                     {profile.patient.email || profile.user.email}
                   </p>
@@ -244,7 +244,7 @@ export default function ProfilePage() {
                     <PhoneIcon className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Teléfono</p>
+                    <p className="text-sm text-gray-600 mb-1">Telï¿½fono</p>
                     <p className="font-semibold text-gray-900">{profile.patient.phone}</p>
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                   <UserIcon className="h-5 w-5 text-pink-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Género</p>
+                  <p className="text-sm text-gray-600 mb-1">Gï¿½nero</p>
                   <p className="font-semibold text-gray-900">
                     {genderLabels[profile.patient.gender] || profile.patient.gender}
                   </p>
@@ -288,16 +288,31 @@ export default function ProfilePage() {
           </h3>
 
           <div className="space-y-4">
+            {/* Session Activity */}
+            <button
+              onClick={() => router.push('/portal/dashboard/security')}
+              className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <ShieldCheckIcon className="h-6 w-6 text-purple-600" />
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Actividad de SesiÃ³n</p>
+                  <p className="text-sm text-gray-600">Ver inicios de sesiÃ³n y eventos de seguridad</p>
+                </div>
+              </div>
+              <PencilIcon className="h-5 w-5 text-gray-400" />
+            </button>
+
             {/* Change Password */}
             <button
-              onClick={() => alert('Función de cambio de contraseña próximamente')}
+              onClick={() => alert('FunciÃ³n de cambio de contraseÃ±a prÃ³ximamente')}
               className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all"
             >
               <div className="flex items-center gap-3">
                 <ShieldCheckIcon className="h-6 w-6 text-blue-600" />
                 <div className="text-left">
-                  <p className="font-semibold text-gray-900">Cambiar Contraseña</p>
-                  <p className="text-sm text-gray-600">Actualiza tu contraseña de acceso</p>
+                  <p className="font-semibold text-gray-900">Cambiar ContraseÃ±a</p>
+                  <p className="text-sm text-gray-600">Actualiza tu contraseÃ±a de acceso</p>
                 </div>
               </div>
               <PencilIcon className="h-5 w-5 text-gray-400" />
@@ -305,18 +320,18 @@ export default function ProfilePage() {
 
             {/* Two-Factor Auth */}
             <button
-              onClick={() => alert('Función de 2FA próximamente')}
+              onClick={() => alert('FunciÃ³n de 2FA prÃ³ximamente')}
               className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all"
             >
               <div className="flex items-center gap-3">
                 <ShieldCheckIcon className="h-6 w-6 text-green-600" />
                 <div className="text-left">
-                  <p className="font-semibold text-gray-900">Autenticación de Dos Factores</p>
-                  <p className="text-sm text-gray-600">Añade una capa extra de seguridad</p>
+                  <p className="font-semibold text-gray-900">AutenticaciÃ³n de Dos Factores</p>
+                  <p className="text-sm text-gray-600">AÃ±ade una capa extra de seguridad</p>
                 </div>
               </div>
               <div className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                Próximamente
+                PrÃ³ximamente
               </div>
             </button>
           </div>
@@ -357,7 +372,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
               <div>
                 <p className="font-semibold text-gray-900">Idioma</p>
-                <p className="text-sm text-gray-600">Español</p>
+                <p className="text-sm text-gray-600">Espaï¿½ol</p>
               </div>
               <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                 Cambiar
@@ -373,8 +388,8 @@ export default function ProfilePage() {
           </h3>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold text-red-900">Cerrar Sesión</p>
-              <p className="text-sm text-red-700">Terminar tu sesión actual</p>
+              <p className="font-semibold text-red-900">Cerrar Sesiï¿½n</p>
+              <p className="text-sm text-red-700">Terminar tu sesiï¿½n actual</p>
             </div>
             <button
               onClick={handleLogout}
@@ -382,7 +397,7 @@ export default function ProfilePage() {
               className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              {loggingOut ? 'Cerrando...' : 'Cerrar Sesión'}
+              {loggingOut ? 'Cerrando...' : 'Cerrar Sesiï¿½n'}
             </button>
           </div>
         </div>
@@ -390,7 +405,7 @@ export default function ProfilePage() {
         {/* Info Box */}
         <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
           <p className="text-sm text-blue-800">
-            =¡ <strong>Consejo:</strong> Mantén tu información de contacto actualizada para recibir
+            =ï¿½ <strong>Consejo:</strong> Mantï¿½n tu informaciï¿½n de contacto actualizada para recibir
             notificaciones importantes sobre tu salud.
           </p>
         </div>

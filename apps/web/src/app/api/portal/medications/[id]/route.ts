@@ -94,7 +94,7 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
+          error: 'No autorizado. Por favor, inicia sesiÃ³n.',
         },
         { status: 401 }
       );
