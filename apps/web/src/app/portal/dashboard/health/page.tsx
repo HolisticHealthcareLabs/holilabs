@@ -51,7 +51,7 @@ const metricConfig = {
     unit: 'kg',
   },
   BLOOD_PRESSURE: {
-    label: 'Presión Arterial',
+    label: 'PresiÃ³n Arterial',
     icon: HeartIcon,
     color: 'red',
     gradient: 'from-red-500 to-pink-500',
@@ -69,17 +69,17 @@ const metricConfig = {
     icon: FireIcon,
     color: 'orange',
     gradient: 'from-orange-500 to-red-500',
-    unit: '°C',
+    unit: 'Â°C',
   },
   HEART_RATE: {
-    label: 'Frecuencia Cardíaca',
+    label: 'Frecuencia CardÃ­aca',
     icon: HeartIcon,
     color: 'pink',
     gradient: 'from-pink-500 to-rose-500',
     unit: 'bpm',
   },
   OXYGEN_SATURATION: {
-    label: 'Saturación de Oxígeno',
+    label: 'SaturaciÃ³n de OxÃ­geno',
     icon: ArrowTrendingUpIcon,
     color: 'green',
     gradient: 'from-green-500 to-emerald-500',
@@ -163,7 +163,7 @@ export default function HealthMetricsPage() {
       const data: MetricsResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al cargar métricas');
+        throw new Error(data.error || 'Error al cargar mÃ©tricas');
       }
 
       if (data.success && data.data) {
@@ -206,7 +206,7 @@ export default function HealthMetricsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al registrar métrica');
+        throw new Error(data.error || 'Error al registrar mÃ©trica');
       }
 
       // Refresh data
@@ -216,9 +216,9 @@ export default function HealthMetricsPage() {
       setShowAddModal(false);
       setMetricValue('');
       setMetricNotes('');
-      alert('Métrica registrada exitosamente');
+      alert('MÃ©trica registrada exitosamente');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al registrar métrica');
+      alert(err instanceof Error ? err.message : 'Error al registrar mÃ©trica');
     } finally {
       setAdding(false);
     }
@@ -248,10 +248,10 @@ export default function HealthMetricsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                =Ê Mis Métricas de Salud
+                =ÃŠ Mis MÃ©tricas de Salud
               </h1>
               <p className="text-gray-600">
-                {summary.total} registro{summary.total !== 1 ? 's' : ''} · {summary.types} tipo{summary.types !== 1 ? 's' : ''} de métrica{summary.types !== 1 ? 's' : ''}
+                {summary.total} registro{summary.total !== 1 ? 's' : ''} Â· {summary.types} tipo{summary.types !== 1 ? 's' : ''} de mÃ©trica{summary.types !== 1 ? 's' : ''}
               </p>
             </div>
 
@@ -260,7 +260,7 @@ export default function HealthMetricsPage() {
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
             >
               <PlusIcon className="h-5 w-5" />
-              Registrar Métrica
+              Registrar MÃ©trica
             </button>
           </div>
         </div>
@@ -284,17 +284,17 @@ export default function HealthMetricsPage() {
               <HeartIcon className="h-10 w-10 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No hay métricas registradas
+              No hay mÃ©tricas registradas
             </h3>
             <p className="text-gray-600 mb-6">
-              Comienza a registrar tus métricas de salud para ver tus progresos
+              Comienza a registrar tus mÃ©tricas de salud para ver tus progresos
             </p>
             <button
               onClick={() => setShowAddModal(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <PlusIcon className="h-5 w-5" />
-              Registrar Primera Métrica
+              Registrar Primera MÃ©trica
             </button>
           </div>
         ) : (
@@ -358,7 +358,7 @@ export default function HealthMetricsPage() {
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900">
-                  Registrar Métrica de Salud
+                  Registrar MÃ©trica de Salud
                 </h3>
                 <button
                   onClick={() => setShowAddModal(false)}
@@ -372,7 +372,7 @@ export default function HealthMetricsPage() {
                 {/* Metric Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Métrica
+                    Tipo de MÃ©trica
                   </label>
                   <select
                     value={selectedMetricType}
@@ -411,7 +411,7 @@ export default function HealthMetricsPage() {
                   <textarea
                     value={metricNotes}
                     onChange={(e) => setMetricNotes(e.target.value)}
-                    placeholder="Información adicional..."
+                    placeholder="InformaciÃ³n adicional..."
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />

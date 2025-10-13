@@ -155,7 +155,7 @@ export default function MedicalRecordsPage() {
             Volver al Dashboard
           </button>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            =Ë Mis Registros Médicos
+            =Ã‹ Mis Registros MÃ©dicos
           </h1>
           <p className="text-gray-600">
             {totalCount > 0
@@ -172,7 +172,7 @@ export default function MedicalRecordsPage() {
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar en registros médicos..."
+                placeholder="Buscar en registros mÃ©dicos..."
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -289,8 +289,8 @@ export default function MedicalRecordsPage() {
             </h3>
             <p className="text-gray-600">
               {search || statusFilter || startDate || endDate
-                ? 'Intenta ajustar los filtros de búsqueda'
-                : 'Tus registros médicos aparecerán aquí'}
+                ? 'Intenta ajustar los filtros de bÃºsqueda'
+                : 'Tus registros mÃ©dicos aparecerÃ¡n aquÃ­'}
             </p>
           </div>
         ) : (
@@ -362,7 +362,7 @@ export default function MedicalRecordsPage() {
             </button>
 
             <span className="text-sm text-gray-600">
-              Página {page} de {totalPages}
+              PÃ¡gina {page} de {totalPages}
             </span>
 
             <button
