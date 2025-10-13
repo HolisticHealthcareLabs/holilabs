@@ -43,11 +43,8 @@ export async function POST(request: NextRequest) {
         },
         data: {
           userId: session.userId,
-          p256dh: validated.subscription.keys.p256dh,
-          auth: validated.subscription.keys.auth,
-          expirationTime: validated.subscription.expirationTime
-            ? new Date(validated.subscription.expirationTime)
-            : null,
+          userType: 'PATIENT',
+          keys: validated.subscription.keys,
         },
       });
 
@@ -64,12 +61,9 @@ export async function POST(request: NextRequest) {
     const subscription = await prisma.pushSubscription.create({
       data: {
         userId: session.userId,
+        userType: 'PATIENT',
         endpoint: validated.subscription.endpoint,
-        p256dh: validated.subscription.keys.p256dh,
-        auth: validated.subscription.keys.auth,
-        expirationTime: validated.subscription.expirationTime
-          ? new Date(validated.subscription.expirationTime)
-          : null,
+        keys: validated.subscription.keys,
       },
     });
 
@@ -77,8 +71,8 @@ export async function POST(request: NextRequest) {
     await prisma.auditLog.create({
       data: {
         userId: session.userId,
-        action: 'PUSH_SUBSCRIPTION_CREATED',
-        resourceType: 'PUSH_SUBSCRIPTION',
+        action: 'CREATE',
+        resource: 'PushSubscription',
         resourceId: subscription.id,
         details: {
           endpoint: validated.subscription.endpoint,
