@@ -4,7 +4,7 @@
  */
 
 import webpush from 'web-push';
-import { prisma } from '@/lib/db/prisma';
+import { prisma } from '@/lib/prisma';
 
 // Configure VAPID keys
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
