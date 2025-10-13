@@ -42,7 +42,6 @@ export async function GET(
             specialty: true,
             licenseNumber: true,
             email: true,
-            phone: true,
           },
         },
         patient: {
