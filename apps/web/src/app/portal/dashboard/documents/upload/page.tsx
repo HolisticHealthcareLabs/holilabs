@@ -258,9 +258,9 @@ export default function DocumentUploadPage() {
             </h3>
 
             <div className="space-y-3">
-              {files.map((uploadFile) => (
+              {files.map((file) => (
                 <div
-                  key={uploadFile.id}
+                  key={file.id}
                   className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
                 >
                   {/* Icon */}
@@ -271,50 +271,50 @@ export default function DocumentUploadPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 truncate">
-                      {uploadFile.file.name}
+                      {file.file.name}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {formatFileSize(uploadFile.file.size)}
+                      {formatFileSize(file.file.size)}
                     </p>
 
                     {/* Progress Bar */}
-                    {uploadFile.status === 'uploading' && (
+                    {file.status === 'uploading' && (
                       <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full transition-all"
-                          style={{ width: `${uploadFile.progress}%` }}
+                          style={{ width: `${file.progress}%` }}
                         />
                       </div>
                     )}
 
-                    {uploadFile.status === 'error' && (
-                      <p className="text-sm text-red-600 mt-1">{uploadFile.error}</p>
+                    {file.status === 'error' && (
+                      <p className="text-sm text-red-600 mt-1">{file.error}</p>
                     )}
                   </div>
 
                   {/* Status/Actions */}
-                  {uploadFile.status === 'pending' && (
+                  {file.status === 'pending' && (
                     <button
-                      onClick={() => removeFile(uploadFile.id)}
+                      onClick={() => removeFile(file.id)}
                       className="p-2 text-gray-400 hover:text-red-600 transition-colors"
                     >
                       <XMarkIcon className="h-5 w-5" />
                     </button>
                   )}
 
-                  {uploadFile.status === 'uploading' && (
+                  {file.status === 'uploading' && (
                     <div className="text-sm text-blue-600 font-medium">
-                      {uploadFile.progress}%
+                      {file.progress}%
                     </div>
                   )}
 
-                  {uploadFile.status === 'success' && (
+                  {file.status === 'success' && (
                     <CheckCircleIcon className="h-6 w-6 text-green-600" />
                   )}
 
-                  {uploadFile.status === 'error' && (
+                  {file.status === 'error' && (
                     <button
-                      onClick={() => uploadFile(uploadFile)}
+                      onClick={() => uploadFile(file)}
                       className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                     >
                       Reintentar
