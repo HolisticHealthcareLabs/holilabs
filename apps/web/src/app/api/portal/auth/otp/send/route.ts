@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,12 @@ async function sendOTPEmail(email: string, code: string): Promise<void> {
 }
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting - 5 requests per minute for auth endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'auth');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const { phone, email, channel = 'SMS' } = body;

@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesiÛn.',
+          error: 'No autorizado. Por favor, inicia sesi√≥n.',
         },
         { status: 401 }
       );
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Error al cargar mÈtricas de salud.',
+        error: 'Error al cargar m√©tricas de salud.',
       },
       { status: 500 }
     );
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Datos inv·lidos',
+          error: 'Datos inv√°lidos',
           details: validation.error.errors,
         },
         { status: 400 }
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: 'MÈtrica de salud registrada correctamente.',
+        message: 'M√©trica de salud registrada correctamente.',
         data: metric,
       },
       { status: 201 }
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesiÛn.',
+          error: 'No autorizado. Por favor, inicia sesi√≥n.',
         },
         { status: 401 }
       );
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Error al registrar mÈtrica de salud.',
+        error: 'Error al registrar m√©trica de salud.',
       },
       { status: 500 }
     );

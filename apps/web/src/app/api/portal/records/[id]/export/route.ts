@@ -119,7 +119,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
+          error: 'No autorizado. Por favor, inicia sesiÃ³n.',
         },
         { status: 401 }
       );
@@ -133,7 +133,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-        error: 'Error al exportar registro médico.',
+        error: 'Error al exportar registro mÃ©dico.',
       },
       { status: 500 }
     );
@@ -159,7 +159,7 @@ function generateRecordHTML(record: any): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registro Médico - ${record.patient.mrn}</title>
+  <title>Registro MÃ©dico - ${record.patient.mrn}</title>
   <style>
     * {
       margin: 0;
@@ -320,8 +320,8 @@ function generateRecordHTML(record: any): string {
 <body>
   <!-- Header -->
   <div class="header">
-    <h1>=Ë Registro Médico</h1>
-    <p>Holi Labs - Sistema de Gestión de Salud</p>
+    <h1>=Ã‹ Registro MÃ©dico</h1>
+    <p>Holi Labs - Sistema de GestiÃ³n de Salud</p>
     <p>${createdDate}</p>
   </div>
 
@@ -333,16 +333,16 @@ function generateRecordHTML(record: any): string {
   <!-- Patient & Clinician Info -->
   <div class="info-section">
     <div class="info-box">
-      <h3>Información del Paciente</h3>
+      <h3>InformaciÃ³n del Paciente</h3>
       <p><strong>Nombre:</strong> ${record.patient.firstName} ${record.patient.lastName}</p>
       <p><strong>MRN:</strong> ${record.patient.mrn}</p>
       <p><strong>Fecha de Nacimiento:</strong> ${patientDOB}</p>
       ${record.patient.email ? `<p><strong>Email:</strong> ${record.patient.email}</p>` : ''}
-      ${record.patient.phone ? `<p><strong>Teléfono:</strong> ${record.patient.phone}</p>` : ''}
+      ${record.patient.phone ? `<p><strong>TelÃ©fono:</strong> ${record.patient.phone}</p>` : ''}
     </div>
 
     <div class="info-box">
-      <h3>Información del Médico</h3>
+      <h3>InformaciÃ³n del MÃ©dico</h3>
       <p><strong>Nombre:</strong> Dr. ${record.clinician.firstName} ${record.clinician.lastName}</p>
       ${record.clinician.specialty ? `<p><strong>Especialidad:</strong> ${record.clinician.specialty}</p>` : ''}
       ${record.clinician.licenseNumber ? `<p><strong>Licencia:</strong> ${record.clinician.licenseNumber}</p>` : ''}
@@ -371,7 +371,7 @@ function generateRecordHTML(record: any): string {
   <div class="section">
     <div class="section-header">
       <div class="section-icon green">O</div>
-      <h2>Objetivo (Hallazgos Clínicos)</h2>
+      <h2>Objetivo (Hallazgos ClÃ­nicos)</h2>
     </div>
     <div class="section-content">${record.objective || 'No disponible'}</div>
   </div>
@@ -380,7 +380,7 @@ function generateRecordHTML(record: any): string {
   <div class="section">
     <div class="section-header">
       <div class="section-icon purple">A</div>
-      <h2>Evaluación (Diagnóstico)</h2>
+      <h2>EvaluaciÃ³n (DiagnÃ³stico)</h2>
     </div>
     <div class="section-content">${record.assessment || 'No disponible'}</div>
   </div>
@@ -396,12 +396,12 @@ function generateRecordHTML(record: any): string {
 
   <!-- Footer -->
   <div class="footer">
-    <p><strong>Fecha de Creación:</strong> ${format(
+    <p><strong>Fecha de CreaciÃ³n:</strong> ${format(
       new Date(record.createdAt),
       "d/MM/yyyy 'a las' HH:mm",
       { locale: es }
     )}</p>
-    <p><strong>Última Actualización:</strong> ${format(
+    <p><strong>Ãšltima ActualizaciÃ³n:</strong> ${format(
       new Date(record.updatedAt),
       "d/MM/yyyy 'a las' HH:mm",
       { locale: es }
@@ -416,8 +416,8 @@ function generateRecordHTML(record: any): string {
         : ''
     }
     <p style="margin-top: 20px; font-style: italic;">
-      Este documento es confidencial y contiene información médica protegida por HIPAA.
-      No debe ser compartido sin autorización expresa del paciente.
+      Este documento es confidencial y contiene informaciÃ³n mÃ©dica protegida por HIPAA.
+      No debe ser compartido sin autorizaciÃ³n expresa del paciente.
     </p>
   </div>
 </body>
@@ -428,7 +428,7 @@ function generateRecordHTML(record: any): string {
 function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     DRAFT: 'Borrador',
-    PENDING_REVIEW: 'Pendiente de revisión',
+    PENDING_REVIEW: 'Pendiente de revisiÃ³n',
     SIGNED: 'Firmado',
     AMENDED: 'Enmendado',
     ADDENDUM: 'Adenda',

@@ -48,9 +48,9 @@ export default async function PatientDashboardPage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Upcoming Appointments */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <a href="/portal/dashboard/appointments/schedule" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <svg
                 className="w-6 h-6 text-blue-600"
                 fill="none"
@@ -69,7 +69,7 @@ export default async function PatientDashboardPage() {
           </div>
           <h3 className="text-sm font-semibold text-gray-700 mb-1">Citas Próximas</h3>
           <p className="text-xs text-gray-500">Siguiente: En 3 días</p>
-        </div>
+        </a>
 
         {/* Active Medications */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -95,12 +95,12 @@ export default async function PatientDashboardPage() {
           <p className="text-xs text-gray-500">Adherencia: 95%</p>
         </div>
 
-        {/* Unread Messages */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        {/* Notifications */}
+        <a href="/portal/dashboard/notifications" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-red-300 transition-all cursor-pointer group">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <svg
-                className="w-6 h-6 text-green-600"
+                className="w-6 h-6 text-red-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -109,20 +109,20 @@ export default async function PatientDashboardPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-gray-900">3</span>
+            <span className="text-2xl font-bold text-gray-900">5</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Mensajes Nuevos</h3>
-          <p className="text-xs text-gray-500">Último: Hace 2 horas</p>
-        </div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Notificaciones</h3>
+          <p className="text-xs text-gray-500">3 sin leer</p>
+        </a>
 
         {/* Documents */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <a href="/portal/dashboard/documents/upload" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-orange-300 transition-all cursor-pointer group">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <svg
                 className="w-6 h-6 text-orange-600"
                 fill="none"
@@ -140,8 +140,8 @@ export default async function PatientDashboardPage() {
             <span className="text-2xl font-bold text-gray-900">12</span>
           </div>
           <h3 className="text-sm font-semibold text-gray-700 mb-1">Documentos</h3>
-          <p className="text-xs text-gray-500">Todos descargables</p>
-        </div>
+          <p className="text-xs text-gray-500">Clic para subir nuevos</p>
+        </a>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -316,7 +316,7 @@ export default async function PatientDashboardPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-4">Acciones Rápidas</h2>
             <div className="space-y-2">
               <a
-                href="/portal/appointments/new"
+                href="/portal/dashboard/appointments/schedule"
                 className="flex items-center gap-3 p-3 bg-white rounded-lg hover:shadow-md transition-all"
               >
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -328,31 +328,19 @@ export default async function PatientDashboardPage() {
               </a>
 
               <a
-                href="/portal/dashboard/records"
+                href="/portal/dashboard/notifications"
                 className="flex items-center gap-3 p-3 bg-white rounded-lg hover:shadow-md transition-all"
               >
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Ver Registros Médicos</span>
+                <span className="font-medium text-gray-900">Ver Notificaciones</span>
               </a>
 
               <a
-                href="/portal/messages/new"
-                className="flex items-center gap-3 p-3 bg-white rounded-lg hover:shadow-md transition-all"
-              >
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
-                </div>
-                <span className="font-medium text-gray-900">Enviar Mensaje</span>
-              </a>
-
-              <a
-                href="/portal/documents/upload"
+                href="/portal/dashboard/documents/upload"
                 className="flex items-center gap-3 p-3 bg-white rounded-lg hover:shadow-md transition-all"
               >
                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -361,6 +349,18 @@ export default async function PatientDashboardPage() {
                   </svg>
                 </div>
                 <span className="font-medium text-gray-900">Subir Documento</span>
+              </a>
+
+              <a
+                href="/portal/dashboard/messages"
+                className="flex items-center gap-3 p-3 bg-white rounded-lg hover:shadow-md transition-all"
+              >
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+                <span className="font-medium text-gray-900">Enviar Mensaje</span>
               </a>
             </div>
           </div>

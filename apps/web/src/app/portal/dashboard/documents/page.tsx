@@ -16,6 +16,7 @@ import {
   ArrowDownTrayIcon,
   EyeIcon,
   MagnifyingGlassIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 
 interface Document {
@@ -45,7 +46,7 @@ interface DocumentsResponse {
 
 const documentTypeLabels = {
   LAB_RESULT: 'Resultados de Laboratorio',
-  IMAGING: 'Im·genes MÈdicas',
+  IMAGING: 'ImÔøΩgenes MÔøΩdicas',
   PRESCRIPTION: 'Recetas',
   INSURANCE: 'Seguros',
   CONSENT: 'Consentimientos',
@@ -53,12 +54,12 @@ const documentTypeLabels = {
 };
 
 const documentTypeIcons = {
-  LAB_RESULT: '>Í',
+  LAB_RESULT: '>ÔøΩ',
   IMAGING: '=,',
-  PRESCRIPTION: '=ä',
-  INSURANCE: '<Â',
-  CONSENT: '=›',
-  OTHER: '=ƒ',
+  PRESCRIPTION: '=ÔøΩ',
+  INSURANCE: '<ÔøΩ',
+  CONSENT: '=ÔøΩ',
+  OTHER: '=ÔøΩ',
 };
 
 const documentTypeColors = {
@@ -178,12 +179,20 @@ export default function DocumentsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                =¡ Mis Documentos
+                üìÅ Mis Documentos
               </h1>
               <p className="text-gray-600">
-                {summary.total} documento{summary.total !== 1 ? 's' : ''} ∑ {summary.totalSizeMB} MB en total
+                {summary.total} documento{summary.total !== 1 ? 's' : ''} ¬∑ {summary.totalSizeMB} MB en total
               </p>
             </div>
+
+            <button
+              onClick={() => router.push('/portal/dashboard/documents/upload')}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Subir Documento
+            </button>
           </div>
         </div>
 
@@ -263,7 +272,7 @@ export default function DocumentsPage() {
             <p className="text-gray-600">
               {searchQuery || selectedType
                 ? 'No se encontraron documentos con los filtros aplicados'
-                : 'Tus documentos mÈdicos aparecer·n aquÌ'}
+                : 'Tus documentos mÔøΩdicos aparecerÔøΩn aquÔøΩ'}
             </p>
             {(searchQuery || selectedType) && (
               <button
@@ -363,7 +372,7 @@ export default function DocumentsPage() {
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">TamaÒo</label>
+                  <label className="text-sm font-medium text-gray-600">TamaÔøΩo</label>
                   <p className="text-gray-900">{formatFileSize(previewDoc.fileSize)}</p>
                 </div>
                 <div>
