@@ -61,11 +61,11 @@ const statusColors = {
 const statusLabels = {
   SCHEDULED: 'Programada',
   CONFIRMED: 'Confirmada',
-  CHECKED_IN: 'En recepción',
+  CHECKED_IN: 'En recepciÃ³n',
   IN_PROGRESS: 'En progreso',
   COMPLETED: 'Completada',
   CANCELLED: 'Cancelada',
-  NO_SHOW: 'No asistió',
+  NO_SHOW: 'No asistiÃ³',
 };
 
 const typeIcons = {
@@ -77,7 +77,7 @@ const typeIcons = {
 const typeLabels = {
   IN_PERSON: 'Presencial',
   TELEHEALTH: 'Virtual',
-  PHONE: 'Telefónica',
+  PHONE: 'TelefÃ³nica',
 };
 
 export default function AppointmentDetailPage() {
@@ -257,7 +257,7 @@ export default function AppointmentDetailPage() {
 
           {appointment.description && (
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">Descripción</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">DescripciÃ³n</h3>
               <p className="text-gray-700">{appointment.description}</p>
             </div>
           )}
@@ -295,7 +295,7 @@ export default function AppointmentDetailPage() {
           {/* Location (if IN_PERSON) */}
           {appointment.type === 'IN_PERSON' && appointment.location && (
             <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-2">Ubicación</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">UbicaciÃ³n</h3>
               <p className="text-gray-700">{appointment.location}</p>
             </div>
           )}
@@ -304,7 +304,7 @@ export default function AppointmentDetailPage() {
         {/* Clinician Info */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Información del Médico
+            InformaciÃ³n del MÃ©dico
           </h3>
 
           <div className="flex items-center gap-4 mb-4">
@@ -371,12 +371,12 @@ export default function AppointmentDetailPage() {
                   <XCircleIcon className="h-6 w-6 text-red-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">
-                  ¿Cancelar cita?
+                  Â¿Cancelar cita?
                 </h3>
               </div>
 
               <p className="text-gray-700 mb-6">
-                ¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer.
+                Â¿EstÃ¡s seguro de que deseas cancelar esta cita? Esta acciÃ³n no se puede deshacer.
               </p>
 
               <div className="flex gap-3">
@@ -392,7 +392,7 @@ export default function AppointmentDetailPage() {
                   disabled={cancelling}
                   className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
-                  {cancelling ? 'Cancelando...' : 'Sí, cancelar'}
+                  {cancelling ? 'Cancelando...' : 'SÃ­, cancelar'}
                 </button>
               </div>
             </div>

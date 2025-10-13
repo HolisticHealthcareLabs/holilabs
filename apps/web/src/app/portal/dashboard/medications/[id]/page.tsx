@@ -99,15 +99,15 @@ export default function MedicationDetailPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al solicitar renovación');
+        throw new Error(data.error || 'Error al solicitar renovaciÃ³n');
       }
 
-      alert(data.message || 'Solicitud de renovación enviada exitosamente');
+      alert(data.message || 'Solicitud de renovaciÃ³n enviada exitosamente');
       setShowRefillModal(false);
       setRefillNotes('');
       setPharmacy('');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al solicitar renovación');
+      alert(err instanceof Error ? err.message : 'Error al solicitar renovaciÃ³n');
     } finally {
       setRequesting(false);
     }
@@ -165,7 +165,7 @@ export default function MedicationDetailPage() {
                 {medication.name}
               </h1>
               {medication.genericName && (
-                <p className="text-gray-600">Nombre genérico: {medication.genericName}</p>
+                <p className="text-gray-600">Nombre genÃ©rico: {medication.genericName}</p>
               )}
             </div>
             {medication.isActive && (
@@ -174,7 +174,7 @@ export default function MedicationDetailPage() {
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
               >
                 <ArrowPathIcon className="h-5 w-5" />
-                Solicitar Renovación
+                Solicitar RenovaciÃ³n
               </button>
             )}
           </div>
@@ -201,7 +201,7 @@ export default function MedicationDetailPage() {
             </div>
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Información del Medicamento
+                InformaciÃ³n del Medicamento
               </h2>
             </div>
           </div>
@@ -210,7 +210,7 @@ export default function MedicationDetailPage() {
             {/* Dosage */}
             {medication.dosage && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-2">Dosificación</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">DosificaciÃ³n</h3>
                 <p className="text-lg font-medium text-gray-900">{medication.dosage}</p>
               </div>
             )}
@@ -262,7 +262,7 @@ export default function MedicationDetailPage() {
         {medication.instructions && (
           <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              =Ë Instrucciones
+              =Ã‹ Instrucciones
             </h3>
             <p className="text-gray-700 whitespace-pre-wrap">{medication.instructions}</p>
           </div>
@@ -287,7 +287,7 @@ export default function MedicationDetailPage() {
             <div className="flex items-center gap-2 mb-3">
               <ExclamationCircleIcon className="h-6 w-6 text-red-600" />
               <h3 className="text-lg font-semibold text-gray-900">
-                  Precauciones
+                Â  Precauciones
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">{medication.precautions}</p>
@@ -313,7 +313,7 @@ export default function MedicationDetailPage() {
                   <ArrowPathIcon className="h-6 w-6 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">
-                  Solicitar Renovación
+                  Solicitar RenovaciÃ³n
                 </h3>
               </div>
 
@@ -338,7 +338,7 @@ export default function MedicationDetailPage() {
                   <textarea
                     value={refillNotes}
                     onChange={(e) => setRefillNotes(e.target.value)}
-                    placeholder="Información adicional para tu médico..."
+                    placeholder="InformaciÃ³n adicional para tu mÃ©dico..."
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
@@ -346,7 +346,7 @@ export default function MedicationDetailPage() {
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-gray-700">
-                    Tu médico revisará esta solicitud y te contactará pronto para confirmar.
+                    Tu mÃ©dico revisarÃ¡ esta solicitud y te contactarÃ¡ pronto para confirmar.
                   </p>
                 </div>
 

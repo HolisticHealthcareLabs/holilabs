@@ -72,7 +72,7 @@ const statusColors = {
 
 const statusLabels = {
   DRAFT: 'Borrador',
-  PENDING_REVIEW: 'Pendiente de revisi髇',
+  PENDING_REVIEW: 'Pendiente de revisi贸n',
   SIGNED: 'Firmado',
   AMENDED: 'Enmendado',
   ADDENDUM: 'Adenda',
@@ -196,7 +196,7 @@ export default function RecordDetailPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Registro M閐ico
+                Registro M茅dico
               </h1>
               <p className="text-gray-600">
                 {format(new Date(record.createdAt), "d 'de' MMMM, yyyy 'a las' HH:mm", {
@@ -231,7 +231,7 @@ export default function RecordDetailPage() {
           {/* Patient Info */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Informaci髇 del Paciente
+              Informaci贸n del Paciente
             </h3>
             <div className="space-y-2 text-sm">
               <div>
@@ -258,7 +258,7 @@ export default function RecordDetailPage() {
           {/* Clinician Info */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Informaci髇 del M閐ico
+              Informaci贸n del M茅dico
             </h3>
             <div className="space-y-2 text-sm">
               <div>
@@ -315,7 +315,7 @@ export default function RecordDetailPage() {
                 O
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Objetivo (Hallazgos Cl韓icos)
+                Objetivo (Hallazgos Cl铆nicos)
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
@@ -330,7 +330,7 @@ export default function RecordDetailPage() {
                 A
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Evaluaci髇 (Diagn髎tico)
+                Evaluaci贸n (Diagn贸stico)
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
@@ -357,7 +357,7 @@ export default function RecordDetailPage() {
         {/* Metadata Footer */}
         <div className="mt-8 bg-gray-50 rounded-xl border border-gray-200 p-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">
-            Informaci髇 del Registro
+            Informaci贸n del Registro
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
@@ -389,7 +389,7 @@ export default function RecordDetailPage() {
           </div>
           {record.session?.audioDuration && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <span className="text-gray-500">Duraci髇 de la grabaci髇:</span>{' '}
+              <span className="text-gray-500">Duraci贸n de la grabaci贸n:</span>{' '}
               <span className="font-medium">
                 {Math.floor(record.session.audioDuration / 60)} minutos{' '}
                 {record.session.audioDuration % 60} segundos

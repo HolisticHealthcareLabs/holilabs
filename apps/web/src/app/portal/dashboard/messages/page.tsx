@@ -209,10 +209,10 @@ export default function MessagesPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No hay mensajes todavía
+                  No hay mensajes todavÃ­a
                 </h3>
                 <p className="text-gray-600">
-                  Envía tu primer mensaje a tu médico
+                  EnvÃ­a tu primer mensaje a tu mÃ©dico
                 </p>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function MessagesPage() {
                       {message.type === 'URGENT' && (
                         <div className="mb-2">
                           <span className="inline-block px-2 py-1 bg-red-500 text-white text-xs rounded-full">
-                            =¨ Urgente
+                            =Â¨ Urgente
                           </span>
                         </div>
                       )}
@@ -252,7 +252,7 @@ export default function MessagesPage() {
                           isFromMe ? 'text-blue-100' : 'text-gray-500'
                         }`}
                       >
-                        {format(new Date(message.sentAt), "HH:mm · d 'de' MMM", {
+                        {format(new Date(message.sentAt), "HH:mm Â· d 'de' MMM", {
                           locale: es,
                         })}
                       </p>
@@ -279,7 +279,7 @@ export default function MessagesPage() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                =¬ Normal
+                =Â¬ Normal
               </button>
               <button
                 type="button"
@@ -301,7 +301,7 @@ export default function MessagesPage() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                =¨ Urgente
+                =Â¨ Urgente
               </button>
             </div>
 
@@ -326,7 +326,7 @@ export default function MessagesPage() {
             </div>
 
             <p className="text-xs text-gray-500">
-              {newMessage.length}/2000 caracteres · Comunicación segura y encriptada =
+              {newMessage.length}/2000 caracteres Â· ComunicaciÃ³n segura y encriptada =
             </p>
           </form>
         </div>

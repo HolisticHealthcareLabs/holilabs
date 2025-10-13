@@ -115,11 +115,11 @@ export default function MedicationsPage() {
 
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              =Š Mis Medicamentos
+              =ÂŠ Mis Medicamentos
             </h1>
             <p className="text-gray-600">
               {summary.active} medicamento{summary.active !== 1 ? 's' : ''} activo
-              {summary.active !== 1 ? 's' : ''} · {summary.inactive} inactivo{summary.inactive !== 1 ? 's' : ''}
+              {summary.active !== 1 ? 's' : ''} Â· {summary.inactive} inactivo{summary.inactive !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function MedicationsPage() {
             <div className="flex items-center gap-3 mb-4">
               <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
               <h3 className="text-lg font-bold text-gray-900">
-                  Medicamentos que requieren renovación
+                Â  Medicamentos que requieren renovaciÃ³n
               </h3>
             </div>
             <div className="space-y-3">
@@ -159,7 +159,7 @@ export default function MedicationsPage() {
                     onClick={() => handleMedicationClick(medication.id)}
                     className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                   >
-                    Solicitar renovación
+                    Solicitar renovaciÃ³n
                   </button>
                 </div>
               ))}
@@ -180,7 +180,7 @@ export default function MedicationsPage() {
                 No tienes medicamentos activos
               </h3>
               <p className="text-gray-600">
-                Los medicamentos prescritos aparecerán aquí
+                Los medicamentos prescritos aparecerÃ¡n aquÃ­
               </p>
             </div>
           ) : (
