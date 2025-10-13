@@ -26,11 +26,13 @@ const ALLOWED_TYPES = [
 
 const uploadSchema = z.object({
   documentType: z.enum([
-    'LAB_RESULT',
+    'LAB_RESULTS',
     'IMAGING',
+    'CONSULTATION_NOTES',
+    'DISCHARGE_SUMMARY',
     'PRESCRIPTION',
     'INSURANCE',
-    'CONSENT',
+    'CONSENT_FORM',
     'OTHER',
   ]),
 });
