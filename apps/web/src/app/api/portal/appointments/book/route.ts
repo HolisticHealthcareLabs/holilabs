@@ -161,8 +161,9 @@ export async function POST(request: NextRequest) {
     await prisma.auditLog.create({
       data: {
         userId: session.userId,
-        action: 'APPOINTMENT_CREATED',
-        resourceType: 'APPOINTMENT',
+        userEmail: patient.email,
+        action: 'CREATE',
+        resource: 'Appointment',
         resourceId: appointment.id,
         details: {
           clinicianId: validated.clinicianId,
