@@ -1,18 +1,21 @@
 /**
  * Appointment Reminder Service
  * Orchestrates sending reminders via multiple channels
+ * Priority: WhatsApp (98% open rate) → Push → Email → SMS
  */
 
 import { createConfirmationLink, formatAppointmentDetails } from '../appointments/confirmation';
 import { sendAppointmentConfirmationSMS } from './sms';
 import { sendAppointmentConfirmationEmail } from './email';
 import { sendPushNotification } from '../notifications/send-push';
+import { sendAppointmentConfirmationWhatsApp } from './whatsapp';
 import { prisma } from '../prisma';
 import logger from '../logger';
 
 interface ReminderResult {
   success: boolean;
   channels: {
+    whatsapp?: boolean;
     push?: boolean;
     sms?: boolean;
     email?: boolean;
@@ -64,8 +67,41 @@ export async function sendAppointmentReminder(
 
     const channels: ReminderResult['channels'] = {};
 
-    // 1. Try Push Notification first (FREE, instant)
-    if (appointment.patient.patientUser) {
+    // 1. Try WhatsApp FIRST (98% open rate, 97% of LATAM has it, $0.005/msg)
+    if (appointment.patient.phone) {
+      try {
+        const whatsappSuccess = await sendAppointmentConfirmationWhatsApp(
+          appointment.patient.phone,
+          details.patientName,
+          details.dateTime,
+          details.clinicianName,
+          confirmationUrl,
+          'es' // Spanish for LATAM
+        );
+
+        channels.whatsapp = whatsappSuccess;
+
+        // Update confirmation method if WhatsApp succeeded
+        if (whatsappSuccess) {
+          await prisma.appointment.update({
+            where: { id: appointmentId },
+            data: { confirmationMethod: 'whatsapp' },
+          });
+
+          logger.info({
+            event: 'whatsapp_confirmation_sent',
+            appointmentId,
+            patientPhone: appointment.patient.phone,
+          });
+        }
+      } catch (error) {
+        console.error('WhatsApp error:', error);
+        channels.whatsapp = false;
+      }
+    }
+
+    // 2. Try Push Notification (FREE, instant, but requires app installed)
+    if (!channels.whatsapp && appointment.patient.patientUser) {
       try {
         const pushResult = await sendPushNotification({
           userId: appointment.patient.patientUser.id,
@@ -108,8 +144,35 @@ export async function sendAppointmentReminder(
       }
     }
 
-    // 2. Try SMS (cheap, high open rate)
-    if (appointment.patient.phone) {
+    // 3. Fallback to Email (FREE, reliable, 20% open rate)
+    if (!channels.whatsapp && !channels.push && appointment.patient.email) {
+      try {
+        const emailSuccess = await sendAppointmentConfirmationEmail(
+          appointment.patient.email,
+          details.patientName,
+          details.dateTime,
+          details.clinicianName,
+          appointment.type,
+          confirmationUrl
+        );
+
+        channels.email = emailSuccess;
+
+        // Update confirmation method if email succeeded
+        if (emailSuccess) {
+          await prisma.appointment.update({
+            where: { id: appointmentId },
+            data: { confirmationMethod: 'email' },
+          });
+        }
+      } catch (error) {
+        console.error('Email error:', error);
+        channels.email = false;
+      }
+    }
+
+    // 4. Last resort: SMS (more expensive at $0.02/msg vs $0.005 for WhatsApp)
+    if (!channels.whatsapp && !channels.push && !channels.email && appointment.patient.phone) {
       try {
         const smsSuccess = await sendAppointmentConfirmationSMS(
           appointment.patient.phone,
@@ -131,33 +194,6 @@ export async function sendAppointmentReminder(
       } catch (error) {
         console.error('SMS error:', error);
         channels.sms = false;
-      }
-    }
-
-    // 3. Fallback to Email (FREE, reliable)
-    if (appointment.patient.email) {
-      try {
-        const emailSuccess = await sendAppointmentConfirmationEmail(
-          appointment.patient.email,
-          details.patientName,
-          details.dateTime,
-          details.clinicianName,
-          appointment.type,
-          confirmationUrl
-        );
-
-        channels.email = emailSuccess;
-
-        // Update confirmation method if email succeeded and nothing else did
-        if (emailSuccess && !channels.push && !channels.sms) {
-          await prisma.appointment.update({
-            where: { id: appointmentId },
-            data: { confirmationMethod: 'email' },
-          });
-        }
-      } catch (error) {
-        console.error('Email error:', error);
-        channels.email = false;
       }
     }
 

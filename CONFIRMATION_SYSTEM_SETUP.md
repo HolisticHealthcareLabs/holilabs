@@ -17,20 +17,26 @@ A complete automated appointment confirmation system with:
 
 Add these to your `.env` file and DigitalOcean/Vercel environment variables:
 
-### Required for SMS (Twilio)
+### Required for WhatsApp + SMS (Twilio)
 ```bash
 TWILIO_ACCOUNT_SID=AC...  # From Twilio Console
 TWILIO_AUTH_TOKEN=...     # From Twilio Console
-TWILIO_PHONE_NUMBER=+1234567890  # Your Twilio phone number
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886  # WhatsApp Sandbox number
+TWILIO_PHONE_NUMBER=+1234567890  # SMS fallback (optional)
 ```
 
-**Cost**: $0.02-0.03 per SMS (~$20-30/month for 1,000 patients if no push notifications)
+**Cost**:
+- WhatsApp: $0.005 per message (~$5/month for 1,000 patients)
+- SMS: $0.02 per message (only used as last resort)
+- **98% open rate on WhatsApp** vs 20% email vs 95% SMS
 
 **Setup Steps**:
-1. Go to https://twilio.com/console
-2. Get Account SID and Auth Token
-3. Buy a phone number ($1/month)
-4. Add to environment variables
+1. Go to https://twilio.com/try-twilio
+2. Sign up (get $15 free credits)
+3. Get WhatsApp Sandbox: Messaging → Try it Out → Send a WhatsApp message
+4. Send `join <code>` to `+1 415 523 8886` from your phone
+5. Get Account SID and Auth Token from dashboard
+6. Add to environment variables
 
 ### Required for Email (Resend)
 ```bash
