@@ -231,7 +231,7 @@ export async function PATCH(
       where: { id },
       data: {
         status: 'CANCELLED',
-        notes: `Cancelada por el paciente el ${new Date().toISOString()}`,
+        description: `Cancelada por el paciente el ${new Date().toISOString()}`,
       },
       include: {
         clinician: {
