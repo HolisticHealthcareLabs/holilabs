@@ -55,7 +55,7 @@ async function main() {
   const lastName = await question('Last name: ');
   const specialty = await question('Specialty (e.g., "Internal Medicine"): ');
   const licenseNumber = await question('Medical license number: ');
-  const npiNumber = await question('NPI number (optional, press Enter to skip): ');
+  const npi = await question('NPI number (optional, press Enter to skip): ');
 
   console.log('\n🔨 Creating database entries...\n');
 
@@ -84,7 +84,7 @@ async function main() {
           lastName,
           specialty,
           licenseNumber,
-          npiNumber: npiNumber || null,
+          npi: npi || null,
           role: 'CLINICIAN',
           mfaEnabled: false,
         }
@@ -103,7 +103,7 @@ async function main() {
           role: 'CLINICIAN',
           specialty,
           licenseNumber,
-          npiNumber: npiNumber || null,
+          npi: npi || null,
           mfaEnabled: false,
         },
       });
