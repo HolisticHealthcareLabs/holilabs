@@ -24,6 +24,41 @@ interface ReminderResult {
 }
 
 /**
+ * Check if current time is within patient's quiet hours
+ */
+function checkQuietHours(preferences: any): boolean {
+  if (!preferences.quietHoursStart || !preferences.quietHoursEnd) {
+    return false;
+  }
+
+  try {
+    const now = new Date();
+    const timezone = preferences.timezone || 'America/Mexico_City';
+
+    // Get current time in patient's timezone
+    const currentTime = now.toLocaleTimeString('en-US', {
+      timeZone: timezone,
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const quietStart = preferences.quietHoursStart;
+    const quietEnd = preferences.quietHoursEnd;
+
+    // Handle overnight quiet hours (e.g., 22:00 to 08:00)
+    if (quietStart > quietEnd) {
+      return currentTime >= quietStart || currentTime < quietEnd;
+    }
+
+    // Handle same-day quiet hours (e.g., 12:00 to 14:00)
+    return currentTime >= quietStart && currentTime < quietEnd;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Send appointment confirmation reminder via all available channels
  * Priority: Push → SMS → Email
  */
@@ -38,6 +73,7 @@ export async function sendAppointmentReminder(
         patient: {
           include: {
             patientUser: true,
+            preferences: true, // Include preferences
           },
         },
         clinician: {
@@ -59,6 +95,32 @@ export async function sendAppointmentReminder(
       };
     }
 
+    // Get or create default preferences
+    let preferences = appointment.patient.preferences;
+    if (!preferences) {
+      preferences = await prisma.patientPreferences.create({
+        data: {
+          patientId: appointment.patientId,
+        },
+      });
+    }
+
+    // Check if we're in quiet hours (skip for emergency override)
+    const isQuietHours = checkQuietHours(preferences);
+    if (isQuietHours && !preferences.allowEmergencyOverride) {
+      logger.info({
+        event: 'reminder_skipped_quiet_hours',
+        appointmentId,
+        patientId: appointment.patientId,
+      });
+
+      return {
+        success: false,
+        channels: {},
+        error: 'Skipped: quiet hours active',
+      };
+    }
+
     // Generate confirmation link
     const confirmationUrl = await createConfirmationLink(appointmentId);
 
@@ -68,7 +130,11 @@ export async function sendAppointmentReminder(
     const channels: ReminderResult['channels'] = {};
 
     // 1. Try WhatsApp FIRST (98% open rate, 97% of LATAM has it, $0.005/msg)
-    if (appointment.patient.phone) {
+    if (
+      appointment.patient.phone &&
+      preferences.whatsappEnabled &&
+      preferences.whatsappConsented
+    ) {
       try {
         const whatsappSuccess = await sendAppointmentConfirmationWhatsApp(
           appointment.patient.phone,
@@ -101,7 +167,12 @@ export async function sendAppointmentReminder(
     }
 
     // 2. Try Push Notification (FREE, instant, but requires app installed)
-    if (!channels.whatsapp && appointment.patient.patientUser) {
+    if (
+      !channels.whatsapp &&
+      appointment.patient.patientUser &&
+      preferences.pushEnabled &&
+      preferences.pushAppointments
+    ) {
       try {
         const pushResult = await sendPushNotification({
           userId: appointment.patient.patientUser.id,
@@ -145,7 +216,13 @@ export async function sendAppointmentReminder(
     }
 
     // 3. Fallback to Email (FREE, reliable, 20% open rate)
-    if (!channels.whatsapp && !channels.push && appointment.patient.email) {
+    if (
+      !channels.whatsapp &&
+      !channels.push &&
+      appointment.patient.email &&
+      preferences.emailEnabled &&
+      preferences.emailAppointments
+    ) {
       try {
         const emailSuccess = await sendAppointmentConfirmationEmail(
           appointment.patient.email,
@@ -172,7 +249,14 @@ export async function sendAppointmentReminder(
     }
 
     // 4. Last resort: SMS (more expensive at $0.02/msg vs $0.005 for WhatsApp)
-    if (!channels.whatsapp && !channels.push && !channels.email && appointment.patient.phone) {
+    if (
+      !channels.whatsapp &&
+      !channels.push &&
+      !channels.email &&
+      appointment.patient.phone &&
+      preferences.smsEnabled &&
+      preferences.smsAppointments
+    ) {
       try {
         const smsSuccess = await sendAppointmentConfirmationSMS(
           appointment.patient.phone,

@@ -95,15 +95,11 @@ export const POST = createProtectedRoute(
     // Send SMS reminder
     const patientName = `${appointment.patient.firstName} ${appointment.patient.lastName}`;
     const clinicianName = `Dr. ${appointment.clinician.firstName} ${appointment.clinician.lastName}`;
-    const timeStr = appointment.startTime.toLocaleTimeString('es-MX', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
 
     const smsResult = await sendAppointmentReminderSMS(
       appointment.patient.phone,
       patientName,
-      timeStr,
+      appointment.startTime,
       clinicianName
     );
 

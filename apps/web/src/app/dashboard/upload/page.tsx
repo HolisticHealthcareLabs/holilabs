@@ -126,34 +126,34 @@ export default function UploadPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-8">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">Upload Document</h2>
+      <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">📄 Documentos - Holi Labs</h2>
 
         {/* Progress Stepper */}
-        <div className="bg-white border border-gray-200 rounded-lg mb-8">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg mb-8">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between max-w-2xl mx-auto">
-              <div className={`flex items-center ${step === 'select' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+              <div className={`flex items-center ${step === 'select' ? 'text-primary font-bold' : 'text-gray-400 dark:text-gray-500'}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                  step === 'select' ? 'bg-primary text-white' : 'bg-gray-200'
+                  step === 'select' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700'
                 }`}>
                   1
                 </div>
                 <span className="hidden md:inline">Seleccionar Paciente</span>
               </div>
-              <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
-              <div className={`flex items-center ${step === 'upload' || step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+              <div className="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700 mx-4" />
+              <div className={`flex items-center ${step === 'upload' || step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400 dark:text-gray-500'}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                  step === 'upload' || step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
+                  step === 'upload' || step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700'
                 }`}>
                   2
                 </div>
                 <span className="hidden md:inline">Subir Documento</span>
               </div>
-              <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
-              <div className={`flex items-center ${step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400'}`}>
+              <div className="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700 mx-4" />
+              <div className={`flex items-center ${step === 'assign' || step === 'confirm' ? 'text-primary font-bold' : 'text-gray-400 dark:text-gray-500'}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                  step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200'
+                  step === 'assign' || step === 'confirm' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700'
                 }`}>
                   3
                 </div>
@@ -167,8 +167,8 @@ export default function UploadPage() {
         <div className="max-w-4xl mx-auto">
           {/* Step 1: Select Patient */}
           {step === 'select' && (
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-2xl font-bold mb-6">Seleccionar o Crear Paciente</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Seleccionar o Crear Paciente</h2>
 
               <div className="space-y-6">
                 <button
@@ -176,21 +176,21 @@ export default function UploadPage() {
                     setIsNewPatient(true);
                     setStep('upload');
                   }}
-                  className="w-full p-6 border-2 border-dashed border-primary rounded-lg hover:bg-blue-50 transition text-left"
+                  className="w-full p-6 border-2 border-dashed border-primary rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition text-left"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="text-4xl">➕</div>
                     <div>
                       <div className="font-bold text-lg text-primary">Crear Nuevo Paciente</div>
-                      <div className="text-sm text-gray-600">Registrar un nuevo paciente y asignar documento</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Registrar un nuevo paciente y asignar documento</div>
                     </div>
                   </div>
                 </button>
 
                 <div className="my-6 flex items-center">
-                  <div className="flex-1 h-0.5 bg-gray-200" />
-                  <span className="px-4 text-gray-500">o seleccionar existente</span>
-                  <div className="flex-1 h-0.5 bg-gray-200" />
+                  <div className="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700" />
+                  <span className="px-4 text-gray-500 dark:text-gray-400">o seleccionar existente</span>
+                  <div className="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700" />
                 </div>
 
                 <PatientSearch onSelectPatient={handleSelectPatient} showMostViewed={true} />
@@ -200,43 +200,43 @@ export default function UploadPage() {
 
           {/* Step 2: Upload Document */}
           {step === 'upload' && (
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-2xl font-bold mb-2">Subir Documento</h2>
-              <p className="text-gray-600 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Subir Documento</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {isNewPatient ? 'Nuevo paciente' : `Para ${selectedPatient?.name}`}
               </p>
 
               {isNewPatient && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="font-bold mb-3">Datos del Nuevo Paciente</h3>
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-lg">
+                  <h3 className="font-bold mb-3 text-gray-900 dark:text-white">Datos del Nuevo Paciente</h3>
                   <div className="grid md:grid-cols-2 gap-4">
                     <input
                       type="text"
                       placeholder="Nombre"
                       value={newPatientData.firstName}
                       onChange={(e) => setNewPatientData({ ...newPatientData, firstName: e.target.value })}
-                      className="px-3 py-2 border rounded"
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                     />
                     <input
                       type="text"
                       placeholder="Apellido"
                       value={newPatientData.lastName}
                       onChange={(e) => setNewPatientData({ ...newPatientData, lastName: e.target.value })}
-                      className="px-3 py-2 border rounded"
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                     />
                     <input
                       type="text"
                       placeholder="Año de Nacimiento"
                       value={newPatientData.birthYear}
                       onChange={(e) => setNewPatientData({ ...newPatientData, birthYear: e.target.value })}
-                      className="px-3 py-2 border rounded"
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                     />
                     <input
                       type="text"
                       placeholder="Condición Principal"
                       value={newPatientData.condition}
                       onChange={(e) => setNewPatientData({ ...newPatientData, condition: e.target.value })}
-                      className="px-3 py-2 border rounded"
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded"
                     />
                   </div>
                 </div>
@@ -248,12 +248,12 @@ export default function UploadPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`border-4 border-dashed rounded-lg p-12 text-center transition ${
-                  isDragging ? 'border-primary bg-blue-50' : 'border-gray-300 hover:border-primary hover:bg-gray-50'
+                  isDragging ? 'border-primary bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-700/50'
                 }`}
               >
                 <div className="text-6xl mb-4">📄</div>
-                <h3 className="text-xl font-bold mb-2">Arrastra tu documento aquí</h3>
-                <p className="text-gray-600 mb-4">o</p>
+                <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Arrastra tu documento aquí</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">o</p>
                 <label className="inline-block px-6 py-3 bg-primary text-white rounded-lg cursor-pointer hover:bg-primary/90">
                   <input
                     type="file"
@@ -263,18 +263,18 @@ export default function UploadPage() {
                   />
                   Seleccionar Archivo
                 </label>
-                <p className="text-sm text-gray-500 mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
                   Formatos soportados: PDF, DICOM, CSV, JPG, PNG · Máx: 100MB
                 </p>
               </div>
 
               {uploadedFile && (
-                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="text-2xl">✓</div>
                     <div>
-                      <div className="font-bold">{uploadedFile.name}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="font-bold text-gray-900 dark:text-white">{uploadedFile.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
                         {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
                       </div>
                     </div>
@@ -285,7 +285,7 @@ export default function UploadPage() {
               <div className="mt-6 flex space-x-2">
                 <button
                   onClick={() => setStep('select')}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   ← Atrás
                 </button>
@@ -295,31 +295,31 @@ export default function UploadPage() {
 
           {/* Step 3: Assign to Wallet */}
           {step === 'assign' && (
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-2xl font-bold mb-6">Confirmar Asignación a Billetera Digital</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Confirmar Asignación a Billetera Digital</h2>
 
               <div className="space-y-6">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-bold mb-2">📄 Documento</h3>
-                  <p>{uploadedFile?.name}</p>
-                  <p className="text-sm text-gray-600">{(uploadedFile!.size / 1024 / 1024).toFixed(2)} MB</p>
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-lg">
+                  <h3 className="font-bold mb-2 text-gray-900 dark:text-white">📄 Documento</h3>
+                  <p className="text-gray-900 dark:text-white">{uploadedFile?.name}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{(uploadedFile!.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
 
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h3 className="font-bold mb-2">
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700/50 rounded-lg">
+                  <h3 className="font-bold mb-2 text-gray-900 dark:text-white">
                     {isNewPatient ? '👤 Nuevo Paciente' : `${selectedPatient?.emoji} Paciente`}
                   </h3>
-                  <p className="font-medium">
+                  <p className="font-medium text-gray-900 dark:text-white">
                     {isNewPatient
                       ? `${newPatientData.firstName} ${newPatientData.lastName}`
                       : selectedPatient?.name}
                   </p>
-                  {!isNewPatient && <p className="text-sm text-gray-600">ID: {selectedPatient?.id}</p>}
+                  {!isNewPatient && <p className="text-sm text-gray-600 dark:text-gray-400">ID: {selectedPatient?.id}</p>}
                 </div>
 
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h3 className="font-bold text-yellow-900 mb-2">🔒 Proceso de Des-identificación</h3>
-                  <ol className="text-sm text-yellow-800 space-y-1 ml-4 list-decimal">
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg">
+                  <h3 className="font-bold text-yellow-900 dark:text-yellow-300 mb-2">🔒 Proceso de Des-identificación</h3>
+                  <ol className="text-sm text-yellow-800 dark:text-yellow-400 space-y-1 ml-4 list-decimal">
                     <li>Supresión de 18 identificadores HIPAA</li>
                     <li>Pseudonimización con token criptográfico</li>
                     <li>Generalización de datos sensibles</li>
@@ -331,7 +331,7 @@ export default function UploadPage() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setStep('upload')}
-                    className="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     ← Atrás
                   </button>
@@ -348,10 +348,10 @@ export default function UploadPage() {
 
           {/* Step 4: Confirmation */}
           {step === 'confirm' && (
-            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center border border-gray-200 dark:border-gray-700">
               <div className="text-6xl mb-4">⏳</div>
-              <h2 className="text-2xl font-bold mb-2">Procesando...</h2>
-              <p className="text-gray-600">Des-identificando y asignando a billetera digital</p>
+              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Procesando...</h2>
+              <p className="text-gray-600 dark:text-gray-400">Des-identificando y asignando a billetera digital</p>
               <div className="mt-6">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
               </div>

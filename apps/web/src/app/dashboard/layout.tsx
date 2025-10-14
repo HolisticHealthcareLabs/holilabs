@@ -40,20 +40,36 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     });
   }, [router]);
 
-  const navItems: NavItem[] = [
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+
+  // Main navigation items
+  const mainNavItems: NavItem[] = [
     { name: t('nav.dashboard'), href: '/dashboard', icon: '📊', emoji: '📊' },
     { name: t('nav.patients'), href: '/dashboard/patients', icon: '👥', emoji: '👥' },
     { name: t('nav.appointments'), href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
     { name: t('nav.forms'), href: '/dashboard/forms', icon: '📝', emoji: '📝' },
     { name: t('nav.messages'), href: '/dashboard/messages', icon: '💬', emoji: '💬' },
-    { name: t('nav.scribe'), href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️' },
     { name: t('nav.documents'), href: '/dashboard/upload', icon: '📄', emoji: '📄' },
-    { name: t('nav.prescriptions'), href: '/dashboard/prescriptions', icon: '💊', emoji: '💊' },
-    { name: t('nav.prevention'), href: '/dashboard/prevention', icon: '🛡️', emoji: '🛡️' },
-    { name: t('nav.aiCopilot'), href: '/dashboard/ai', icon: '🦾', emoji: '🦾' },
-    { name: t('nav.analysis'), href: '/dashboard/doc-intelligence', icon: '🧠', emoji: '🧠' },
     { name: t('nav.settings'), href: '/dashboard/settings', icon: '⚙️', emoji: '⚙️' },
   ];
+
+  // Clinical Tools Group (Spider Tree)
+  const clinicalToolsGroup = {
+    id: 'clinical-tools',
+    name: 'Clinical Tools',
+    emoji: '🏥',
+    children: [
+      { name: t('nav.prevention'), href: '/dashboard/prevention', emoji: '🛡️' },
+      { name: t('nav.prescriptions'), href: '/dashboard/prescriptions', emoji: '💊' },
+      { name: t('nav.scribe'), href: '/dashboard/scribe', emoji: '🎙️' },
+      { name: t('nav.analysis'), href: '/dashboard/doc-intelligence', emoji: '🧠' },
+    ],
+  };
+
+  // AI Copilot (standalone with emphasis)
+  const aiCopilotItem = { name: t('nav.aiCopilot'), href: '/dashboard/ai', emoji: '🦾' };
+
+  const navItems = mainNavItems;
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -101,57 +117,222 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
+          {/* Navigation - Futuristic Floating Emoji Tiles */}
+          <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
+            {/* Main Navigation Items */}
+            {navItems.map((item, index) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group relative flex items-center px-3 py-2.5 rounded-lg transition-all duration-300 overflow-hidden ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <span className="text-xl flex-shrink-0 z-10">{item.emoji}</span>
-                  <span
-                    className={`absolute left-12 whitespace-nowrap font-medium transition-all duration-500 ease-out transform ${
-                      isActive ? 'font-semibold' : ''
-                    } opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0`}
+                <div key={item.href} className="relative">
+                  <Link
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-500 ${
+                      isActive
+                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/50 scale-110 ring-2 ring-blue-400 dark:ring-blue-500'
+                        : 'bg-white/80 dark:bg-gray-800/50 backdrop-blur-lg border border-gray-200/50 dark:border-gray-700/50 hover:scale-110 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/20'
+                    }`}
                     style={{
-                      animation: 'wave 0.6s ease-out forwards',
-                      animationPlayState: 'paused'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.animationPlayState = 'running';
+                      transitionDelay: `${index * 30}ms`
                     }}
                   >
-                    {item.name}
-                  </span>
-                  {item.badge && (
-                    <span className="ml-auto flex items-center justify-center min-w-[1.5rem] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full z-10">
-                      {item.badge}
+                    <span className={`text-2xl transition-transform duration-300 group-hover:scale-125 ${
+                      isActive ? 'filter drop-shadow-lg' : ''
+                    }`}>
+                      {item.emoji}
                     </span>
-                  )}
-                </Link>
+
+                    {/* Floating Text Label */}
+                    <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
+                      <div className={`
+                        opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0
+                        transition-all duration-500 ease-out
+                        bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900
+                        backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80
+                        px-4 py-2 rounded-xl shadow-2xl
+                        whitespace-nowrap
+                      `}>
+                        <p className={`font-semibold text-sm tracking-wide ${
+                          isActive
+                            ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {item.name}
+                        </p>
+                        <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+                          <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 opacity-20 animate-pulse" />
+                    )}
+
+                    {item.badge && (
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full shadow-lg z-10 animate-bounce">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                </div>
               );
             })}
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent my-2" />
+
+            {/* Clinical Tools Group - Spider Tree */}
+            <div
+              className="relative"
+              onMouseEnter={() => setExpandedGroup('clinical-tools')}
+              onMouseLeave={() => setExpandedGroup(null)}
+            >
+              <button
+                className="group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-500 bg-gradient-to-br from-green-500 to-teal-600 hover:scale-110 hover:shadow-xl hover:shadow-green-500/30 dark:hover:shadow-green-400/20"
+              >
+                <span className="text-2xl transition-transform duration-300 group-hover:scale-125">
+                  {clinicalToolsGroup.emoji}
+                </span>
+
+                {/* Floating Text Label */}
+                <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
+                  <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 ease-out bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
+                    <p className="font-semibold text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-400 dark:to-teal-400">
+                      {clinicalToolsGroup.name}
+                    </p>
+                    <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+                      <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Spider Tree Sub-Items */}
+              {expandedGroup === 'clinical-tools' && (
+                <div className="absolute left-20 top-0 z-40 flex flex-col gap-2 pl-6">
+                  {clinicalToolsGroup.children.map((child, idx) => {
+                    const isActive = pathname === child.href || pathname.startsWith(child.href + '/');
+                    return (
+                      <div
+                        key={child.href}
+                        className="relative"
+                        style={{
+                          animation: `slideIn 0.3s ease-out forwards`,
+                          animationDelay: `${idx * 50}ms`,
+                          opacity: 0
+                        }}
+                      >
+                        {/* Connecting Line */}
+                        <svg className="absolute -left-6 top-1/2 -translate-y-1/2 w-6 h-0.5" xmlns="http://www.w3.org/2000/svg">
+                          <line x1="0" y1="1" x2="24" y2="1" stroke="url(#gradient)" strokeWidth="2" strokeDasharray="2,2" />
+                          <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="rgb(34, 197, 94)" stopOpacity="0.5" />
+                              <stop offset="100%" stopColor="rgb(20, 184, 166)" stopOpacity="0.8" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+
+                        <Link
+                          href={child.href}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`group/child flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
+                            isActive
+                              ? 'bg-gradient-to-br from-green-500 to-teal-600 shadow-md shadow-green-500/50 scale-110 ring-2 ring-green-400'
+                              : 'bg-white/70 dark:bg-gray-800/40 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50 hover:scale-110 hover:shadow-lg'
+                          }`}
+                        >
+                          <span className="text-lg">{child.emoji}</span>
+
+                          {/* Child Text Label */}
+                          <div className="absolute left-14 top-1/2 -translate-y-1/2 pointer-events-none z-50">
+                            <div className="opacity-0 -translate-x-4 group-hover/child:opacity-100 group-hover/child:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
+                              <p className="font-medium text-xs text-gray-900 dark:text-white">
+                                {child.name}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* AI Copilot - Featured Item */}
+            <div className="relative">
+              <Link
+                href={aiCopilotItem.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-500 ${
+                  pathname === aiCopilotItem.href || pathname.startsWith(aiCopilotItem.href + '/')
+                    ? 'bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg shadow-purple-500/50 scale-110 ring-2 ring-purple-400 dark:ring-purple-500'
+                    : 'bg-gradient-to-br from-purple-400 to-pink-500 hover:scale-110 hover:shadow-xl hover:shadow-purple-500/40'
+                }`}
+              >
+                <span className="text-2xl transition-transform duration-300 group-hover:scale-125">
+                  {aiCopilotItem.emoji}
+                </span>
+
+                {/* Floating Text Label */}
+                <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
+                  <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 ease-out bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
+                    <p className="font-semibold text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400">
+                      {aiCopilotItem.name}
+                    </p>
+                    <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+                      <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                    </div>
+                  </div>
+                </div>
+
+                {(pathname === aiCopilotItem.href || pathname.startsWith(aiCopilotItem.href + '/')) && (
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 opacity-20 animate-pulse" />
+                )}
+              </Link>
+            </div>
           </nav>
+
+          {/* Enhanced animations */}
           <style jsx>{`
-            @keyframes wave {
+            @keyframes textReveal {
               0% {
                 opacity: 0;
-                transform: translateX(-16px) translateY(8px);
+                transform: translateX(-20px);
+                letter-spacing: 0.2em;
               }
-              50% {
-                transform: translateX(0px) translateY(-4px);
+              60% {
+                letter-spacing: 0.05em;
               }
               100% {
                 opacity: 1;
-                transform: translateX(0px) translateY(0px);
+                transform: translateX(0);
+                letter-spacing: 0.025em;
+              }
+            }
+
+            @keyframes glowPulse {
+              0%, 100% {
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+              }
+              50% {
+                box-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
+              }
+            }
+
+            @keyframes slideIn {
+              0% {
+                opacity: 0;
+                transform: translateX(-20px) scale(0.8);
+              }
+              60% {
+                transform: translateX(2px) scale(1.05);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
               }
             }
           `}</style>
