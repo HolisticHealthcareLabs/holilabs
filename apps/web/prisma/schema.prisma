@@ -15,38 +15,38 @@ datasource db {
 // ============================================================================
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  supabaseId    String?   @unique // Link to Supabase Auth
+  id         String  @id @default(cuid())
+  email      String  @unique
+  supabaseId String? @unique // Link to Supabase Auth
 
   // Blockchain fields
-  walletAddress String?   @unique // Future: Web3 login
+  walletAddress String? @unique // Future: Web3 login
   publicKey     String?
 
   // Profile
   firstName     String
   lastName      String
-  role          UserRole  @default(CLINICIAN)
+  role          UserRole @default(CLINICIAN)
   specialty     String?
   licenseNumber String?
-  npi           String?   // National Provider Identifier (US only)
+  npi           String? // National Provider Identifier (US only)
 
   // Security
-  mfaEnabled    Boolean   @default(false)
-  lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  mfaEnabled  Boolean   @default(false)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
-  patients      Patient[]
-  auditLogs     AuditLog[]
-  prescriptions Prescription[]
-  appointments  Appointment[]
+  patients             Patient[]
+  auditLogs            AuditLog[]
+  prescriptions        Prescription[]
+  appointments         Appointment[]
   calendarIntegrations CalendarIntegration[]
-  scribeSessions ScribeSession[]
-  soapNotes     SOAPNote[]
-  formTemplates FormTemplate[]
-  formInstances FormInstance[]
+  scribeSessions       ScribeSession[]
+  soapNotes            SOAPNote[]
+  formTemplates        FormTemplate[]
+  formInstances        FormInstance[]
   clinicalNoteVersions ClinicalNoteVersion[]
 
   @@index([email])
@@ -66,32 +66,32 @@ enum UserRole {
 // ============================================================================
 
 model PatientUser {
-  id                String    @id @default(cuid())
-  patientId         String    @unique
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String  @unique
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Contact (for authentication)
-  email             String    @unique
-  phone             String?   @unique
+  email String  @unique
+  phone String? @unique
 
   // Verification status
-  emailVerifiedAt   DateTime?
-  phoneVerifiedAt   DateTime?
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
 
   // Security
-  mfaEnabled        Boolean   @default(false)
-  lastLoginAt       DateTime?
-  lastLoginIp       String?
-  loginAttempts     Int       @default(0)
-  lockedUntil       DateTime?
+  mfaEnabled    Boolean   @default(false)
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  loginAttempts Int       @default(0)
+  lockedUntil   DateTime?
 
   // Metadata
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  magicLinks        MagicLink[]
-  otpCodes          OTPCode[]
+  magicLinks MagicLink[]
+  otpCodes   OTPCode[]
 
   @@index([email])
   @@index([phone])
@@ -100,24 +100,24 @@ model PatientUser {
 }
 
 model MagicLink {
-  id                String      @id @default(cuid())
-  patientUserId     String
-  patientUser       PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  patientUserId String
+  patientUser   PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
 
   // Token details
-  token             String      @unique @default(cuid())
-  tokenHash         String      @unique  // SHA-256 hash of token for lookup
+  token     String @unique @default(cuid())
+  tokenHash String @unique // SHA-256 hash of token for lookup
 
   // Expiration
-  expiresAt         DateTime
-  usedAt            DateTime?
+  expiresAt DateTime
+  usedAt    DateTime?
 
   // Security
-  ipAddress         String?
-  userAgent         String?     @db.Text
+  ipAddress String?
+  userAgent String? @db.Text
 
   // Metadata
-  createdAt         DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   @@index([token])
   @@index([tokenHash])
@@ -127,29 +127,29 @@ model MagicLink {
 }
 
 model OTPCode {
-  id                String      @id @default(cuid())
-  patientUserId     String
-  patientUser       PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  patientUserId String
+  patientUser   PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
 
   // Code details
-  code              String      // 6-digit code
-  codeHash          String      @unique  // SHA-256 hash
+  code     String // 6-digit code
+  codeHash String @unique // SHA-256 hash
 
   // Expiration (10 minutes)
-  expiresAt         DateTime
-  usedAt            DateTime?
+  expiresAt DateTime
+  usedAt    DateTime?
 
   // Security
-  attempts          Int         @default(0)
-  maxAttempts       Int         @default(3)
+  attempts    Int @default(0)
+  maxAttempts Int @default(3)
 
   // Delivery
-  sentVia           OTPChannel  @default(SMS)
-  recipientPhone    String?
-  recipientEmail    String?
+  sentVia        OTPChannel @default(SMS)
+  recipientPhone String?
+  recipientEmail String?
 
   // Metadata
-  createdAt         DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   @@index([codeHash])
   @@index([patientUserId])
@@ -168,41 +168,41 @@ enum OTPChannel {
 // ============================================================================
 
 model Message {
-  id                String      @id @default(cuid())
+  id String @id @default(cuid())
 
   // Sender/Recipient (polymorphic)
-  fromUserId        String
-  fromUserType      UserType
-  toUserId          String
-  toUserType        UserType
+  fromUserId   String
+  fromUserType UserType
+  toUserId     String
+  toUserType   UserType
 
   // Always link to patient for context
-  patientId         String
-  patient           Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Content
-  subject           String?
-  body              String      @db.Text
+  subject String?
+  body    String  @db.Text
 
   // Attachments
-  attachments       Json?       // Array of { fileName, fileUrl, fileType, fileSize }
+  attachments Json? // Array of { fileName, fileUrl, fileType, fileSize }
 
   // Threading
-  parentMessageId   String?
-  parentMessage     Message?    @relation("MessageThread", fields: [parentMessageId], references: [id], onDelete: SetNull)
-  replies           Message[]   @relation("MessageThread")
+  parentMessageId String?
+  parentMessage   Message?  @relation("MessageThread", fields: [parentMessageId], references: [id], onDelete: SetNull)
+  replies         Message[] @relation("MessageThread")
 
   // Status
-  readAt            DateTime?
-  archivedAt        DateTime?
+  readAt     DateTime?
+  archivedAt DateTime?
 
   // Note: No direct FK relations due to polymorphic nature
   // Use fromUserId + fromUserType to lookup sender
   // Use toUserId + toUserType to lookup recipient
 
   // Metadata
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([fromUserId])
   @@index([toUserId])
@@ -222,48 +222,48 @@ enum UserType {
 // ============================================================================
 
 model Notification {
-  id                String      @id @default(cuid())
+  id String @id @default(cuid())
 
   // Recipient (polymorphic - clinician or patient)
-  recipientId       String
-  recipientType     UserType
+  recipientId   String
+  recipientType UserType
 
   // Notification details
-  type              NotificationType
-  title             String
-  message           String      @db.Text
+  type    NotificationType
+  title   String
+  message String           @db.Text
 
   // Action/Link
-  actionUrl         String?     @db.Text  // e.g., "/portal/appointments/123"
-  actionLabel       String?     // e.g., "View Appointment"
+  actionUrl   String? @db.Text // e.g., "/portal/appointments/123"
+  actionLabel String? // e.g., "View Appointment"
 
   // Related resources
-  resourceType      String?     // e.g., "Appointment", "Message", "Document"
-  resourceId        String?
+  resourceType String? // e.g., "Appointment", "Message", "Document"
+  resourceId   String?
 
   // Status
-  isRead            Boolean     @default(false)
-  readAt            DateTime?
+  isRead Boolean   @default(false)
+  readAt DateTime?
 
   // Delivery channels
-  deliveredInApp    Boolean     @default(false)
-  deliveredEmail    Boolean     @default(false)
-  deliveredSMS      Boolean     @default(false)
+  deliveredInApp Boolean @default(false)
+  deliveredEmail Boolean @default(false)
+  deliveredSMS   Boolean @default(false)
 
-  emailSentAt       DateTime?
-  smsSentAt         DateTime?
+  emailSentAt DateTime?
+  smsSentAt   DateTime?
 
   // Priority
-  priority          NotificationPriority @default(NORMAL)
+  priority NotificationPriority @default(NORMAL)
 
   // Expiration (auto-delete old notifications)
-  expiresAt         DateTime?
+  expiresAt DateTime?
 
   // Metadata
-  metadata          Json?       // Additional context
+  metadata Json? // Additional context
 
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([recipientId, recipientType])
   @@index([isRead])
@@ -307,35 +307,35 @@ enum NotificationPriority {
 // ============================================================================
 
 model HealthMetric {
-  id                String      @id @default(cuid())
-  patientId         String
-  patient           Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Metric details
-  metricType        MetricType
-  value             Json        // Flexible structure based on metric type
-  unit              String?     // e.g., "kg", "mmHg", "mg/dL"
+  metricType MetricType
+  value      Json // Flexible structure based on metric type
+  unit       String? // e.g., "kg", "mmHg", "mg/dL"
 
   // Timing
-  recordedAt        DateTime    // When the measurement was taken
+  recordedAt DateTime // When the measurement was taken
 
   // Source
-  source            MetricSource @default(PATIENT_MANUAL)
-  deviceName        String?     // e.g., "Apple Watch", "Omron BP Monitor"
+  source     MetricSource @default(PATIENT_MANUAL)
+  deviceName String? // e.g., "Apple Watch", "Omron BP Monitor"
 
   // Context
-  notes             String?     @db.Text
-  tags              String[]    // e.g., ["fasting", "morning", "post-meal"]
+  notes String?  @db.Text
+  tags  String[] // e.g., ["fasting", "morning", "post-meal"]
 
   // Quality
-  isOutOfRange      Boolean     @default(false)
-  flaggedForReview  Boolean     @default(false)
-  reviewedAt        DateTime?
-  reviewedBy        String?     // User ID
+  isOutOfRange     Boolean   @default(false)
+  flaggedForReview Boolean   @default(false)
+  reviewedAt       DateTime?
+  reviewedBy       String? // User ID
 
   // Metadata
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([metricType])
@@ -351,7 +351,7 @@ enum MetricType {
   HEART_RATE
   TEMPERATURE
   BLOOD_GLUCOSE
-  GLUCOSE  // Alias for BLOOD_GLUCOSE for API compatibility
+  GLUCOSE // Alias for BLOOD_GLUCOSE for API compatibility
   OXYGEN_SATURATION
   STEPS
   SLEEP_HOURS
@@ -359,7 +359,7 @@ enum MetricType {
   MOOD
   MEDICATION_ADHERENCE
   CUSTOM
-  OTHER  // Alias for CUSTOM for API compatibility
+  OTHER // Alias for CUSTOM for API compatibility
 }
 
 enum MetricSource {
@@ -379,48 +379,48 @@ enum MetricSource {
 // ============================================================================
 
 model DocumentShare {
-  id                String      @id @default(cuid())
-  patientId         String
-  patient           Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // What's being shared
-  documentType      ShareableType
-  documentId        String      // ID of the SOAP note, prescription, document, etc.
-  documentIds       String[]    // Allow sharing multiple items at once
+  documentType ShareableType
+  documentId   String // ID of the SOAP note, prescription, document, etc.
+  documentIds  String[] // Allow sharing multiple items at once
 
   // Access control
-  shareToken        String      @unique @default(cuid())
-  shareTokenHash    String      @unique  // SHA-256 for lookup
+  shareToken     String @unique @default(cuid())
+  shareTokenHash String @unique // SHA-256 for lookup
 
   // Recipient
-  recipientEmail    String?
-  recipientPhone    String?
-  recipientName     String?
-  purpose           String?     @db.Text  // Why are they sharing it?
+  recipientEmail String?
+  recipientPhone String?
+  recipientName  String?
+  purpose        String? @db.Text // Why are they sharing it?
 
   // Expiration
-  expiresAt         DateTime?
-  accessCount       Int         @default(0)
-  maxAccesses       Int?        // Optional limit
+  expiresAt   DateTime?
+  accessCount Int       @default(0)
+  maxAccesses Int? // Optional limit
 
   // Access tracking
   accessedAt        DateTime?
   lastAccessedAt    DateTime?
-  accessIpAddresses String[]    // Track all IPs that accessed
+  accessIpAddresses String[] // Track all IPs that accessed
 
   // Permissions
-  allowDownload     Boolean     @default(true)
-  requirePassword   Boolean     @default(false)
-  passwordHash      String?     // If password protection is enabled
+  allowDownload   Boolean @default(true)
+  requirePassword Boolean @default(false)
+  passwordHash    String? // If password protection is enabled
 
   // Status
-  isActive          Boolean     @default(true)
-  revokedAt         DateTime?
-  revokedBy         String?     // PatientUser ID
+  isActive  Boolean   @default(true)
+  revokedAt DateTime?
+  revokedBy String? // PatientUser ID
 
   // Metadata
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([shareToken])
   @@index([shareTokenHash])
@@ -444,60 +444,60 @@ enum ShareableType {
 // ============================================================================
 
 model Patient {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Blockchain fields - CRITICAL for Web3 pivot
-  blockchainId      String?   @unique  // Future: Patient's wallet address
-  dataHash          String?              // Hash of critical patient data
-  lastHashUpdate    DateTime?
+  blockchainId   String?   @unique // Future: Patient's wallet address
+  dataHash       String? // Hash of critical patient data
+  lastHashUpdate DateTime?
 
   // Personal Info (ENCRYPTED in production)
-  firstName         String    @db.Text
-  lastName          String    @db.Text
-  dateOfBirth       DateTime
-  gender            String?
+  firstName   String   @db.Text
+  lastName    String   @db.Text
+  dateOfBirth DateTime
+  gender      String?
 
   // Contact (ENCRYPTED)
-  email             String?   @db.Text
-  phone             String?   @db.Text
-  address           String?   @db.Text
-  city              String?
-  state             String?
-  postalCode        String?
-  country           String    @default("MX")
+  email      String? @db.Text
+  phone      String? @db.Text
+  address    String? @db.Text
+  city       String?
+  state      String?
+  postalCode String?
+  country    String  @default("MX")
 
   // Medical Record Number
-  mrn               String    @unique  // Internal MRN
-  externalMrn       String?              // External system MRN
+  mrn         String  @unique // Internal MRN
+  externalMrn String? // External system MRN
 
   // De-identification
-  tokenId           String    @unique  // Public-facing token (e.g., PT-892a-4f3e-b1c2)
-  ageBand           String?              // e.g., "30-39" for de-identified reports
-  region            String?              // e.g., "SP" (São Paulo)
+  tokenId String  @unique // Public-facing token (e.g., PT-892a-4f3e-b1c2)
+  ageBand String? // e.g., "30-39" for de-identified reports
+  region  String? // e.g., "SP" (São Paulo)
 
   // Metadata
-  isActive          Boolean   @default(true)
+  isActive            Boolean @default(true)
   assignedClinicianId String?
-  assignedClinician User?     @relation(fields: [assignedClinicianId], references: [id])
+  assignedClinician   User?   @relation(fields: [assignedClinicianId], references: [id])
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  patientUser       PatientUser?
-  preferences       PatientPreferences?
-  medications       Medication[]
-  appointments      Appointment[]
-  consents          Consent[]
-  documents         Document[]
-  clinicalNotes     ClinicalNote[]
-  prescriptions     Prescription[]
-  scribeSessions    ScribeSession[]
-  soapNotes         SOAPNote[]
-  messages          Message[]
-  healthMetrics     HealthMetric[]
-  documentShares    DocumentShare[]
-  formInstances     FormInstance[]
+  patientUser    PatientUser?
+  preferences    PatientPreferences?
+  medications    Medication[]
+  appointments   Appointment[]
+  consents       Consent[]
+  documents      Document[]
+  clinicalNotes  ClinicalNote[]
+  prescriptions  Prescription[]
+  scribeSessions ScribeSession[]
+  soapNotes      SOAPNote[]
+  messages       Message[]
+  healthMetrics  HealthMetric[]
+  documentShares DocumentShare[]
+  formInstances  FormInstance[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -511,33 +511,33 @@ model Patient {
 // ============================================================================
 
 model Medication {
-  id                String    @id @default(cuid())
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Blockchain fields
-  prescriptionHash  String?   // Hash for blockchain verification
+  prescriptionHash String? // Hash for blockchain verification
 
   // Medication details
-  name              String
-  genericName       String?
-  dose              String    // e.g., "500mg"
-  frequency         String    // e.g., "2x/día", "BID"
-  route             String?   // e.g., "oral", "IV"
-  instructions      String?   @db.Text
+  name         String
+  genericName  String?
+  dose         String // e.g., "500mg"
+  frequency    String // e.g., "2x/día", "BID"
+  route        String? // e.g., "oral", "IV"
+  instructions String? @db.Text
 
   // Dates
-  startDate         DateTime  @default(now())
-  endDate           DateTime?
+  startDate DateTime  @default(now())
+  endDate   DateTime?
 
   // Status
-  isActive          Boolean   @default(true)
+  isActive Boolean @default(true)
 
   // Prescriber
-  prescribedBy      String?
+  prescribedBy String?
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([isActive])
@@ -549,36 +549,36 @@ model Medication {
 // ============================================================================
 
 model Prescription {
-  id                String    @id @default(cuid())
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  clinicianId       String
-  clinician         User      @relation(fields: [clinicianId], references: [id])
+  clinicianId String
+  clinician   User   @relation(fields: [clinicianId], references: [id])
 
   // Blockchain fields - CRITICAL for tamper-proof prescriptions
-  prescriptionHash  String    @unique  // SHA-256 hash of prescription data
-  txHash            String?              // Blockchain transaction hash (future)
-  blockTimestamp    DateTime?
+  prescriptionHash String    @unique // SHA-256 hash of prescription data
+  txHash           String? // Blockchain transaction hash (future)
+  blockTimestamp   DateTime?
 
   // Prescription content
-  medications       Json      // Array of { drug, dose, frequency, duration }
-  instructions      String?   @db.Text
-  diagnosis         String?   @db.Text
+  medications  Json // Array of { drug, dose, frequency, duration }
+  instructions String? @db.Text
+  diagnosis    String? @db.Text
 
   // Electronic signature
-  signatureMethod   String    // "pin" or "signature_pad"
-  signatureData     String    @db.Text  // Encrypted signature or PIN hash
-  signedAt          DateTime  @default(now())
+  signatureMethod String // "pin" or "signature_pad"
+  signatureData   String   @db.Text // Encrypted signature or PIN hash
+  signedAt        DateTime @default(now())
 
   // Status
-  status            PrescriptionStatus @default(PENDING)
-  sentToPharmacy    Boolean   @default(false)
-  pharmacyId        String?
+  status         PrescriptionStatus @default(PENDING)
+  sentToPharmacy Boolean            @default(false)
+  pharmacyId     String?
 
   // Audit
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([clinicianId])
@@ -600,35 +600,35 @@ enum PrescriptionStatus {
 // ============================================================================
 
 model Consent {
-  id                String    @id @default(cuid())
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Blockchain fields - CRITICAL for immutable proof
-  consentHash       String    @unique  // SHA-256 of consent content + signature
-  txHash            String?              // Blockchain transaction hash (future)
-  blockTimestamp    DateTime?
+  consentHash    String    @unique // SHA-256 of consent content + signature
+  txHash         String? // Blockchain transaction hash (future)
+  blockTimestamp DateTime?
 
   // Consent details
-  type              ConsentType
-  title             String
-  content           String    @db.Text  // Full consent text
-  version           String    @default("1.0")
+  type    ConsentType
+  title   String
+  content String      @db.Text // Full consent text
+  version String      @default("1.0")
 
   // Signature
-  signatureData     String    @db.Text  // Base64 signature image or digital signature
-  signedAt          DateTime
-  witnessName       String?
-  witnessSignature  String?   @db.Text
+  signatureData    String   @db.Text // Base64 signature image or digital signature
+  signedAt         DateTime
+  witnessName      String?
+  witnessSignature String?  @db.Text
 
   // Status
-  isActive          Boolean   @default(true)
-  revokedAt         DateTime?
-  revokedReason     String?   @db.Text
+  isActive      Boolean   @default(true)
+  revokedAt     DateTime?
+  revokedReason String?   @db.Text
 
   // Audit
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([consentHash])
@@ -651,59 +651,59 @@ enum ConsentType {
 // ============================================================================
 
 model Appointment {
-  id                String    @id @default(cuid())
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  clinicianId       String
-  clinician         User      @relation(fields: [clinicianId], references: [id])
+  clinicianId String
+  clinician   User   @relation(fields: [clinicianId], references: [id])
 
   // Appointment details
-  title             String
-  description       String?   @db.Text
+  title       String
+  description String? @db.Text
 
   // Date/Time
-  startTime         DateTime
-  endTime           DateTime
-  timezone          String    @default("America/Mexico_City")
+  startTime DateTime
+  endTime   DateTime
+  timezone  String   @default("America/Mexico_City")
 
   // Calendar integration
-  googleEventId     String?   @unique
-  outlookEventId    String?   @unique
-  calendarSyncedAt  DateTime?
+  googleEventId    String?   @unique
+  outlookEventId   String?   @unique
+  calendarSyncedAt DateTime?
 
   // Type
-  type              AppointmentType @default(IN_PERSON)
-  meetingUrl        String?          // For telehealth
+  type       AppointmentType @default(IN_PERSON)
+  meetingUrl String? // For telehealth
 
   // Status
-  status            AppointmentStatus @default(SCHEDULED)
+  status AppointmentStatus @default(SCHEDULED)
 
   // Reminders
-  reminderSent      Boolean   @default(false)
-  reminderSentAt    DateTime?
+  reminderSent   Boolean   @default(false)
+  reminderSentAt DateTime?
 
   // Confirmation system
-  confirmationStatus    ConfirmationStatus @default(PENDING)
-  confirmationToken     String?            @unique
-  confirmationSentAt    DateTime?
-  confirmedAt           DateTime?
-  confirmationMethod    String?            // 'sms', 'email', 'push', 'whatsapp'
+  confirmationStatus ConfirmationStatus @default(PENDING)
+  confirmationToken  String?            @unique
+  confirmationSentAt DateTime?
+  confirmedAt        DateTime?
+  confirmationMethod String? // 'sms', 'email', 'push', 'whatsapp'
 
   // Reschedule requests
-  rescheduleRequested   Boolean            @default(false)
+  rescheduleRequested   Boolean   @default(false)
   rescheduleRequestedAt DateTime?
-  rescheduleReason      String?            @db.Text
+  rescheduleReason      String?   @db.Text
   rescheduleNewTime     DateTime?
-  rescheduleApproved    Boolean?           // null = pending, true = approved, false = rejected
+  rescheduleApproved    Boolean? // null = pending, true = approved, false = rejected
   rescheduleApprovedAt  DateTime?
-  rescheduleApprovedBy  String?            // User ID who approved
+  rescheduleApprovedBy  String? // User ID who approved
 
   // Relations
-  scribeSessions    ScribeSession[]
+  scribeSessions ScribeSession[]
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([clinicianId])
@@ -732,12 +732,12 @@ enum AppointmentStatus {
 }
 
 enum ConfirmationStatus {
-  PENDING           // Reminder not sent yet
-  SENT              // Reminder sent, waiting for response
-  CONFIRMED         // Patient confirmed
-  RESCHEDULE_REQUESTED  // Patient requested reschedule
-  CANCELLED_BY_PATIENT  // Patient cancelled
-  NO_RESPONSE       // Patient didn't respond
+  PENDING // Reminder not sent yet
+  SENT // Reminder sent, waiting for response
+  CONFIRMED // Patient confirmed
+  RESCHEDULE_REQUESTED // Patient requested reschedule
+  CANCELLED_BY_PATIENT // Patient cancelled
+  NO_RESPONSE // Patient didn't respond
 }
 
 // ============================================================================
@@ -745,40 +745,40 @@ enum ConfirmationStatus {
 // ============================================================================
 
 model Document {
-  id                String    @id @default(cuid())
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Blockchain fields
-  documentHash      String    @unique  // SHA-256 of original document
-  deidentifiedHash  String?              // Hash of de-identified version
-  txHash            String?              // Future: blockchain storage proof
+  documentHash     String  @unique // SHA-256 of original document
+  deidentifiedHash String? // Hash of de-identified version
+  txHash           String? // Future: blockchain storage proof
 
   // File details
-  fileName          String
-  fileType          String    // e.g., "pdf", "jpg", "docx"
-  fileSize          Int       // bytes
+  fileName String
+  fileType String // e.g., "pdf", "jpg", "docx"
+  fileSize Int // bytes
 
   // Storage (Supabase Storage or S3)
-  storageUrl        String    @db.Text  // Encrypted, de-identified version
-  originalStorageUrl String?  @db.Text  // Original (highly restricted access)
+  storageUrl         String  @db.Text // Encrypted, de-identified version
+  originalStorageUrl String? @db.Text // Original (highly restricted access)
 
   // Processing
-  documentType      DocumentType
-  ocrText           String?   @db.Text  // Extracted text (de-identified)
-  entities          Json?                // Extracted medical entities
+  documentType DocumentType
+  ocrText      String?      @db.Text // Extracted text (de-identified)
+  entities     Json? // Extracted medical entities
 
   // De-identification
-  isDeidentified    Boolean   @default(false)
-  phiDetected       Int       @default(0)
-  deidentifiedAt    DateTime?
+  isDeidentified Boolean   @default(false)
+  phiDetected    Int       @default(0)
+  deidentifiedAt DateTime?
 
   // Metadata
-  uploadedBy        String?
-  processingStatus  ProcessingStatus @default(PENDING)
+  uploadedBy       String?
+  processingStatus ProcessingStatus @default(PENDING)
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([documentHash])
@@ -812,34 +812,34 @@ enum ProcessingStatus {
 // ============================================================================
 
 model ClinicalNote {
-  id                String    @id @default(cuid())
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Blockchain fields
-  noteHash          String    @unique
-  txHash            String?
+  noteHash String  @unique
+  txHash   String?
 
   // Note content
-  type              NoteType  @default(PROGRESS)
-  subjective        String?   @db.Text  // S in SOAP
-  objective         String?   @db.Text  // O in SOAP
-  assessment        String?   @db.Text  // A in SOAP
-  plan              String?   @db.Text  // P in SOAP
+  type       NoteType @default(PROGRESS)
+  subjective String?  @db.Text // S in SOAP
+  objective  String?  @db.Text // O in SOAP
+  assessment String?  @db.Text // A in SOAP
+  plan       String?  @db.Text // P in SOAP
 
   // Additional
-  chiefComplaint    String?   @db.Text
-  diagnosis         String[]
+  chiefComplaint String?  @db.Text
+  diagnosis      String[]
 
   // Author
-  authorId          String
-  signedAt          DateTime?
+  authorId String
+  signedAt DateTime?
 
   // Version history
-  versions          ClinicalNoteVersion[]
+  versions ClinicalNoteVersion[]
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([authorId])
@@ -860,38 +860,38 @@ enum NoteType {
 // ============================================================================
 
 model ClinicalNoteVersion {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Version metadata
-  noteId            String
-  note              ClinicalNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  versionNumber     Int       // 1, 2, 3, ...
+  noteId        String
+  note          ClinicalNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  versionNumber Int // 1, 2, 3, ...
 
   // Changed by
-  changedBy         String
-  changedByUser     User      @relation(fields: [changedBy], references: [id])
-  ipAddress         String?
-  userAgent         String?   @db.Text
+  changedBy     String
+  changedByUser User    @relation(fields: [changedBy], references: [id])
+  ipAddress     String?
+  userAgent     String? @db.Text
 
   // Snapshot of note content at this version
-  type              NoteType
-  subjective        String?   @db.Text
-  objective         String?   @db.Text
-  assessment        String?   @db.Text
-  plan              String?   @db.Text
-  chiefComplaint    String?   @db.Text
-  diagnosis         String[]
+  type           NoteType
+  subjective     String?  @db.Text
+  objective      String?  @db.Text
+  assessment     String?  @db.Text
+  plan           String?  @db.Text
+  chiefComplaint String?  @db.Text
+  diagnosis      String[]
 
   // Change tracking
-  changedFields     String[]  // Array of field names that were changed
-  changesSummary    String?   @db.Text  // Human-readable summary
+  changedFields  String[] // Array of field names that were changed
+  changesSummary String?  @db.Text // Human-readable summary
 
   // Blockchain tracking
-  noteHash          String    // Hash of note at this version
-  previousHash      String?   // Hash of previous version (for chain validation)
+  noteHash     String // Hash of note at this version
+  previousHash String? // Hash of previous version (for chain validation)
 
   // Timestamps
-  createdAt         DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([noteId])
   @@index([changedBy])
@@ -904,25 +904,25 @@ model ClinicalNoteVersion {
 // ============================================================================
 
 model TokenMap {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Encrypted mapping
-  encryptedMap      String    @db.Text  // AES-256 encrypted token->original mapping
-  mapHash           String    @unique   // Hash for verification
+  encryptedMap String @db.Text // AES-256 encrypted token->original mapping
+  mapHash      String @unique // Hash for verification
 
   // Metadata
-  recordType        String    // "patient", "document", etc.
-  recordId          String
+  recordType String // "patient", "document", etc.
+  recordId   String
 
   // Access control
-  createdBy         String
-  accessCount       Int       @default(0)
-  lastAccessedAt    DateTime?
+  createdBy      String
+  accessCount    Int       @default(0)
+  lastAccessedAt DateTime?
 
   // Expiration (for temporary de-identification)
-  expiresAt         DateTime?
+  expiresAt DateTime?
 
-  createdAt         DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([recordId])
   @@index([mapHash])
@@ -934,30 +934,30 @@ model TokenMap {
 // ============================================================================
 
 model AuditLog {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Who
-  userId            String?
-  user              User?     @relation(fields: [userId], references: [id])
-  userEmail         String?
-  ipAddress         String
-  userAgent         String?   @db.Text
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id])
+  userEmail String?
+  ipAddress String
+  userAgent String? @db.Text
 
   // What
-  action            AuditAction
-  resource          String    // e.g., "Patient", "Prescription"
-  resourceId        String
+  action     AuditAction
+  resource   String // e.g., "Patient", "Prescription"
+  resourceId String
 
   // Details
-  details           Json?     // Additional context
-  dataHash          String?   // Hash of data accessed/modified
+  details  Json? // Additional context
+  dataHash String? // Hash of data accessed/modified
 
   // Result
-  success           Boolean   @default(true)
-  errorMessage      String?   @db.Text
+  success      Boolean @default(true)
+  errorMessage String? @db.Text
 
   // When
-  timestamp         DateTime  @default(now())
+  timestamp DateTime @default(now())
 
   @@index([userId])
   @@index([action])
@@ -980,8 +980,10 @@ enum AuditAction {
   PRESCRIBE
   SIGN
   REVOKE
-  NOTIFY          // WhatsApp/Email/SMS notifications
-  DOCUMENT_UPLOADED  // Document upload action
+  ROLLBACK // Clinical note rollback action
+  OPT_OUT // Patient preference opt-out action
+  NOTIFY // WhatsApp/Email/SMS notifications
+  DOCUMENT_UPLOADED // Document upload action
 }
 
 // ============================================================================
@@ -989,31 +991,31 @@ enum AuditAction {
 // ============================================================================
 
 model BlockchainTransaction {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Transaction details
-  txHash            String    @unique
-  blockNumber       BigInt?
-  network           String    @default("polygon-mainnet") // or "ethereum", "base"
+  txHash      String  @unique
+  blockNumber BigInt?
+  network     String  @default("polygon-mainnet") // or "ethereum", "base"
 
   // What was recorded
-  recordType        String    // "consent", "prescription", "document"
-  recordId          String
-  dataHash          String    // The hash that was recorded on-chain
+  recordType String // "consent", "prescription", "document"
+  recordId   String
+  dataHash   String // The hash that was recorded on-chain
 
   // Contract details
-  contractAddress   String
-  functionCalled    String
-  gasUsed           BigInt?
-  gasCost           String?   // in native token
+  contractAddress String
+  functionCalled  String
+  gasUsed         BigInt?
+  gasCost         String? // in native token
 
   // Status
-  status            TxStatus  @default(PENDING)
-  confirmations     Int       @default(0)
+  status        TxStatus @default(PENDING)
+  confirmations Int      @default(0)
 
   // Timestamps
-  submittedAt       DateTime  @default(now())
-  confirmedAt       DateTime?
+  submittedAt DateTime  @default(now())
+  confirmedAt DateTime?
 
   @@index([txHash])
   @@index([recordId])
@@ -1033,33 +1035,33 @@ enum TxStatus {
 // ============================================================================
 
 model CalendarIntegration {
-  id                String    @id @default(cuid())
-  userId            String
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Provider
   provider          CalendarProvider
-  providerAccountId String    // OAuth provider's user ID
+  providerAccountId String // OAuth provider's user ID
 
   // OAuth tokens (ENCRYPTED in production)
-  accessToken       String    @db.Text
-  refreshToken      String?   @db.Text
-  tokenExpiresAt    DateTime?
-  scope             String[]
+  accessToken    String    @db.Text
+  refreshToken   String?   @db.Text
+  tokenExpiresAt DateTime?
+  scope          String[]
 
   // Calendar details
-  calendarId        String?   // Primary calendar ID
-  calendarName      String?
-  calendarEmail     String?
+  calendarId    String? // Primary calendar ID
+  calendarName  String?
+  calendarEmail String?
 
   // Sync status
-  lastSyncAt        DateTime?
-  syncEnabled       Boolean   @default(true)
-  syncErrors        Int       @default(0)
+  lastSyncAt  DateTime?
+  syncEnabled Boolean   @default(true)
+  syncErrors  Int       @default(0)
 
   // Metadata
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, provider])
   @@index([userId])
@@ -1078,43 +1080,43 @@ enum CalendarProvider {
 // ============================================================================
 
 model ScribeSession {
-  id                String    @id @default(cuid())
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  clinicianId       String
-  clinician         User      @relation(fields: [clinicianId], references: [id])
+  clinicianId String
+  clinician   User   @relation(fields: [clinicianId], references: [id])
 
   // Session metadata
-  appointmentId     String?
-  appointment       Appointment? @relation(fields: [appointmentId], references: [id])
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
 
   // Recording details
-  audioFileUrl      String?   @db.Text
-  audioFileName     String?
-  audioDuration     Int       @default(0)  // seconds
-  audioFormat       String    @default("webm")
-  audioSize         Int?      // bytes
-  startedAt         DateTime?
-  endedAt           DateTime?
+  audioFileUrl  String?   @db.Text
+  audioFileName String?
+  audioDuration Int       @default(0) // seconds
+  audioFormat   String    @default("webm")
+  audioSize     Int? // bytes
+  startedAt     DateTime?
+  endedAt       DateTime?
 
   // Processing
-  status            ScribeStatus @default(RECORDING)
-  processingStartedAt DateTime?
+  status                ScribeStatus @default(RECORDING)
+  processingStartedAt   DateTime?
   processingCompletedAt DateTime?
-  processingError   String?   @db.Text
+  processingError       String?      @db.Text
 
   // AI Model
-  transcriptionModel String?  @default("whisper-1")
-  soapModel         String?   @default("claude-3-5-sonnet-20250219")
+  transcriptionModel String? @default("whisper-1")
+  soapModel          String? @default("claude-3-5-sonnet-20250219")
 
   // Relations
-  transcription     Transcription?
-  soapNote          SOAPNote?
+  transcription Transcription?
+  soapNote      SOAPNote?
 
   // Metadata
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([clinicianId])
@@ -1133,90 +1135,90 @@ enum ScribeStatus {
 }
 
 model Transcription {
-  id                String    @id @default(cuid())
-  sessionId         String    @unique
-  session           ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id        String        @id @default(cuid())
+  sessionId String        @unique
+  session   ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   // Raw transcript
-  rawText           String    @db.Text
+  rawText String @db.Text
 
   // Speaker diarization
-  segments          Json      // Array of { speaker, text, startTime, endTime, confidence }
-  speakerCount      Int       @default(2)
+  segments     Json // Array of { speaker, text, startTime, endTime, confidence }
+  speakerCount Int  @default(2)
 
   // Quality metrics
-  confidence        Float     @default(0)  // 0-1
-  wordCount         Int       @default(0)
-  durationSeconds   Int
+  confidence      Float @default(0) // 0-1
+  wordCount       Int   @default(0)
+  durationSeconds Int
 
   // Processing metadata
-  model             String    @default("whisper-1")
-  language          String    @default("es")  // Spanish by default
-  processingTime    Int?      // milliseconds
+  model          String @default("whisper-1")
+  language       String @default("es") // Spanish by default
+  processingTime Int? // milliseconds
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([sessionId])
   @@map("transcriptions")
 }
 
 model SOAPNote {
-  id                String    @id @default(cuid())
-  sessionId         String    @unique
-  session           ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id        String        @id @default(cuid())
+  sessionId String        @unique
+  session   ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  patientId         String
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  clinicianId       String
-  clinician         User      @relation(fields: [clinicianId], references: [id])
+  clinicianId String
+  clinician   User   @relation(fields: [clinicianId], references: [id])
 
   // Blockchain fields - CRITICAL for tamper-proof notes
-  noteHash          String    @unique
-  txHash            String?
+  noteHash String  @unique
+  txHash   String?
 
   // SOAP structure
-  subjective        String    @db.Text
+  subjective           String @db.Text
   subjectiveConfidence Float  @default(0)
 
-  objective         String    @db.Text
-  objectiveConfidence Float   @default(0)
+  objective           String @db.Text
+  objectiveConfidence Float  @default(0)
 
-  assessment        String    @db.Text
+  assessment           String @db.Text
   assessmentConfidence Float  @default(0)
 
-  plan              String    @db.Text
-  planConfidence    Float     @default(0)
+  plan           String @db.Text
+  planConfidence Float  @default(0)
 
   // Additional clinical data
-  chiefComplaint    String?   @db.Text
-  vitalSigns        Json?     // { bp, hr, temp, rr, spo2, weight }
-  diagnoses         Json      // Array of { icd10Code, description, isPrimary }
-  procedures        Json?     // Array of { cptCode, description }
-  medications       Json?     // Array of medication changes
+  chiefComplaint String? @db.Text
+  vitalSigns     Json? // { bp, hr, temp, rr, spo2, weight }
+  diagnoses      Json // Array of { icd10Code, description, isPrimary }
+  procedures     Json? // Array of { cptCode, description }
+  medications    Json? // Array of medication changes
 
   // Quality & editing
-  overallConfidence Float     @default(0)  // 0-1
-  wasEdited         Boolean   @default(false)
-  editCount         Int       @default(0)
-  editHistory       Json?     // Array of { field, oldValue, newValue, editedAt, editedBy }
+  overallConfidence Float   @default(0) // 0-1
+  wasEdited         Boolean @default(false)
+  editCount         Int     @default(0)
+  editHistory       Json? // Array of { field, oldValue, newValue, editedAt, editedBy }
 
   // Signature
-  signedAt          DateTime?
-  signedBy          String?
-  signatureMethod   String?   // "pin" or "digital"
+  signedAt        DateTime?
+  signedBy        String?
+  signatureMethod String? // "pin" or "digital"
 
   // AI metadata
-  model             String    @default("claude-3-5-sonnet-20250219")
-  tokensUsed        Int?
-  processingTime    Int?      // milliseconds
+  model          String @default("claude-3-5-sonnet-20250219")
+  tokensUsed     Int?
+  processingTime Int? // milliseconds
 
   // Status
-  status            SOAPStatus @default(DRAFT)
+  status SOAPStatus @default(DRAFT)
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([clinicianId])
@@ -1239,32 +1241,32 @@ enum SOAPStatus {
 // ============================================================================
 
 model PushSubscription {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Owner (polymorphic - clinician or patient)
-  userId            String
-  userType          UserType
+  userId   String
+  userType UserType
 
   // Push subscription details (from browser)
-  endpoint          String    @db.Text  @unique
-  keys              Json      // { p256dh, auth } from PushSubscription
+  endpoint String @unique @db.Text
+  keys     Json // { p256dh, auth } from PushSubscription
 
   // Device/Browser info
-  userAgent         String?   @db.Text
-  platform          String?   // e.g., "web", "android", "ios"
-  deviceName        String?   // e.g., "Chrome on MacOS"
+  userAgent  String? @db.Text
+  platform   String? // e.g., "web", "android", "ios"
+  deviceName String? // e.g., "Chrome on MacOS"
 
   // Status
-  isActive          Boolean   @default(true)
-  failedDeliveries  Int       @default(0)  // Track failed attempts
-  lastUsedAt        DateTime  @default(now())
+  isActive         Boolean  @default(true)
+  failedDeliveries Int      @default(0) // Track failed attempts
+  lastUsedAt       DateTime @default(now())
 
   // Preferences
-  enabledTypes      String[]  // Array of NotificationType to receive
+  enabledTypes String[] // Array of NotificationType to receive
 
   // Metadata
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, userType])
   @@index([endpoint])
@@ -1277,38 +1279,38 @@ model PushSubscription {
 // ============================================================================
 
 model FormTemplate {
-  id                String        @id @default(cuid())
+  id String @id @default(cuid())
 
   // Template info
-  title             String
-  description       String?       @db.Text
-  category          FormCategory
-  isBuiltIn         Boolean       @default(false)  // Pre-built vs custom
-  isActive          Boolean       @default(true)
+  title       String
+  description String?      @db.Text
+  category    FormCategory
+  isBuiltIn   Boolean      @default(false) // Pre-built vs custom
+  isActive    Boolean      @default(true)
 
   // Template content (JSON structure or file reference)
-  structure         Json?         // For drag-and-drop forms { fields: [...], logic: {...} }
-  fileUrl           String?       // For uploaded PDF/DOCX templates
-  fileType          String?       // "pdf", "docx", "json"
+  structure Json? // For drag-and-drop forms { fields: [...], logic: {...} }
+  fileUrl   String? // For uploaded PDF/DOCX templates
+  fileType  String? // "pdf", "docx", "json"
 
   // Creator (if custom template)
-  createdBy         String?
-  clinician         User?         @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  createdBy String?
+  clinician User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull)
 
   // Usage tracking
-  usageCount        Int           @default(0)
+  usageCount Int @default(0)
 
   // Metadata
-  version           Int           @default(1)
-  tags              String[]      // ["consent", "hipaa", "intake", etc]
-  estimatedMinutes  Int?          // How long to fill out
+  version          Int      @default(1)
+  tags             String[] // ["consent", "hipaa", "intake", etc]
+  estimatedMinutes Int? // How long to fill out
 
   // Timestamps
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  formInstances     FormInstance[]
+  formInstances FormInstance[]
 
   @@index([category])
   @@index([isBuiltIn])
@@ -1318,73 +1320,73 @@ model FormTemplate {
 }
 
 enum FormCategory {
-  CONSENT                 // General consent forms
-  HIPAA_AUTHORIZATION    // HIPAA release forms
-  MEDICAL_HISTORY        // Health history intake
-  TREATMENT_CONSENT      // Specific treatment consent
-  FINANCIAL_AGREEMENT    // Payment/billing forms
-  INSURANCE_INFORMATION  // Insurance details
-  REFERRAL              // Referral forms
-  CUSTOM                // Custom uploaded forms
+  CONSENT // General consent forms
+  HIPAA_AUTHORIZATION // HIPAA release forms
+  MEDICAL_HISTORY // Health history intake
+  TREATMENT_CONSENT // Specific treatment consent
+  FINANCIAL_AGREEMENT // Payment/billing forms
+  INSURANCE_INFORMATION // Insurance details
+  REFERRAL // Referral forms
+  CUSTOM // Custom uploaded forms
 }
 
 model FormInstance {
-  id                String            @id @default(cuid())
+  id String @id @default(cuid())
 
   // Template reference
-  templateId        String
-  template          FormTemplate      @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  templateId String
+  template   FormTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
 
   // Assignment
-  patientId         String
-  patient           Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  assignedBy        String
-  assignedByUser    User              @relation(fields: [assignedBy], references: [id], onDelete: Restrict)
+  assignedBy     String
+  assignedByUser User   @relation(fields: [assignedBy], references: [id], onDelete: Restrict)
 
   // Status tracking
-  status            FormStatus        @default(PENDING)
-  sentAt            DateTime          @default(now())
-  viewedAt          DateTime?
-  startedAt         DateTime?         // When patient started filling
-  completedAt       DateTime?
-  signedAt          DateTime?
+  status      FormStatus @default(PENDING)
+  sentAt      DateTime   @default(now())
+  viewedAt    DateTime?
+  startedAt   DateTime? // When patient started filling
+  completedAt DateTime?
+  signedAt    DateTime?
 
   // Submission data
-  responses         Json?             // Structured form responses
-  submittedData     Json?             // Full submission payload
+  responses     Json? // Structured form responses
+  submittedData Json? // Full submission payload
 
   // E-signature
-  signatureDataUrl  String?           @db.Text  // Base64 signature image
-  signatureIp       String?
-  signedUserAgent   String?           @db.Text
+  signatureDataUrl String? @db.Text // Base64 signature image
+  signatureIp      String?
+  signedUserAgent  String? @db.Text
 
   // File attachments (if patient uploads documents)
-  attachments       String[]          // Array of Document IDs
+  attachments String[] // Array of Document IDs
 
   // Access control
-  accessToken       String            @unique  // Unique link token for patient access
-  accessTokenHash   String            @unique  // SHA-256 hash for lookup
-  expiresAt         DateTime?
+  accessToken     String    @unique // Unique link token for patient access
+  accessTokenHash String    @unique // SHA-256 hash for lookup
+  expiresAt       DateTime?
 
   // Reminders
-  remindersSent     Int               @default(0)
-  lastReminderAt    DateTime?
+  remindersSent  Int       @default(0)
+  lastReminderAt DateTime?
 
   // Progress tracking
-  progressPercent   Int               @default(0)
-  currentStepIndex  Int               @default(0)
+  progressPercent  Int @default(0)
+  currentStepIndex Int @default(0)
 
   // Audit trail
-  dataHash          String?           // SHA-256 of final submission
-  ipAddress         String?
+  dataHash  String? // SHA-256 of final submission
+  ipAddress String?
 
   // Metadata
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  auditTrail        FormAuditLog[]
+  auditTrail FormAuditLog[]
 
   @@index([patientId])
   @@index([assignedBy])
@@ -1396,36 +1398,36 @@ model FormInstance {
 }
 
 enum FormStatus {
-  PENDING         // Sent, not opened
-  VIEWED          // Patient opened the form
-  IN_PROGRESS     // Patient started filling
-  COMPLETED       // Submitted but not signed
-  SIGNED          // Fully completed with signature
-  EXPIRED         // Link expired
-  REVOKED         // Clinician revoked access
+  PENDING // Sent, not opened
+  VIEWED // Patient opened the form
+  IN_PROGRESS // Patient started filling
+  COMPLETED // Submitted but not signed
+  SIGNED // Fully completed with signature
+  EXPIRED // Link expired
+  REVOKED // Clinician revoked access
 }
 
 model FormAuditLog {
-  id                String        @id @default(cuid())
+  id String @id @default(cuid())
 
-  formInstanceId    String
-  formInstance      FormInstance  @relation(fields: [formInstanceId], references: [id], onDelete: Cascade)
+  formInstanceId String
+  formInstance   FormInstance @relation(fields: [formInstanceId], references: [id], onDelete: Cascade)
 
   // Event details
-  event             FormAuditEvent
-  description       String?       @db.Text
+  event       FormAuditEvent
+  description String?        @db.Text
 
   // Actor (patient or clinician)
-  userId            String?       // PatientUser or User ID
-  userType          String?       // "patient" or "clinician"
+  userId   String? // PatientUser or User ID
+  userType String? // "patient" or "clinician"
 
   // Context
-  ipAddress         String?
-  userAgent         String?       @db.Text
-  metadata          Json?
+  ipAddress String?
+  userAgent String? @db.Text
+  metadata  Json?
 
   // Timestamp
-  createdAt         DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   @@index([formInstanceId])
   @@index([event])
@@ -1434,17 +1436,17 @@ model FormAuditLog {
 }
 
 enum FormAuditEvent {
-  SENT              // Form sent to patient
-  VIEWED            // Patient opened form
-  STARTED           // Patient started filling
-  PROGRESS_SAVED    // Auto-save progress
-  SUBMITTED         // Patient submitted form
-  SIGNED            // E-signature added
-  REMINDER_SENT     // Reminder email/SMS sent
-  EXPIRED           // Form link expired
-  REVOKED           // Clinician revoked form
-  UPDATED           // Clinician updated form
-  DOWNLOADED        // PDF downloaded
+  SENT // Form sent to patient
+  VIEWED // Patient opened form
+  STARTED // Patient started filling
+  PROGRESS_SAVED // Auto-save progress
+  SUBMITTED // Patient submitted form
+  SIGNED // E-signature added
+  REMINDER_SENT // Reminder email/SMS sent
+  EXPIRED // Form link expired
+  REVOKED // Clinician revoked form
+  UPDATED // Clinician updated form
+  DOWNLOADED // PDF downloaded
 }
 
 // ============================================================================
@@ -1452,49 +1454,49 @@ enum FormAuditEvent {
 // ============================================================================
 
 model Pharmacy {
-  id                String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Pharmacy details
-  name              String    // e.g., "Farmacia Guadalajara Centro"
-  chain             PharmacyChain
-  branchCode        String?   // Internal branch identifier
-  
+  name       String // e.g., "Farmacia Guadalajara Centro"
+  chain      PharmacyChain
+  branchCode String? // Internal branch identifier
+
   // Contact
-  phone             String?
-  email             String?
-  
+  phone String?
+  email String?
+
   // Address
-  address           String    @db.Text
-  city              String
-  state             String
-  postalCode        String
-  country           String    @default("MX")
-  
+  address    String @db.Text
+  city       String
+  state      String
+  postalCode String
+  country    String @default("MX")
+
   // Geolocation
-  latitude          Float?
-  longitude         Float?
-  
+  latitude  Float?
+  longitude Float?
+
   // Operating hours
-  openingTime       String?   // e.g., "08:00"
-  closingTime       String?   // e.g., "22:00"
-  isOpen24Hours     Boolean   @default(false)
-  
+  openingTime   String? // e.g., "08:00"
+  closingTime   String? // e.g., "22:00"
+  isOpen24Hours Boolean @default(false)
+
   // Services
-  hasDelivery       Boolean   @default(false)
+  hasDelivery           Boolean @default(false)
   acceptsEPrescriptions Boolean @default(true)
-  
+
   // Integration
-  apiEndpoint       String?   @db.Text
-  apiKey            String?   @db.Text  // Encrypted
-  isActive          Boolean   @default(true)
-  lastSyncAt        DateTime?
-  
+  apiEndpoint String?   @db.Text
+  apiKey      String?   @db.Text // Encrypted
+  isActive    Boolean   @default(true)
+  lastSyncAt  DateTime?
+
   // Relations
-  prescriptions     PharmacyPrescription[]
-  
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
+  prescriptions PharmacyPrescription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([chain])
   @@index([city, state])
   @@index([isActive])
@@ -1502,58 +1504,58 @@ model Pharmacy {
 }
 
 enum PharmacyChain {
-  GUADALAJARA      // Farmacias Guadalajara
-  BENAVIDES        // Farmacias Benavides
-  DEL_AHORRO       // Farmacias del Ahorro
-  SIMILARES        // Farmacias Similares
-  SAN_PABLO        // Farmacias San Pablo
-  ROMA             // Farmacias Roma
-  YZA              // Farmacias YZA
-  INDEPENDIENTE    // Independent pharmacy
+  GUADALAJARA // Farmacias Guadalajara
+  BENAVIDES // Farmacias Benavides
+  DEL_AHORRO // Farmacias del Ahorro
+  SIMILARES // Farmacias Similares
+  SAN_PABLO // Farmacias San Pablo
+  ROMA // Farmacias Roma
+  YZA // Farmacias YZA
+  INDEPENDIENTE // Independent pharmacy
   OTHER
 }
 
 model PharmacyPrescription {
-  id                String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Links
-  prescriptionId    String
-  pharmacyId        String
-  pharmacy          Pharmacy  @relation(fields: [pharmacyId], references: [id])
-  
+  prescriptionId String
+  pharmacyId     String
+  pharmacy       Pharmacy @relation(fields: [pharmacyId], references: [id])
+
   // Status tracking
-  status            PharmacyPrescriptionStatus @default(SENT)
-  
+  status PharmacyPrescriptionStatus @default(SENT)
+
   // Pharmacy reference
-  pharmacyOrderId   String?   // Pharmacy's internal order ID
-  
+  pharmacyOrderId String? // Pharmacy's internal order ID
+
   // Pricing
-  estimatedCost     Float?
-  finalCost         Float?
-  currency          String    @default("MXN")
-  
+  estimatedCost Float?
+  finalCost     Float?
+  currency      String @default("MXN")
+
   // Fulfillment
-  sentAt            DateTime  @default(now())
-  readyAt           DateTime? // When pharmacy confirms it's ready
-  pickedUpAt        DateTime? // When patient picks up
-  
+  sentAt     DateTime  @default(now())
+  readyAt    DateTime? // When pharmacy confirms it's ready
+  pickedUpAt DateTime? // When patient picks up
+
   // Delivery (if applicable)
   deliveryMethod    DeliveryMethod @default(PICKUP)
-  deliveryAddress   String?   @db.Text
+  deliveryAddress   String?        @db.Text
   estimatedDelivery DateTime?
   deliveredAt       DateTime?
   trackingNumber    String?
-  
+
   // Notifications
-  patientNotified   Boolean   @default(false)
-  notifiedAt        DateTime?
-  
+  patientNotified Boolean   @default(false)
+  notifiedAt      DateTime?
+
   // Notes
-  pharmacyNotes     String?   @db.Text
-  
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
+  pharmacyNotes String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([prescriptionId])
   @@index([pharmacyId])
   @@index([status])
@@ -1561,20 +1563,20 @@ model PharmacyPrescription {
 }
 
 enum PharmacyPrescriptionStatus {
-  SENT              // Sent to pharmacy
-  RECEIVED          // Pharmacy acknowledged
-  PROCESSING        // Pharmacy is preparing
-  READY             // Ready for pickup/delivery
-  PICKED_UP         // Patient picked up
-  DELIVERED         // Delivered to patient
-  CANCELLED         // Cancelled by patient or pharmacy
-  EXPIRED           // Prescription expired before fulfillment
+  SENT // Sent to pharmacy
+  RECEIVED // Pharmacy acknowledged
+  PROCESSING // Pharmacy is preparing
+  READY // Ready for pickup/delivery
+  PICKED_UP // Patient picked up
+  DELIVERED // Delivered to patient
+  CANCELLED // Cancelled by patient or pharmacy
+  EXPIRED // Prescription expired before fulfillment
 }
 
 enum DeliveryMethod {
-  PICKUP            // Patient picks up at pharmacy
-  HOME_DELIVERY     // Delivered to patient's home
-  CLINIC_DELIVERY   // Delivered to clinic
+  PICKUP // Patient picks up at pharmacy
+  HOME_DELIVERY // Delivered to patient's home
+  CLINIC_DELIVERY // Delivered to clinic
 }
 
 // ============================================================================
@@ -1582,63 +1584,63 @@ enum DeliveryMethod {
 // ============================================================================
 
 model PatientPreferences {
-  id                String    @id @default(cuid())
-  patientId         String    @unique
-  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String  @unique
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // SMS Preferences (TCPA Compliant)
-  smsEnabled        Boolean   @default(true)
-  smsAppointments   Boolean   @default(true)
-  smsPrescriptions  Boolean   @default(true)
-  smsResults        Boolean   @default(true)
-  smsReminders      Boolean   @default(true)
-  smsMarketing      Boolean   @default(false)
-  
+  smsEnabled       Boolean @default(true)
+  smsAppointments  Boolean @default(true)
+  smsPrescriptions Boolean @default(true)
+  smsResults       Boolean @default(true)
+  smsReminders     Boolean @default(true)
+  smsMarketing     Boolean @default(false)
+
   // SMS Consent
-  smsConsentedAt    DateTime?
-  smsConsentIp      String?
-  smsConsentMethod  String?   // 'web', 'portal', 'phone', 'in_person'
-  smsOptedOutAt     DateTime?
-  
+  smsConsentedAt   DateTime?
+  smsConsentIp     String?
+  smsConsentMethod String? // 'web', 'portal', 'phone', 'in_person'
+  smsOptedOutAt    DateTime?
+
   // Email Preferences (CAN-SPAM Compliant)
-  emailEnabled      Boolean   @default(true)
-  emailAppointments Boolean   @default(true)
-  emailPrescriptions Boolean  @default(true)
-  emailResults      Boolean   @default(true)
-  emailReminders    Boolean   @default(true)
-  emailMarketing    Boolean   @default(false)
-  
+  emailEnabled       Boolean @default(true)
+  emailAppointments  Boolean @default(true)
+  emailPrescriptions Boolean @default(true)
+  emailResults       Boolean @default(true)
+  emailReminders     Boolean @default(true)
+  emailMarketing     Boolean @default(false)
+
   // Email Consent
-  emailConsentedAt  DateTime?
-  emailConsentIp    String?
+  emailConsentedAt   DateTime?
+  emailConsentIp     String?
   emailConsentMethod String?
-  emailOptedOutAt   DateTime?
-  
+  emailOptedOutAt    DateTime?
+
   // Push Notification Preferences
-  pushEnabled       Boolean   @default(true)
-  pushAppointments  Boolean   @default(true)
-  pushPrescriptions Boolean   @default(true)
-  pushResults       Boolean   @default(true)
-  pushMessages      Boolean   @default(true)
-  
+  pushEnabled       Boolean @default(true)
+  pushAppointments  Boolean @default(true)
+  pushPrescriptions Boolean @default(true)
+  pushResults       Boolean @default(true)
+  pushMessages      Boolean @default(true)
+
   // WhatsApp Preferences
-  whatsappEnabled   Boolean   @default(false)
-  whatsappConsented Boolean   @default(false)
+  whatsappEnabled     Boolean   @default(false)
+  whatsappConsented   Boolean   @default(false)
   whatsappConsentedAt DateTime?
-  
+
   // Global Settings
-  allowEmergencyOverride Boolean @default(true)  // Always notify for emergencies
-  quietHoursStart   String?   // e.g., "22:00"
-  quietHoursEnd     String?   // e.g., "08:00"
-  timezone          String    @default("America/Mexico_City")
-  
+  allowEmergencyOverride Boolean @default(true) // Always notify for emergencies
+  quietHoursStart        String? // e.g., "22:00"
+  quietHoursEnd          String? // e.g., "08:00"
+  timezone               String  @default("America/Mexico_City")
+
   // Language
-  preferredLanguage String    @default("es")  // 'es', 'en'
-  
+  preferredLanguage String @default("es") // 'es', 'en'
+
   // Audit
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([patientId])
   @@map("patient_preferences")
 }

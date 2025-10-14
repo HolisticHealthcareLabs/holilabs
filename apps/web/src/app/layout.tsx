@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import OfflineIndicator from '@/components/OfflineIndicator';
@@ -6,10 +6,10 @@ import OfflineIndicator from '@/components/OfflineIndicator';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'Holi Labs - AI Medical Scribe',
   description: 'Professional AI medical scribe with voice detection, SOAP templates, and billing export for LATAM doctors',
   manifest: '/manifest.json',
-  themeColor: '#3b82f6',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -29,6 +29,14 @@ export const metadata: Metadata = {
     title: 'Holi Labs - AI Medical Scribe',
     description: 'Professional AI medical scribe for LATAM doctors',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#3b82f6',
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

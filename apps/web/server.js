@@ -37,12 +37,13 @@ app.prepare().then(() => {
     }
   });
 
-  // Initialize Socket.io ONLY in production or when explicitly needed
-  // In development, Next.js dev server doesn't support custom servers well
-  if (!dev || process.env.ENABLE_SOCKET_SERVER === 'true') {
+  // Initialize Socket.io by default (opt-out with DISABLE_SOCKET_SERVER=true)
+  // Required for real-time messaging feature
+  if (process.env.DISABLE_SOCKET_SERVER !== 'true') {
     // Dynamically import Socket.io server (ESM module)
-    import('./src/lib/socket-server.js')
-      .then(({ initSocketServer }) => {
+    import('./src/lib/socket-server.ts')
+      .then((module) => {
+        const initSocketServer = module.initSocketServer || module.default?.initSocketServer;
         const io = initSocketServer(httpServer);
         console.log('✅ Socket.io server initialized');
 
@@ -56,8 +57,8 @@ app.prepare().then(() => {
         console.error('Failed to initialize Socket.io:', err);
       });
   } else {
-    console.warn('⚠️  Socket.io server disabled in development mode');
-    console.warn('   Set ENABLE_SOCKET_SERVER=true to enable it');
+    console.warn('⚠️  Socket.io server disabled');
+    console.warn('   Remove DISABLE_SOCKET_SERVER=true to enable it');
   }
 
   httpServer

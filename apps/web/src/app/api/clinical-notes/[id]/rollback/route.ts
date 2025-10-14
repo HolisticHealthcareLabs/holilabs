@@ -85,7 +85,7 @@ export const POST = createProtectedRoute(
           action: 'ROLLBACK',
           resource: 'ClinicalNote',
           resourceId: id,
-          changes: {
+          details: {
             versionId: validated.versionId,
             reason: validated.reason,
           },
