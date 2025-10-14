@@ -278,7 +278,7 @@ export default function Home() {
               </h2>
               <p className="text-xl text-gray-200 max-w-3xl mx-auto leading-relaxed">
                 <span className="text-white font-semibold">Holilabs no es un EHR. No es un sistema de facturación.</span>{' '}
-                Es una herramienta de productividad clínica que se integra con su flujo de trabajo existente y{' '}
+                Es <span className="text-white font-semibold">su copiloto clínico con IA</span> que automatiza la documentación, optimiza cada consulta con inteligencia artificial, y{' '}
                 <span className="text-white font-semibold">elimina el trabajo administrativo que causa burnout.</span>
               </p>
             </div>

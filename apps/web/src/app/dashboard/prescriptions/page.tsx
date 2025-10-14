@@ -108,30 +108,30 @@ export default function PrescriptionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
           <span className="mr-3">💊</span>
           Recetas Médicas
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Gestiona y envía recetas médicas a farmacias asociadas
         </p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Patient Selection */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Seleccionar Paciente
             </label>
             <select
               value={selectedPatient}
               onChange={(e) => setSelectedPatient(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">-- Seleccionar paciente --</option>
               {patients.map((patient) => (
@@ -144,13 +144,13 @@ export default function PrescriptionsPage() {
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Filtrar por Estado
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Todas</option>
               <option value="SIGNED">Firmadas</option>
@@ -164,26 +164,26 @@ export default function PrescriptionsPage() {
       {/* Prescriptions List */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando recetas...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cargando recetas...</p>
         </div>
       ) : !selectedPatient ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
           <div className="text-6xl mb-4">💊</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             Selecciona un paciente
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Selecciona un paciente de la lista para ver sus recetas médicas
           </p>
         </div>
       ) : filteredPrescriptions.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
           <div className="text-6xl mb-4">📋</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             No hay recetas
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Este paciente no tiene recetas médicas registradas
           </p>
         </div>
@@ -192,17 +192,17 @@ export default function PrescriptionsPage() {
           {filteredPrescriptions.map((prescription) => (
             <div
               key={prescription.id}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow"
             >
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                       Receta para {prescription.patient.firstName}{' '}
                       {prescription.patient.lastName}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Dr. {prescription.clinician.firstName}{' '}
                       {prescription.clinician.lastName} - Lic.{' '}
                       {prescription.clinician.licenseNumber}
@@ -232,10 +232,10 @@ export default function PrescriptionsPage() {
                 {/* Diagnosis */}
                 {prescription.diagnosis && (
                   <div className="mb-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-1">
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                       Diagnóstico:
                     </p>
-                    <p className="text-sm text-gray-900">
+                    <p className="text-sm text-gray-900 dark:text-white">
                       {prescription.diagnosis}
                     </p>
                   </div>
@@ -243,31 +243,31 @@ export default function PrescriptionsPage() {
 
                 {/* Medications */}
                 <div className="mb-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Medicamentos:
                   </p>
                   <div className="space-y-2">
                     {prescription.medications.map((med: any, index: number) => (
                       <div
                         key={index}
-                        className="bg-blue-50 rounded-lg p-3 border border-blue-200"
+                        className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700/50"
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="font-semibold text-gray-900">
+                            <p className="font-semibold text-gray-900 dark:text-white">
                               {med.name}
                             </p>
                             {med.genericName && med.genericName !== med.name && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
                                 ({med.genericName})
                               </p>
                             )}
-                            <p className="text-sm text-gray-700 mt-1">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                               <span className="font-medium">Dosis:</span>{' '}
                               {med.dose} - {med.frequency}
                             </p>
                             {med.instructions && (
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                 {med.instructions}
                               </p>
                             )}
@@ -281,20 +281,20 @@ export default function PrescriptionsPage() {
                 {/* Instructions */}
                 {prescription.instructions && (
                   <div className="mb-4">
-                    <p className="text-sm font-semibold text-gray-700 mb-1">
+                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                       Instrucciones adicionales:
                     </p>
-                    <p className="text-sm text-gray-900">
+                    <p className="text-sm text-gray-900 dark:text-white">
                       {prescription.instructions}
                     </p>
                   </div>
                 )}
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="text-sm text-gray-600">
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     <p>Firmada: {formatDate(prescription.signedAt)}</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                       Token Paciente: {prescription.patient.tokenId}
                     </p>
                   </div>
@@ -307,7 +307,7 @@ export default function PrescriptionsPage() {
                         📤 Enviar a Farmacia
                       </button>
                     )}
-                    <button className="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all">
+                    <button className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
                       📄 Ver Detalles
                     </button>
                   </div>
@@ -319,16 +319,16 @@ export default function PrescriptionsPage() {
       )}
 
       {/* Pharmacy Integration Notice */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-blue-900 mb-2 flex items-center">
+      <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-xl p-6">
+        <h3 className="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2 flex items-center">
           <span className="mr-2">🏥</span>
           Integración con Farmacias
         </h3>
-        <p className="text-blue-800 mb-3">
+        <p className="text-blue-800 dark:text-blue-400 mb-3">
           Esta función permite enviar recetas médicas directamente a farmacias
           asociadas. Próximas integraciones:
         </p>
-        <ul className="space-y-1 text-blue-800">
+        <ul className="space-y-1 text-blue-800 dark:text-blue-400">
           <li>• Farmacias Benavides</li>
           <li>• Farmacias Guadalajara</li>
           <li>• Farmacias del Ahorro</li>

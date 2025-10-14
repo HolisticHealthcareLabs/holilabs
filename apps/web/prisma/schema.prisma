@@ -47,6 +47,7 @@ model User {
   soapNotes     SOAPNote[]
   formTemplates FormTemplate[]
   formInstances FormInstance[]
+  clinicalNoteVersions ClinicalNoteVersion[]
 
   @@index([email])
   @@index([walletAddress])
@@ -484,6 +485,7 @@ model Patient {
 
   // Relations
   patientUser       PatientUser?
+  preferences       PatientPreferences?
   medications       Medication[]
   appointments      Appointment[]
   consents          Consent[]
@@ -833,6 +835,9 @@ model ClinicalNote {
   authorId          String
   signedAt          DateTime?
 
+  // Version history
+  versions          ClinicalNoteVersion[]
+
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -848,6 +853,50 @@ enum NoteType {
   DISCHARGE
   PROCEDURE
   FOLLOW_UP
+}
+
+// ============================================================================
+// CLINICAL NOTE VERSION HISTORY (HIPAA Audit Trail)
+// ============================================================================
+
+model ClinicalNoteVersion {
+  id                String    @id @default(cuid())
+
+  // Version metadata
+  noteId            String
+  note              ClinicalNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  versionNumber     Int       // 1, 2, 3, ...
+
+  // Changed by
+  changedBy         String
+  changedByUser     User      @relation(fields: [changedBy], references: [id])
+  ipAddress         String?
+  userAgent         String?   @db.Text
+
+  // Snapshot of note content at this version
+  type              NoteType
+  subjective        String?   @db.Text
+  objective         String?   @db.Text
+  assessment        String?   @db.Text
+  plan              String?   @db.Text
+  chiefComplaint    String?   @db.Text
+  diagnosis         String[]
+
+  // Change tracking
+  changedFields     String[]  // Array of field names that were changed
+  changesSummary    String?   @db.Text  // Human-readable summary
+
+  // Blockchain tracking
+  noteHash          String    // Hash of note at this version
+  previousHash      String?   // Hash of previous version (for chain validation)
+
+  // Timestamps
+  createdAt         DateTime  @default(now())
+
+  @@index([noteId])
+  @@index([changedBy])
+  @@index([createdAt])
+  @@map("clinical_note_versions")
 }
 
 // ============================================================================
@@ -1526,4 +1575,70 @@ enum DeliveryMethod {
   PICKUP            // Patient picks up at pharmacy
   HOME_DELIVERY     // Delivered to patient's home
   CLINIC_DELIVERY   // Delivered to clinic
+}
+
+// ============================================================================
+// PATIENT COMMUNICATION PREFERENCES (TCPA & CAN-SPAM Compliant)
+// ============================================================================
+
+model PatientPreferences {
+  id                String    @id @default(cuid())
+  patientId         String    @unique
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // SMS Preferences (TCPA Compliant)
+  smsEnabled        Boolean   @default(true)
+  smsAppointments   Boolean   @default(true)
+  smsPrescriptions  Boolean   @default(true)
+  smsResults        Boolean   @default(true)
+  smsReminders      Boolean   @default(true)
+  smsMarketing      Boolean   @default(false)
+  
+  // SMS Consent
+  smsConsentedAt    DateTime?
+  smsConsentIp      String?
+  smsConsentMethod  String?   // 'web', 'portal', 'phone', 'in_person'
+  smsOptedOutAt     DateTime?
+  
+  // Email Preferences (CAN-SPAM Compliant)
+  emailEnabled      Boolean   @default(true)
+  emailAppointments Boolean   @default(true)
+  emailPrescriptions Boolean  @default(true)
+  emailResults      Boolean   @default(true)
+  emailReminders    Boolean   @default(true)
+  emailMarketing    Boolean   @default(false)
+  
+  // Email Consent
+  emailConsentedAt  DateTime?
+  emailConsentIp    String?
+  emailConsentMethod String?
+  emailOptedOutAt   DateTime?
+  
+  // Push Notification Preferences
+  pushEnabled       Boolean   @default(true)
+  pushAppointments  Boolean   @default(true)
+  pushPrescriptions Boolean   @default(true)
+  pushResults       Boolean   @default(true)
+  pushMessages      Boolean   @default(true)
+  
+  // WhatsApp Preferences
+  whatsappEnabled   Boolean   @default(false)
+  whatsappConsented Boolean   @default(false)
+  whatsappConsentedAt DateTime?
+  
+  // Global Settings
+  allowEmergencyOverride Boolean @default(true)  // Always notify for emergencies
+  quietHoursStart   String?   // e.g., "22:00"
+  quietHoursEnd     String?   // e.g., "08:00"
+  timezone          String    @default("America/Mexico_City")
+  
+  // Language
+  preferredLanguage String    @default("es")  // 'es', 'en'
+  
+  // Audit
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([patientId])
+  @@map("patient_preferences")
 }
