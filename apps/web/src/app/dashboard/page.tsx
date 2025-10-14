@@ -163,28 +163,28 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4" />
-          <h3 className="text-xl font-bold text-gray-800">{t('dashboard.loading')}</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('dashboard.loading')}</h3>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Onboarding Components */}
       <WelcomeModal />
       <OnboardingChecklist />
 
       {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{greeting}, Dr.</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{greeting}, Dr.</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {new Date().toLocaleDateString('es-ES', {
                   weekday: 'long',
                   year: 'numeric',
@@ -194,7 +194,7 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="relative p-2 text-gray-600 hover:text-primary transition">
+              <button className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-primary transition">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
@@ -214,77 +214,77 @@ export default function Dashboard() {
       <div className="container mx-auto px-6 py-8">
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+              <span className="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
                 {t('dashboard.weekGrowth')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.totalPatients')}</h3>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalPatients}</p>
-            <p className="text-xs text-gray-500 mt-2">{stats.activePatients} {t('dashboard.stats.activePatients')}</p>
+            <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{t('dashboard.stats.totalPatients')}</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalPatients}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{stats.activePatients} {t('dashboard.stats.activePatients')}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
                 {t('dashboard.stats.today')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.scheduledAppointments')}</h3>
-            <p className="text-3xl font-bold text-gray-900">{stats.todayAppointments}</p>
-            <p className="text-xs text-gray-500 mt-2">3 {t('dashboard.stats.upcoming')} 2 {t('dashboard.stats.hours')}</p>
+            <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{t('dashboard.stats.scheduledAppointments')}</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.todayAppointments}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">3 {t('dashboard.stats.upcoming')} 2 {t('dashboard.stats.hours')}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+              <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-2 py-1 rounded-full">
                 {t('dashboard.stats.thisWeek')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.clinicalNotes')}</h3>
-            <p className="text-3xl font-bold text-gray-900">{stats.recentNotes}</p>
-            <p className="text-xs text-gray-500 mt-2">{t('dashboard.stats.average')}: 4.2 {t('dashboard.stats.perDay')}</p>
+            <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{t('dashboard.stats.clinicalNotes')}</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.recentNotes}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{t('dashboard.stats.average')}: 4.2 {t('dashboard.stats.perDay')}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 hover:shadow-md transition">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
+              <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-full">
                 {t('dashboard.stats.today')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.signedPrescriptions')}</h3>
-            <p className="text-3xl font-bold text-gray-900">{stats.prescriptionsToday}</p>
-            <p className="text-xs text-gray-500 mt-2">0 {t('dashboard.stats.pending')}</p>
+            <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{t('dashboard.stats.signedPrescriptions')}</h3>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.prescriptionsToday}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">0 {t('dashboard.stats.pending')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Activity */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">{t('dashboard.recentActivity')}</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('dashboard.recentActivity')}</h2>
                 <button className="text-sm text-primary hover:text-primary/80 font-medium">
                   {t('dashboard.viewAll')} →
                 </button>
@@ -293,7 +293,7 @@ export default function Dashboard() {
               {recentActivity.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">📋</div>
-                  <p className="text-gray-600">{t('dashboard.noActivity')}</p>
+                  <p className="text-gray-600 dark:text-gray-400">{t('dashboard.noActivity')}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -301,17 +301,17 @@ export default function Dashboard() {
                     <div
                       key={activity.id}
                       onClick={() => router.push(`/dashboard/patients/${activity.patientId}`)}
-                      className="flex items-start space-x-4 p-4 hover:bg-gray-50 rounded-lg transition cursor-pointer group"
+                      className="flex items-start space-x-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition cursor-pointer group"
                     >
                       <div className={`text-3xl ${activity.color}`}>{activity.icon}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 group-hover:text-primary transition">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition">
                           {activity.patientName}
                         </p>
-                        <p className="text-sm text-gray-600">{activity.action}</p>
-                        <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(activity.timestamp)}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{activity.action}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatTimeAgo(activity.timestamp)}</p>
                       </div>
-                      <svg className="w-5 h-5 text-gray-400 group-hover:text-primary transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-primary transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -323,12 +323,12 @@ export default function Dashboard() {
 
           {/* Quick Actions */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">{t('dashboard.quickActions')}</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('dashboard.quickActions')}</h2>
               <div className="space-y-3">
                 <Link
                   href="/dashboard/patients"
-                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-lg transition group"
+                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/20 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/30 dark:hover:to-blue-900/30 rounded-lg transition group"
                 >
                   <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -336,14 +336,14 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{t('dashboard.viewPatients')}</h4>
-                    <p className="text-xs text-gray-600">{t('dashboard.completePatients')}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.viewPatients')}</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.completePatients')}</p>
                   </div>
                 </Link>
 
                 <Link
                   href="/dashboard/patients/new"
-                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-lg transition group"
+                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/20 hover:from-green-100 hover:to-green-200 dark:hover:from-green-900/30 dark:hover:to-green-900/30 rounded-lg transition group"
                 >
                   <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,14 +351,14 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{t('dashboard.newPatient')}</h4>
-                    <p className="text-xs text-gray-600">{t('dashboard.quickRegistration')}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.newPatient')}</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.quickRegistration')}</p>
                   </div>
                 </Link>
 
                 <Link
                   href="/dashboard/ai"
-                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-lg transition group"
+                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/20 hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-900/30 dark:hover:to-purple-900/30 rounded-lg transition group"
                 >
                   <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,14 +366,14 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{t('dashboard.aiAssistant')}</h4>
-                    <p className="text-xs text-gray-600">{t('dashboard.consultNow')}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.aiAssistant')}</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.consultNow')}</p>
                   </div>
                 </Link>
 
                 <button
                   onClick={() => setShowExportModal(true)}
-                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200 rounded-lg transition group"
+                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/20 hover:from-orange-100 hover:to-orange-200 dark:hover:from-orange-900/30 dark:hover:to-orange-900/30 rounded-lg transition group"
                 >
                   <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -381,8 +381,8 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{t('dashboard.exportBilling')}</h4>
-                    <p className="text-xs text-gray-600">{t('dashboard.csvInsurance')}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.exportBilling')}</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.csvInsurance')}</p>
                   </div>
                 </button>
               </div>
@@ -424,13 +424,13 @@ export default function Dashboard() {
 
       {/* Export Modal */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">📊 {t('dashboard.exportBillingTitle')}</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">📊 {t('dashboard.exportBillingTitle')}</h3>
               <button
                 onClick={() => setShowExportModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -451,7 +451,7 @@ export default function Dashboard() {
             >
               {/* Date Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('dashboard.startDate')}
                 </label>
                 <input
@@ -459,12 +459,12 @@ export default function Dashboard() {
                   name="startDate"
                   required
                   defaultValue={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('dashboard.endDate')}
                 </label>
                 <input
@@ -472,19 +472,19 @@ export default function Dashboard() {
                   name="endDate"
                   required
                   defaultValue={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
 
               {/* Format Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('dashboard.exportFormat')}
                 </label>
                 <select
                   name="format"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="csv">{t('dashboard.csvCompatible')}</option>
                   <option value="pdf" disabled>{t('dashboard.pdfComing')}</option>
@@ -492,8 +492,8 @@ export default function Dashboard() {
               </div>
 
               {/* Info Box */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-800">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+                <p className="text-xs text-blue-800 dark:text-blue-300">
                   <strong>📋 {t('dashboard.includes')}:</strong> {t('dashboard.includesDetails')}
                 </p>
               </div>
@@ -503,7 +503,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setShowExportModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                 >
                   {t('dashboard.cancel')}
                 </button>
