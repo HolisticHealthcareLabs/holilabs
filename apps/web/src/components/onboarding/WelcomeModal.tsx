@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface WelcomeModalProps {
   userName?: string;
@@ -16,6 +17,7 @@ interface WelcomeModalProps {
 
 export default function WelcomeModal({ userName }: WelcomeModalProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Check if user has seen welcome modal
@@ -46,17 +48,17 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
           <div className="bg-gradient-to-r from-primary to-purple-700 text-white p-8 text-center">
             <div className="text-6xl mb-4">🎉</div>
             <h1 className="text-3xl font-bold mb-2">
-              ¡Bienvenido{userName ? `, ${userName}` : ''}!
+              {t('onboarding.welcome')}{userName ? `, ${userName}` : ''}!
             </h1>
             <p className="text-white/90 text-lg">
-              Tu práctica médica ahora tiene superpoderes
+              {t('onboarding.subtitle')}
             </p>
           </div>
 
           {/* Content */}
           <div className="p-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-              Comienza en 3 pasos sencillos:
+              {t('onboarding.steps.title')}
             </h2>
 
             {/* 3 Quick Wins */}
@@ -68,17 +70,17 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">
-                    📝 Crea tu primera nota clínica
+                    📝 {t('onboarding.steps.note.title')}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Documenta consultas en segundos con nuestro editor SOAP potenciado por IA
+                    {t('onboarding.steps.note.description')}
                   </p>
                   <Link
                     href="/dashboard/patients"
                     onClick={handleDismiss}
                     className="inline-block text-sm font-medium text-blue-600 hover:text-blue-700 transition"
                   >
-                    Ver pacientes de ejemplo →
+                    {t('onboarding.steps.note.action')} →
                   </Link>
                 </div>
               </div>
@@ -90,17 +92,17 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">
-                    🤖 Pregunta a tu asistente de IA
+                    📊 {t('onboarding.steps.transfer.title')}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Obtén ayuda instantánea con diagnósticos diferenciales e interacciones medicamentosas
+                    {t('onboarding.steps.transfer.description')}
                   </p>
                   <Link
-                    href="/dashboard/ai"
+                    href="/dashboard/upload"
                     onClick={handleDismiss}
                     className="inline-block text-sm font-medium text-purple-600 hover:text-purple-700 transition"
                   >
-                    Abrir chat médico →
+                    {t('onboarding.steps.transfer.action')} →
                   </Link>
                 </div>
               </div>
@@ -112,17 +114,17 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">
-                    👤 Invita a tu primer paciente
+                    👤 {t('onboarding.steps.invite.title')}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Comienza a construir tu historia clínica digital con blockchain
+                    {t('onboarding.steps.invite.description')}
                   </p>
                   <Link
                     href="/dashboard/patients/new"
                     onClick={handleDismiss}
                     className="inline-block text-sm font-medium text-green-600 hover:text-green-700 transition"
                   >
-                    Agregar paciente →
+                    {t('onboarding.steps.invite.action')} →
                   </Link>
                 </div>
               </div>
@@ -134,17 +136,17 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                 <span className="text-2xl">📱</span>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">
-                    Opcional: Configura notificaciones automáticas
+                    {t('onboarding.optional.title')}
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">
-                    Envía recordatorios de citas por WhatsApp, Email y SMS
+                    {t('onboarding.optional.description')}
                   </p>
                   <Link
                     href="/dashboard/settings"
                     onClick={handleDismiss}
                     className="text-sm text-gray-600 hover:text-gray-900 transition underline"
                   >
-                    Configurar después
+                    {t('onboarding.optional.action')}
                   </Link>
                 </div>
               </div>
@@ -156,13 +158,13 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                 onClick={handleDismiss}
                 className="text-sm text-gray-500 hover:text-gray-700 transition"
               >
-                Omitir por ahora
+                {t('onboarding.skip')}
               </button>
               <button
                 onClick={handleDismiss}
                 className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all hover:scale-105"
               >
-                ¡Empecemos! 🚀
+                {t('onboarding.start')} 🚀
               </button>
             </div>
           </div>
@@ -170,7 +172,7 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
           {/* Footer */}
           <div className="bg-gray-50 border-t border-gray-200 px-8 py-4 text-center">
             <p className="text-xs text-gray-500">
-              💡 Tip: Encuentra esta guía más tarde en el checklist (abajo a la derecha)
+              {t('onboarding.tip')}
             </p>
           </div>
         </div>

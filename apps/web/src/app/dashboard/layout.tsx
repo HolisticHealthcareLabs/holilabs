@@ -8,6 +8,7 @@ import NotificationPrompt from '@/components/NotificationPrompt';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import LanguageSelector from '@/components/LanguageSelector';
+import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 
 interface NavItem {
   name: string;
@@ -17,15 +18,12 @@ interface NavItem {
   badge?: number;
 }
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { locale, t } = useLanguage();
 
   useEffect(() => {
     const supabase = createClient();
@@ -39,16 +37,16 @@ export default function DashboardLayout({
   }, [router]);
 
   const navItems: NavItem[] = [
-    { name: 'Panel', href: '/dashboard', icon: '📊', emoji: '📊' },
-    { name: 'Pacientes', href: '/dashboard/patients', icon: '👥', emoji: '👥' },
-    { name: 'Citas', href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
-    { name: 'Formularios', href: '/dashboard/forms', icon: '📝', emoji: '📝' },
-    { name: 'Mensajes', href: '/dashboard/messages', icon: '💬', emoji: '💬' },
-    { name: 'AI Scribe', href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️' },
-    { name: 'Documentos', href: '/dashboard/upload', icon: '📄', emoji: '📄' },
-    { name: 'IA Asistente', href: '/dashboard/ai', icon: '🤖', emoji: '🤖' },
-    { name: 'Análisis', href: '/dashboard/doc-intelligence', icon: '🧠', emoji: '🧠' },
-    { name: 'Configuración', href: '/dashboard/settings', icon: '⚙️', emoji: '⚙️' },
+    { name: t('nav.dashboard'), href: '/dashboard', icon: '📊', emoji: '📊' },
+    { name: t('nav.patients'), href: '/dashboard/patients', icon: '👥', emoji: '👥' },
+    { name: t('nav.appointments'), href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
+    { name: t('nav.forms'), href: '/dashboard/forms', icon: '📝', emoji: '📝' },
+    { name: t('nav.messages'), href: '/dashboard/messages', icon: '💬', emoji: '💬' },
+    { name: t('nav.scribe'), href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️' },
+    { name: t('nav.documents'), href: '/dashboard/upload', icon: '📄', emoji: '📄' },
+    { name: t('nav.aiAssistant'), href: '/dashboard/ai', icon: '🤖', emoji: '🤖' },
+    { name: t('nav.analysis'), href: '/dashboard/doc-intelligence', icon: '🧠', emoji: '🧠' },
+    { name: t('nav.settings'), href: '/dashboard/settings', icon: '⚙️', emoji: '⚙️' },
   ];
 
   const handleSignOut = async () => {
@@ -139,7 +137,7 @@ export default function DashboardLayout({
               className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
             >
               <span className="text-lg">🚪</span>
-              <span>Cerrar Sesión</span>
+              <span>{t('nav.logout')}</span>
             </button>
           </div>
         </div>
@@ -165,7 +163,7 @@ export default function DashboardLayout({
               <span className="font-bold text-lg text-gray-900">Holi Labs</span>
             </div>
             <div className="flex items-center gap-2">
-              <LanguageSelector currentLocale="en" />
+              <LanguageSelector currentLocale={locale} />
               <GlobalSearch />
               <NotificationCenter />
             </div>
@@ -175,7 +173,7 @@ export default function DashboardLayout({
         {/* Desktop Header */}
         <header className="hidden lg:block bg-white border-b border-gray-200 sticky top-0 z-30">
           <div className="flex items-center justify-end h-16 px-6 gap-4">
-            <LanguageSelector currentLocale="en" />
+            <LanguageSelector currentLocale={locale} />
             <GlobalSearch />
             <NotificationCenter />
           </div>
@@ -190,5 +188,17 @@ export default function DashboardLayout({
       {/* Notification Permission Prompt */}
       <NotificationPrompt />
     </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <LanguageProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </LanguageProvider>
   );
 }

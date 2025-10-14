@@ -15,6 +15,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 import WelcomeModal from '@/components/onboarding/WelcomeModal';
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist';
 
@@ -40,6 +41,7 @@ interface RecentActivity {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [stats, setStats] = useState<DashboardStats>({
     totalPatients: 0,
     activePatients: 0,
@@ -57,13 +59,13 @@ export default function Dashboard() {
   useEffect(() => {
     // Set time-based greeting
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Buenos días');
-    else if (hour < 18) setGreeting('Buenas tardes');
-    else setGreeting('Buenas noches');
+    if (hour < 12) setGreeting(t('dashboard.greeting.morning'));
+    else if (hour < 18) setGreeting(t('dashboard.greeting.afternoon'));
+    else setGreeting(t('dashboard.greeting.evening'));
 
     // Fetch dashboard data
     fetchDashboardData();
-  }, []);
+  }, [t]);
 
   const fetchDashboardData = async () => {
     try {
@@ -90,7 +92,7 @@ export default function Dashboard() {
             type: 'note' as const,
             patientName: `${p.firstName} ${p.lastName}`,
             patientId: p.id,
-            action: p.medications?.length > 0 ? 'Medicación actualizada' : 'Paciente registrado',
+            action: p.medications?.length > 0 ? t('dashboard.medicationUpdated') : t('dashboard.patientRegistered'),
             timestamp: p.updatedAt,
             icon: p.medications?.length > 0 ? '💊' : '👤',
             color: p.medications?.length > 0 ? 'text-green-600' : 'text-blue-600',
@@ -113,10 +115,10 @@ export default function Dashboard() {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Justo ahora';
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours}h`;
-    return `Hace ${diffDays}d`;
+    if (diffMins < 1) return t('dashboard.justNow');
+    if (diffMins < 60) return t('dashboard.minutesAgo').replace('{0}', diffMins.toString());
+    if (diffHours < 24) return t('dashboard.hoursAgo').replace('{0}', diffHours.toString());
+    return t('dashboard.daysAgo').replace('{0}', diffDays.toString());
   };
 
   const handleExport = async (format: 'csv' | 'pdf', startDate: string, endDate: string) => {
@@ -153,7 +155,7 @@ export default function Dashboard() {
       setShowExportModal(false);
     } catch (error) {
       console.error('Error exporting:', error);
-      alert('Error al exportar. Por favor intente nuevamente.');
+      alert(t('dashboard.errorExporting'));
     } finally {
       setExportLoading(false);
     }
@@ -164,7 +166,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4" />
-          <h3 className="text-xl font-bold text-gray-800">Cargando panel...</h3>
+          <h3 className="text-xl font-bold text-gray-800">{t('dashboard.loading')}</h3>
         </div>
       </div>
     );
@@ -202,7 +204,7 @@ export default function Dashboard() {
                 href="/dashboard/patients"
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
               >
-                Ver Pacientes
+                {t('dashboard.viewPatients')}
               </Link>
             </div>
           </div>
@@ -220,12 +222,12 @@ export default function Dashboard() {
                 </svg>
               </div>
               <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                +12% esta semana
+                {t('dashboard.weekGrowth')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">Pacientes Totales</h3>
+            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.totalPatients')}</h3>
             <p className="text-3xl font-bold text-gray-900">{stats.totalPatients}</p>
-            <p className="text-xs text-gray-500 mt-2">{stats.activePatients} activos</p>
+            <p className="text-xs text-gray-500 mt-2">{stats.activePatients} {t('dashboard.stats.activePatients')}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
@@ -236,12 +238,12 @@ export default function Dashboard() {
                 </svg>
               </div>
               <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                Hoy
+                {t('dashboard.stats.today')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">Citas Programadas</h3>
+            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.scheduledAppointments')}</h3>
             <p className="text-3xl font-bold text-gray-900">{stats.todayAppointments}</p>
-            <p className="text-xs text-gray-500 mt-2">3 próximas 2 horas</p>
+            <p className="text-xs text-gray-500 mt-2">3 {t('dashboard.stats.upcoming')} 2 {t('dashboard.stats.hours')}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
@@ -252,12 +254,12 @@ export default function Dashboard() {
                 </svg>
               </div>
               <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-                Esta semana
+                {t('dashboard.stats.thisWeek')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">Notas Clínicas</h3>
+            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.clinicalNotes')}</h3>
             <p className="text-3xl font-bold text-gray-900">{stats.recentNotes}</p>
-            <p className="text-xs text-gray-500 mt-2">Promedio: 4.2 por día</p>
+            <p className="text-xs text-gray-500 mt-2">{t('dashboard.stats.average')}: 4.2 {t('dashboard.stats.perDay')}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
@@ -268,12 +270,12 @@ export default function Dashboard() {
                 </svg>
               </div>
               <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
-                Hoy
+                {t('dashboard.stats.today')}
               </span>
             </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">Recetas Firmadas</h3>
+            <h3 className="text-gray-600 text-sm font-medium mb-1">{t('dashboard.stats.signedPrescriptions')}</h3>
             <p className="text-3xl font-bold text-gray-900">{stats.prescriptionsToday}</p>
-            <p className="text-xs text-gray-500 mt-2">0 pendientes</p>
+            <p className="text-xs text-gray-500 mt-2">0 {t('dashboard.stats.pending')}</p>
           </div>
         </div>
 
@@ -282,16 +284,16 @@ export default function Dashboard() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Actividad Reciente</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('dashboard.recentActivity')}</h2>
                 <button className="text-sm text-primary hover:text-primary/80 font-medium">
-                  Ver todo →
+                  {t('dashboard.viewAll')} →
                 </button>
               </div>
 
               {recentActivity.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">📋</div>
-                  <p className="text-gray-600">No hay actividad reciente</p>
+                  <p className="text-gray-600">{t('dashboard.noActivity')}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -322,7 +324,7 @@ export default function Dashboard() {
           {/* Quick Actions */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Acciones Rápidas</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">{t('dashboard.quickActions')}</h2>
               <div className="space-y-3">
                 <Link
                   href="/dashboard/patients"
@@ -334,8 +336,8 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">Ver Pacientes</h4>
-                    <p className="text-xs text-gray-600">Lista completa</p>
+                    <h4 className="font-semibold text-gray-900">{t('dashboard.viewPatients')}</h4>
+                    <p className="text-xs text-gray-600">{t('dashboard.completePatients')}</p>
                   </div>
                 </Link>
 
@@ -349,8 +351,8 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">Nuevo Paciente</h4>
-                    <p className="text-xs text-gray-600">Registro rápido</p>
+                    <h4 className="font-semibold text-gray-900">{t('dashboard.newPatient')}</h4>
+                    <p className="text-xs text-gray-600">{t('dashboard.quickRegistration')}</p>
                   </div>
                 </Link>
 
@@ -364,8 +366,8 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">Asistente IA</h4>
-                    <p className="text-xs text-gray-600">Consultar ahora</p>
+                    <h4 className="font-semibold text-gray-900">{t('dashboard.aiAssistant')}</h4>
+                    <p className="text-xs text-gray-600">{t('dashboard.consultNow')}</p>
                   </div>
                 </Link>
 
@@ -379,8 +381,8 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">Exportar Facturación</h4>
-                    <p className="text-xs text-gray-600">CSV para seguros</p>
+                    <h4 className="font-semibold text-gray-900">{t('dashboard.exportBilling')}</h4>
+                    <p className="text-xs text-gray-600">{t('dashboard.csvInsurance')}</p>
                   </div>
                 </button>
               </div>
@@ -388,32 +390,32 @@ export default function Dashboard() {
 
             {/* Today's Schedule */}
             <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-sm p-6 text-white">
-              <h2 className="text-lg font-bold mb-4">Agenda de Hoy</h2>
+              <h2 className="text-lg font-bold mb-4">{t('dashboard.todaySchedule')}</h2>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-white rounded-full" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">09:00 - Consulta de seguimiento</p>
+                    <p className="text-sm font-medium">09:00 - {t('dashboard.followupConsult')}</p>
                     <p className="text-xs opacity-80">María González</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-white rounded-full" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">11:30 - Primera consulta</p>
-                    <p className="text-xs opacity-80">Paciente nuevo</p>
+                    <p className="text-sm font-medium">11:30 - {t('dashboard.firstConsult')}</p>
+                    <p className="text-xs opacity-80">{t('dashboard.newPatientLabel')}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-white/50 rounded-full" />
                   <div className="flex-1 opacity-60">
-                    <p className="text-sm font-medium">14:00 - Revisión de resultados</p>
+                    <p className="text-sm font-medium">14:00 - {t('dashboard.resultsReview')}</p>
                     <p className="text-xs">Carlos Silva</p>
                   </div>
                 </div>
               </div>
               <button className="mt-4 w-full py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition">
-                Ver agenda completa →
+                {t('dashboard.viewFullSchedule')} →
               </button>
             </div>
           </div>
@@ -425,7 +427,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">📊 Exportar Facturación</h3>
+              <h3 className="text-2xl font-bold text-gray-900">📊 {t('dashboard.exportBillingTitle')}</h3>
               <button
                 onClick={() => setShowExportModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition"
@@ -450,7 +452,7 @@ export default function Dashboard() {
               {/* Date Range */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de Inicio
+                  {t('dashboard.startDate')}
                 </label>
                 <input
                   type="date"
@@ -463,7 +465,7 @@ export default function Dashboard() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de Fin
+                  {t('dashboard.endDate')}
                 </label>
                 <input
                   type="date"
@@ -477,22 +479,22 @@ export default function Dashboard() {
               {/* Format Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Formato de Exportación
+                  {t('dashboard.exportFormat')}
                 </label>
                 <select
                   name="format"
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
-                  <option value="csv">CSV (Excel compatible)</option>
-                  <option value="pdf" disabled>PDF (próximamente)</option>
+                  <option value="csv">{t('dashboard.csvCompatible')}</option>
+                  <option value="pdf" disabled>{t('dashboard.pdfComing')}</option>
                 </select>
               </div>
 
               {/* Info Box */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-xs text-blue-800">
-                  <strong>📋 Incluye:</strong> Códigos ICD-10, CPT, datos del paciente, NPI del proveedor
+                  <strong>📋 {t('dashboard.includes')}:</strong> {t('dashboard.includesDetails')}
                 </p>
               </div>
 
@@ -503,7 +505,7 @@ export default function Dashboard() {
                   onClick={() => setShowExportModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                 >
-                  Cancelar
+                  {t('dashboard.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -516,10 +518,10 @@ export default function Dashboard() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      Exportando...
+                      {t('dashboard.exporting')}
                     </span>
                   ) : (
-                    'Exportar'
+                    t('dashboard.export')
                   )}
                 </button>
               </div>

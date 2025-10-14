@@ -5,6 +5,11 @@
     "appointments": "Citas",
     "medications": "Medicamentos",
     "forms": "Formularios",
+    "messages": "Mensajes",
+    "scribe": "AI Scribe",
+    "documents": "Documentos",
+    "aiAssistant": "IA Asistente",
+    "analysis": "Análisis",
     "settings": "Configuración",
     "logout": "Cerrar Sesión"
   },
@@ -15,13 +20,89 @@
       "evening": "Buenas noches"
     },
     "stats": {
-      "totalPatients": "Total de Pacientes",
-      "activeAppointments": "Citas Activas",
-      "pendingForms": "Formularios Pendientes",
-      "recentActivity": "Actividad Reciente"
+      "totalPatients": "Pacientes Totales",
+      "activePatients": "activos",
+      "scheduledAppointments": "Citas Programadas",
+      "clinicalNotes": "Notas Clínicas",
+      "signedPrescriptions": "Recetas Firmadas",
+      "pending": "pendientes",
+      "average": "Promedio",
+      "perDay": "por día",
+      "thisWeek": "esta semana",
+      "today": "Hoy",
+      "upcoming": "próximas",
+      "hours": "horas"
     },
     "quickActions": "Acciones Rápidas",
-    "todaySchedule": "Agenda de Hoy"
+    "todaySchedule": "Agenda de Hoy",
+    "recentActivity": "Actividad Reciente",
+    "noActivity": "No hay actividad reciente",
+    "viewPatients": "Ver Pacientes",
+    "newPatient": "Nuevo Paciente",
+    "aiAssistant": "Asistente IA",
+    "exportBilling": "Exportar Facturación",
+    "completePatients": "Lista completa",
+    "quickRegistration": "Registro rápido",
+    "consultNow": "Consultar ahora",
+    "csvInsurance": "CSV para seguros",
+    "loading": "Cargando panel...",
+    "weekGrowth": "+12% esta semana",
+    "medicationUpdated": "Medicación actualizada",
+    "patientRegistered": "Paciente registrado",
+    "justNow": "Justo ahora",
+    "minutesAgo": "Hace {0} min",
+    "hoursAgo": "Hace {0}h",
+    "daysAgo": "Hace {0}d",
+    "viewAll": "Ver todo",
+    "followupConsult": "Consulta de seguimiento",
+    "firstConsult": "Primera consulta",
+    "newPatientLabel": "Paciente nuevo",
+    "resultsReview": "Revisión de resultados",
+    "viewFullSchedule": "Ver agenda completa",
+    "exportBillingTitle": "Exportar Facturación",
+    "startDate": "Fecha de Inicio",
+    "endDate": "Fecha de Fin",
+    "exportFormat": "Formato de Exportación",
+    "csvCompatible": "CSV (Excel compatible)",
+    "pdfComing": "PDF (próximamente)",
+    "includes": "Incluye",
+    "includesDetails": "Códigos ICD-10, CPT, datos del paciente, NPI del proveedor",
+    "cancel": "Cancelar",
+    "export": "Exportar",
+    "exporting": "Exportando...",
+    "errorExporting": "Error al exportar. Por favor intente nuevamente.",
+    "nextHours": "próximas {0} horas"
+  },
+  "onboarding": {
+    "welcome": "¡Bienvenido",
+    "title": "Comienza con Holi Labs",
+    "subtitle": "Tu práctica médica ahora tiene superpoderes",
+    "steps": {
+      "title": "Configura tu plataforma en 3 simples pasos:",
+      "invite": {
+        "title": "Invita a tu primer paciente",
+        "description": "Agrega pacientes manualmente o importa datos existentes de forma masiva",
+        "action": "Agregar paciente"
+      },
+      "transfer": {
+        "title": "Transfiere data existente",
+        "description": "Importa historias clínicas desde Excel, CSV o tu sistema actual para procesamiento automático",
+        "action": "Importar datos"
+      },
+      "note": {
+        "title": "Crea tu primera nota clínica",
+        "description": "Documenta consultas en segundos con nuestro editor SOAP potenciado por IA",
+        "action": "Ver ejemplo"
+      }
+    },
+    "optional": {
+      "title": "Opcional: Configura notificaciones automáticas",
+      "description": "Envía recordatorios de citas por WhatsApp, Email y SMS",
+      "action": "Configurar después"
+    },
+    "skip": "Omitir por ahora",
+    "start": "¡Empecemos!",
+    "tip": "💡 Tip: Encuentra esta guía más tarde en el checklist (abajo a la derecha)"
   },
   "patients": {
     "title": "Pacientes",
