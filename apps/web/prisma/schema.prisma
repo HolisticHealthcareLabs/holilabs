@@ -38,16 +38,17 @@ model User {
   updatedAt   DateTime  @updatedAt
 
   // Relations
-  patients             Patient[]
-  auditLogs            AuditLog[]
-  prescriptions        Prescription[]
-  appointments         Appointment[]
-  calendarIntegrations CalendarIntegration[]
-  scribeSessions       ScribeSession[]
-  soapNotes            SOAPNote[]
-  formTemplates        FormTemplate[]
-  formInstances        FormInstance[]
-  clinicalNoteVersions ClinicalNoteVersion[]
+  patients              Patient[]
+  auditLogs             AuditLog[]
+  prescriptions         Prescription[]
+  appointments          Appointment[]
+  calendarIntegrations  CalendarIntegration[]
+  scribeSessions        ScribeSession[]
+  soapNotes             SOAPNote[]
+  formTemplates         FormTemplate[]
+  formInstances         FormInstance[]
+  clinicalNoteVersions  ClinicalNoteVersion[]
+  transcriptionErrors   TranscriptionError[]
 
   @@index([email])
   @@index([walletAddress])
@@ -484,20 +485,24 @@ model Patient {
   updatedAt DateTime @updatedAt
 
   // Relations
-  patientUser    PatientUser?
-  preferences    PatientPreferences?
-  medications    Medication[]
-  appointments   Appointment[]
-  consents       Consent[]
-  documents      Document[]
-  clinicalNotes  ClinicalNote[]
-  prescriptions  Prescription[]
-  scribeSessions ScribeSession[]
-  soapNotes      SOAPNote[]
-  messages       Message[]
-  healthMetrics  HealthMetric[]
-  documentShares DocumentShare[]
-  formInstances  FormInstance[]
+  patientUser      PatientUser?
+  preferences      PatientPreferences?
+  medications      Medication[]
+  appointments     Appointment[]
+  consents         Consent[]
+  documents        Document[]
+  clinicalNotes    ClinicalNote[]
+  prescriptions    Prescription[]
+  scribeSessions   ScribeSession[]
+  soapNotes        SOAPNote[]
+  messages         Message[]
+  healthMetrics    HealthMetric[]
+  documentShares   DocumentShare[]
+  formInstances    FormInstance[]
+  labResults       LabResult[]
+  imagingStudies   ImagingStudy[]
+  grantedAccess    DataAccessGrant[] @relation("PatientAccess")
+  receivedAccess   DataAccessGrant[] @relation("GrantedToUser")
 
   @@index([mrn])
   @@index([tokenId])
@@ -542,6 +547,195 @@ model Medication {
   @@index([patientId])
   @@index([isActive])
   @@map("medications")
+}
+
+// ============================================================================
+// LAB RESULTS & IMAGING
+// ============================================================================
+
+model LabResult {
+  id String @id @default(cuid())
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Blockchain fields
+  resultHash String? // SHA-256 hash of results for integrity
+
+  // Lab details
+  testName        String
+  testCode        String? // LOINC code
+  category        String? // e.g., "Hematology", "Chemistry", "Microbiology"
+  orderingDoctor  String?
+  performingLab   String?
+
+  // Results
+  value           String? @db.Text // The actual result value
+  unit            String? // e.g., "mg/dL", "mmol/L"
+  referenceRange  String? // e.g., "70-100 mg/dL"
+  status          LabResultStatus @default(PRELIMINARY)
+  interpretation  String? // e.g., "High", "Low", "Normal", "Critical"
+
+  // Flags
+  isAbnormal      Boolean @default(false)
+  isCritical      Boolean @default(false)
+
+  // Dates
+  orderedDate     DateTime?
+  collectedDate   DateTime?
+  resultDate      DateTime
+  reviewedDate    DateTime?
+
+  // Additional info
+  notes           String? @db.Text
+  attachmentUrl   String? @db.Text // PDF or image of lab report
+
+  // Privacy - Who can see this?
+  accessGrants    DataAccessGrant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([resultDate])
+  @@index([status])
+  @@index([isAbnormal])
+  @@index([isCritical])
+  @@map("lab_results")
+}
+
+enum LabResultStatus {
+  PRELIMINARY
+  FINAL
+  CORRECTED
+  CANCELLED
+}
+
+model ImagingStudy {
+  id String @id @default(cuid())
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Blockchain fields
+  studyHash String? // SHA-256 hash for integrity
+
+  // Study identification
+  studyInstanceUID String? @unique // DICOM Study Instance UID
+  accessionNumber  String? // Hospital accession number
+
+  // Study details
+  modality        String // e.g., "X-Ray", "CT", "MRI", "Ultrasound"
+  bodyPart        String // e.g., "Chest", "Brain", "Knee"
+  description     String @db.Text
+  indication      String? @db.Text // Why the study was ordered
+
+  // Status
+  status          ImagingStatus @default(SCHEDULED)
+
+  // Ordering
+  orderingDoctor  String?
+  referringDoctor String?
+  performingFacility String?
+
+  // Images & Reports
+  imageCount      Int @default(0)
+  imageUrls       String[] // Array of image URLs (or DICOM viewer links)
+  thumbnailUrl    String? @db.Text
+  reportUrl       String? @db.Text // Radiologist report PDF
+
+  // Findings
+  findings        String? @db.Text // Key findings from radiologist
+  impression      String? @db.Text // Radiologist impression/conclusion
+  isAbnormal      Boolean @default(false)
+
+  // Dates
+  scheduledDate   DateTime?
+  studyDate       DateTime
+  reportDate      DateTime?
+  reviewedDate    DateTime?
+
+  // Additional info
+  technician      String?
+  radiologist     String?
+  notes           String? @db.Text
+
+  // Privacy - Who can see this?
+  accessGrants    DataAccessGrant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([studyDate])
+  @@index([status])
+  @@index([modality])
+  @@map("imaging_studies")
+}
+
+enum ImagingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  REPORTED
+  CANCELLED
+}
+
+model DataAccessGrant {
+  id String @id @default(cuid())
+
+  // Who is granting access?
+  patientId String
+  patient   Patient @relation("PatientAccess", fields: [patientId], references: [id], onDelete: Cascade)
+
+  // To whom is access granted?
+  grantedToType String // "USER" (clinician), "PATIENT" (family member), "EXTERNAL" (other clinic)
+  grantedToId   String? // User ID if type is USER or PATIENT
+  grantedToUser Patient? @relation("GrantedToUser", fields: [grantedToId], references: [id])
+
+  grantedToEmail String? // For external users not in the system
+  grantedToName  String? // Display name for external users
+
+  // What resources can they access?
+  resourceType String // "LAB_RESULT", "IMAGING_STUDY", "CLINICAL_NOTE", "ALL"
+  resourceId   String? // Specific resource ID, or null for "ALL"
+
+  // Relations to specific resources
+  labResultId     String?
+  labResult       LabResult? @relation(fields: [labResultId], references: [id], onDelete: Cascade)
+
+  imagingStudyId  String?
+  imagingStudy    ImagingStudy? @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+
+  // Permissions
+  canView         Boolean @default(true)
+  canDownload     Boolean @default(false)
+  canShare        Boolean @default(false)
+
+  // Time constraints
+  grantedAt       DateTime @default(now())
+  expiresAt       DateTime? // Null = never expires
+  revokedAt       DateTime?
+  revokedBy       String? // User ID who revoked
+  revokedReason   String? @db.Text
+
+  // Audit trail
+  accessCount     Int @default(0) // How many times accessed
+  lastAccessedAt  DateTime?
+
+  // Metadata
+  purpose         String? @db.Text // Why was access granted?
+  consentFormId   String? // Reference to signed consent form
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([grantedToId])
+  @@index([resourceType, resourceId])
+  @@index([grantedAt])
+  @@index([expiresAt])
+  @@map("data_access_grants")
 }
 
 // ============================================================================
@@ -1111,8 +1305,9 @@ model ScribeSession {
   soapModel          String? @default("claude-3-5-sonnet-20250219")
 
   // Relations
-  transcription Transcription?
-  soapNote      SOAPNote?
+  transcription       Transcription?
+  soapNote            SOAPNote?
+  transcriptionErrors TranscriptionError[]
 
   // Metadata
   createdAt DateTime @default(now())
@@ -1161,6 +1356,48 @@ model Transcription {
 
   @@index([sessionId])
   @@map("transcriptions")
+}
+
+// ============================================================================
+// AI SCRIBE - Error Tracking for ML Improvement
+// ============================================================================
+
+model TranscriptionError {
+  id String @id @default(cuid())
+
+  // Associated session
+  sessionId String
+  session   ScribeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Segment information
+  segmentIndex Int // Index in the transcription segments array
+  startTime    Float // Seconds
+  endTime      Float // Seconds
+
+  // Speaker info
+  speaker    String? // "clinician" or "patient"
+  confidence Float   @default(0) // Original transcription confidence
+
+  // Error details
+  originalText  String @db.Text
+  correctedText String @db.Text
+  editDistance  Int? // Levenshtein distance for ML analysis
+
+  // Corrected by
+  correctedBy   String
+  correctedByUser User @relation(fields: [correctedBy], references: [id])
+
+  // Metadata
+  ipAddress String?
+  userAgent String?  @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([correctedBy])
+  @@index([confidence]) // For analytics on low-confidence errors
+  @@index([createdAt])
+  @@map("transcription_errors")
 }
 
 model SOAPNote {
