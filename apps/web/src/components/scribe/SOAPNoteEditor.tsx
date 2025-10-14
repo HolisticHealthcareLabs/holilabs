@@ -5,6 +5,7 @@ import {
   getTemplatesByLanguage,
   type SOAPTemplate,
 } from '@/lib/templates/soap-templates';
+import VersionHistoryModal from './VersionHistoryModal';
 
 interface Diagnosis {
   icd10Code: string;
@@ -80,6 +81,7 @@ export default function SOAPNoteEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'pt'>('es');
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // ICD-10 validation regex
   const validateICD10 = (code: string): boolean => {
@@ -477,6 +479,15 @@ export default function SOAPNoteEditor({
 
       {/* Action Buttons */}
       <div className="pt-6 border-t border-gray-200 space-y-3">
+        {/* Version History Button - Always visible */}
+        <button
+          onClick={() => setIsHistoryModalOpen(true)}
+          className="w-full px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all border border-gray-300 flex items-center justify-center space-x-2"
+        >
+          <span>🕐</span>
+          <span>Ver Historial de Versiones</span>
+        </button>
+
         {!readOnly && (
           <>
             {!isEditing ? (
@@ -536,6 +547,13 @@ export default function SOAPNoteEditor({
           </div>
         )}
       </div>
+
+      {/* Version History Modal */}
+      <VersionHistoryModal
+        noteId={note.id}
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+      />
     </div>
   );
 }
