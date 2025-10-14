@@ -10,7 +10,7 @@ import NotificationCenter from '@/components/notifications/NotificationCenter';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import LanguageSelector from '@/components/LanguageSelector';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
 
 interface NavItem {
@@ -27,6 +27,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { locale, t } = useLanguage();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const supabase = createClient();
@@ -80,7 +81,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
             <Link href="/dashboard" className="flex items-center space-x-2">
-              <Image src="/logos/Logo 1_Light.svg" alt="Holi Labs" width={32} height={32} />
+              <Image
+                src={theme === 'dark' ? "/logos/Logo 1_Dark (1).svg" : "/logos/Logo 1_Light.svg"}
+                alt="Holi Labs"
+                width={32}
+                height={32}
+              />
               <span className="font-bold text-xl text-gray-900 dark:text-white">
                 Holi Labs
               </span>
@@ -188,7 +194,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </svg>
             </button>
             <div className="flex items-center space-x-2">
-              <Image src="/logos/Logo 1_Light.svg" alt="Holi Labs" width={32} height={32} />
+              <Image
+                src={theme === 'dark' ? "/logos/Logo 1_Dark (1).svg" : "/logos/Logo 1_Light.svg"}
+                alt="Holi Labs"
+                width={32}
+                height={32}
+              />
               <span className="font-bold text-lg text-gray-900 dark:text-white">Holi Labs</span>
             </div>
             <div className="flex items-center gap-2">
