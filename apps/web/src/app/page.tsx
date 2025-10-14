@@ -242,10 +242,11 @@ export default function Home() {
                   </div>
                   <div className="md:w-2/3">
                     <h3 className="text-2xl font-bold mb-4 text-red-300">El riesgo definitivo: daño al paciente.</h3>
-                    <p className="text-lg text-gray-300 leading-relaxed">
-                      Los médicos con burnout tienen el doble de probabilidad de cometer errores médicos. Esta no es una estadística abstracta.
-                      Son diagnósticos perdidos. Dosis incorrectas. Signos vitales críticos no detectados. El trabajo administrativo no es
-                      solo una molestia para los médicos. Es un riesgo de seguridad activo para los pacientes.
+                    <p className="text-lg text-gray-100 leading-relaxed">
+                      Los médicos con burnout tienen el doble de probabilidad de cometer errores médicos. Esta no es una estadística abstracta.{' '}
+                      <span className="text-white font-semibold">Son diagnósticos perdidos. Dosis incorrectas. Signos vitales críticos no detectados.</span>{' '}
+                      El trabajo administrativo no es solo una molestia para los médicos.{' '}
+                      <span className="text-white font-semibold">Es un riesgo de seguridad activo para los pacientes.</span>
                     </p>
                   </div>
                 </div>
@@ -254,8 +255,13 @@ export default function Home() {
 
             {/* Conclusion Statement */}
             <div className="mt-20 text-center">
-              <p className="text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-                No puede resolver el burnout con resiliencia. Debe resolver el trabajo administrativo con tecnología.
+              <p className="text-3xl font-semibold max-w-3xl mx-auto leading-relaxed">
+                <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
+                  No puede resolver el burnout con resiliencia.
+                </span>{' '}
+                <span className="bg-gradient-to-r from-orange-300 via-red-300 to-orange-300 bg-clip-text text-transparent">
+                  Debe resolver el trabajo administrativo con tecnología.
+                </span>
               </p>
             </div>
           </div>
@@ -270,9 +276,10 @@ export default function Home() {
               <h2 className="text-5xl md:text-6xl font-bold mb-6">
                 Menos administración. Mejor medicina.
               </h2>
-              <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-                Holilabs no es un EHR. No es un sistema de facturación. Es una herramienta de productividad clínica
-                que se integra con su flujo de trabajo existente y elimina el trabajo administrativo que causa burnout.
+              <p className="text-xl text-gray-200 max-w-3xl mx-auto leading-relaxed">
+                <span className="text-white font-semibold">Holilabs no es un EHR. No es un sistema de facturación.</span>{' '}
+                Es una herramienta de productividad clínica que se integra con su flujo de trabajo existente y{' '}
+                <span className="text-white font-semibold">elimina el trabajo administrativo que causa burnout.</span>
               </p>
             </div>
 
