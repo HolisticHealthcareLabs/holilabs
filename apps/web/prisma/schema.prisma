@@ -1397,3 +1397,133 @@ enum FormAuditEvent {
   UPDATED           // Clinician updated form
   DOWNLOADED        // PDF downloaded
 }
+
+// ============================================================================
+// PHARMACY INTEGRATION (Mexican Chains)
+// ============================================================================
+
+model Pharmacy {
+  id                String    @id @default(cuid())
+  
+  // Pharmacy details
+  name              String    // e.g., "Farmacia Guadalajara Centro"
+  chain             PharmacyChain
+  branchCode        String?   // Internal branch identifier
+  
+  // Contact
+  phone             String?
+  email             String?
+  
+  // Address
+  address           String    @db.Text
+  city              String
+  state             String
+  postalCode        String
+  country           String    @default("MX")
+  
+  // Geolocation
+  latitude          Float?
+  longitude         Float?
+  
+  // Operating hours
+  openingTime       String?   // e.g., "08:00"
+  closingTime       String?   // e.g., "22:00"
+  isOpen24Hours     Boolean   @default(false)
+  
+  // Services
+  hasDelivery       Boolean   @default(false)
+  acceptsEPrescriptions Boolean @default(true)
+  
+  // Integration
+  apiEndpoint       String?   @db.Text
+  apiKey            String?   @db.Text  // Encrypted
+  isActive          Boolean   @default(true)
+  lastSyncAt        DateTime?
+  
+  // Relations
+  prescriptions     PharmacyPrescription[]
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([chain])
+  @@index([city, state])
+  @@index([isActive])
+  @@map("pharmacies")
+}
+
+enum PharmacyChain {
+  GUADALAJARA      // Farmacias Guadalajara
+  BENAVIDES        // Farmacias Benavides
+  DEL_AHORRO       // Farmacias del Ahorro
+  SIMILARES        // Farmacias Similares
+  SAN_PABLO        // Farmacias San Pablo
+  ROMA             // Farmacias Roma
+  YZA              // Farmacias YZA
+  INDEPENDIENTE    // Independent pharmacy
+  OTHER
+}
+
+model PharmacyPrescription {
+  id                String    @id @default(cuid())
+  
+  // Links
+  prescriptionId    String
+  pharmacyId        String
+  pharmacy          Pharmacy  @relation(fields: [pharmacyId], references: [id])
+  
+  // Status tracking
+  status            PharmacyPrescriptionStatus @default(SENT)
+  
+  // Pharmacy reference
+  pharmacyOrderId   String?   // Pharmacy's internal order ID
+  
+  // Pricing
+  estimatedCost     Float?
+  finalCost         Float?
+  currency          String    @default("MXN")
+  
+  // Fulfillment
+  sentAt            DateTime  @default(now())
+  readyAt           DateTime? // When pharmacy confirms it's ready
+  pickedUpAt        DateTime? // When patient picks up
+  
+  // Delivery (if applicable)
+  deliveryMethod    DeliveryMethod @default(PICKUP)
+  deliveryAddress   String?   @db.Text
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+  trackingNumber    String?
+  
+  // Notifications
+  patientNotified   Boolean   @default(false)
+  notifiedAt        DateTime?
+  
+  // Notes
+  pharmacyNotes     String?   @db.Text
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  @@index([prescriptionId])
+  @@index([pharmacyId])
+  @@index([status])
+  @@map("pharmacy_prescriptions")
+}
+
+enum PharmacyPrescriptionStatus {
+  SENT              // Sent to pharmacy
+  RECEIVED          // Pharmacy acknowledged
+  PROCESSING        // Pharmacy is preparing
+  READY             // Ready for pickup/delivery
+  PICKED_UP         // Patient picked up
+  DELIVERED         // Delivered to patient
+  CANCELLED         // Cancelled by patient or pharmacy
+  EXPIRED           // Prescription expired before fulfillment
+}
+
+enum DeliveryMethod {
+  PICKUP            // Patient picks up at pharmacy
+  HOME_DELIVERY     // Delivered to patient's home
+  CLINIC_DELIVERY   // Delivered to clinic
+}
