@@ -206,22 +206,22 @@ function AppointmentsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
       <div className="container mx-auto px-6 max-w-5xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-2">
             <Link
               href="/dashboard"
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               ← Regresar
             </Link>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             📅 Gestión de Citas
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 dark:text-gray-400">
             Conecta tu calendario para gestionar citas de pacientes de forma automática
           </p>
         </div>
@@ -231,8 +231,8 @@ function AppointmentsContent() {
           <div
             className={`mb-6 p-4 rounded-lg ${
               message.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
+                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300'
+                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300'
             }`}
           >
             {message.text}
@@ -240,14 +240,14 @@ function AppointmentsContent() {
         )}
 
         {/* Features */}
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 mb-8 border border-blue-100">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">✨ Beneficios de la Integración</h3>
+        <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 mb-8 border border-blue-100 dark:border-blue-800">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">✨ Beneficios de la Integración</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="flex items-start space-x-3">
               <span className="text-2xl">🔄</span>
               <div>
-                <h4 className="font-semibold text-gray-900">Sincronización Automática</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-gray-900 dark:text-white">Sincronización Automática</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Tus citas se actualizan en tiempo real en ambas plataformas
                 </p>
               </div>
@@ -255,8 +255,8 @@ function AppointmentsContent() {
             <div className="flex items-start space-x-3">
               <span className="text-2xl">⏰</span>
               <div>
-                <h4 className="font-semibold text-gray-900">Recordatorios Automáticos</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-gray-900 dark:text-white">Recordatorios Automáticos</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Los pacientes reciben notificaciones antes de su cita
                 </p>
               </div>
@@ -264,8 +264,8 @@ function AppointmentsContent() {
             <div className="flex items-start space-x-3">
               <span className="text-2xl">👥</span>
               <div>
-                <h4 className="font-semibold text-gray-900">Gestión Centralizada</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-gray-900 dark:text-white">Gestión Centralizada</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Administra todas tus citas desde un solo lugar
                 </p>
               </div>
@@ -273,8 +273,8 @@ function AppointmentsContent() {
             <div className="flex items-start space-x-3">
               <span className="text-2xl">🔒</span>
               <div>
-                <h4 className="font-semibold text-gray-900">Seguro y Privado</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-semibold text-gray-900 dark:text-white">Seguro y Privado</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Cumple con estándares HIPAA de privacidad médica
                 </p>
               </div>
@@ -289,7 +289,7 @@ function AppointmentsContent() {
             return (
               <div
                 key={integration.provider}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-200 overflow-hidden"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-200 dark:border-gray-700 overflow-hidden"
               >
                 <div className={`h-2 bg-gradient-to-r ${getProviderColor(integration.provider)}`} />
                 <div className="p-6">
@@ -297,11 +297,11 @@ function AppointmentsContent() {
                     <div className="flex items-center space-x-3">
                       <span className="text-4xl">{getProviderIcon(integration.provider)}</span>
                       <div>
-                        <h3 className="font-bold text-gray-900">
+                        <h3 className="font-bold text-gray-900 dark:text-white">
                           {getProviderName(integration.provider)}
                         </h3>
                         {integration.connected && (
-                          <p className="text-xs text-green-600 font-medium">✓ Conectado</p>
+                          <p className="text-xs text-green-600 dark:text-green-400 font-medium">✓ Conectado</p>
                         )}
                       </div>
                     </div>
@@ -309,13 +309,13 @@ function AppointmentsContent() {
 
                   {integration.connected ? (
                     <div className="space-y-3">
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-600 mb-1">Cuenta</p>
-                        <p className="text-sm font-medium text-gray-900">{integration.email}</p>
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Cuenta</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{integration.email}</p>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-600 mb-1">Última sincronización</p>
-                        <p className="text-sm font-medium text-gray-900">
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Última sincronización</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
                           {integration.lastSync
                             ? new Date(integration.lastSync).toLocaleString('es-ES', {
                                 day: '2-digit',
@@ -329,7 +329,7 @@ function AppointmentsContent() {
                       <button
                         onClick={() => disconnectCalendar(integration.provider)}
                         disabled={isProcessing}
-                        className="w-full px-4 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                        className="w-full px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
                       >
                         {isProcessing ? 'Desconectando...' : 'Desconectar'}
                       </button>
@@ -376,38 +376,38 @@ function AppointmentsContent() {
         </div>
 
         {/* Instructions */}
-        <div className="mt-8 bg-white rounded-xl shadow-md p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">📖 Cómo funciona</h3>
+        <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">📖 Cómo funciona</h3>
           <ol className="space-y-3">
             <li className="flex items-start space-x-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-bold">
+              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">
                 1
               </span>
-              <p className="text-gray-700">
+              <p className="text-gray-700 dark:text-gray-300">
                 Selecciona el calendario que deseas conectar (Google, Microsoft, o Apple)
               </p>
             </li>
             <li className="flex items-start space-x-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-bold">
+              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">
                 2
               </span>
-              <p className="text-gray-700">
+              <p className="text-gray-700 dark:text-gray-300">
                 Autoriza el acceso a tu calendario desde la ventana de autenticación
               </p>
             </li>
             <li className="flex items-start space-x-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-bold">
+              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">
                 3
               </span>
-              <p className="text-gray-700">
+              <p className="text-gray-700 dark:text-gray-300">
                 Una vez conectado, todas tus citas se sincronizarán automáticamente
               </p>
             </li>
             <li className="flex items-start space-x-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-bold">
+              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">
                 4
               </span>
-              <p className="text-gray-700">
+              <p className="text-gray-700 dark:text-gray-300">
                 Gestiona las citas de tus pacientes directamente desde Holi Labs
               </p>
             </li>
@@ -416,17 +416,17 @@ function AppointmentsContent() {
 
         {/* Apple Calendar Modal */}
         {showAppleModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                 Conectar Apple Calendar
               </h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Para conectar Apple Calendar, necesitas generar una contraseña específica de app desde tu cuenta de iCloud.
               </p>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Apple ID
                   </label>
                   <input
@@ -434,11 +434,11 @@ function AppointmentsContent() {
                     value={appleCredentials.appleId}
                     onChange={(e) => setAppleCredentials({ ...appleCredentials, appleId: e.target.value })}
                     placeholder="tu@icloud.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Contraseña específica de app
                   </label>
                   <input
@@ -446,14 +446,14 @@ function AppointmentsContent() {
                     value={appleCredentials.appPassword}
                     onChange={(e) => setAppleCredentials({ ...appleCredentials, appPassword: e.target.value })}
                     placeholder="xxxx-xxxx-xxxx-xxxx"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     <a
                       href="https://support.apple.com/es-es/HT204397"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       ¿Cómo generar una contraseña específica?
                     </a>
@@ -466,7 +466,7 @@ function AppointmentsContent() {
                     setShowAppleModal(false);
                     setAppleCredentials({ appleId: '', appPassword: '' });
                   }}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -484,9 +484,9 @@ function AppointmentsContent() {
 
         {/* Support */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             ¿Necesitas ayuda? {' '}
-            <Link href="/dashboard/settings" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link href="/dashboard/settings" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
               Contacta soporte técnico
             </Link>
           </p>

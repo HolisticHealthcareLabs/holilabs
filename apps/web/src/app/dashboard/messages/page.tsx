@@ -222,8 +222,8 @@ export default function ClinicianMessagesPage() {
 
   if (status === 'loading' || !session) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="w-10 h-10 border-4 border-blue-200 dark:border-blue-800 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin" />
       </div>
     );
   }
@@ -232,20 +232,20 @@ export default function ClinicianMessagesPage() {
   if (isMobileView) {
     if (selectedConversationId && selectedConversation) {
       return (
-        <div className="flex flex-col h-screen bg-white">
+        <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
           {/* Mobile header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <button
               onClick={() => setSelectedConversationId(null)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-700 dark:text-gray-300"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">{selectedConversation.patientName}</h2>
-              <p className="text-xs text-gray-500">Paciente</p>
+              <h2 className="font-semibold text-gray-900 dark:text-white">{selectedConversation.patientName}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Paciente</p>
             </div>
           </div>
 
@@ -272,8 +272,8 @@ export default function ClinicianMessagesPage() {
     }
 
     return (
-      <div className="flex flex-col h-screen bg-white">
-        <div className="px-4 py-4 border-b border-gray-200">
+      <div className="flex flex-col h-screen bg-white dark:bg-gray-900">
+        <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Mensajes
           </h1>
@@ -290,10 +290,10 @@ export default function ClinicianMessagesPage() {
 
   // Desktop: Split view
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Conversations sidebar */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
-        <div className="px-4 py-4 border-b border-gray-200">
+      <div className="w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800">
+        <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Mensajes
           </h1>
@@ -309,15 +309,15 @@ export default function ClinicianMessagesPage() {
       </div>
 
       {/* Chat thread */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
         {selectedConversation ? (
           <>
             {/* Thread header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {selectedConversation.patientName}
               </h2>
-              <p className="text-sm text-gray-500">Paciente</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Paciente</p>
             </div>
 
             {/* Messages */}
@@ -340,10 +340,10 @@ export default function ClinicianMessagesPage() {
             />
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-10 h-10 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -352,10 +352,10 @@ export default function ClinicianMessagesPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Selecciona una conversación
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Elige un paciente para comenzar a chatear
               </p>
             </div>

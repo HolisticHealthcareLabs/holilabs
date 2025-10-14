@@ -370,18 +370,18 @@ export default function AIScribePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">AI Scribe</h1>
-        <p className="text-gray-600">Grabación inteligente y generación automática de notas SOAP</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Scribe</h1>
+        <p className="text-gray-600 dark:text-gray-400">Grabación inteligente y generación automática de notas SOAP</p>
       </div>
 
       {/* 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Column 1: Patient Selection */}
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-600">
               <h2 className="text-lg font-bold text-white">Seleccionar Paciente</h2>
             </div>
@@ -391,7 +391,7 @@ export default function AIScribePage() {
                 placeholder="Buscar paciente..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <div className="mt-4 space-y-2 max-h-[600px] overflow-y-auto">
                 {filteredPatients.map((patient) => (
@@ -401,18 +401,18 @@ export default function AIScribePage() {
                     disabled={recordingState !== 'idle'}
                     className={`w-full text-left p-3 rounded-lg border transition-all ${
                       selectedPatient?.id === patient.id
-                        ? 'bg-blue-50 border-blue-500 shadow-sm'
-                        : 'bg-white border-gray-200 hover:border-blue-300'
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 shadow-sm'
+                        : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
                     } ${recordingState !== 'idle' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold text-gray-900 dark:text-white">
                       {patient.firstName} {patient.lastName}
                     </div>
-                    <div className="text-sm text-gray-500">MRN: {patient.mrn}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">MRN: {patient.mrn}</div>
                   </button>
                 ))}
                 {filteredPatients.length === 0 && (
-                  <div className="text-center text-gray-500 py-8">
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                     No se encontraron pacientes
                   </div>
                 )}
@@ -423,21 +423,21 @@ export default function AIScribePage() {
 
         {/* Column 2: Recording Controls & Live Transcript */}
         <div className="lg:col-span-5">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-600">
               <h2 className="text-lg font-bold text-white">Grabación</h2>
             </div>
             <div className="p-6">
               {/* Selected Patient Info */}
               {selectedPatient && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm text-blue-600 font-medium">Paciente Seleccionado</div>
-                      <div className="text-lg font-bold text-gray-900">
+                      <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">Paciente Seleccionado</div>
+                      <div className="text-lg font-bold text-gray-900 dark:text-white">
                         {selectedPatient.firstName} {selectedPatient.lastName}
                       </div>
-                      <div className="text-sm text-gray-600">MRN: {selectedPatient.mrn}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">MRN: {selectedPatient.mrn}</div>
                     </div>
                     <div className="text-4xl">👤</div>
                   </div>
@@ -449,31 +449,31 @@ export default function AIScribePage() {
                 <div
                   className={`inline-flex items-center space-x-2 px-6 py-3 rounded-full ${
                     recordingState === 'recording'
-                      ? 'bg-red-100 text-red-700'
+                      ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                       : recordingState === 'paused'
-                      ? 'bg-yellow-100 text-yellow-700'
+                      ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400'
                       : recordingState === 'processing'
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
                       : recordingState === 'completed'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   {recordingState === 'recording' && (
                     <>
-                      <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                      <div className="w-3 h-3 bg-red-600 dark:bg-red-500 rounded-full animate-pulse"></div>
                       <span className="font-bold">GRABANDO</span>
                     </>
                   )}
                   {recordingState === 'paused' && (
                     <>
-                      <div className="w-3 h-3 bg-yellow-600 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-600 dark:bg-yellow-500 rounded-full"></div>
                       <span className="font-bold">PAUSADO</span>
                     </>
                   )}
                   {recordingState === 'processing' && (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700 dark:border-blue-400"></div>
                       <span className="font-bold">PROCESANDO</span>
                     </>
                   )}
@@ -491,7 +491,7 @@ export default function AIScribePage() {
                   )}
                 </div>
                 {(recordingState === 'recording' || recordingState === 'paused') && (
-                  <div className="mt-4 text-4xl font-mono font-bold text-gray-900">
+                  <div className="mt-4 text-4xl font-mono font-bold text-gray-900 dark:text-white">
                     {formatDuration(recordingDuration)}
                   </div>
                 )}
@@ -520,17 +520,17 @@ export default function AIScribePage() {
 
               {/* Smart Auto-Pause Toggle */}
               {(recordingState === 'recording' || recordingState === 'paused') && (
-                <div className="mb-6 flex items-center justify-between bg-white rounded-lg border border-gray-200 p-4">
+                <div className="mb-6 flex items-center justify-between bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">Pausa Automática Inteligente</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="font-semibold text-gray-900 dark:text-white">Pausa Automática Inteligente</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Pausa automáticamente tras 5 segundos de silencio
                     </p>
                   </div>
                   <button
                     onClick={() => setSmartAutoPauseEnabled(!smartAutoPauseEnabled)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      smartAutoPauseEnabled ? 'bg-green-600' : 'bg-gray-300'
+                      smartAutoPauseEnabled ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
                     }`}
                   >
                     <span
@@ -603,8 +603,8 @@ export default function AIScribePage() {
 
               {/* Live Transcript with Speaker Diarization */}
               {transcriptSegments.length > 0 && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                     <span className="mr-2">🎙️</span>
                     Transcripción con Identificación de Hablantes
                   </h3>
@@ -617,7 +617,7 @@ export default function AIScribePage() {
 
         {/* Column 3: SOAP Note Editor */}
         <div className="lg:col-span-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-green-500 to-teal-600">
               <h2 className="text-lg font-bold text-white flex items-center">
                 <span className="mr-2">📝</span>
@@ -626,9 +626,9 @@ export default function AIScribePage() {
             </div>
             <div className="p-6 max-h-[800px] overflow-y-auto">
               {!soapNote ? (
-                <div className="text-center text-gray-500 py-12">
+                <div className="text-center text-gray-500 dark:text-gray-400 py-12">
                   <div className="text-6xl mb-4">📝</div>
-                  <p className="text-lg font-medium mb-2">
+                  <p className="text-lg font-medium mb-2 dark:text-gray-300">
                     La nota SOAP aparecerá aquí después de finalizar la grabación
                   </p>
                   <p className="text-sm text-gray-400">
@@ -650,18 +650,18 @@ export default function AIScribePage() {
 
       {/* Audio Source Selection Modal */}
       {showAudioSourceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Seleccionar Fuente de Audio
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Elige la fuente de audio para tu grabación médica
             </p>
 
             <div className="space-y-3">
               {/* Microphone Option */}
-              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-blue-300">
+              <label className="flex items-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-500">
                 <input
                   type="radio"
                   name="audioSource"
@@ -673,14 +673,14 @@ export default function AIScribePage() {
                 <div className="ml-4 flex items-center flex-1">
                   <span className="text-3xl mr-3">🎤</span>
                   <div>
-                    <div className="font-semibold text-gray-900">Micrófono del sistema</div>
-                    <div className="text-sm text-gray-500">Para consultas presenciales</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">Micrófono del sistema</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Para consultas presenciales</div>
                   </div>
                 </div>
               </label>
 
               {/* System Audio Option */}
-              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-blue-300">
+              <label className="flex items-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-500">
                 <input
                   type="radio"
                   name="audioSource"
@@ -692,14 +692,14 @@ export default function AIScribePage() {
                 <div className="ml-4 flex items-center flex-1">
                   <span className="text-3xl mr-3">💻</span>
                   <div>
-                    <div className="font-semibold text-gray-900">Audio del sistema</div>
-                    <div className="text-sm text-gray-500">Para videollamadas (Zoom, Meet, etc.)</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">Audio del sistema</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Para videollamadas (Zoom, Meet, etc.)</div>
                   </div>
                 </div>
               </label>
 
               {/* Both Option */}
-              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-blue-300">
+              <label className="flex items-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-500">
                 <input
                   type="radio"
                   name="audioSource"
@@ -711,8 +711,8 @@ export default function AIScribePage() {
                 <div className="ml-4 flex items-center flex-1">
                   <span className="text-3xl mr-3">🎧</span>
                   <div>
-                    <div className="font-semibold text-gray-900">Micrófono + Audio del sistema</div>
-                    <div className="text-sm text-gray-500">Captura ambos canales</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">Micrófono + Audio del sistema</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Captura ambos canales</div>
                   </div>
                 </div>
               </label>
@@ -721,7 +721,7 @@ export default function AIScribePage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowAudioSourceModal(false)}
-                className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+                className="flex-1 px-4 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Cancelar
               </button>
