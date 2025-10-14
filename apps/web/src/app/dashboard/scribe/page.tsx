@@ -362,6 +362,55 @@ export default function AIScribePage() {
     }
   };
 
+  // Handle transcript segment correction
+  const handleSegmentCorrect = async (index: number, newText: string, originalText: string) => {
+    if (!sessionId) return;
+
+    try {
+      // Update local state immediately for responsive UI
+      const updatedSegments = [...transcriptSegments];
+      updatedSegments[index] = { ...updatedSegments[index], text: newText };
+      setTranscriptSegments(updatedSegments);
+
+      // Save correction to database for error tracking and ML improvement
+      const response = await fetch(`/api/scribe/sessions/${sessionId}/corrections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          segmentIndex: index,
+          originalText,
+          correctedText: newText,
+          confidence: transcriptSegments[index].confidence,
+          speaker: transcriptSegments[index].speaker,
+          startTime: transcriptSegments[index].startTime,
+          endTime: transcriptSegments[index].endTime,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save correction');
+      }
+
+      console.log('✅ Correction saved successfully');
+    } catch (error) {
+      console.error('Error saving correction:', error);
+      alert('Error al guardar la corrección. Intenta de nuevo.');
+
+      // Reload session data from server to revert optimistic update
+      try {
+        const transcriptResponse = await fetch(`/api/scribe/sessions/${sessionId}`);
+        if (transcriptResponse.ok) {
+          const sessionData = await transcriptResponse.json();
+          if (sessionData.data?.transcription?.segments) {
+            setTranscriptSegments(sessionData.data.transcription.segments);
+          }
+        }
+      } catch (reloadError) {
+        console.error('Error reloading transcript:', reloadError);
+      }
+    }
+  };
+
   // Format duration
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -608,7 +657,11 @@ export default function AIScribePage() {
                     <span className="mr-2">🎙️</span>
                     Transcripción con Identificación de Hablantes
                   </h3>
-                  <TranscriptViewer segments={transcriptSegments} />
+                  <TranscriptViewer
+                    segments={transcriptSegments}
+                    onSegmentCorrect={handleSegmentCorrect}
+                    readonly={recordingState !== 'completed'}
+                  />
                 </div>
               )}
             </div>
