@@ -10,7 +10,19 @@ interface ClinicalNotesEditorProps {
   onSave?: () => void;
 }
 
-type NoteType = 'FOLLOW_UP' | 'INITIAL_CONSULT' | 'PROCEDURE' | 'EMERGENCY';
+type NoteType =
+  | 'FOLLOW_UP'
+  | 'INITIAL_CONSULT'
+  | 'PROCEDURE'
+  | 'EMERGENCY'
+  | 'CARDIOLOGY'
+  | 'PEDIATRICS'
+  | 'GYNECOLOGY'
+  | 'PSYCHIATRY'
+  | 'DERMATOLOGY'
+  | 'ORTHOPEDICS'
+  | 'GASTROENTEROLOGY'
+  | 'ENDOCRINOLOGY';
 
 interface SOAPNote {
   subjective: string;
@@ -111,6 +123,54 @@ export default function ClinicalNotesEditor({
       objective: 'Estado general: ___. Signos vitales: TA ___/___ FC ___ FR ___ SpO2 ___...',
       assessment: 'Emergencia médica por ___. Riesgo: alto/medio/bajo...',
       plan: 'Estabilización inmediata. Interconsulta a ___. Monitoreo continuo...',
+    },
+    CARDIOLOGY: {
+      subjective: 'Paciente refiere dolor torácico/disnea/palpitaciones. Características: ___. Factores desencadenantes: ___. Duración: ___.',
+      objective: 'TA: ___/___ FC: ___ FR: ___ SpO2: ___%. Auscultación cardíaca: R1 R2 sin soplos audibles. Pulsos periféricos palpables y simétricos. Sin edema en extremidades.',
+      assessment: 'Sospecha de síndrome coronario agudo/insuficiencia cardíaca/arritmia. Clasificación NYHA: ___. Riesgo cardiovascular: bajo/medio/alto.',
+      plan: 'ECG de 12 derivaciones. Troponinas seriadas. Ecocardiograma. Iniciar AAS 100mg + estatina. Interconsulta con cardiología. Control en 1 semana.',
+    },
+    PEDIATRICS: {
+      subjective: 'Menor acompañado por ___. Motivo de consulta: ___. Inicio de síntomas: ___. Fiebre: Sí/No. Temperatura máxima: ___°C. Vacunación al día: Sí/No.',
+      objective: 'Paciente alerta, reactivo. Peso: ___ kg (P___). Talla: ___ cm (P___). Temp: ___°C. FC: ___ FR: ___. Piel sin lesiones. Faringe: ___. Tímpanos: ___. Auscultación pulmonar: ___.',
+      assessment: 'Diagnóstico pediátrico: ___. Estado nutricional: adecuado/desnutrición/sobrepeso. Desarrollo psicomotor: acorde a edad.',
+      plan: 'Tratamiento sintomático. Hidratación oral abundante. Antipiréticos según necesidad. Signos de alarma: ___. Control en 3-5 días o antes si empeora.',
+    },
+    GYNECOLOGY: {
+      subjective: 'FUM: ___. G___ P___ A___ C___. Ciclos menstruales: regulares/irregulares. Método anticonceptivo: ___. Motivo de consulta: ___. PAP previo: ___.',
+      objective: 'Examen ginecológico: Vulva: ___. Especuloscopía: cuello uterino ___. Flujo vaginal: ___. Tacto bimanual: útero ___. Anexos: ___. Examen mamario: ___.',
+      assessment: 'Diagnóstico ginecológico: ___. Riesgo: bajo/medio/alto. Indicación de mamografía/PAP/colposcopía.',
+      plan: 'Tratamiento hormonal/antibiótico según hallazgos. Estudios complementarios: ___. Anticoncepción: ___. Control en 1-3 meses.',
+    },
+    PSYCHIATRY: {
+      subjective: 'Paciente refiere síntomas de ___. Inicio: ___. Duración: ___. Intensidad: leve/moderada/severa. Ideación suicida: Sí/No. Tratamiento previo: ___. Adherencia: ___.',
+      objective: 'Paciente orientado en tiempo/espacio/persona. Estado de ánimo: ___. Afecto: ___. Pensamiento: ___. Lenguaje: ___. Insight: presente/ausente. Juicio: conservado/alterado.',
+      assessment: 'Impresión diagnóstica psiquiátrica: ___. DSM-5: ___. Episodio actual: leve/moderado/severo. Riesgo suicida: bajo/medio/alto.',
+      plan: 'Iniciar/ajustar psicofármacos: ___. Psicoterapia: TCC/psicodinámica/DBT. Frecuencia: ___. Control en 2 semanas. Signos de alarma. Red de apoyo activada.',
+    },
+    DERMATOLOGY: {
+      subjective: 'Paciente consulta por lesión cutánea en ___. Inicio: ___. Evolución: ___. Síntomas: prurito/dolor/ninguno. Exposición solar: ___. Alergias conocidas: ___.',
+      objective: 'Lesión dermatológica: Tipo: mácula/pápula/nódulo/vesícula. Tamaño: ___ mm. Color: ___. Bordes: regulares/irregulares. Localización: ___. Número: única/múltiples.',
+      assessment: 'Diagnóstico dermatológico: ___. Diagnóstico diferencial: ___. Indicación de biopsia: Sí/No. Riesgo de malignidad: bajo/medio/alto.',
+      plan: 'Tratamiento tópico/sistémico: ___. Protección solar FPS 50+. Evitar irritantes. Biopsia si indicado. Dermatoscopía. Control en 2-4 semanas. Fotografía clínica.',
+    },
+    ORTHOPEDICS: {
+      subjective: 'Paciente refiere dolor/trauma en ___. Mecanismo de lesión: ___. Tiempo de evolución: ___. Intensidad del dolor (EVA): ___/10. Limitación funcional: Sí/No.',
+      objective: 'Inspección: edema/deformidad/equimosis en ___. Palpación: dolor localizado en ___. Movilidad: activa ___ / pasiva ___. Fuerza muscular: ___/5. Sensibilidad: conservada.',
+      assessment: 'Diagnóstico ortopédico: ___. Fractura/luxación/esguince. Grado: I/II/III. Estabilidad articular: conservada/comprometida.',
+      plan: 'Rx de ___: AP/lateral/oblicua. Inmovilización con ___. AINES. Hielo local. Reposo relativo. Fisioterapia. Control con Rx control en 2 semanas.',
+    },
+    GASTROENTEROLOGY: {
+      subjective: 'Paciente refiere síntomas gastrointestinales: dolor abdominal/náusea/vómito/diarrea/estreñimiento. Localización: ___. Irradiación: ___. Relación con alimentos: ___.',
+      objective: 'Abdomen: inspección ___. Auscultación: RHA presentes/ausentes. Palpación: dolor en ___. Defensa/rebote: Sí/No. Masas palpables: Sí/No. Tacto rectal: ___.',
+      assessment: 'Diagnóstico gastroenterológico: ___. Abdomen agudo: Sí/No. Signos de irritación peritoneal: Sí/No. Deshidratación: leve/moderada/severa.',
+      plan: 'Laboratorios: BH, QS, amilasa, lipasa. Rx abdomen AP/lat. US abdominal si indicado. Dieta líquida/blanda. Hidratación. Procinéticos/antieméticos. Control en 48h.',
+    },
+    ENDOCRINOLOGY: {
+      subjective: 'Paciente con diagnóstico de diabetes/hipotiroidismo/obesidad. Tiempo de evolución: ___. Tratamiento actual: ___. Adherencia: ___. Síntomas actuales: ___.',
+      objective: 'Peso: ___ kg. IMC: ___. TA: ___/___. Glucemia capilar: ___ mg/dL. Examen de tiroides: ___. Acantosis nigricans: Sí/No. Examen de pies diabético: ___.',
+      assessment: 'Control metabólico: óptimo/subóptimo/descontrolado. HbA1c meta: <7%. Complicaciones: retinopatía/nefropatía/neuropatía. Riesgo cardiovascular: ___.',
+      plan: 'Ajuste de tratamiento: ___. Metas glucémicas: ayuno 80-130, postprandial <180. Dieta y ejercicio. Automonitoreo. Exámenes: HbA1c, perfil lipídico, función renal. Control en 3 meses.',
     },
   };
 
@@ -259,23 +319,46 @@ export default function ClinicalNotesEditor({
             {/* Note Type Selector */}
             <div className="mb-8">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Tipo de Nota Clínica
+                Tipo de Nota Clínica / Especialidad
               </label>
-              <div className="grid grid-cols-4 gap-3">
-                {(['FOLLOW_UP', 'INITIAL_CONSULT', 'PROCEDURE', 'EMERGENCY'] as NoteType[]).map((type) => {
-                  const labels = {
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                {(
+                  [
+                    'FOLLOW_UP',
+                    'INITIAL_CONSULT',
+                    'PROCEDURE',
+                    'EMERGENCY',
+                    'CARDIOLOGY',
+                    'PEDIATRICS',
+                    'GYNECOLOGY',
+                    'PSYCHIATRY',
+                    'DERMATOLOGY',
+                    'ORTHOPEDICS',
+                    'GASTROENTEROLOGY',
+                    'ENDOCRINOLOGY',
+                  ] as NoteType[]
+                ).map((type) => {
+                  const labels: Record<NoteType, string> = {
                     FOLLOW_UP: '📋 Control',
-                    INITIAL_CONSULT: '🆕 Consulta Inicial',
+                    INITIAL_CONSULT: '🆕 Inicial',
                     PROCEDURE: '🔬 Procedimiento',
                     EMERGENCY: '🚨 Emergencia',
+                    CARDIOLOGY: '❤️ Cardiología',
+                    PEDIATRICS: '👶 Pediatría',
+                    GYNECOLOGY: '💐 Ginecología',
+                    PSYCHIATRY: '🧠 Psiquiatría',
+                    DERMATOLOGY: '🩹 Dermatología',
+                    ORTHOPEDICS: '🦴 Ortopedia',
+                    GASTROENTEROLOGY: '🫃 Gastro',
+                    ENDOCRINOLOGY: '🩺 Endocrino',
                   };
                   return (
                     <button
                       key={type}
                       onClick={() => setNoteType(type)}
-                      className={`py-3 px-4 rounded-lg font-medium transition-all ${
+                      className={`py-2 px-3 rounded-lg font-medium text-sm transition-all ${
                         noteType === type
-                          ? 'bg-primary text-white shadow-lg scale-105'
+                          ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg scale-105'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
