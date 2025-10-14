@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
       action: 'OPT_OUT',
       resource: 'PatientPreferences',
       resourceId: patientId,
-      changes: { type, ipAddress },
+      details: { type, ipAddress },
       ipAddress,
       userAgent: request.headers.get('user-agent') || 'unknown',
     },
