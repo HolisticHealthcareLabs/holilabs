@@ -12,8 +12,19 @@
   "nav": {
     "dashboard": "Dashboard",
     "patients": "Patients",
+    "appointments": "Appointments",
+    "forms": "Forms",
+    "messages": "Messages",
+    "scribe": "AI Scribe",
+    "documents": "Documents",
+    "aiCopilot": "AI Copilot",
+    "analysis": "Analysis",
+    "prescriptions": "Prescriptions",
+    "prevention": "Prevention",
+    "settings": "Settings",
     "upload": "Upload Data",
     "ai": "AI",
-    "admin": "Administration"
+    "admin": "Administration",
+    "logout": "Sign Out"
   }
 }

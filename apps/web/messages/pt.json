@@ -12,8 +12,19 @@
   "nav": {
     "dashboard": "Painel",
     "patients": "Pacientes",
+    "appointments": "Consultas",
+    "forms": "Formulários",
+    "messages": "Mensagens",
+    "scribe": "AI Scribe",
+    "documents": "Documentos",
+    "aiCopilot": "AI Copilot",
+    "analysis": "Análise",
+    "prescriptions": "Prescrições",
+    "prevention": "Prevenção",
+    "settings": "Configurações",
     "upload": "Enviar Dados",
     "ai": "IA",
-    "admin": "Administração"
+    "admin": "Administração",
+    "logout": "Sair"
   }
 }
