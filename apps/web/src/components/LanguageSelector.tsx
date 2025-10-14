@@ -1,34 +1,23 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { locales, localeLabels, localeFlags, type Locale } from '../i18n';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LanguageSelector({ currentLocale }: { currentLocale: Locale }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { setLocale } = useLanguage();
 
   const handleLocaleChange = (newLocale: Locale) => {
     setIsOpen(false);
-
-    startTransition(() => {
-      // Remove the current locale from the pathname
-      const pathWithoutLocale = pathname.replace(`/${currentLocale}`, '');
-
-      // Navigate to the new locale
-      router.push(`/${newLocale}${pathWithoutLocale}`);
-      router.refresh();
-    });
+    setLocale(newLocale);
   };
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        disabled={isPending}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors disabled:opacity-50"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
         aria-label="Select language"
       >
         <span className="text-xl">{localeFlags[currentLocale]}</span>

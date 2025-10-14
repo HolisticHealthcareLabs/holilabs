@@ -5,6 +5,11 @@
     "appointments": "Appointments",
     "medications": "Medications",
     "forms": "Forms",
+    "messages": "Messages",
+    "scribe": "AI Scribe",
+    "documents": "Documents",
+    "aiAssistant": "AI Assistant",
+    "analysis": "Analysis",
     "settings": "Settings",
     "logout": "Sign Out"
   },
@@ -16,12 +21,63 @@
     },
     "stats": {
       "totalPatients": "Total Patients",
-      "activeAppointments": "Active Appointments",
-      "pendingForms": "Pending Forms",
-      "recentActivity": "Recent Activity"
+      "activePatients": "active",
+      "scheduledAppointments": "Scheduled Appointments",
+      "clinicalNotes": "Clinical Notes",
+      "signedPrescriptions": "Signed Prescriptions",
+      "pending": "pending",
+      "average": "Average",
+      "perDay": "per day",
+      "thisWeek": "this week",
+      "today": "Today",
+      "upcoming": "upcoming",
+      "hours": "hours"
     },
     "quickActions": "Quick Actions",
-    "todaySchedule": "Today's Schedule"
+    "todaySchedule": "Today's Schedule",
+    "recentActivity": "Recent Activity",
+    "noActivity": "No recent activity",
+    "viewPatients": "View Patients",
+    "newPatient": "New Patient",
+    "aiAssistant": "AI Assistant",
+    "exportBilling": "Export Billing",
+    "completePatients": "Complete list",
+    "quickRegistration": "Quick registration",
+    "consultNow": "Consult now",
+    "csvInsurance": "CSV for insurance",
+    "loading": "Loading dashboard...",
+    "weekGrowth": "+12% this week"
+  },
+  "onboarding": {
+    "welcome": "Welcome",
+    "title": "Get Started with Holi Labs",
+    "subtitle": "Your medical practice now has superpowers",
+    "steps": {
+      "title": "Set up your platform in 3 simple steps:",
+      "invite": {
+        "title": "Invite your first patient",
+        "description": "Add patients manually or import existing data in bulk",
+        "action": "Add patient"
+      },
+      "transfer": {
+        "title": "Transfer existing data",
+        "description": "Import medical records from Excel, CSV, or your current system for automatic processing",
+        "action": "Import data"
+      },
+      "note": {
+        "title": "Create your first clinical note",
+        "description": "Document consultations in seconds with our AI-powered SOAP editor",
+        "action": "View example"
+      }
+    },
+    "optional": {
+      "title": "Optional: Set up automatic notifications",
+      "description": "Send appointment reminders via WhatsApp, Email, and SMS",
+      "action": "Configure later"
+    },
+    "skip": "Skip for now",
+    "start": "Let's get started!",
+    "tip": "💡 Tip: Find this guide later in the checklist (bottom right)"
   },
   "patients": {
     "title": "Patients",
