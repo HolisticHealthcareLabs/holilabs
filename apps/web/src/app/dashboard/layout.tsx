@@ -53,21 +53,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     { name: t('nav.settings'), href: '/dashboard/settings', icon: '⚙️', emoji: '⚙️' },
   ];
 
-  // Clinical Tools Group (Spider Tree)
+  // Clinical Tools Group (Spider Tree) - includes Copilot
   const clinicalToolsGroup = {
     id: 'clinical-tools',
     name: 'Clinical Tools',
     emoji: '🏥',
     children: [
-      { name: t('nav.prevention'), href: '/dashboard/prevention', emoji: '🛡️' },
-      { name: t('nav.prescriptions'), href: '/dashboard/prescriptions', emoji: '💊' },
-      { name: t('nav.scribe'), href: '/dashboard/scribe', emoji: '🎙️' },
-      { name: t('nav.analysis'), href: '/dashboard/doc-intelligence', emoji: '🧠' },
+      { name: 'Prevention', href: '/dashboard/prevention', emoji: '🛡️' },
+      { name: 'Prescription', href: '/dashboard/prescriptions', emoji: '💊' },
+      { name: 'Scribe', href: '/dashboard/scribe', emoji: '🎙️' },
+      { name: 'Copilot', href: '/dashboard/ai', emoji: '🦾' },
     ],
   };
-
-  // AI Copilot (standalone with emphasis)
-  const aiCopilotItem = { name: t('nav.aiCopilot'), href: '/dashboard/ai', emoji: '🦾' };
 
   const navItems = mainNavItems;
 
@@ -211,6 +208,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               {/* Spider Tree Sub-Items */}
               {expandedGroup === 'clinical-tools' && (
                 <div className="absolute left-20 top-0 z-40 flex flex-col gap-2 pl-6">
+                  {/* Section Title */}
+                  <div
+                    className="mb-2 px-3 py-1.5 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg shadow-lg"
+                    style={{
+                      animation: `slideIn 0.3s ease-out forwards`,
+                      opacity: 0
+                    }}
+                  >
+                    <p className="text-sm font-bold text-white whitespace-nowrap">
+                      {clinicalToolsGroup.name}
+                    </p>
+                  </div>
+
                   {clinicalToolsGroup.children.map((child, idx) => {
                     const isActive = pathname === child.href || pathname.startsWith(child.href + '/');
                     return (
@@ -261,38 +271,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               )}
             </div>
 
-            {/* AI Copilot - Featured Item */}
-            <div className="relative">
-              <Link
-                href={aiCopilotItem.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-500 ${
-                  pathname === aiCopilotItem.href || pathname.startsWith(aiCopilotItem.href + '/')
-                    ? 'bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg shadow-purple-500/50 scale-110 ring-2 ring-purple-400 dark:ring-purple-500'
-                    : 'bg-gradient-to-br from-purple-400 to-pink-500 hover:scale-110 hover:shadow-xl hover:shadow-purple-500/40'
-                }`}
-              >
-                <span className="text-2xl transition-transform duration-300 group-hover:scale-125">
-                  {aiCopilotItem.emoji}
-                </span>
-
-                {/* Floating Text Label */}
-                <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
-                  <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 ease-out bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
-                    <p className="font-semibold text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400">
-                      {aiCopilotItem.name}
-                    </p>
-                    <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
-                      <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
-                    </div>
-                  </div>
-                </div>
-
-                {(pathname === aiCopilotItem.href || pathname.startsWith(aiCopilotItem.href + '/')) && (
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 opacity-20 animate-pulse" />
-                )}
-              </Link>
-            </div>
           </nav>
 
           {/* Enhanced animations */}
