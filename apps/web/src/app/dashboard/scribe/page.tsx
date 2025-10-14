@@ -41,6 +41,8 @@ export default function AIScribePage() {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [smartAutoPauseEnabled, setSmartAutoPauseEnabled] = useState(true);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [showAudioSourceModal, setShowAudioSourceModal] = useState(false);
+  const [audioSource, setAudioSource] = useState<'microphone' | 'system' | 'both'>('microphone');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -76,13 +78,19 @@ export default function AIScribePage() {
       p.mrn.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Start recording
+  // Show audio source modal before recording
+  const handleStartRecordingClick = () => {
+    if (!selectedPatient) {
+      alert('Por favor seleccione un paciente primero');
+      return;
+    }
+    setShowAudioSourceModal(true);
+  };
+
+  // Start recording with selected audio source
   const startRecording = async () => {
     try {
-      if (!selectedPatient) {
-        alert('Por favor seleccione un paciente primero');
-        return;
-      }
+      setShowAudioSourceModal(false);
 
       // Create scribe session
       const sessionResponse = await fetch('/api/scribe/sessions', {
@@ -98,8 +106,38 @@ export default function AIScribePage() {
       const sessionData = await sessionResponse.json();
       setSessionId(sessionData.data.id);
 
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Request audio access based on selected source
+      let stream: MediaStream;
+      try {
+        if (audioSource === 'microphone') {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } else if (audioSource === 'system') {
+          // Request screen capture with audio for system audio (videocalls)
+          stream = await (navigator.mediaDevices as any).getDisplayMedia({
+            audio: true,
+            video: false
+          });
+        } else { // both
+          // Get both microphone and system audio
+          const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const systemStream = await (navigator.mediaDevices as any).getDisplayMedia({
+            audio: true,
+            video: false
+          });
+          // Mix both streams
+          const audioContext = new AudioContext();
+          const micSource = audioContext.createMediaStreamSource(micStream);
+          const systemSource = audioContext.createMediaStreamSource(systemStream);
+          const destination = audioContext.createMediaStreamDestination();
+          micSource.connect(destination);
+          systemSource.connect(destination);
+          stream = destination.stream;
+        }
+      } catch (error) {
+        console.error('Error accessing audio:', error);
+        alert('Error al acceder al audio. Por favor verifica los permisos.');
+        return;
+      }
       setAudioStream(stream); // Store for waveform visualization
 
       // Create media recorder
@@ -508,7 +546,7 @@ export default function AIScribePage() {
               <div className="flex items-center justify-center space-x-4 mb-6">
                 {recordingState === 'idle' && (
                   <button
-                    onClick={startRecording}
+                    onClick={handleStartRecordingClick}
                     disabled={!selectedPatient}
                     className="flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-red-500 to-pink-600 text-white font-bold rounded-full hover:from-red-600 hover:to-pink-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -589,7 +627,7 @@ export default function AIScribePage() {
             <div className="p-6 max-h-[800px] overflow-y-auto">
               {!soapNote ? (
                 <div className="text-center text-gray-500 py-12">
-                  <div className="text-6xl mb-4">🤖</div>
+                  <div className="text-6xl mb-4">📝</div>
                   <p className="text-lg font-medium mb-2">
                     La nota SOAP aparecerá aquí después de finalizar la grabación
                   </p>
@@ -609,6 +647,94 @@ export default function AIScribePage() {
           </div>
         </div>
       </div>
+
+      {/* Audio Source Selection Modal */}
+      {showAudioSourceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Seleccionar Fuente de Audio
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Elige la fuente de audio para tu grabación médica
+            </p>
+
+            <div className="space-y-3">
+              {/* Microphone Option */}
+              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-blue-300">
+                <input
+                  type="radio"
+                  name="audioSource"
+                  value="microphone"
+                  checked={audioSource === 'microphone'}
+                  onChange={(e) => setAudioSource(e.target.value as any)}
+                  className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="ml-4 flex items-center flex-1">
+                  <span className="text-3xl mr-3">🎤</span>
+                  <div>
+                    <div className="font-semibold text-gray-900">Micrófono del sistema</div>
+                    <div className="text-sm text-gray-500">Para consultas presenciales</div>
+                  </div>
+                </div>
+              </label>
+
+              {/* System Audio Option */}
+              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-blue-300">
+                <input
+                  type="radio"
+                  name="audioSource"
+                  value="system"
+                  checked={audioSource === 'system'}
+                  onChange={(e) => setAudioSource(e.target.value as any)}
+                  className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="ml-4 flex items-center flex-1">
+                  <span className="text-3xl mr-3">💻</span>
+                  <div>
+                    <div className="font-semibold text-gray-900">Audio del sistema</div>
+                    <div className="text-sm text-gray-500">Para videollamadas (Zoom, Meet, etc.)</div>
+                  </div>
+                </div>
+              </label>
+
+              {/* Both Option */}
+              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-blue-300">
+                <input
+                  type="radio"
+                  name="audioSource"
+                  value="both"
+                  checked={audioSource === 'both'}
+                  onChange={(e) => setAudioSource(e.target.value as any)}
+                  className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="ml-4 flex items-center flex-1">
+                  <span className="text-3xl mr-3">🎧</span>
+                  <div>
+                    <div className="font-semibold text-gray-900">Micrófono + Audio del sistema</div>
+                    <div className="text-sm text-gray-500">Captura ambos canales</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowAudioSourceModal(false)}
+                className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-lg font-semibold hover:bg-gray-200 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={startRecording}
+                className="flex-1 px-4 py-3 text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-lg font-semibold hover:from-red-600 hover:to-pink-700 transition-all shadow-lg"
+              >
+                Iniciar Grabación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
