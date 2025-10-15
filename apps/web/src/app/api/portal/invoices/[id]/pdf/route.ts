@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
+import { createElement } from 'react';
 import { PrismaClient } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth/server';
 import { InvoicePDF, type InvoiceData } from '@/lib/invoices/pdf-generator';
@@ -105,7 +106,9 @@ export async function GET(
     };
 
     // Generate PDF
-    const pdfBuffer = await renderToBuffer(<InvoicePDF invoice={invoiceData} />);
+    const pdfBuffer = await renderToBuffer(
+      createElement(InvoicePDF, { invoice: invoiceData })
+    );
 
     // Return PDF as download
     return new NextResponse(pdfBuffer, {
