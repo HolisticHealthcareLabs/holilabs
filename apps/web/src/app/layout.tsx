@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import '@/styles/print.css';
+import '@/styles/mobile.css';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import { Providers } from '@/components/Providers';
+import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -53,8 +57,11 @@ export default function RootLayout({
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover" />
       </head>
       <body className={inter.className}>
-        <OfflineIndicator />
-        {children}
+        <Providers>
+          <OfflineIndicator />
+          <IOSInstallPrompt />
+          {children}
+        </Providers>
       </body>
     </html>
   );
