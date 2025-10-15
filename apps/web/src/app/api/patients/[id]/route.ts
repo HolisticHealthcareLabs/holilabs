@@ -6,9 +6,12 @@
  * DELETE /api/patients/[id] - Soft delete patient
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
+import { auditView, auditUpdate, auditDelete } from '@/lib/audit';
+import { UpdatePatientSchema } from '@/lib/validation/schemas';
+import { z } from 'zod';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -19,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * Get detailed patient information
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -88,16 +91,13 @@ export async function GET(
       );
     }
 
-    // Create audit log for PHI access
-    await prisma.auditLog.create({
-      data: {
-        userEmail: 'system', // TODO: Get from auth session
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        action: 'READ',
-        resource: 'Patient',
-        resourceId: patient.id,
-        success: true,
-      },
+    // Create audit log for PHI access with full context
+    await auditView('Patient', patient.id, request, {
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      mrn: patient.mrn,
+      includesAppointments: patient.appointments.length,
+      includesMedications: patient.medications.length,
+      includesClinicalNotes: patient.clinicalNotes.length,
     });
 
     return NextResponse.json({
@@ -118,11 +118,32 @@ export async function GET(
  * Update patient information
  */
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const body = await request.json();
+
+    // Validate input with medical-grade Zod schema
+    let validatedData;
+    try {
+      validatedData = UpdatePatientSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            message: 'Please check your input and try again',
+            details: error.errors.map((err) => ({
+              field: err.path.join('.'),
+              message: err.message,
+            })),
+          },
+          { status: 400 }
+        );
+      }
+      throw error; // Re-throw non-validation errors
+    }
 
     // Check if patient exists
     const existingPatient = await prisma.patient.findUnique({
@@ -136,7 +157,7 @@ export async function PUT(
       );
     }
 
-    // Prepare update data
+    // Prepare update data (using validated data)
     const updateData: any = {};
 
     // Only update provided fields
@@ -154,29 +175,32 @@ export async function PUT(
       'country',
       'externalMrn',
       'assignedClinicianId',
+      'cpf',
+      'cns',
+      'isPalliativeCare',
     ];
 
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field];
+      if (validatedData[field] !== undefined) {
+        updateData[field] = validatedData[field];
       }
     }
 
     // If critical data changed, regenerate hash
     const criticalFieldsChanged =
-      body.firstName ||
-      body.lastName ||
-      body.dateOfBirth ||
-      body.mrn;
+      validatedData.firstName ||
+      validatedData.lastName ||
+      validatedData.dateOfBirth ||
+      validatedData.mrn;
 
     if (criticalFieldsChanged) {
       updateData.dataHash = generatePatientDataHash({
         id: existingPatient.id,
-        firstName: body.firstName || existingPatient.firstName,
-        lastName: body.lastName || existingPatient.lastName,
+        firstName: validatedData.firstName || existingPatient.firstName,
+        lastName: validatedData.lastName || existingPatient.lastName,
         dateOfBirth:
-          body.dateOfBirth || existingPatient.dateOfBirth.toISOString(),
-        mrn: body.mrn || existingPatient.mrn,
+          validatedData.dateOfBirth || existingPatient.dateOfBirth.toISOString(),
+        mrn: validatedData.mrn || existingPatient.mrn,
       });
       updateData.lastHashUpdate = new Date();
     }
@@ -197,17 +221,11 @@ export async function PUT(
       },
     });
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        userEmail: 'system', // TODO: Get from auth session
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        action: 'UPDATE',
-        resource: 'Patient',
-        resourceId: patient.id,
-        details: { updatedFields: Object.keys(updateData) },
-        success: true,
-      },
+    // Create audit log with full user context
+    await auditUpdate('Patient', patient.id, request, {
+      updatedFields: Object.keys(updateData),
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      mrn: patient.mrn,
     });
 
     return NextResponse.json({
@@ -229,7 +247,7 @@ export async function PUT(
  * Soft delete patient (set isActive = false)
  */
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -251,16 +269,11 @@ export async function DELETE(
       data: { isActive: false },
     });
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        userEmail: 'system', // TODO: Get from auth session
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        action: 'DELETE',
-        resource: 'Patient',
-        resourceId: patient.id,
-        success: true,
-      },
+    // Create audit log with full user context
+    await auditDelete('Patient', patient.id, request, {
+      patientName: `${existingPatient.firstName} ${existingPatient.lastName}`,
+      mrn: existingPatient.mrn,
+      reason: 'Soft delete (set isActive=false)',
     });
 
     return NextResponse.json({

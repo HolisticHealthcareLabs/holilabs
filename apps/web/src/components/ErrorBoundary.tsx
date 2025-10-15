@@ -24,6 +24,8 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  errorType: 'generic' | 'network' | 'auth' | 'notfound';
+  retryCount: number;
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -32,15 +34,37 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     this.state = {
       hasError: false,
       error: null,
+      errorType: 'generic',
+      retryCount: 0,
     };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    // Determine error type
+    let errorType: ErrorBoundaryState['errorType'] = 'generic';
+
+    if (error.message.includes('fetch') || error.message.includes('network')) {
+      errorType = 'network';
+    } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+      errorType = 'auth';
+    } else if (error.message.includes('404') || error.message.includes('not found')) {
+      errorType = 'notfound';
+    }
+
     return {
       hasError: true,
       error,
+      errorType,
     };
   }
+
+  handleRetry = () => {
+    this.setState((prevState) => ({
+      hasError: false,
+      error: null,
+      retryCount: prevState.retryCount + 1,
+    }));
+  };
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Report to Sentry
@@ -69,7 +93,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }
 
       // Default fallback UI
-      return <DefaultErrorFallback error={this.state.error} />;
+      return (
+        <DefaultErrorFallback
+          error={this.state.error}
+          errorType={this.state.errorType}
+          retryCount={this.state.retryCount}
+          onRetry={this.handleRetry}
+        />
+      );
     }
 
     return this.props.children;
@@ -79,20 +110,59 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 /**
  * Default Error Fallback UI
  */
-function DefaultErrorFallback({ error }: { error: Error | null }) {
+function DefaultErrorFallback({
+  error,
+  errorType,
+  retryCount,
+  onRetry,
+}: {
+  error: Error | null;
+  errorType: ErrorBoundaryState['errorType'];
+  retryCount: number;
+  onRetry: () => void;
+}) {
+  const maxRetries = 3;
+
   const handleReload = () => {
     window.location.reload();
   };
 
+  const getErrorConfig = () => {
+    switch (errorType) {
+      case 'network':
+        return {
+          title: 'Problema de Conexión',
+          message: 'No pudimos conectarnos al servidor. Verifica tu conexión a internet e intenta nuevamente.',
+        };
+      case 'auth':
+        return {
+          title: 'Sesión Expirada',
+          message: 'Tu sesión ha expirado. Inicia sesión nuevamente para continuar.',
+        };
+      case 'notfound':
+        return {
+          title: 'Recurso No Encontrado',
+          message: 'El recurso que buscas no existe o fue eliminado.',
+        };
+      default:
+        return {
+          title: 'Algo salió mal',
+          message: 'Ocurrió un error inesperado. Intenta nuevamente o contacta a soporte si el problema persiste.',
+        };
+    }
+  };
+
+  const errorConfig = getErrorConfig();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
           {/* Error Icon */}
           <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-red-100 p-3">
+            <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-3">
               <svg
-                className="w-8 h-8 text-red-600"
+                className="w-8 h-8 text-red-600 dark:text-red-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -108,47 +178,80 @@ function DefaultErrorFallback({ error }: { error: Error | null }) {
           </div>
 
           {/* Error Message */}
-          <h2 className="text-xl font-semibold text-gray-900 text-center mb-2">
-            Algo salió mal
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-2">
+            {errorConfig.title}
           </h2>
-          <p className="text-gray-600 text-center mb-6">
-            Lo sentimos, ha ocurrido un error inesperado. Por favor, intenta recargar la página.
+          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+            {errorConfig.message}
           </p>
 
           {/* Error Details (dev only) */}
           {process.env.NODE_ENV === 'development' && error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-xs">
-              <p className="font-mono text-red-800 break-all">
+            <details className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs">
+              <summary className="cursor-pointer font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Detalles técnicos
+              </summary>
+              <pre className="font-mono text-red-800 dark:text-red-300 break-all overflow-auto">
                 {error.message}
-              </p>
-            </div>
+                {'\n\n'}
+                {error.stack}
+              </pre>
+            </details>
           )}
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleReload}
-              className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:from-purple-600 hover:to-indigo-700 transition-all"
-            >
-              Recargar página
-            </button>
-            <button
-              onClick={() => window.history.back()}
-              className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-all"
-            >
-              Volver
-            </button>
+            {retryCount < maxRetries && errorType !== 'auth' ? (
+              <button
+                onClick={onRetry}
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all inline-flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reintentar {retryCount > 0 && `(${retryCount}/${maxRetries})`}
+              </button>
+            ) : (
+              <button
+                onClick={handleReload}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:from-purple-600 hover:to-indigo-700 transition-all"
+              >
+                Recargar página
+              </button>
+            )}
+
+            {errorType === 'auth' ? (
+              <a
+                href="/login"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all text-center"
+              >
+                Iniciar Sesión
+              </a>
+            ) : (
+              <button
+                onClick={() => window.history.back()}
+                className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Volver
+              </button>
+            )}
           </div>
 
           {/* Support Link */}
           <div className="mt-4 text-center">
             <a
               href="mailto:support@holilabs.com"
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
               ¿Necesitas ayuda? Contacta soporte
             </a>
           </div>
+
+          {retryCount >= maxRetries && (
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
+              Si el problema persiste, contacta a soporte técnico.
+            </p>
+          )}
         </div>
       </div>
     </div>
