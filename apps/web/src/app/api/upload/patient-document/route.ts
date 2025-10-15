@@ -107,11 +107,13 @@ export async function POST(request: NextRequest) {
 
     // Map category to DocumentType enum
     const documentTypeMap: Record<string, string> = {
-      lab_results: 'LAB_RESULT',
+      lab_results: 'LAB_RESULTS',
       imaging: 'IMAGING',
+      consultation_notes: 'CONSULTATION_NOTES',
+      discharge_summary: 'DISCHARGE_SUMMARY',
       prescriptions: 'PRESCRIPTION',
-      referrals: 'REFERRAL',
       insurance: 'INSURANCE',
+      consent_form: 'CONSENT_FORM',
       other: 'OTHER',
     };
 

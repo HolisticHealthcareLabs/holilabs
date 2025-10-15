@@ -233,6 +233,119 @@ async function chatWithOpenAI(request: ChatRequest): Promise<ChatResponse> {
 }
 
 // ============================================================================
+// GOOGLE GEMINI API (Gemini 1.5 Flash) - Cost-Effective Alternative
+// ============================================================================
+
+async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
+  try {
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'Google AI API key not configured',
+      };
+    }
+
+    // Use Gemini 1.5 Flash for cost optimization (20x cheaper than Claude)
+    const model = request.model || 'gemini-1.5-flash';
+
+    // Build conversation history
+    const systemPrompt = request.systemPrompt || ClinicalSystemPrompts.general;
+
+    // Gemini requires combining system prompt with first user message
+    const conversationParts = request.messages.map((msg, index) => {
+      if (index === 0 && msg.role === 'user') {
+        // Prepend system prompt to first user message
+        return {
+          role: 'user',
+          parts: [{ text: `${systemPrompt}\n\n${msg.content}` }],
+        };
+      }
+      return {
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }],
+      };
+    });
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: conversationParts,
+          generationConfig: {
+            temperature: request.temperature || 0.7,
+            maxOutputTokens: request.maxTokens || 4096,
+            topP: 0.95,
+            topK: 40,
+          },
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_MEDICAL',
+              threshold: 'BLOCK_NONE', // Allow medical content for clinical use
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_ONLY_HIGH',
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Gemini API error:', error);
+      return {
+        success: false,
+        error: 'Failed to get Gemini response',
+      };
+    }
+
+    const data = await response.json();
+
+    // Check if response was blocked
+    if (data.promptFeedback?.blockReason) {
+      return {
+        success: false,
+        error: `Content blocked: ${data.promptFeedback.blockReason}`,
+      };
+    }
+
+    const candidate = data.candidates?.[0];
+    if (!candidate || !candidate.content?.parts?.[0]?.text) {
+      return {
+        success: false,
+        error: 'No response generated',
+      };
+    }
+
+    // Calculate token usage (Gemini provides this in usageMetadata)
+    const usage = data.usageMetadata || {};
+
+    return {
+      success: true,
+      message: candidate.content.parts[0].text,
+      usage: {
+        promptTokens: usage.promptTokenCount || 0,
+        completionTokens: usage.candidatesTokenCount || 0,
+        totalTokens: usage.totalTokenCount || 0,
+      },
+    };
+  } catch (error: any) {
+    console.error('Gemini chat error:', error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+// ============================================================================
 // MAIN CHAT FUNCTION
 // ============================================================================
 
@@ -250,11 +363,7 @@ export async function chat(request: ChatRequest): Promise<ChatResponse> {
       return chatWithOpenAI(request);
 
     case 'gemini':
-      // TODO: Implement Google Gemini
-      return {
-        success: false,
-        error: 'Gemini not yet implemented',
-      };
+      return chatWithGemini(request);
 
     default:
       return {

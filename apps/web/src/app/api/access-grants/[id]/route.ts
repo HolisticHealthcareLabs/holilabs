@@ -39,7 +39,6 @@ export const GET = createProtectedRoute(
               firstName: true,
               lastName: true,
               email: true,
-              role: true,
             },
           },
           labResult: {

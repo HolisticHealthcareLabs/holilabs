@@ -49,6 +49,8 @@ model User {
   formInstances         FormInstance[]
   clinicalNoteVersions  ClinicalNoteVersion[]
   transcriptionErrors   TranscriptionError[]
+  aiUsageLogs           AIUsageLog[]
+  subscriptionTier      SubscriptionTier?
 
   @@index([email])
   @@index([walletAddress])
@@ -503,6 +505,9 @@ model Patient {
   imagingStudies   ImagingStudy[]
   grantedAccess    DataAccessGrant[] @relation("PatientAccess")
   receivedAccess   DataAccessGrant[] @relation("GrantedToUser")
+  invoices         Invoice[]
+  payments         Payment[]
+  aiUsageLogs      AIUsageLog[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -1880,4 +1885,358 @@ model PatientPreferences {
 
   @@index([patientId])
   @@map("patient_preferences")
+}
+
+// ============================================================================
+// BILLING & PAYMENTS
+// ============================================================================
+
+model Invoice {
+  id String @id @default(cuid())
+
+  // Invoice identification
+  invoiceNumber String  @unique // Auto-generated: INV-2025-0001
+  referenceId   String? // External reference (insurance, etc.)
+
+  // Patient relationship
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Invoice details
+  description String?  @db.Text
+  notes       String?  @db.Text
+  currency    String   @default("MXN") // ISO 4217 currency code
+  status      InvoiceStatus @default(DRAFT)
+
+  // Financial amounts (stored in cents/smallest currency unit)
+  subtotal        Int // Subtotal before tax and discounts
+  taxAmount       Int @default(0) // Tax amount (IVA in Mexico = 16%)
+  taxRate         Float @default(16.0) // Tax rate percentage
+  discountAmount  Int @default(0) // Discount amount
+  discountPercent Float? // Discount percentage if applicable
+  totalAmount     Int // Final amount due
+
+  // Billing address
+  billingName       String?
+  billingAddress    String? @db.Text
+  billingCity       String?
+  billingState      String?
+  billingPostalCode String?
+  billingCountry    String @default("MX")
+
+  // Tax information (for Mexico)
+  rfc               String? // Registro Federal de Contribuyentes (RFC)
+  fiscalAddress     String? @db.Text
+  taxRegime         String? // Régimen fiscal
+
+  // Dates
+  issueDate DateTime @default(now())
+  dueDate   DateTime
+  paidDate  DateTime?
+  voidedDate DateTime?
+
+  // Metadata
+  voidReason String? @db.Text
+  issuedBy   String? // User ID who issued the invoice
+  paidBy     String? // User ID who processed payment
+
+  // Stripe integration
+  stripeInvoiceId String? @unique // Stripe invoice ID if applicable
+
+  // CFDI (Comprobante Fiscal Digital por Internet) - Mexican Tax Compliance
+  cfdiUUID       String? @unique // UUID del timbre fiscal
+  cfdiXml        String? @db.Text // XML timbrado del SAT
+  cfdiPdfUrl     String? // URL del PDF con código QR
+  cfdiStampDate  DateTime? // Fecha de timbrado
+  cfdiSerie      String? // Serie del comprobante
+  cfdiNumber     String? // Folio del comprobante
+  cfdiStatus     CFDIStatus @default(PENDING) // Estado del CFDI
+  cfdiUsage      String? @default("G03") // Uso del CFDI (G03 = Gastos en general)
+  cfdiPaymentForm String? @default("03") // Forma de pago (03 = Transferencia electrónica)
+  cfdiPaymentMethod String? @default("PUE") // Método de pago (PUE = Pago en una sola exhibición)
+
+  // Relations
+  lineItems InvoiceLineItem[]
+  payments  Payment[]
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+  @@index([invoiceNumber])
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  DRAFT // Invoice created but not sent
+  PENDING // Invoice sent, awaiting payment
+  PAID // Invoice fully paid
+  PARTIALLY_PAID // Invoice partially paid
+  OVERDUE // Invoice past due date
+  CANCELLED // Invoice cancelled
+  REFUNDED // Invoice refunded
+  VOID // Invoice voided
+}
+
+enum CFDIStatus {
+  PENDING // CFDI not yet generated
+  GENERATING // CFDI generation in progress
+  STAMPED // CFDI successfully stamped by PAC
+  FAILED // CFDI generation failed
+  CANCELLED // CFDI cancelled with SAT
+}
+
+model InvoiceLineItem {
+  id String @id @default(cuid())
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  // Line item details
+  description  String @db.Text
+  itemType     String // 'APPOINTMENT', 'CONSULTATION', 'LAB_TEST', 'IMAGING', 'PROCEDURE', 'MEDICATION', 'OTHER'
+  itemId       String? // Reference to appointment, lab test, etc.
+  quantity     Int @default(1)
+  unitPrice    Int // Price per unit in cents
+  totalPrice   Int // quantity * unitPrice
+  taxable      Boolean @default(true)
+
+  // CPT/ICD codes for insurance billing
+  cptCode      String? // Current Procedural Terminology code
+  icd10Code    String? // ICD-10 diagnosis code
+  hcpcsCode    String? // HCPCS code (US)
+
+  // Metadata
+  notes        String? @db.Text
+  performedBy  String? // Clinician who performed service
+  performedAt  DateTime? // Date service was performed
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  // Patient and invoice relationship
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  // Payment identification
+  paymentNumber String @unique // Auto-generated: PAY-2025-0001
+  referenceId   String? // External reference (bank, insurance, etc.)
+
+  // Payment details
+  amount        Int // Amount in cents
+  currency      String @default("MXN")
+  paymentMethod PaymentMethod @default(CARD)
+  status        PaymentStatus @default(PENDING)
+
+  // Stripe integration
+  stripePaymentIntentId String? @unique // Stripe PaymentIntent ID
+  stripeChargeId        String? @unique // Stripe Charge ID
+  stripeRefundId        String? // Stripe Refund ID if refunded
+  stripeCustomerId      String? // Stripe Customer ID
+
+  // Card information (last 4 digits only)
+  cardBrand     String? // 'visa', 'mastercard', 'amex', etc.
+  cardLast4     String? // Last 4 digits
+  cardExpMonth  Int?
+  cardExpYear   Int?
+
+  // Bank transfer information
+  bankName            String?
+  bankAccountLast4    String?
+  bankTransferDate    DateTime?
+  bankTransactionId   String?
+
+  // Insurance information
+  insuranceProvider   String?
+  insurancePolicyId   String?
+  insuranceClaimId    String?
+
+  // Cash/other
+  receiptNumber       String?
+
+  // Payment processing
+  processedAt         DateTime?
+  processedBy         String? // User ID who processed
+  failedAt            DateTime?
+  failureReason       String? @db.Text
+  failureCode         String?
+
+  // Refund information
+  refundedAt          DateTime?
+  refundedAmount      Int?
+  refundReason        String? @db.Text
+  refundedBy          String? // User ID who processed refund
+
+  // Metadata
+  notes               String? @db.Text
+  ipAddress           String?
+  userAgent           String? @db.Text
+
+  // Receipts
+  receiptUrl          String? @db.Text // URL to generated receipt PDF
+  receiptSentAt       DateTime?
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([invoiceId])
+  @@index([status])
+  @@index([processedAt])
+  @@index([paymentNumber])
+  @@index([stripePaymentIntentId])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CARD // Credit/Debit Card (Stripe)
+  BANK_TRANSFER // Wire transfer/ACH
+  CASH // Cash payment
+  CHECK // Check payment
+  INSURANCE // Insurance payment
+  PAYMENT_PLAN // Payment plan installment
+  CRYPTOCURRENCY // Future: Crypto payment
+  OTHER // Other payment method
+}
+
+enum PaymentStatus {
+  PENDING // Payment initiated but not completed
+  PROCESSING // Payment being processed
+  COMPLETED // Payment successfully completed
+  FAILED // Payment failed
+  CANCELLED // Payment cancelled
+  REFUNDED // Payment refunded
+  PARTIALLY_REFUNDED // Payment partially refunded
+  DISPUTED // Payment disputed/chargeback
+}
+
+// ============================================================================
+// AI SERVICES & USAGE TRACKING
+// ============================================================================
+
+model AIUsageLog {
+  id String @id @default(cuid())
+
+  // Provider Info
+  provider         String // "gemini", "claude", "openai"
+  model            String? // Model version used
+
+  // User/Clinic Association
+  userId           String?
+  user             User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  clinicId         String? // For multi-tenancy
+  patientId        String? // If AI was used for specific patient
+  patient          Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  // Token Usage
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+
+  // Cost Metrics (in USD)
+  estimatedCost    Float // Cost in USD
+
+  // Performance Metrics
+  responseTimeMs   Int // Response time in milliseconds
+  fromCache        Boolean @default(false) // Was this a cache hit?
+
+  // Context
+  queryComplexity  String? // "simple", "moderate", "complex", "critical"
+  feature          String? // "diagnosis", "prescriptions", "clinical-notes", etc.
+  promptPreview    String? @db.Text // First 500 chars of prompt for debugging
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([patientId])
+  @@index([provider])
+  @@index([createdAt])
+  @@index([clinicId])
+  @@map("ai_usage_logs")
+}
+
+model SubscriptionTier {
+  id String @id @default(cuid())
+
+  // User Association
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Tier Info
+  tier            SubscriptionTierEnum @default(FREE)
+
+  // Stripe Integration
+  stripeCustomerId       String? @unique
+  stripeSubscriptionId   String? @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+
+  // Usage Quotas
+  dailyAILimit    Int @default(10) // Daily AI query limit
+  monthlyAILimit  Int @default(300) // Monthly AI query limit
+
+  // Current Usage Tracking
+  dailyAIUsed     Int @default(0)
+  monthlyAIUsed   Int @default(0)
+  lastResetDate   DateTime @default(now())
+
+  // Subscription Status
+  status          SubscriptionStatus @default(ACTIVE)
+  cancelAtPeriodEnd Boolean @default(false)
+
+  // Billing
+  billingCycle    BillingCycle? // "monthly", "annually"
+  amount          Float? // Amount in USD
+  currency        String @default("USD")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trialEndsAt DateTime? // For free trials
+  cancelledAt DateTime?
+
+  @@index([userId])
+  @@index([tier])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@map("subscription_tiers")
+}
+
+enum SubscriptionTierEnum {
+  FREE        // 10 AI queries/day
+  STARTER     // 50 AI queries/day
+  PRO         // Unlimited AI queries
+  ENTERPRISE  // Unlimited + BYOK + priority support
+}
+
+enum SubscriptionStatus {
+  ACTIVE              // Currently active
+  CANCELLED           // Cancelled (still active until period end)
+  EXPIRED             // Subscription expired
+  PAST_DUE            // Payment failed
+  TRIALING            // In trial period
+  PAUSED              // Temporarily paused
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUALLY
 }

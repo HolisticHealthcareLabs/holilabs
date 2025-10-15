@@ -13,6 +13,7 @@
 
 import { redirect } from 'next/navigation';
 import { getPatientSession } from '@/lib/auth/patient-session';
+import { AuthProvider } from '@/lib/auth/AuthProvider';
 import PatientNavigation from '@/components/portal/PatientNavigation';
 import { OfflineDetector } from '@/components/OfflineDetector';
 
@@ -35,14 +36,16 @@ export default async function PortalLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Offline Detection Banner */}
-      <OfflineDetector />
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Offline Detection Banner */}
+        <OfflineDetector />
 
-      <PatientNavigation />
-      <main className="lg:ml-64 min-h-screen">
-        {children}
-      </main>
-    </div>
+        <PatientNavigation />
+        <main className="lg:ml-64 min-h-screen">
+          {children}
+        </main>
+      </div>
+    </AuthProvider>
   );
 }

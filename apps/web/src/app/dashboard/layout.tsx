@@ -60,9 +60,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     emoji: '🏥',
     children: [
       { name: 'Prevention', href: '/dashboard/prevention', emoji: '🛡️' },
+      { name: 'Diagnosis', href: '/dashboard/diagnosis', emoji: '🩺' },
       { name: 'Prescription', href: '/dashboard/prescriptions', emoji: '💊' },
       { name: 'Scribe', href: '/dashboard/scribe', emoji: '🎙️' },
       { name: 'Copilot', href: '/dashboard/ai', emoji: '🦾' },
+      { name: 'Forms', href: '/dashboard/forms', emoji: '📝' },
+      { name: 'Documents', href: '/dashboard/upload', emoji: '📄' },
     ],
   };
 
@@ -208,19 +211,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               {/* Spider Tree Sub-Items */}
               {expandedGroup === 'clinical-tools' && (
                 <div className="absolute left-20 top-0 z-40 flex flex-col gap-2 pl-6">
-                  {/* Section Title */}
-                  <div
-                    className="mb-2 px-3 py-1.5 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg shadow-lg"
-                    style={{
-                      animation: `slideIn 0.3s ease-out forwards`,
-                      opacity: 0
-                    }}
-                  >
-                    <p className="text-sm font-bold text-white whitespace-nowrap">
-                      {clinicalToolsGroup.name}
-                    </p>
-                  </div>
-
                   {clinicalToolsGroup.children.map((child, idx) => {
                     const isActive = pathname === child.href || pathname.startsWith(child.href + '/');
                     return (

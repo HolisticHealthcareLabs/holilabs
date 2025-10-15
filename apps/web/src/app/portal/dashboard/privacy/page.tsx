@@ -1,17 +1,39 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import AccessGrantsList from '@/components/access-grants/AccessGrantsList';
 import AccessGrantForm from '@/components/access-grants/AccessGrantForm';
 
 export default function PrivacyControlPage() {
-  // In a real implementation, get patient ID from session/auth
-  // For now, we'll use a placeholder that would come from authentication
-  const patientId = 'current-patient-id'; // TODO: Get from auth session
-
+  const { patientId, loading } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Show loading state while auth is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // If no patient ID, show error (should not happen if middleware is working)
+  if (!patientId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Acceso Denegado
+          </h2>
+          <p className="text-gray-600">
+            Debes iniciar sesión como paciente para acceder a esta página.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleFormSuccess = () => {
     setShowForm(false);

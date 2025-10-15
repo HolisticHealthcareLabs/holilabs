@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import {
   ChevronLeftIcon,
   BellIcon,
@@ -25,6 +26,7 @@ import {
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
+  const { patientId, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -92,9 +94,12 @@ export default function NotificationSettingsPage() {
       setNotificationPermission(permission);
 
       if (permission === 'granted') {
-        // Subscribe to push notifications
-        // Note: patientId should come from session
-        const subscription = await subscribeToPushNotifications('current-patient-id');
+        // Subscribe to push notifications with real patient ID
+        if (!patientId) {
+          alert('No se pudo obtener el ID del paciente');
+          return;
+        }
+        const subscription = await subscribeToPushNotifications(patientId);
 
         if (subscription) {
           setPushEnabled(true);
