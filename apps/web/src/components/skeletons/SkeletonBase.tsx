@@ -3,6 +3,8 @@
  * Reusable loading skeleton primitives
  */
 
+'use client';
+
 export function SkeletonBox({ className = '' }: { className?: string }) {
   return (
     <div
