@@ -1,0 +1,142 @@
+name: holi-labs
+region: nyc
+domains:
+  - domain: holilabs.xyz
+    type: PRIMARY
+  - domain: www.holilabs.xyz
+    type: ALIAS
+
+services:
+  - name: web
+    github:
+      repo: nicolacapriroloteran/vidabanq-health-ai
+      branch: main
+      deploy_on_push: true
+
+    build_command: |
+      cd apps/web
+      pnpm install --frozen-lockfile
+      pnpm prisma generate
+      pnpm build
+
+    run_command: cd apps/web && pnpm start
+
+    environment_slug: node-js
+
+    instance_count: 1
+    instance_size_slug: basic-xxs
+
+    http_port: 3000
+
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 30
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+    routes:
+      - path: /
+
+    envs:
+      # App Configuration
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://holilabs.xyz
+        scope: RUN_AND_BUILD_TIME
+
+      - key: NEXTAUTH_URL
+        value: https://holilabs.xyz
+        scope: RUN_AND_BUILD_TIME
+
+      # Database (SET THIS IN DIGITALOCEAN DASHBOARD)
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      # Supabase
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://yyteqajwjjrubiktornb.supabase.co
+        scope: RUN_AND_BUILD_TIME
+
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        value: ${SUPABASE_ANON_KEY}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: ${SUPABASE_SERVICE_ROLE_KEY}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      # Security Secrets (SET THESE IN DIGITALOCEAN DASHBOARD)
+      - key: NEXTAUTH_SECRET
+        value: ${NEXTAUTH_SECRET}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: ENCRYPTION_KEY
+        value: ${ENCRYPTION_KEY}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: DEID_SECRET
+        value: ${DEID_SECRET}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      # AI Services
+      - key: ASSEMBLYAI_API_KEY
+        value: ${ASSEMBLYAI_API_KEY}
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: GOOGLE_AI_API_KEY
+        value: ${GOOGLE_AI_API_KEY}
+        scope: RUN_TIME
+        type: SECRET
+
+      # Email
+      - key: RESEND_API_KEY
+        value: ${RESEND_API_KEY}
+        scope: RUN_TIME
+        type: SECRET
+
+      # Push Notifications
+      - key: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        value: BPgdD0ETGgvkFq0yV3jyRcIoq725bXPbytjUQxmO5LQt5OOG4GH5bx9hyLf5Vr3m9bnzKIwAnyEciPqaK87qalw
+        scope: RUN_AND_BUILD_TIME
+
+      - key: VAPID_PRIVATE_KEY
+        value: ${VAPID_PRIVATE_KEY}
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: VAPID_EMAIL
+        value: mailto:notifications@holilabs.xyz
+        scope: RUN_TIME
+
+      # Optional: Twilio (if configured)
+      - key: TWILIO_ACCOUNT_SID
+        value: ${TWILIO_ACCOUNT_SID}
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: TWILIO_AUTH_TOKEN
+        value: ${TWILIO_AUTH_TOKEN}
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: TWILIO_WHATSAPP_NUMBER
+        value: ${TWILIO_WHATSAPP_NUMBER}
+        scope: RUN_TIME
+
+      # Blockchain (disabled by default)
+      - key: ENABLE_BLOCKCHAIN
+        value: "false"
+        scope: RUN_TIME
