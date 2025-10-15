@@ -33,10 +33,14 @@ function LoginContent() {
   const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
   const [devMagicLink, setDevMagicLink] = useState<string | null>(null);
 
-  // Check for errors from URL params
+  // Check for errors and timeout from URL params
   useEffect(() => {
     const errorParam = searchParams?.get('error');
-    if (errorParam) {
+    const timeoutParam = searchParams?.get('timeout');
+
+    if (timeoutParam === 'true') {
+      setError('⏰ Tu sesión expiró por inactividad. Por favor, inicia sesión de nuevo.');
+    } else if (errorParam) {
       const errorMessages: Record<string, string> = {
         missing_token: 'Enlace inválido. Por favor, solicita uno nuevo.',
         invalid_link: 'El enlace ha expirado o es inválido.',

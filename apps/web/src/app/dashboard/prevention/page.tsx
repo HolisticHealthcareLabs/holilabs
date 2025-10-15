@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import DashboardTile, { TileColor } from '@/components/dashboard/DashboardTile';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,7 @@ interface ProtocolTemplate {
   interventions: string[];
   screenings: string[];
   education: string[];
+  color: TileColor;
 }
 
 const protocolTemplates: ProtocolTemplate[] = [
@@ -21,6 +23,7 @@ const protocolTemplates: ProtocolTemplate[] = [
     name: 'Prevención Cardiovascular',
     specialty: 'Cardiología',
     icon: '❤️',
+    color: 'blue',
     description: 'Protocolo integral para la prevención de enfermedades cardiovasculares',
     interventions: [
       'Control de presión arterial cada 3 meses',
@@ -48,6 +51,7 @@ const protocolTemplates: ProtocolTemplate[] = [
     name: 'Prevención de Diabetes',
     specialty: 'Endocrinología',
     icon: '🩺',
+    color: 'green',
     description: 'Programa de prevención y control de diabetes mellitus tipo 2',
     interventions: [
       'Glucosa en ayuno trimestral',
@@ -76,6 +80,7 @@ const protocolTemplates: ProtocolTemplate[] = [
     name: 'Tamizaje Oncológico',
     specialty: 'Oncología Preventiva',
     icon: '🎗️',
+    color: 'purple',
     description: 'Protocolo de detección temprana de cáncer basado en guías internacionales',
     interventions: [
       'Mastografía anual en mujeres >40 años',
@@ -104,6 +109,7 @@ const protocolTemplates: ProtocolTemplate[] = [
     name: 'Control de Hipertensión',
     specialty: 'Medicina Interna',
     icon: '🩸',
+    color: 'orange',
     description: 'Manejo integral de hipertensión arterial y prevención de complicaciones',
     interventions: [
       'Toma de presión arterial en cada consulta',
@@ -132,6 +138,7 @@ const protocolTemplates: ProtocolTemplate[] = [
     name: 'Medicina Preventiva Pediátrica',
     specialty: 'Pediatría',
     icon: '👶',
+    color: 'pink',
     description: 'Protocolo de seguimiento y prevención en edad pediátrica',
     interventions: [
       'Esquema de vacunación completo',
@@ -160,6 +167,7 @@ const protocolTemplates: ProtocolTemplate[] = [
     name: 'Salud de la Mujer',
     specialty: 'Ginecología',
     icon: '👩‍⚕️',
+    color: 'teal',
     description: 'Cuidado preventivo integral para la salud femenina',
     interventions: [
       'Examen ginecológico anual',
@@ -254,47 +262,25 @@ export default function PreventionPage() {
         </select>
       </div>
 
-      {/* Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Protocol List */}
-        <div className="lg:col-span-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-green-500 to-teal-600">
-              <h2 className="text-lg font-bold text-white">Protocolos Disponibles</h2>
-            </div>
-            <div className="p-4 space-y-2 max-h-[800px] overflow-y-auto">
-              {filteredProtocols.map((protocol) => (
-                <button
-                  key={protocol.id}
-                  onClick={() => setSelectedProtocol(protocol)}
-                  className={`w-full text-left p-4 rounded-lg border transition-all ${
-                    selectedProtocol?.id === protocol.id
-                      ? 'bg-green-50 border-green-500 shadow-sm'
-                      : 'bg-white border-gray-200 hover:border-green-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <div className="text-3xl mr-3">{protocol.icon}</div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-gray-900 mb-1">
-                        {protocol.name}
-                      </div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        {protocol.specialty}
-                      </div>
-                      <div className="text-sm text-gray-600 line-clamp-2">
-                        {protocol.description}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* Protocol Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {filteredProtocols.map((protocol) => (
+          <DashboardTile
+            key={protocol.id}
+            title={protocol.name}
+            description={protocol.description}
+            icon={protocol.icon}
+            href="#"
+            color={protocol.color}
+            chartEmoji="📊"
+            badge={protocol.specialty}
+            onClick={() => setSelectedProtocol(protocol)}
+          />
+        ))}
+      </div>
 
-        {/* Protocol Details */}
-        <div className="lg:col-span-8">
+      {/* Protocol Details */}
+      <div>
           {!selectedProtocol ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
               <div className="text-6xl mb-4">🛡️</div>
@@ -451,7 +437,6 @@ export default function PreventionPage() {
               </div>
             </div>
           )}
-        </div>
       </div>
 
       {/* Collaboration Section */}

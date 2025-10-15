@@ -371,6 +371,19 @@ export default function Dashboard() {
                   </div>
                 </Link>
 
+                <Link
+                  href="/dashboard/diagnosis"
+                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-900/20 hover:from-pink-100 hover:to-pink-200 dark:hover:from-pink-900/30 dark:hover:to-pink-900/30 rounded-lg transition group"
+                >
+                  <div className="w-10 h-10 bg-pink-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
+                    <span className="text-xl">🩺</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">AI Diagnosis</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Clinical decision support</p>
+                  </div>
+                </Link>
+
                 <button
                   onClick={() => setShowExportModal(true)}
                   className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/20 hover:from-orange-100 hover:to-orange-200 dark:hover:from-orange-900/30 dark:hover:to-orange-900/30 rounded-lg transition group"
