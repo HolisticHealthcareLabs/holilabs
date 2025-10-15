@@ -97,7 +97,7 @@ export const GET = createProtectedRoute(
     }
   },
   {
-    roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'PATIENT'],
+    roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
   }
 );
@@ -226,7 +226,7 @@ export const PATCH = createProtectedRoute(
     }
   },
   {
-    roles: ['ADMIN', 'CLINICIAN', 'PATIENT'],
+    roles: ['ADMIN', 'CLINICIAN', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
   }
 );
