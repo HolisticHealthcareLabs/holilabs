@@ -6,6 +6,7 @@ import '@/styles/mobile.css';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { Providers } from '@/components/Providers';
 import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
+import { FeedbackWidget } from '@/components/FeedbackWidget';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -60,6 +61,7 @@ export default function RootLayout({
         <Providers>
           <OfflineIndicator />
           <IOSInstallPrompt />
+          <FeedbackWidget />
           {children}
         </Providers>
       </body>
