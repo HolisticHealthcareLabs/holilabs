@@ -286,6 +286,7 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
               </div>
               <button
                 onClick={closeDetailView}
+                aria-label="Cerrar detalles"
                 className="text-gray-400 hover:text-gray-600 text-2xl"
               >
                 ×
@@ -458,6 +459,7 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
         >
           <button
             onClick={closeImageViewer}
+            aria-label="Cerrar visor de imagen"
             className="absolute top-4 right-4 text-white text-4xl hover:text-gray-300"
           >
             ×

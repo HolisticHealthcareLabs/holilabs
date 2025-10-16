@@ -459,6 +459,7 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
               <h3 className="text-xl font-bold text-gray-900">Detalles del Permiso</h3>
               <button
                 onClick={() => setSelectedGrant(null)}
+                aria-label="Cerrar detalles"
                 className="text-gray-400 hover:text-gray-600 text-2xl"
               >
                 ×

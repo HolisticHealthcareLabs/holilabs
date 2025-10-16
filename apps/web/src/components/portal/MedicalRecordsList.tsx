@@ -227,6 +227,7 @@ export default function MedicalRecordsList() {
                 🔍 {search}
                 <button
                   onClick={() => setSearch('')}
+                  aria-label="Limpiar búsqueda"
                   className="hover:text-green-900"
                 >
                   ×
@@ -238,6 +239,7 @@ export default function MedicalRecordsList() {
                 📋 {STATUS_LABELS[status]}
                 <button
                   onClick={() => setStatus('')}
+                  aria-label="Limpiar filtro de estado"
                   className="hover:text-blue-900"
                 >
                   ×
@@ -249,6 +251,7 @@ export default function MedicalRecordsList() {
                 📅 Desde {format(new Date(startDate), 'dd MMM yyyy', { locale: es })}
                 <button
                   onClick={() => setStartDate('')}
+                  aria-label="Limpiar filtro de fecha"
                   className="hover:text-purple-900"
                 >
                   ×

@@ -284,6 +284,7 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
               <h3 className="text-xl font-bold text-gray-900">{selectedResult.testName}</h3>
               <button
                 onClick={closeDetailView}
+                aria-label="Cerrar detalles"
                 className="text-gray-400 hover:text-gray-600 text-2xl"
               >
                 ×

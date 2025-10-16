@@ -7,7 +7,7 @@
  * Shows once after signup, highlights 3 quick wins
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -19,6 +19,10 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
   const [isVisible, setIsVisible] = useState(false);
   const { t } = useLanguage();
 
+  // Accessibility: Focus management
+  const startButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     // Check if user has seen welcome modal
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
@@ -28,6 +32,32 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
       setTimeout(() => setIsVisible(true), 500);
     }
   }, []);
+
+  // Handle Escape key and focus management
+  useEffect(() => {
+    if (isVisible) {
+      // Store the element that opened the modal
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+
+      // Focus the start button when modal opens
+      setTimeout(() => startButtonRef.current?.focus(), 600);
+
+      // Handle Escape key
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          handleDismiss();
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        // Return focus to the element that opened the modal
+        previousActiveElementRef.current?.focus();
+      };
+    }
+  }, [isVisible]);
 
   const handleDismiss = () => {
     localStorage.setItem('hasSeenWelcome', 'true');
@@ -42,12 +72,17 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 transition-opacity" />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="welcome-modal-title"
+      >
         <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in duration-300">
           {/* Header with gradient */}
           <div className="bg-gradient-to-r from-primary to-purple-700 text-white p-8 text-center">
-            <div className="text-6xl mb-4">🎉</div>
-            <h1 className="text-3xl font-bold mb-2">
+            <div className="text-6xl mb-4" aria-hidden="true">🎉</div>
+            <h1 id="welcome-modal-title" className="text-3xl font-bold mb-2">
               {t('onboarding.welcome')}{userName ? `, ${userName}` : ''}!
             </h1>
             <p className="text-white/90 text-lg">
@@ -161,6 +196,7 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                 {t('onboarding.skip')}
               </button>
               <button
+                ref={startButtonRef}
                 onClick={handleDismiss}
                 className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all hover:scale-105"
               >

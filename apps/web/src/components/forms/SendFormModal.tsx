@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Patient {
@@ -36,6 +36,10 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Accessibility: Focus management
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       fetchPatients();
@@ -44,6 +48,32 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
       setSearchQuery('');
       setCustomMessage('');
       setError(null);
+    }
+  }, [isOpen]);
+
+  // Handle Escape key and focus management
+  useEffect(() => {
+    if (isOpen) {
+      // Store the element that opened the modal
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+
+      // Focus the close button when modal opens
+      setTimeout(() => closeButtonRef.current?.focus(), 100);
+
+      // Handle Escape key
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          handleClose();
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        // Return focus to the element that opened the modal
+        previousActiveElementRef.current?.focus();
+      };
     }
   }, [isOpen]);
 
@@ -116,7 +146,12 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="send-form-modal-title"
+      >
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -136,16 +171,18 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Enviar Formulario</h2>
+              <h2 id="send-form-modal-title" className="text-2xl font-bold text-gray-900">Enviar Formulario</h2>
               {template && (
                 <p className="text-sm text-gray-500 mt-1">{template.title}</p>
               )}
             </div>
             <button
+              ref={closeButtonRef}
               onClick={handleClose}
+              aria-label="Cerrar diálogo"
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -340,8 +377,15 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
                 )}
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-sm text-red-700">{error}</p>
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="bg-red-50 border border-red-200 rounded-lg p-4"
+                  >
+                    <p className="text-sm text-red-700">
+                      <span className="sr-only">Error: </span>
+                      {error}
+                    </p>
                   </div>
                 )}
               </div>
