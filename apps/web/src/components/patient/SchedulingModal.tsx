@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type IntegrationState = 'not_integrated' | 'single_calendar' | 'multiple_calendars';
 
@@ -21,6 +21,36 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
   const [selectedCalendar, setSelectedCalendar] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
+
+  // Accessibility: Focus management
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
+  // Handle Escape key and focus management
+  useEffect(() => {
+    if (isOpen) {
+      // Store the element that opened the modal
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+
+      // Focus the close button when modal opens
+      setTimeout(() => closeButtonRef.current?.focus(), 100);
+
+      // Handle Escape key
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        // Return focus to the element that opened the modal
+        previousActiveElementRef.current?.focus();
+      };
+    }
+  }, [isOpen, onClose]);
 
   const handleConnectGoogle = async () => {
     // Simulate OAuth flow
@@ -78,6 +108,9 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
       <div
         className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center"
         onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="scheduling-modal-title"
       >
         {/* Modal */}
         <div
@@ -87,9 +120,11 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
           <div className="p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Agendar Cita</h2>
+              <h2 id="scheduling-modal-title" className="text-2xl font-bold text-gray-800">Agendar Cita</h2>
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
+                aria-label="Cerrar diálogo"
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >
                 ×

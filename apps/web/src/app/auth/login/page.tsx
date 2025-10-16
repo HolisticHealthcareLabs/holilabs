@@ -70,8 +70,15 @@ export default function LoginPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
-            <p className="text-sm">{error}</p>
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6"
+          >
+            <p className="text-sm">
+              <span className="sr-only">Error: </span>
+              {error}
+            </p>
           </div>
         )}
 

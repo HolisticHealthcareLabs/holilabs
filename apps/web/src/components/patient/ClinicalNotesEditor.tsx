@@ -307,6 +307,7 @@ export default function ClinicalNotesEditor({
                 )}
                 <button
                   onClick={onClose}
+                  aria-label="Cerrar editor"
                   className="text-white hover:bg-white/20 rounded-full w-10 h-10 flex items-center justify-center text-2xl transition"
                 >
                   ×
@@ -583,6 +584,7 @@ export default function ClinicalNotesEditor({
                         <span className="text-sm text-purple-900">{diagnosis}</span>
                         <button
                           onClick={() => removeDiagnosis(i)}
+                          aria-label={`Eliminar diagnóstico: ${diagnosis}`}
                           className="text-purple-600 hover:text-purple-800"
                         >
                           ×
@@ -651,6 +653,7 @@ export default function ClinicalNotesEditor({
                         <span className="text-sm text-orange-900">{procedure}</span>
                         <button
                           onClick={() => removeProcedure(i)}
+                          aria-label={`Eliminar procedimiento: ${procedure}`}
                           className="text-orange-600 hover:text-orange-800"
                         >
                           ×

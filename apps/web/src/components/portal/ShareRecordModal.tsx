@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ShareRecordModalProps {
@@ -50,6 +50,36 @@ export default function ShareRecordModal({
     allowDownload: true,
     requirePassword: false,
   });
+
+  // Accessibility: Focus management
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
+  // Handle Escape key and focus management
+  useEffect(() => {
+    if (isOpen) {
+      // Store the element that opened the modal
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+
+      // Focus the close button when modal opens
+      setTimeout(() => closeButtonRef.current?.focus(), 100);
+
+      // Handle Escape key
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          handleClose();
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        // Return focus to the element that opened the modal
+        previousActiveElementRef.current?.focus();
+      };
+    }
+  }, [isOpen]);
 
   const handleShare = async () => {
     setIsLoading(true);
@@ -107,7 +137,12 @@ export default function ShareRecordModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="share-modal-title"
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -118,16 +153,18 @@ export default function ShareRecordModal({
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 id="share-modal-title" className="text-2xl font-bold text-gray-900">
                     Compartir Registro Médico
                   </h2>
                   <p className="text-sm text-gray-600 mt-1">{recordTitle}</p>
                 </div>
                 <button
+                  ref={closeButtonRef}
                   onClick={handleClose}
+                  aria-label="Cerrar diálogo"
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -290,8 +327,15 @@ export default function ShareRecordModal({
 
                   {/* Error Message */}
                   {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-sm text-red-600">{error}</p>
+                    <div
+                      role="alert"
+                      aria-live="assertive"
+                      className="bg-red-50 border border-red-200 rounded-lg p-4"
+                    >
+                      <p className="text-sm text-red-600">
+                        <span className="sr-only">Error: </span>
+                        {error}
+                      </p>
                     </div>
                   )}
 
@@ -380,6 +424,7 @@ export default function ShareRecordModal({
                       />
                       <button
                         onClick={handleCopyLink}
+                        aria-label={copied ? "Enlace copiado al portapapeles" : "Copiar enlace al portapapeles"}
                         className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
                       >
                         {copied ? (

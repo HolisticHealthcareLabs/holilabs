@@ -7,6 +7,7 @@ import OfflineIndicator from '@/components/OfflineIndicator';
 import { Providers } from '@/components/Providers';
 import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
+import { SkipLink } from '@/components/SkipLink';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -58,11 +59,14 @@ export default function RootLayout({
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover" />
       </head>
       <body className={inter.className}>
+        <SkipLink />
         <Providers>
           <OfflineIndicator />
           <IOSInstallPrompt />
           <FeedbackWidget />
-          {children}
+          <main id="main-content">
+            {children}
+          </main>
         </Providers>
       </body>
     </html>

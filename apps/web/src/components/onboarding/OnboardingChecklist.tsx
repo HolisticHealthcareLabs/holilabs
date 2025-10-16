@@ -121,6 +121,7 @@ export default function OnboardingChecklist() {
           <h3 className="text-lg font-bold">Comienza con Holi Labs</h3>
           <button
             onClick={() => setIsVisible(false)}
+            aria-label="Cerrar checklist"
             className="text-white/80 hover:text-white text-xl"
           >
             ×

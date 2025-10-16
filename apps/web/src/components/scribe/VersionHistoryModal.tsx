@@ -6,7 +6,7 @@
  * Allows comparing any two versions with VersionDiffViewer
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { X, Clock, User, FileEdit, GitCompare } from 'lucide-react';
@@ -48,12 +48,42 @@ export default function VersionHistoryModal({
   const [selectedVersions, setSelectedVersions] = useState<string[]>([]);
   const [showDiff, setShowDiff] = useState(false);
 
+  // Accessibility: Focus management
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
   // Fetch versions when modal opens
   useEffect(() => {
     if (isOpen && noteId) {
       fetchVersions();
     }
   }, [isOpen, noteId]);
+
+  // Handle Escape key and focus management
+  useEffect(() => {
+    if (isOpen) {
+      // Store the element that opened the modal
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+
+      // Focus the close button when modal opens
+      setTimeout(() => closeButtonRef.current?.focus(), 100);
+
+      // Handle Escape key
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        // Return focus to the element that opened the modal
+        previousActiveElementRef.current?.focus();
+      };
+    }
+  }, [isOpen, onClose]);
 
   const fetchVersions = async () => {
     setLoading(true);
@@ -116,7 +146,12 @@ export default function VersionHistoryModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="version-history-modal-title"
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
@@ -129,17 +164,18 @@ export default function VersionHistoryModal({
           {/* Header */}
           <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex items-center justify-between z-10">
             <div className="flex items-center gap-3">
-              <Clock className="w-6 h-6" />
-              <h2 className="text-xl font-bold">
+              <Clock className="w-6 h-6" aria-hidden="true" />
+              <h2 id="version-history-modal-title" className="text-xl font-bold">
                 {showDiff ? 'Comparación de Versiones' : 'Historial de Versiones'}
               </h2>
             </div>
             <button
+              ref={closeButtonRef}
               onClick={onClose}
               className="p-2 hover:bg-blue-800 rounded-lg transition-colors"
               aria-label="Cerrar"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
@@ -152,8 +188,15 @@ export default function VersionHistoryModal({
             )}
 
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                <p className="text-sm text-red-700">{error}</p>
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="bg-red-50 border-l-4 border-red-500 p-4 rounded"
+              >
+                <p className="text-sm text-red-700">
+                  <span className="sr-only">Error: </span>
+                  {error}
+                </p>
               </div>
             )}
 

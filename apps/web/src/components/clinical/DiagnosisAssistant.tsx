@@ -274,6 +274,7 @@ export default function DiagnosisAssistant() {
                     <button
                       type="button"
                       onClick={() => removeSymptom(index)}
+                      aria-label={`Eliminar síntoma: ${symptom}`}
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                     >
                       ×
