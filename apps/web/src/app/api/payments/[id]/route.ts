@@ -252,7 +252,7 @@ export const PATCH = createProtectedRoute(
           userId: context.user.id,
           userEmail: context.user.email || 'unknown',
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          action: refund ? 'REFUND' : 'UPDATE',
+          action: refund ? 'REVOKE' : 'UPDATE',
           resource: 'Payment',
           resourceId: paymentId,
           details: {

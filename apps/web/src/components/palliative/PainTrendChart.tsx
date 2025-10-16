@@ -221,7 +221,7 @@ export default function PainTrendChart({
             {showInterventions && chartData.filter(d => d.hasIntervention).map((point, i) => (
               <ReferenceLine
                 key={i}
-                x={point.date}
+                x={point.date.getTime()}
                 stroke="#10B981"
                 strokeWidth={2}
                 strokeDasharray="5 5"

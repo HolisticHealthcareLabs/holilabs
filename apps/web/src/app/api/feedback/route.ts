@@ -81,10 +81,11 @@ export async function POST(request: NextRequest) {
       await prisma.auditLog.create({
         data: {
           userId,
-          action: 'FEEDBACK_SUBMITTED',
-          resourceType: 'feedback',
+          action: 'CREATE',
+          resource: 'feedback',
           resourceId: 'n/a',
-          metadata: {
+          ipAddress: '0.0.0.0',
+          details: {
             type: validatedData.type,
             messageLength: validatedData.message.length,
             hasEmail: !!validatedData.email,
