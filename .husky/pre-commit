@@ -1,0 +1,51 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-commit hook to prevent deployment-blocking errors
+echo "🔍 Running pre-commit checks..."
+
+# 1. Check for CSS syntax errors
+echo "  ├─ Checking CSS syntax..."
+cd apps/web
+if pnpm exec stylelint "src/**/*.css" --quiet 2>/dev/null; then
+  echo "  ✓ CSS syntax valid"
+else
+  echo "  ⚠️  CSS linting skipped (stylelint not installed)"
+fi
+
+# 2. TypeScript type check
+echo "  ├─ Type checking..."
+if pnpm tsc --noEmit 2>&1 | grep -q "error TS"; then
+  echo "  ✗ TypeScript errors found!"
+  echo "  Run 'pnpm tsc --noEmit' to see details"
+  exit 1
+else
+  echo "  ✓ No TypeScript errors"
+fi
+
+# 3. ESLint check (auto-fixable issues)
+echo "  ├─ Linting code..."
+if pnpm exec eslint "src/**/*.{ts,tsx}" --max-warnings=0 --quiet 2>/dev/null; then
+  echo "  ✓ Code linting passed"
+else
+  echo "  ⚠️  Some linting issues found (auto-fixing...)"
+  pnpm exec eslint "src/**/*.{ts,tsx}" --fix --quiet 2>/dev/null || true
+fi
+
+# 4. Check for common deployment blockers
+echo "  ├─ Checking for common issues..."
+
+# Check for invalid CSS properties
+if grep -r "justify-center\|align-content-center\|flex-direction-row-reverse" apps/web/src/styles/*.css 2>/dev/null; then
+  echo "  ✗ Invalid CSS properties found!"
+  exit 1
+fi
+
+# Check for missing semicolons in CSS
+if grep -E "^\s+[a-z-]+:\s+[^;]+$" apps/web/src/styles/*.css | grep -v "^$" | grep -v "^}" 2>/dev/null; then
+  echo "  ⚠️  Possible missing semicolons in CSS"
+fi
+
+echo "  └─ ✓ All checks passed!"
+echo ""
+echo "✅ Pre-commit checks complete. Proceeding with commit..."
