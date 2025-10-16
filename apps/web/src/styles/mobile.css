@@ -72,7 +72,7 @@ a.clickable,
   min-width: 44px;
   display: inline-flex;
   align-items: center;
-  justify-center;
+  justify-content: center;
 }
 
 /* Active state for touch devices */
