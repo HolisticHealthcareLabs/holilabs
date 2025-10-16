@@ -107,11 +107,11 @@ export async function GET(
 
     // Generate PDF
     const pdfBuffer = await renderToBuffer(
-      createElement(InvoicePDF, { invoice: invoiceData })
+      createElement(InvoicePDF, { invoice: invoiceData }) as any
     );
 
     // Return PDF as download
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`,
