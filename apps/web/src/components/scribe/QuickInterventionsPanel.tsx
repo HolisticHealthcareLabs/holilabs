@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Intervention {
   id: string;
@@ -20,7 +20,7 @@ export default function QuickInterventionsPanel({
   onInsertText,
   className = '',
 }: QuickInterventionsPanelProps) {
-  const { t } = useTranslations();
+  const { t } = useLanguage();
 
   // Build interventions from translations
   const interventions: Intervention[] = [

@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { routeAIRequest } from '@/lib/ai/router';
-import { trackAIUsage } from '@/lib/ai/usage-tracker';
+import { trackUsage } from '@/lib/ai/usage-tracker';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -249,20 +249,16 @@ IMPORTANT:
     const responseTime = Date.now() - startTime;
     const cost = calculateEstimatedCost(aiResponse.usage);
 
-    await trackAIUsage({
+    await trackUsage({
       provider: aiResponse.provider || 'claude',
-      model: 'claude-3-sonnet',
       userId: session.user.id,
-      patientId: body.patientId,
       promptTokens: aiResponse.usage?.promptTokens || 0,
       completionTokens: aiResponse.usage?.completionTokens || 0,
       totalTokens: aiResponse.usage?.totalTokens || 0,
-      estimatedCost: cost,
       responseTimeMs: responseTime,
-      fromCache: aiResponse.cached || false,
+      fromCache: false,
       queryComplexity: 'complex',
       feature: 'diagnosis_assistant',
-      promptPreview: body.chiefComplaint.substring(0, 200),
     });
 
     // 10. Update user's daily usage count
