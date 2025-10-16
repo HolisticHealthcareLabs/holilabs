@@ -49,6 +49,9 @@ export async function search(options: SearchOptions): Promise<SearchResult[]> {
             { lastName: { contains: searchTerm, mode: 'insensitive' } },
             { email: { contains: searchTerm, mode: 'insensitive' } },
             { mrn: { contains: searchTerm, mode: 'insensitive' } },
+            { tokenId: { contains: searchTerm, mode: 'insensitive' } },
+            { cpf: { contains: searchTerm.replace(/\D/g, '') } }, // Remove non-digits from CPF search
+            { cns: { contains: searchTerm.replace(/\D/g, '') } }, // Remove non-digits from CNS search
           ],
           assignedClinicianId: userId,
         },
@@ -61,12 +64,16 @@ export async function search(options: SearchOptions): Promise<SearchResult[]> {
           id: patient.id,
           type: 'patient' as const,
           title: `${patient.firstName} ${patient.lastName}`,
-          description: `MRN: ${patient.mrn}`,
+          description: `MRN: ${patient.mrn}${patient.tokenId ? ` • Token: ${patient.tokenId}` : ''}${patient.cpf ? ` • CPF: ${patient.cpf}` : ''}`,
           date: patient.updatedAt,
           url: `/dashboard/patients/${patient.id}`,
           metadata: {
             mrn: patient.mrn,
+            tokenId: patient.tokenId,
             dateOfBirth: patient.dateOfBirth,
+            cpf: patient.cpf,
+            cns: patient.cns,
+            isPalliativeCare: patient.isPalliativeCare,
           },
         }))
       );
@@ -291,6 +298,9 @@ export async function searchPatients(clinicianId: string, query: string) {
         { lastName: { contains: searchTerm, mode: 'insensitive' } },
         { email: { contains: searchTerm, mode: 'insensitive' } },
         { mrn: { contains: searchTerm, mode: 'insensitive' } },
+        { tokenId: { contains: searchTerm, mode: 'insensitive' } },
+        { cpf: { contains: searchTerm.replace(/\D/g, '') } },
+        { cns: { contains: searchTerm.replace(/\D/g, '') } },
       ],
       assignedClinicianId: clinicianId,
     },

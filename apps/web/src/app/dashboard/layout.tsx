@@ -12,6 +12,8 @@ import LanguageSelector from '@/components/LanguageSelector';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning';
 
 interface NavItem {
   name: string;
@@ -28,6 +30,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { locale, t } = useLanguage();
   const { theme } = useTheme();
+
+  // Session timeout (15 min idle for HIPAA compliance)
+  const { showWarning, timeRemaining, extendSession, logout } = useSessionTimeout({
+    timeoutMs: 15 * 60 * 1000, // 15 minutes
+    warningMs: 2 * 60 * 1000,  // 2 minute warning
+  });
 
   useEffect(() => {
     const supabase = createClient();
@@ -378,6 +386,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {/* Notification Permission Prompt */}
       <NotificationPrompt />
+
+      {/* Session Timeout Warning Modal */}
+      <SessionTimeoutWarning
+        isOpen={showWarning}
+        timeRemaining={timeRemaining}
+        onExtend={extendSession}
+        onLogout={logout}
+      />
     </div>
   );
 }
