@@ -39,6 +39,7 @@ model User {
 
   // Relations
   patients              Patient[]
+  primaryCarePatients   Patient[]             @relation("PrimaryCaregiver")
   auditLogs             AuditLog[]
   prescriptions         Prescription[]
   appointments          Appointment[]
@@ -478,6 +479,101 @@ model Patient {
   ageBand String? // e.g., "30-39" for de-identified reports
   region  String? // e.g., "SP" (São Paulo)
 
+  // ========================================================================
+  // BRAZILIAN NATIONAL IDENTIFIERS
+  // ========================================================================
+
+  // Primary identifiers
+  cns                 String?   @unique     // Cartão Nacional de Saúde (15 digits)
+  cpf                 String?   @unique     // CPF (11 digits)
+  rg                  String?               // RG (identity document)
+
+  // Healthcare system identifiers
+  municipalityCode    String?               // IBGE municipality code (7 digits)
+  healthUnitCNES      String?               // CNES health facility code (7 digits)
+  susPacientId        String?               // SUS patient ID (if integrated)
+
+  // ========================================================================
+  // PALLIATIVE CARE SPECIFIC FIELDS
+  // ========================================================================
+
+  // Care preferences
+  isPalliativeCare    Boolean   @default(false)
+  comfortCareOnly     Boolean   @default(false)
+  advanceDirectivesStatus AdvanceDirectivesStatus?
+  advanceDirectivesDate   DateTime?
+  advanceDirectivesNotes  String?   @db.Text
+
+  // DNR/DNI (Do Not Resuscitate / Do Not Intubate)
+  dnrStatus           Boolean   @default(false)
+  dnrDate             DateTime?
+  dniStatus           Boolean   @default(false)
+  dniDate             DateTime?
+  codeStatus          CodeStatus?
+
+  // Primary caregiver assignment
+  primaryCaregiverId  String?
+  primaryCaregiver    User?     @relation("PrimaryCaregiver", fields: [primaryCaregiverId], references: [id])
+
+  // Quality of life
+  qualityOfLifeScore  Int?                  // 0-10 scale
+  lastQoLAssessment   DateTime?
+
+  // Spiritual care
+  religiousAffiliation String?
+  spiritualCareNeeds  String?   @db.Text
+  chaplainAssigned    Boolean   @default(false)
+
+  // ========================================================================
+  // FAMILY CONTACTS (Hierarchical)
+  // ========================================================================
+
+  primaryContactName      String?
+  primaryContactRelation  String?              // e.g., "Daughter", "Son", "Spouse"
+  primaryContactPhone     String?   @db.Text   // Encrypted
+  primaryContactEmail     String?   @db.Text   // Encrypted
+  primaryContactAddress   String?   @db.Text   // Encrypted
+
+  secondaryContactName    String?
+  secondaryContactRelation String?
+  secondaryContactPhone   String?   @db.Text
+  secondaryContactEmail   String?   @db.Text
+
+  emergencyContactName    String?
+  emergencyContactPhone   String?   @db.Text
+  emergencyContactRelation String?
+
+  // Family portal access
+  familyPortalEnabled Boolean   @default(false)
+  familyPortalInviteSent DateTime?
+
+  // ========================================================================
+  // HUMANIZATION & DIGNITY
+  // ========================================================================
+
+  photoUrl            String?               // Patient photo (with consent)
+  photoConsentDate    DateTime?
+  photoConsentBy      String?               // Who gave consent
+
+  preferredName       String?               // How they like to be called
+  pronouns            String?               // Their pronouns
+  culturalPreferences String?   @db.Text    // Cultural/religious preferences
+
+  // ========================================================================
+  // SPECIAL NEEDS SUPPORT
+  // ========================================================================
+
+  hasSpecialNeeds     Boolean   @default(false)
+  specialNeedsType    String[]              // e.g., ["Cognitive", "Physical", "Sensory"]
+  communicationNeeds  String?   @db.Text    // How they communicate best
+  mobilityNeeds       String?   @db.Text    // Mobility assistance needs
+  dietaryNeeds        String?   @db.Text    // Special dietary requirements
+  sensoryNeeds        String?   @db.Text    // Sensory sensitivities
+
+  // Care team notes
+  careTeamNotes       String?   @db.Text    // Important info for entire care team
+  flaggedConcerns     String[]              // e.g., ["Fall Risk", "Seizure Risk"]
+
   // Metadata
   isActive            Boolean @default(true)
   assignedClinicianId String?
@@ -487,32 +583,40 @@ model Patient {
   updatedAt DateTime @updatedAt
 
   // Relations
-  patientUser      PatientUser?
-  preferences      PatientPreferences?
-  medications      Medication[]
-  appointments     Appointment[]
-  consents         Consent[]
-  documents        Document[]
-  clinicalNotes    ClinicalNote[]
-  prescriptions    Prescription[]
-  scribeSessions   ScribeSession[]
-  soapNotes        SOAPNote[]
-  messages         Message[]
-  healthMetrics    HealthMetric[]
-  documentShares   DocumentShare[]
-  formInstances    FormInstance[]
-  labResults       LabResult[]
-  imagingStudies   ImagingStudy[]
-  grantedAccess    DataAccessGrant[] @relation("PatientAccess")
-  receivedAccess   DataAccessGrant[] @relation("GrantedToUser")
-  invoices         Invoice[]
-  payments         Payment[]
-  aiUsageLogs      AIUsageLog[]
+  patientUser         PatientUser?
+  preferences         PatientPreferences?
+  medications         Medication[]
+  appointments        Appointment[]
+  consents            Consent[]
+  documents           Document[]
+  clinicalNotes       ClinicalNote[]
+  prescriptions       Prescription[]
+  scribeSessions      ScribeSession[]
+  soapNotes           SOAPNote[]
+  messages            Message[]
+  healthMetrics       HealthMetric[]
+  documentShares      DocumentShare[]
+  formInstances       FormInstance[]
+  labResults          LabResult[]
+  imagingStudies      ImagingStudy[]
+  grantedAccess       DataAccessGrant[] @relation("PatientAccess")
+  receivedAccess      DataAccessGrant[] @relation("GrantedToUser")
+  invoices            Invoice[]
+  payments            Payment[]
+  aiUsageLogs         AIUsageLog[]
+
+  // Palliative care relations
+  carePlans           CarePlan[]
+  painAssessments     PainAssessment[]
+  familyPortalAccess  FamilyPortalAccess[]
 
   @@index([mrn])
   @@index([tokenId])
   @@index([blockchainId])
   @@index([assignedClinicianId])
+  @@index([cns])
+  @@index([cpf])
+  @@index([isPalliativeCare])
   @@map("patients")
 }
 
@@ -2239,4 +2343,200 @@ enum SubscriptionStatus {
 enum BillingCycle {
   MONTHLY
   ANNUALLY
+}
+
+// ============================================================================
+// PALLIATIVE CARE - CARE PLANS
+// ============================================================================
+
+model CarePlan {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Plan details
+  title         String
+  description   String?   @db.Text
+  category      CarePlanCategory
+  priority      Priority  @default(MEDIUM)
+
+  // Goals
+  goals         String[]              // Array of goal descriptions
+  targetDate    DateTime?
+  status        CarePlanStatus @default(ACTIVE)
+
+  // Interdisciplinary team
+  assignedTeam  String[]              // Array of User IDs (doctor, nurse, therapist, chaplain)
+
+  // Progress tracking
+  progressNotes String[]   @db.Text   // Team updates
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  createdBy String  // User ID
+  updatedAt DateTime @updatedAt
+  updatedBy String? // User ID
+
+  @@index([patientId])
+  @@index([status])
+  @@index([category])
+  @@index([priority])
+  @@map("care_plans")
+}
+
+enum CarePlanCategory {
+  PAIN_MANAGEMENT
+  SYMPTOM_CONTROL
+  PSYCHOSOCIAL_SUPPORT
+  SPIRITUAL_CARE
+  FAMILY_SUPPORT
+  QUALITY_OF_LIFE
+  END_OF_LIFE_PLANNING
+  MOBILITY
+  NUTRITION
+  WOUND_CARE
+}
+
+enum CarePlanStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// ============================================================================
+// PALLIATIVE CARE - PAIN ASSESSMENTS
+// ============================================================================
+
+model PainAssessment {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Pain scale (0-10)
+  painScore   Int                   // 0 = no pain, 10 = worst pain
+  painType    PainType?
+  location    String?               // Body location
+  description String?   @db.Text    // Patient's description
+
+  // Characteristics
+  quality     String[]              // e.g., ["Sharp", "Burning", "Aching"]
+  timing      String?               // e.g., "Constant", "Intermittent"
+  aggravatingFactors String[]
+  relievingFactors   String[]
+
+  // Impact
+  functionalImpact String?   @db.Text // How it affects daily activities
+  sleepImpact      String?             // Impact on sleep
+  moodImpact       String?             // Impact on mood
+
+  // Interventions
+  interventionsGiven String[]         // What was done
+  responseToTreatment String? @db.Text
+
+  // Metadata
+  assessedAt DateTime @default(now())
+  assessedBy String  // User ID
+  notes      String? @db.Text
+
+  @@index([patientId])
+  @@index([assessedAt])
+  @@index([painScore])
+  @@map("pain_assessments")
+}
+
+enum PainType {
+  ACUTE
+  CHRONIC
+  BREAKTHROUGH
+  NEUROPATHIC
+  VISCERAL
+  SOMATIC
+}
+
+// ============================================================================
+// PALLIATIVE CARE - FAMILY PORTAL ACCESS
+// ============================================================================
+
+model FamilyPortalAccess {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Family member details
+  familyMemberName  String
+  relationship      String              // e.g., "Daughter", "Son"
+  email             String
+  phone             String?
+
+  // Access control
+  accessToken       String  @unique
+  accessLevel       FamilyAccessLevel @default(READ_ONLY)
+
+  // Permissions
+  canViewClinicalNotes    Boolean @default(true)
+  canViewMedications      Boolean @default(true)
+  canViewCarePlan         Boolean @default(true)
+  canViewPainAssessments  Boolean @default(true)
+  canReceiveDailyUpdates  Boolean @default(true)
+  canViewPhotos           Boolean @default(false)
+
+  // Status
+  isActive          Boolean   @default(true)
+  inviteSentAt      DateTime?
+  firstAccessAt     DateTime?
+  lastAccessAt      DateTime?
+  accessCount       Int       @default(0)
+
+  // Expiration
+  expiresAt         DateTime?
+  revokedAt         DateTime?
+  revokedBy         String?   // User ID who revoked
+  revokedReason     String?   @db.Text
+
+  // Metadata
+  createdAt DateTime @default(now())
+  createdBy String  // User ID
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([accessToken])
+  @@index([isActive])
+  @@index([email])
+  @@map("family_portal_access")
+}
+
+enum FamilyAccessLevel {
+  READ_ONLY
+  LIMITED_INTERACTION  // Can send messages but not view all data
+  FULL_ACCESS          // Can view everything (for legal guardians)
+}
+
+// ============================================================================
+// PALLIATIVE CARE - ENUMS
+// ============================================================================
+
+enum AdvanceDirectivesStatus {
+  NOT_COMPLETED
+  IN_PROGRESS
+  COMPLETED
+  REVIEWED_ANNUALLY
+}
+
+enum CodeStatus {
+  FULL_CODE         // Full resuscitation
+  DNR               // Do Not Resuscitate
+  DNI               // Do Not Intubate
+  DNR_DNI           // Both
+  COMFORT_CARE_ONLY // Comfort measures only
+  AND               // Allow Natural Death
 }

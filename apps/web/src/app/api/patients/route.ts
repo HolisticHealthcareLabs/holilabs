@@ -194,22 +194,102 @@ export async function POST(request: Request) {
     // Create patient (using validated data - type-safe)
     const patient = await prisma.patient.create({
       data: {
+        // Basic demographics
         firstName: validatedData.firstName,
         lastName: validatedData.lastName,
         dateOfBirth: new Date(validatedData.dateOfBirth),
         gender: validatedData.gender,
+
+        // Contact information
         email: validatedData.email,
         phone: validatedData.phone,
         address: validatedData.address,
         city: validatedData.city,
         state: validatedData.state,
         postalCode: validatedData.postalCode,
-        country: validatedData.country || 'MX',
+        country: validatedData.country || 'BR',
+
+        // Medical Record Numbers
         mrn: validatedData.mrn,
         externalMrn: validatedData.externalMrn,
+
+        // De-identification
         tokenId,
         ageBand,
         region: validatedData.state || validatedData.region,
+
+        // Brazilian National Identifiers
+        cns: validatedData.cns,
+        cpf: validatedData.cpf,
+        rg: validatedData.rg,
+        municipalityCode: validatedData.municipalityCode,
+        healthUnitCNES: validatedData.healthUnitCNES,
+        susPacientId: validatedData.susPacientId,
+
+        // Palliative Care
+        isPalliativeCare: validatedData.isPalliativeCare || false,
+        comfortCareOnly: validatedData.comfortCareOnly || false,
+        advanceDirectivesStatus: validatedData.advanceDirectivesStatus,
+        advanceDirectivesDate: validatedData.advanceDirectivesDate ? new Date(validatedData.advanceDirectivesDate) : undefined,
+        advanceDirectivesNotes: validatedData.advanceDirectivesNotes,
+
+        // DNR/DNI
+        dnrStatus: validatedData.dnrStatus || false,
+        dnrDate: validatedData.dnrDate ? new Date(validatedData.dnrDate) : undefined,
+        dniStatus: validatedData.dniStatus || false,
+        dniDate: validatedData.dniDate ? new Date(validatedData.dniDate) : undefined,
+        codeStatus: validatedData.codeStatus,
+
+        // Caregiver and Quality of Life
+        primaryCaregiverId: validatedData.primaryCaregiverId,
+        qualityOfLifeScore: validatedData.qualityOfLifeScore,
+        lastQoLAssessment: validatedData.lastQoLAssessment ? new Date(validatedData.lastQoLAssessment) : undefined,
+
+        // Spiritual Care
+        religiousAffiliation: validatedData.religiousAffiliation,
+        spiritualCareNeeds: validatedData.spiritualCareNeeds,
+        chaplainAssigned: validatedData.chaplainAssigned || false,
+
+        // Family Contacts
+        primaryContactName: validatedData.primaryContactName,
+        primaryContactRelation: validatedData.primaryContactRelation,
+        primaryContactPhone: validatedData.primaryContactPhone,
+        primaryContactEmail: validatedData.primaryContactEmail,
+        primaryContactAddress: validatedData.primaryContactAddress,
+
+        secondaryContactName: validatedData.secondaryContactName,
+        secondaryContactRelation: validatedData.secondaryContactRelation,
+        secondaryContactPhone: validatedData.secondaryContactPhone,
+        secondaryContactEmail: validatedData.secondaryContactEmail,
+
+        emergencyContactName: validatedData.emergencyContactName,
+        emergencyContactPhone: validatedData.emergencyContactPhone,
+        emergencyContactRelation: validatedData.emergencyContactRelation,
+
+        // Family Portal
+        familyPortalEnabled: validatedData.familyPortalEnabled || false,
+
+        // Humanization & Dignity
+        photoUrl: validatedData.photoUrl,
+        photoConsentDate: validatedData.photoConsentDate ? new Date(validatedData.photoConsentDate) : undefined,
+        photoConsentBy: validatedData.photoConsentBy,
+        preferredName: validatedData.preferredName,
+        pronouns: validatedData.pronouns,
+        culturalPreferences: validatedData.culturalPreferences,
+
+        // Special Needs
+        hasSpecialNeeds: validatedData.hasSpecialNeeds || false,
+        specialNeedsType: validatedData.specialNeedsType || [],
+        communicationNeeds: validatedData.communicationNeeds,
+        mobilityNeeds: validatedData.mobilityNeeds,
+        dietaryNeeds: validatedData.dietaryNeeds,
+        sensoryNeeds: validatedData.sensoryNeeds,
+
+        // Care Team
+        careTeamNotes: validatedData.careTeamNotes,
+        flaggedConcerns: validatedData.flaggedConcerns || [],
+
+        // Assignment & Blockchain
         assignedClinicianId: validatedData.assignedClinicianId,
         dataHash,
         lastHashUpdate: new Date(),

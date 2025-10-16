@@ -3,10 +3,11 @@
 /**
  * Language Context Provider
  * Manages language selection with localStorage persistence
+ * Default: Portuguese (for Pequeno Cotolêngo pilot)
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { type Locale } from '@/i18n';
+import { type Locale, defaultLocale } from '@/i18n';
 
 interface LanguageContextType {
   locale: Locale;
@@ -17,13 +18,13 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('es');
+  const [locale, setLocaleState] = useState<Locale>(defaultLocale);
   const [translations, setTranslations] = useState<Record<string, any>>({});
 
   // Load locale from localStorage on mount
   useEffect(() => {
     const savedLocale = localStorage.getItem('locale') as Locale;
-    if (savedLocale && ['es', 'en', 'pt'].includes(savedLocale)) {
+    if (savedLocale && ['pt', 'en', 'es'].includes(savedLocale)) {
       setLocaleState(savedLocale);
     }
   }, []);
@@ -32,7 +33,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadTranslations = async () => {
       try {
-        const messages = await import(`../../locales/${locale}/common.json`);
+        const messages = await import(`../../messages/${locale}.json`);
         setTranslations(messages.default);
       } catch (error) {
         console.error('Error loading translations:', error);

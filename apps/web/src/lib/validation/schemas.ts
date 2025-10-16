@@ -239,6 +239,27 @@ export const VitalSignsSchema = z.object({
 // PATIENT VALIDATION
 // ============================================================================
 
+// Brazilian identifier validators
+export const cnsValidator = z.string()
+  .length(15, 'CNS must be exactly 15 digits')
+  .regex(/^\d{15}$/, 'CNS must contain only digits')
+  .optional();
+
+export const cpfValidator = z.string()
+  .length(11, 'CPF must be exactly 11 digits')
+  .regex(/^\d{11}$/, 'CPF must contain only digits')
+  .optional();
+
+export const cnesValidator = z.string()
+  .length(7, 'CNES must be exactly 7 digits')
+  .regex(/^\d{7}$/, 'CNES must contain only digits')
+  .optional();
+
+export const ibgeCodeValidator = z.string()
+  .length(7, 'IBGE municipality code must be exactly 7 digits')
+  .regex(/^\d{7}$/, 'IBGE code must contain only digits')
+  .optional();
+
 export const CreatePatientSchema = z.object({
   // Required fields
   firstName: nameValidator,
@@ -252,6 +273,10 @@ export const CreatePatientSchema = z.object({
     message: 'Invalid date of birth (must be between 0-150 years ago)',
   }),
 
+  // Medical Record Numbers
+  mrn: mrnValidator,
+  externalMrn: z.string().max(50).optional(),
+
   // Optional demographic fields
   gender: z.enum(['M', 'F', 'O', 'U'], {
     errorMap: () => ({ message: 'Gender must be M (Male), F (Female), O (Other), or U (Unknown)' })
@@ -264,14 +289,88 @@ export const CreatePatientSchema = z.object({
   city: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
   postalCode: z.string().max(20).optional(),
-  country: z.string().length(2).default('MX'), // ISO 3166-1 alpha-2
+  country: z.string().length(2).default('BR'), // ISO 3166-1 alpha-2 (Brazil for Pequeno Cotolêngo)
 
   // De-identification
   ageBand: z.string().regex(/^\d{1,2}-\d{1,2}$/, 'Age band must be in format: XX-YY (e.g., 30-39)').optional(),
   region: z.string().max(10).optional(),
 
+  // Brazilian National Identifiers
+  cns: cnsValidator,
+  cpf: cpfValidator,
+  rg: z.string().max(20).optional(),
+  municipalityCode: ibgeCodeValidator,
+  healthUnitCNES: cnesValidator,
+  susPacientId: z.string().max(50).optional(),
+
+  // Palliative Care Fields
+  isPalliativeCare: z.boolean().default(false),
+  comfortCareOnly: z.boolean().default(false),
+  advanceDirectivesStatus: z.enum(['NOT_COMPLETED', 'IN_PROGRESS', 'COMPLETED', 'REVIEWED_ANNUALLY']).optional(),
+  advanceDirectivesDate: z.string().datetime().or(z.date()).optional(),
+  advanceDirectivesNotes: z.string().max(2000).optional(),
+
+  // DNR/DNI Status
+  dnrStatus: z.boolean().default(false),
+  dnrDate: z.string().datetime().or(z.date()).optional(),
+  dniStatus: z.boolean().default(false),
+  dniDate: z.string().datetime().or(z.date()).optional(),
+  codeStatus: z.enum(['FULL_CODE', 'DNR', 'DNI', 'DNR_DNI', 'COMFORT_CARE_ONLY', 'AND']).optional(),
+
+  // Primary Caregiver
+  primaryCaregiverId: z.string().cuid('Invalid caregiver ID').optional(),
+
+  // Quality of Life
+  qualityOfLifeScore: z.number().int().min(0).max(10).optional(),
+  lastQoLAssessment: z.string().datetime().or(z.date()).optional(),
+
+  // Spiritual Care
+  religiousAffiliation: z.string().max(100).optional(),
+  spiritualCareNeeds: z.string().max(1000).optional(),
+  chaplainAssigned: z.boolean().default(false),
+
+  // Family Contacts (Hierarchical)
+  primaryContactName: z.string().max(100).optional(),
+  primaryContactRelation: z.string().max(50).optional(),
+  primaryContactPhone: phoneValidator,
+  primaryContactEmail: emailValidator,
+  primaryContactAddress: z.string().max(FIELD_LIMITS.address.max).optional(),
+
+  secondaryContactName: z.string().max(100).optional(),
+  secondaryContactRelation: z.string().max(50).optional(),
+  secondaryContactPhone: phoneValidator,
+  secondaryContactEmail: emailValidator,
+
+  emergencyContactName: z.string().max(100).optional(),
+  emergencyContactPhone: phoneValidator,
+  emergencyContactRelation: z.string().max(50).optional(),
+
+  // Family Portal
+  familyPortalEnabled: z.boolean().default(false),
+
+  // Humanization & Dignity
+  photoUrl: z.string().url().optional(),
+  photoConsentDate: z.string().datetime().or(z.date()).optional(),
+  photoConsentBy: z.string().max(100).optional(),
+  preferredName: z.string().max(100).optional(),
+  pronouns: z.string().max(50).optional(),
+  culturalPreferences: z.string().max(1000).optional(),
+
+  // Special Needs Support
+  hasSpecialNeeds: z.boolean().default(false),
+  specialNeedsType: z.array(z.string().max(50)).max(10).optional(),
+  communicationNeeds: z.string().max(1000).optional(),
+  mobilityNeeds: z.string().max(1000).optional(),
+  dietaryNeeds: z.string().max(1000).optional(),
+  sensoryNeeds: z.string().max(1000).optional(),
+
+  // Care Team Notes
+  careTeamNotes: z.string().max(2000).optional(),
+  flaggedConcerns: z.array(z.string().max(100)).max(20).optional(),
+
   // Assignment
   assignedClinicianId: z.string().cuid('Invalid clinician ID').optional(),
+  createdBy: z.string().cuid('Invalid user ID').optional(),
 });
 
 export const UpdatePatientSchema = CreatePatientSchema.partial();

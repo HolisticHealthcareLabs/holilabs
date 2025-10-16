@@ -6,6 +6,9 @@ import {
   type SOAPTemplate,
 } from '@/lib/templates/soap-templates';
 import VersionHistoryModal from './VersionHistoryModal';
+import VoiceInputButton from './VoiceInputButton';
+import QuickInterventionsPanel from './QuickInterventionsPanel';
+import PainScaleSelector from './PainScaleSelector';
 
 interface Diagnosis {
   icd10Code: string;
@@ -59,6 +62,7 @@ interface SOAPNoteEditorProps {
   onSave: (updatedNote: Partial<SOAPNote>) => void;
   onSign: () => void;
   onNotifyPatient?: () => void;
+  patientId?: string;
   readOnly?: boolean;
 }
 
@@ -67,6 +71,7 @@ export default function SOAPNoteEditor({
   onSave,
   onSign,
   onNotifyPatient,
+  patientId,
   readOnly = false,
 }: SOAPNoteEditorProps) {
   const [editedNote, setEditedNote] = useState<Partial<SOAPNote>>({
@@ -82,6 +87,11 @@ export default function SOAPNoteEditor({
   const [showTemplates, setShowTemplates] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'es' | 'pt'>('es');
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showPainScale, setShowPainScale] = useState(false);
+  const [activeVoiceField, setActiveVoiceField] = useState<
+    'subjective' | 'objective' | 'assessment' | 'plan' | null
+  >(null);
 
   // ICD-10 validation regex
   const validateICD10 = (code: string): boolean => {
@@ -136,6 +146,36 @@ export default function SOAPNoteEditor({
     });
     setIsEditing(true);
     setShowTemplates(false);
+  };
+
+  // Handler for voice input
+  const handleVoiceTranscript = (text: string) => {
+    if (!activeVoiceField) return;
+
+    setEditedNote((prev) => ({
+      ...prev,
+      [activeVoiceField]: prev[activeVoiceField]
+        ? `${prev[activeVoiceField]}\n${text}`
+        : text,
+    }));
+  };
+
+  // Handler for quick interventions (inserts into Plan section)
+  const handleInsertIntervention = (text: string) => {
+    setEditedNote((prev) => ({
+      ...prev,
+      plan: prev.plan ? `${prev.plan}\n• ${text}` : `• ${text}`,
+    }));
+  };
+
+  // Handler for pain scale (inserts into Subjective section)
+  const handlePainScoreSelection = (score: number, description: string) => {
+    setEditedNote((prev) => ({
+      ...prev,
+      subjective: prev.subjective
+        ? `${prev.subjective}\n${description}`
+        : description,
+    }));
   };
 
   const templates = getTemplatesByLanguage(selectedLanguage);
@@ -225,6 +265,41 @@ export default function SOAPNoteEditor({
         )}
       </div>
 
+      {/* Quick Actions Panel (Palliative Care) */}
+      {isEditing && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <button
+              onClick={() => setShowQuickActions(!showQuickActions)}
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all font-semibold"
+            >
+              {showQuickActions ? '🔽 Ocultar' : '⚡ Ver'} Acciones Rápidas
+            </button>
+            <button
+              onClick={() => setShowPainScale(!showPainScale)}
+              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-lg hover:from-blue-600 hover:to-cyan-700 transition-all font-semibold"
+            >
+              {showPainScale ? '🔽 Ocultar' : '🩺 Ver'} Escala de Dolor
+            </button>
+          </div>
+
+          {showQuickActions && (
+            <QuickInterventionsPanel
+              onInsertText={handleInsertIntervention}
+              className="mb-4"
+            />
+          )}
+
+          {showPainScale && (
+            <PainScaleSelector
+              onSelectPainScore={handlePainScoreSelection}
+              patientId={patientId}
+              className="mb-4"
+            />
+          )}
+        </div>
+      )}
+
       {/* Chief Complaint */}
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -257,12 +332,33 @@ export default function SOAPNoteEditor({
           </span>
         </div>
         {isEditing ? (
-          <textarea
-            value={editedNote.subjective || ''}
-            onChange={(e) => setEditedNote({ ...editedNote, subjective: e.target.value })}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <>
+            <VoiceInputButton
+              onTranscript={handleVoiceTranscript}
+              language="pt-BR"
+              className="mb-2"
+            />
+            <button
+              onClick={() =>
+                setActiveVoiceField(activeVoiceField === 'subjective' ? null : 'subjective')
+              }
+              className={`text-xs px-3 py-1 rounded mb-2 ${
+                activeVoiceField === 'subjective'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+            >
+              {activeVoiceField === 'subjective'
+                ? '✓ Voz activa para este campo'
+                : 'Activar voz para este campo'}
+            </button>
+            <textarea
+              value={editedNote.subjective || ''}
+              onChange={(e) => setEditedNote({ ...editedNote, subjective: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </>
         ) : (
           <p className="text-gray-900 whitespace-pre-wrap bg-blue-50 p-3 rounded-lg">
             {note.subjective}
@@ -283,12 +379,28 @@ export default function SOAPNoteEditor({
           </span>
         </div>
         {isEditing ? (
-          <textarea
-            value={editedNote.objective || ''}
-            onChange={(e) => setEditedNote({ ...editedNote, objective: e.target.value })}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
+          <>
+            <button
+              onClick={() =>
+                setActiveVoiceField(activeVoiceField === 'objective' ? null : 'objective')
+              }
+              className={`text-xs px-3 py-1 rounded mb-2 ${
+                activeVoiceField === 'objective'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              }`}
+            >
+              {activeVoiceField === 'objective'
+                ? '✓ Voz activa para este campo'
+                : 'Activar voz para este campo'}
+            </button>
+            <textarea
+              value={editedNote.objective || ''}
+              onChange={(e) => setEditedNote({ ...editedNote, objective: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </>
         ) : (
           <p className="text-gray-900 whitespace-pre-wrap bg-green-50 p-3 rounded-lg">
             {note.objective}
@@ -351,12 +463,28 @@ export default function SOAPNoteEditor({
           </span>
         </div>
         {isEditing ? (
-          <textarea
-            value={editedNote.assessment || ''}
-            onChange={(e) => setEditedNote({ ...editedNote, assessment: e.target.value })}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
+          <>
+            <button
+              onClick={() =>
+                setActiveVoiceField(activeVoiceField === 'assessment' ? null : 'assessment')
+              }
+              className={`text-xs px-3 py-1 rounded mb-2 ${
+                activeVoiceField === 'assessment'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+              }`}
+            >
+              {activeVoiceField === 'assessment'
+                ? '✓ Voz activa para este campo'
+                : 'Activar voz para este campo'}
+            </button>
+            <textarea
+              value={editedNote.assessment || ''}
+              onChange={(e) => setEditedNote({ ...editedNote, assessment: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </>
         ) : (
           <p className="text-gray-900 whitespace-pre-wrap bg-purple-50 p-3 rounded-lg">
             {note.assessment}
@@ -406,12 +534,28 @@ export default function SOAPNoteEditor({
           </span>
         </div>
         {isEditing ? (
-          <textarea
-            value={editedNote.plan || ''}
-            onChange={(e) => setEditedNote({ ...editedNote, plan: e.target.value })}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
+          <>
+            <button
+              onClick={() =>
+                setActiveVoiceField(activeVoiceField === 'plan' ? null : 'plan')
+              }
+              className={`text-xs px-3 py-1 rounded mb-2 ${
+                activeVoiceField === 'plan'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+              }`}
+            >
+              {activeVoiceField === 'plan'
+                ? '✓ Voz activa para este campo'
+                : 'Activar voz para este campo'}
+            </button>
+            <textarea
+              value={editedNote.plan || ''}
+              onChange={(e) => setEditedNote({ ...editedNote, plan: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </>
         ) : (
           <p className="text-gray-900 whitespace-pre-wrap bg-orange-50 p-3 rounded-lg">
             {note.plan}

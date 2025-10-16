@@ -457,6 +457,159 @@ export const portugueseTemplates: SOAPTemplate[] = [
       },
     ],
   },
+  // ========================================
+  // PALLIATIVE CARE TEMPLATES (Pequeno Cotolêngo Pilot)
+  // ========================================
+  {
+    id: 'pt-palliative-pain',
+    name: 'Avaliação de Dor - Cuidados Paliativos',
+    specialty: 'Palliative Care',
+    language: 'pt',
+    chiefComplaint: 'Avaliação e controle da dor',
+    subjective:
+      'Paciente refere dor com intensidade [X]/10 na escala numérica. Localização: [região]. Qualidade: [latejante/queimação/aperto/penetrante]. Início: [agudo/gradual]. Padrão temporal: [constante/intermitente]. Fatores agravantes: [movimento/toque/posição]. Fatores atenuantes: [repouso/medicação/posicionamento]. Impacto: [mobilidade/sono/humor/apetite]. Última dose de analgésico: [horário e medicação].',
+    objective:
+      'Paciente apresenta sinais de desconforto: [expressão facial/gemidos/proteção da área/limitação de movimento]. Escala de dor: [X]/10. Sinais vitais: PA X/X mmHg, FC X bpm, FR X irpm. Área dolorosa: [inspeção, palpação, edema, calor]. Funcionalidade: [capacidade de mobilização]. Estado cognitivo: [lúcido/confuso/sedado].',
+    assessment:
+      'Dor [tipo: oncológica/neuropática/visceral/somática] com intensidade [leve/moderada/intensa/intolerável]. Controle analgésico [adequado/inadequado/subótimo]. Qualidade de vida impactada pela dor. Sem sinais de emergência álgica.',
+    plan: '1. Ajustar esquema analgésico:\n   - Morfina [dose] SC/VO a cada [intervalo]\n   - Dipirona [dose] IV/VO se necessário\n   - Considerar adjuvantes (gabapentina/amitriptilina)\n2. Medidas não-farmacológicas:\n   - Reposicionamento a cada 2h\n   - Massagem suave se tolerado\n   - Aplicação de calor/frio local\n3. Registrar dor na próxima avaliação (3x ao dia)\n4. Reavaliar eficácia em 24h\n5. Disponibilizar dose de resgate\n6. Orientar equipe sobre sinais de dor em paciente não-verbal',
+    vitalSigns: {
+      bp: '120/70',
+      hr: '85',
+      temp: '36.8',
+      rr: '18',
+      spo2: '94',
+    },
+    diagnoses: [
+      {
+        icd10Code: 'R52.1',
+        description: 'Dor crônica intratável',
+        isPrimary: true,
+      },
+      {
+        icd10Code: 'Z51.5',
+        description: 'Cuidado paliativo',
+        isPrimary: false,
+      },
+    ],
+    medications: [
+      {
+        action: 'prescribe',
+        name: 'Morfina',
+        dose: '10mg',
+        frequency: 'a cada 4 horas',
+        duration: 'contínuo',
+      },
+      {
+        action: 'prescribe',
+        name: 'Morfina (resgate)',
+        dose: '5mg',
+        frequency: 'se necessário (máx 3x/dia)',
+        duration: 'contínuo',
+      },
+    ],
+  },
+  {
+    id: 'pt-palliative-symptoms',
+    name: 'Controle de Sintomas - Cuidados Paliativos',
+    specialty: 'Palliative Care',
+    language: 'pt',
+    chiefComplaint: 'Controle de sintomas em cuidados paliativos',
+    subjective:
+      'Sintomas atuais:\n- Náusea: [sim/não], intensidade [X]/10, frequência [constante/intermitente]\n- Dispneia: [sim/não], aos esforços/repouso, SatO2 [X]%\n- Constipação: última evacuação há [X] dias\n- Fadiga: [leve/moderada/intensa], impacto nas AVD\n- Anorexia: aceitação alimentar [boa/reduzida/mínima]\n- Ansiedade/agitação: [presente/ausente]\n- Confusão mental: [orientado/desorientado]\nPaciente/família referem: [preocupações específicas].',
+    objective:
+      'Estado geral: [bom/regular/debilitado]. Nível de consciência: [alerta/sonolento/torporoso]. Hidratação: [boa/regular/desidratado]. Estado nutricional: [adequado/emagrecido/caquético]. Abdome: [distendido/flácido/timpânico], RHA [presentes/diminuídos/ausentes]. Ausculta pulmonar: [MV presente/diminuído, estertores/roncos]. Pele: [íntegra/lesões]. Mucosas: [coradas/descoradas], [úmidas/secas].',
+    assessment:
+      'Paciente em cuidados paliativos com múltiplos sintomas [controlados/parcialmente controlados/descontrolados]. Qualidade de vida: [preservada/comprometida]. Conforto: [adequado/necessita ajustes]. Sem indicação de internação hospitalar no momento.',
+    plan: '1. Controle de náusea:\n   - Metoclopramida 10mg VO 8/8h\n   - Ondasetrona 4mg SL se necessário\n2. Manejo de dispneia:\n   - Morfina 2.5mg VO/SC se desconforto respiratório\n   - Oxigenoterapia 2L/min se SatO2 <90%\n   - Ventilador/ambiente arejado\n3. Constipação:\n   - Lactulose 15ml VO 12/12h\n   - Supositório de glicerina se necessário\n   - Hidratação adequada\n4. Fadiga:\n   - Períodos de repouso intercalados\n   - Atividades leves conforme tolerância\n5. Suporte nutricional:\n   - Dieta leve, fracionada, conforme aceitação\n   - Sem forçar alimentação\n6. Reavaliação diária dos sintomas\n7. Ajustar esquema conforme resposta',
+    vitalSigns: {
+      bp: '110/65',
+      hr: '90',
+      temp: '36.6',
+      rr: '22',
+      spo2: '92',
+    },
+    diagnoses: [
+      {
+        icd10Code: 'Z51.5',
+        description: 'Cuidado paliativo',
+        isPrimary: true,
+      },
+      {
+        icd10Code: 'R11.0',
+        description: 'Náusea',
+        isPrimary: false,
+      },
+      {
+        icd10Code: 'R06.0',
+        description: 'Dispneia',
+        isPrimary: false,
+      },
+    ],
+    medications: [
+      {
+        action: 'prescribe',
+        name: 'Metoclopramida',
+        dose: '10mg',
+        frequency: 'a cada 8 horas',
+        duration: 'contínuo',
+      },
+      {
+        action: 'prescribe',
+        name: 'Lactulose',
+        dose: '15ml',
+        frequency: 'a cada 12 horas',
+        duration: 'contínuo',
+      },
+    ],
+  },
+  {
+    id: 'pt-palliative-comfort',
+    name: 'Intervenções de Conforto - Cuidados Paliativos',
+    specialty: 'Palliative Care',
+    language: 'pt',
+    chiefComplaint: 'Promoção de conforto e dignidade',
+    subjective:
+      'Paciente apresenta necessidades de conforto relacionadas a: [dor/posicionamento/higiene/ambiente/companhia]. Família presente: [sim/não], [nome do familiar]. Comunicação: [verbal/não-verbal/mista]. Preferências expressadas: [música/silêncio/companhia/privacidade]. Estado emocional: [calmo/ansioso/triste/agitado]. Necessidades espirituais: [visita do capelão/oração/terço/comunhão].',
+    objective:
+      'Paciente encontra-se: [confortável/desconfortável], [mobilizado/acamado]. Posicionamento: [decúbito dorsal/lateral/Fowler]. Pele: [íntegra/áreas de pressão/lesões]. Ambiente: [calmo/barulhento], [iluminado/penumbra], temperatura [adequada/fria/quente]. Presença de: [música ambiente/TV/silêncio]. Familiar ao lado: [sim/não]. Expressão facial: [tranquila/tensa/dolorosa].',
+    assessment:
+      'Paciente em cuidados paliativos com foco em conforto e dignidade. Necessidades físicas [atendidas/parcialmente atendidas]. Necessidades psicossociais e espirituais identificadas. Família [participativa/ausente/sobrecarregada]. Ambiente [adequado/necessita ajustes].',
+    plan: '1. Medidas de conforto físico:\n   - Reposicionamento a cada 2h com travesseiros\n   - Colchão caixa de ovo/pneumático para prevenção de lesões\n   - Higiene de conforto com água morna\n   - Hidratação de pele com óleo/creme\n   - Cuidados orais 3x ao dia\n2. Conforto ambiental:\n   - Ajustar temperatura do quarto\n   - Iluminação suave/penumbra conforme preferência\n   - Música ambiente (Roberto Carlos/sertanejo antigo)\n   - Minimizar ruídos\n3. Suporte emocional:\n   - Presença da equipe com escuta ativa\n   - Permitir visita familiar estendida\n   - Disponibilizar espaço para choro/desabafo\n4. Suporte espiritual:\n   - Solicitar visita do capelão\n   - Disponibilizar terço/bíblia se desejado\n   - Respeitar momentos de oração\n5. Orientar família sobre sinais de conforto/desconforto\n6. Reavaliar necessidades a cada turno',
+    diagnoses: [
+      {
+        icd10Code: 'Z51.5',
+        description: 'Cuidado paliativo',
+        isPrimary: true,
+      },
+    ],
+  },
+  {
+    id: 'pt-palliative-family',
+    name: 'Comunicação com Família - Cuidados Paliativos',
+    specialty: 'Palliative Care',
+    language: 'pt',
+    chiefComplaint: 'Reunião familiar e alinhamento de cuidados',
+    subjective:
+      'Reunião realizada com: [nomes dos familiares presentes, grau de parentesco]. Principais preocupações da família: [listar]. Entendimento sobre o quadro clínico: [adequado/parcial/limitado]. Expectativas: [realistas/necessitam ajuste]. Dúvidas apresentadas: [listar]. Família expressa: [aceitação/negação/revolta/esperança]. Questões práticas: [revezamento de acompanhantes/questões financeiras/logística].',
+    objective:
+      'Familiares presentes: [número] pessoas. Estado emocional: [calmos/ansiosos/chorosos/revoltados]. Comunicação: [clara/dificultada]. Compreensão das informações: [boa/necessita repetição]. Presença de cuidador principal: [sim/não], [nome]. Suporte social: [adequado/limitado/ausente]. Documentação: [diretivas antecipadas assinadas/pendentes].',
+    assessment:
+      'Família [bem informada/necessita esclarecimentos] sobre quadro clínico e prognóstico. Objetivos de cuidado: [alinhados/em discussão]. Família demonstra [capacidade/dificuldade] para participar dos cuidados. Apoio psicossocial: [necessário/em andamento]. Planejamento de cuidados: [claro/necessita revisão].',
+    plan: '1. Comunicação clara e empática:\n   - Explicar evolução do quadro clínico\n   - Esclarecer objetivos dos cuidados paliativos\n   - Responder dúvidas de forma acessível\n   - Validar sentimentos da família\n2. Alinhamento de expectativas:\n   - Discutir metas de cuidado (conforto vs prolongamento)\n   - Revisar diretivas antecipadas\n   - Confirmar status DNR/DNI\n   - Documentar preferências do paciente/família\n3. Suporte à família:\n   - Orientar sobre sinais de piora/conforto\n   - Ensinar cuidados básicos (posicionamento, higiene oral)\n   - Incentivar presença e participação\n   - Oferecer suporte psicológico/espiritual\n4. Questões práticas:\n   - Organizar revezamento de acompanhantes\n   - Informar sobre recursos disponíveis\n   - Agendar próxima reunião familiar\n5. Comunicação com equipe:\n   - Registrar em prontuário decisões tomadas\n   - Informar equipe sobre preferências da família\n   - Garantir continuidade do plano de cuidados\n6. Próxima reunião: [data prevista] ou conforme necessidade',
+    diagnoses: [
+      {
+        icd10Code: 'Z51.5',
+        description: 'Cuidado paliativo',
+        isPrimary: true,
+      },
+      {
+        icd10Code: 'Z63.7',
+        description: 'Outros eventos estressantes que afetam a família',
+        isPrimary: false,
+      },
+    ],
+  },
 ];
 
 /**
