@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PainScaleSelectorProps {
   onSelectPainScore: (score: number, description: string) => void;
@@ -14,7 +14,7 @@ export default function PainScaleSelector({
   patientId,
   className = '',
 }: PainScaleSelectorProps) {
-  const { t } = useTranslations();
+  const { t } = useLanguage();
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
   const [isCreatingAssessment, setIsCreatingAssessment] = useState(false);
   const [assessmentSuccess, setAssessmentSuccess] = useState(false);

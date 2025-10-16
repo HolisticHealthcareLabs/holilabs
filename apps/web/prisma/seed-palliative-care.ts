@@ -5,7 +5,7 @@
  * Focus: Special needs and palliative care patients with Brazilian identifiers
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, AdvanceDirectivesStatus, CodeStatus } from '@prisma/client';
 import { generatePatientDataHash } from '../src/lib/blockchain/hashing';
 
 const prisma = new PrismaClient();
@@ -69,14 +69,14 @@ async function main() {
       // Palliative care
       isPalliativeCare: true,
       comfortCareOnly: true,
-      advanceDirectivesStatus: 'COMPLETED',
+      advanceDirectivesStatus: AdvanceDirectivesStatus.COMPLETED,
       advanceDirectivesDate: new Date('2024-12-01'),
       advanceDirectivesNotes: 'Paciente expressa desejo de permanecer no Pequeno Cotolêngo. Não deseja hospitalização. Família está de acordo.',
       dnrStatus: true,
       dnrDate: new Date('2024-12-01'),
       dniStatus: true,
       dniDate: new Date('2024-12-01'),
-      codeStatus: 'COMFORT_CARE_ONLY',
+      codeStatus: CodeStatus.COMFORT_CARE_ONLY,
 
       // Quality of life
       qualityOfLifeScore: 6,
@@ -130,7 +130,7 @@ async function main() {
       // Palliative care
       isPalliativeCare: true,
       comfortCareOnly: false,
-      codeStatus: 'DNR',
+      codeStatus: CodeStatus.DNR,
       dnrStatus: true,
       dnrDate: new Date('2023-05-10'),
 
@@ -185,10 +185,10 @@ async function main() {
       // Palliative care
       isPalliativeCare: true,
       comfortCareOnly: true,
-      codeStatus: 'AND', // Allow Natural Death
+      codeStatus: CodeStatus.AND, // Allow Natural Death
       dnrStatus: true,
       dnrDate: new Date('2024-08-15'),
-      advanceDirectivesStatus: 'COMPLETED',
+      advanceDirectivesStatus: AdvanceDirectivesStatus.COMPLETED,
 
       // Quality of life
       qualityOfLifeScore: 5,
@@ -248,7 +248,9 @@ async function main() {
         region: 'SP',
         dataHash,
         lastHashUpdate: new Date(),
-        assignedClinicianId: clinician.id,
+        assignedClinician: {
+          connect: { id: clinician.id },
+        },
       },
     });
 

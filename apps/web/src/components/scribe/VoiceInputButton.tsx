@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useTranslations } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface VoiceInputButtonProps {
   onTranscript: (text: string) => void;
@@ -14,7 +14,7 @@ export default function VoiceInputButton({
   language = 'pt-BR',
   className = '',
 }: VoiceInputButtonProps) {
-  const { t } = useTranslations();
+  const { t } = useLanguage();
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);

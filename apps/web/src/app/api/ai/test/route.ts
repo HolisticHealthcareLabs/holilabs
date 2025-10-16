@@ -70,7 +70,7 @@ export async function GET() {
         messagePreview: simpleQuery.message?.substring(0, 200) + '...' || null,
         tokens: simpleQuery.usage?.totalTokens || 0,
         responseTime: simpleQuery.usage ? 'N/A' : 'Error',
-        fromCache: simpleQuery.cached || false,
+        fromCache: false,
         error: simpleQuery.error || null,
       },
 
@@ -80,7 +80,7 @@ export async function GET() {
         provider: complexQuery.provider || 'unknown',
         messagePreview: complexQuery.message?.substring(0, 200) + '...' || null,
         tokens: complexQuery.usage?.totalTokens || 0,
-        fromCache: complexQuery.cached || false,
+        fromCache: false,
         error: complexQuery.error || null,
       },
 
