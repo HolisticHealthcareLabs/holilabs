@@ -11,6 +11,9 @@
  * - Quick actions
  */
 
+// Force dynamic rendering for portal (requires authentication and session cookies)
+export const dynamic = 'force-dynamic';
+
 import { redirect } from 'next/navigation';
 import { getPatientSession } from '@/lib/auth/patient-session';
 import { AuthProvider } from '@/lib/auth/AuthProvider';
