@@ -53,30 +53,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
-  // Main navigation items
+  // Main navigation - 4 core categories
   const mainNavItems: NavItem[] = [
-    { name: t('nav.dashboard'), href: '/dashboard', icon: '📊', emoji: '📊' },
-    { name: t('nav.patients'), href: '/dashboard/patients', icon: '👥', emoji: '👥' },
-    { name: t('nav.appointments'), href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
-    { name: t('nav.forms'), href: '/dashboard/forms', icon: '📝', emoji: '📝' },
-    { name: t('nav.messages'), href: '/dashboard/messages', icon: '💬', emoji: '💬' },
-    { name: t('nav.documents'), href: '/dashboard/upload', icon: '📄', emoji: '📄' },
-    { name: t('nav.settings'), href: '/dashboard/settings', icon: '⚙️', emoji: '⚙️' },
+    { name: 'Dashboard', href: '/dashboard', icon: '📊', emoji: '📊' },
+    { name: 'Patients', href: '/dashboard/patients', icon: '👥', emoji: '👥' },
+    { name: 'Calendar & Messages', href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
+    { name: 'Documentation', href: '/dashboard/forms', icon: '📝', emoji: '📝' },
   ];
 
-  // Clinical Tools Group (Spider Tree) - includes Copilot
+  // Clinical Tools Group - AI-powered medical tools
   const clinicalToolsGroup = {
     id: 'clinical-tools',
     name: 'Clinical Tools',
     emoji: '🏥',
     children: [
-      { name: 'Prevention', href: '/dashboard/prevention', emoji: '🛡️' },
-      { name: 'Diagnosis', href: '/dashboard/diagnosis', emoji: '🩺' },
-      { name: 'Prescription', href: '/dashboard/prescriptions', emoji: '💊' },
-      { name: 'Scribe', href: '/dashboard/scribe', emoji: '🎙️' },
-      { name: 'Copilot', href: '/dashboard/ai', emoji: '🦾' },
-      { name: 'Forms', href: '/dashboard/forms', emoji: '📝' },
-      { name: 'Documents', href: '/dashboard/upload', emoji: '📄' },
+      { name: 'AI Scribe', href: '/dashboard/scribe', emoji: '🎙️' },
+      { name: 'AI Copilot', href: '/dashboard/ai', emoji: '🦾' },
+      { name: 'Diagnosis Assistant', href: '/dashboard/diagnosis', emoji: '🩺' },
+      { name: 'Prevention Protocols', href: '/dashboard/prevention', emoji: '🛡️' },
+      { name: 'Prescriptions', href: '/dashboard/prescriptions', emoji: '💊' },
+      { name: 'Document Intelligence', href: '/dashboard/doc-intelligence', emoji: '📄' },
     ],
   };
 
@@ -138,10 +134,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   <Link
                     href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-500 ${
+                    className={`group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ${
                       isActive
                         ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/50 scale-110 ring-2 ring-blue-400 dark:ring-blue-500'
-                        : 'bg-white/80 dark:bg-gray-800/50 backdrop-blur-lg border border-gray-200/50 dark:border-gray-700/50 hover:scale-110 hover:shadow-xl hover:shadow-blue-500/30 dark:hover:shadow-blue-400/20'
+                        : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:scale-110 hover:shadow-xl hover:shadow-blue-500/40 dark:hover:shadow-blue-400/30'
                     }`}
                     style={{
                       transitionDelay: `${index * 30}ms`
@@ -200,7 +196,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               onMouseLeave={() => setExpandedGroup(null)}
             >
               <button
-                className="group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-500 bg-gradient-to-br from-green-500 to-teal-600 hover:scale-110 hover:shadow-xl hover:shadow-green-500/30 dark:hover:shadow-green-400/20"
+                className="group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 bg-gradient-to-br from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 hover:scale-110 hover:shadow-xl hover:shadow-green-500/50 dark:hover:shadow-green-400/40 ring-2 ring-transparent hover:ring-green-400 dark:hover:ring-green-500"
               >
                 <span className="text-2xl transition-transform duration-300 group-hover:scale-125">
                   {clinicalToolsGroup.emoji}
@@ -251,7 +247,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                           className={`group/child flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
                             isActive
                               ? 'bg-gradient-to-br from-green-500 to-teal-600 shadow-md shadow-green-500/50 scale-110 ring-2 ring-green-400'
-                              : 'bg-white/70 dark:bg-gray-800/40 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50 hover:scale-110 hover:shadow-lg'
+                              : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-110 hover:shadow-lg hover:shadow-green-500/30'
                           }`}
                         >
                           <span className="text-lg">{child.emoji}</span>
@@ -329,12 +325,19 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
               </div>
             </div>
+            <Link
+              href="/dashboard/settings"
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            >
+              <span className="text-lg">⚙️</span>
+              <span>Settings</span>
+            </Link>
             <button
               onClick={handleSignOut}
               className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
             >
               <span className="text-lg">🚪</span>
-              <span>{t('nav.logout')}</span>
+              <span>Sign Out</span>
             </button>
           </div>
         </div>

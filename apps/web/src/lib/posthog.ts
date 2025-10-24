@@ -20,7 +20,10 @@ export const initPostHog = () => {
   const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
 
   if (!apiKey) {
-    console.warn('PostHog API key not configured');
+    // Only log in development mode to avoid console noise
+    if (process.env.NODE_ENV === 'development') {
+      console.info('ℹ️  PostHog analytics not configured (optional)');
+    }
     return;
   }
 
@@ -79,6 +82,7 @@ export const trackEvent = (
   properties?: Record<string, any>
 ) => {
   if (typeof window === 'undefined') return;
+  if (!posthog.__loaded) return; // Silently skip if not initialized
 
   posthog.capture(eventName, properties);
 };
@@ -88,6 +92,7 @@ export const trackEvent = (
  */
 export const trackPageView = (pageName?: string) => {
   if (typeof window === 'undefined') return;
+  if (!posthog.__loaded) return; // Silently skip if not initialized
 
   posthog.capture('$pageview', {
     page: pageName || window.location.pathname,
@@ -99,6 +104,7 @@ export const trackPageView = (pageName?: string) => {
  */
 export const identifyUser = (userId: string, traits?: Record<string, any>) => {
   if (typeof window === 'undefined') return;
+  if (!posthog.__loaded) return;
 
   // Use a hashed or anonymized user ID
   posthog.identify(userId, traits);
@@ -109,6 +115,7 @@ export const identifyUser = (userId: string, traits?: Record<string, any>) => {
  */
 export const resetUser = () => {
   if (typeof window === 'undefined') return;
+  if (!posthog.__loaded) return;
 
   posthog.reset();
 };
@@ -118,6 +125,7 @@ export const resetUser = () => {
  */
 export const setUserProperties = (properties: Record<string, any>) => {
   if (typeof window === 'undefined') return;
+  if (!posthog.__loaded) return;
 
   posthog.people.set(properties);
 };
@@ -127,6 +135,7 @@ export const setUserProperties = (properties: Record<string, any>) => {
  */
 export const isFeatureEnabled = (flagKey: string): boolean => {
   if (typeof window === 'undefined') return false;
+  if (!posthog.__loaded) return false;
 
   return posthog.isFeatureEnabled(flagKey) ?? false;
 };
@@ -136,6 +145,7 @@ export const isFeatureEnabled = (flagKey: string): boolean => {
  */
 export const getFeatureFlagPayload = (flagKey: string): any => {
   if (typeof window === 'undefined') return null;
+  if (!posthog.__loaded) return null;
 
   return posthog.getFeatureFlagPayload(flagKey);
 };
