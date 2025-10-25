@@ -150,7 +150,7 @@ export function GlobalSearch() {
         <MagnifyingGlassIcon className="w-4 h-4" />
         <span className="hidden sm:inline">Search patients...</span>
         <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold text-gray-500 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">
-          <span></span>K
+          <span>Cmd</span>K
         </kbd>
       </button>
     );
@@ -262,11 +262,11 @@ export function GlobalSearch() {
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">‘“</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">Arrows</kbd>
                   Navigate
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">µ</kbd>
+                  <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">Enter</kbd>
                   Select
                 </span>
               </div>
