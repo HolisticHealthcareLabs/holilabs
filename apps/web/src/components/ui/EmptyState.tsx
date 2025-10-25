@@ -1,12 +1,17 @@
 /**
  * Empty State Components
  *
- * Beautiful empty states with clear CTAs
- * Helps guide users when there's no data yet
+ * Hospital-grade empty states with:
+ * - Beautiful illustrations
+ * - Clear CTAs
+ * - Dark mode support
+ * - Design token integration
+ * - Accessibility features
  */
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Button } from './Button';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -23,7 +28,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon, title, description, action, illustration = 'default' }: EmptyStateProps) {
   const illustrations = {
     patients: (
-      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="mx-auto h-24 w-24 text-neutral-400 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -33,7 +38,7 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
       </svg>
     ),
     forms: (
-      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="mx-auto h-24 w-24 text-neutral-400 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -43,7 +48,7 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
       </svg>
     ),
     appointments: (
-      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="mx-auto h-24 w-24 text-neutral-400 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -53,7 +58,7 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
       </svg>
     ),
     documents: (
-      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="mx-auto h-24 w-24 text-neutral-400 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -63,7 +68,7 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
       </svg>
     ),
     messages: (
-      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="mx-auto h-24 w-24 text-neutral-400 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -73,7 +78,7 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
       </svg>
     ),
     default: (
-      <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="mx-auto h-24 w-24 text-neutral-400 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -84,37 +89,33 @@ export function EmptyState({ icon, title, description, action, illustration = 'd
     ),
   };
 
+  const rightArrow = (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-gray-200 rounded-xl p-12 text-center"
+      className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-12 text-center"
     >
       {icon || illustrations[illustration]}
-      <h3 className="mt-6 text-xl font-bold text-gray-900">{title}</h3>
-      <p className="mt-2 text-gray-600 max-w-md mx-auto">{description}</p>
+      <h3 className="mt-6 text-xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h3>
+      <p className="mt-2 text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">{description}</p>
       {action && (
         <div className="mt-6">
           {action.href ? (
-            <Link
-              href={action.href}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-lg shadow-blue-600/30"
-            >
-              {action.label}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+            <Link href={action.href}>
+              <Button size="lg" rightIcon={rightArrow}>
+                {action.label}
+              </Button>
             </Link>
           ) : (
-            <button
-              onClick={action.onClick}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-lg shadow-blue-600/30"
-            >
+            <Button size="lg" onClick={action.onClick} rightIcon={rightArrow}>
               {action.label}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -208,14 +209,25 @@ export function ErrorState({
   description?: string;
   onRetry?: () => void;
 }) {
+  const retryIcon = (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
+    </svg>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-red-200 rounded-xl p-12 text-center"
+      className="bg-white dark:bg-neutral-900 border border-error-200 dark:border-error-900/30 rounded-xl p-12 text-center"
     >
-      <div className="mx-auto w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
-        <svg className="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="mx-auto w-24 h-24 bg-error-100 dark:bg-error-900/30 rounded-full flex items-center justify-center mb-6">
+        <svg className="w-12 h-12 text-error-600 dark:text-error-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -224,23 +236,14 @@ export function ErrorState({
           />
         </svg>
       </div>
-      <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-      <p className="mt-2 text-gray-600 max-w-md mx-auto">{description}</p>
+      <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h3>
+      <p className="mt-2 text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">{description}</p>
       {onRetry && (
-        <button
-          onClick={onRetry}
-          className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          Intentar de Nuevo
-        </button>
+        <div className="mt-6">
+          <Button variant="danger" size="lg" onClick={onRetry} leftIcon={retryIcon}>
+            Intentar de Nuevo
+          </Button>
+        </div>
       )}
     </motion.div>
   );
@@ -259,10 +262,10 @@ export function SuccessState({
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white border border-green-200 rounded-xl p-12 text-center"
+      className="bg-white dark:bg-neutral-900 border border-success-200 dark:border-success-900/30 rounded-xl p-12 text-center"
     >
-      <div className="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6">
-        <svg className="w-12 h-12 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+      <div className="mx-auto w-24 h-24 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center mb-6">
+        <svg className="w-12 h-12 text-success-600 dark:text-success-400" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -270,15 +273,14 @@ export function SuccessState({
           />
         </svg>
       </div>
-      <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-      <p className="mt-2 text-gray-600 max-w-md mx-auto">{description}</p>
+      <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">{title}</h3>
+      <p className="mt-2 text-neutral-600 dark:text-neutral-400 max-w-md mx-auto">{description}</p>
       {onClose && (
-        <button
-          onClick={onClose}
-          className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-        >
-          Cerrar
-        </button>
+        <div className="mt-6">
+          <Button variant="success" size="lg" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
       )}
     </motion.div>
   );
