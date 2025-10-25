@@ -34,6 +34,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { locale, t } = useLanguage();
   const { theme } = useTheme();
 
@@ -281,32 +282,160 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             }
           `}</style>
 
-          {/* User Profile */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+          {/* User Profile with Dropdown Menu */}
+          <div className="relative border-t border-gray-200 dark:border-gray-700 p-4">
+            {/* Profile Menu Dropdown - Expands Upward */}
+            {profileMenuOpen && (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setProfileMenuOpen(false)}
+                />
+                {/* Menu */}
+                <div className="absolute bottom-full left-4 right-4 mb-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 animate-slideUp">
+                  {/* Settings Options */}
+                  <div className="px-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <p className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Settings
+                    </p>
+
+                    <Link
+                      href="/dashboard/settings"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-lg">👤</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Profile</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Personal information</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/dashboard/settings?tab=security"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                    >
+                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-lg">🔐</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Password & Security</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Change password, 2FA</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/dashboard/settings?tab=preferences"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                    >
+                      <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-lg">⚙️</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Preferences</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Language, theme, notifications</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/dashboard/settings?tab=privacy"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                    >
+                      <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-lg">🔒</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Privacy & Data</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Data sharing, HIPAA compliance</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/dashboard/settings?tab=billing"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                    >
+                      <div className="w-8 h-8 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-lg">💳</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Billing & Subscription</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Plan, invoices, payment</p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/dashboard/settings?tab=integrations"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                    >
+                      <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span className="text-lg">🔗</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Integrations</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Connected apps, API keys</p>
+                      </div>
+                    </Link>
+                  </div>
+
+                  {/* Help Section */}
+                  <div className="px-2 py-2 border-b border-gray-200 dark:border-gray-700">
+                    <Link
+                      href="/help"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <span className="text-lg">❓</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">Help & Support</span>
+                    </Link>
+                  </div>
+
+                  {/* Sign Out */}
+                  <div className="px-2 pt-2">
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        handleSignOut();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-700 dark:text-red-400"
+                    >
+                      <span className="text-lg">🚪</span>
+                      <span className="text-sm font-semibold">Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Profile Button */}
+            <button
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:scale-105 transition-transform">
                 {user?.email?.[0].toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                   Dr. {user?.email?.split('@')[0]}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
               </div>
-            </div>
-            <Link
-              href="/dashboard/settings"
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              <span className="text-lg">⚙️</span>
-              <span>Settings</span>
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-            >
-              <span className="text-lg">🚪</span>
-              <span>Sign Out</span>
+              <svg
+                className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
             </button>
           </div>
         </div>
