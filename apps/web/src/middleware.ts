@@ -90,4 +90,5 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\..*|public).*)',
   ],
+  runtime: 'nodejs', // Use Node.js runtime for Supabase compatibility
 };
