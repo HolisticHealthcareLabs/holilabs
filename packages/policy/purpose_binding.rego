@@ -1,4 +1,4 @@
-package vidabanq.purpose_binding
+package holilabs.purpose_binding
 
 # Purpose-binding policy enforcement
 # Ensures requests match consent purpose and user role has appropriate scope

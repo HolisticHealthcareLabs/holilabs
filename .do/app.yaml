@@ -9,7 +9,7 @@ domains:
 services:
   - name: web
     github:
-      repo: nicolacapriroloteran/vidabanq-health-ai
+      repo: nicolacapriroloteran/holilabs-health-ai
       branch: main
       deploy_on_push: true
 

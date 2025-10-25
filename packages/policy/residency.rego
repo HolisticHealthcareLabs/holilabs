@@ -1,4 +1,4 @@
-package vidabanq.residency
+package holilabs.residency
 
 # Data residency policy enforcement
 # Ensures data is stored and accessed only in allowed regions

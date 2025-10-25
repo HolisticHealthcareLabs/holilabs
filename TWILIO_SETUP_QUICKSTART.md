@@ -106,7 +106,7 @@ DATABASE_URL="postgresql://..."
 
 1. Open terminal and run:
 ```bash
-cd /Users/nicolacapriroloteran/vidabanq-health-ai
+cd /Users/nicolacapriroloteran/holilabs-health-ai
 pnpm dev
 ```
 

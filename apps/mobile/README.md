@@ -108,7 +108,7 @@ apps/mobile/
 
 ```bash
 # From the monorepo root
-cd /Users/nicolacapriroloteran/vidabanq-health-ai
+cd /Users/nicolacapriroloteran/holilabs-health-ai
 
 # Install dependencies for the entire monorepo
 pnpm install

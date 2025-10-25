@@ -27,7 +27,7 @@ Run these commands locally to generate secure secrets:
 
 ```bash
 # Navigate to your project
-cd /Users/nicolacapriroloteran/vidabanq-health-ai/apps/web
+cd /Users/nicolacapriroloteran/holilabs-health-ai/apps/web
 
 # Generate NEXTAUTH_SECRET (32 bytes base64)
 openssl rand -base64 32
@@ -370,7 +370,7 @@ psql $DATABASE_URL -c "\dt"
 
 ```bash
 # From your project root
-cd /Users/nicolacapriroloteran/vidabanq-health-ai
+cd /Users/nicolacapriroloteran/holilabs-health-ai
 
 # Create workflows directory at monorepo root
 mkdir -p .github/workflows

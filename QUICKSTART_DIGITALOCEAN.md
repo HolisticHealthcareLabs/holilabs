@@ -34,7 +34,7 @@
 2. Click **"Create App"**
 3. Choose **"GitHub"** as source
 4. Click **"Manage Access"** → Authorize DigitalOcean
-5. Select repository: **`vidabanq-health-ai`**
+5. Select repository: **`holilabs-health-ai`**
 6. Select branch: **`main`**
 7. Check **"Autodeploy"** (✅ checked)
 8. Click **"Next"**

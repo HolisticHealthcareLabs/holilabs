@@ -12,7 +12,7 @@
 
 ```bash
 # Make sure all changes are committed
-cd /Users/nicolacapriroloteran/vidabanq-health-ai
+cd /Users/nicolacapriroloteran/holilabs-health-ai
 git add .
 git commit -m "Prepare for DigitalOcean deployment"
 git push origin main
@@ -29,7 +29,7 @@ git push origin main
 ### 2.2 Connect GitHub Repository
 1. Click **"GitHub"** as source
 2. Authorize DigitalOcean to access your GitHub
-3. Select repository: `vidabanq-health-ai`
+3. Select repository: `holilabs-health-ai`
 4. Select branch: `main`
 5. Check **"Autodeploy"** (deploys on every push)
 

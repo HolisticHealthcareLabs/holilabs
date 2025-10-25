@@ -69,7 +69,7 @@
 ## 3. Repository Structure
 
 ```
-vidabanq-health-ai/
+holilabs-health-ai/
 ├── apps/
 │   ├── web/                    # Main Next.js application (PRIMARY)
 │   │   ├── src/

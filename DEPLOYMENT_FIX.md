@@ -100,7 +100,7 @@ openssl rand -hex 32
 ### Step 2: Push Fixes to Git
 
 ```bash
-cd /Users/nicolacapriroloteran/vidabanq-health-ai
+cd /Users/nicolacapriroloteran/holilabs-health-ai
 
 # Add and commit fixes
 git add -A

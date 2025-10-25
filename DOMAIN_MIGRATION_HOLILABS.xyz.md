@@ -70,7 +70,7 @@ DigitalOcean will auto-deploy from GitHub.
 #### 1. Deploy to Vercel
 
 ```bash
-cd /Users/nicolacapriroloteran/vidabanq-health-ai
+cd /Users/nicolacapriroloteran/holilabs-health-ai
 pnpm install -g vercel
 vercel login
 vercel --prod

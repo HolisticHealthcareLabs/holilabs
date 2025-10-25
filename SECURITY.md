@@ -29,7 +29,7 @@ VidaBanq Health AI Platform implements defense-in-depth security controls for he
 
 **DO NOT** open public GitHub issues for security vulnerabilities.
 
-Email: security@vidabanq.xyz
+Email: security@holilabs.xyz
 PGP Key: [KEY_ID]
 
 Expected response: 48 hours
@@ -136,7 +136,7 @@ Annual pentests recommended. Scope:
 - Infrastructure (AWS/GCP CIS Benchmarks)
 - De-ID validation (re-identification attacks)
 
-Report findings to security@vidabanq.xyz.
+Report findings to security@holilabs.xyz.
 
 ## Known Limitations (MVP)
 
@@ -148,4 +148,4 @@ Report findings to security@vidabanq.xyz.
 
 ## Security Updates
 
-Subscribe to security-announce@vidabanq.xyz for CVE notifications.
+Subscribe to security-announce@holilabs.xyz for CVE notifications.

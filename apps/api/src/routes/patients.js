@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const zod_1 = require("zod");
 const index_1 = require("../index");
-const deid_1 = require("@vidabanq/deid");
+const deid_1 = require("@holilabs/deid");
 const CreateTokenSchema = zod_1.z.object({
     subjectKeys: zod_1.z.array(zod_1.z.string()),
 });

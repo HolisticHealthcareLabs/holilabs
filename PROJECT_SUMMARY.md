@@ -16,7 +16,7 @@ A **production-ready healthcare AI platform MVP** with:
 ## 📁 Project Structure
 
 ```
-vidabanq-health-ai/
+holilabs-health-ai/
 ├── apps/
 │   ├── web/                    # Next.js 14 frontend (Dentalink-style UI)
 │   └── api/                    # Fastify backend (REST API)
@@ -138,7 +138,7 @@ cd infra/docker
 docker-compose -f docker-compose.prod.yml up -d
 
 # Or Kubernetes (Helm)
-helm install vidabanq ./charts/vidabanq
+helm install holilabs ./charts/holilabs
 ```
 
 See [GETTING_STARTED.md](./GETTING_STARTED.md) for full instructions.
@@ -267,9 +267,9 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for full instructions.
 
 ## 📞 Support & Contact
 
-- **Email:** support@vidabanq.xyz
-- **Security:** security@vidabanq.xyz
-- **GitHub:** https://github.com/vidabanq/health-ai
+- **Email:** support@holilabs.xyz
+- **Security:** security@holilabs.xyz
+- **GitHub:** https://github.com/holilabs/health-ai
 
 ---
 

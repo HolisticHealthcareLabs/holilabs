@@ -15,7 +15,7 @@
 - ✅ Expo SDK 51 with TypeScript strict mode
 - ✅ Feature-based folder structure
 - ✅ Clean architecture with separation of concerns
-- ✅ Monorepo integration at `vidabanq-health-ai/apps/mobile/`
+- ✅ Monorepo integration at `holilabs-health-ai/apps/mobile/`
 - ✅ ESLint + TypeScript configuration
 - ✅ Environment variable management
 
@@ -299,7 +299,7 @@ Each feature is self-contained:
 1. **Real Authentication API**
    ```typescript
    // Currently: Mock
-   // Needed: Connect to vidabanq-health-ai/apps/api
+   // Needed: Connect to holilabs-health-ai/apps/api
    API_URL=http://your-backend-url.com
    ```
 
@@ -452,7 +452,7 @@ eas submit --platform android
 ## 🎓 Key Learnings & Best Practices
 
 ### 1. Monorepo Integration
-- Mobile app fits seamlessly in existing `vidabanq-health-ai` monorepo
+- Mobile app fits seamlessly in existing `holilabs-health-ai` monorepo
 - Shares TypeScript types with backend (future)
 - Consistent tooling across projects
 
@@ -481,7 +481,7 @@ eas submit --platform android
 
 1. **Install Dependencies**
    ```bash
-   cd /Users/nicolacapriroloteran/vidabanq-health-ai/apps/mobile
+   cd /Users/nicolacapriroloteran/holilabs-health-ai/apps/mobile
    pnpm install
    ```
 
