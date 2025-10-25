@@ -99,11 +99,13 @@ export default function FormsPage() {
           >
             📊 Formularios Enviados
           </Link>
-          <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-600/30"
+          <Link
+            href="/dashboard/forms/create-with-ai"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-lg shadow-blue-600/30 flex items-center gap-2"
           >
-            ➕ Crear Personalizado
-          </button>
+            <span>🤖</span>
+            <span>Crear con AI</span>
+          </Link>
         </div>
       </div>
 
