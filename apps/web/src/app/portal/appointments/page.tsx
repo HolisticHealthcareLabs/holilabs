@@ -53,14 +53,14 @@ export default function AppointmentsPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al cargar citas');
+        throw new Error(data.error || 'Error loading appointments');
       }
 
       setAppointments(data.data.appointments);
       setUpcomingAppointments(data.data.upcomingAppointments);
       setPastAppointments(data.data.pastAppointments);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }
@@ -85,15 +85,15 @@ export default function AppointmentsPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'SCHEDULED':
-        return 'Programada';
+        return 'Scheduled';
       case 'RESCHEDULED':
-        return 'Reprogramada';
+        return 'Rescheduled';
       case 'COMPLETED':
-        return 'Completada';
+        return 'Completed';
       case 'CANCELLED':
-        return 'Cancelada';
+        return 'Cancelled';
       case 'NO_SHOW':
-        return 'No asistió';
+        return 'No Show';
       default:
         return status;
     }
@@ -116,10 +116,10 @@ export default function AppointmentsPage() {
       case 'VIRTUAL':
         return 'Virtual';
       case 'PHONE':
-        return 'Telefónica';
+        return 'Phone';
       case 'IN_PERSON':
       default:
-        return 'Presencial';
+        return 'In-Person';
     }
   };
 
@@ -156,14 +156,14 @@ export default function AppointmentsPage() {
             />
           </svg>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Error al cargar citas
+            Error loading appointments
           </h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={fetchAppointments}
             className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
           >
-            Reintentar
+            Retry
           </button>
         </div>
       </div>
@@ -179,10 +179,10 @@ export default function AppointmentsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            Mis Citas
+            My Appointments
           </h1>
           <p className="text-gray-600">
-            Administra tus consultas médicas
+            Manage your medical visits
           </p>
         </div>
         <Link
@@ -197,7 +197,7 @@ export default function AppointmentsPage() {
               d="M12 4v16m8-8H4"
             />
           </svg>
-          <span className="hidden sm:inline">Solicitar Cita</span>
+          <span className="hidden sm:inline">Request</span>
         </Link>
       </div>
 
@@ -212,7 +212,7 @@ export default function AppointmentsPage() {
             <span className="text-2xl">📅</span>
             <span className="text-3xl font-bold">{upcomingAppointments.length}</span>
           </div>
-          <p className="text-sm font-medium">Próximas</p>
+          <p className="text-sm font-medium">Upcoming</p>
         </motion.div>
 
         <motion.div
@@ -225,7 +225,7 @@ export default function AppointmentsPage() {
             <span className="text-2xl">✅</span>
             <span className="text-3xl font-bold">{pastAppointments.length}</span>
           </div>
-          <p className="text-sm font-medium">Historial</p>
+          <p className="text-sm font-medium">Past</p>
         </motion.div>
 
         <motion.div
@@ -240,7 +240,7 @@ export default function AppointmentsPage() {
               {appointments.filter((a) => a.type === 'VIRTUAL').length}
             </span>
           </div>
-          <p className="text-sm font-medium">Virtuales</p>
+          <p className="text-sm font-medium">Virtual</p>
         </motion.div>
 
         <motion.div
@@ -255,7 +255,7 @@ export default function AppointmentsPage() {
               {appointments.filter((a) => a.type === 'IN_PERSON').length}
             </span>
           </div>
-          <p className="text-sm font-medium">Presenciales</p>
+          <p className="text-sm font-medium">In-Person</p>
         </motion.div>
       </div>
 
@@ -269,7 +269,7 @@ export default function AppointmentsPage() {
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          Próximas ({upcomingAppointments.length})
+          Upcoming ({upcomingAppointments.length})
         </button>
         <button
           onClick={() => setActiveTab('past')}
@@ -279,7 +279,7 @@ export default function AppointmentsPage() {
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          Historial ({pastAppointments.length})
+          Past ({pastAppointments.length})
         </button>
       </div>
 
@@ -310,13 +310,13 @@ export default function AppointmentsPage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {activeTab === 'upcoming'
-                ? 'No tienes citas próximas'
-                : 'No hay citas en el historial'}
+                ? 'No upcoming appointments'
+                : 'No past appointments'}
             </h3>
             <p className="text-gray-600 mb-6">
               {activeTab === 'upcoming'
-                ? 'Solicita una nueva cita para agendar tu consulta'
-                : 'Las citas completadas aparecerán aquí'}
+                ? 'Request an appointment to schedule your visit'
+                : 'Completed appointments will appear here'}
             </p>
             {activeTab === 'upcoming' && (
               <Link
@@ -336,7 +336,7 @@ export default function AppointmentsPage() {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Solicitar Cita
+                Request Appointment
               </Link>
             )}
           </motion.div>
@@ -419,7 +419,7 @@ export default function AppointmentsPage() {
                   </span>
                   {appointment.urgency === 'URGENT' && (
                     <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded">
-                      ⚠️ Urgente
+                      ⚠️ Urgent
                     </span>
                   )}
                 </div>
@@ -433,10 +433,10 @@ export default function AppointmentsPage() {
                   isFuture(new Date(appointment.startTime)) && (
                     <div className="flex gap-2 pt-4 border-t border-gray-200">
                       <button className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium text-sm transition-colors">
-                        Cancelar
+                        Cancel
                       </button>
                       <button className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors">
-                        Ver Detalles
+                        View Details
                       </button>
                     </div>
                   )}

@@ -1,8 +1,8 @@
 import DiagnosisAssistant from '@/components/clinical/DiagnosisAssistant';
 
 export const metadata = {
-  title: 'AI Diagnosis Assistant | Holi Labs',
-  description: 'Clinical decision support system powered by AI',
+  title: 'AI Diagnosis | Holi Labs',
+  description: 'AI clinical recommendations',
 };
 
 export default function DiagnosisPage() {

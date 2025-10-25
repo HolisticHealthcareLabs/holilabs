@@ -1,18 +1,16 @@
 {
-  "nav": {
-    "dashboard": "Painel",
-    "patients": "Pacientes",
-    "appointments": "Consultas",
-    "medications": "Medicamentos",
-    "forms": "Formulários",
-    "messages": "Mensagens",
-    "scribe": "AI Scribe",
-    "documents": "Documentos",
-    "aiAssistant": "Assistente IA",
-    "analysis": "Análise",
-    "settings": "Configurações",
-    "logout": "Sair"
-  },
+  "dashboardNav": "Painel",
+  "patientsNav": "Pacientes",
+  "appointmentsNav": "Consultas",
+  "medicationsNav": "Medicamentos",
+  "formsNav": "Formulários",
+  "messagesNav": "Mensagens",
+  "scribeNav": "AI Scribe",
+  "documentsNav": "Documentos",
+  "aiAssistantNav": "Assistente IA",
+  "analysisNav": "Análise",
+  "settingsNav": "Configurações",
+  "logoutNav": "Sair",
   "dashboard": {
     "greeting": {
       "morning": "Bom dia",

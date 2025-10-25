@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import confetti from 'canvas-confetti';
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -23,6 +24,7 @@ interface Appointment {
   id: string;
   patientName: string;
   clinicianName: string;
+  clinicianSpecialty?: string;
   date: string;
   time: string;
   dateTime: string;
@@ -30,6 +32,9 @@ interface Appointment {
   status: string;
   confirmationStatus: string;
   description?: string;
+  branch?: string;
+  branchAddress?: string;
+  branchMapLink?: string;
 }
 
 type ActionType = 'confirm' | 'reschedule' | 'cancel';
@@ -49,6 +54,7 @@ export default function ConfirmAppointmentPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [patientNotes, setPatientNotes] = useState('');
 
   useEffect(() => {
     fetchAppointment();
@@ -88,6 +94,34 @@ export default function ConfirmAppointmentPage() {
     }
   };
 
+  // Trigger confetti animation
+  const celebrate = () => {
+    // Fire confetti from both sides
+    const end = Date.now() + 3 * 1000; // 3 seconds
+    const colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B'];
+
+    (function frame() {
+      confetti({
+        particleCount: 4,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.6 },
+        colors: colors,
+      });
+      confetti({
+        particleCount: 4,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.6 },
+        colors: colors,
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+  };
+
   const handleAction = async (action: ActionType) => {
     if (action === 'reschedule' && !selectedSlot) {
       alert('Por favor selecciona una nueva fecha y hora');
@@ -103,6 +137,7 @@ export default function ConfirmAppointmentPage() {
           action,
           newTime: action === 'reschedule' ? selectedSlot : undefined,
           reason: action === 'cancel' ? cancelReason : undefined,
+          patientNotes: action === 'confirm' ? patientNotes : undefined,
         }),
       });
 
@@ -115,6 +150,11 @@ export default function ConfirmAppointmentPage() {
 
       setActionType(action);
       setActionComplete(true);
+
+      // Trigger confetti on successful confirmation
+      if (action === 'confirm') {
+        celebrate();
+      }
     } catch (err) {
       alert('Error al procesar la solicitud');
     } finally {
@@ -266,8 +306,62 @@ export default function ConfirmAppointmentPage() {
                 </p>
               </div>
             </div>
+
+            {/* Branch/Location */}
+            {appointment.branch && (
+              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl">
+                <MapPinIcon className="h-6 w-6 text-teal-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-500">Sucursal</p>
+                  <p className="text-lg font-semibold text-gray-900 mb-1">
+                    {appointment.branch}
+                  </p>
+                  {appointment.branchAddress && (
+                    <>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {appointment.branchAddress}
+                      </p>
+                      {appointment.branchMapLink && (
+                        <a
+                          href={appointment.branchMapLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-1 text-sm font-medium text-teal-600 hover:text-teal-700 hover:underline"
+                        >
+                          <MapPinIcon className="h-4 w-4" />
+                          <span>Ver en Google Maps</span>
+                        </a>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Patient Notes Section */}
+        {!showReschedule && !showCancel && (
+          <div className="backdrop-blur-xl bg-white/70 rounded-3xl shadow-2xl p-8 border border-white/20">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              ¿Tienes alguna nota para el doctor?
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Puedes compartir información relevante que el doctor deba saber antes de la consulta (opcional)
+            </p>
+            <textarea
+              value={patientNotes}
+              onChange={(e) => setPatientNotes(e.target.value)}
+              placeholder="Ej: Síntomas recientes, medicamentos que tomo, alergias, etc..."
+              className="w-full p-4 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition resize-none text-gray-900"
+              rows={4}
+              maxLength={500}
+            />
+            <p className="text-xs text-gray-500 mt-2 text-right">
+              {patientNotes.length}/500 caracteres
+            </p>
+          </div>
+        )}
 
         {/* Actions Card */}
         {!showReschedule && !showCancel && (

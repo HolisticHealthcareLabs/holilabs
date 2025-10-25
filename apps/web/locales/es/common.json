@@ -1,18 +1,16 @@
 {
-  "nav": {
-    "dashboard": "Tablero",
-    "patients": "Pacientes",
-    "appointments": "Citas",
-    "medications": "Medicamentos",
-    "forms": "Formularios",
-    "messages": "Mensajes",
-    "scribe": "AI Scribe",
-    "documents": "Documentos",
-    "aiAssistant": "IA Asistente",
-    "analysis": "Análisis",
-    "settings": "Configuración",
-    "logout": "Cerrar Sesión"
-  },
+  "dashboardNav": "Tablero",
+  "patientsNav": "Pacientes",
+  "appointmentsNav": "Citas",
+  "medicationsNav": "Medicamentos",
+  "formsNav": "Formularios",
+  "messagesNav": "Mensajes",
+  "scribeNav": "AI Scribe",
+  "documentsNav": "Documentos",
+  "aiAssistantNav": "IA Asistente",
+  "analysisNav": "Análisis",
+  "settingsNav": "Configuración",
+  "logoutNav": "Cerrar Sesión",
   "dashboard": {
     "greeting": {
       "morning": "Buenos días",

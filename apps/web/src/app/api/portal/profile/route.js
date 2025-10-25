@@ -1,0 +1,200 @@
+"use strict";
+/**
+ * Patient Profile API
+ *
+ * GET /api/portal/profile
+ * Fetch profile data for authenticated patient
+ *
+ * PATCH /api/portal/profile
+ * Update profile data
+ */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GET = GET;
+exports.PATCH = PATCH;
+const server_1 = require("next/server");
+const patient_session_1 = require("@/lib/auth/patient-session");
+const prisma_1 = require("@/lib/prisma");
+const logger_1 = __importDefault(require("@/lib/logger"));
+const zod_1 = require("zod");
+// Update profile schema
+// TODO: These fields don't exist in Patient model yet
+const UpdateProfileSchema = zod_1.z.object({
+// emergencyContactName: z.string().min(2).optional(),
+// emergencyContactPhone: z.string().min(10).optional(),
+// emergencyContactRelationship: z.string().optional(),
+// preferredLanguage: z.enum(['en', 'es']).optional(),
+// communicationPreferences: z.object({
+//   email: z.boolean().optional(),
+//   sms: z.boolean().optional(),
+//   push: z.boolean().optional(),
+// }).optional(),
+});
+async function GET(request) {
+    try {
+        // Authenticate patient
+        const session = await (0, patient_session_1.requirePatientSession)();
+        // Fetch patient with full profile data
+        const patient = await prisma_1.prisma.patient.findUnique({
+            where: { id: session.patientId },
+            include: {
+                assignedClinician: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        specialty: true,
+                        licenseNumber: true,
+                        email: true,
+                        // TODO: phone field doesn't exist in User model
+                        // phone: true,
+                        // TODO: user relation doesn't exist - assignedClinician IS a User
+                        // user: {
+                        //   select: {
+                        //     email: true,
+                        //     phone: true,
+                        //   },
+                        // },
+                    },
+                },
+                medications: {
+                    where: { isActive: true },
+                    select: { id: true },
+                },
+                appointments: {
+                    where: {
+                        startTime: { gte: new Date() },
+                        // TODO: RESCHEDULED status doesn't exist - using SCHEDULED and CONFIRMED
+                        status: { in: ['SCHEDULED', 'CONFIRMED'] },
+                    },
+                    select: { id: true },
+                },
+                documents: {
+                    select: { id: true },
+                },
+            },
+        });
+        if (!patient) {
+            return server_1.NextResponse.json({
+                success: false,
+                error: 'Perfil no encontrado.',
+            }, { status: 404 });
+        }
+        logger_1.default.info({
+            event: 'patient_profile_fetched',
+            patientId: session.patientId,
+            patientUserId: session.userId,
+        });
+        return server_1.NextResponse.json({
+            success: true,
+            data: {
+                id: patient.id,
+                // TODO: patientId field doesn't exist - using mrn instead
+                patientId: patient.mrn,
+                firstName: patient.firstName,
+                lastName: patient.lastName,
+                dateOfBirth: patient.dateOfBirth,
+                gender: patient.gender,
+                // TODO: These fields don't exist in Patient model yet
+                // bloodType: patient.bloodType,
+                // allergies: patient.allergies,
+                // chronicConditions: patient.chronicConditions,
+                // emergencyContactName: patient.emergencyContactName,
+                // emergencyContactPhone: patient.emergencyContactPhone,
+                // emergencyContactRelationship: patient.emergencyContactRelationship,
+                assignedClinician: patient.assignedClinician,
+                stats: {
+                    activeMedications: patient.medications.length,
+                    upcomingAppointments: patient.appointments.length,
+                    totalDocuments: patient.documents.length,
+                },
+                createdAt: patient.createdAt,
+            },
+        }, { status: 200 });
+    }
+    catch (error) {
+        // Check if it's an auth error
+        if (error instanceof Error && error.message.includes('Unauthorized')) {
+            return server_1.NextResponse.json({
+                success: false,
+                error: 'No autorizado. Por favor, inicia sesión.',
+            }, { status: 401 });
+        }
+        logger_1.default.error({
+            event: 'patient_profile_fetch_error',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return server_1.NextResponse.json({
+            success: false,
+            error: 'Error al cargar perfil.',
+        }, { status: 500 });
+    }
+}
+async function PATCH(request) {
+    try {
+        // Authenticate patient
+        const session = await (0, patient_session_1.requirePatientSession)();
+        // Parse and validate request body
+        const body = await request.json();
+        const validation = UpdateProfileSchema.safeParse(body);
+        if (!validation.success) {
+            return server_1.NextResponse.json({
+                success: false,
+                error: 'Datos inválidos',
+                details: validation.error.errors,
+            }, { status: 400 });
+        }
+        const updateData = validation.data;
+        // Update patient profile
+        const updatedPatient = await prisma_1.prisma.patient.update({
+            where: { id: session.patientId },
+            data: updateData,
+        });
+        // Create audit log
+        await prisma_1.prisma.auditLog.create({
+            data: {
+                userId: session.userId,
+                userEmail: session.email,
+                ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+                action: 'UPDATE',
+                resource: 'Patient',
+                resourceId: session.patientId,
+                success: true,
+                details: {
+                    updatedFields: Object.keys(updateData),
+                },
+            },
+        });
+        logger_1.default.info({
+            event: 'patient_profile_updated',
+            patientId: session.patientId,
+            patientUserId: session.userId,
+            updatedFields: Object.keys(updateData),
+        });
+        return server_1.NextResponse.json({
+            success: true,
+            message: 'Perfil actualizado correctamente.',
+            data: updatedPatient,
+        }, { status: 200 });
+    }
+    catch (error) {
+        // Check if it's an auth error
+        if (error instanceof Error && error.message.includes('Unauthorized')) {
+            return server_1.NextResponse.json({
+                success: false,
+                error: 'No autorizado. Por favor, inicia sesión.',
+            }, { status: 401 });
+        }
+        logger_1.default.error({
+            event: 'patient_profile_update_error',
+            error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return server_1.NextResponse.json({
+            success: false,
+            error: 'Error al actualizar perfil.',
+        }, { status: 500 });
+    }
+}
+//# sourceMappingURL=route.js.map
