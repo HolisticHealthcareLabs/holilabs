@@ -15,6 +15,7 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { MedicationsListSkeleton } from '@/components/skeletons/PortalSkeletons';
 
 interface Medication {
   id: string;
@@ -94,8 +95,10 @@ export default function MedicationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <MedicationsListSkeleton count={5} />
+        </div>
       </div>
     );
   }
