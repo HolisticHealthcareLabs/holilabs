@@ -131,12 +131,14 @@ export async function POST(
         } else if ((ch === 'push' || ch === 'in-app') && preferences?.pushEnabled) {
           const pushResult = await sendPushNotification({
             userId: patient.id,
-            userType: 'PATIENT',
-            title: subject,
-            body: message,
-            data: {
-              appointmentId,
-              type,
+            payload: {
+              title: subject,
+              body: message,
+              data: {
+                appointmentId,
+                type,
+                userType: 'PATIENT', // Moved to data
+              },
             },
           });
           results.push({ channel: 'push', success: pushResult.success });
