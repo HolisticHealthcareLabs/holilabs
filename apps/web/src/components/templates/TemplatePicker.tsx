@@ -57,18 +57,24 @@ interface TemplatePickerProps {
 
   /** Show favorites only */
   favoritesOnly?: boolean;
+
+  /** External control of open state (optional) */
+  isOpen?: boolean;
+
+  /** Callback when picker should close (optional) */
+  onClose?: () => void;
 }
 
 const TEMPLATE_CATEGORIES = [
-  { value: 'ALL', label: 'All Templates', icon: '=Ë' },
-  { value: 'CHIEF_COMPLAINT', label: 'Chief Complaint', icon: '>z' },
-  { value: 'HISTORY_OF_PRESENT_ILLNESS', label: 'HPI', icon: '=Ý' },
-  { value: 'PHYSICAL_EXAM', label: 'Physical Exam', icon: '=' },
-  { value: 'ASSESSMENT', label: 'Assessment', icon: '=­' },
-  { value: 'PLAN', label: 'Plan', icon: '=Ê' },
-  { value: 'PRESCRIPTION', label: 'Prescription', icon: '=Š' },
-  { value: 'PATIENT_EDUCATION', label: 'Education', icon: '=Ú' },
-  { value: 'PROGRESS_NOTE', label: 'Progress Note', icon: '=È' },
+  { value: 'ALL', label: 'All Templates', icon: 'ðŸ“‹' },
+  { value: 'CHIEF_COMPLAINT', label: 'Chief Complaint', icon: 'ðŸ—£ï¸' },
+  { value: 'HISTORY_OF_PRESENT_ILLNESS', label: 'HPI', icon: 'ðŸ“–' },
+  { value: 'PHYSICAL_EXAM', label: 'Physical Exam', icon: 'ðŸ©º' },
+  { value: 'ASSESSMENT', label: 'Assessment', icon: 'ðŸ”' },
+  { value: 'PLAN', label: 'Plan', icon: 'ðŸ“' },
+  { value: 'PRESCRIPTION', label: 'Prescription', icon: 'ðŸ’Š' },
+  { value: 'PATIENT_EDUCATION', label: 'Education', icon: 'ðŸ“š' },
+  { value: 'PROGRESS_NOTE', label: 'Progress Note', icon: 'ðŸ“„' },
 ];
 
 export function TemplatePicker({
@@ -76,8 +82,16 @@ export function TemplatePicker({
   context,
   categoryFilter,
   favoritesOnly = false,
+  isOpen: externalIsOpen,
+  onClose: externalOnClose,
 }: TemplatePickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use external control if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = externalOnClose ? (value: boolean) => {
+    if (!value) externalOnClose();
+  } : setInternalIsOpen;
   const [query, setQuery] = useState('');
   const [templates, setTemplates] = useState<ClinicalTemplate[]>([]);
   const [selectedCategory, setSelectedCategory] = useState(categoryFilter || 'ALL');
@@ -215,10 +229,15 @@ export function TemplatePicker({
   // Show recent templates
   const recentTemplateObjects = templates.filter(t => recentTemplates.includes(t.id));
 
+  // If externally controlled and not open, render nothing
+  if (!isOpen && externalIsOpen !== undefined) {
+    return null;
+  }
+
   if (!isOpen) {
     return (
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => setInternalIsOpen(true)}
         className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         title="Insert template (Cmd+Shift+T)"
       >

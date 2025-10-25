@@ -9,6 +9,7 @@ import VersionHistoryModal from './VersionHistoryModal';
 import VoiceInputButton from './VoiceInputButton';
 import QuickInterventionsPanel from './QuickInterventionsPanel';
 import PainScaleSelector from './PainScaleSelector';
+import { TemplatePicker } from '@/components/templates/TemplatePicker';
 
 interface Diagnosis {
   icd10Code: string;
@@ -90,6 +91,9 @@ export default function SOAPNoteEditor({
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showPainScale, setShowPainScale] = useState(false);
   const [activeVoiceField, setActiveVoiceField] = useState<
+    'subjective' | 'objective' | 'assessment' | 'plan' | null
+  >(null);
+  const [templatePickerTarget, setTemplatePickerTarget] = useState<
     'subjective' | 'objective' | 'assessment' | 'plan' | null
   >(null);
 
@@ -176,6 +180,19 @@ export default function SOAPNoteEditor({
         ? `${prev.subjective}\n${description}`
         : description,
     }));
+  };
+
+  // Handler for clinical template insertion
+  const handleTemplateSelect = (content: string) => {
+    if (!templatePickerTarget) return;
+
+    setEditedNote((prev) => ({
+      ...prev,
+      [templatePickerTarget]: prev[templatePickerTarget]
+        ? `${prev[templatePickerTarget]}\n\n${content}`
+        : content,
+    }));
+    setTemplatePickerTarget(null);
   };
 
   const templates = getTemplatesByLanguage(selectedLanguage);
@@ -333,25 +350,33 @@ export default function SOAPNoteEditor({
         </div>
         {isEditing ? (
           <>
-            <VoiceInputButton
-              onTranscript={handleVoiceTranscript}
-              language="pt-BR"
-              className="mb-2"
-            />
-            <button
-              onClick={() =>
-                setActiveVoiceField(activeVoiceField === 'subjective' ? null : 'subjective')
-              }
-              className={`text-xs px-3 py-1 rounded mb-2 ${
-                activeVoiceField === 'subjective'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}
-            >
-              {activeVoiceField === 'subjective'
-                ? '✓ Voz activa para este campo'
-                : 'Activar voz para este campo'}
-            </button>
+            <div className="flex items-center gap-2 mb-2">
+              <VoiceInputButton
+                onTranscript={handleVoiceTranscript}
+                language="pt-BR"
+                className=""
+              />
+              <button
+                onClick={() =>
+                  setActiveVoiceField(activeVoiceField === 'subjective' ? null : 'subjective')
+                }
+                className={`text-xs px-3 py-1 rounded ${
+                  activeVoiceField === 'subjective'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
+              >
+                {activeVoiceField === 'subjective'
+                  ? '✓ Voz activa'
+                  : 'Activar voz'}
+              </button>
+              <button
+                onClick={() => setTemplatePickerTarget('subjective')}
+                className="text-xs px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold"
+              >
+                📋 Insertar Plantilla
+              </button>
+            </div>
             <textarea
               value={editedNote.subjective || ''}
               onChange={(e) => setEditedNote({ ...editedNote, subjective: e.target.value })}
@@ -380,20 +405,28 @@ export default function SOAPNoteEditor({
         </div>
         {isEditing ? (
           <>
-            <button
-              onClick={() =>
-                setActiveVoiceField(activeVoiceField === 'objective' ? null : 'objective')
-              }
-              className={`text-xs px-3 py-1 rounded mb-2 ${
-                activeVoiceField === 'objective'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-green-100 text-green-700 hover:bg-green-200'
-              }`}
-            >
-              {activeVoiceField === 'objective'
-                ? '✓ Voz activa para este campo'
-                : 'Activar voz para este campo'}
-            </button>
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                onClick={() =>
+                  setActiveVoiceField(activeVoiceField === 'objective' ? null : 'objective')
+                }
+                className={`text-xs px-3 py-1 rounded ${
+                  activeVoiceField === 'objective'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+              >
+                {activeVoiceField === 'objective'
+                  ? '✓ Voz activa'
+                  : 'Activar voz'}
+              </button>
+              <button
+                onClick={() => setTemplatePickerTarget('objective')}
+                className="text-xs px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold"
+              >
+                📋 Insertar Plantilla
+              </button>
+            </div>
             <textarea
               value={editedNote.objective || ''}
               onChange={(e) => setEditedNote({ ...editedNote, objective: e.target.value })}
@@ -464,20 +497,28 @@ export default function SOAPNoteEditor({
         </div>
         {isEditing ? (
           <>
-            <button
-              onClick={() =>
-                setActiveVoiceField(activeVoiceField === 'assessment' ? null : 'assessment')
-              }
-              className={`text-xs px-3 py-1 rounded mb-2 ${
-                activeVoiceField === 'assessment'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-              }`}
-            >
-              {activeVoiceField === 'assessment'
-                ? '✓ Voz activa para este campo'
-                : 'Activar voz para este campo'}
-            </button>
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                onClick={() =>
+                  setActiveVoiceField(activeVoiceField === 'assessment' ? null : 'assessment')
+                }
+                className={`text-xs px-3 py-1 rounded ${
+                  activeVoiceField === 'assessment'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                }`}
+              >
+                {activeVoiceField === 'assessment'
+                  ? '✓ Voz activa'
+                  : 'Activar voz'}
+              </button>
+              <button
+                onClick={() => setTemplatePickerTarget('assessment')}
+                className="text-xs px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold"
+              >
+                📋 Insertar Plantilla
+              </button>
+            </div>
             <textarea
               value={editedNote.assessment || ''}
               onChange={(e) => setEditedNote({ ...editedNote, assessment: e.target.value })}
@@ -535,20 +576,28 @@ export default function SOAPNoteEditor({
         </div>
         {isEditing ? (
           <>
-            <button
-              onClick={() =>
-                setActiveVoiceField(activeVoiceField === 'plan' ? null : 'plan')
-              }
-              className={`text-xs px-3 py-1 rounded mb-2 ${
-                activeVoiceField === 'plan'
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-              }`}
-            >
-              {activeVoiceField === 'plan'
-                ? '✓ Voz activa para este campo'
-                : 'Activar voz para este campo'}
-            </button>
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                onClick={() =>
+                  setActiveVoiceField(activeVoiceField === 'plan' ? null : 'plan')
+                }
+                className={`text-xs px-3 py-1 rounded ${
+                  activeVoiceField === 'plan'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                }`}
+              >
+                {activeVoiceField === 'plan'
+                  ? '✓ Voz activa'
+                  : 'Activar voz'}
+              </button>
+              <button
+                onClick={() => setTemplatePickerTarget('plan')}
+                className="text-xs px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold"
+              >
+                📋 Insertar Plantilla
+              </button>
+            </div>
             <textarea
               value={editedNote.plan || ''}
               onChange={(e) => setEditedNote({ ...editedNote, plan: e.target.value })}
@@ -697,6 +746,13 @@ export default function SOAPNoteEditor({
         noteId={note.id}
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
+      />
+
+      {/* Clinical Template Picker */}
+      <TemplatePicker
+        isOpen={templatePickerTarget !== null}
+        onSelect={handleTemplateSelect}
+        onClose={() => setTemplatePickerTarget(null)}
       />
     </div>
   );
