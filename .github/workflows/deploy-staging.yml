@@ -55,7 +55,7 @@ jobs:
 
       - name: Notify team
         if: success()
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
@@ -74,7 +74,7 @@ jobs:
 
       - name: Notify team on failure
         if: failure()
-        uses: slackapi/slack-github-action@v1
+        uses: slackapi/slack-github-action@v2
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
