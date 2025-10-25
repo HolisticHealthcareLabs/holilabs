@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { sendOTPCode, sendWhatsApp, isTwilioConfigured } from '@/lib/sms/twilio';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,26 +21,42 @@ function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
 }
 
-async function sendSMS(phone: string, code: string): Promise<void> {
-  // TODO: Implement Twilio SMS sending
-  console.log(`Would send SMS to ${phone}: Your verification code is ${code}`);
+async function sendSMSCode(phone: string, code: string): Promise<boolean> {
+  if (!isTwilioConfigured()) {
+    logger.warn({
+      event: 'otp_twilio_not_configured',
+      message: 'Twilio not configured, logging code instead',
+      phone,
+    });
+    console.log(`[DEV MODE] OTP code for ${phone}: ${code}`);
+    return true; // Allow in dev mode
+  }
 
-  // Example Twilio implementation:
-  /*
-  const twilio = require('twilio');
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  return await sendOTPCode(phone, code);
+}
 
-  await client.messages.create({
-    body: `Your Holi Labs verification code is: ${code}. Valid for 10 minutes.`,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: phone,
-  });
-  */
+async function sendWhatsAppCode(phone: string, code: string): Promise<boolean> {
+  if (!isTwilioConfigured()) {
+    logger.warn({
+      event: 'otp_twilio_not_configured',
+      message: 'Twilio not configured, logging code instead',
+      phone,
+    });
+    console.log(`[DEV MODE] WhatsApp OTP code for ${phone}: ${code}`);
+    return true; // Allow in dev mode
+  }
+
+  const message = `Tu código de verificación de Holi Labs es: ${code}. Válido por 10 minutos.`;
+  return await sendWhatsApp({ to: phone, message });
 }
 
 async function sendOTPEmail(email: string, code: string): Promise<void> {
-  // TODO: Implement email sending
-  console.log(`Would send email to ${email}: Your verification code is ${code}`);
+  // TODO: Implement email sending via SendGrid/AWS SES
+  logger.info({
+    event: 'otp_email_placeholder',
+    email,
+  });
+  console.log(`[DEV MODE] Email OTP code for ${email}: ${code}`);
 }
 
 export async function POST(request: NextRequest) {
@@ -111,16 +129,35 @@ export async function POST(request: NextRequest) {
 
     // Send OTP via selected channel
     try {
+      let sent = false;
+
       if (channel === 'SMS' && phone) {
-        await sendSMS(phone, code);
+        sent = await sendSMSCode(phone, code);
       } else if (channel === 'EMAIL' && email) {
         await sendOTPEmail(email, code);
+        sent = true; // Email always "succeeds" in dev mode
       } else if (channel === 'WHATSAPP' && phone) {
-        // TODO: Implement WhatsApp sending
-        console.log(`Would send WhatsApp to ${phone}: ${code}`);
+        sent = await sendWhatsAppCode(phone, code);
+      }
+
+      if (!sent) {
+        logger.error({
+          event: 'otp_send_failed',
+          channel,
+          phone,
+          email,
+        });
+        return NextResponse.json(
+          { error: 'Failed to send OTP code. Please try again.' },
+          { status: 500 }
+        );
       }
     } catch (sendError) {
-      console.error('Error sending OTP:', sendError);
+      logger.error({
+        event: 'otp_send_error',
+        error: sendError instanceof Error ? sendError.message : 'Unknown error',
+        channel,
+      });
       return NextResponse.json(
         { error: 'Failed to send OTP code' },
         { status: 500 }

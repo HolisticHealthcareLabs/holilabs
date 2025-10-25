@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,6 +128,13 @@ export async function POST(request: NextRequest) {
         data: { emailVerifiedAt: new Date() },
       });
     }
+
+    logger.info({
+      event: 'otp_verified_success',
+      patientUserId: otpRecord.patientUserId,
+      sentVia: otpRecord.sentVia,
+      attempts: otpRecord.attempts + 1,
+    });
 
     return NextResponse.json(
       {
