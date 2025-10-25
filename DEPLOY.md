@@ -6,10 +6,10 @@
 
 ```bash
 # Create a new repo on GitHub: https://github.com/new
-# Name it: vidabanq-health-ai
+# Name it: holilabs-health-ai
 
 # Then push your code:
-git remote add origin https://github.com/YOUR_USERNAME/vidabanq-health-ai.git
+git remote add origin https://github.com/YOUR_USERNAME/holilabs-health-ai.git
 git branch -M main
 git push -u origin main
 ```
@@ -20,13 +20,13 @@ git push -u origin main
 2. Click **"Create App"**
 3. Select **"GitHub"** as source
 4. Authorize DigitalOcean to access your GitHub
-5. Select repository: `vidabanq-health-ai`
+5. Select repository: `holilabs-health-ai`
 6. Branch: `main`
 7. Click **"Next"**
 
 ### Step 3: Configure Build Settings
 
-**App Name:** `vidabanq-health-ai`
+**App Name:** `holilabs-health-ai`
 
 **Region:** Choose closest to your users (e.g., `nyc` for Americas)
 
@@ -64,14 +64,14 @@ If you need the full backend:
 
 1. Click **"Next"** → **"Create Resources"**
 2. Wait 5-10 minutes for build
-3. Your app will be live at: `https://vidabanq-health-ai-xxxxx.ondigitalocean.app`
+3. Your app will be live at: `https://holilabs-health-ai-xxxxx.ondigitalocean.app`
 
 ### Step 6: Custom Domain (Optional)
 
 1. Go to **Settings** → **Domains**
-2. Add `vidabanq.xyz`
+2. Add `holilabs.xyz`
 3. Update DNS records at your domain provider:
-   - CNAME: `www` → `vidabanq-health-ai-xxxxx.ondigitalocean.app`
+   - CNAME: `www` → `holilabs-health-ai-xxxxx.ondigitalocean.app`
    - A: `@` → (DO provides IP)
 
 ---
@@ -99,12 +99,12 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 
 # Clone repo
-git clone https://github.com/YOUR_USERNAME/vidabanq-health-ai.git
-cd vidabanq-health-ai
+git clone https://github.com/YOUR_USERNAME/holilabs-health-ai.git
+cd holilabs-health-ai
 
 # Build and run
-docker build -t vidabanq-web .
-docker run -d -p 80:3000 --name vidabanq vidabanq-web
+docker build -t holilabs-web .
+docker run -d -p 80:3000 --name holilabs holilabs-web
 ```
 
 Your site will be live at `http://129.212.184.190`

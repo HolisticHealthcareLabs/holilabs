@@ -38,16 +38,16 @@ importers:
       '@prisma/client':
         specifier: ^5.9.0
         version: 5.22.0(prisma@5.22.0)
-      '@vidabanq/deid':
+      '@holilabs/deid':
         specifier: workspace:*
         version: link:../../packages/deid
-      '@vidabanq/dp':
+      '@holilabs/dp':
         specifier: workspace:*
         version: link:../../packages/dp
-      '@vidabanq/schemas':
+      '@holilabs/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
-      '@vidabanq/utils':
+      '@holilabs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
       argon2:

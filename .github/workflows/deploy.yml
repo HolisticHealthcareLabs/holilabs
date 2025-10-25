@@ -50,10 +50,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run linter
-        run: pnpm --filter @vidabanq/web lint
+        run: pnpm --filter @holilabs/web lint
 
       - name: Type check
-        run: pnpm --filter @vidabanq/web tsc --noEmit
+        run: pnpm --filter @holilabs/web tsc --noEmit
 
   # Job 2: Build
   build:
@@ -93,7 +93,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
-        run: pnpm --filter @vidabanq/web prisma generate
+        run: pnpm --filter @holilabs/web prisma generate
 
       - name: Build application
         env:
@@ -107,7 +107,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-        run: pnpm --filter @vidabanq/web build
+        run: pnpm --filter @holilabs/web build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3

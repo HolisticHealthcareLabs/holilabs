@@ -3,7 +3,7 @@ version: '3.9'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: vidabanq-postgres
+    container_name: holilabs-postgres
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
@@ -18,11 +18,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - vidabanq-network
+      - holilabs-network
 
   redis:
     image: redis:7-alpine
-    container_name: vidabanq-redis
+    container_name: holilabs-redis
     ports:
       - "6379:6379"
     volumes:
@@ -33,11 +33,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - vidabanq-network
+      - holilabs-network
 
   minio:
     image: minio/minio:latest
-    container_name: vidabanq-minio
+    container_name: holilabs-minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: admin
@@ -53,11 +53,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - vidabanq-network
+      - holilabs-network
 
   opa:
     image: openpolicyagent/opa:latest
-    container_name: vidabanq-opa
+    container_name: holilabs-opa
     command:
       - "run"
       - "--server"
@@ -74,7 +74,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - vidabanq-network
+      - holilabs-network
 
 volumes:
   postgres_data:
@@ -82,5 +82,5 @@ volumes:
   minio_data:
 
 networks:
-  vidabanq-network:
+  holilabs-network:
     driver: bridge

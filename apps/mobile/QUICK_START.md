@@ -17,7 +17,7 @@ Get the Holi Labs AI Medical Scribe mobile app running in 5 minutes!
 
 ```bash
 # From the monorepo root
-cd /Users/nicolacapriroloteran/vidabanq-health-ai
+cd /Users/nicolacapriroloteran/holilabs-health-ai
 
 # Install all dependencies
 pnpm install

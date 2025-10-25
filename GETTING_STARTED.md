@@ -14,7 +14,7 @@ Welcome! This guide will help you set up and run the VidaBanq Health AI Platform
 ### 1. Clone and Install
 
 ```bash
-cd vidabanq-health-ai
+cd holilabs-health-ai
 pnpm install
 ```
 
@@ -227,7 +227,7 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ```bash
 # Coming soon: Helm charts
-helm install vidabanq ./charts/vidabanq
+helm install holilabs ./charts/holilabs
 ```
 
 ### Option 3: Managed Cloud (AWS/GCP)
@@ -280,7 +280,7 @@ Configure alerts for:
 ### API won't start
 ```bash
 # Check logs
-docker logs vidabanq-api
+docker logs holilabs-api
 
 # Common issues:
 # 1. Database not ready → Wait for healthcheck
@@ -332,10 +332,10 @@ pnpm test
 
 ## 🤝 Support
 
-- **Documentation:** https://docs.vidabanq.xyz
-- **GitHub Issues:** https://github.com/vidabanq/health-ai/issues
-- **Email:** support@vidabanq.xyz
-- **Security:** security@vidabanq.xyz (PGP required)
+- **Documentation:** https://docs.holilabs.xyz
+- **GitHub Issues:** https://github.com/holilabs/health-ai/issues
+- **Email:** support@holilabs.xyz
+- **Security:** security@holilabs.xyz (PGP required)
 
 ---
 

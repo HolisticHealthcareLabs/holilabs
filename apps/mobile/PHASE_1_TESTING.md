@@ -171,7 +171,7 @@ Verify these design elements:
 **Solution:**
 ```bash
 # In terminal, stop current server (Ctrl+C)
-cd /Users/nicolacapriroloteran/vidabanq-health-ai/apps/mobile
+cd /Users/nicolacapriroloteran/holilabs-health-ai/apps/mobile
 pnpm start --clear
 ```
 

@@ -1,4 +1,4 @@
-package vidabanq.export_dp
+package holilabs.export_dp
 
 # Differential privacy export policy
 # Enforces epsilon budget limits, consent requirements, and cooldown periods

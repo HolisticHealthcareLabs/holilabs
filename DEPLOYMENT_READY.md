@@ -131,7 +131,7 @@ DigitalOcean automatically builds and deploys in 3-5 minutes.
 ## 📊 Deployment Architecture
 
 ```
-[GitHub repo: vidabanq-health-ai]
+[GitHub repo: holilabs-health-ai]
           ↓
 [DigitalOcean App Platform]
           ↓
