@@ -13,14 +13,16 @@ export const dynamic = 'force-dynamic';
  * - Consent management
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function InvitePatientPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -32,6 +34,16 @@ export default function InvitePatientPage() {
     message: '',
   });
 
+  // Get current user ID on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    });
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -39,6 +51,11 @@ export default function InvitePatientPage() {
     setSuccessMessage('');
 
     try {
+      // Validate current user is set
+      if (!currentUserId) {
+        throw new Error('No se pudo obtener información del usuario actual');
+      }
+
       // Create patient
       const patientRes = await fetch('/api/patients', {
         method: 'POST',
@@ -50,6 +67,7 @@ export default function InvitePatientPage() {
           phone: formData.phone,
           ageBand: '30-40', // Default
           gender: 'OTHER',
+          assignedClinicianId: currentUserId, // CRITICAL: Assign patient to current clinician
         }),
       });
 
@@ -342,14 +360,14 @@ export default function InvitePatientPage() {
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !currentUserId}
                 className={`px-8 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg transition-all ${
-                  isSubmitting
+                  isSubmitting || !currentUserId
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:shadow-lg hover:scale-105'
                 }`}
               >
-                {isSubmitting ? 'Enviando...' : 'Enviar Invitación'}
+                {!currentUserId ? 'Cargando...' : isSubmitting ? 'Enviando...' : 'Enviar Invitación'}
               </button>
             </div>
           </form>
