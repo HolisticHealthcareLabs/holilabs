@@ -18,9 +18,43 @@ import { es } from 'date-fns/locale';
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Buenos días';
-  if (hour < 19) return 'Buenas tardes';
-  return 'Buenas noches';
+  if (hour < 12) return 'Good morning';
+  if (hour < 19) return 'Good afternoon';
+  return 'Good evening';
+}
+
+async function fetchDashboardStats(patientUserId: string) {
+  try {
+    // Fetch real stats from API
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/portal/dashboard/stats`,
+      {
+        method: 'GET',
+        headers: {
+          Cookie: `patient_session=${patientUserId}`, // Pass session for authentication
+        },
+        cache: 'no-store', // Always get fresh data
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch stats');
+    }
+
+    const data = await response.json();
+    return data.stats;
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    // Return default/empty stats on error
+    return {
+      upcomingAppointments: { count: 0, next: null, all: [] },
+      medications: { active: 0, adherence: 0 },
+      notifications: { unread: 0 },
+      documents: { total: 0 },
+      consultations: { recent: [] },
+      forms: { pending: 0 },
+    };
+  }
 }
 
 export default async function PatientDashboardPage() {
@@ -32,6 +66,9 @@ export default async function PatientDashboardPage() {
 
   const greeting = getGreeting();
   const firstName = patientUser.patient.firstName;
+
+  // Fetch real dashboard stats
+  const stats = await fetchDashboardStats(patientUser.id);
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
@@ -65,10 +102,14 @@ export default async function PatientDashboardPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-gray-900">2</span>
+            <span className="text-2xl font-bold text-gray-900">{stats.upcomingAppointments.count}</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Citas Próximas</h3>
-          <p className="text-xs text-gray-500">Siguiente: En 3 días</p>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Upcoming</h3>
+          <p className="text-xs text-gray-500">
+            {stats.upcomingAppointments.next
+              ? `Next: ${stats.upcomingAppointments.next.daysUntil === 0 ? 'Today' : stats.upcomingAppointments.next.daysUntil === 1 ? 'Tomorrow' : `${stats.upcomingAppointments.next.daysUntil} days`}`
+              : 'No appointments scheduled'}
+          </p>
         </a>
 
         {/* Active Medications */}
@@ -89,10 +130,12 @@ export default async function PatientDashboardPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-gray-900">4</span>
+            <span className="text-2xl font-bold text-gray-900">{stats.medications.active}</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Medicamentos Activos</h3>
-          <p className="text-xs text-gray-500">Adherencia: 95%</p>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Active Meds</h3>
+          <p className="text-xs text-gray-500">
+            {stats.medications.active > 0 ? `Adherence: ${stats.medications.adherence}%` : 'No medications'}
+          </p>
         </div>
 
         {/* Notifications */}
@@ -113,10 +156,12 @@ export default async function PatientDashboardPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-gray-900">5</span>
+            <span className="text-2xl font-bold text-gray-900">{stats.notifications.unread}</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Notificaciones</h3>
-          <p className="text-xs text-gray-500">3 sin leer</p>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Notifications</h3>
+          <p className="text-xs text-gray-500">
+            {stats.notifications.unread > 0 ? `${stats.notifications.unread} unread` : 'All caught up'}
+          </p>
         </a>
 
         {/* Documents */}
@@ -137,10 +182,10 @@ export default async function PatientDashboardPage() {
                 />
               </svg>
             </div>
-            <span className="text-2xl font-bold text-gray-900">12</span>
+            <span className="text-2xl font-bold text-gray-900">{stats.documents.total}</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Documentos</h3>
-          <p className="text-xs text-gray-500">Clic para subir nuevos</p>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Documents</h3>
+          <p className="text-xs text-gray-500">Click to upload</p>
         </a>
       </div>
 
@@ -150,12 +195,12 @@ export default async function PatientDashboardPage() {
           {/* Upcoming Appointments */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Próximas Citas</h2>
+              <h2 className="text-xl font-bold text-gray-900">Upcoming Appointments</h2>
               <a
                 href="/portal/appointments"
                 className="text-sm font-semibold text-green-600 hover:text-green-700"
               >
-                Ver todas →
+                View all →
               </a>
             </div>
 
@@ -178,8 +223,8 @@ export default async function PatientDashboardPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Consulta de seguimiento</h3>
-                  <p className="text-sm text-gray-600 mt-1">Dr. Juan Pérez - Medicina General</p>
+                  <h3 className="font-semibold text-gray-900">Follow-up visit</h3>
+                  <p className="text-sm text-gray-600 mt-1">Dr. Juan Pérez - General Medicine</p>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +235,7 @@ export default async function PatientDashboardPage() {
                           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                      Lun, 14 Oct
+                      Mon, Oct 14
                     </span>
                     <span className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +251,7 @@ export default async function PatientDashboardPage() {
                   </div>
                 </div>
                 <span className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                  En 3 días
+                  In 3 days
                 </span>
               </div>
 
@@ -228,7 +273,7 @@ export default async function PatientDashboardPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Laboratorio - Análisis de sangre</h3>
+                  <h3 className="font-semibold text-gray-900">Laboratory - Blood test</h3>
                   <p className="text-sm text-gray-600 mt-1">Lab. Central - Dr. María López</p>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
@@ -240,7 +285,7 @@ export default async function PatientDashboardPage() {
                           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                      Vie, 18 Oct
+                      Fri, Oct 18
                     </span>
                     <span className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +301,7 @@ export default async function PatientDashboardPage() {
                   </div>
                 </div>
                 <span className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                  En 7 días
+                  In 7 days
                 </span>
               </div>
             </div>
@@ -265,19 +310,19 @@ export default async function PatientDashboardPage() {
           {/* Recent Medications */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Mis Medicamentos</h2>
+              <h2 className="text-xl font-bold text-gray-900">My Medications</h2>
               <a
                 href="/portal/medications"
                 className="text-sm font-semibold text-green-600 hover:text-green-700"
               >
-                Ver todos →
+                View all →
               </a>
             </div>
 
             <div className="space-y-3">
               {[
-                { name: 'Metformina', dose: '500mg', frequency: '2 veces al día', time: '8:00 AM, 8:00 PM' },
-                { name: 'Enalapril', dose: '10mg', frequency: '1 vez al día', time: '8:00 AM' },
+                { name: 'Metformin', dose: '500mg', frequency: '2x daily', time: '8:00 AM, 8:00 PM' },
+                { name: 'Enalapril', dose: '10mg', frequency: '1x daily', time: '8:00 AM' },
               ].map((med) => (
                 <div
                   key={med.name}
@@ -313,7 +358,7 @@ export default async function PatientDashboardPage() {
         <div className="space-y-6">
           {/* Quick Actions */}
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Acciones Rápidas</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
             <div className="space-y-2">
               <a
                 href="/portal/dashboard/appointments/schedule"
@@ -324,7 +369,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Agendar Cita</span>
+                <span className="font-medium text-gray-900">Book Appointment</span>
               </a>
 
               <a
@@ -336,7 +381,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Ver Notificaciones</span>
+                <span className="font-medium text-gray-900">View Notifications</span>
               </a>
 
               <a
@@ -348,7 +393,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Subir Documento</span>
+                <span className="font-medium text-gray-900">Upload Document</span>
               </a>
 
               <a
@@ -360,7 +405,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Enviar Mensaje</span>
+                <span className="font-medium text-gray-900">Send Message</span>
               </a>
             </div>
           </div>
@@ -371,11 +416,10 @@ export default async function PatientDashboardPage() {
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <span className="text-lg">💡</span>
               </div>
-              <h3 className="font-bold text-gray-900">Consejo del día</h3>
+              <h3 className="font-bold text-gray-900">Daily Tip</h3>
             </div>
             <p className="text-sm text-gray-700">
-              Recuerda tomar tus medicamentos a la misma hora todos los días para mantener niveles
-              constantes en tu cuerpo.
+              Take your medications at the same time daily to maintain consistent levels.
             </p>
           </div>
         </div>
