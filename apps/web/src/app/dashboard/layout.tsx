@@ -10,7 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
-import GlobalSearch from '@/components/search/GlobalSearch';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 import LanguageSelector from '@/components/LanguageSelector';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';

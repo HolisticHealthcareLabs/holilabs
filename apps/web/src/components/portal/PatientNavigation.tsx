@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
-import GlobalSearch from '@/components/search/GlobalSearch';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 
 interface NavigationItem {
   name: string;
