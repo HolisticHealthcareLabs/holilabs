@@ -50,13 +50,20 @@ async function sendWhatsAppCode(phone: string, code: string): Promise<boolean> {
   return await sendWhatsApp({ to: phone, message });
 }
 
-async function sendOTPEmail(email: string, code: string): Promise<void> {
-  // TODO: Implement email sending via SendGrid/AWS SES
-  logger.info({
-    event: 'otp_email_placeholder',
-    email,
-  });
-  console.log(`[DEV MODE] Email OTP code for ${email}: ${code}`);
+async function sendOTPCodeEmail(email: string, code: string): Promise<boolean> {
+  const { sendOTPEmail, isResendConfigured } = await import('@/lib/email');
+
+  if (!isResendConfigured()) {
+    logger.warn({
+      event: 'otp_resend_not_configured',
+      message: 'Resend not configured, logging code instead',
+      email,
+    });
+    console.log(`[DEV MODE] Email OTP code for ${email}: ${code}`);
+    return true; // Allow in dev mode
+  }
+
+  return await sendOTPEmail(email, code);
 }
 
 export async function POST(request: NextRequest) {
@@ -134,8 +141,7 @@ export async function POST(request: NextRequest) {
       if (channel === 'SMS' && phone) {
         sent = await sendSMSCode(phone, code);
       } else if (channel === 'EMAIL' && email) {
-        await sendOTPEmail(email, code);
-        sent = true; // Email always "succeeds" in dev mode
+        sent = await sendOTPCodeEmail(email, code);
       } else if (channel === 'WHATSAPP' && phone) {
         sent = await sendWhatsAppCode(phone, code);
       }
