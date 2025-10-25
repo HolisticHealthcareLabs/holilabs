@@ -8,12 +8,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { rateLimit } from '@/lib/rate-limit';
+// FIXME: Old rate limiting API - needs refactor
+// import { rateLimit } from '@/lib/rate-limit';
 
-const limiter = rateLimit({
-  interval: 60 * 1000,
-  uniqueTokenPerInterval: 500,
-});
+// FIXME: Old rate limiting - commented out for now
+// const limiter = rateLimit({
+//   interval: 60 * 1000,
+//   uniqueTokenPerInterval: 500,
+// });
 
 /**
  * GET /api/appointments/templates
@@ -21,7 +23,8 @@ const limiter = rateLimit({
  */
 export async function GET(request: NextRequest) {
   try {
-    await limiter.check(request, 60, 'TEMPLATES_GET');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 60, 'TEMPLATES_GET');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -100,7 +103,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    await limiter.check(request, 20, 'TEMPLATES_POST');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 20, 'TEMPLATES_POST');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
