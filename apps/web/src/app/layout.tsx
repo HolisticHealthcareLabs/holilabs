@@ -8,6 +8,7 @@ import { Providers } from '@/components/Providers';
 import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
 import { SkipLink } from '@/components/SkipLink';
+import { themeInitScript } from '@/scripts/theme-init';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -51,8 +52,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <head>
+        {/* Theme initialization script - prevents FOUC */}
+        <script
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+          suppressHydrationWarning
+        />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
