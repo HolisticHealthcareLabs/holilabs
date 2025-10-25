@@ -162,7 +162,7 @@ export async function POST(
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: 'NOTIFY',
         resource: 'Appointment',
         resourceId: appointmentId,
