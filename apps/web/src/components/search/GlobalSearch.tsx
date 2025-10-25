@@ -311,7 +311,7 @@ export default function GlobalSearch() {
                     value={query}
                     onChange={(e) => handleQueryChange(e.target.value)}
                     placeholder="Buscar por nombre, MRN, Token ID, CPF, CNS, documentos..."
-                    className="w-full pl-12 pr-4 py-4 text-lg placeholder-gray-400 focus:outline-none"
+                    className="w-full pl-12 pr-4 py-4 text-lg text-gray-900 placeholder-gray-400 focus:outline-none"
                   />
                 </div>
 

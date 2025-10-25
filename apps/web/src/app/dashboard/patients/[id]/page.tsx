@@ -76,14 +76,44 @@ export default function PatientProfile() {
   // Error state
   if (error || !patient) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center p-8">
-          <div className="text-6xl mb-4">❌</div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">Error al cargar paciente</h3>
-          <p className="text-gray-600 mb-4">{error || 'Paciente no encontrado'}</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-8">
+        <div className="max-w-2xl w-full text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            Error al cargar paciente
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            {error || 'Patient not found'}
+          </p>
+
+          {/* Support Options */}
+          <div className="mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-4 font-medium">
+              ¿Necesitas ayuda?
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <a
+                href="https://wa.me/1234567890"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium shadow-md"
+              >
+                <span>📱</span>
+                <span>Contactar por WhatsApp</span>
+              </a>
+              <a
+                href="mailto:support@holilabs.com"
+                className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-md"
+              >
+                <span>📧</span>
+                <span>Enviar Email</span>
+              </a>
+            </div>
+          </div>
+
           <Link
             href="/dashboard/patients"
-            className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition"
+            className="inline-block px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
           >
             Volver a pacientes
           </Link>

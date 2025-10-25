@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import DashboardTile, { TileColor } from '@/components/dashboard/DashboardTile';
 
 export const dynamic = 'force-dynamic';
@@ -209,11 +210,44 @@ export default function PreventionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
+      {/* NEW: Prevention Hub Banner */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-8 mb-8 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-5xl">🧭</span>
+              <div>
+                <h2 className="text-3xl font-bold mb-2">
+                  NEW: Longitudinal Prevention Hub
+                </h2>
+                <p className="text-blue-50 text-lg">
+                  AI-powered, patient-centric prevention platform with risk assessment, timeline views, and 100+ integrative interventions
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4 text-sm text-blue-100 mb-4">
+              <span>✓ Dynamic Risk Scores</span>
+              <span>✓ Longitudinal Timeline</span>
+              <span>✓ 7 Health Domains</span>
+              <span>✓ AI Recommendations</span>
+              <span>✓ One-Click Workflow</span>
+            </div>
+            <Link
+              href="/dashboard/prevention/hub"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary rounded-xl hover:bg-gray-50 transition-all font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              <span>Launch Prevention Hub</span>
+              <span>→</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
           <span className="mr-3">🛡️</span>
-          Protocolos de Prevención
+          Protocolos de Prevención (Legacy)
         </h1>
         <p className="text-gray-600">
           Protocolos basados en evidencia para medicina preventiva y atención basada en valor
