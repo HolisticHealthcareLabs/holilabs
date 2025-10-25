@@ -24,7 +24,8 @@ import {
   subscribeToPushNotifications,
   unsubscribeFromPushNotifications,
   isPushSubscribed,
-} from '@/lib/notifications/web-push';
+  getVapidPublicKey,
+} from '@/lib/notifications/web-push-client';
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
