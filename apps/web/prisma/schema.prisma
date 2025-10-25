@@ -52,6 +52,8 @@ model User {
   transcriptionErrors   TranscriptionError[]
   aiUsageLogs           AIUsageLog[]
   subscriptionTier      SubscriptionTier?
+  doctorPreferences     DoctorPreferences?
+  notificationTemplates NotificationTemplate[]
 
   @@index([email])
   @@index([walletAddress])
@@ -1002,8 +1004,16 @@ model Appointment {
   rescheduleApprovedAt  DateTime?
   rescheduleApprovedBy  String? // User ID who approved
 
+  // NEW FIELDS FOR ENHANCED AGENDA SYSTEM
+  branch                String?   @db.Text // Location/Sucursal name
+  branchAddress         String?   @db.Text // Full address for Google Maps
+  patientNotes          String?   @db.Text // Notes from patient before appointment
+  followUpCount         Int       @default(0) // Tracks follow-up notifications (0, 1, 2, ...)
+  waitingRoomCheckedInAt DateTime? // When patient checked in to waiting room
+
   // Relations
   scribeSessions ScribeSession[]
+  situations     AppointmentSituation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2539,4 +2549,186 @@ enum CodeStatus {
   DNR_DNI           // Both
   COMFORT_CARE_ONLY // Comfort measures only
   AND               // Allow Natural Death
+}
+
+// ============================================================================
+// ENHANCED AGENDA SYSTEM - APPOINTMENT SITUATIONS & NOTIFICATIONS
+// ============================================================================
+
+// Situation Tags (color-coded, multiple per appointment)
+model Situation {
+  id       String @id @default(cuid())
+
+  // Situation details
+  name     String @unique // "Deudas", "Primera Vez", "Seguimiento", "Urgente", "VIP"
+  color    String // Hex color code: "#EF4444" (red), "#3B82F6" (blue), etc.
+  priority Int    // 1=highest (Deudas, Urgente), 5=lowest
+  icon     String? // Optional emoji or icon identifier
+
+  // Behavior
+  isActive            Boolean @default(true)
+  requiresAction      Boolean @default(false) // e.g., "Deudas" requires payment action
+  actionLabel         String? // e.g., "Notify Patient", "Collect Payment"
+
+  // Display
+  description         String? @db.Text
+
+  // Relations
+  appointments        AppointmentSituation[]
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([priority])
+  @@index([isActive])
+  @@map("situations")
+}
+
+// Junction table for Appointment ↔ Situation (many-to-many)
+model AppointmentSituation {
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  situationId   String
+  situation     Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
+
+  // Metadata
+  addedAt       DateTime @default(now())
+  addedBy       String? // User ID who added this situation
+  notes         String? @db.Text // Optional notes about this specific situation for this appointment
+
+  @@id([appointmentId, situationId])
+  @@index([appointmentId])
+  @@index([situationId])
+  @@map("appointment_situations")
+}
+
+// Notification Templates (Clinic-wide + Doctor overrides)
+model NotificationTemplate {
+  id        String @id @default(cuid())
+
+  // Template identification
+  name      String // e.g., "Appointment Reminder - WhatsApp"
+  type      NotificationTemplateType
+  channel   NotificationChannel
+
+  // Template level (clinic-wide or doctor-specific)
+  level     TemplateLevel @default(CLINIC)
+
+  // Ownership
+  clinicId  String? // null for default clinic-wide templates
+  doctorId  String? // null for clinic-wide, set for doctor overrides
+  doctor    User? @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  // Template content
+  subject   String? // For email/push notifications
+  body      String @db.Text // Template body with variables: {firstName}, {appointmentDate}, etc.
+
+  // Variables documentation (for UI helper)
+  availableVariables Json? // ["firstName", "lastName", "appointmentDate", "doctorName", etc.]
+
+  // Scheduling
+  sendTiming           Int? // Minutes/hours before appointment (e.g., -1440 for 24 hours before)
+  sendTimingUnit       String? @default("minutes") // "minutes", "hours", "days"
+  requireConfirmation  Boolean @default(true) // Whether to ask for patient confirmation
+
+  // Status
+  isActive   Boolean @default(true)
+  isDefault  Boolean @default(false) // Is this the default template for this type/channel?
+
+  // Usage tracking
+  usageCount Int @default(0)
+  lastUsedAt DateTime?
+
+  // Audit
+  createdAt DateTime @default(now())
+  createdBy String? // User ID
+  updatedAt DateTime @updatedAt
+  updatedBy String? // User ID
+
+  @@unique([type, channel, level, doctorId]) // One template per type/channel/level/doctor combination
+  @@index([type])
+  @@index([channel])
+  @@index([level])
+  @@index([doctorId])
+  @@index([isActive])
+  @@map("notification_templates")
+}
+
+enum NotificationTemplateType {
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CONFIRMATION
+  APPOINTMENT_RESCHEDULED
+  APPOINTMENT_CANCELLED
+  PAYMENT_REMINDER
+  FOLLOWUP_1
+  FOLLOWUP_2
+  FOLLOWUP_3
+  CUSTOM
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+enum TemplateLevel {
+  CLINIC  // Clinic-wide default template
+  DOCTOR  // Doctor-specific override
+}
+
+// Doctor Preferences for Appointment Scheduling
+model DoctorPreferences {
+  id       String @id @default(cuid())
+  doctorId String @unique
+  doctor   User @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  // Working schedule
+  workingDays       Int[] // [1,2,3,4,5] = Monday-Friday, [1,2,3,4,5,6,7] = All week
+  workingHoursStart String @default("09:00") // "HH:MM" format
+  workingHoursEnd   String @default("17:00") // "HH:MM" format
+
+  // Appointment rules
+  minimumAdvanceNotice  Int @default(24) // Hours - minimum time before appointment can be booked
+  appointmentDuration   Int @default(30) // Minutes - default appointment duration
+  bufferBetweenSlots    Int @default(0) // Minutes - buffer time between appointments
+
+  // Booking settings
+  allowSameDayBooking   Boolean @default(false)
+  allowWeekendBooking   Boolean @default(false)
+  maxAppointmentsPerDay Int? // null = unlimited
+
+  // Reschedule settings
+  autoApproveReschedule Boolean @default(false) // Auto-approve reschedule requests
+  allowPatientReschedule Boolean @default(true)
+  rescheduleMinNotice   Int @default(12) // Hours - minimum notice for patient reschedule
+
+  // Confirmation settings
+  requireConfirmation    Boolean @default(true)
+  confirmationDeadline   Int @default(24) // Hours before appointment
+
+  // Breaks & time off
+  lunchBreakStart       String? // "HH:MM" format
+  lunchBreakEnd         String? // "HH:MM" format
+  customBreaks          Json? // Array of {start, end, dayOfWeek}
+
+  // Weekly view customization
+  weeklyViewDays        Int[] @default([1,2,3,4,5]) // Which days to show in weekly view
+
+  // Notifications
+  notifyOnNewBooking     Boolean @default(true)
+  notifyOnReschedule     Boolean @default(true)
+  notifyOnCancellation   Boolean @default(true)
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([doctorId])
+  @@map("doctor_preferences")
 }

@@ -337,7 +337,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.viewPatients')}</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.completePatients')}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Browse all patients</p>
                   </div>
                 </Link>
 
@@ -352,7 +352,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.newPatient')}</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.quickRegistration')}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Register new patient</p>
                   </div>
                 </Link>
 
@@ -367,9 +367,16 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.aiAssistant')}</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.consultNow')}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Ask AI questions</p>
                   </div>
                 </Link>
+
+                {/* Medical Tools Section */}
+                <div className="pt-3 pb-2 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2">
+                    Medical Tools
+                  </h3>
+                </div>
 
                 <Link
                   href="/dashboard/diagnosis"
@@ -380,7 +387,20 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 dark:text-white">AI Diagnosis</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Clinical decision support</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Get clinical recommendations</p>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/dashboard/scribe"
+                  className="flex items-center space-x-3 p-4 bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-900/20 hover:from-teal-100 hover:to-teal-200 dark:hover:from-teal-900/30 dark:hover:to-teal-900/30 rounded-lg transition group"
+                >
+                  <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition">
+                    <span className="text-xl">📝</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">AI Scribe</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Voice to clinical notes</p>
                   </div>
                 </Link>
 
@@ -395,7 +415,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{t('dashboard.exportBilling')}</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{t('dashboard.csvInsurance')}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Download reports</p>
                   </div>
                 </button>
               </div>

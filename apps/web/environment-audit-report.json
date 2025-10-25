@@ -1,0 +1,335 @@
+{
+  "timestamp": "2025-10-25T00:01:11.449Z",
+  "environment": "development",
+  "summary": {
+    "total": 40,
+    "configured": 7,
+    "placeholder": 31,
+    "missing": 2,
+    "criticalMissing": 9,
+    "requiredMissing": 17,
+    "completionRate": 18
+  },
+  "variables": [
+    {
+      "name": "DATABASE_URL",
+      "category": "Database",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "PostgreSQL connection string"
+    },
+    {
+      "name": "NEXTAUTH_SECRET",
+      "category": "Authentication",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "NextAuth session encryption secret"
+    },
+    {
+      "name": "NEXTAUTH_URL",
+      "category": "Authentication",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "missing",
+      "description": "Production URL for NextAuth"
+    },
+    {
+      "name": "SESSION_SECRET",
+      "category": "Authentication",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "Session encryption secret"
+    },
+    {
+      "name": "NEXT_PUBLIC_SUPABASE_URL",
+      "category": "Supabase",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "Supabase project URL"
+    },
+    {
+      "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "category": "Supabase",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "Supabase anonymous key"
+    },
+    {
+      "name": "SUPABASE_SERVICE_ROLE_KEY",
+      "category": "Supabase",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "Supabase service role key (admin access)"
+    },
+    {
+      "name": "ENCRYPTION_KEY",
+      "category": "Security",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "PHI data encryption key (AES-256)"
+    },
+    {
+      "name": "CRON_SECRET",
+      "category": "Security",
+      "priority": "HIGH",
+      "required": true,
+      "status": "placeholder",
+      "description": "Cron job authentication secret"
+    },
+    {
+      "name": "DEID_SECRET",
+      "category": "Security",
+      "priority": "HIGH",
+      "required": true,
+      "status": "missing",
+      "description": "De-identification hashing secret"
+    },
+    {
+      "name": "ANTHROPIC_API_KEY",
+      "category": "AI Services",
+      "priority": "HIGH",
+      "required": true,
+      "status": "placeholder",
+      "description": "Anthropic Claude API key"
+    },
+    {
+      "name": "GOOGLE_AI_API_KEY",
+      "category": "AI Services",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Google Gemini API key"
+    },
+    {
+      "name": "OPENAI_API_KEY",
+      "category": "AI Services",
+      "priority": "LOW",
+      "required": false,
+      "status": "placeholder",
+      "description": "OpenAI GPT-4 API key (fallback)"
+    },
+    {
+      "name": "DEEPGRAM_API_KEY",
+      "category": "AI Services",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Deepgram transcription API key"
+    },
+    {
+      "name": "ASSEMBLYAI_API_KEY",
+      "category": "AI Services",
+      "priority": "LOW",
+      "required": false,
+      "status": "placeholder",
+      "description": "AssemblyAI transcription API key"
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "category": "Communication",
+      "priority": "HIGH",
+      "required": true,
+      "status": "placeholder",
+      "description": "Resend email service API key"
+    },
+    {
+      "name": "TWILIO_ACCOUNT_SID",
+      "category": "Communication",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Twilio account SID"
+    },
+    {
+      "name": "TWILIO_AUTH_TOKEN",
+      "category": "Communication",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Twilio authentication token"
+    },
+    {
+      "name": "TWILIO_WHATSAPP_NUMBER",
+      "category": "Communication",
+      "priority": "LOW",
+      "required": false,
+      "status": "configured",
+      "description": "Twilio WhatsApp business number"
+    },
+    {
+      "name": "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+      "category": "Push Notifications",
+      "priority": "HIGH",
+      "required": true,
+      "status": "placeholder",
+      "description": "VAPID public key for web push"
+    },
+    {
+      "name": "VAPID_PRIVATE_KEY",
+      "category": "Push Notifications",
+      "priority": "HIGH",
+      "required": true,
+      "status": "placeholder",
+      "description": "VAPID private key for web push"
+    },
+    {
+      "name": "VAPID_SUBJECT",
+      "category": "Push Notifications",
+      "priority": "HIGH",
+      "required": true,
+      "status": "configured",
+      "description": "VAPID subject (mailto:)"
+    },
+    {
+      "name": "STRIPE_SECRET_KEY",
+      "category": "Payments",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Stripe secret API key"
+    },
+    {
+      "name": "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+      "category": "Payments",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Stripe publishable key"
+    },
+    {
+      "name": "STRIPE_WEBHOOK_SECRET",
+      "category": "Payments",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Stripe webhook signing secret"
+    },
+    {
+      "name": "NEXT_PUBLIC_SENTRY_DSN",
+      "category": "Monitoring",
+      "priority": "HIGH",
+      "required": true,
+      "status": "placeholder",
+      "description": "Sentry error tracking DSN"
+    },
+    {
+      "name": "SENTRY_AUTH_TOKEN",
+      "category": "Monitoring",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Sentry authentication token"
+    },
+    {
+      "name": "NEXT_PUBLIC_POSTHOG_KEY",
+      "category": "Analytics",
+      "priority": "HIGH",
+      "required": true,
+      "status": "placeholder",
+      "description": "PostHog analytics project key"
+    },
+    {
+      "name": "NEXT_PUBLIC_POSTHOG_HOST",
+      "category": "Analytics",
+      "priority": "HIGH",
+      "required": true,
+      "status": "configured",
+      "description": "PostHog host URL (US for HIPAA)"
+    },
+    {
+      "name": "UPSTASH_REDIS_REST_URL",
+      "category": "Rate Limiting",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Upstash Redis REST URL"
+    },
+    {
+      "name": "UPSTASH_REDIS_REST_TOKEN",
+      "category": "Rate Limiting",
+      "priority": "MEDIUM",
+      "required": false,
+      "status": "placeholder",
+      "description": "Upstash Redis REST token"
+    },
+    {
+      "name": "R2_ENDPOINT",
+      "category": "Storage",
+      "priority": "LOW",
+      "required": false,
+      "status": "placeholder",
+      "description": "Cloudflare R2 endpoint"
+    },
+    {
+      "name": "R2_BUCKET",
+      "category": "Storage",
+      "priority": "LOW",
+      "required": false,
+      "status": "placeholder",
+      "description": "Cloudflare R2 bucket name"
+    },
+    {
+      "name": "R2_ACCESS_KEY_ID",
+      "category": "Storage",
+      "priority": "LOW",
+      "required": false,
+      "status": "placeholder",
+      "description": "Cloudflare R2 access key"
+    },
+    {
+      "name": "R2_SECRET_ACCESS_KEY",
+      "category": "Storage",
+      "priority": "LOW",
+      "required": false,
+      "status": "placeholder",
+      "description": "Cloudflare R2 secret key"
+    },
+    {
+      "name": "HOLI_LABS_RFC",
+      "category": "CFDI",
+      "priority": "LOW",
+      "required": false,
+      "status": "configured",
+      "description": "Holi Labs RFC (tax ID)"
+    },
+    {
+      "name": "PAC_PROVIDER",
+      "category": "CFDI",
+      "priority": "LOW",
+      "required": false,
+      "status": "configured",
+      "description": "PAC provider (finkok, sw-sapien)"
+    },
+    {
+      "name": "PAC_API_URL",
+      "category": "CFDI",
+      "priority": "LOW",
+      "required": false,
+      "status": "configured",
+      "description": "PAC API endpoint"
+    },
+    {
+      "name": "NEXT_PUBLIC_APP_URL",
+      "category": "Application",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "placeholder",
+      "description": "Production app URL"
+    },
+    {
+      "name": "NODE_ENV",
+      "category": "Application",
+      "priority": "CRITICAL",
+      "required": true,
+      "status": "configured",
+      "description": "Node environment (production)"
+    }
+  ]
+}

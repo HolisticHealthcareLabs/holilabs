@@ -20,7 +20,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import GlobalSearch from '@/components/search/GlobalSearch';
 
-const navigationItems = [
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: JSX.Element;
+  badge?: string | number;
+}
+
+const navigationItems: NavigationItem[] = [
   {
     name: 'Inicio',
     href: '/portal/dashboard',

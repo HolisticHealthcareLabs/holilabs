@@ -423,7 +423,7 @@ export default function AIScribePage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Scribe</h1>
-        <p className="text-gray-600 dark:text-gray-400">Grabación inteligente y generación automática de notas SOAP</p>
+        <p className="text-gray-600 dark:text-gray-400">Record voice, get SOAP notes</p>
       </div>
 
       {/* 3-Column Layout */}
@@ -571,9 +571,9 @@ export default function AIScribePage() {
               {(recordingState === 'recording' || recordingState === 'paused') && (
                 <div className="mb-6 flex items-center justify-between bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900 dark:text-white">Pausa Automática Inteligente</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">Auto Pause</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Pausa automáticamente tras 5 segundos de silencio
+                      Pauses after 5 seconds of silence
                     </p>
                   </div>
                   <button
@@ -655,7 +655,7 @@ export default function AIScribePage() {
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                     <span className="mr-2">🎙️</span>
-                    Transcripción con Identificación de Hablantes
+                    Transcript
                   </h3>
                   <TranscriptViewer
                     segments={transcriptSegments}
@@ -674,7 +674,7 @@ export default function AIScribePage() {
             <div className="p-4 bg-gradient-to-r from-green-500 to-teal-600">
               <h2 className="text-lg font-bold text-white flex items-center">
                 <span className="mr-2">📝</span>
-                Nota SOAP Generada por IA
+                AI SOAP Note
               </h2>
             </div>
             <div className="p-6 max-h-[800px] overflow-y-auto">
@@ -682,10 +682,10 @@ export default function AIScribePage() {
                 <div className="text-center text-gray-500 dark:text-gray-400 py-12">
                   <div className="text-6xl mb-4">📝</div>
                   <p className="text-lg font-medium mb-2 dark:text-gray-300">
-                    La nota SOAP aparecerá aquí después de finalizar la grabación
+                    SOAP note appears after recording
                   </p>
                   <p className="text-sm text-gray-400">
-                    Generada automáticamente con AssemblyAI + Gemini 2.0 Flash
+                    Generated with AI
                   </p>
                 </div>
               ) : (

@@ -206,19 +206,43 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  {/* Info Box */}
+                  {/* Info Box - Security & De-identification */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="font-semibold text-blue-900 mb-2">
-                      ¿Por qué necesito una API key?
+                    <h3 className="font-semibold text-blue-900 mb-3">
+                      🔒 Seguridad y Privacidad Médica
                     </h3>
-                    <p className="text-sm text-blue-800 mb-2">
+                    <p className="text-sm text-blue-800 mb-3">
                       Las claves API te permiten usar IA de manera segura y privada:
                     </p>
-                    <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                      <li>Tus datos médicos nunca se comparten con terceros</li>
-                      <li>Control total sobre uso y costos (~$15-75/mes)</li>
-                      <li>Cumplimiento HIPAA con Anthropic Claude</li>
+                    <ul className="text-sm text-blue-800 space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">✓</span>
+                        <span>Información médica <strong>de-identificada</strong> antes de procesamiento</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">✓</span>
+                        <span>Los datos del paciente nunca se comparten con terceros</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">✓</span>
+                        <span>Cumplimiento HIPAA con Anthropic Claude</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">✓</span>
+                        <span>Encriptación end-to-end de toda la información</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-600 font-bold">✓</span>
+                        <span>Control total sobre el uso de IA en tu práctica</span>
+                      </li>
                     </ul>
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <p className="text-xs text-blue-900 leading-relaxed">
+                        <strong>Protección de privacidad:</strong> Nuestro sistema automáticamente elimina
+                        información personal identificable (nombre, ID, fechas específicas) antes de enviar
+                        datos al modelo de IA, asegurando la máxima privacidad del paciente.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

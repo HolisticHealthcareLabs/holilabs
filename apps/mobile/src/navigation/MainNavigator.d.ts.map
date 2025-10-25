@@ -1,0 +1,1 @@
+{"version":3,"file":"MainNavigator.d.ts","sourceRoot":"","sources":["MainNavigator.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAS1B,MAAM,MAAM,gBAAgB,GAAG;IAC7B,IAAI,EAAE,SAAS,CAAC;IAChB,OAAO,EAAE,SAAS,CAAC;IACnB,QAAQ,EAAE,SAAS,CAAC;IACpB,OAAO,EAAE,SAAS,CAAC;CACpB,CAAC;AASF,eAAO,MAAM,aAAa,yBAwDzB,CAAC"}
