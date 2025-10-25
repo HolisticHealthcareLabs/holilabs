@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (appointment.clinician.id !== session.user.id) {
+    if (appointment.clinician.id !== (session.user as any).id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para grabar esta cita' },
         { status: 403 }
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         userEmail: session.user.email || '',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'recording_started',
-      userId: session.user.id,
+      userId: (session.user as any).id,
       recordingId: recording.id,
       appointmentId,
       patientId,

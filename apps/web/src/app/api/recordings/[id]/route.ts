@@ -61,8 +61,8 @@ export async function GET(
 
     // Verify access (clinician who recorded it or patient)
     const isAuthorized =
-      recording.appointment.clinicianId === session.user.id ||
-      recording.patientId === session.user.id;
+      recording.appointment.clinicianId === (session.user as any).id ||
+      recording.patientId === (session.user as any).id;
 
     if (!isAuthorized) {
       return NextResponse.json(
@@ -73,7 +73,7 @@ export async function GET(
 
     logger.info({
       event: 'recording_viewed',
-      userId: session.user.id,
+      userId: (session.user as any).id,
       recordingId,
     });
 

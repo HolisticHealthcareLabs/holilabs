@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
     if (clinicianSession?.user?.id) {
       return NextResponse.json({
         user: {
-          id: clinicianSession.user.id,
+          id: (clinicianSession.user as any).id,
           email: clinicianSession.user.email,
-          firstName: clinicianSession.user.firstName,
-          lastName: clinicianSession.user.lastName,
-          role: clinicianSession.user.role,
+          firstName: (clinicianSession.user as any).firstName,
+          lastName: (clinicianSession.user as any).lastName,
+          role: (clinicianSession.user as any).role,
           type: 'CLINICIAN',
         },
       });

@@ -187,8 +187,8 @@ export async function POST(request: NextRequest) {
         requireConfirmation,
         isActive,
         isDefault,
-        createdBy: session.user.id,
-        updatedBy: session.user.id,
+        createdBy: (session.user as any).id,
+        updatedBy: (session.user as any).id,
       },
       include: {
         doctor: {
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: 'CREATE',
         resource: 'NotificationTemplate',
         resourceId: template.id,

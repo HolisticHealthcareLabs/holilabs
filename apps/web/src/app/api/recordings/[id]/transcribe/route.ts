@@ -82,7 +82,7 @@ export async function POST(
     }
 
     // Verify ownership
-    if (recording.appointment.clinician.id !== session.user.id) {
+    if (recording.appointment.clinician.id !== (session.user as any).id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para transcribir esta grabación' },
         { status: 403 }
@@ -257,7 +257,7 @@ Responde en formato JSON con esta estructura:
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         userEmail: session.user.email || '',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'UPDATE',

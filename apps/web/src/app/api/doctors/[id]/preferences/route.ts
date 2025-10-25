@@ -161,7 +161,7 @@ export async function PATCH(
     }
 
     // Authorization: Only the doctor themselves or admin can update preferences
-    if (session.user.role !== 'ADMIN' && session.user.id !== doctorId) {
+    if ((session.user as any).role !== 'ADMIN' && (session.user as any).id !== doctorId) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: You can only update your own preferences' },
         { status: 403 }
@@ -209,7 +209,7 @@ export async function PATCH(
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: 'UPDATE',
         resource: 'DoctorPreferences',
         resourceId: preferences.id,

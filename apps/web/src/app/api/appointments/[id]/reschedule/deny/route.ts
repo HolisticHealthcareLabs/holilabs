@@ -73,7 +73,7 @@ export async function POST(
       data: {
         rescheduleApproved: false,
         rescheduleApprovedAt: new Date(),
-        rescheduleApprovedBy: session.user.id,
+        rescheduleApprovedBy: (session.user as any).id,
         rescheduleRequested: false,
         rescheduleReason: reason || appointment.rescheduleReason,
       },
@@ -100,7 +100,7 @@ export async function POST(
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: 'UPDATE',
         resource: 'Appointment',
         resourceId: appointmentId,

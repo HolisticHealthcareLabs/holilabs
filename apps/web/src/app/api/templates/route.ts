@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         {
           OR: [
             { isPublic: true },
-            { createdById: session.user.id },
+            { createdById: (session.user as any).id },
           ],
         },
         query ? {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   const template = await prisma.clinicalTemplate.create({
     data: {
       ...body,
-      createdById: session.user.id,
+      createdById: (session.user as any).id,
     },
   });
 

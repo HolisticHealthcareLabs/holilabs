@@ -83,7 +83,7 @@ export async function POST(
       data: {
         appointmentId,
         situationId,
-        addedBy: session.user.id,
+        addedBy: (session.user as any).id,
         notes,
       },
       include: {
