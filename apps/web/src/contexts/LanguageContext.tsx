@@ -3,7 +3,7 @@
 /**
  * Language Context Provider
  * Manages language selection with localStorage persistence
- * Default: Portuguese (for Pequeno Cotolêngo pilot)
+ * Priority: User preference → Browser language → Spanish default
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -17,16 +17,40 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+/**
+ * Detect user's preferred language
+ * Priority order:
+ * 1. User's saved preference (localStorage)
+ * 2. Browser language
+ * 3. Default (Spanish for Mexican market)
+ */
+const detectUserLanguage = (): Locale => {
+  // 1. Check localStorage first
+  if (typeof window !== 'undefined') {
+    const savedLocale = localStorage.getItem('locale') as Locale;
+    if (savedLocale && ['es', 'en', 'pt'].includes(savedLocale)) {
+      return savedLocale;
+    }
+
+    // 2. Check browser language
+    const browserLang = navigator.language.split('-')[0];
+    if (['es', 'en', 'pt'].includes(browserLang)) {
+      return browserLang as Locale;
+    }
+  }
+
+  // 3. Default to Spanish
+  return defaultLocale;
+};
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(defaultLocale);
   const [translations, setTranslations] = useState<Record<string, any>>({});
 
-  // Load locale from localStorage on mount
+  // Detect and set initial locale on mount
   useEffect(() => {
-    const savedLocale = localStorage.getItem('locale') as Locale;
-    if (savedLocale && ['pt', 'en', 'es'].includes(savedLocale)) {
-      setLocaleState(savedLocale);
-    }
+    const detectedLocale = detectUserLanguage();
+    setLocaleState(detectedLocale);
   }, []);
 
   // Load translations when locale changes

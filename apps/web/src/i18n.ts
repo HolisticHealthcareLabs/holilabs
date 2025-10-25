@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
 
-// Define supported locales (Portuguese primary for Pequeno Cotolêngo pilot)
-export const locales = ['pt', 'en', 'es'] as const;
-export const defaultLocale = 'pt' as const;
+// Define supported locales (Spanish primary for Mexican healthcare market)
+export const locales = ['es', 'en', 'pt'] as const;
+export const defaultLocale = 'es' as const;
 export type Locale = (typeof locales)[number];
 
 // Locale display labels

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import SupportContact from '@/components/SupportContact';
 
 interface Patient {
   id: string;
@@ -90,10 +91,68 @@ export default function PatientsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4" />
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cargando pacientes...</h3>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Header Skeleton */}
+        <header className="bg-primary text-white shadow-md">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <span className="text-3xl">🏥</span>
+                <span className="text-xl font-bold">Holi Labs</span>
+                <span className="text-sm opacity-80">/ Pacientes</span>
+              </div>
+              <div className="bg-white/20 h-10 w-40 rounded-lg animate-pulse"></div>
+            </div>
+          </div>
+        </header>
+
+        <div className="container mx-auto px-4 py-8">
+          {/* Stats Row Skeleton */}
+          <div className="grid md:grid-cols-4 gap-4 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 animate-pulse">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-2"></div>
+                <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Search Bar Skeleton */}
+          <div className="mb-6">
+            <div className="w-full max-w-2xl h-12 bg-white dark:bg-gray-800 rounded-lg animate-pulse"></div>
+          </div>
+
+          {/* Filters Skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 animate-pulse">
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-10 w-24 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Patient Cards Skeleton */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden animate-pulse">
+                <div className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-14 h-14 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                    <div className="flex-1">
+                      <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-3"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 py-3 bg-gray-50 dark:bg-gray-750 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+                  <div className="flex-1 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                  <div className="flex-1 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                  <div className="flex-1 h-9 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -102,44 +161,31 @@ export default function PatientsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-8">
-        <div className="max-w-2xl w-full text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-            No se pudieron cargar los pacientes
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+        <div className="max-w-2xl w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+                No se pudieron cargar los pacientes
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">{error}</p>
+            </div>
 
-          {/* Support Options */}
-          <div className="mb-6">
-            <p className="text-gray-600 dark:text-gray-400 mb-4 font-medium">
-              ¿Necesitas ayuda?
-            </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <a
-                href="https://wa.me/1234567890"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium shadow-md"
+            {/* Support Contact Component */}
+            <div className="mb-6">
+              <SupportContact variant="default" />
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
               >
-                <span>📱</span>
-                <span>Contactar por WhatsApp</span>
-              </a>
-              <a
-                href="mailto:support@holilabs.com"
-                className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-md"
-              >
-                <span>📧</span>
-                <span>Enviar Email</span>
-              </a>
+                <span>🔄</span>
+                <span>Intentar de nuevo</span>
+              </button>
             </div>
           </div>
-
-          <button
-            onClick={() => window.location.reload()}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline font-medium"
-          >
-            Intentar de nuevo
-          </button>
         </div>
       </div>
     );

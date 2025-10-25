@@ -11,6 +11,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
+import SupportContact from '@/components/SupportContact';
 
 export default function GlobalError({
   error,
@@ -87,14 +88,9 @@ export default function GlobalError({
                 </button>
               </div>
 
-              {/* Support Link */}
-              <div className="mt-4 text-center">
-                <a
-                  href="mailto:support@holilabs.com"
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  ¿Necesitas ayuda? Contacta soporte
-                </a>
+              {/* Support Contact */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <SupportContact variant="compact" showTitle={true} />
               </div>
             </div>
           </div>
