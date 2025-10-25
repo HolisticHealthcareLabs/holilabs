@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Patient Medications Page
  *
  * Beautiful medication management with:

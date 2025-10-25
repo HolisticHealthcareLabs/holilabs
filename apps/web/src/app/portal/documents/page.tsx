@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Documents Page
  *
  * Beautiful mobile-first document management interface

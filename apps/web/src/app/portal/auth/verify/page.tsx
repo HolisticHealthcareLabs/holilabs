@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Magic Link Verification Page
  *
  * This page is shown while the magic link token is being verified

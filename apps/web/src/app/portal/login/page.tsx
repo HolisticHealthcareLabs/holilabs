@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Patient Login Page
  *
  * Industry-grade, bleeding-edge passwordless authentication

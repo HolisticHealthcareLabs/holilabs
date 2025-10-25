@@ -1,4 +1,6 @@
 'use client';
+export const dynamic = 'force-dynamic';
+
 
 /**
  * Documents Page - Patient Document Wallet

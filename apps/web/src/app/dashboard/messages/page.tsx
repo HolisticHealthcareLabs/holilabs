@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Clinician Messages Page
  *
  * Real-time chat interface for clinicians

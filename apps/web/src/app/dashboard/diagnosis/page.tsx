@@ -1,4 +1,6 @@
 import DiagnosisAssistant from '@/components/clinical/DiagnosisAssistant';
+export const dynamic = 'force-dynamic';
+
 
 export const metadata = {
   title: 'AI Diagnosis | Holi Labs',

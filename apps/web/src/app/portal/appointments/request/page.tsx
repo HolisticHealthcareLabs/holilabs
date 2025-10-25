@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Request Appointment Page
  *
  * Beautiful mobile-first appointment request form

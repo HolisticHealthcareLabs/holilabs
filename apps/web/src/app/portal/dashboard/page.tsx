@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Patient Dashboard
  *
  * Main landing page for authenticated patients

@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Settings Page
  *
  * Beautiful settings interface for patient preferences and configuration
