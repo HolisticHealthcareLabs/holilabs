@@ -58,7 +58,7 @@
     "@types/uuid": "^11.0.0",
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.5",
-    "assemblyai": "^4.16.1",
+    "assemblyai": "^4.17.0",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
