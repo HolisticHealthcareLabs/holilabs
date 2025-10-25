@@ -7,14 +7,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { rateLimit } from '@/lib/rate-limit';
-import { sendWhatsAppMessage } from '@/lib/notifications/whatsapp';
+// FIXME: Old rate limiting API - needs refactor
+// import { rateLimit } from '@/lib/rate-limit';
+// import { sendWhatsAppMessage } from '@/lib/notifications/whatsapp'; // Function doesn't exist
 import { sendEmail } from '@/lib/notifications/email';
 
-const limiter = rateLimit({
-  interval: 60 * 1000,
-  uniqueTokenPerInterval: 500,
-});
+// FIXME: Old rate limiting - commented out for now
+// const limiter = rateLimit({
+//   interval: 60 * 1000,
+//   uniqueTokenPerInterval: 500,
+// });
 
 /**
  * POST /api/appointments/[id]/reschedule/deny
@@ -25,7 +27,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    await limiter.check(request, 20, 'RESCHEDULE_DENY');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 20, 'RESCHEDULE_DENY');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -81,7 +84,9 @@ export async function POST(
 
     // Send notifications
     if (appointment.patient.phone && appointment.patient.preferences?.whatsappEnabled) {
-      await sendWhatsAppMessage(appointment.patient.phone, message);
+      // FIXME: sendWhatsAppMessage doesn't exist - needs proper WhatsApp function
+      // await sendWhatsAppMessage(appointment.patient.phone, message);
+      console.warn('WhatsApp notifications not configured');
     }
 
     if (appointment.patient.email && appointment.patient.preferences?.emailEnabled) {

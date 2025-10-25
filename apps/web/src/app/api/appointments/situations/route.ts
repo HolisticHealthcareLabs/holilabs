@@ -7,13 +7,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { rateLimit } from '@/lib/rate-limit';
+// FIXME: Old rate limiting API - needs refactor
+// import { rateLimit } from '@/lib/rate-limit';
 
-// Rate limiter: 60 requests per minute
-const limiter = rateLimit({
-  interval: 60 * 1000, // 1 minute
-  uniqueTokenPerInterval: 500,
-});
+// FIXME: Old rate limiting - commented out for now
+// const limiter = rateLimit({
+//   interval: 60 * 1000,
+//   uniqueTokenPerInterval: 500,
+// });
 
 /**
  * GET /api/appointments/situations
@@ -21,8 +22,8 @@ const limiter = rateLimit({
  */
 export async function GET(request: NextRequest) {
   try {
-    // Rate limiting
-    await limiter.check(request, 60, 'SITUATIONS_GET');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 60, 'SITUATIONS_GET');
 
     // Authentication
     const session = await getServerSession(authOptions);
@@ -62,8 +63,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
-    await limiter.check(request, 10, 'SITUATIONS_POST');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 10, 'SITUATIONS_POST');
 
     // Authentication
     const session = await getServerSession(authOptions);

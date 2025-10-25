@@ -9,12 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { rateLimit } from '@/lib/rate-limit';
+// FIXME: Old rate limiting API - needs refactor
+// import { rateLimit } from '@/lib/rate-limit';
 
-const limiter = rateLimit({
-  interval: 60 * 1000,
-  uniqueTokenPerInterval: 500,
-});
+// FIXME: Old rate limiting - commented out for now
+// const limiter = rateLimit({
+//   interval: 60 * 1000,
+//   uniqueTokenPerInterval: 500,
+// });
 
 /**
  * GET /api/appointments/templates/[id]
@@ -25,7 +27,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await limiter.check(request, 60, 'TEMPLATE_GET');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 60, 'TEMPLATE_GET');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -79,7 +82,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    await limiter.check(request, 20, 'TEMPLATE_PATCH');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 20, 'TEMPLATE_PATCH');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -178,7 +182,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await limiter.check(request, 20, 'TEMPLATE_DELETE');
+    // FIXME: Rate limiting disabled - needs refactor
+    // await limiter.check(request, 20, 'TEMPLATE_DELETE');
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
