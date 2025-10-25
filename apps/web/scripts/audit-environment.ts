@@ -485,10 +485,10 @@ function main() {
   }
 
   // Print results by category
-  for (const [category, vars] of results.entries()) {
+  for (const [category, vars] of Array.from(results.entries())) {
     printSubheader(`📦 ${category}`);
 
-    for (const [name, { envVar, result }] of vars.entries()) {
+    for (const [name, { envVar, result }] of Array.from(vars.entries())) {
       const icon = getStatusIcon(result.status);
       const priorityColor = getPriorityColor(envVar.priority);
       const priority = `[${envVar.priority}]`;
@@ -518,8 +518,8 @@ function main() {
   let criticalMissing = 0;
   let requiredMissing = 0;
 
-  for (const [, vars] of results.entries()) {
-    for (const [, { envVar, result }] of vars.entries()) {
+  for (const [, vars] of Array.from(results.entries())) {
+    for (const [, { envVar, result }] of Array.from(vars.entries())) {
       if (result.status === 'configured') {
         configured++;
       } else if (result.status === 'placeholder') {
