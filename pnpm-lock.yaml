@@ -100,8 +100,8 @@ importers:
         specifier: ^6.9.26
         version: 6.11.0(@react-navigation/native@6.1.18)(react-native-safe-area-context@4.10.0)(react-native-screens@3.31.1)(react-native@0.74.0)(react@18.2.0)
       '@supabase/supabase-js':
-        specifier: ^2.58.0
-        version: 2.58.0
+        specifier: ^2.75.0
+        version: 2.75.0
       '@tanstack/react-query':
         specifier: ^5.28.0
         version: 5.90.2(react@18.2.0)
@@ -125,7 +125,7 @@ importers:
         version: 6.0.2(expo@51.0.39)
       expo-router:
         specifier: ~3.5.0
-        version: 3.5.24(expo-constants@16.0.2)(expo-linking@8.0.8)(expo-modules-autolinking@3.0.14)(expo-status-bar@1.12.1)(expo@51.0.39)(react-native-reanimated@3.10.1)(react-native-safe-area-context@4.10.0)(react-native-screens@3.31.1)(react-native@0.74.0)(react@18.2.0)(typescript@5.9.3)
+        version: 3.5.24(expo-constants@16.0.2)(expo-linking@8.0.8)(expo-modules-autolinking@3.0.15)(expo-status-bar@1.12.1)(expo@51.0.39)(react-native-reanimated@3.10.1)(react-native-safe-area-context@4.10.0)(react-native-screens@3.31.1)(react-native@0.74.0)(react@18.2.0)(typescript@5.9.3)
       expo-secure-store:
         specifier: ~13.0.0
         version: 13.0.2(expo@51.0.39)
@@ -198,7 +198,7 @@ importers:
         version: 2.11.0(@prisma/client@5.22.0)
       '@auth/supabase-adapter':
         specifier: ^1.11.0
-        version: 1.11.0(@supabase/supabase-js@2.58.0)
+        version: 1.11.0(@supabase/supabase-js@2.75.0)
       '@aws-sdk/client-s3':
         specifier: ^3.908.0
         version: 3.908.0
@@ -252,13 +252,13 @@ importers:
         version: 8.0.0
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.10.0
-        version: 0.10.0(@supabase/supabase-js@2.58.0)
+        version: 0.10.0(@supabase/supabase-js@2.75.0)
       '@supabase/ssr':
         specifier: ^0.7.0
-        version: 0.7.0(@supabase/supabase-js@2.58.0)
+        version: 0.7.0(@supabase/supabase-js@2.75.0)
       '@supabase/supabase-js':
-        specifier: ^2.58.0
-        version: 2.58.0
+        specifier: ^2.75.0
+        version: 2.75.0
       '@types/uuid':
         specifier: ^11.0.0
         version: 11.0.0
@@ -631,13 +631,13 @@ packages:
       - nodemailer
     dev: false
 
-  /@auth/supabase-adapter@1.11.0(@supabase/supabase-js@2.58.0):
+  /@auth/supabase-adapter@1.11.0(@supabase/supabase-js@2.75.0):
     resolution: {integrity: sha512-CRzSnnm7K0Tp807SIR3CdR5hX+eGtyQtI6tXY1SlEyZCFnrZuCQXi1AnYBYuZZigam0BosNd2ufs4wz/uSWf3w==}
     peerDependencies:
       '@supabase/supabase-js': ^2.43.1
     dependencies:
       '@auth/core': 0.41.0
-      '@supabase/supabase-js': 2.58.0
+      '@supabase/supabase-js': 2.75.0
     transitivePeerDependencies:
       - '@simplewebauthn/browser'
       - '@simplewebauthn/server'
@@ -3572,7 +3572,7 @@ packages:
       - supports-color
     dev: false
 
-  /@expo/prebuild-config@7.0.9(expo-modules-autolinking@3.0.14):
+  /@expo/prebuild-config@7.0.9(expo-modules-autolinking@3.0.15):
     resolution: {integrity: sha512-9i6Cg7jInpnGEHN0jxnW0P+0BexnePiBzmbUvzSbRXpdXihYUX2AKMu73jgzxn5P1hXOSkzNS7umaY+BZ+aBag==}
     peerDependencies:
       expo-modules-autolinking: '>=0.8.1'
@@ -3584,7 +3584,7 @@ packages:
       '@expo/json-file': 8.3.3
       '@react-native/normalize-colors': 0.74.85
       debug: 4.4.3
-      expo-modules-autolinking: 3.0.14
+      expo-modules-autolinking: 3.0.15
       fs-extra: 9.1.0
       resolve-from: 5.0.0
       semver: 7.7.2
@@ -6824,7 +6824,7 @@ packages:
     resolution: {integrity: sha512-lzD84av1ZQhYUS+jsGqJiCMaJO2dn9u+RTT9n9q6D3SaKVwWqv+7AoRKqBu19bkwyE+iFRl1ymr40QS90jVFYg==}
     engines: {node: '>=14.15'}
     dependencies:
-      '@types/node': 18.19.129
+      '@types/node': 18.19.130
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -7958,35 +7958,35 @@ packages:
     engines: {node: '>=12.16'}
     dev: false
 
-  /@supabase/auth-helpers-nextjs@0.10.0(@supabase/supabase-js@2.58.0):
+  /@supabase/auth-helpers-nextjs@0.10.0(@supabase/supabase-js@2.75.0):
     resolution: {integrity: sha512-2dfOGsM4yZt0oS4TPiE7bD4vf7EVz7NRz/IJrV6vLg0GP7sMUx8wndv2euLGq4BjN9lUCpu6DG/uCC8j+ylwPg==}
     deprecated: This package is now deprecated - please use the @supabase/ssr package instead.
     peerDependencies:
       '@supabase/supabase-js': ^2.39.8
     dependencies:
-      '@supabase/auth-helpers-shared': 0.7.0(@supabase/supabase-js@2.58.0)
-      '@supabase/supabase-js': 2.58.0
+      '@supabase/auth-helpers-shared': 0.7.0(@supabase/supabase-js@2.75.0)
+      '@supabase/supabase-js': 2.75.0
       set-cookie-parser: 2.7.1
     dev: false
 
-  /@supabase/auth-helpers-shared@0.7.0(@supabase/supabase-js@2.58.0):
+  /@supabase/auth-helpers-shared@0.7.0(@supabase/supabase-js@2.75.0):
     resolution: {integrity: sha512-FBFf2ei2R7QC+B/5wWkthMha8Ca2bWHAndN+syfuEUUfufv4mLcAgBCcgNg5nJR8L0gZfyuaxgubtOc9aW3Cpg==}
     deprecated: This package is now deprecated - please use the @supabase/ssr package instead.
     peerDependencies:
       '@supabase/supabase-js': ^2.39.8
     dependencies:
-      '@supabase/supabase-js': 2.58.0
+      '@supabase/supabase-js': 2.75.0
       jose: 4.15.9
     dev: false
 
-  /@supabase/auth-js@2.72.0:
-    resolution: {integrity: sha512-4+bnUrtTDK1YD0/FCx2YtMiQH5FGu9Jlf4IQi5kcqRwRwqp2ey39V61nHNdH86jm3DIzz0aZKiWfTW8qXk1swQ==}
+  /@supabase/auth-js@2.75.0:
+    resolution: {integrity: sha512-J8TkeqCOMCV4KwGKVoxmEBuDdHRwoInML2vJilthOo7awVCro2SM+tOcpljORwuBQ1vHUtV62Leit+5wlxrNtw==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
-  /@supabase/functions-js@2.5.0:
-    resolution: {integrity: sha512-SXBx6Jvp+MOBekeKFu+G11YLYPeVeGQl23eYyAG9+Ro0pQ1aIP0UZNIBxHKNHqxzR0L0n6gysNr2KT3841NATw==}
+  /@supabase/functions-js@2.75.0:
+    resolution: {integrity: sha512-18yk07Moj/xtQ28zkqswxDavXC3vbOwt1hDuYM3/7xPnwwpKnsmPyZ7bQ5th4uqiJzQ135t74La9tuaxBR6e7w==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
@@ -7998,14 +7998,14 @@ packages:
       whatwg-url: 5.0.0
     dev: false
 
-  /@supabase/postgrest-js@1.21.4:
-    resolution: {integrity: sha512-TxZCIjxk6/dP9abAi89VQbWWMBbybpGWyvmIzTd79OeravM13OjR/YEYeyUOPcM1C3QyvXkvPZhUfItvmhY1IQ==}
+  /@supabase/postgrest-js@2.75.0:
+    resolution: {integrity: sha512-YfBz4W/z7eYCFyuvHhfjOTTzRrQIvsMG2bVwJAKEVVUqGdzqfvyidXssLBG0Fqlql1zJFgtsPpK1n4meHrI7tg==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
-  /@supabase/realtime-js@2.15.5:
-    resolution: {integrity: sha512-/Rs5Vqu9jejRD8ZeuaWXebdkH+J7V6VySbCZ/zQM93Ta5y3mAmocjioa/nzlB6qvFmyylUgKVS1KpE212t30OA==}
+  /@supabase/realtime-js@2.75.0:
+    resolution: {integrity: sha512-B4Xxsf2NHd5cEnM6MGswOSPSsZKljkYXpvzKKmNxoUmNQOfB7D8HOa6NwHcUBSlxcjV+vIrYKcYXtavGJqeGrw==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
       '@types/phoenix': 1.6.6
@@ -8016,30 +8016,30 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@supabase/ssr@0.7.0(@supabase/supabase-js@2.58.0):
+  /@supabase/ssr@0.7.0(@supabase/supabase-js@2.75.0):
     resolution: {integrity: sha512-G65t5EhLSJ5c8hTCcXifSL9Q/ZRXvqgXeNo+d3P56f4U1IxwTqjB64UfmfixvmMcjuxnq2yGqEWVJqUcO+AzAg==}
     peerDependencies:
       '@supabase/supabase-js': ^2.43.4
     dependencies:
-      '@supabase/supabase-js': 2.58.0
+      '@supabase/supabase-js': 2.75.0
       cookie: 1.0.2
     dev: false
 
-  /@supabase/storage-js@2.12.2:
-    resolution: {integrity: sha512-SiySHxi3q7gia7NBYpsYRu8gyI0NhFwSORMxbZIxJ/zAVkN6QpwDRan158CJ+UdzD4WB/rQMAGRqIJQP+7ccAQ==}
+  /@supabase/storage-js@2.75.0:
+    resolution: {integrity: sha512-wpJMYdfFDckDiHQaTpK+Ib14N/O2o0AAWWhguKvmmMurB6Unx17GGmYp5rrrqCTf8S1qq4IfIxTXxS4hzrUySg==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
-  /@supabase/supabase-js@2.58.0:
-    resolution: {integrity: sha512-Tm1RmQpoAKdQr4/8wiayGti/no+If7RtveVZjHR8zbO7hhQjmPW2Ok5ZBPf1MGkt5c+9R85AVMsTfSaqAP1sUg==}
+  /@supabase/supabase-js@2.75.0:
+    resolution: {integrity: sha512-8UN/vATSgS2JFuJlMVr51L3eUDz+j1m7Ww63wlvHLKULzCDaVWYzvacCjBTLW/lX/vedI2LBI4Vg+01G9ufsJQ==}
     dependencies:
-      '@supabase/auth-js': 2.72.0
-      '@supabase/functions-js': 2.5.0
+      '@supabase/auth-js': 2.75.0
+      '@supabase/functions-js': 2.75.0
       '@supabase/node-fetch': 2.6.15
-      '@supabase/postgrest-js': 1.21.4
-      '@supabase/realtime-js': 2.15.5
-      '@supabase/storage-js': 2.12.2
+      '@supabase/postgrest-js': 2.75.0
+      '@supabase/realtime-js': 2.75.0
+      '@supabase/storage-js': 2.75.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -8379,6 +8379,12 @@ packages:
 
   /@types/node@18.19.129:
     resolution: {integrity: sha512-hrmi5jWt2w60ayox3iIXwpMEnfUvOLJCRtrOPbHtH15nTjvO7uhnelvrdAs0dO0/zl5DZ3ZbahiaXEVb54ca/A==}
+    dependencies:
+      undici-types: 5.26.5
+    dev: false
+
+  /@types/node@18.19.130:
+    resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
     dependencies:
       undici-types: 5.26.5
 
@@ -11856,8 +11862,8 @@ packages:
       resolve-from: 5.0.0
     dev: false
 
-  /expo-modules-autolinking@3.0.14:
-    resolution: {integrity: sha512-/qh1ru2kGPOycGvE9dXEKJZbPmYA5U5UcAlWWFbcq9+VhhWdZWZ0zs7V2JCdl+OvpBDo1y9WbqPP5VHQSYqT+Q==}
+  /expo-modules-autolinking@3.0.15:
+    resolution: {integrity: sha512-B6c+x664ImrWd+PknEy5454gtY6P0cMxj4P50fvLYP4HimbYj9SzwoHqZ/Rxh9NwxnUkT2nappk/USYIcPoS/A==}
     hasBin: true
     dependencies:
       '@expo/spawn-async': 1.7.2
@@ -11874,7 +11880,7 @@ packages:
       invariant: 2.2.4
     dev: false
 
-  /expo-router@3.5.24(expo-constants@16.0.2)(expo-linking@8.0.8)(expo-modules-autolinking@3.0.14)(expo-status-bar@1.12.1)(expo@51.0.39)(react-native-reanimated@3.10.1)(react-native-safe-area-context@4.10.0)(react-native-screens@3.31.1)(react-native@0.74.0)(react@18.2.0)(typescript@5.9.3):
+  /expo-router@3.5.24(expo-constants@16.0.2)(expo-linking@8.0.8)(expo-modules-autolinking@3.0.15)(expo-status-bar@1.12.1)(expo@51.0.39)(react-native-reanimated@3.10.1)(react-native-safe-area-context@4.10.0)(react-native-screens@3.31.1)(react-native@0.74.0)(react@18.2.0)(typescript@5.9.3):
     resolution: {integrity: sha512-wFi+PIUrOntF5cgg0PgBMlkxEZlWedIv5dWnPFEzN6Tr3A3bpsqdDLgOEIwvwd+pxn5DLzykTmg9EkQ1pPGspw==}
     peerDependencies:
       '@react-navigation/drawer': ^6.5.8
@@ -11903,7 +11909,7 @@ packages:
       expo: 51.0.39(@babel/core@7.28.4)(@babel/preset-env@7.28.3)(react-native@0.74.0)(react@18.2.0)
       expo-constants: 16.0.2(expo@51.0.39)
       expo-linking: 8.0.8(expo@51.0.39)(react-native@0.74.0)(react@18.2.0)
-      expo-splash-screen: 0.27.7(expo-modules-autolinking@3.0.14)(expo@51.0.39)
+      expo-splash-screen: 0.27.7(expo-modules-autolinking@3.0.15)(expo@51.0.39)
       expo-status-bar: 1.12.1
       react-native-helmet-async: 2.0.4(react@18.2.0)
       react-native-reanimated: 3.10.1(@babel/core@7.28.4)(react-native@0.74.0)(react@18.2.0)
@@ -11927,12 +11933,12 @@ packages:
       expo: 51.0.39(@babel/core@7.28.4)(@babel/preset-env@7.28.3)(react-native@0.74.0)(react@18.2.0)
     dev: false
 
-  /expo-splash-screen@0.27.7(expo-modules-autolinking@3.0.14)(expo@51.0.39):
+  /expo-splash-screen@0.27.7(expo-modules-autolinking@3.0.15)(expo@51.0.39):
     resolution: {integrity: sha512-s+eGcG185878nixlrjhhLD6UDYrvoqBUaBkIEozBVWFg3pkdsKpONPiUAco4XR3h7I/9ODq4quN28RJLFO+s0Q==}
     peerDependencies:
       expo: '*'
     dependencies:
-      '@expo/prebuild-config': 7.0.9(expo-modules-autolinking@3.0.14)
+      '@expo/prebuild-config': 7.0.9(expo-modules-autolinking@3.0.15)
       expo: 51.0.39(@babel/core@7.28.4)(@babel/preset-env@7.28.3)(react-native@0.74.0)(react@18.2.0)
     transitivePeerDependencies:
       - encoding
