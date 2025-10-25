@@ -24,6 +24,9 @@ interface NavItem {
   icon: string;
   emoji: string;
   badge?: number;
+  gradient?: string;
+  hoverGradient?: string;
+  shadowColor?: string;
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -51,32 +54,87 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     });
   }, [router]);
 
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  // Clinical Tools - Each with unique color gradient (top priority)
+  const clinicalTools: NavItem[] = [
+    {
+      name: 'Scribe',
+      href: '/dashboard/scribe',
+      icon: '🎙️',
+      emoji: '🎙️',
+      gradient: 'from-purple-500 to-pink-600', // Creative/Audio
+      hoverGradient: 'from-purple-600 to-pink-700',
+      shadowColor: 'purple-500/50'
+    },
+    {
+      name: 'Prevention',
+      href: '/dashboard/prevention',
+      icon: '🛡️',
+      emoji: '🛡️',
+      gradient: 'from-emerald-500 to-teal-600', // Health/Safety
+      hoverGradient: 'from-emerald-600 to-teal-700',
+      shadowColor: 'emerald-500/50'
+    },
+    {
+      name: 'Diagnosis',
+      href: '/dashboard/diagnosis',
+      icon: '🩺',
+      emoji: '🩺',
+      gradient: 'from-cyan-500 to-blue-600', // Medical/Trust
+      hoverGradient: 'from-cyan-600 to-blue-700',
+      shadowColor: 'cyan-500/50'
+    },
+    {
+      name: 'Prescription',
+      href: '/dashboard/prescriptions',
+      icon: '💊',
+      emoji: '💊',
+      gradient: 'from-orange-500 to-red-600', // Pharmaceutical/Important
+      hoverGradient: 'from-orange-600 to-red-700',
+      shadowColor: 'orange-500/50'
+    },
+  ];
 
   // Main navigation - 4 core categories
   const mainNavItems: NavItem[] = [
-    { name: 'Dashboard', href: '/dashboard', icon: '📊', emoji: '📊' },
-    { name: 'Patients', href: '/dashboard/patients', icon: '👥', emoji: '👥' },
-    { name: 'Calendar & Messages', href: '/dashboard/appointments', icon: '📅', emoji: '📅' },
-    { name: 'Documentation', href: '/dashboard/forms', icon: '📝', emoji: '📝' },
+    {
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: '📊',
+      emoji: '📊',
+      gradient: 'from-blue-500 to-indigo-600',
+      hoverGradient: 'from-blue-600 to-indigo-700',
+      shadowColor: 'blue-500/50'
+    },
+    {
+      name: 'Patients',
+      href: '/dashboard/patients',
+      icon: '👥',
+      emoji: '👥',
+      gradient: 'from-violet-500 to-purple-600',
+      hoverGradient: 'from-violet-600 to-purple-700',
+      shadowColor: 'violet-500/50'
+    },
+    {
+      name: 'Calendar',
+      href: '/dashboard/appointments',
+      icon: '📅',
+      emoji: '📅',
+      gradient: 'from-green-500 to-emerald-600',
+      hoverGradient: 'from-green-600 to-emerald-700',
+      shadowColor: 'green-500/50'
+    },
+    {
+      name: 'Messages',
+      href: '/dashboard/messages',
+      icon: '💬',
+      emoji: '💬',
+      gradient: 'from-sky-500 to-cyan-600',
+      hoverGradient: 'from-sky-600 to-cyan-700',
+      shadowColor: 'sky-500/50'
+    },
   ];
 
-  // Clinical Tools Group - AI-powered medical tools
-  const clinicalToolsGroup = {
-    id: 'clinical-tools',
-    name: 'Clinical Tools',
-    emoji: '🏥',
-    children: [
-      { name: 'AI Scribe', href: '/dashboard/scribe', emoji: '🎙️' },
-      { name: 'AI Copilot', href: '/dashboard/ai', emoji: '🦾' },
-      { name: 'Diagnosis Assistant', href: '/dashboard/diagnosis', emoji: '🩺' },
-      { name: 'Prevention Protocols', href: '/dashboard/prevention', emoji: '🛡️' },
-      { name: 'Prescriptions', href: '/dashboard/prescriptions', emoji: '💊' },
-      { name: 'Document Intelligence', href: '/dashboard/doc-intelligence', emoji: '📄' },
-    ],
-  };
-
-  const navItems = mainNavItems;
+  const navItems = [...clinicalTools, ...mainNavItems];
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -124,149 +182,60 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* Navigation - Futuristic Floating Emoji Tiles */}
+          {/* Navigation - Beautiful Circular Gradient Tiles */}
           <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
-            {/* Main Navigation Items */}
-            {navItems.map((item, index) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            {/* All Navigation Items - Clinical Tools First, Then Main Nav */}
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+
               return (
-                <div key={item.href} className="relative">
-                  <Link
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ${
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300"
+                >
+                  {/* Circular Gradient Tile */}
+                  <div
+                    className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ${
+                      item.gradient ? `bg-gradient-to-br ${item.gradient}` : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                    } ${
                       isActive
-                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/50 scale-110 ring-2 ring-blue-400 dark:ring-blue-500'
-                        : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:scale-110 hover:shadow-xl hover:shadow-blue-500/40 dark:hover:shadow-blue-400/30'
-                    }`}
-                    style={{
-                      transitionDelay: `${index * 30}ms`
-                    }}
+                        ? 'scale-110 ring-4 ring-white/50 dark:ring-gray-700/50'
+                        : ''
+                    } ${
+                      item.hoverGradient
+                        ? `hover:bg-gradient-to-br hover:${item.hoverGradient}`
+                        : ''
+                    } hover:scale-110 hover:shadow-xl ${
+                      item.shadowColor ? `hover:shadow-${item.shadowColor}` : 'hover:shadow-gray-500/50'
+                    } dark:hover:shadow-${item.shadowColor?.replace('500', '400')}/40`}
                   >
-                    <span className={`text-2xl transition-transform duration-300 group-hover:scale-125 ${
-                      isActive ? 'filter drop-shadow-lg' : ''
-                    }`}>
+                    <span className="text-2xl transition-transform duration-300 group-hover:scale-125">
                       {item.emoji}
                     </span>
+                  </div>
 
-                    {/* Floating Text Label */}
-                    <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
-                      <div className={`
-                        opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0
-                        transition-all duration-500 ease-out
-                        bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900
-                        backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80
-                        px-4 py-2 rounded-xl shadow-2xl
-                        whitespace-nowrap
-                      `}>
-                        <p className={`font-semibold text-sm tracking-wide ${
-                          isActive
-                            ? 'text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400'
-                            : 'text-gray-900 dark:text-white'
-                        }`}>
-                          {item.name}
-                        </p>
-                        <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
-                          <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
-                        </div>
+                  {/* Floating Text Label - Appears on Hover */}
+                  <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
+                    <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                        {item.name}
+                      </p>
+                      {item.badge && (
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {item.badge}
+                        </span>
+                      )}
+                      {/* Arrow pointer */}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+                        <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
                       </div>
-                    </div>
-
-                    {isActive && (
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 opacity-20 animate-pulse" />
-                    )}
-
-                    {item.badge && (
-                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full shadow-lg z-10 animate-bounce">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                </div>
-              );
-            })}
-
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent my-2" />
-
-            {/* Clinical Tools Group - Spider Tree */}
-            <div
-              className="relative"
-              onMouseEnter={() => setExpandedGroup('clinical-tools')}
-              onMouseLeave={() => setExpandedGroup(null)}
-            >
-              <button
-                className="group relative flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 bg-gradient-to-br from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 hover:scale-110 hover:shadow-xl hover:shadow-green-500/50 dark:hover:shadow-green-400/40 ring-2 ring-transparent hover:ring-green-400 dark:hover:ring-green-500"
-              >
-                <span className="text-2xl transition-transform duration-300 group-hover:scale-125">
-                  {clinicalToolsGroup.emoji}
-                </span>
-
-                {/* Floating Text Label */}
-                <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
-                  <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 ease-out bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
-                    <p className="font-semibold text-sm tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-400 dark:to-teal-400">
-                      {clinicalToolsGroup.name}
-                    </p>
-                    <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
-                      <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
                     </div>
                   </div>
-                </div>
-              </button>
-
-              {/* Spider Tree Sub-Items */}
-              {expandedGroup === 'clinical-tools' && (
-                <div className="absolute left-20 top-0 z-40 flex flex-col gap-2 pl-6">
-                  {clinicalToolsGroup.children.map((child, idx) => {
-                    const isActive = pathname === child.href || pathname.startsWith(child.href + '/');
-                    return (
-                      <div
-                        key={child.href}
-                        className="relative"
-                        style={{
-                          animation: `slideIn 0.3s ease-out forwards`,
-                          animationDelay: `${idx * 50}ms`,
-                          opacity: 0
-                        }}
-                      >
-                        {/* Connecting Line */}
-                        <svg className="absolute -left-6 top-1/2 -translate-y-1/2 w-6 h-0.5" xmlns="http://www.w3.org/2000/svg">
-                          <line x1="0" y1="1" x2="24" y2="1" stroke="url(#gradient)" strokeWidth="2" strokeDasharray="2,2" />
-                          <defs>
-                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="rgb(34, 197, 94)" stopOpacity="0.5" />
-                              <stop offset="100%" stopColor="rgb(20, 184, 166)" stopOpacity="0.8" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-
-                        <Link
-                          href={child.href}
-                          onClick={() => setSidebarOpen(false)}
-                          className={`group/child flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
-                            isActive
-                              ? 'bg-gradient-to-br from-green-500 to-teal-600 shadow-md shadow-green-500/50 scale-110 ring-2 ring-green-400'
-                              : 'bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-green-400 dark:hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 hover:scale-110 hover:shadow-lg hover:shadow-green-500/30'
-                          }`}
-                        >
-                          <span className="text-lg">{child.emoji}</span>
-
-                          {/* Child Text Label */}
-                          <div className="absolute left-14 top-1/2 -translate-y-1/2 pointer-events-none z-50">
-                            <div className="opacity-0 -translate-x-4 group-hover/child:opacity-100 group-hover/child:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-3 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
-                              <p className="font-medium text-xs text-gray-900 dark:text-white">
-                                {child.name}
-                              </p>
-                            </div>
-                          </div>
-                        </Link>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                </Link>
+              );
+            })}
 
           </nav>
 
