@@ -3,10 +3,12 @@
 /**
  * Portal Error Page
  * Catches errors in the portal section
+ * Industry-grade error handling with professional support options
  */
 
 import { useEffect } from 'react';
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline';
+import SupportContact from '@/components/SupportContact';
 
 export default function PortalError({
   error,
@@ -74,13 +76,14 @@ export default function PortalError({
             </button>
           </div>
 
-          {/* Help text */}
-          <p className="text-xs text-gray-500 text-center mt-4">
-            Si el problema persiste, contacta al soporte técnico en{' '}
-            <a href="mailto:support@holilabs.com" className="text-blue-600 hover:underline">
-              support@holilabs.com
-            </a>
-          </p>
+          {/* Support Contact */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <SupportContact
+              variant="compact"
+              showTitle={true}
+              title="¿Necesitas ayuda?"
+            />
+          </div>
         </div>
       </div>
     </div>
