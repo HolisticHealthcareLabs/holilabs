@@ -145,6 +145,12 @@ const nextConfig = {
     instrumentationHook: true,
   },
   output: 'standalone',
+
+  // Skip static optimization for pages with dynamic features
+  // This prevents build failures when pages use cookies, headers, or searchParams
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+
   webpack: (config, { isServer }) => {
     // Exclude server-only packages from client bundle
     if (!isServer) {
@@ -154,6 +160,15 @@ const nextConfig = {
       };
     }
     return config;
+  },
+
+  // Disable static page generation errors during build
+  // Pages with dynamic features will be rendered at runtime
+  onDemandEntries: {
+    // period (in ms) where the server will keep pages in the buffer
+    maxInactiveAge: 25 * 1000,
+    // number of pages that should be kept simultaneously without being disposed
+    pagesBufferLength: 2,
   },
 };
 

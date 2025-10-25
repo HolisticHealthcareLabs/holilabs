@@ -1,4 +1,18 @@
 {
+  "nav": {
+    "dashboard": "Dashboard",
+    "patients": "Patients",
+    "appointments": "Appointments",
+    "medications": "Medications",
+    "forms": "Forms",
+    "messages": "Messages",
+    "scribe": "AI Scribe",
+    "documents": "Documents",
+    "aiAssistant": "AI Assistant",
+    "analysis": "Analysis",
+    "settings": "Settings",
+    "logout": "Sign Out"
+  },
   "dashboardNav": "Dashboard",
   "patientsNav": "Patients",
   "appointmentsNav": "Appointments",
