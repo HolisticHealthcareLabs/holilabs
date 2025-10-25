@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Health Metrics Page
  *
  * Beautiful health tracking dashboard with vital signs and trends

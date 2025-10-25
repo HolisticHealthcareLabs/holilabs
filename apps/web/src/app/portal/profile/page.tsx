@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Profile Page
  *
  * Beautiful patient profile with personal info and statistics

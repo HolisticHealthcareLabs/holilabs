@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Patient Consultations Page
  *
  * View past consultation recordings and transcripts

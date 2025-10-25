@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Patient Medical Records Page
  *
  * Industry-grade medical records viewer with:

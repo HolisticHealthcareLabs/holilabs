@@ -1,4 +1,6 @@
 /**
+export const dynamic = 'force-dynamic';
+
  * Patient Appointments Page
  *
  * Mobile-first appointment management with:
