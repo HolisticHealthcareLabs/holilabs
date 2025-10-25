@@ -75,7 +75,7 @@ export async function POST(
         endTime: new Date(appointment.rescheduleNewTime.getTime() + 30 * 60 * 1000), // 30 min duration
         rescheduleApproved: true,
         rescheduleApprovedAt: new Date(),
-        rescheduleApprovedBy: session.user.id,
+        rescheduleApprovedBy: (session.user as any).id,
         rescheduleRequested: false,
         status: 'SCHEDULED',
         confirmationStatus: 'PENDING',
@@ -111,7 +111,7 @@ export async function POST(
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: 'UPDATE',
         resource: 'Appointment',
         resourceId: appointmentId,

@@ -130,7 +130,7 @@ export async function PATCH(
       where: { id: templateId },
       data: {
         ...body,
-        updatedBy: session.user.id,
+        updatedBy: (session.user as any).id,
         updatedAt: new Date(),
       },
       include: {
@@ -147,7 +147,7 @@ export async function PATCH(
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: 'UPDATE',
         resource: 'NotificationTemplate',
         resourceId: templateId,
@@ -223,7 +223,7 @@ export async function DELETE(
     // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: (session.user as any).id,
         action: 'DELETE',
         resource: 'NotificationTemplate',
         resourceId: templateId,

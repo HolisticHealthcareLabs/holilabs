@@ -147,7 +147,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
 
     // 4. Check user's subscription tier and quota
     const subscriptionTier = await prisma.subscriptionTier.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: (session.user as any).id },
     });
 
     const tier = subscriptionTier?.tier || 'FREE';
@@ -251,7 +251,7 @@ IMPORTANT:
 
     await trackUsage({
       provider: aiResponse.provider || 'claude',
-      userId: session.user.id,
+      userId: (session.user as any).id,
       promptTokens: aiResponse.usage?.promptTokens || 0,
       completionTokens: aiResponse.usage?.completionTokens || 0,
       totalTokens: aiResponse.usage?.totalTokens || 0,
@@ -264,7 +264,7 @@ IMPORTANT:
     // 10. Update user's daily usage count
     if (subscriptionTier) {
       await prisma.subscriptionTier.update({
-        where: { userId: session.user.id },
+        where: { userId: (session.user as any).id },
         data: {
           dailyAIUsed: dailyUsed + 1,
           monthlyAIUsed: { increment: 1 },
@@ -274,7 +274,7 @@ IMPORTANT:
       // Create default FREE tier for user if doesn't exist
       await prisma.subscriptionTier.create({
         data: {
-          userId: session.user.id,
+          userId: (session.user as any).id,
           tier: 'FREE',
           dailyAIUsed: 1,
           monthlyAIUsed: 1,

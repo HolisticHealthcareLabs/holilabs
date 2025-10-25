@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     // Authorization: Only admins can create situations
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: (session.user as any).id },
     });
 
     if (user?.role !== 'ADMIN') {
