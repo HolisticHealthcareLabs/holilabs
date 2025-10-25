@@ -54,6 +54,7 @@ model User {
   subscriptionTier      SubscriptionTier?
   doctorPreferences     DoctorPreferences?
   notificationTemplates NotificationTemplate[]
+  createdTemplates      ClinicalTemplate[]    @relation("CreatedTemplates")
 
   @@index([email])
   @@index([walletAddress])
@@ -1590,6 +1591,83 @@ enum SOAPStatus {
   SIGNED
   AMENDED
   ADDENDUM
+}
+
+// ============================================================================
+// CLINICAL TEMPLATES & SMART PHRASES
+// ============================================================================
+
+model ClinicalTemplate {
+  id String @id @default(cuid())
+
+  // Template metadata
+  name        String
+  description String?   @db.Text
+  category    TemplateCategory
+  specialty   String? // Cardiology, Orthopedics, etc.
+
+  // Template content
+  content     String    @db.Text // The actual template text with {{variables}}
+  variables   Json?     // Array of variable definitions: [{ name, type, default }]
+
+  // Keyboard shortcut for quick access
+  shortcut    String?   @unique // e.g., "cc:chest-pain", "pe:cardiac"
+
+  // Access control
+  createdById String
+  createdBy   User      @relation("CreatedTemplates", fields: [createdById], references: [id])
+  isPublic    Boolean   @default(false) // Global template vs user-specific
+  isOfficial  Boolean   @default(false) // Organization-approved template
+
+  // Usage tracking
+  useCount    Int       @default(0)
+
+  // Metadata
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  favorites   TemplateFavorite[]
+
+  @@index([category])
+  @@index([specialty])
+  @@index([shortcut])
+  @@index([createdById])
+  @@index([isPublic])
+  @@map("clinical_templates")
+}
+
+model TemplateFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  templateId String
+  template   ClinicalTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // Sort order for user's favorites
+  sortOrder  Int      @default(0)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, templateId])
+  @@index([userId])
+  @@map("template_favorites")
+}
+
+enum TemplateCategory {
+  CHIEF_COMPLAINT
+  HISTORY_OF_PRESENT_ILLNESS
+  REVIEW_OF_SYSTEMS
+  PHYSICAL_EXAM
+  ASSESSMENT
+  PLAN
+  PRESCRIPTION
+  PATIENT_EDUCATION
+  FOLLOW_UP
+  PROCEDURE_NOTE
+  DISCHARGE_SUMMARY
+  PROGRESS_NOTE
+  CONSULTATION
+  CUSTOM
 }
 
 // ============================================================================
