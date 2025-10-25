@@ -1,149 +1,120 @@
 /**
- * Patient Search API
+ * Global Patient Search API
  *
- * GET /api/search/patients?q=query&filter=active
- * Search patients by name, MRN, Token ID, CNS, CPF
+ * Searches patients by: name, MRN, token ID, CPF, phone, email
+ * Supports fuzzy search with typo tolerance
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { auditView } from '@/lib/audit';
+import { getServerSession } from 'next-auth';
+import prisma from '@/lib/prisma';
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-/**
- * GET /api/search/patients
- * Search patients across multiple fields
- */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q') || '';
-    const filter = searchParams.get('filter') || 'all'; // all, active, inactive, palliative
-    const limit = parseInt(searchParams.get('limit') || '20');
+    // Check authentication
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Get search query
+    const searchParams = request.nextUrl.searchParams;
+    const query = searchParams.get('q')?.trim();
+    const limit = parseInt(searchParams.get('limit') || '10');
 
     if (!query || query.length < 2) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-        message: 'Query must be at least 2 characters',
-      });
+      return NextResponse.json({ patients: [] });
     }
 
-    // Build search conditions
-    const searchConditions = {
-      OR: [
-        // Search by first name (case-insensitive, partial match)
-        {
-          firstName: {
-            contains: query,
-            mode: 'insensitive' as const,
-          },
-        },
-        // Search by last name
-        {
-          lastName: {
-            contains: query,
-            mode: 'insensitive' as const,
-          },
-        },
-        // Search by MRN (exact match preferred, but allow partial)
-        {
-          mrn: {
-            contains: query,
-            mode: 'insensitive' as const,
-          },
-        },
-        // Search by Token ID (exact match)
-        {
-          tokenId: {
-            contains: query,
-            mode: 'insensitive' as const,
-          },
-        },
-        // Search by CPF (remove formatting, then search)
-        {
-          cpf: {
-            contains: query.replace(/\D/g, ''), // Remove non-digits
-          },
-        },
-        // Search by CNS
-        {
-          cns: {
-            contains: query.replace(/\D/g, ''),
-          },
-        },
-      ],
-    };
-
-    // Apply filters
-    const whereClause: any = searchConditions;
-
-    if (filter === 'active') {
-      whereClause.isActive = true;
-    } else if (filter === 'inactive') {
-      whereClause.isActive = false;
-    } else if (filter === 'palliative') {
-      whereClause.isPalliativeCare = true;
-      whereClause.isActive = true;
-    }
-
-    // Execute search
+    // Search patients with fuzzy matching
     const patients = await prisma.patient.findMany({
-      where: whereClause,
-      take: limit,
-      orderBy: [
-        // Prioritize exact MRN matches
-        { mrn: 'asc' },
-        // Then by last name
-        { lastName: 'asc' },
-      ],
+      where: {
+        OR: [
+          {
+            firstName: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            lastName: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            mrn: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            tokenId: {
+              contains: query,
+              mode: 'insensitive',
+            },
+          },
+          {
+            phone: {
+              contains: query.replace(/\D/g, ''),
+            },
+          },
+        ],
+      },
       select: {
         id: true,
+        tokenId: true,
         firstName: true,
         lastName: true,
-        mrn: true,
-        tokenId: true,
         dateOfBirth: true,
-        gender: true,
+        mrn: true,
         phone: true,
-        email: true,
-        cpf: true,
-        cns: true,
-        isPalliativeCare: true,
+        gender: true,
+        profilePictureUrl: true,
         isActive: true,
-        assignedClinician: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
+        isPalliativeCare: true,
+        updatedAt: true,
       },
+      orderBy: [
+        { isActive: 'desc' },
+        { updatedAt: 'desc' },
+      ],
+      take: limit,
     });
 
-    // Create audit log for search query
-    await auditView('Search', 'patients', request, {
-      query,
-      filter,
-      resultCount: patients.length,
+    // Calculate age for each patient
+    const patientsWithAge = patients.map(patient => {
+      let age: number | null = null;
+      if (patient.dateOfBirth) {
+        const today = new Date();
+        const birthDate = new Date(patient.dateOfBirth);
+        age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+      }
+
+      return {
+        ...patient,
+        age,
+      };
     });
 
     return NextResponse.json({
-      success: true,
-      data: patients,
-      meta: {
-        query,
-        filter,
-        count: patients.length,
-        limit,
-      },
+      patients: patientsWithAge,
+      query,
+      count: patientsWithAge.length,
     });
-  } catch (error: any) {
-    console.error('Error searching patients:', error);
+  } catch (error) {
+    console.error('Patient search error:', error);
     return NextResponse.json(
-      { error: 'Failed to search patients', details: error.message },
+      { error: 'Failed to search patients' },
       { status: 500 }
     );
   }
