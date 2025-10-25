@@ -8,3 +8,5 @@
 export * from './VitalSignsTracker';
 export * from './ICD10Search';
 export * from './MedicationPrescription';
+export * from './ProblemList';
+export * from './ClinicalDecisionSupport';
