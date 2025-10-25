@@ -1,276 +1,282 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/lib/auth/AuthProvider';
-import InvoicesList from '@/components/invoices/InvoicesList';
-import InvoiceForm from '@/components/invoices/InvoiceForm';
+/**
+ * Billing & Payment History Page
+ * 
+ * Displays patient's invoices, payments, and billing information
+ */
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { motion } from 'framer-motion';
+
+interface Payment {
+  id: string;
+  amount: number;
+  currency: string;
+  status: 'PAID' | 'PENDING' | 'FAILED' | 'REFUNDED';
+  paymentMethod: string;
+  date: string;
+  description: string;
+  invoiceId?: string;
+}
 
 export default function BillingPage() {
-  const { patientId, loading } = useAuth();
-  const [showForm, setShowForm] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [totalPending, setTotalPending] = useState(0);
 
-  // Show loading state while auth is being determined
+  useEffect(() => {
+    // Mock data - replace with actual API call
+    setTimeout(() => {
+      const mockPayments: Payment[] = [
+        {
+          id: '1',
+          amount: 150.00,
+          currency: 'USD',
+          status: 'PAID',
+          paymentMethod: 'Visa •••• 4242',
+          date: new Date('2025-01-15').toISOString(),
+          description: 'Consulta General - Dr. Juan Pérez',
+        },
+        {
+          id: '2',
+          amount: 250.00,
+          currency: 'USD',
+          status: 'PAID',
+          paymentMethod: 'MasterCard •••• 5555',
+          date: new Date('2024-12-20').toISOString(),
+          description: 'Análisis de Sangre Completo',
+        },
+        {
+          id: '3',
+          amount: 75.00,
+          currency: 'USD',
+          status: 'PENDING',
+          paymentMethod: 'Pendiente',
+          date: new Date('2025-01-20').toISOString(),
+          description: 'Consulta de Seguimiento',
+        },
+      ];
+
+      setPayments(mockPayments);
+      setTotalPaid(mockPayments.filter(p => p.status === 'PAID').reduce((sum, p) => sum + p.amount, 0));
+      setTotalPending(mockPayments.filter(p => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0));
+      setLoading(false);
+    }, 500);
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'FAILED':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'REFUNDED':
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PAID': return 'Pagado';
+      case 'PENDING': return 'Pendiente';
+      case 'FAILED': return 'Fallido';
+      case 'REFUNDED': return 'Reembolsado';
+      default: return status;
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  // If no patient ID, show error
-  if (!patientId) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Acceso Denegado
-          </h2>
-          <p className="text-gray-600">
-            Debes iniciar sesión como paciente para acceder a esta página.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    setRefreshKey((prev) => prev + 1); // Trigger list refresh
-  };
-
-  const handleFormCancel = () => {
-    setShowForm(false);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="text-4xl">💳</div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Facturación y Pagos
-            </h1>
-          </div>
-          <p className="text-sm text-gray-600">
-            Gestiona tus facturas, pagos y métodos de pago. Sistema compatible
-            con facturación electrónica (CFDI) para México.
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver
+          </button>
+
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <span className="text-4xl">💳</span>
+            <span>Facturación y Pagos</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Historial de pagos y facturas
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Facturas Pendientes
-                </p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">-</p>
-              </div>
-              <div className="text-4xl">📋</div>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Pagado</span>
+              <span className="text-2xl">✅</span>
             </div>
-          </div>
+            <p className="text-3xl font-bold text-green-600">${totalPaid.toFixed(2)}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Este año</p>
+          </motion.div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Saldo Pendiente
-                </p>
-                <p className="text-3xl font-bold text-red-600 mt-2">-</p>
-              </div>
-              <div className="text-4xl">💰</div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Pendiente</span>
+              <span className="text-2xl">⏳</span>
             </div>
-          </div>
+            <p className="text-3xl font-bold text-yellow-600">${totalPending.toFixed(2)}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Por pagar</p>
+          </motion.div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Facturas Pagadas
-                </p>
-                <p className="text-3xl font-bold text-green-600 mt-2">-</p>
-              </div>
-              <div className="text-4xl">✅</div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Transacciones</span>
+              <span className="text-2xl">📊</span>
             </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Pagado Este Mes
-                </p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">-</p>
-              </div>
-              <div className="text-4xl">📊</div>
-            </div>
-          </div>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{payments.length}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total este año</p>
+          </motion.div>
         </div>
 
-        {/* Payment Methods Info */}
-        <div className="bg-gradient-to-r from-green-50 to-teal-50 border-l-4 border-green-500 p-6 rounded-lg mb-8">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-6 w-6 text-green-500"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-bold text-green-900 mb-2">
-                Métodos de Pago Disponibles
-              </h3>
-              <ul className="space-y-1 text-sm text-green-800">
-                <li>
-                  💳 <strong>Tarjeta de Crédito/Débito:</strong> Procesamiento
-                  seguro con Stripe
-                </li>
-                <li>
-                  🏦 <strong>Transferencia Bancaria:</strong> CLABE o SPEI
-                </li>
-                <li>
-                  💵 <strong>Efectivo:</strong> Pago en sucursal con recibo
-                </li>
-                <li>
-                  🏥 <strong>Seguro Médico:</strong> Facturación directa a
-                  aseguradoras
-                </li>
-                <li>
-                  📅 <strong>Planes de Pago:</strong> Pagos diferidos disponibles
-                </li>
-              </ul>
-            </div>
+        {/* Payment History */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+        >
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Historial de Pagos
+            </h2>
           </div>
-        </div>
 
-        {/* CFDI Info */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-6 rounded-lg mb-8">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-6 w-6 text-blue-500"
-                fill="currentColor"
-                viewBox="0 0 20 20"
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {payments.map((payment, index) => (
+              <motion.div
+                key={payment.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * index }}
+                className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
-                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                <path
-                  fillRule="evenodd"
-                  d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-lg font-bold text-blue-900 mb-2">
-                Facturación Electrónica (CFDI)
-              </h3>
-              <p className="text-sm text-blue-800 mb-2">
-                Todas las facturas son compatibles con el sistema de Comprobante
-                Fiscal Digital por Internet (CFDI) del SAT.
-              </p>
-              <ul className="space-y-1 text-sm text-blue-800">
-                <li>• Timbrado automático según normativa del SAT</li>
-                <li>• Generación de XML y PDF</li>
-                <li>• Envío por correo electrónico</li>
-                <li>• Cancelación en línea cuando sea necesario</li>
-                <li>
-                  • Almacenamiento seguro de comprobantes fiscales por 5 años
-                </li>
-              </ul>
-            </div>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {payment.description}
+                      </h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}>
+                        {getStatusLabel(payment.status)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{format(new Date(payment.date), "d 'de' MMM, yyyy", { locale: es })}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <span>{payment.paymentMethod}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right ml-4">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      ${payment.amount.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{payment.currency}</p>
+                    
+                    {payment.status === 'PAID' && (
+                      <button className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        Descargar Factura
+                      </button>
+                    )}
+                    
+                    {payment.status === 'PENDING' && (
+                      <button className="mt-2 px-4 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Pagar Ahora
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Toggle Button */}
-        {!showForm && (
-          <div className="mb-6 flex justify-end">
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Nueva Factura
+        {/* Payment Methods */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+        >
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            Métodos de Pago
+          </h2>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">VISA</span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">•••• 4242</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Expira 12/2026</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                Principal
+              </span>
+            </div>
+
+            <button className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-colors">
+              + Agregar Método de Pago
             </button>
           </div>
-        )}
-
-        {/* Form or List View */}
-        {showForm ? (
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Nueva Factura</h2>
-              <button
-                onClick={handleFormCancel}
-                className="text-gray-600 hover:text-gray-800"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <InvoiceForm
-              patientId={patientId}
-              onSuccess={handleFormSuccess}
-              onCancel={handleFormCancel}
-            />
-          </div>
-        ) : (
-          <InvoicesList
-            key={refreshKey}
-            patientId={patientId}
-            onInvoiceCreated={() => setRefreshKey((prev) => prev + 1)}
-          />
-        )}
-
-        {/* Tax & Compliance Notice */}
-        <div className="mt-8 bg-gray-100 border border-gray-300 rounded-lg p-6">
-          <h3 className="text-sm font-bold text-gray-900 mb-2">
-            Aviso Fiscal y de Cumplimiento
-          </h3>
-          <p className="text-xs text-gray-700 leading-relaxed">
-            Esta plataforma cumple con la normativa del Servicio de
-            Administración Tributaria (SAT) de México para la emisión de
-            Comprobantes Fiscales Digitales por Internet (CFDI). Todos los pagos
-            son procesados de forma segura cumpliendo con los estándares PCI DSS.
-            Para consultas fiscales, contacta a nuestro equipo de soporte o a tu
-            contador de confianza. Los comprobantes fiscales se conservan durante
-            el plazo establecido por la ley (5 años).
-          </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
