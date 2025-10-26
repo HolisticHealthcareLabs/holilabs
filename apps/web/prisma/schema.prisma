@@ -614,6 +614,8 @@ model Patient {
   familyPortalAccess  FamilyPortalAccess[]
   allergies           Allergy[]
   preventiveCareReminders PreventiveCareReminder[]
+  medicationSchedules     MedicationSchedule[]
+  medicationAdministrations MedicationAdministration[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -655,12 +657,125 @@ model Medication {
   // Prescriber
   prescribedBy String?
 
+  // Relations
+  schedules     MedicationSchedule[]
+  administrations MedicationAdministration[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([patientId])
   @@index([isActive])
   @@map("medications")
+}
+
+// ============================================================================
+// MAR (MEDICATION ADMINISTRATION RECORD)
+// ============================================================================
+
+model MedicationSchedule {
+  id           String  @id @default(cuid())
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  patientId    String
+  patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Schedule details
+  scheduledTime DateTime            // When this dose should be given (e.g., 08:00, 14:00, 20:00)
+  dayOfWeek     Int?                // 0-6 (0=Sunday) if weekly schedule, null if daily
+  isPRN         Boolean  @default(false)  // PRN (as needed) medications
+
+  // Frequency metadata
+  frequency     String              // QD, BID, TID, QID, Q4H, Q6H, Q8H, Q12H, PRN, QHS, QAM
+  timesPerDay   Int?                // Calculated from frequency (BID=2, TID=3, etc.)
+
+  // Status
+  isActive      Boolean  @default(true)
+  startDate     DateTime @default(now())
+  endDate       DateTime?
+
+  // Relations
+  administrations MedicationAdministration[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([medicationId])
+  @@index([patientId])
+  @@index([scheduledTime])
+  @@index([isActive])
+  @@index([isPRN])
+  @@map("medication_schedules")
+}
+
+model MedicationAdministration {
+  id           String  @id @default(cuid())
+  scheduleId   String?
+  schedule     MedicationSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  patientId    String
+  patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Administration details
+  scheduledTime    DateTime           // When it was supposed to be given
+  actualTime       DateTime?          // When it was actually given (null if not given)
+  status           MedicationAdministrationStatus
+
+  // PRN-specific
+  isPRN            Boolean  @default(false)
+  prnReason        String?  @db.Text  // Why PRN was needed (e.g., "Patient complained of pain 8/10")
+
+  // Dose details
+  doseGiven        String?            // Actual dose given (may differ from prescribed)
+  route            String?            // Actual route used
+  site             String?            // Administration site (e.g., "Left arm", "Right thigh")
+
+  // Verification
+  administeredBy   String             // User ID (nurse/clinician)
+  witnessedBy      String?            // User ID if second nurse verification required
+  barcodeScanned   Boolean  @default(false)
+  patientIdVerified Boolean @default(false)
+
+  // Refusal/Missing
+  refusalReason    String?  @db.Text  // If status=REFUSED
+  missedReason     String?  @db.Text  // If status=MISSED (e.g., "Patient asleep", "Patient NPO for procedure")
+
+  // Patient response
+  patientResponse  String?  @db.Text  // How patient tolerated medication
+  adverseReaction  Boolean  @default(false)
+  reactionDetails  String?  @db.Text  // If adverse reaction occurred
+
+  // Notes
+  notes            String?  @db.Text  // Additional notes
+
+  // Timing classification
+  onTime           Boolean  @default(true)   // false if >30 min late
+  minutesLate      Int?                      // Calculate delay
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scheduleId])
+  @@index([medicationId])
+  @@index([patientId])
+  @@index([scheduledTime])
+  @@index([actualTime])
+  @@index([status])
+  @@index([administeredBy])
+  @@index([isPRN])
+  @@map("medication_administrations")
+}
+
+enum MedicationAdministrationStatus {
+  SCHEDULED     // Not yet time to give
+  DUE          // Time to give now
+  GIVEN        // Successfully administered
+  LATE         // >30 minutes past scheduled time, not yet given
+  REFUSED      // Patient refused medication
+  MISSED       // Not given for valid reason (NPO, asleep, etc.)
+  HELD         // Held per MD/RN judgment (e.g., low BP, patient vomiting)
+  DISCONTINUED // Medication order discontinued
 }
 
 // ============================================================================
