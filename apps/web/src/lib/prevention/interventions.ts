@@ -39,7 +39,7 @@ export type InterventionType =
 
 export type EvidenceLevel = 'STRONG' | 'MODERATE' | 'EMERGING';
 
-export type AgeGroup = 'all' | '18-39' | '40-49' | '50-59' | '60-69' | '70+';
+export type AgeGroup = 'all' | '18-29' | '18-39' | '30-39' | '40-49' | '50-59' | '50-64' | '60-69' | '65-79' | '70+' | '80+';
 
 export type Gender = 'all' | 'male' | 'female';
 
@@ -53,8 +53,9 @@ export interface InterventionProtocol {
 
 export interface Contraindication {
   condition: string;
-  severity: 'absolute' | 'relative';
+  severity?: 'absolute' | 'relative';
   alternative?: string;
+  type?: string;
 }
 
 export interface Intervention {

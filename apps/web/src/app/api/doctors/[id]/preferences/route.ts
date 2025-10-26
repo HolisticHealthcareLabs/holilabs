@@ -52,9 +52,9 @@ export async function GET(
       );
     }
 
-    if (doctor.role !== 'DOCTOR' && doctor.role !== 'ADMIN') {
+    if (doctor.role !== 'CLINICIAN' && doctor.role !== 'ADMIN') {
       return NextResponse.json(
-        { success: false, error: 'User is not a doctor' },
+        { success: false, error: 'User is not a clinician' },
         { status: 400 }
       );
     }
@@ -153,9 +153,9 @@ export async function PATCH(
       );
     }
 
-    if (doctor.role !== 'DOCTOR' && doctor.role !== 'ADMIN') {
+    if (doctor.role !== 'CLINICIAN' && doctor.role !== 'ADMIN') {
       return NextResponse.json(
-        { success: false, error: 'User is not a doctor' },
+        { success: false, error: 'User is not a clinician' },
         { status: 400 }
       );
     }

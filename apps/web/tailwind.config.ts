@@ -107,7 +107,9 @@ const config: Config = {
         sans: designTokens.typography.fontFamily.sans.split(', '),
         mono: designTokens.typography.fontFamily.mono.split(', '),
       },
+      // @ts-ignore - Tailwind types are strict about readonly
       fontSize: designTokens.typography.fontSize,
+      // @ts-ignore - Tailwind types are strict about readonly
       fontWeight: designTokens.typography.fontWeight,
 
       // ============================================================================
@@ -124,6 +126,7 @@ const config: Config = {
       // ============================================================================
       // SHADOWS - Layered depth system
       // ============================================================================
+      // @ts-ignore - Tailwind types are strict about readonly
       boxShadow: {
         ...designTokens.shadows,
         // Named shadow utilities
@@ -138,6 +141,7 @@ const config: Config = {
       // ============================================================================
       // Z-INDEX - Layered stacking context
       // ============================================================================
+      // @ts-ignore - Tailwind types are strict about readonly
       zIndex: designTokens.zIndex,
 
       // ============================================================================
@@ -145,6 +149,7 @@ const config: Config = {
       // ============================================================================
       transitionDuration: designTokens.animations.duration,
       transitionTimingFunction: designTokens.animations.easing,
+      // @ts-ignore - Tailwind types are strict about readonly
       keyframes: designTokens.animations.keyframes,
       animation: {
         // Pre-configured animations

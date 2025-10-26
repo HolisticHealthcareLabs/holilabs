@@ -16,17 +16,20 @@ export async function GET(request: NextRequest) {
     // Try clinician session first
     const clinicianSession = await getServerSession(authOptions);
 
-    if (clinicianSession?.user?.id) {
-      return NextResponse.json({
-        user: {
-          id: (clinicianSession.user as any).id,
-          email: clinicianSession.user.email,
-          firstName: (clinicianSession.user as any).firstName,
-          lastName: (clinicianSession.user as any).lastName,
-          role: (clinicianSession.user as any).role,
-          type: 'CLINICIAN',
-        },
-      });
+    if (clinicianSession?.user) {
+      const user = clinicianSession.user as any;
+      if (user.id) {
+        return NextResponse.json({
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            type: 'CLINICIAN',
+          },
+        });
+      }
     }
 
     // Try patient session
