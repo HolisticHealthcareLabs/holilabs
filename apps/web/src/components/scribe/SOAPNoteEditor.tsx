@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   getTemplatesByLanguage,
   type SOAPTemplate,
@@ -10,6 +10,13 @@ import VoiceInputButton from './VoiceInputButton';
 import QuickInterventionsPanel from './QuickInterventionsPanel';
 import PainScaleSelector from './PainScaleSelector';
 import { TemplatePicker } from '@/components/templates/TemplatePicker';
+import { useVoiceCommands } from '@/hooks/useVoiceCommands';
+import { VoiceCommandFeedback } from '@/components/voice/VoiceCommandFeedback';
+import {
+  createSOAPEditorCommands,
+  type SOAPEditorCommandHandlers,
+} from '@/lib/voice/soapEditorCommands';
+import { MicrophoneIcon, StopIcon } from '@heroicons/react/24/solid';
 
 interface Diagnosis {
   icd10Code: string;
@@ -96,6 +103,109 @@ export default function SOAPNoteEditor({
   const [templatePickerTarget, setTemplatePickerTarget] = useState<
     'subjective' | 'objective' | 'assessment' | 'plan' | null
   >(null);
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(false);
+
+  // Section refs for navigation
+  const chiefComplaintRef = useRef<HTMLDivElement>(null);
+  const subjectiveRef = useRef<HTMLDivElement>(null);
+  const objectiveRef = useRef<HTMLDivElement>(null);
+  const assessmentRef = useRef<HTMLDivElement>(null);
+  const planRef = useRef<HTMLDivElement>(null);
+
+  // ============================================================================
+  // Voice Command Handlers
+  // ============================================================================
+
+  const jumpToSection = useCallback((section: 'subjective' | 'objective' | 'assessment' | 'plan' | 'chief-complaint') => {
+    const refMap = {
+      'chief-complaint': chiefComplaintRef,
+      'subjective': subjectiveRef,
+      'objective': objectiveRef,
+      'assessment': assessmentRef,
+      'plan': planRef,
+    };
+
+    const ref = refMap[section];
+    if (ref?.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Flash the section to indicate focus
+      ref.current.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      setTimeout(() => {
+        if (ref.current) {
+          ref.current.style.backgroundColor = '';
+        }
+      }, 1000);
+    }
+  }, []);
+
+  const insertTemplateByName = useCallback(async (templateName: string) => {
+    // Try to find template by name (fuzzy match)
+    const allTemplates = getTemplatesByLanguage(selectedLanguage);
+    const template = allTemplates.find((t) =>
+      t.name.toLowerCase().includes(templateName.toLowerCase())
+    );
+
+    if (template) {
+      applyTemplate(template);
+    } else {
+      console.warn(`Template not found: ${templateName}`);
+    }
+  }, [selectedLanguage]);
+
+  const addMedicationVoice = useCallback((params: { name: string; dose?: string; frequency?: string }) => {
+    const medicationText = `• ${params.name}${params.dose ? ` ${params.dose}` : ''}${params.frequency ? ` - ${params.frequency}` : ''}`;
+
+    setEditedNote((prev) => ({
+      ...prev,
+      plan: prev.plan ? `${prev.plan}\n${medicationText}` : medicationText,
+    }));
+  }, []);
+
+  const addDiagnosisVoice = useCallback((params: { name: string; code?: string }) => {
+    const diagnosisText = `• ${params.name}${params.code ? ` (${params.code})` : ''}`;
+
+    setEditedNote((prev) => ({
+      ...prev,
+      assessment: prev.assessment ? `${prev.assessment}\n${diagnosisText}` : diagnosisText,
+    }));
+  }, []);
+
+  const insertTextToSection = useCallback((section: string, text: string) => {
+    setEditedNote((prev) => ({
+      ...prev,
+      [section]: prev[section] ? `${prev[section]}\n${text}` : text,
+    }));
+  }, []);
+
+  const voiceCommandHandlers: SOAPEditorCommandHandlers = {
+    jumpToSection,
+    insertTemplate: insertTemplateByName,
+    insertText: insertTextToSection,
+    save: handleSave,
+    saveAndSign: onSign,
+    cancel: handleCancel,
+    startEditing: () => setIsEditing(true),
+    addMedication: addMedicationVoice,
+    addDiagnosis: addDiagnosisVoice,
+    showTemplates: () => setShowTemplates(true),
+    hideTemplates: () => setShowTemplates(false),
+  };
+
+  // Create voice commands
+  const voiceCommands = createSOAPEditorCommands(voiceCommandHandlers);
+
+  // Initialize voice commands hook
+  const voiceCommandsState = useVoiceCommands({
+    commands: voiceCommands,
+    language: selectedLanguage === 'pt' ? 'pt' : 'es',
+    debug: true,
+    onCommandExecuted: (command) => {
+      console.log('[Voice Command] Executed:', command);
+    },
+    onError: (error) => {
+      console.error('[Voice Command] Error:', error);
+    },
+  });
 
   // ICD-10 validation regex
   const validateICD10 = (code: string): boolean => {
@@ -212,6 +322,56 @@ export default function SOAPNoteEditor({
         </div>
       </div>
 
+      {/* Voice Commands Toggle */}
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-2 border-indigo-200 dark:border-indigo-700 rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 flex items-center mb-1">
+              <span className="mr-2">🎤</span>
+              Voice Commands (Beta)
+            </h3>
+            <p className="text-sm text-indigo-700 dark:text-indigo-300">
+              Hands-free documentation with intelligent commands
+            </p>
+            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+              Try: &quot;insert template chest pain&quot;, &quot;jump to assessment&quot;, &quot;add medication aspirin&quot;
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (voiceCommandsState.isListening) {
+                voiceCommandsState.stopListening();
+              } else {
+                voiceCommandsState.startListening();
+              }
+            }}
+            disabled={!voiceCommandsState.isSupported}
+            className={`
+              px-6 py-3 rounded-lg font-bold transition-all shadow-lg flex items-center gap-2
+              ${
+                voiceCommandsState.isListening
+                  ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse'
+                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+              }
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+            title={voiceCommandsState.isSupported ? (voiceCommandsState.isListening ? 'Stop listening' : 'Start voice commands') : 'Voice commands not supported'}
+          >
+            {voiceCommandsState.isListening ? (
+              <>
+                <StopIcon className="w-5 h-5" />
+                <span>Stop Listening</span>
+              </>
+            ) : (
+              <>
+                <MicrophoneIcon className="w-5 h-5" />
+                <span>Start Voice Commands</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {/* Template Library (Nuance DAX Feature) */}
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
@@ -318,7 +478,7 @@ export default function SOAPNoteEditor({
       )}
 
       {/* Chief Complaint */}
-      <div>
+      <div ref={chiefComplaintRef}>
         <label className="block text-sm font-bold text-gray-700 mb-2">
           Motivo de Consulta
         </label>
@@ -337,7 +497,7 @@ export default function SOAPNoteEditor({
       </div>
 
       {/* Subjective */}
-      <div className="border-l-4 border-blue-500 pl-4">
+      <div ref={subjectiveRef} className="border-l-4 border-blue-500 pl-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-blue-700 uppercase">Subjetivo (S)</h3>
           <span
@@ -392,7 +552,7 @@ export default function SOAPNoteEditor({
       </div>
 
       {/* Objective */}
-      <div className="border-l-4 border-green-500 pl-4">
+      <div ref={objectiveRef} className="border-l-4 border-green-500 pl-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-green-700 uppercase">Objetivo (O)</h3>
           <span
@@ -484,7 +644,7 @@ export default function SOAPNoteEditor({
       </div>
 
       {/* Assessment */}
-      <div className="border-l-4 border-purple-500 pl-4">
+      <div ref={assessmentRef} className="border-l-4 border-purple-500 pl-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-purple-700 uppercase">Evaluación (A)</h3>
           <span
@@ -565,7 +725,7 @@ export default function SOAPNoteEditor({
       </div>
 
       {/* Plan */}
-      <div className="border-l-4 border-orange-500 pl-4">
+      <div ref={planRef} className="border-l-4 border-orange-500 pl-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-orange-700 uppercase">Plan (P)</h3>
           <span
@@ -753,6 +913,17 @@ export default function SOAPNoteEditor({
         isOpen={templatePickerTarget !== null}
         onSelect={handleTemplateSelect}
         onClose={() => setTemplatePickerTarget(null)}
+      />
+
+      {/* Voice Command Feedback */}
+      <VoiceCommandFeedback
+        isListening={voiceCommandsState.isListening}
+        isProcessing={voiceCommandsState.isProcessing}
+        transcript={voiceCommandsState.transcript}
+        lastCommand={voiceCommandsState.lastCommand}
+        error={voiceCommandsState.error}
+        availableCommands={voiceCommandsState.getAvailableCommands()}
+        showSuggestions={!voiceCommandsState.isListening && !voiceCommandsState.isProcessing}
       />
     </div>
   );
