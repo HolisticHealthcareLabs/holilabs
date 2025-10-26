@@ -19,6 +19,11 @@ import { authOptions } from '@/lib/auth';
 import { routeAIRequest } from '@/lib/ai/router';
 import { trackUsage } from '@/lib/ai/usage-tracker';
 import { prisma } from '@/lib/prisma';
+import {
+  sanitizeString,
+  validateArray,
+  sanitizeMedicationName,
+} from '@/lib/security/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,12 +142,111 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
     // 2. Parse request body
     const body: DiagnosisRequest = await req.json();
 
-    // 3. Validate required fields
+    // 3. Validate and sanitize inputs
+    // Validate required fields
     if (!body.chiefComplaint || !body.symptoms || body.symptoms.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Chief complaint and symptoms are required' },
         { status: 400 }
       );
+    }
+
+    // Validate age
+    if (typeof body.age !== 'number' || body.age < 0 || body.age > 150) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid age (must be 0-150)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate and sanitize text fields
+    try {
+      body.chiefComplaint = sanitizeString(body.chiefComplaint, 1000);
+
+      if (body.physicalExam) {
+        body.physicalExam = sanitizeString(body.physicalExam, 5000);
+      }
+
+      if (body.symptomDuration) {
+        body.symptomDuration = sanitizeString(body.symptomDuration, 200);
+      }
+    } catch (error: any) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
+
+    // Validate arrays
+    try {
+      validateArray(body.symptoms, 50, (item: any) => typeof item === 'string');
+      body.symptoms = body.symptoms.map(s => sanitizeString(s, 200));
+
+      if (body.medicalHistory) {
+        validateArray(body.medicalHistory, 50, (item: any) => typeof item === 'string');
+        body.medicalHistory = body.medicalHistory.map(s => sanitizeString(s, 200));
+      }
+
+      if (body.medications) {
+        validateArray(body.medications, 50, (item: any) => typeof item === 'string');
+        body.medications = body.medications.map(m => sanitizeMedicationName(m));
+      }
+
+      if (body.allergies) {
+        validateArray(body.allergies, 50, (item: any) => typeof item === 'string');
+        body.allergies = body.allergies.map(a => sanitizeString(a, 200));
+      }
+
+      if (body.familyHistory) {
+        validateArray(body.familyHistory, 50, (item: any) => typeof item === 'string');
+        body.familyHistory = body.familyHistory.map(f => sanitizeString(f, 200));
+      }
+
+      if (body.labResults) {
+        validateArray(body.labResults, 50, (item: any) => typeof item === 'object');
+        body.labResults = body.labResults.map(lab => ({
+          name: sanitizeString(lab.name, 100),
+          value: sanitizeString(lab.value, 100),
+          unit: lab.unit ? sanitizeString(lab.unit, 50) : undefined,
+          normalRange: lab.normalRange ? sanitizeString(lab.normalRange, 100) : undefined,
+        }));
+      }
+    } catch (error: any) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
+
+    // Validate vital signs if provided
+    if (body.vitalSigns) {
+      if (body.vitalSigns.bloodPressure) {
+        body.vitalSigns.bloodPressure = sanitizeString(body.vitalSigns.bloodPressure, 20);
+      }
+      if (body.vitalSigns.heartRate && (body.vitalSigns.heartRate < 0 || body.vitalSigns.heartRate > 300)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid heart rate' },
+          { status: 400 }
+        );
+      }
+      if (body.vitalSigns.temperature && (body.vitalSigns.temperature < 20 || body.vitalSigns.temperature > 50)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid temperature' },
+          { status: 400 }
+        );
+      }
+      if (body.vitalSigns.respiratoryRate && (body.vitalSigns.respiratoryRate < 0 || body.vitalSigns.respiratoryRate > 100)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid respiratory rate' },
+          { status: 400 }
+        );
+      }
+      if (body.vitalSigns.oxygenSaturation && (body.vitalSigns.oxygenSaturation < 0 || body.vitalSigns.oxygenSaturation > 100)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid oxygen saturation' },
+          { status: 400 }
+        );
+      }
     }
 
     // 4. Check user's subscription tier and quota
@@ -307,7 +411,8 @@ IMPORTANT:
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to generate diagnosis',
+        error: 'Failed to generate diagnosis',
+        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
       },
       { status: 500 }
     );

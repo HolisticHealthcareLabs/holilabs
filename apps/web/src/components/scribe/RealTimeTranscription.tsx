@@ -22,7 +22,9 @@ import {
   UserIcon,
   PauseIcon,
   PlayIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
+import { identifyMedicalTerms, getMedicalTermColor, getMedicalTermCategoryName } from '@/lib/medical/terminology';
 
 interface TranscriptWord {
   word: string;
@@ -75,6 +77,7 @@ export function RealTimeTranscription({
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('excellent');
+  const [highlightMedicalTerms, setHighlightMedicalTerms] = useState(true);
 
   const wsRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -389,6 +392,20 @@ export function RealTimeTranscription({
 
         {/* Controls */}
         <div className="flex items-center gap-2">
+          {/* Medical Terms Toggle */}
+          <button
+            onClick={() => setHighlightMedicalTerms(!highlightMedicalTerms)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm font-medium ${
+              highlightMedicalTerms
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+            }`}
+            title="Toggle medical term highlighting"
+          >
+            <SparklesIcon className="w-4 h-4" />
+            {highlightMedicalTerms ? 'On' : 'Off'}
+          </button>
+
           {!isRecording ? (
             <button
               onClick={startRecording}
@@ -509,9 +526,11 @@ export function RealTimeTranscription({
                 </div>
               </div>
 
-              {/* Transcript Text with Word-Level Confidence */}
+              {/* Transcript Text with Word-Level Confidence and Medical Terms */}
               <div className="text-gray-900 dark:text-white text-base leading-relaxed">
-                {segment.words.length > 0 ? (
+                {segment.words.length > 0 && highlightMedicalTerms ? (
+                  <MedicalTermHighlighter words={segment.words} text={segment.text} />
+                ) : segment.words.length > 0 ? (
                   segment.words.map((word, wordIdx) => (
                     <span
                       key={wordIdx}
@@ -557,5 +576,56 @@ export function RealTimeTranscription({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Medical Term Highlighter Component
+ * Highlights medical terms within transcribed words
+ */
+function MedicalTermHighlighter({ words, text }: { words: TranscriptWord[]; text: string }) {
+  const medicalTerms = identifyMedicalTerms(text);
+
+  return (
+    <>
+      {words.map((word, wordIdx) => {
+        // Find if this word is part of a medical term
+        const wordStart = text.indexOf(word.word, wordIdx > 0 ? text.indexOf(words[wordIdx - 1].word) + words[wordIdx - 1].word.length : 0);
+        const wordEnd = wordStart + word.word.length;
+
+        const matchingTerm = medicalTerms.find(
+          term => wordStart >= term.startIndex && wordEnd <= term.endIndex
+        );
+
+        if (matchingTerm) {
+          const color = getMedicalTermColor(matchingTerm.category);
+          const categoryName = getMedicalTermCategoryName(matchingTerm.category);
+
+          return (
+            <span
+              key={wordIdx}
+              className={`inline-flex items-center px-1 rounded border font-medium ${color} ${
+                word.confidence < 0.7 ? 'opacity-75' : ''
+              }`}
+              title={`${categoryName} | Confidence: ${Math.round(word.confidence * 100)}%`}
+            >
+              {word.word}{' '}
+            </span>
+          );
+        }
+
+        return (
+          <span
+            key={wordIdx}
+            className={`${
+              word.confidence < 0.7 ? 'bg-yellow-200 dark:bg-yellow-900/40 px-1 rounded' : ''
+            }`}
+            title={`Confidence: ${Math.round(word.confidence * 100)}%`}
+          >
+            {word.word}{' '}
+          </span>
+        );
+      })}
+    </>
   );
 }

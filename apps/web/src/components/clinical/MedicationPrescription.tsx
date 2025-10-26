@@ -139,7 +139,7 @@ export function MedicationPrescription({
   }, [searchQuery]);
 
   // Check for drug interactions
-  useEffect() => {
+  useEffect(() => {
     if (!selectedMedication) {
       setInteractions([]);
       return;

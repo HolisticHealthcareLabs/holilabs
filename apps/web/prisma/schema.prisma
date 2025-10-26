@@ -612,6 +612,8 @@ model Patient {
   carePlans           CarePlan[]
   painAssessments     PainAssessment[]
   familyPortalAccess  FamilyPortalAccess[]
+  allergies           Allergy[]
+  preventiveCareReminders PreventiveCareReminder[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -2607,6 +2609,185 @@ enum FamilyAccessLevel {
   READ_ONLY
   LIMITED_INTERACTION  // Can send messages but not view all data
   FULL_ACCESS          // Can view everything (for legal guardians)
+}
+
+// ============================================================================
+// CLINICAL DECISION SUPPORT - ALLERGIES
+// ============================================================================
+
+model Allergy {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Allergy details
+  allergen        String              // e.g., "Penicillin", "Peanuts", "Latex"
+  allergyType     AllergyType
+  category        AllergyCategory?    // MEDICATION, FOOD, ENVIRONMENTAL, etc.
+
+  // Severity and reaction
+  severity        AllergySeverity
+  reactions       String[]            // e.g., ["Hives", "Anaphylaxis", "Rash"]
+
+  // Clinical details
+  onsetDate       DateTime?
+  diagnosedBy     String?             // User ID of clinician who diagnosed
+  verificationStatus AllergyVerificationStatus @default(UNVERIFIED)
+
+  // Notes
+  notes           String?   @db.Text
+  clinicalNotes   String?   @db.Text  // Additional clinical context
+
+  // Cross-reactivity info (for medications)
+  crossReactiveWith String[]          // Other drugs to avoid
+
+  // Status
+  isActive        Boolean   @default(true)
+  resolvedAt      DateTime?
+  resolvedBy      String?             // User ID who marked as resolved
+
+  // Metadata
+  createdAt DateTime @default(now())
+  createdBy String  // User ID
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([isActive])
+  @@index([allergyType])
+  @@map("allergies")
+}
+
+enum AllergyType {
+  MEDICATION
+  FOOD
+  ENVIRONMENTAL
+  INSECT
+  LATEX
+  OTHER
+}
+
+enum AllergyCategory {
+  ANTIBIOTIC
+  ANALGESIC
+  ANESTHETIC
+  NSAID
+  OPIOID
+  SHELLFISH
+  NUTS
+  DAIRY
+  GLUTEN
+  POLLEN
+  DUST
+  MOLD
+  ANIMAL
+  OTHER
+}
+
+enum AllergySeverity {
+  MILD          // Minor symptoms, no intervention needed
+  MODERATE      // Significant symptoms, requires treatment
+  SEVERE        // Life-threatening, requires immediate care
+  UNKNOWN       // Severity not documented
+}
+
+enum AllergyVerificationStatus {
+  UNVERIFIED    // Reported but not confirmed
+  PATIENT_REPORTED
+  CLINICIAN_VERIFIED
+  CHALLENGED    // Allergy challenge test performed
+  CONFIRMED_BY_TESTING
+}
+
+// ============================================================================
+// CLINICAL DECISION SUPPORT - PREVENTIVE CARE
+// ============================================================================
+
+model PreventiveCareReminder {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Screening details
+  screeningType   PreventiveCareType
+  title           String              // e.g., "Mammogram Screening"
+  description     String?   @db.Text  // Why this is recommended
+
+  // Scheduling
+  recommendedBy   DateTime            // When the screening became due
+  dueDate         DateTime
+  priority        Priority  @default(MEDIUM)
+
+  // Guidelines
+  guidelineSource String?             // e.g., "USPSTF", "ADA", "AHA"
+  evidenceLevel   String?             // e.g., "Grade A", "Strong Recommendation"
+
+  // Status
+  status          PreventiveCareStatus @default(DUE)
+  completedAt     DateTime?
+  completedBy     String?             // User ID who marked complete
+  resultNotes     String?   @db.Text
+
+  // Next occurrence
+  recurringInterval Int?              // Months until next screening
+  nextDueDate      DateTime?
+
+  // Dismissal
+  dismissedAt     DateTime?
+  dismissedBy     String?             // User ID who dismissed
+  dismissalReason String?   @db.Text
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([screeningType])
+  @@map("preventive_care_reminders")
+}
+
+enum PreventiveCareType {
+  // Cancer screenings
+  MAMMOGRAM
+  COLONOSCOPY
+  CERVICAL_CANCER
+  PROSTATE_CANCER
+  LUNG_CANCER
+  SKIN_CANCER
+
+  // Cardiovascular
+  BLOOD_PRESSURE
+  CHOLESTEROL
+  DIABETES_SCREENING
+
+  // Vaccinations
+  INFLUENZA
+  PNEUMONIA
+  SHINGLES
+  COVID_19
+  TDAP
+  HPV
+
+  // Other
+  BONE_DENSITY
+  VISION_SCREENING
+  HEARING_SCREENING
+  DENTAL_EXAM
+  DEPRESSION_SCREENING
+  FALLS_RISK
+
+  OTHER
+}
+
+enum PreventiveCareStatus {
+  DUE           // Currently due
+  OVERDUE       // Past due date
+  SCHEDULED     // Appointment scheduled
+  COMPLETED     // Completed
+  NOT_INDICATED // Not applicable for this patient
+  DECLINED      // Patient declined
+  DISMISSED     // Dismissed by clinician
 }
 
 // ============================================================================
