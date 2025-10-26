@@ -75,3 +75,17 @@
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
 }
+
+/* Voice Command Waveform Animation */
+@keyframes waveform {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-waveform {
+  animation: waveform 0.8s ease-in-out infinite;
+}
