@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import logger from '@/lib/logger';
+import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,6 +136,17 @@ export async function POST(request: NextRequest) {
       sentVia: otpRecord.sentVia,
       attempts: otpRecord.attempts + 1,
     });
+
+    // Track analytics event (NO PHI!)
+    await trackEvent(
+      ServerAnalyticsEvents.OTP_VERIFIED,
+      otpRecord.patientUserId,
+      {
+        method: otpRecord.sentVia, // SMS or EMAIL
+        attempts: otpRecord.attempts + 1,
+        success: true
+      }
+    );
 
     return NextResponse.json(
       {

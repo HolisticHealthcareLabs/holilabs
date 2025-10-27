@@ -1,23 +1,54 @@
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, pbkdf2Sync, createHmac } from 'crypto';
 import { PseudonymizationResult } from './types';
 
 /**
- * Pseudonymize subject identifiers using salted hash
+ * Pseudonymize subject identifiers using PBKDF2 + HMAC
+ * SECURITY IMPROVEMENTS:
+ * - Uses PBKDF2 (100,000 iterations) to prevent rainbow table attacks
+ * - Adds HMAC with secret pepper for additional security layer
+ * - Requires both salt and pepper to be compromised for re-identification
+ *
  * Generates a deterministic patient token from subject keys
  */
 export function pseudonymize(
   subjectKeys: string[],
-  saltRotationKey: string
+  saltRotationKey: string,
+  pepper?: string // Optional secret pepper (from DEID_SECRET env var)
 ): PseudonymizationResult {
-  // Concatenate all subject identifiers
+  // Validate inputs
+  if (!subjectKeys || subjectKeys.length === 0) {
+    throw new Error('Subject keys cannot be empty');
+  }
+
+  if (!saltRotationKey || saltRotationKey === 'default-salt') {
+    console.error('⚠️  SECURITY WARNING: Using weak or default salt for pseudonymization!');
+    console.error('⚠️  Set SALT_ROTATION_KEY environment variable to a strong random value.');
+  }
+
+  // Concatenate all subject identifiers (deterministic)
   const subjectString = subjectKeys.sort().join('|');
 
-  // Create salted hash
-  const hash = createHash('sha256');
-  hash.update(saltRotationKey);
-  hash.update(subjectString);
+  // Step 1: PBKDF2 - Key derivation with 100,000 iterations
+  // This makes brute-force and rainbow table attacks computationally infeasible
+  const derivedKey = pbkdf2Sync(
+    subjectString,
+    saltRotationKey,
+    100000, // iterations - NIST recommends 100k+ for PBKDF2-SHA256
+    32,     // key length (256 bits)
+    'sha256'
+  );
 
-  const pointerHash = hash.digest('hex');
+  // Step 2: HMAC with pepper - Additional security layer
+  // Even if salt is compromised, pepper (stored separately) protects the hash
+  const pepperKey = pepper || process.env.DEID_SECRET || 'CHANGE_ME_IN_PRODUCTION';
+
+  if (pepperKey === 'CHANGE_ME_IN_PRODUCTION') {
+    console.error('⚠️  CRITICAL: DEID_SECRET not set! Pseudonymization is vulnerable!');
+  }
+
+  const hmac = createHmac('sha256', pepperKey);
+  hmac.update(derivedKey);
+  const pointerHash = hmac.digest('hex');
 
   // Generate UUID-like token for external use
   const tokenId = generateUUIDFromHash(pointerHash);
@@ -46,9 +77,10 @@ function generateUUIDFromHash(hash: string): string {
 export function verifyPseudonym(
   subjectKeys: string[],
   saltRotationKey: string,
-  expectedPointerHash: string
+  expectedPointerHash: string,
+  pepper?: string
 ): boolean {
-  const result = pseudonymize(subjectKeys, saltRotationKey);
+  const result = pseudonymize(subjectKeys, saltRotationKey, pepper);
   return result.pointerHash === expectedPointerHash;
 }
 

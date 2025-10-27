@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
+import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +94,18 @@ export const POST = createProtectedRoute(
           },
         },
       });
+
+      // Track analytics event (NO PHI!)
+      await trackEvent(
+        ServerAnalyticsEvents.SCRIBE_SESSION_STARTED,
+        context.user.id,
+        {
+          hasAppointment: !!appointmentId,
+          transcriptionModel: 'whisper-1',
+          soapModel: 'claude-3-5-sonnet',
+          success: true
+        }
+      );
 
       return NextResponse.json({
         success: true,

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
+import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -148,6 +149,19 @@ export const POST = createProtectedRoute(
           success: true,
         },
       });
+
+      // Track analytics event (NO PHI!)
+      await trackEvent(
+        ServerAnalyticsEvents.PRESCRIPTION_CREATED,
+        clinicianId,
+        {
+          medicationCount: body.medications.length,
+          signatureMethod: body.signatureMethod,
+          hasDiagnosis: !!body.diagnosis,
+          hasInstructions: !!body.instructions,
+          success: true
+        }
+      );
 
       return NextResponse.json(
         {

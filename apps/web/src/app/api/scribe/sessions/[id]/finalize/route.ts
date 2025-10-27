@@ -14,6 +14,7 @@ import { decryptBuffer } from '@/lib/security/encryption';
 import { CreateSOAPNoteSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
 import { transcribeAudioWithDeepgram } from '@/lib/transcription/deepgram';
+import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -173,6 +174,22 @@ export const POST = createProtectedRoute(
         },
       });
 
+      // Track transcription event (NO PHI!)
+      await trackEvent(
+        ServerAnalyticsEvents.SCRIBE_TRANSCRIPTION_GENERATED,
+        context.user.id,
+        {
+          wordCount,
+          durationSeconds: transcriptionResult.durationSeconds,
+          confidence: transcriptionResult.confidence,
+          speakerCount: transcriptionResult.speakerCount,
+          language: transcriptionResult.language,
+          model: 'deepgram-nova-2',
+          processingTimeMs: transcriptionResult.processingTimeMs,
+          success: true
+        }
+      );
+
       // STEP 3: Generate SOAP note using Claude
       const soapNote = await generateSOAPNote(
         transcriptText,
@@ -286,6 +303,31 @@ export const POST = createProtectedRoute(
           processingCompletedAt: new Date(),
         },
       });
+
+      // Track SOAP generation event (NO PHI!)
+      await trackEvent(
+        ServerAnalyticsEvents.SCRIBE_SOAP_GENERATED,
+        context.user.id,
+        {
+          overallConfidence: soapNoteRecord.overallConfidence,
+          hasDiagnoses: (validatedSOAPData.diagnoses?.length || 0) > 0,
+          hasProcedures: (validatedSOAPData.procedures?.length || 0) > 0,
+          hasMedications: (validatedSOAPData.medications?.length || 0) > 0,
+          model: 'gemini-2.0-flash',
+          tokensUsed: soapNote.tokensUsed,
+          processingTimeMs: soapNote.processingTime,
+          success: true
+        }
+      );
+
+      // Track session completed event (NO PHI!)
+      await trackEvent(
+        ServerAnalyticsEvents.SCRIBE_SESSION_COMPLETED,
+        context.user.id,
+        {
+          success: true
+        }
+      );
 
       return NextResponse.json({
         success: true,

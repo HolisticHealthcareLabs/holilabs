@@ -10,6 +10,7 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 
 // Maximum file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -170,6 +171,18 @@ export async function POST(request: NextRequest) {
         actionLabel: 'Ver documento',
       },
     });
+
+    // Track analytics event (NO PHI!)
+    await trackEvent(
+      ServerAnalyticsEvents.PORTAL_DOCUMENT_UPLOADED,
+      session.userId,
+      {
+        documentType: validatedData.documentType,
+        fileType,
+        fileSizeKB: Math.round(file.size / 1024),
+        success: true
+      }
+    );
 
     return NextResponse.json({
       success: true,

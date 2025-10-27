@@ -305,8 +305,8 @@ export const GET = createProtectedRoute(
 
     // Calculate analytics
     const totalNoShows = noShowRecords.length;
-    const contacted = noShowRecords.filter((r) => r.contacted).length;
-    const notContacted = totalNoShows - contacted;
+    const contactedCount = noShowRecords.filter((r) => r.contacted).length;
+    const notContacted = totalNoShows - contactedCount;
     const feesCharged = noShowRecords.filter((r) => r.feeCharged).length;
     const feesPaid = noShowRecords.filter((r) => r.feePaid).length;
     const totalFeeAmount = noShowRecords.reduce(
@@ -359,11 +359,11 @@ export const GET = createProtectedRoute(
       count: totalNoShows,
       analytics: {
         totalNoShows,
-        contacted,
+        contacted: contactedCount,
         notContacted,
         contactRate:
           totalNoShows > 0
-            ? Math.round((contacted / totalNoShows) * 100)
+            ? Math.round((contactedCount / totalNoShows) * 100)
             : 0,
         feesCharged,
         feesPaid,
