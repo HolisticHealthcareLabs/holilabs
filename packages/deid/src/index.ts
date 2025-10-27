@@ -4,3 +4,6 @@ export * from './generalize';
 export * from './dicom';
 export * from './ocr';
 export * from './types';
+export * from './k-anonymity';
+export * from './nlp-redaction';
+export * from './differential-privacy';
