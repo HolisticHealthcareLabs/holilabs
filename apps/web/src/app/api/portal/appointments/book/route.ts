@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { parse, addMinutes, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 
 const bookingSchema = z.object({
   clinicianId: z.string().cuid(),
@@ -208,6 +209,29 @@ export async function POST(request: NextRequest) {
         actionLabel: 'Ver detalles',
       },
     });
+
+    // Track analytics events (NO PHI!)
+    // Track from patient's perspective
+    await trackEvent(
+      ServerAnalyticsEvents.PORTAL_APPOINTMENT_BOOKED,
+      session.userId,
+      {
+        type: validated.type,
+        hasNotes: !!validated.notes,
+        success: true
+      }
+    );
+
+    // Track from clinician's perspective
+    await trackEvent(
+      ServerAnalyticsEvents.APPOINTMENT_CREATED,
+      clinician.id,
+      {
+        type: validated.type,
+        bookedByPatient: true,
+        success: true
+      }
+    );
 
     return NextResponse.json({
       success: true,

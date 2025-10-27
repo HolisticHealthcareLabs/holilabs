@@ -13,9 +13,10 @@ const patientRoutes: FastifyPluginAsync = async (server) => {
     try {
       const body = CreateTokenSchema.parse(request.body);
       const saltKey = process.env.SALT_ROTATION_KEY || 'default-salt';
+      const pepper = process.env.DEID_SECRET;
 
-      // Pseudonymize
-      const { tokenId, pointerHash } = pseudonymize(body.subjectKeys, saltKey);
+      // Pseudonymize with PBKDF2 + HMAC for enhanced security
+      const { tokenId, pointerHash } = pseudonymize(body.subjectKeys, saltKey, pepper);
 
       // Get org from auth (stub - in production, extract from JWT)
       const orgId = 'demo-org-id';

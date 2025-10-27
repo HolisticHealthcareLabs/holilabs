@@ -105,10 +105,10 @@ export async function POST(request: NextRequest) {
 
         // Check cross-reactions
         if (!isContraindicated && MEDICATION_CROSS_REACTIONS[allergy.allergen]) {
-          for (const crossReactive of MEDICATION_CROSS_REACTIONS[allergy.allergen]) {
+          for (const crossReactiveMed of MEDICATION_CROSS_REACTIONS[allergy.allergen]) {
             if (
-              medName.toLowerCase().includes(crossReactive.toLowerCase()) ||
-              crossReactive.toLowerCase().includes(medName.toLowerCase())
+              medName.toLowerCase().includes(crossReactiveMed.toLowerCase()) ||
+              crossReactiveMed.toLowerCase().includes(medName.toLowerCase())
             ) {
               isContraindicated = true;
               crossReactive = true;

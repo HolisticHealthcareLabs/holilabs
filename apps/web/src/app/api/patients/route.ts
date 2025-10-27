@@ -11,6 +11,9 @@ import { prisma } from '@/lib/prisma';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 import { CreatePatientSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
+import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import { generateUniquePatientTokenId } from '@/lib/security/token-generation';
+import { logDeIDOperation } from '@/lib/audit/deid-audit';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -173,8 +176,10 @@ export async function POST(request: Request) {
       throw error; // Re-throw non-validation errors
     }
 
-    // Generate token ID for de-identification
-    const tokenId = `PT-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}-${Math.random().toString(36).substr(2, 4)}`;
+    // Generate cryptographically secure token ID for de-identification
+    // SECURITY: Uses crypto.randomBytes (128-bit entropy) instead of Math.random()
+    // Includes automatic collision detection
+    const tokenId = await generateUniquePatientTokenId();
 
     // Generate blockchain hash (using validated data)
     const dataHash = generatePatientDataHash({
@@ -319,6 +324,35 @@ export async function POST(request: Request) {
         success: true,
       },
     });
+
+    // SECURITY: Log de-identification operation for HIPAA compliance
+    await logDeIDOperation(
+      'TOKEN_GENERATE',
+      validatedData.createdBy || validatedData.assignedClinicianId || 'system',
+      [patient.id],
+      {
+        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+        tokenId,
+        ageBand: patient.ageBand,
+        region: patient.region,
+        policyVersion: 'MVP-1.2',
+      }
+    );
+
+    // Track analytics event (NO PHI!)
+    await trackEvent(
+      ServerAnalyticsEvents.PATIENT_CREATED,
+      validatedData.assignedClinicianId || 'system',
+      {
+        isPalliativeCare: patient.isPalliativeCare,
+        hasSpecialNeeds: patient.hasSpecialNeeds,
+        dnrStatus: patient.dnrStatus,
+        gender: patient.gender,
+        ageBand: patient.ageBand,
+        success: true
+      }
+    );
 
     return NextResponse.json({
       success: true,
