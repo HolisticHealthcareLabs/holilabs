@@ -43,6 +43,7 @@ ENV SESSION_SECRET=$SESSION_SECRET
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=deps /app/packages/deid/node_modules ./packages/deid/node_modules
 
 # Copy source code
 COPY . .
