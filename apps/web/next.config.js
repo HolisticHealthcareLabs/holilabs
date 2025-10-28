@@ -139,6 +139,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n.ts');
 const nextConfig = {
   experimental: {
     typedRoutes: false,
+    instrumentationHook: true, // Enable instrumentation for cron jobs
   },
   output: 'standalone',
 

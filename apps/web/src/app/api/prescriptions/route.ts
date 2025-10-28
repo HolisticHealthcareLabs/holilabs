@@ -187,53 +187,94 @@ export const POST = createProtectedRoute(
 );
 
 /**
- * GET /api/prescriptions?patientId=xxx
- * Get prescriptions for a patient
- * SECURITY: Enforces tenant isolation - clinicians can only view prescriptions for their own patients
+ * GET /api/prescriptions?patientId=xxx OR /api/prescriptions (all for clinician)
+ * Get prescriptions for a patient OR all prescriptions for logged-in clinician
+ * SECURITY: Enforces tenant isolation - clinicians can only view their own prescriptions
  */
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
       const { searchParams } = new URL(request.url);
       const patientId = searchParams.get('patientId');
+      const status = searchParams.get('status'); // Optional filter by status
 
-      if (!patientId) {
-        return NextResponse.json(
-          { error: 'patientId query parameter is required' },
-          { status: 400 }
-        );
+      // If patientId is provided, get prescriptions for that patient
+      if (patientId) {
+        // ===================================================================
+        // SECURITY: TENANT ISOLATION - CRITICAL FOR HIPAA COMPLIANCE
+        // ===================================================================
+        // Verify the patient belongs to this clinician
+        const patient = await prisma.patient.findUnique({
+          where: { id: patientId },
+          select: { assignedClinicianId: true },
+        });
+
+        if (!patient) {
+          return NextResponse.json(
+            { error: 'Patient not found' },
+            { status: 404 }
+          );
+        }
+
+        // Only ADMIN or assigned clinician can view prescriptions for this patient
+        if (
+          patient.assignedClinicianId !== context.user.id &&
+          context.user.role !== 'ADMIN'
+        ) {
+          return NextResponse.json(
+            { error: 'Forbidden: You cannot access prescriptions for this patient' },
+            { status: 403 }
+          );
+        }
+
+        const prescriptions = await prisma.prescription.findMany({
+          where: {
+            patientId,
+            ...(status && { status: status as any }),
+          },
+          include: {
+            patient: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                tokenId: true,
+              },
+            },
+            clinician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                licenseNumber: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: prescriptions,
+        });
       }
 
-      // ===================================================================
-      // SECURITY: TENANT ISOLATION - CRITICAL FOR HIPAA COMPLIANCE
-      // ===================================================================
-      // Verify the patient belongs to this clinician
-      const patient = await prisma.patient.findUnique({
-        where: { id: patientId },
-        select: { assignedClinicianId: true },
-      });
-
-      if (!patient) {
-        return NextResponse.json(
-          { error: 'Patient not found' },
-          { status: 404 }
-        );
-      }
-
-      // Only ADMIN or assigned clinician can view prescriptions for this patient
-      if (
-        patient.assignedClinicianId !== context.user.id &&
-        context.user.role !== 'ADMIN'
-      ) {
-        return NextResponse.json(
-          { error: 'Forbidden: You cannot access prescriptions for this patient' },
-          { status: 403 }
-        );
-      }
-
+      // Otherwise, get all prescriptions for this clinician
       const prescriptions = await prisma.prescription.findMany({
-        where: { patientId },
+        where: {
+          clinicianId: context.user.id,
+          ...(status && { status: status as any }),
+        },
         include: {
+          patient: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              tokenId: true,
+              dateOfBirth: true,
+            },
+          },
           clinician: {
             select: {
               id: true,
@@ -244,6 +285,7 @@ export const GET = createProtectedRoute(
           },
         },
         orderBy: { createdAt: 'desc' },
+        take: 100, // Limit to 100 most recent prescriptions
       });
 
       return NextResponse.json({

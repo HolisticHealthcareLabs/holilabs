@@ -154,6 +154,8 @@ export const ServerAnalyticsEvents = {
 
   // Prescriptions
   PRESCRIPTION_CREATED: 'prescription_created',
+  PRESCRIPTION_SIGNED: 'prescription_signed',
+  PRESCRIPTION_SENT: 'prescription_sent',
   MEDICATION_ADDED: 'medication_added',
 
   // Appointments

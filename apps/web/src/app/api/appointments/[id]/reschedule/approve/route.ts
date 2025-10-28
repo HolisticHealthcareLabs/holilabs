@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 // FIXME: Old rate limiting API - needs refactor
 // import { rateLimit } from '@/lib/rate-limit';
-// import { sendWhatsAppMessage } from '@/lib/notifications/whatsapp'; // Function doesn't exist
+import { notifyAppointmentReminder } from '@/lib/notifications/whatsapp';
 import { sendEmail } from '@/lib/notifications/email';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -94,9 +94,15 @@ export async function POST(
 
     // Send WhatsApp notification
     if (appointment.patient.phone && appointment.patient.preferences?.whatsappEnabled) {
-      // FIXME: sendWhatsAppMessage doesn't exist - needs proper WhatsApp function
-      // await sendWhatsAppMessage(appointment.patient.phone, message);
-      console.warn('WhatsApp notifications not configured');
+      await notifyAppointmentReminder({
+        patientPhone: appointment.patient.phone,
+        patientName: appointment.patient.firstName,
+        doctorName: `${appointment.clinician.firstName} ${appointment.clinician.lastName}`,
+        appointmentDate: newDate,
+        appointmentTime: newTime,
+        clinicAddress: appointment.branch || undefined,
+        language: 'es',
+      });
     }
 
     // Send email notification

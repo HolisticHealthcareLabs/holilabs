@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 // FIXME: Old rate limiting API - needs refactor to use checkRateLimit from @/lib/rate-limit
 // import { rateLimit } from '@/lib/rate-limit';
-// import { sendWhatsAppMessage } from '@/lib/notifications/whatsapp'; // Function doesn't exist
+import { notifyAppointmentReminder } from '@/lib/notifications/whatsapp';
 import { sendEmail } from '@/lib/notifications/email';
 import { sendSMS } from '@/lib/notifications/sms';
 import { sendPushNotification } from '@/lib/notifications/send-push';
@@ -113,11 +113,16 @@ export async function POST(
     for (const ch of channels) {
       try {
         if (ch === 'whatsapp' && patient.phone && preferences?.whatsappEnabled) {
-          // FIXME: sendWhatsAppMessage doesn't exist - needs proper WhatsApp function
-          // const whatsappResult = await sendWhatsAppMessage(patient.phone, message);
-          // results.push({ channel: 'whatsapp', success: whatsappResult.success });
-          console.warn('WhatsApp notifications not configured');
-          results.push({ channel: 'whatsapp', success: false, error: 'Not implemented' });
+          const whatsappResult = await notifyAppointmentReminder({
+            patientPhone: patient.phone,
+            patientName: patient.firstName,
+            doctorName: `${appointment.clinician.firstName} ${appointment.clinician.lastName}`,
+            appointmentDate,
+            appointmentTime,
+            clinicAddress: appointment.branch || undefined,
+            language: 'es',
+          });
+          results.push({ channel: 'whatsapp', success: whatsappResult.success });
         } else if (ch === 'email' && patient.email && preferences?.emailEnabled) {
           const emailResult = await sendEmail({
             to: patient.email,
