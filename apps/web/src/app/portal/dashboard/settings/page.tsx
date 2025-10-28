@@ -13,6 +13,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import WhatsAppConsentSection from '@/components/portal/WhatsAppConsentSection';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -162,6 +163,9 @@ export default function SettingsPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* WhatsApp Adherence Monitoring Consent */}
+          <WhatsAppConsentSection />
 
           {/* GDPR Data Export */}
           <motion.div
