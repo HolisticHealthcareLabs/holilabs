@@ -14,6 +14,7 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/schemas/package.json ./packages/schemas/
 COPY packages/utils/package.json ./packages/utils/
+COPY packages/deid/package.json ./packages/deid/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
@@ -45,6 +46,10 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 # Copy source code
 COPY . .
+
+# Build workspace packages first (deid package)
+WORKDIR /app/packages/deid
+RUN pnpm build
 
 # Generate Prisma Client
 WORKDIR /app/apps/web
