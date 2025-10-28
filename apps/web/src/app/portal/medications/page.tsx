@@ -17,6 +17,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import MedicationAdherenceTracker from '@/components/medications/MedicationAdherenceTracker';
 
 interface Prescriber {
   id: string;
@@ -160,6 +161,11 @@ export default function MedicationsPage() {
         <p className="text-gray-600">
           Administra tus medicamentos y prescripciones
         </p>
+      </div>
+
+      {/* Daily Adherence Tracker */}
+      <div className="mb-8">
+        <MedicationAdherenceTracker />
       </div>
 
       {/* Refill Alert */}

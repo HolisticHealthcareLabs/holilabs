@@ -281,3 +281,64 @@ export function emitUserOffline(userId: string, userType: string) {
 
   io.emit('user_offline', { userId, userType });
 }
+
+/**
+ * Emit appointment notification
+ */
+export function emitAppointmentNotification(
+  userId: string,
+  userType: 'CLINICIAN' | 'PATIENT',
+  data: { date: string; time?: string; provider?: string }
+) {
+  if (!io) return;
+
+  const roomId = `user:${userType}:${userId}`;
+  io.to(roomId).emit('notification:appointment', data);
+
+  logger.info({
+    event: 'notification_sent',
+    type: 'appointment',
+    userId,
+    userType,
+  });
+}
+
+/**
+ * Emit medication reminder notification
+ */
+export function emitMedicationReminder(
+  userId: string,
+  data: { message: string; medicationName?: string }
+) {
+  if (!io) return;
+
+  const roomId = `user:PATIENT:${userId}`;
+  io.to(roomId).emit('notification:medication', data);
+
+  logger.info({
+    event: 'notification_sent',
+    type: 'medication',
+    userId,
+  });
+}
+
+/**
+ * Emit lab result notification
+ */
+export function emitLabResultNotification(
+  userId: string,
+  userType: 'CLINICIAN' | 'PATIENT',
+  data: { message: string; testName?: string }
+) {
+  if (!io) return;
+
+  const roomId = `user:${userType}:${userId}`;
+  io.to(roomId).emit('notification:lab', data);
+
+  logger.info({
+    event: 'notification_sent',
+    type: 'lab',
+    userId,
+    userType,
+  });
+}

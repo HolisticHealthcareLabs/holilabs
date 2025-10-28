@@ -1,6 +1,4 @@
 /**
-export const dynamic = 'force-dynamic';
-
  * Patient Dashboard
  *
  * Main landing page for authenticated patients
@@ -11,12 +9,17 @@ export const dynamic = 'force-dynamic';
  * - Recent medications
  * - Quick actions
  * - Health metrics summary
+ * - Onboarding wizard for new patients
  */
+
+export const dynamic = 'force-dynamic';
 
 import { redirect } from 'next/navigation';
 import { getCurrentPatient } from '@/lib/auth/patient-session';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import PatientOnboardingWizard from '@/components/portal/PatientOnboardingWizard';
+import MedicationAdherenceTracker from '@/components/medications/MedicationAdherenceTracker';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -74,6 +77,9 @@ export default async function PatientDashboardPage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+      {/* Onboarding Wizard */}
+      <PatientOnboardingWizard />
+
       {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
@@ -87,7 +93,7 @@ export default async function PatientDashboardPage() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {/* Upcoming Appointments */}
-        <a href="/portal/dashboard/appointments/schedule" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group">
+        <a href="/portal/appointments" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group">
           <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <svg
@@ -115,9 +121,9 @@ export default async function PatientDashboardPage() {
         </a>
 
         {/* Active Medications */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <a href="/portal/medications" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <svg
                 className="w-6 h-6 text-purple-600"
                 fill="none"
@@ -138,7 +144,7 @@ export default async function PatientDashboardPage() {
           <p className="text-xs text-gray-500">
             {stats.medications.active > 0 ? `Adherence: ${stats.medications.adherence}%` : 'No medications'}
           </p>
-        </div>
+        </a>
 
         {/* Notifications */}
         <a href="/portal/dashboard/notifications" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-red-300 transition-all cursor-pointer group">
@@ -309,51 +315,8 @@ export default async function PatientDashboardPage() {
             </div>
           </div>
 
-          {/* Recent Medications */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">My Medications</h2>
-              <a
-                href="/portal/medications"
-                className="text-sm font-semibold text-green-600 hover:text-green-700"
-              >
-                View all →
-              </a>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { name: 'Metformin', dose: '500mg', frequency: '2x daily', time: '8:00 AM, 8:00 PM' },
-                { name: 'Enalapril', dose: '10mg', frequency: '1x daily', time: '8:00 AM' },
-              ].map((med) => (
-                <div
-                  key={med.name}
-                  className="flex items-center gap-4 p-4 rounded-lg border border-gray-200"
-                >
-                  <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg
-                      className="w-5 h-5 text-purple-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{med.name}</h3>
-                    <p className="text-sm text-gray-600">{med.dose} - {med.frequency}</p>
-                    <p className="text-xs text-gray-500 mt-1">⏰ {med.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Medication Adherence Tracker */}
+          <MedicationAdherenceTracker />
         </div>
 
         {/* Sidebar */}

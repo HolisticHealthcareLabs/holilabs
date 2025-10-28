@@ -18,8 +18,18 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
-import WelcomeModal from '@/components/onboarding/WelcomeModal';
+import ImprovedWelcomeModal from '@/components/onboarding/ImprovedWelcomeModal';
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist';
+import DemoModeToggle from '@/components/demo/DemoModeToggle';
+
+// Demo data
+import {
+  generateDemoPatients,
+  generateDemoAppointments,
+  getDemoStats,
+  isDemoModeEnabled,
+  type DemoPatient
+} from '@/lib/demo/demo-data-generator';
 
 // Phase 1 Components
 import {
@@ -31,6 +41,7 @@ import { CommandPalette, useCommandPalette } from '@/components/dashboard/Comman
 import { SmartNotifications, NotificationBadge } from '@/components/dashboard/SmartNotifications';
 import { ActivityTimeline, Activity } from '@/components/dashboard/ActivityTimeline';
 import { AIInsights } from '@/components/dashboard/AIInsights';
+import TaskManagementPanel from '@/components/tasks/TaskManagementPanel';
 
 export default function DashboardCommandCenter() {
   const router = useRouter();
@@ -77,27 +88,49 @@ export default function DashboardCommandCenter() {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch patients for stats
-      const patientsRes = await fetch('/api/patients');
-      const patientsData = await patientsRes.json();
+      // Check if demo mode is enabled
+      const demoMode = isDemoModeEnabled();
+      let patients: any[];
 
-      if (patientsData.success) {
-        const patients = patientsData.data;
+      if (demoMode) {
+        // Use demo data
+        const demoPatients = generateDemoPatients(10);
+        const demoStats = getDemoStats(demoPatients);
+
         setStats({
-          totalPatients: patients.length,
-          activePatients: patients.filter((p: any) => p.isActive).length,
-          todayAppointments: patients.filter((p: any) => p.appointments?.length > 0).length,
-          prescriptionsToday: patients.reduce((acc: number, p: any) => acc + (p.medications?.length || 0), 0),
+          totalPatients: demoStats.totalPatients,
+          activePatients: demoStats.activePatients,
+          todayAppointments: demoStats.patientsWithUpcomingAppointments,
+          prescriptionsToday: demoPatients.reduce((acc, p) => acc + p.medications.length, 0),
         });
 
-        // Generate recent activity from patients
-        const activities: Activity[] = patients.slice(0, 8).map((p: any, index: number) => ({
-          id: `activity-${p.id}`,
-          type: index % 4 === 0 ? 'appointment' : index % 4 === 1 ? 'prescription' : index % 4 === 2 ? 'note' : 'lab_result',
-          action:
-            index % 4 === 0
-              ? 'Appointment completed'
-              : index % 4 === 1
+        patients = demoPatients;
+      } else {
+        // Fetch real patients from API
+        const patientsRes = await fetch('/api/patients');
+        const patientsData = await patientsRes.json();
+
+        if (patientsData.success) {
+          patients = patientsData.data;
+          setStats({
+            totalPatients: patients.length,
+            activePatients: patients.filter((p: any) => p.isActive).length,
+            todayAppointments: patients.filter((p: any) => p.appointments?.length > 0).length,
+            prescriptionsToday: patients.reduce((acc: number, p: any) => acc + (p.medications?.length || 0), 0),
+          });
+        } else {
+          patients = [];
+        }
+      }
+
+      // Generate recent activity from patients (works for both demo and real data)
+      const activities: Activity[] = patients.slice(0, 8).map((p: any, index: number) => ({
+        id: `activity-${p.id}`,
+        type: index % 4 === 0 ? 'appointment' : index % 4 === 1 ? 'prescription' : index % 4 === 2 ? 'note' : 'lab_result',
+        action:
+          index % 4 === 0
+            ? 'Appointment completed'
+            : index % 4 === 1
               ? 'Prescription signed'
               : index % 4 === 2
               ? 'Clinical note added'
@@ -123,8 +156,7 @@ export default function DashboardCommandCenter() {
               : undefined,
         }));
 
-        setRecentActivities(activities);
-      }
+      setRecentActivities(activities);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -148,7 +180,7 @@ export default function DashboardCommandCenter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900">
       {/* Onboarding */}
-      <WelcomeModal />
+      <ImprovedWelcomeModal />
       <OnboardingChecklist />
 
       {/* Command Palette */}
@@ -174,6 +206,9 @@ export default function DashboardCommandCenter() {
 
             {/* Header actions */}
             <div className="flex items-center gap-3">
+              {/* Demo Mode Toggle */}
+              <DemoModeToggle />
+
               {/* Command palette hint */}
               <button
                 onClick={() => {}}
@@ -416,6 +451,40 @@ export default function DashboardCommandCenter() {
                 </button>
 
                 <button
+                  onClick={() => router.push('/dashboard/tasks')}
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/30 hover:from-orange-100 hover:to-orange-200 dark:hover:from-orange-900/30 dark:hover:to-orange-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                >
+                  <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Tasks</span>
+                </button>
+
+                <button
+                  onClick={() => router.push('/dashboard/reminders')}
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/30 hover:from-indigo-100 hover:to-indigo-200 dark:hover:from-indigo-900/30 dark:hover:to-indigo-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                >
+                  <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Reminders</span>
+                </button>
+
+                <button
                   onClick={() => router.push('/dashboard/scribe')}
                   className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-900/30 hover:from-teal-100 hover:to-teal-200 dark:hover:from-teal-900/30 dark:hover:to-teal-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
                 >
@@ -442,6 +511,22 @@ export default function DashboardCommandCenter() {
                   <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Clinical Tools</span>
                 </button>
               </div>
+            </div>
+
+            {/* Task Management Widget */}
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                  My Tasks
+                </h2>
+                <button
+                  onClick={() => router.push('/dashboard/tasks')}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center"
+                >
+                  View All →
+                </button>
+              </div>
+              <TaskManagementPanel userId="system" compact={true} />
             </div>
           </div>
         </div>

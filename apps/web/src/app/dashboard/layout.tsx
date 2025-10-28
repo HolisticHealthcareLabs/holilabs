@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -27,6 +26,7 @@ interface NavItem {
   gradient?: string;
   hoverGradient?: string;
   shadowColor?: string;
+  subItems?: NavItem[];
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -45,58 +45,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
-        router.push('/auth/login');
-      } else {
-        setUser(user);
-      }
-    });
+    // Demo mode - no authentication required
+    setUser({ email: 'demo@holilabs.com', name: 'Demo User' });
   }, [router]);
 
-  // Clinical Tools - Each with unique color gradient (top priority)
-  const clinicalTools: NavItem[] = [
-    {
-      name: 'Scribe',
-      href: '/dashboard/scribe',
-      icon: '🎙️',
-      emoji: '🎙️',
-      gradient: 'from-purple-500 to-pink-600', // Creative/Audio
-      hoverGradient: 'from-purple-600 to-pink-700',
-      shadowColor: 'purple-500/50'
-    },
-    {
-      name: 'Prevention',
-      href: '/dashboard/prevention',
-      icon: '🛡️',
-      emoji: '🛡️',
-      gradient: 'from-emerald-500 to-teal-600', // Health/Safety
-      hoverGradient: 'from-emerald-600 to-teal-700',
-      shadowColor: 'emerald-500/50'
-    },
-    {
-      name: 'Diagnosis',
-      href: '/dashboard/diagnosis',
-      icon: '🩺',
-      emoji: '🩺',
-      gradient: 'from-cyan-500 to-blue-600', // Medical/Trust
-      hoverGradient: 'from-cyan-600 to-blue-700',
-      shadowColor: 'cyan-500/50'
-    },
-    {
-      name: 'Prescription',
-      href: '/dashboard/prescriptions',
-      icon: '💊',
-      emoji: '💊',
-      gradient: 'from-orange-500 to-red-600', // Pharmaceutical/Important
-      hoverGradient: 'from-orange-600 to-red-700',
-      shadowColor: 'orange-500/50'
-    },
-  ];
-
-  // Main navigation - 4 core categories
-  const mainNavItems: NavItem[] = [
+  // Streamlined Navigation - Minimal & Elegant
+  const navItems: NavItem[] = [
     {
       name: 'Dashboard',
       href: '/dashboard',
@@ -133,13 +87,29 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       hoverGradient: 'from-sky-600 to-cyan-700',
       shadowColor: 'sky-500/50'
     },
+    {
+      name: 'Toolkit',
+      href: '/dashboard/scribe',
+      icon: '🧰',
+      emoji: '🧰',
+      gradient: 'from-fuchsia-500 to-pink-600',
+      hoverGradient: 'from-fuchsia-600 to-pink-700',
+      shadowColor: 'fuchsia-500/50',
+      subItems: [
+        { name: 'Scribe', href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️', gradient: 'from-purple-500 to-pink-600' },
+        { name: 'Prevention', href: '/dashboard/prevention', icon: '🛡️', emoji: '🛡️', gradient: 'from-emerald-500 to-teal-600' },
+        { name: 'Diagnosis', href: '/dashboard/diagnosis', icon: '🩺', emoji: '🩺', gradient: 'from-cyan-500 to-blue-600' },
+        { name: 'Prescriptions', href: '/dashboard/prescriptions', icon: '💊', emoji: '💊', gradient: 'from-orange-500 to-red-600' },
+        { name: 'Forms', href: '/dashboard/forms', icon: '📋', emoji: '📋', gradient: 'from-indigo-500 to-purple-600' },
+        { name: 'Templates', href: '/dashboard/templates', icon: '📝', emoji: '📝', gradient: 'from-rose-500 to-red-600' },
+        { name: 'Analytics', href: '/dashboard/analytics', icon: '📈', emoji: '📈', gradient: 'from-blue-500 to-cyan-600' },
+        { name: 'Share Profile', href: '/dashboard/share-profile', icon: '🔗', emoji: '🔗', gradient: 'from-teal-500 to-green-600' },
+        { name: 'Credentials', href: '/dashboard/credentials', icon: '🏅', emoji: '🏅', gradient: 'from-yellow-500 to-amber-600' },
+      ]
+    },
   ];
 
-  const navItems = [...clinicalTools, ...mainNavItems];
-
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
     router.push('/auth/login');
   };
 
@@ -217,22 +187,52 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     </span>
                   </div>
 
-                  {/* Floating Text Label - Appears on Hover */}
+                  {/* Floating Text Label or Submenu - Appears on Hover */}
                   <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
-                    <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                        {item.name}
-                      </p>
-                      {item.badge && (
-                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                          {item.badge}
-                        </span>
-                      )}
-                      {/* Arrow pointer */}
-                      <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
-                        <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                    {item.subItems ? (
+                      /* Toolkit Submenu */
+                      <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-2xl overflow-hidden">
+                        <div className="p-3 bg-gradient-to-r from-fuchsia-500/10 to-pink-500/10 border-b border-gray-200/50 dark:border-gray-700/50">
+                          <p className="font-bold text-sm text-gray-900 dark:text-white">
+                            {item.name}
+                          </p>
+                        </div>
+                        <div className="p-2 space-y-1 max-h-96 overflow-y-auto pointer-events-auto">
+                          {item.subItems.map((subItem) => (
+                            <Link
+                              key={subItem.href}
+                              href={subItem.href}
+                              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group/sub"
+                            >
+                              <span className="text-lg">{subItem.emoji}</span>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover/sub:text-gray-900 dark:group-hover/sub:text-white whitespace-nowrap">
+                                {subItem.name}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                        {/* Arrow pointer */}
+                        <div className="absolute right-full top-8 -mr-1">
+                          <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* Regular Label */
+                      <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                          {item.name}
+                        </p>
+                        {item.badge && (
+                          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                            {item.badge}
+                          </span>
+                        )}
+                        {/* Arrow pointer */}
+                        <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+                          <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Link>
               );
