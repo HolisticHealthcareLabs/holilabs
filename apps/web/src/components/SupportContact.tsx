@@ -25,7 +25,7 @@ export default function SupportContact({
   const [copied, setCopied] = useState(false);
 
   // Support contact information
-  const whatsappNumber = '+525512345678'; // TODO: Move to environment variable
+  const whatsappNumber = '+55 (11) 97448-7888'; // TODO: Move to environment variable
   const supportEmail = 'support@holilabs.com';
   const whatsappMessage = encodeURIComponent(
     'Hola, necesito ayuda con la plataforma Holi Labs.'
@@ -110,9 +110,6 @@ export default function SupportContact({
             <div className="text-xs text-green-100 opacity-90">
               Respuesta rápida 24/7
             </div>
-          </div>
-          <div className="text-xs opacity-75 group-hover:opacity-100 transition-opacity">
-            {whatsappNumber}
           </div>
         </a>
 

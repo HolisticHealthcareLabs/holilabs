@@ -462,7 +462,7 @@ export default function Home() {
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
         {/* WhatsApp Button */}
         <a
-          href="https://wa.me/1234567890?text=Hi!%20I'm%20interested%20in%20Holi%20Labs%20BETA"
+          href="https://wa.me/5511974487888?text=Hi!%20I'm%20interested%20in%20Holi%20Labs%20BETA"
           target="_blank"
           rel="noopener noreferrer"
           className="group relative"
