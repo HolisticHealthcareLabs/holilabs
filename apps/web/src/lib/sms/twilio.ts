@@ -8,11 +8,18 @@
 import twilio from 'twilio';
 import logger from '@/lib/logger';
 
-// Initialize Twilio client
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+// Lazy initialize Twilio client only when credentials are available
+let twilioClient: ReturnType<typeof twilio> | null = null;
+
+function getTwilioClient() {
+  if (!twilioClient && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+  }
+  return twilioClient;
+}
 
 const TWILIO_PHONE = process.env.TWILIO_PHONE_NUMBER;
 const TWILIO_WHATSAPP = process.env.TWILIO_WHATSAPP_NUMBER;
@@ -35,6 +42,15 @@ export async function sendSMS(options: SendSMSOptions): Promise<boolean> {
   try {
     const { to, message, from = TWILIO_PHONE } = options;
 
+    const client = getTwilioClient();
+    if (!client) {
+      logger.warn({
+        event: 'twilio_sms_not_configured',
+        error: 'Twilio credentials not configured - SMS not sent',
+      });
+      return false;
+    }
+
     if (!from) {
       logger.error({
         event: 'twilio_sms_missing_config',
@@ -46,7 +62,7 @@ export async function sendSMS(options: SendSMSOptions): Promise<boolean> {
     // Format phone number to E.164 format if needed
     const formattedPhone = formatPhoneNumber(to);
 
-    const twilioMessage = await twilioClient.messages.create({
+    const twilioMessage = await client.messages.create({
       body: message,
       from: from,
       to: formattedPhone,
@@ -77,6 +93,15 @@ export async function sendWhatsApp(options: SendWhatsAppOptions): Promise<boolea
   try {
     const { to, message } = options;
 
+    const client = getTwilioClient();
+    if (!client) {
+      logger.warn({
+        event: 'twilio_whatsapp_not_configured',
+        error: 'Twilio credentials not configured - WhatsApp not sent',
+      });
+      return false;
+    }
+
     if (!TWILIO_WHATSAPP) {
       logger.error({
         event: 'twilio_whatsapp_missing_config',
@@ -89,7 +114,7 @@ export async function sendWhatsApp(options: SendWhatsAppOptions): Promise<boolea
     const formattedPhone = formatPhoneNumber(to);
     const whatsappTo = `whatsapp:${formattedPhone}`;
 
-    const twilioMessage = await twilioClient.messages.create({
+    const twilioMessage = await client.messages.create({
       body: message,
       from: TWILIO_WHATSAPP,
       to: whatsappTo,

@@ -9,7 +9,7 @@ const { parse } = require('url');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
+const hostname = '0.0.0.0'; // Allow external connections
 const port = parseInt(process.env.PORT || '3000', 10);
 
 // Create Next.js app
@@ -61,6 +61,22 @@ app.prepare().then(() => {
     console.warn('   Remove DISABLE_SOCKET_SERVER=true to enable it');
   }
 
+  // Initialize Cron Scheduler for scheduled reminders (opt-out with DISABLE_CRON_SCHEDULER=true)
+  if (process.env.DISABLE_CRON_SCHEDULER !== 'true') {
+    import('./src/lib/cron/scheduler.ts')
+      .then((module) => {
+        const initializeScheduler = module.initializeScheduler || module.default?.initializeScheduler;
+        initializeScheduler();
+        console.log('✅ Cron scheduler initialized');
+      })
+      .catch((err) => {
+        console.error('Failed to initialize Cron scheduler:', err);
+      });
+  } else {
+    console.warn('⚠️  Cron scheduler disabled');
+    console.warn('   Remove DISABLE_CRON_SCHEDULER=true to enable it');
+  }
+
   httpServer
     .once('error', (err) => {
       console.error('Server error:', err);
@@ -78,10 +94,24 @@ app.prepare().then(() => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server');
+  // Stop cron scheduler if running
+  import('./src/lib/cron/scheduler.ts')
+    .then((module) => {
+      const stopScheduler = module.stopScheduler || module.default?.stopScheduler;
+      stopScheduler();
+    })
+    .catch(() => {});
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT signal received: closing HTTP server');
+  // Stop cron scheduler if running
+  import('./src/lib/cron/scheduler.ts')
+    .then((module) => {
+      const stopScheduler = module.stopScheduler || module.default?.stopScheduler;
+      stopScheduler();
+    })
+    .catch(() => {});
   process.exit(0);
 });

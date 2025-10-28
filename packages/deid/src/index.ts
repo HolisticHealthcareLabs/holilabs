@@ -1,9 +1,26 @@
-export * from './redact';
-export * from './pseudonymize';
-export * from './generalize';
-export * from './dicom';
-export * from './ocr';
-export * from './types';
-export * from './k-anonymity';
-export * from './nlp-redaction';
-export * from './differential-privacy';
+// K-Anonymity exports
+export {
+  checkKAnonymity,
+  applyKAnonymity,
+  generalizeAge,
+  generalizeZipCode,
+  generalizeDate,
+  type KAnonymityOptions,
+  type KAnonymityResult,
+} from './k-anonymity';
+
+// Differential Privacy exports
+export {
+  dpCount,
+  dpHistogram,
+  dpSum,
+  dpAverage,
+  composeEpsilon,
+} from './differential-privacy';
+
+// Privacy Budget Tracker exports
+export {
+  PrivacyBudgetTracker,
+  type BudgetEntry,
+  type BudgetReport,
+} from './privacy-budget';
