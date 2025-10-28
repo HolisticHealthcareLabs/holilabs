@@ -589,6 +589,77 @@ model Patient {
   careTeamNotes   String?  @db.Text // Important info for entire care team
   flaggedConcerns String[] // e.g., ["Fall Risk", "Seizure Risk"]
 
+  // ========================================================================
+  // WHATSAPP ADHERENCE MONITORING CONSENT (HIPAA/LGPD Compliant)
+  // ========================================================================
+
+  // Patient must explicitly consent to receive automated WhatsApp messages
+  whatsappConsentGiven       Boolean   @default(false)
+  whatsappConsentDate        DateTime? // When consent was given
+  whatsappConsentMethod      String?   // e.g., "Portal", "In-Person", "Verbal"
+  whatsappConsentWithdrawnAt DateTime? // If patient withdraws consent
+  whatsappConsentLanguage    String?   // Language of consent (en/es/pt)
+
+  // Adherence monitoring preferences
+  medicationRemindersEnabled Boolean @default(false)
+  appointmentRemindersEnabled Boolean @default(true)
+  labResultsAlertsEnabled Boolean @default(true)
+  preventiveCareAlertsEnabled Boolean @default(true)
+
+  // Preferred contact times (for adherence reminders)
+  preferredContactTimeStart String? // e.g., "09:00"
+  preferredContactTimeEnd   String? // e.g., "18:00"
+  doNotDisturbEnabled       Boolean @default(false)
+
+  // ========================================================================
+  // PREVENTIVE CARE SCREENING TRACKING
+  // ========================================================================
+
+  // Cardiovascular screening
+  lastBloodPressureCheck  DateTime?
+  lastCholesterolTest     DateTime?
+  cvdRiskScore            Float? // Framingham 10-year CVD risk (0-100%)
+  cvdRiskAssessmentDate   DateTime?
+  cvdRiskCategory         String? // "Low", "Medium", "High", "Very High"
+
+  // Diabetes screening
+  lastHbA1c               DateTime?
+  lastFastingGlucose      DateTime?
+  diabetesRiskScore       Float? // FINDRISC score (0-26)
+  diabetesRiskDate        DateTime?
+  diabetesRiskCategory    String? // "Low", "Moderate", "High", "Very High"
+  prediabetesDetected     Boolean @default(false)
+  enrolledInDPP           Boolean @default(false) // Diabetes Prevention Program
+  dppStartDate            DateTime?
+
+  // Cancer screening
+  lastMammogram           DateTime?
+  lastPapSmear            DateTime?
+  lastColonoscopy         DateTime?
+  lastProstateScreening   DateTime? // PSA test
+
+  // General health screening
+  lastPhysicalExam        DateTime?
+  lastDentalCheckup       DateTime?
+  lastEyeExam             DateTime?
+  lastImmunizationUpdate  DateTime?
+
+  // Lifestyle risk factors (for risk calculation)
+  tobaccoUse                   Boolean @default(false)
+  tobaccoType                  String? // "Cigarettes", "Cigars", "Vape", "Smokeless"
+  tobaccoPackYears             Float? // Pack-years for CVD risk
+  alcoholUse                   Boolean @default(false)
+  alcoholDrinksPerWeek         Int?
+  physicalActivityMinutesWeek  Int? // Minutes per week
+  dietQualityScore             Int? // 0-100 Mediterranean diet score
+
+  // BMI tracking
+  heightCm                Float?
+  weightKg                Float?
+  bmi                     Float?
+  bmiCategory             String? // "Underweight", "Normal", "Overweight", "Obese"
+  lastBMIUpdate           DateTime?
+
   // Metadata
   isActive            Boolean @default(true)
   assignedClinicianId String?
