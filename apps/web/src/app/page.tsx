@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 
 export default function Home() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [scrollY, setScrollY] = useState(0);
+  const [showPracticesList, setShowPracticesList] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -26,10 +28,10 @@ export default function Home() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/waitlist', {
+      const response = await fetch('/api/beta-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, organization, role: clinicSize }),
+        body: JSON.stringify({ email, name }),
       });
 
       const data = await response.json();
@@ -37,7 +39,7 @@ export default function Home() {
       if (response.ok) {
         setMessage({
           type: 'success',
-          text: 'Perfecto! Un especialista se comunicará en 24 horas para programar su demostración personalizada.'
+          text: '¡Perfecto! Revisa tu email para acceder inmediatamente a Holi Labs BETA. 🚀'
         });
         setEmail('');
         setName('');
@@ -53,10 +55,27 @@ export default function Home() {
     }
   };
 
+  const handleConfettiClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+
+    // Trigger confetti animation
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#38F2AE', '#014751', '#22c55e', '#10b981']
+    });
+
+    // Scroll to demo section after confetti
+    setTimeout(() => {
+      document.querySelector('#demo')?.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  };
+
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-black text-white">
       {/* Header with Trust Signals */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-b border-gray-800 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-3 group">
@@ -67,30 +86,35 @@ export default function Home() {
                 height={40}
                 className="transition-transform group-hover:scale-110"
               />
-              <h1 className="text-2xl font-bold text-gray-900">
-                Holi Labs
-              </h1>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-2xl font-bold text-white">
+                  Holi Labs
+                </h1>
+                <span className="bg-gradient-to-r from-green-400 to-emerald-500 text-black text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wider">
+                  BETA
+                </span>
+              </div>
             </Link>
 
             {/* Trust Badges */}
             <div className="hidden md:flex items-center space-x-6">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex items-center space-x-2 text-sm text-gray-300">
+                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <span className="font-medium">HIPAA Compliant</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex items-center space-x-2 text-sm text-gray-300">
+                <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 <span className="font-medium">GDPR & LGPD</span>
               </div>
               <Link
                 href="#demo"
-                className="bg-green-600 text-white px-6 py-2.5 rounded-lg hover:bg-green-700 transition-all font-semibold shadow-lg shadow-green-600/20"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2.5 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-semibold shadow-lg shadow-green-500/30"
               >
-                Solicitar Demo
+                Acceso BETA
               </Link>
             </div>
           </div>
@@ -105,20 +129,20 @@ export default function Home() {
               {/* Left: Value Proposition */}
               <div>
                 {/* Attention-grabbing stat */}
-                <div className="inline-flex items-center space-x-2 bg-green-50 border border-green-200 rounded-full px-4 py-2 mb-6">
-                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <div className="inline-flex items-center space-x-2 bg-green-500/10 border border-green-500/30 rounded-full px-4 py-2 mb-6">
+                  <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-sm font-semibold text-green-800">
+                  <span className="text-sm font-semibold text-green-400">
                     Ahorre hasta 10 horas/semana por médico
                   </span>
                 </div>
 
-                <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+                <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                   Gestión clínica moderna para su práctica médica
                 </h1>
 
-                <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                <p className="text-xl text-gray-300 mb-8 leading-relaxed">
                   Plataforma integral que automatiza la documentación, organiza pacientes y
                   simplifica tareas administrativas. Sus médicos vuelven a enfocarse en lo que importa:
                   la atención al paciente.
@@ -127,30 +151,30 @@ export default function Home() {
                 {/* Quick benefits */}
                 <div className="space-y-4 mb-10">
                   <div className="flex items-start space-x-3">
-                    <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     <div>
-                      <p className="font-semibold text-gray-900">Implementación en 48 horas</p>
-                      <p className="text-gray-600 text-sm">Sin instalación compleja ni meses de capacitación</p>
+                      <p className="font-semibold text-white">Implementación en 48 horas</p>
+                      <p className="text-gray-400 text-sm">Sin instalación compleja ni meses de capacitación</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     <div>
-                      <p className="font-semibold text-gray-900">Funciona sin internet</p>
-                      <p className="text-gray-600 text-sm">Perfecto para consultorios rurales o visitas domiciliarias</p>
+                      <p className="font-semibold text-white">Funciona sin internet</p>
+                      <p className="text-gray-400 text-sm">Perfecto para consultorios rurales o visitas domiciliarias</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <svg className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     <div>
-                      <p className="font-semibold text-gray-900">100% cumplimiento normativo</p>
-                      <p className="text-gray-600 text-sm">HIPAA, GDPR y LGPD certificado desde el día uno</p>
+                      <p className="font-semibold text-white">100% cumplimiento normativo</p>
+                      <p className="text-gray-400 text-sm">HIPAA, GDPR y LGPD certificado desde el día uno</p>
                     </div>
                   </div>
                 </div>
@@ -159,41 +183,98 @@ export default function Home() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <a
                     href="#demo"
-                    className="inline-flex items-center justify-center bg-green-600 text-white px-8 py-4 rounded-lg hover:bg-green-700 transition-all font-bold text-lg shadow-xl shadow-green-600/30 hover:shadow-green-600/50"
+                    onClick={handleConfettiClick}
+                    className="inline-flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-bold text-lg shadow-xl shadow-green-500/30 hover:shadow-green-500/50 cursor-pointer"
                   >
-                    Ver demostración en vivo
+                    Acceso BETA Inmediato
                     <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </a>
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center justify-center border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:border-green-600 hover:text-green-600 transition-all font-semibold text-lg"
+                    className="inline-flex items-center justify-center border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-lg hover:border-green-400 hover:text-green-400 transition-all font-semibold text-lg"
                   >
                     Explorar plataforma
                   </Link>
                 </div>
 
-                {/* Social proof */}
-                <div className="mt-8 flex items-center space-x-6">
-                  <div className="flex -space-x-2">
-                    <div className="w-10 h-10 rounded-full bg-green-100 border-2 border-white flex items-center justify-center text-green-700 font-bold">
-                      M
+                {/* Social proof - Expandable Practices */}
+                <div className="mt-8">
+                  <button
+                    onClick={() => setShowPracticesList(!showPracticesList)}
+                    className="flex items-center space-x-6 hover:scale-105 transition-all duration-300 cursor-pointer group"
+                  >
+                    <div className="flex -space-x-2">
+                      <div className="w-10 h-10 rounded-full bg-green-400/20 border-2 border-green-400 flex items-center justify-center text-green-400 font-bold">
+                        M
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-blue-400/20 border-2 border-blue-400 flex items-center justify-center text-blue-400 font-bold">
+                        A
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-purple-400/20 border-2 border-purple-400 flex items-center justify-center text-purple-400 font-bold">
+                        R
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-orange-400/20 border-2 border-orange-400 flex items-center justify-center text-orange-400 font-bold text-sm">
+                        +50
+                      </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-blue-700 font-bold">
-                      A
+                    <div className="text-sm text-gray-300">
+                      <p className="font-semibold text-white group-hover:text-green-400 transition">Más de 50 prácticas médicas</p>
+                      <p className="flex items-center gap-2">
+                        ahorrando tiempo cada día
+                        <svg className={`w-4 h-4 transition-transform ${showPracticesList ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </p>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-purple-100 border-2 border-white flex items-center justify-center text-purple-700 font-bold">
-                      R
+                  </button>
+
+                  {/* Expandable Practice List */}
+                  {showPracticesList && (
+                    <div className="mt-4 bg-gradient-to-br from-gray-900 to-gray-800 border border-green-400/30 rounded-xl p-6 shadow-2xl animate-in slide-in-from-top duration-300">
+                      <h4 className="text-green-400 font-bold mb-4 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Clínicas que confían en Holi Labs
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3 text-sm text-gray-300">
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-400">•</span>
+                          <span>Clínica Médica del Valle</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-blue-400">•</span>
+                          <span>Centro de Atención Familiar</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-purple-400">•</span>
+                          <span>Consultorio Dr. Rodríguez</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-orange-400">•</span>
+                          <span>Clínica Santa María</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-400">•</span>
+                          <span>Medicina Integral México</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-blue-400">•</span>
+                          <span>Salud Total Querétaro</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-purple-400">•</span>
+                          <span>Centro Médico Guadalajara</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-orange-400">•</span>
+                          <span>+ 43 clínicas más...</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-orange-700 font-bold text-sm">
-                      +50
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <p className="font-semibold text-gray-900">Más de 50 prácticas médicas</p>
-                    <p>ahorrando tiempo cada día</p>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -737,10 +818,7 @@ export default function Home() {
                 Solicite su demostración personalizada
               </h2>
               <p className="text-xl text-gray-300 mb-4">
-                Le mostraremos exactamente cómo Holi Labs funciona para su práctica específica
-              </p>
-              <p className="text-gray-400">
-                🎁 Los primeros 10 en registrarse reciben 2 meses gratis
+                Acceso inmediato al dashboard BETA. Empieza a usar IA médica hoy mismo.
               </p>
             </div>
 

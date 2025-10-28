@@ -39,8 +39,8 @@ const detectUserLanguage = (): Locale => {
     }
   }
 
-  // 3. Default to Spanish
-  return defaultLocale;
+  // 3. Default to English
+  return 'en';
 };
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
