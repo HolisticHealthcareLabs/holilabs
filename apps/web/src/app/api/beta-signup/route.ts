@@ -30,104 +30,101 @@ export async function POST(request: Request) {
 
     const result = await sendEmail({
       to: email,
-      subject: '🎉 Bienvenido a Holi Labs BETA - Acceso Inmediato',
+      subject: '🎉 Welcome to Holi Labs BETA - Instant Access',
       html: `
         <!DOCTYPE html>
         <html>
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Bienvenido a Holi Labs BETA</title>
+            <title>Welcome to Holi Labs BETA</title>
           </head>
-          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0a0a0a;">
+          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #ffffff;">
             <table role="presentation" style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td align="center" style="padding: 40px 20px;">
-                  <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%); border-radius: 16px; border: 1px solid #38F2AE;">
+                  <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 16px; border: 2px solid #10b981;">
 
                     <!-- Header with BETA badge -->
                     <tr>
                       <td style="padding: 40px 40px 20px 40px; text-align: center;">
-                        <div style="display: inline-block; background: #38F2AE; color: #000; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 20px;">
-                          BETA
+                        <div style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; padding: 8px 20px; border-radius: 24px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 24px;">
+                          BETA ACCESS
                         </div>
-                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #38F2AE 0%, #014751 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                          <span style="color: #fff; font-size: 40px; font-weight: bold; line-height: 80px;">H</span>
-                        </div>
-                        <h1 style="margin: 0; color: #38F2AE; font-size: 32px; font-weight: bold;">¡Bienvenido a Holi Labs!</h1>
-                        <p style="margin: 10px 0 0 0; color: #a0a0a0; font-size: 16px;">Tu acceso BETA está listo</p>
+                        <h1 style="margin: 0; color: #111827; font-size: 36px; font-weight: 800;">Welcome to Holi Labs!</h1>
+                        <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 18px;">Your BETA access is ready</p>
                       </td>
                     </tr>
 
                     <!-- Content -->
                     <tr>
                       <td style="padding: 30px 40px;">
-                        <p style="margin: 0 0 20px 0; color: #e0e0e0; font-size: 16px; line-height: 24px;">
-                          Hola${name ? ` ${name}` : ''},
+                        <p style="margin: 0 0 20px 0; color: #374151; font-size: 16px; line-height: 26px;">
+                          Hi${name ? ` ${name}` : ''},
                         </p>
-                        <p style="margin: 0 0 20px 0; color: #e0e0e0; font-size: 16px; line-height: 24px;">
-                          ¡Gracias por unirte al programa BETA de Holi Labs! Tu acceso está activo y listo para usar.
+                        <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 26px;">
+                          Thank you for joining the Holi Labs BETA program! Your access is active and ready to use—no password needed.
                         </p>
 
                         <!-- Access Card -->
-                        <div style="background: #1a1a1a; border: 2px solid #38F2AE; border-radius: 12px; padding: 24px; margin: 30px 0;">
-                          <p style="margin: 0 0 16px 0; color: #38F2AE; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-                            🔐 TUS CREDENCIALES DE ACCESO
+                        <div style="background: #f9fafb; border: 2px solid #10b981; border-radius: 12px; padding: 28px; margin: 32px 0;">
+                          <p style="margin: 0 0 18px 0; color: #059669; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">
+                            🔐 YOUR ACCESS CREDENTIALS
                           </p>
-                          <p style="margin: 0 0 12px 0; color: #e0e0e0; font-size: 15px;">
-                            <strong style="color: #38F2AE;">Email:</strong> ${email}
+                          <p style="margin: 0 0 14px 0; color: #111827; font-size: 16px;">
+                            <strong style="color: #059669;">Email:</strong> ${email}
                           </p>
-                          <p style="margin: 0 0 12px 0; color: #e0e0e0; font-size: 15px;">
-                            <strong style="color: #38F2AE;">Modo:</strong> Demo BETA (acceso completo)
+                          <p style="margin: 0 0 14px 0; color: #111827; font-size: 16px;">
+                            <strong style="color: #059669;">Access:</strong> Full BETA Demo Mode
                           </p>
-                          <p style="margin: 0 0 0 0; color: #e0e0e0; font-size: 15px;">
-                            <strong style="color: #38F2AE;">URL:</strong> ${dashboardUrl}
+                          <p style="margin: 0 0 0 0; color: #111827; font-size: 16px;">
+                            <strong style="color: #059669;">Dashboard:</strong> <a href="${dashboardUrl}" style="color: #2563eb; text-decoration: underline;">${dashboardUrl}</a>
                           </p>
                         </div>
 
                         <!-- CTA Button -->
-                        <div style="text-align: center; margin: 30px 0;">
-                          <a href="${dashboardUrl}" style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #38F2AE 0%, #014751 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(56, 242, 174, 0.3);">
-                            🚀 Acceder al Dashboard
+                        <div style="text-align: center; margin: 36px 0;">
+                          <a href="${dashboardUrl}" style="display: inline-block; padding: 18px 56px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 18px; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);">
+                            🚀 Access Dashboard Now
                           </a>
                         </div>
 
                         <!-- Features -->
-                        <div style="background: #0a0a0a; border-radius: 8px; padding: 20px; margin: 30px 0;">
-                          <p style="margin: 0 0 16px 0; color: #38F2AE; font-size: 16px; font-weight: 600;">
-                            ✨ Características BETA incluidas:
+                        <div style="background: #f3f4f6; border-radius: 12px; padding: 24px; margin: 32px 0;">
+                          <p style="margin: 0 0 18px 0; color: #059669; font-size: 18px; font-weight: 700;">
+                            ✨ BETA Features Included:
                           </p>
-                          <ul style="margin: 0; padding-left: 20px; color: #c0c0c0; font-size: 14px; line-height: 24px;">
-                            <li>Asistente de Voz AI para SOAP notes</li>
-                            <li>Generación automática de documentación clínica</li>
-                            <li>Portal de pacientes con WhatsApp reminders</li>
-                            <li>E-prescripciones digitales</li>
-                            <li>Gestión inteligente de citas</li>
-                            <li>100% HIPAA/LGPD compliant</li>
+                          <ul style="margin: 0; padding-left: 24px; color: #4b5563; font-size: 15px; line-height: 28px;">
+                            <li><strong>AI Voice Assistant</strong> for automated SOAP notes</li>
+                            <li><strong>Clinical Documentation</strong> auto-generation</li>
+                            <li><strong>Patient Portal</strong> with WhatsApp reminders</li>
+                            <li><strong>Digital E-Prescriptions</strong></li>
+                            <li><strong>Intelligent Appointment Management</strong></li>
+                            <li><strong>100% HIPAA, GDPR & LGPD Compliant</strong></li>
                           </ul>
                         </div>
 
-                        <div style="background: #1a1a1a; border-left: 3px solid #38F2AE; border-radius: 4px; padding: 16px; margin: 20px 0;">
-                          <p style="margin: 0; color: #c0c0c0; font-size: 14px; line-height: 20px;">
-                            💡 <strong style="color: #38F2AE;">Tip:</strong> Estás en modo BETA demo - puedes explorar todas las características sin necesidad de configuración adicional.
+                        <div style="background: #dbeafe; border-left: 4px solid #2563eb; border-radius: 6px; padding: 20px; margin: 24px 0;">
+                          <p style="margin: 0; color: #1e40af; font-size: 15px; line-height: 24px;">
+                            💡 <strong>Quick Tip:</strong> You're in BETA demo mode—explore all features without any additional setup. Just click and start!
                           </p>
                         </div>
 
-                        <p style="margin: 20px 0 0 0; color: #c0c0c0; font-size: 14px; line-height: 20px;">
-                          ¿Necesitas ayuda? Responde a este email y nuestro equipo te asistirá.
+                        <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 15px; line-height: 24px;">
+                          Need help? Reply to this email and our team will assist you within 24 hours.
                         </p>
                       </td>
                     </tr>
 
                     <!-- Footer -->
                     <tr>
-                      <td style="padding: 30px 40px; background-color: #0a0a0a; border-radius: 0 0 16px 16px; border-top: 1px solid #2a2a2a;">
-                        <p style="margin: 0; color: #38F2AE; font-size: 14px; line-height: 20px; text-align: center;">
-                          <strong>Holi Labs</strong> – IA Médica con Privacidad de Primera Clase
+                      <td style="padding: 32px 40px; background-color: #f9fafb; border-radius: 0 0 16px 16px; border-top: 2px solid #e5e7eb;">
+                        <p style="margin: 0; color: #059669; font-size: 16px; line-height: 24px; text-align: center; font-weight: 700;">
+                          Holi Labs – Privacy-First Medical AI
                         </p>
-                        <p style="margin: 10px 0 0 0; color: #606060; font-size: 12px; text-align: center;">
+                        <p style="margin: 12px 0 0 0; color: #9ca3af; font-size: 13px; text-align: center;">
                           HIPAA | GDPR | LGPD Compliant<br/>
-                          © 2025 Holi Labs. Todos los derechos reservados.
+                          © 2025 Holi Labs. All rights reserved.
                         </p>
                       </td>
                     </tr>
@@ -139,37 +136,37 @@ export async function POST(request: Request) {
         </html>
       `,
       text: `
-🎉 Bienvenido a Holi Labs BETA
+🎉 Welcome to Holi Labs BETA
 
-Hola${name ? ` ${name}` : ''},
+Hi${name ? ` ${name}` : ''},
 
-¡Gracias por unirte al programa BETA de Holi Labs! Tu acceso está activo y listo para usar.
+Thank you for joining the Holi Labs BETA program! Your access is active and ready to use—no password needed.
 
-🔐 TUS CREDENCIALES DE ACCESO:
+🔐 YOUR ACCESS CREDENTIALS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Email: ${email}
-Modo: Demo BETA (acceso completo)
-URL: ${dashboardUrl}
+Access: Full BETA Demo Mode
+Dashboard: ${dashboardUrl}
 
-🚀 Acceder ahora:
+🚀 Access Now:
 ${dashboardUrl}
 
-✨ Características BETA incluidas:
-• Asistente de Voz AI para SOAP notes
-• Generación automática de documentación clínica
-• Portal de pacientes con WhatsApp reminders
-• E-prescripciones digitales
-• Gestión inteligente de citas
-• 100% HIPAA/LGPD compliant
+✨ BETA Features Included:
+• AI Voice Assistant for automated SOAP notes
+• Clinical Documentation auto-generation
+• Patient Portal with WhatsApp reminders
+• Digital E-Prescriptions
+• Intelligent Appointment Management
+• 100% HIPAA, GDPR & LGPD Compliant
 
-💡 Tip: Estás en modo BETA demo - puedes explorar todas las características sin necesidad de configuración adicional.
+💡 Quick Tip: You're in BETA demo mode—explore all features without any additional setup. Just click and start!
 
-¿Necesitas ayuda? Responde a este email y nuestro equipo te asistirá.
+Need help? Reply to this email and our team will assist you within 24 hours.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Holi Labs – IA Médica con Privacidad de Primera Clase
+Holi Labs – Privacy-First Medical AI
 HIPAA | GDPR | LGPD Compliant
-© 2025 Holi Labs. Todos los derechos reservados.
+© 2025 Holi Labs. All rights reserved.
       `,
       tags: [
         { name: 'type', value: 'beta_signup' },

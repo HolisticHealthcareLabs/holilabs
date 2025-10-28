@@ -1,6 +1,14 @@
 'use client';
 
+/**
+ * E-Prescriptions Dashboard
+ * Provider dashboard for managing prescriptions
+ * Features: List, filter, sign, send to pharmacy
+ */
+
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 export const dynamic = 'force-dynamic';
@@ -11,14 +19,17 @@ interface Prescription {
   medications: any[];
   diagnosis: string;
   instructions: string;
-  status: string;
+  status: 'PENDING' | 'SIGNED' | 'SENT' | 'FILLED' | 'CANCELLED';
   signedAt: string;
   createdAt: string;
+  sentToPharmacy: boolean;
+  prescriptionHash: string;
   patient: {
     id: string;
     firstName: string;
     lastName: string;
     tokenId: string;
+    dateOfBirth: string;
   };
   clinician: {
     id: string;
@@ -28,47 +39,32 @@ interface Prescription {
   };
 }
 
-interface Patient {
-  id: string;
-  firstName: string;
-  lastName: string;
-  mrn: string;
-}
-
 export default function PrescriptionsPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPatient, setSelectedPatient] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUser(user);
-        loadPatients();
+        loadPrescriptions();
       }
     });
   }, []);
 
-  const loadPatients = async () => {
-    try {
-      const response = await fetch('/api/patients?limit=100');
-      if (response.ok) {
-        const data = await response.json();
-        setPatients(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error loading patients:', error);
-    }
-  };
-
-  const loadPrescriptions = async (patientId: string) => {
+  const loadPrescriptions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/prescriptions?patientId=${patientId}`);
+      const url =
+        filterStatus !== 'all'
+          ? `/api/prescriptions?status=${filterStatus}`
+          : '/api/prescriptions';
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setPrescriptions(data.data || []);
@@ -81,81 +77,180 @@ export default function PrescriptionsPage() {
   };
 
   useEffect(() => {
-    if (selectedPatient) {
-      loadPrescriptions(selectedPatient);
-    } else {
-      setPrescriptions([]);
-      setLoading(false);
+    if (user) {
+      loadPrescriptions();
     }
-  }, [selectedPatient]);
+  }, [filterStatus, user]);
 
   const filteredPrescriptions = prescriptions.filter((prescription) => {
-    if (filterStatus === 'all') return true;
-    return prescription.status === filterStatus;
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    const patientName =
+      `${prescription.patient.firstName} ${prescription.patient.lastName}`.toLowerCase();
+    const medicationNames = prescription.medications
+      .map((m: any) => m.name.toLowerCase())
+      .join(' ');
+    return (
+      patientName.includes(searchLower) ||
+      medicationNames.includes(searchLower) ||
+      prescription.patient.tokenId?.toLowerCase().includes(searchLower)
+    );
   });
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
-  const sendToPharmacy = async (prescriptionId: string) => {
-    // Placeholder for pharmacy integration
-    alert('Funcionalidad de envío a farmacia próximamente. Esta función se integrará con APIs de farmacias.');
+  const getStatusBadge = (status: string) => {
+    const badges = {
+      PENDING: {
+        className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+        label: 'Pending Signature',
+        icon: '⏳',
+      },
+      SIGNED: {
+        className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+        label: 'Signed',
+        icon: '✓',
+      },
+      SENT: {
+        className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+        label: 'Sent to Pharmacy',
+        icon: '📤',
+      },
+      FILLED: {
+        className: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+        label: 'Filled',
+        icon: '✓',
+      },
+      CANCELLED: {
+        className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+        label: 'Cancelled',
+        icon: '✕',
+      },
+    };
+    const badge = badges[status as keyof typeof badges] || badges.PENDING;
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.className}`}>
+        {badge.icon} {badge.label}
+      </span>
+    );
+  };
+
+  const handleViewDetails = (prescriptionId: string) => {
+    router.push(`/dashboard/prescriptions/${prescriptionId}`);
+  };
+
+  const handleNewPrescription = () => {
+    // TODO: Navigate to new prescription page with patient selector
+    alert('New prescription flow coming soon! Use the existing MedicationPrescription component in patient details for now.');
+  };
+
+  const stats = {
+    total: prescriptions.length,
+    pending: prescriptions.filter((p) => p.status === 'PENDING').length,
+    signed: prescriptions.filter((p) => p.status === 'SIGNED').length,
+    sent: prescriptions.filter((p) => p.status === 'SENT').length,
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
-          <span className="mr-3">💊</span>
-          Recetas Médicas
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Gestiona y envía recetas médicas a farmacias asociadas
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              E-Prescriptions
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage and send prescriptions electronically
+            </p>
+          </div>
+          <button
+            onClick={handleNewPrescription}
+            className="px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white font-semibold rounded-lg hover:from-primary-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            New Prescription
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+          </div>
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border border-yellow-200 dark:border-yellow-700/50">
+            <p className="text-sm text-yellow-700 dark:text-yellow-400 mb-1">Pending</p>
+            <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-300">
+              {stats.pending}
+            </p>
+          </div>
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-700/50">
+            <p className="text-sm text-green-700 dark:text-green-400 mb-1">Signed</p>
+            <p className="text-2xl font-bold text-green-900 dark:text-green-300">
+              {stats.signed}
+            </p>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700/50">
+            <p className="text-sm text-blue-700 dark:text-blue-400 mb-1">Sent</p>
+            <p className="text-2xl font-bold text-blue-900 dark:text-blue-300">{stats.sent}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Search */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Patient Selection */}
+          {/* Search */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Seleccionar Paciente
+              Search
             </label>
-            <select
-              value={selectedPatient}
-              onChange={(e) => setSelectedPatient(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">-- Seleccionar paciente --</option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.firstName} {patient.lastName} (MRN: {patient.mrn})
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by patient name, medication, or token..."
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
           </div>
 
           {/* Status Filter */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Filtrar por Estado
+              Filter by Status
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              <option value="all">Todas</option>
-              <option value="SIGNED">Firmadas</option>
-              <option value="SENT">Enviadas</option>
-              <option value="DISPENSED">Dispensadas</option>
+              <option value="all">All Prescriptions</option>
+              <option value="PENDING">Pending</option>
+              <option value="SIGNED">Signed</option>
+              <option value="SENT">Sent</option>
+              <option value="FILLED">Filled</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
         </div>
@@ -164,28 +259,28 @@ export default function PrescriptionsPage() {
       {/* Prescriptions List */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Cargando recetas...</p>
-        </div>
-      ) : !selectedPatient ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <div className="text-6xl mb-4">💊</div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Selecciona un paciente
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Selecciona un paciente de la lista para ver sus recetas médicas
-          </p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 dark:border-primary-400 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading prescriptions...</p>
         </div>
       ) : filteredPrescriptions.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <div className="text-6xl mb-4">📋</div>
+          <div className="text-6xl mb-4">💊</div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            No hay recetas
+            No prescriptions found
           </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            Este paciente no tiene recetas médicas registradas
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {searchTerm
+              ? 'Try adjusting your search or filters'
+              : 'Create your first prescription to get started'}
           </p>
+          {!searchTerm && (
+            <button
+              onClick={handleNewPrescription}
+              className="px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-all"
+            >
+              Create First Prescription
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -199,41 +294,21 @@ export default function PrescriptionsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                      Receta para {prescription.patient.firstName}{' '}
-                      {prescription.patient.lastName}
+                      {prescription.patient.firstName} {prescription.patient.lastName}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Dr. {prescription.clinician.firstName}{' '}
-                      {prescription.clinician.lastName} - Lic.{' '}
-                      {prescription.clinician.licenseNumber}
+                      Token: {prescription.patient.tokenId} • DOB:{' '}
+                      {new Date(prescription.patient.dateOfBirth).toLocaleDateString()}
                     </p>
                   </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      prescription.status === 'SIGNED'
-                        ? 'bg-green-100 text-green-700'
-                        : prescription.status === 'SENT'
-                        ? 'bg-blue-100 text-blue-700'
-                        : prescription.status === 'DISPENSED'
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {prescription.status === 'SIGNED'
-                      ? '✓ Firmada'
-                      : prescription.status === 'SENT'
-                      ? '📤 Enviada'
-                      : prescription.status === 'DISPENSED'
-                      ? '✓ Dispensada'
-                      : prescription.status}
-                  </span>
+                  {getStatusBadge(prescription.status)}
                 </div>
 
                 {/* Diagnosis */}
                 {prescription.diagnosis && (
                   <div className="mb-4">
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Diagnóstico:
+                      Diagnosis:
                     </p>
                     <p className="text-sm text-gray-900 dark:text-white">
                       {prescription.diagnosis}
@@ -241,74 +316,38 @@ export default function PrescriptionsPage() {
                   </div>
                 )}
 
-                {/* Medications */}
+                {/* Medications Summary */}
                 <div className="mb-4">
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Medicamentos:
+                    Medications ({prescription.medications.length}):
                   </p>
-                  <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
                     {prescription.medications.map((med: any, index: number) => (
-                      <div
+                      <span
                         key={index}
-                        className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700/50"
+                        className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium"
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {med.name}
-                            </p>
-                            {med.genericName && med.genericName !== med.name && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                ({med.genericName})
-                              </p>
-                            )}
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                              <span className="font-medium">Dosis:</span>{' '}
-                              {med.dose} - {med.frequency}
-                            </p>
-                            {med.instructions && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                {med.instructions}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        {med.name} {med.dose}
+                      </span>
                     ))}
                   </div>
                 </div>
 
-                {/* Instructions */}
-                {prescription.instructions && (
-                  <div className="mb-4">
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Instrucciones adicionales:
-                    </p>
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {prescription.instructions}
-                    </p>
-                  </div>
-                )}
-
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <p>Firmada: {formatDate(prescription.signedAt)}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      Token Paciente: {prescription.patient.tokenId}
+                    <p>
+                      Created: {formatDate(prescription.createdAt)}
+                      {prescription.signedAt &&
+                        ` • Signed: ${formatDate(prescription.signedAt)}`}
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    {prescription.status === 'SIGNED' && (
-                      <button
-                        onClick={() => sendToPharmacy(prescription.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-sm"
-                      >
-                        📤 Enviar a Farmacia
-                      </button>
-                    )}
-                    <button className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
-                      📄 Ver Detalles
+                    <button
+                      onClick={() => handleViewDetails(prescription.id)}
+                      className="px-4 py-2 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-all"
+                    >
+                      View Details
                     </button>
                   </div>
                 </div>
@@ -318,21 +357,33 @@ export default function PrescriptionsPage() {
         </div>
       )}
 
-      {/* Pharmacy Integration Notice */}
-      <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-xl p-6">
-        <h3 className="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2 flex items-center">
-          <span className="mr-2">🏥</span>
-          Integración con Farmacias
+      {/* Info Banner */}
+      <div className="mt-8 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700/50 rounded-xl p-6">
+        <h3 className="text-lg font-bold text-primary-900 dark:text-primary-300 mb-2 flex items-center">
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          E-Prescriptions Feature
         </h3>
-        <p className="text-blue-800 dark:text-blue-400 mb-3">
-          Esta función permite enviar recetas médicas directamente a farmacias
-          asociadas. Próximas integraciones:
+        <p className="text-primary-800 dark:text-primary-400 mb-3">
+          This system provides secure, blockchain-verified electronic prescriptions with:
         </p>
-        <ul className="space-y-1 text-blue-800 dark:text-blue-400">
-          <li>• Farmacias Benavides</li>
-          <li>• Farmacias Guadalajara</li>
-          <li>• Farmacias del Ahorro</li>
-          <li>• API de Red de Farmacias Nacionales</li>
+        <ul className="space-y-1 text-primary-800 dark:text-primary-400">
+          <li>• Electronic signature support (PIN or signature pad)</li>
+          <li>• Tamper-proof prescription hashing</li>
+          <li>• Direct pharmacy transmission</li>
+          <li>• HIPAA-compliant audit trails</li>
+          <li>• Drug interaction checking</li>
         </ul>
       </div>
     </div>

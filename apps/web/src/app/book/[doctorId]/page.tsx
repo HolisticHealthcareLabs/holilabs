@@ -104,7 +104,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
         <div className="bg-white rounded-lg border border-gray-200 p-8 max-w-md text-center">
           <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Doctor Not Found</h2>
-          <p className="text-gray-600">{error || 'The doctor profile you're looking for doesn't exist.'}</p>
+          <p className="text-gray-600">{error || "The doctor profile you're looking for doesn't exist."}</p>
         </div>
       </div>
     );

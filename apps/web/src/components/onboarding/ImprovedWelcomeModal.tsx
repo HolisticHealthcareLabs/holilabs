@@ -54,7 +54,11 @@ export default function ImprovedWelcomeModal() {
       <div className="relative w-full max-w-4xl mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-600 to-purple-600 text-white p-8 text-center">
-          <div className="text-6xl mb-4">🚀</div>
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full mb-4">
+            <span className="text-6xl font-black bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+              H
+            </span>
+          </div>
           <h1 className="text-3xl font-bold mb-2">Welcome to Holi Labs!</h1>
           <p className="text-lg text-white/90">
             Let's get you started. What would you like to do first?
@@ -69,10 +73,12 @@ export default function ImprovedWelcomeModal() {
               onClick={handleAddFirstPatient}
               className="group relative bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-2 border-green-200 hover:border-green-300 rounded-xl p-6 text-left transition-all hover:scale-105 hover:shadow-lg"
             >
-              <div className="absolute top-4 right-4 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
-                👤
+              <div className="flex justify-end mb-3">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
+                  👤
+                </div>
               </div>
-              <div className="mb-16">
+              <div className="mb-12">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Add My First Patient</h3>
                 <p className="text-sm text-gray-600">
                   Start fresh by adding your first patient to the system
@@ -91,13 +97,15 @@ export default function ImprovedWelcomeModal() {
               onClick={handleEnableDemoMode}
               className="group relative bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-2 border-blue-200 hover:border-blue-300 rounded-xl p-6 text-left transition-all hover:scale-105 hover:shadow-lg"
             >
-              <div className="absolute top-4 right-4 px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
-                RECOMMENDED
+              <div className="flex justify-between items-start mb-3">
+                <span className="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
+                  RECOMMENDED
+                </span>
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
+                  ⚡
+                </div>
               </div>
-              <div className="absolute top-16 right-4 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
-                🎭
-              </div>
-              <div className="mb-16">
+              <div className="mb-12">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Explore with Demo Data</h3>
                 <p className="text-sm text-gray-600">
                   See how Holi Labs works with 10 realistic sample patients
@@ -116,10 +124,12 @@ export default function ImprovedWelcomeModal() {
               onClick={handleImport}
               className="group relative bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-2 border-purple-200 hover:border-purple-300 rounded-xl p-6 text-left transition-all hover:scale-105 hover:shadow-lg"
             >
-              <div className="absolute top-4 right-4 w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
-                📂
+              <div className="flex justify-end mb-3">
+                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
+                  📂
+                </div>
               </div>
-              <div className="mb-16">
+              <div className="mb-12">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Import Existing Patients</h3>
                 <p className="text-sm text-gray-600">
                   Upload a CSV file with your existing patient database
@@ -131,8 +141,10 @@ export default function ImprovedWelcomeModal() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-              <div className="absolute bottom-4 left-6 text-xs text-purple-600 font-medium">
-                Coming Soon
+              <div className="mt-2">
+                <span className="text-xs text-purple-600 font-medium bg-purple-100 px-2 py-1 rounded-full">
+                  Coming Soon
+                </span>
               </div>
             </button>
           </div>

@@ -68,6 +68,13 @@ model User {
   // Credential Verification
   credentials ProviderCredential[]
 
+  // Medical Imaging
+  patientMedicalImages  MedicalImage[]    @relation("PatientMedicalImages")
+  providerMedicalImages MedicalImage[]    @relation("ProviderMedicalImages")
+  uploadedMedicalImages MedicalImage[]    @relation("UploadedMedicalImages")
+  imageAccessLogs       ImageAccessLog[]
+  imageAnnotations      ImageAnnotation[]
+
   @@index([email])
   @@index([walletAddress])
   @@map("users")
@@ -596,14 +603,14 @@ model Patient {
   // Patient must explicitly consent to receive automated WhatsApp messages
   whatsappConsentGiven       Boolean   @default(false)
   whatsappConsentDate        DateTime? // When consent was given
-  whatsappConsentMethod      String?   // e.g., "Portal", "In-Person", "Verbal"
+  whatsappConsentMethod      String? // e.g., "Portal", "In-Person", "Verbal"
   whatsappConsentWithdrawnAt DateTime? // If patient withdraws consent
-  whatsappConsentLanguage    String?   // Language of consent (en/es/pt)
+  whatsappConsentLanguage    String? // Language of consent (en/es/pt)
 
   // Adherence monitoring preferences
-  medicationRemindersEnabled Boolean @default(false)
+  medicationRemindersEnabled  Boolean @default(false)
   appointmentRemindersEnabled Boolean @default(true)
-  labResultsAlertsEnabled Boolean @default(true)
+  labResultsAlertsEnabled     Boolean @default(true)
   preventiveCareAlertsEnabled Boolean @default(true)
 
   // Preferred contact times (for adherence reminders)
@@ -616,49 +623,49 @@ model Patient {
   // ========================================================================
 
   // Cardiovascular screening
-  lastBloodPressureCheck  DateTime?
-  lastCholesterolTest     DateTime?
-  cvdRiskScore            Float? // Framingham 10-year CVD risk (0-100%)
-  cvdRiskAssessmentDate   DateTime?
-  cvdRiskCategory         String? // "Low", "Medium", "High", "Very High"
+  lastBloodPressureCheck DateTime?
+  lastCholesterolTest    DateTime?
+  cvdRiskScore           Float? // Framingham 10-year CVD risk (0-100%)
+  cvdRiskAssessmentDate  DateTime?
+  cvdRiskCategory        String? // "Low", "Medium", "High", "Very High"
 
   // Diabetes screening
-  lastHbA1c               DateTime?
-  lastFastingGlucose      DateTime?
-  diabetesRiskScore       Float? // FINDRISC score (0-26)
-  diabetesRiskDate        DateTime?
-  diabetesRiskCategory    String? // "Low", "Moderate", "High", "Very High"
-  prediabetesDetected     Boolean @default(false)
-  enrolledInDPP           Boolean @default(false) // Diabetes Prevention Program
-  dppStartDate            DateTime?
+  lastHbA1c            DateTime?
+  lastFastingGlucose   DateTime?
+  diabetesRiskScore    Float? // FINDRISC score (0-26)
+  diabetesRiskDate     DateTime?
+  diabetesRiskCategory String? // "Low", "Moderate", "High", "Very High"
+  prediabetesDetected  Boolean   @default(false)
+  enrolledInDPP        Boolean   @default(false) // Diabetes Prevention Program
+  dppStartDate         DateTime?
 
   // Cancer screening
-  lastMammogram           DateTime?
-  lastPapSmear            DateTime?
-  lastColonoscopy         DateTime?
-  lastProstateScreening   DateTime? // PSA test
+  lastMammogram         DateTime?
+  lastPapSmear          DateTime?
+  lastColonoscopy       DateTime?
+  lastProstateScreening DateTime? // PSA test
 
   // General health screening
-  lastPhysicalExam        DateTime?
-  lastDentalCheckup       DateTime?
-  lastEyeExam             DateTime?
-  lastImmunizationUpdate  DateTime?
+  lastPhysicalExam       DateTime?
+  lastDentalCheckup      DateTime?
+  lastEyeExam            DateTime?
+  lastImmunizationUpdate DateTime?
 
   // Lifestyle risk factors (for risk calculation)
-  tobaccoUse                   Boolean @default(false)
-  tobaccoType                  String? // "Cigarettes", "Cigars", "Vape", "Smokeless"
-  tobaccoPackYears             Float? // Pack-years for CVD risk
-  alcoholUse                   Boolean @default(false)
-  alcoholDrinksPerWeek         Int?
-  physicalActivityMinutesWeek  Int? // Minutes per week
-  dietQualityScore             Int? // 0-100 Mediterranean diet score
+  tobaccoUse                  Boolean @default(false)
+  tobaccoType                 String? // "Cigarettes", "Cigars", "Vape", "Smokeless"
+  tobaccoPackYears            Float? // Pack-years for CVD risk
+  alcoholUse                  Boolean @default(false)
+  alcoholDrinksPerWeek        Int?
+  physicalActivityMinutesWeek Int? // Minutes per week
+  dietQualityScore            Int? // 0-100 Mediterranean diet score
 
   // BMI tracking
-  heightCm                Float?
-  weightKg                Float?
-  bmi                     Float?
-  bmiCategory             String? // "Underweight", "Normal", "Overweight", "Obese"
-  lastBMIUpdate           DateTime?
+  heightCm      Float?
+  weightKg      Float?
+  bmi           Float?
+  bmiCategory   String? // "Underweight", "Normal", "Overweight", "Obese"
+  lastBMIUpdate DateTime?
 
   // Metadata
   isActive            Boolean @default(true)
@@ -1222,8 +1229,9 @@ model Appointment {
   situations     AppointmentSituation[]
   noShowHistory  NoShowHistory? // Phase 5: No-show tracking
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  MedicalImage MedicalImage[]
 
   @@index([patientId])
   @@index([clinicianId])
@@ -3763,4 +3771,227 @@ enum VerificationResult {
   NOT_FOUND // Not found in external database
   ERROR // Verification attempt failed
   PENDING // Still processing
+}
+
+// ============================================================================
+// MEDICAL IMAGING SYSTEM
+// ============================================================================
+// HIPAA-compliant medical image storage with de-identification and audit trail
+
+model MedicalImage {
+  id String @id @default(cuid())
+
+  // Core Image Information
+  filename       String // Original filename
+  storedFilename String // De-identified filename on disk
+  fileExtension  String // png, jpg, dcm, etc.
+  filePath       String // Relative path from storage root
+  fileSize       Int // Size in bytes
+  mimeType       String // image/jpeg, application/dicom, etc.
+
+  // Medical Metadata
+  imageType    MedicalImageType // X-ray, MRI, CT, etc.
+  modality     String? // DICOM modality code (CR, CT, MR, US, etc.)
+  bodyPart     String? // Anatomical region
+  laterality   String? // LEFT, RIGHT, BILATERAL
+  viewPosition String? // AP, PA, LATERAL, etc.
+
+  // Study Information
+  studyDescription String?   @db.Text
+  studyDate        DateTime?
+  acquisitionDate  DateTime?
+
+  // De-identification Information
+  isDeidentified         Boolean   @default(false)
+  deidentificationDate   DateTime?
+  removedPHI             Json? // Array of removed PHI elements
+  deidentificationMethod String? // Method used for de-identification
+
+  // DICOM Specific (if applicable)
+  isDICOM           Boolean @default(false)
+  studyInstanceUID  String? @unique // DICOM Study Instance UID
+  seriesInstanceUID String? // DICOM Series Instance UID
+  sopInstanceUID    String? @unique // DICOM SOP Instance UID
+  dicomMetadata     Json? // Additional DICOM tags
+
+  // Image Processing
+  thumbnailPath    String? // Path to thumbnail image
+  processed        Boolean               @default(false)
+  processingStatus ImageProcessingStatus @default(PENDING)
+  processingError  String?               @db.Text
+
+  // Clinical Context
+  patientId String?
+  patient   User?   @relation("PatientMedicalImages", fields: [patientId], references: [id], onDelete: SetNull)
+
+  providerId String?
+  provider   User?   @relation("ProviderMedicalImages", fields: [providerId], references: [id], onDelete: SetNull)
+
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  // Clinical Notes
+  findings          String? @db.Text
+  clinicalNotes     String? @db.Text
+  diagnosis         String? @db.Text
+  recommendedAction String? @db.Text
+
+  // AI Analysis (if applicable)
+  aiAnalysisPerformed Boolean @default(false)
+  aiFindings          Json? // AI-detected findings
+  aiConfidenceScore   Float? // 0-1 confidence score
+  aiModelVersion      String? // Version of AI model used
+
+  // Sharing and Permissions
+  isShared       Boolean   @default(false)
+  sharedWith     Json? // Array of user IDs with access
+  shareExpiresAt DateTime?
+
+  // Audit and Compliance
+  uploadedBy     String // User ID who uploaded
+  uploadedByUser User      @relation("UploadedMedicalImages", fields: [uploadedBy], references: [id], onDelete: Restrict)
+  uploadedAt     DateTime  @default(now())
+  lastAccessedAt DateTime?
+  accessCount    Int       @default(0)
+
+  // Soft Delete
+  isDeleted      Boolean   @default(false)
+  deletedAt      DateTime?
+  deletedBy      String?
+  deletionReason String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  accessLogs  ImageAccessLog[]
+  annotations ImageAnnotation[]
+
+  @@index([patientId])
+  @@index([providerId])
+  @@index([appointmentId])
+  @@index([uploadedBy])
+  @@index([imageType])
+  @@index([studyDate])
+  @@index([isDeidentified])
+  @@index([isDeleted])
+  @@index([studyInstanceUID])
+  @@index([sopInstanceUID])
+  @@map("medical_images")
+}
+
+model ImageAccessLog {
+  id String @id @default(cuid())
+
+  // Image Reference
+  imageId String
+  image   MedicalImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  // User Information
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userRole String? // Provider, Patient, Admin
+
+  // Access Details
+  accessType ImageAccessType // VIEW, DOWNLOAD, DELETE, SHARE, etc.
+  accessedAt DateTime        @default(now())
+  ipAddress  String?
+  userAgent  String?         @db.Text
+
+  // Context
+  reason      String? @db.Text // Clinical reason for access
+  actionTaken String? @db.Text // What did they do with it
+
+  // Compliance
+  hipaaCompliant Boolean @default(true)
+  auditNotes     String? @db.Text
+
+  @@index([imageId])
+  @@index([userId])
+  @@index([accessedAt])
+  @@index([accessType])
+  @@map("image_access_logs")
+}
+
+model ImageAnnotation {
+  id String @id @default(cuid())
+
+  // Image Reference
+  imageId String
+  image   MedicalImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  // Annotation Data
+  annotationType AnnotationType // MEASUREMENT, MARKER, REGION, TEXT, ARROW
+  coordinates    Json // {x, y, width, height} or array of points
+  label          String? // Label for the annotation
+  description    String?        @db.Text
+  color          String? // Hex color for display
+
+  // Measurements (if applicable)
+  measurementValue Float? // Measured value
+  measurementUnit  String? // mm, cm, degrees, etc.
+
+  // Creator
+  createdBy String
+  creator   User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([imageId])
+  @@index([createdBy])
+  @@map("image_annotations")
+}
+
+// Enums for Medical Imaging
+
+enum MedicalImageType {
+  XRAY // X-Ray radiograph
+  CT // Computed Tomography
+  MRI // Magnetic Resonance Imaging
+  ULTRASOUND // Ultrasound
+  MAMMOGRAPHY // Mammogram
+  PET // Positron Emission Tomography
+  NUCLEAR_MEDICINE // Nuclear medicine scan
+  FLUOROSCOPY // Fluoroscopy
+  ENDOSCOPY // Endoscopic image
+  DERMOSCOPY // Dermatology image
+  FUNDUS // Retinal fundus photo
+  OCT // Optical Coherence Tomography
+  ECG // Electrocardiogram
+  EEG // Electroencephalogram
+  PATHOLOGY // Pathology slide
+  PHOTOGRAPH // Clinical photograph
+  OTHER
+}
+
+enum ImageProcessingStatus {
+  PENDING // Not yet processed
+  PROCESSING // Currently being processed
+  COMPLETED // Successfully processed
+  FAILED // Processing failed
+  SKIPPED // Processing not needed
+}
+
+enum ImageAccessType {
+  VIEW // Viewed the image
+  DOWNLOAD // Downloaded the image
+  UPLOAD // Uploaded the image
+  DELETE // Deleted the image
+  SHARE // Shared with another user
+  ANNOTATE // Added annotation
+  PRINT // Printed the image
+  EXPORT // Exported to external system
+  AI_ANALYSIS // Ran AI analysis
+}
+
+enum AnnotationType {
+  MEASUREMENT // Linear measurement
+  REGION // Region of interest
+  MARKER // Point marker
+  TEXT // Text annotation
+  ARROW // Arrow pointer
+  CIRCLE // Circle annotation
+  RECTANGLE // Rectangle annotation
+  FREEHAND // Freehand drawing
 }

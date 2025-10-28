@@ -418,9 +418,9 @@ export default function DashboardCommandCenter() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => router.push('/dashboard/patients')}
-                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/30 dark:hover:to-blue-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/30 dark:hover:to-blue-900/40 hover:-translate-y-2 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-2xl"
                 >
-                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center group-hover:scale-125 group-hover:rotate-6 transition-transform duration-300 mb-2">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -430,14 +430,14 @@ export default function DashboardCommandCenter() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Patients</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Patients</span>
                 </button>
 
                 <button
                   onClick={() => router.push('/dashboard/patients/new')}
-                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-900/30 dark:hover:to-green-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-900/30 dark:hover:to-green-900/40 hover:-translate-y-2 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-2xl"
                 >
-                  <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
+                  <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center group-hover:scale-125 group-hover:rotate-6 transition-transform duration-300 mb-2">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -447,14 +447,14 @@ export default function DashboardCommandCenter() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">New Patient</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">New Patient</span>
                 </button>
 
                 <button
                   onClick={() => router.push('/dashboard/tasks')}
-                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/30 hover:from-orange-100 hover:to-orange-200 dark:hover:from-orange-900/30 dark:hover:to-orange-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/30 hover:from-orange-100 hover:to-orange-200 dark:hover:from-orange-900/30 dark:hover:to-orange-900/40 hover:-translate-y-2 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-2xl"
                 >
-                  <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
+                  <div className="w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center group-hover:scale-125 group-hover:rotate-6 transition-transform duration-300 mb-2">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -464,14 +464,14 @@ export default function DashboardCommandCenter() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Tasks</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Tasks</span>
                 </button>
 
                 <button
                   onClick={() => router.push('/dashboard/reminders')}
-                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/30 hover:from-indigo-100 hover:to-indigo-200 dark:hover:from-indigo-900/30 dark:hover:to-indigo-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-900/30 hover:from-indigo-100 hover:to-indigo-200 dark:hover:from-indigo-900/30 dark:hover:to-indigo-900/40 hover:-translate-y-2 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-2xl"
                 >
-                  <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
+                  <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-125 group-hover:rotate-6 transition-transform duration-300 mb-2">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -481,14 +481,14 @@ export default function DashboardCommandCenter() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Reminders</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Reminders</span>
                 </button>
 
                 <button
                   onClick={() => router.push('/dashboard/scribe')}
-                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-900/30 hover:from-teal-100 hover:to-teal-200 dark:hover:from-teal-900/30 dark:hover:to-teal-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-900/30 hover:from-teal-100 hover:to-teal-200 dark:hover:from-teal-900/30 dark:hover:to-teal-900/40 hover:-translate-y-2 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-2xl"
                 >
-                  <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
+                  <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center group-hover:scale-125 group-hover:rotate-6 transition-transform duration-300 mb-2">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -498,17 +498,41 @@ export default function DashboardCommandCenter() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">AI Scribe</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">AI Scribe</span>
+                </button>
+
+                <button
+                  onClick={() => router.push('/dashboard/clinical-support')}
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-900/30 hover:from-emerald-100 hover:to-emerald-200 dark:hover:from-emerald-900/30 dark:hover:to-emerald-900/40 hover:-translate-y-2 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-2xl"
+                >
+                  <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-125 group-hover:rotate-6 transition-transform duration-300 mb-2">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Clinical Support</span>
                 </button>
 
                 <button
                   onClick={() => router.push('/dashboard/diagnosis')}
-                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-900/30 dark:hover:to-purple-900/40 rounded-xl transition group shadow-sm hover:shadow-md"
+                  className="flex flex-col items-center justify-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-900/30 dark:hover:to-purple-900/40 hover:-translate-y-2 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-2xl"
                 >
-                  <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition mb-2">
-                    <span className="text-2xl">🏥</span>
+                  <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center group-hover:scale-125 group-hover:rotate-6 transition-transform duration-300 mb-2">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                      />
+                    </svg>
                   </div>
-                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Clinical Tools</span>
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Clinical Tools</span>
                 </button>
               </div>
             </div>
