@@ -1,36 +1,19 @@
 /**
- * Server-Side Analytics
+ * Server-Side Analytics - STUB
  *
- * PostHog tracking for server-side API routes
+ * Analytics removed (PostHog removed)
+ * This file exists to prevent build errors from legacy imports
  * HIPAA-compliant - never includes PHI in events
  */
 
-import { PostHog } from 'posthog-node';
 import logger from '@/lib/logger';
 
-let posthogClient: PostHog | null = null;
-
 /**
- * Get or create PostHog client for server-side tracking
+ * Get or create analytics client for server-side tracking (STUB)
  */
-function getPostHogClient(): PostHog | null {
-  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
-
-  if (!apiKey) {
-    // Silently skip if not configured (development mode)
-    return null;
-  }
-
-  if (!posthogClient) {
-    posthogClient = new PostHog(apiKey, {
-      host: apiHost,
-      flushAt: 1, // Flush immediately for testing
-      flushInterval: 1000 // Flush every second
-    });
-  }
-
-  return posthogClient;
+function getAnalyticsClient(): null {
+  // Analytics removed - no-op
+  return null;
 }
 
 /**
@@ -49,48 +32,13 @@ export async function trackEvent(
   userId: string,
   properties: Record<string, any> = {}
 ): Promise<void> {
-  const client = getPostHogClient();
-
-  if (!client) {
-    // PostHog not configured, skip tracking
-    return;
-  }
-
-  try {
-    // Sanitize properties - remove any PHI that might have leaked
-    const sanitizedProperties = sanitizeProperties(properties);
-
-    // Add standard metadata
-    const enrichedProperties = {
-      ...sanitizedProperties,
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'production',
-      serverSide: true
-    };
-
-    // Capture event
-    client.capture({
-      distinctId: userId,
-      event,
-      properties: enrichedProperties
-    });
-
-    // Log for debugging
-    logger.debug({
-      message: 'Analytics event tracked',
-      event,
-      userId,
-      propertiesCount: Object.keys(enrichedProperties).length
-    });
-
-  } catch (error) {
-    // Never let analytics errors break the app
-    logger.error({
-      message: 'Failed to track analytics event',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      event
-    });
-  }
+  // Analytics removed - no-op
+  logger.debug({
+    message: '[Analytics removed] trackEvent called',
+    event,
+    userId,
+    propertiesCount: Object.keys(properties).length
+  });
 }
 
 /**
@@ -105,54 +53,20 @@ export async function identifyUser(
   userId: string,
   traits: Record<string, any> = {}
 ): Promise<void> {
-  const client = getPostHogClient();
-
-  if (!client) {
-    return;
-  }
-
-  try {
-    const sanitizedTraits = sanitizeProperties(traits);
-
-    client.identify({
-      distinctId: userId,
-      properties: sanitizedTraits
-    });
-
-    logger.debug({
-      message: 'User identified in analytics',
-      userId,
-      traitsCount: Object.keys(sanitizedTraits).length
-    });
-
-  } catch (error) {
-    logger.error({
-      message: 'Failed to identify user',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+  // Analytics removed - no-op
+  logger.debug({
+    message: '[Analytics removed] identifyUser called',
+    userId,
+    traitsCount: Object.keys(traits).length
+  });
 }
 
 /**
  * Flush events immediately (call before server shutdown)
  */
 export async function flushAnalytics(): Promise<void> {
-  const client = getPostHogClient();
-
-  if (!client) {
-    return;
-  }
-
-  try {
-    await client.shutdown();
-    posthogClient = null; // Reset client
-    logger.debug('Analytics events flushed');
-  } catch (error) {
-    logger.error({
-      message: 'Failed to flush analytics',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+  // Analytics removed - no-op
+  logger.debug('[Analytics removed] flushAnalytics called');
 }
 
 /**
