@@ -1,23 +1,23 @@
 import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
 
-// Define supported locales (Spanish primary for Mexican healthcare market)
-export const locales = ['es', 'en', 'pt'] as const;
-export const defaultLocale = 'es' as const;
+// Define supported locales (English primary, Spanish/Portuguese for LATAM)
+export const locales = ['en', 'es', 'pt'] as const;
+export const defaultLocale = 'en' as const;
 export type Locale = (typeof locales)[number];
 
 // Locale display labels
 export const localeLabels: Record<Locale, string> = {
-  pt: 'Português',
   en: 'English',
   es: 'Español',
+  pt: 'Português',
 };
 
 // Locale flag emojis
 export const localeFlags: Record<Locale, string> = {
-  pt: '🇧🇷',
   en: '🇺🇸',
   es: '🇪🇸',
+  pt: '🇧🇷',
 };
 
 export default getRequestConfig(async ({ locale }) => {
