@@ -9,6 +9,8 @@
  */
 
 import twilio from 'twilio';
+import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 // Lazy-load Twilio client to avoid build-time errors
 function getTwilioClient() {
@@ -47,6 +49,96 @@ function formatWhatsAppNumber(phoneNumber: string): string {
   }
 
   return `whatsapp:+${cleaned}`;
+}
+
+/**
+ * Check if patient has given consent for specific WhatsApp message type
+ * HIPAA/LGPD Compliance: Must check consent before sending automated messages
+ */
+async function checkPatientConsent(
+  patientPhone: string,
+  messageType: 'medication' | 'appointment' | 'labResults' | 'preventiveCare' | 'general'
+): Promise<{ hasConsent: boolean; language?: string; reason?: string }> {
+  try {
+    // Find patient by phone number
+    const patient = await prisma.patient.findFirst({
+      where: { phoneNumber: patientPhone },
+      select: {
+        id: true,
+        whatsappConsentGiven: true,
+        whatsappConsentWithdrawnAt: true,
+        whatsappConsentLanguage: true,
+        medicationRemindersEnabled: true,
+        appointmentRemindersEnabled: true,
+        labResultsAlertsEnabled: true,
+        preventiveCareAlertsEnabled: true,
+      },
+    });
+
+    if (!patient) {
+      logger.warn({
+        event: 'whatsapp_consent_check_failed',
+        reason: 'patient_not_found',
+        phoneNumber: patientPhone,
+      });
+      return { hasConsent: false, reason: 'Patient not found' };
+    }
+
+    // Check if consent was withdrawn
+    if (patient.whatsappConsentWithdrawnAt) {
+      logger.info({
+        event: 'whatsapp_consent_withdrawn',
+        patientId: patient.id,
+        withdrawnAt: patient.whatsappConsentWithdrawnAt,
+      });
+      return { hasConsent: false, reason: 'Consent withdrawn' };
+    }
+
+    // Check if general consent is given
+    if (!patient.whatsappConsentGiven) {
+      logger.info({
+        event: 'whatsapp_consent_not_given',
+        patientId: patient.id,
+      });
+      return { hasConsent: false, reason: 'Consent not given' };
+    }
+
+    // Check specific message type preference
+    const typeChecks = {
+      medication: patient.medicationRemindersEnabled,
+      appointment: patient.appointmentRemindersEnabled,
+      labResults: patient.labResultsAlertsEnabled,
+      preventiveCare: patient.preventiveCareAlertsEnabled,
+      general: true, // General messages always allowed if consent given
+    };
+
+    if (!typeChecks[messageType]) {
+      logger.info({
+        event: 'whatsapp_message_type_disabled',
+        patientId: patient.id,
+        messageType,
+      });
+      return { hasConsent: false, reason: `${messageType} reminders disabled` };
+    }
+
+    logger.info({
+      event: 'whatsapp_consent_verified',
+      patientId: patient.id,
+      messageType,
+    });
+
+    return {
+      hasConsent: true,
+      language: patient.whatsappConsentLanguage || 'en',
+    };
+  } catch (error) {
+    logger.error({
+      event: 'whatsapp_consent_check_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    // Fail closed - deny consent on error
+    return { hasConsent: false, reason: 'Consent check error' };
+  }
 }
 
 /**
@@ -232,6 +324,22 @@ export async function sendAppointmentConfirmationWhatsApp(
   language: 'pt' | 'es' = 'es'
 ): Promise<boolean> {
   try {
+    // HIPAA/LGPD Compliance: Check consent before sending
+    const consentCheck = await checkPatientConsent(patientPhone, 'appointment');
+
+    if (!consentCheck.hasConsent) {
+      logger.warn({
+        event: 'whatsapp_blocked_no_consent',
+        messageType: 'appointment_confirmation',
+        reason: consentCheck.reason,
+      });
+      return false; // Don't throw - allow other channels
+    }
+
+    // Use patient's preferred language if available
+    const preferredLanguage = (consentCheck.language as 'pt' | 'es' | 'en') || language;
+    const finalLanguage = preferredLanguage === 'en' ? 'es' : preferredLanguage; // Fallback to Spanish if English
+
     const client = getTwilioClient();
     const fromNumber = getTwilioWhatsAppNumber();
     const toNumber = formatWhatsAppNumber(patientPhone);
@@ -244,10 +352,14 @@ export async function sendAppointmentConfirmationWhatsApp(
     const message = await client.messages.create({
       from: fromNumber,
       to: toNumber,
-      body: messages[language],
+      body: messages[finalLanguage],
     });
 
-    console.log('✅ WhatsApp confirmation sent:', message.sid);
+    logger.info({
+      event: 'whatsapp_appointment_confirmation_sent',
+      messageSid: message.sid,
+      consentVerified: true,
+    });
     return true;
   } catch (error: any) {
     console.error('❌ WhatsApp confirmation failed:', error);
