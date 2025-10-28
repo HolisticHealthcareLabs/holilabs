@@ -6,8 +6,7 @@
  */
 
 import { useEffect } from 'react';
-import * as Sentry from '@sentry/nextjs';
-import { ExclamationTriangleIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
+import { ShieldExclamationIcon } from '@heroicons/react/24/outline';
 
 export default function AdminError({
   error,
@@ -17,13 +16,8 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error to Sentry
-    Sentry.captureException(error, {
-      tags: {
-        errorBoundary: 'admin',
-        route: '/dashboard/admin',
-      },
-    });
+    // Log error to console (Sentry removed)
+    console.error('[Admin Error]', error);
   }, [error]);
 
   return (

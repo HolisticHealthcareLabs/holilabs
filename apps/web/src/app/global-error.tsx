@@ -9,7 +9,7 @@
 
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
+
 import { useEffect } from 'react';
 import SupportContact from '@/components/SupportContact';
 
@@ -22,7 +22,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // Report error to Sentry
-    Sentry.captureException(error);
+    console.error('[Global Error]', error);
   }, [error]);
 
   return (
