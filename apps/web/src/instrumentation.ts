@@ -1,15 +1,27 @@
 /**
  * Next.js Instrumentation Hook
  * Runs once when the server starts up
- * Used to initialize background services like cron jobs
+ * Used to initialize Sentry and background services like cron jobs
  */
 
-export async function register() {
-  // Only run on server side
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { startAppointmentScheduler } = await import('./lib/jobs/appointment-scheduler');
+import * as Sentry from '@sentry/nextjs';
 
-    // Start the automated reminder scheduler
-    startAppointmentScheduler();
+export async function register() {
+  // Initialize Sentry
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('../sentry.server.config');
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('../sentry.edge.config');
+  }
+
+  // Only run background jobs on server side
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // TODO: Re-enable when node-cron is installed
+    // const { startAppointmentScheduler } = await import('./lib/jobs/appointment-scheduler');
+    // startAppointmentScheduler();
   }
 }
+
+export const onRequestError = Sentry.captureRequestError;
