@@ -17,7 +17,7 @@ export const PolicySchema = z.object({
     min_confidence: z.number(),
     fallback: z.enum(['REDACT', 'KEEP']),
   }),
-  dicom_profiles: z.record(z.object({
+  dicom_profiles: z.record(z.string(), z.object({
     scrub_tags: z.string(),
     preserve_windowing: z.boolean().optional(),
     burn_in_removal: z.boolean().optional(),

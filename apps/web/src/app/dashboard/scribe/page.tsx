@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useSession } from 'next-auth/react';
 import TranscriptViewer from '@/components/scribe/TranscriptViewer';
 import SOAPNoteEditor from '@/components/scribe/SOAPNoteEditor';
 import AudioWaveform from '@/components/scribe/AudioWaveform';
@@ -30,7 +30,8 @@ interface TranscriptSegment {
 type RecordingState = 'idle' | 'recording' | 'paused' | 'processing' | 'completed';
 
 export default function AIScribePage() {
-  const [user, setUser] = useState<any>(null);
+  const sessionData = useSession();
+  const session = sessionData?.data ?? null;
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
@@ -50,18 +51,14 @@ export default function AIScribePage() {
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load user and patients
+  // Load patients
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUser(user);
-        loadPatients(user.id);
-      }
-    });
-  }, []);
+    if (session?.user?.id) {
+      loadPatients();
+    }
+  }, [session]);
 
-  const loadPatients = async (userId: string) => {
+  const loadPatients = async () => {
     try {
       const response = await fetch(`/api/patients?limit=100`);
       if (response.ok) {

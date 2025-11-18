@@ -102,6 +102,13 @@ export default function FormsPage() {
             📊 Formularios Enviados
           </Link>
           <Link
+            href="/dashboard/forms/builder"
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-medium shadow-lg shadow-purple-600/30 flex items-center gap-2"
+          >
+            <span>🎨</span>
+            <span>Form Builder</span>
+          </Link>
+          <Link
             href="/dashboard/forms/create-with-ai"
             className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-lg shadow-blue-600/30 flex items-center gap-2"
           >
@@ -297,9 +304,22 @@ export default function FormsPage() {
                 >
                   📤 Enviar
                 </button>
-                <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                <button
+                  onClick={() => alert('Vista previa próximamente')}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  title="Vista Previa"
+                >
                   👁️
                 </button>
+                {!template.isBuiltIn && (
+                  <button
+                    onClick={() => alert('Edición próximamente')}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    title="Editar"
+                  >
+                    ✏️
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}

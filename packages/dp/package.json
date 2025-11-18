@@ -1,18 +1,21 @@
 {
-  "name": "@holilabs/dp",
-  "version": "1.0.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "name": "@holi/dp",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {
     "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
     "test": "vitest"
   },
   "dependencies": {
-    "crypto": "^1.0.1",
-    "pdfkit": "^0.14.0"
+    "@types/pdfkit": "^0.17.3",
+    "pdfkit": "^0.17.2"
   },
   "devDependencies": {
-    "@types/pdfkit": "^0.13.3",
+    "@types/node": "^20.11.0",
     "typescript": "^5.3.3",
     "vitest": "^1.2.0"
   }
