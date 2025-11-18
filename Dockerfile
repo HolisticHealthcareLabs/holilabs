@@ -56,7 +56,10 @@ RUN pnpm build
 WORKDIR /app/apps/web
 RUN pnpm prisma generate
 
-# Build the web app
+# Build the web app with increased Node.js memory limit
+# Sentry source map upload disabled to reduce memory usage
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV SENTRY_IGNORE_API_RESOLUTION_ERROR=1
 RUN pnpm build
 
 FROM base AS runner
