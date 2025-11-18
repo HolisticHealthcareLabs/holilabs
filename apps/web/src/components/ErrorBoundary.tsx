@@ -13,6 +13,7 @@
 'use client';
 
 import React, { Component, ReactNode } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 
 interface ErrorBoundaryProps {
@@ -67,14 +68,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   };
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Report to Sentry
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
-    });
+    // Report to Sentry (if available and configured)
+    if (typeof Sentry !== 'undefined' && Sentry.captureException) {
+      try {
+        Sentry.captureException(error, {
+          contexts: {
+            react: {
+              componentStack: errorInfo.componentStack,
+            },
+          },
+        });
+      } catch (sentryError) {
+        // Silently fail if Sentry is not properly configured
+        console.warn('Sentry error reporting failed:', sentryError);
+      }
+    }
 
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);

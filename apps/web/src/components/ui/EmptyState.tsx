@@ -189,6 +189,36 @@ export function NoMessagesState() {
   );
 }
 
+export function NoClinicalNotesState({ onCreateNote }: { onCreateNote?: () => void }) {
+  return (
+    <EmptyState
+      illustration="documents"
+      title="No hay notas clínicas"
+      description="Comienza a documentar consultas con el asistente AI. Crea notas SOAP completas en segundos."
+      action={
+        onCreateNote
+          ? { label: 'Crear Primera Nota', onClick: onCreateNote }
+          : { label: 'Crear Primera Nota', href: '/clinical-notes?action=new' }
+      }
+    />
+  );
+}
+
+export function NoLabResultsState({ onAddResult }: { onAddResult?: () => void }) {
+  return (
+    <EmptyState
+      illustration="documents"
+      title="No hay resultados de laboratorio"
+      description="Registra resultados de pruebas y análisis para un seguimiento completo de la salud del paciente."
+      action={
+        onAddResult
+          ? { label: 'Agregar Primer Resultado', onClick: onAddResult }
+          : { label: 'Agregar Primer Resultado', href: '/lab-results?action=new' }
+      }
+    />
+  );
+}
+
 export function NoResultsState({ query, onClear }: { query?: string; onClear?: () => void }) {
   return (
     <EmptyState

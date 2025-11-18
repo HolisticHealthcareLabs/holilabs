@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { decryptToken, encryptToken } from './token-encryption';
+import { createDAVClient, DAVClient } from 'tsdav';
 
 interface CalendarEvent {
   id: string;
@@ -302,13 +303,129 @@ export async function syncAppleCalendar(userId: string) {
     return { success: false, error: 'Integration not found or disabled' };
   }
 
-  // Apple Calendar sync via CalDAV would require additional CalDAV library
-  // For now, return a placeholder
-  return {
-    success: true,
-    message: 'Apple Calendar sync requires CalDAV implementation',
-    synced: 0,
-  };
+  try {
+    // Decrypt credentials
+    const appleId = decryptToken(integration.accessToken); // Apple ID email
+    const appPassword = integration.refreshToken ? decryptToken(integration.refreshToken) : null; // App-specific password
+
+    if (!appPassword) {
+      return { success: false, error: 'Apple app-specific password not configured' };
+    }
+
+    // Create CalDAV client for iCloud
+    const client: DAVClient = await createDAVClient({
+      serverUrl: 'https://caldav.icloud.com',
+      credentials: {
+        username: appleId,
+        password: appPassword,
+      },
+      authMethod: 'Basic',
+      defaultAccountType: 'caldav',
+    });
+
+    // Fetch calendars
+    const calendars = await client.fetchCalendars();
+
+    if (!calendars || calendars.length === 0) {
+      return { success: false, error: 'No calendars found in Apple Calendar' };
+    }
+
+    // Use the first calendar (default calendar)
+    const primaryCalendar = calendars[0];
+
+    // Fetch appointments from Holi Labs database
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        providerId: userId,
+        startTime: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+          lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Next 30 days
+        },
+      },
+      include: {
+        patient: true,
+      },
+    });
+
+    let syncedCount = 0;
+
+    // Sync each appointment to Apple Calendar
+    for (const appointment of appointments) {
+      try {
+        // Check if event already exists via externalEventId
+        if (appointment.externalEventId) {
+          // Event already synced, skip
+          continue;
+        }
+
+        // Create iCalendar event format
+        const eventICS = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//HoliLabs//Calendar//EN
+BEGIN:VEVENT
+UID:${appointment.id}@holilabs.com
+DTSTAMP:${formatDateForICal(new Date())}
+DTSTART:${formatDateForICal(appointment.startTime)}
+DTEND:${formatDateForICal(appointment.endTime)}
+SUMMARY:${appointment.title || 'Consulta'}
+DESCRIPTION:Paciente: ${appointment.patient.firstName} ${appointment.patient.lastName}${appointment.notes ? `\\n${appointment.notes}` : ''}
+STATUS:${appointment.status === 'CONFIRMED' ? 'CONFIRMED' : 'TENTATIVE'}
+END:VEVENT
+END:VCALENDAR`;
+
+        // Create event in Apple Calendar via CalDAV
+        await client.createCalendarObject({
+          calendar: primaryCalendar,
+          filename: `${appointment.id}.ics`,
+          iCalString: eventICS,
+        });
+
+        // Update appointment with external event ID
+        await prisma.appointment.update({
+          where: { id: appointment.id },
+          data: {
+            externalEventId: `${appointment.id}@holilabs.com`,
+            syncedAt: new Date(),
+          },
+        });
+
+        syncedCount++;
+      } catch (eventError) {
+        console.error(`Failed to sync appointment ${appointment.id}:`, eventError);
+      }
+    }
+
+    // Update last sync time
+    await prisma.calendarIntegration.update({
+      where: { id: integration.id },
+      data: {
+        lastSyncAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      synced: syncedCount,
+      message: `Successfully synced ${syncedCount} appointments to Apple Calendar`,
+    };
+  } catch (error) {
+    console.error('Apple Calendar sync error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error during Apple Calendar sync',
+    };
+  }
+}
+
+// Helper function to format dates for iCalendar format (YYYYMMDDTHHMMSSZ)
+function formatDateForICal(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+  return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
 }
 
 // ============================================================================

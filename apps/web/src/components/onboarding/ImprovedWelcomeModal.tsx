@@ -43,8 +43,7 @@ export default function ImprovedWelcomeModal() {
 
   const handleImport = () => {
     handleClose();
-    // TODO: Navigate to import page (future feature)
-    alert('CSV import coming soon! For now, try adding a patient or exploring demo mode.');
+    router.push('/dashboard/patients/import');
   };
 
   if (!isOpen) return null;

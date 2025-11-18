@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { validateArray, sanitizeMedicationName } from '@/lib/security/validation';
+import { checkDrugInteractions } from '@/lib/openfda/drug-interactions';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -128,38 +129,39 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // Sanitize and normalize medication names
-      const normalizedMeds = medications.map((med: string) => {
-        const sanitized = sanitizeMedicationName(med);
-        return sanitized.toLowerCase().trim();
-      });
+      // Sanitize medication names
+      const sanitizedMeds = medications.map((med: string) => sanitizeMedicationName(med));
 
-      // Find interactions
-      const interactions: DrugInteraction[] = [];
+      // Check interactions using OpenFDA API + local database
+      const openFDAInteractions = await checkDrugInteractions(sanitizedMeds);
 
-      for (let i = 0; i < normalizedMeds.length; i++) {
-        for (let j = i + 1; j < normalizedMeds.length; j++) {
-          const med1 = normalizedMeds[i];
-          const med2 = normalizedMeds[j];
+      // Map to expected format
+      const interactions: DrugInteraction[] = openFDAInteractions.map((interaction) => {
+        // Map severity from API (high/moderate/low) to expected (major/moderate/minor)
+        const severityMap: Record<string, 'major' | 'moderate' | 'minor'> = {
+          high: 'major',
+          moderate: 'moderate',
+          low: 'minor',
+        };
 
-          // Check both directions
-          const interaction = DRUG_INTERACTIONS.find(
-            (int) =>
-              (int.drug1 === med1 && int.drug2 === med2) ||
-              (int.drug1 === med2 && int.drug2 === med1)
-          );
-
-          if (interaction) {
-            interactions.push({
-              drug1: medications[i],
-              drug2: medications[j],
-              severity: interaction.severity as 'major' | 'moderate' | 'minor',
-              description: interaction.description,
-              recommendation: interaction.recommendation,
-            });
-          }
+        // Generate recommendation based on severity
+        let recommendation = '';
+        if (interaction.severity === 'high') {
+          recommendation = 'Avoid combination if possible. Consult with clinical pharmacist if alternative unavailable.';
+        } else if (interaction.severity === 'moderate') {
+          recommendation = 'Use with caution. Monitor patient closely for adverse effects.';
+        } else {
+          recommendation = 'Monitor for potential interaction effects.';
         }
-      }
+
+        return {
+          drug1: interaction.drug1,
+          drug2: interaction.drug2,
+          severity: severityMap[interaction.severity],
+          description: interaction.description,
+          recommendation,
+        };
+      });
 
       // Sort by severity (major > moderate > minor)
       const severityOrder = { major: 3, moderate: 2, minor: 1 };

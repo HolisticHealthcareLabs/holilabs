@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { VerificationMethod, VerificationResult, VerificationStatus } from '@prisma/client';
+import { verifyNPI } from '@/lib/nppes/npi-verification';
 
 /**
  * POST /api/credentials/[id]/verify
@@ -159,15 +160,81 @@ async function attemptAutoVerification(
   try {
     // PLACEHOLDER: In production, integrate with actual verification APIs
 
-    // Simulate NPPES lookup for NPI credentials
+    // NPPES lookup for NPI credentials
     if (method === VerificationMethod.NPPES_LOOKUP && credential.credentialType === 'NPI') {
-      // TODO: Integrate with NPPES API (https://npiregistry.cms.hhs.gov/api/)
-      // For now, return mock result
+      const nppesResult = await verifyNPI(credential.number);
+
+      if (!nppesResult.verified) {
+        return {
+          status: VerificationResult.REJECTED,
+          matchScore: 0,
+          matchedData: null,
+          discrepancies: {
+            error: nppesResult.error || 'NPI not found in NPPES registry',
+          },
+        };
+      }
+
+      // Calculate match score based on name matching
+      let matchScore = 100;
+      const discrepancies: any = {};
+
+      // Compare names (if we have provider name in credential)
+      if (credential.providerName) {
+        const credentialName = credential.providerName.toLowerCase().trim();
+        const nppesName = nppesResult.name.toLowerCase().trim();
+
+        if (credentialName !== nppesName) {
+          matchScore -= 30;
+          discrepancies.name = {
+            expected: credential.providerName,
+            found: nppesResult.name,
+          };
+        }
+      }
+
+      // Compare specialty/taxonomy
+      if (credential.specialty && nppesResult.specialty) {
+        const credentialSpecialty = credential.specialty.toLowerCase();
+        const nppesSpecialty = nppesResult.specialty.toLowerCase();
+
+        if (!nppesSpecialty.includes(credentialSpecialty) && !credentialSpecialty.includes(nppesSpecialty)) {
+          matchScore -= 20;
+          discrepancies.specialty = {
+            expected: credential.specialty,
+            found: nppesResult.specialty,
+          };
+        }
+      }
+
+      // Determine verification status based on match score
+      let status: VerificationResult;
+      if (matchScore >= 90) {
+        status = VerificationResult.VERIFIED;
+      } else if (matchScore >= 70) {
+        status = VerificationResult.PENDING; // Needs manual review
+      } else {
+        status = VerificationResult.REJECTED;
+      }
+
       return {
-        status: VerificationResult.PENDING,
-        matchScore: null,
-        matchedData: { note: 'NPPES integration pending' },
-        discrepancies: null,
+        status,
+        matchScore,
+        matchedData: {
+          npi: nppesResult.npi,
+          name: nppesResult.name,
+          providerType: nppesResult.providerType,
+          specialty: nppesResult.specialty,
+          credential: nppesResult.credential,
+          licenseNumber: nppesResult.licenseNumber,
+          licenseState: nppesResult.licenseState,
+          address: nppesResult.address,
+          phone: nppesResult.phone,
+          status: nppesResult.status,
+          enumerationDate: nppesResult.enumerationDate,
+          lastUpdated: nppesResult.lastUpdated,
+        },
+        discrepancies: Object.keys(discrepancies).length > 0 ? discrepancies : null,
       };
     }
 

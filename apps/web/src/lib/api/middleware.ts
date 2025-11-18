@@ -4,7 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { csrfProtection } from '@/lib/security/csrf';
@@ -241,29 +240,36 @@ export function requireAuth() {
         return next();
       }
 
-      const supabase = createClient();
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+      // ===================================================================
+      // DEMO MODE AUTHENTICATION (MVP)
+      // ===================================================================
+      // TODO: Replace with NextAuth or proper authentication system
+      // For MVP development, use demo user from database
+      // ===================================================================
 
-      if (error || !user) {
-        return NextResponse.json(
-          { error: 'Unauthorized - Please login' },
-          { status: 401 }
-        );
-      }
+      const demoEmail = process.env.DEMO_USER_EMAIL || 'doctor@holilabs.com';
 
-      // Fetch user from database with role
+      // Fetch demo user from database
       const dbUser = await prisma.user.findUnique({
-        where: { supabaseId: user.id },
-        select: { id: true, email: true, role: true },
+        where: { email: demoEmail },
+        select: { id: true, email: true, role: true, firstName: true, lastName: true },
       });
 
       if (!dbUser) {
+        // If demo user doesn't exist, create one
+        const log = createLogger({ requestId: context.requestId });
+        log.warn({
+          event: 'demo_user_not_found',
+          email: demoEmail,
+          msg: 'Demo user not found in database. Please seed the database.',
+        });
+
         return NextResponse.json(
-          { error: 'User not found in database' },
-          { status: 404 }
+          {
+            error: 'Demo user not configured',
+            details: 'Please run database seed to create demo users',
+          },
+          { status: 500 }
         );
       }
 

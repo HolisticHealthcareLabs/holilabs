@@ -1,17 +1,21 @@
 {
-  "name": "@holilabs/utils",
-  "version": "1.0.0",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "name": "@holi/utils",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {
     "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
     "test": "vitest"
   },
   "dependencies": {
-    "crypto": "^1.0.1",
-    "pino": "^8.17.2"
+    "pino": "^8.17.2",
+    "pino-pretty": "^10.3.1"
   },
   "devDependencies": {
+    "@types/node": "^20.11.0",
     "typescript": "^5.3.3",
     "vitest": "^1.2.0"
   }

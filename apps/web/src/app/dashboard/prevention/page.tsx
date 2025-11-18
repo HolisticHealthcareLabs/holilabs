@@ -1,10 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import DashboardTile, { TileColor } from '@/components/dashboard/DashboardTile';
 
 export const dynamic = 'force-dynamic';
+
+interface PreventiveCareRecommendation {
+  id: string;
+  patientId: string;
+  patientName: string;
+  category: string;
+  recommendation: string;
+  dueDate: Date;
+  priority: 'high' | 'medium' | 'low';
+  status: 'overdue' | 'due_soon' | 'scheduled' | 'completed';
+}
 
 interface ProtocolTemplate {
   id: string;
@@ -195,11 +207,16 @@ const protocolTemplates: ProtocolTemplate[] = [
 ];
 
 export default function PreventionPage() {
+  const sessionData = useSession();
+  const session = sessionData?.data ?? null;
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<'interventions' | 'screenings' | 'education'>(
     'interventions'
   );
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('all');
+  const [recommendations, setRecommendations] = useState<PreventiveCareRecommendation[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  const [showDashboard, setShowDashboard] = useState(true);
 
   const specialties = Array.from(new Set(protocolTemplates.map((p) => p.specialty)));
 
@@ -207,6 +224,145 @@ export default function PreventionPage() {
     selectedSpecialty === 'all'
       ? protocolTemplates
       : protocolTemplates.filter((p) => p.specialty === selectedSpecialty);
+
+  // Fetch preventive care recommendations
+  useEffect(() => {
+    async function fetchRecommendations() {
+      try {
+        // Call the preventive care API
+        const response = await fetch('/api/clinical/preventive-care');
+        if (response.ok) {
+          const data = await response.json();
+          // Transform API response to recommendations format
+          const recs: PreventiveCareRecommendation[] = data.recommendations?.map((rec: any) => ({
+            id: rec.id,
+            patientId: rec.patientId,
+            patientName: rec.patientName || 'Unknown Patient',
+            category: rec.category,
+            recommendation: rec.recommendation,
+            dueDate: new Date(rec.dueDate),
+            priority: rec.priority,
+            status: rec.status,
+          })) || [];
+          setRecommendations(recs);
+        }
+      } catch (error) {
+        console.error('Error fetching preventive care recommendations:', error);
+        // Use mock data if API fails
+        setRecommendations(getMockRecommendations());
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    }
+
+    if (session?.user) {
+      fetchRecommendations();
+    }
+  }, [session]);
+
+  const getMockRecommendations = (): PreventiveCareRecommendation[] => {
+    return [
+      {
+        id: '1',
+        patientId: 'pat-001',
+        patientName: 'María González García',
+        category: 'Cancer Screening',
+        recommendation: 'Mastografía anual (Mujer, 45 años)',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        priority: 'high',
+        status: 'due_soon',
+      },
+      {
+        id: '2',
+        patientId: 'pat-001',
+        patientName: 'María González García',
+        category: 'Cardiovascular',
+        recommendation: 'Perfil lipídico semestral',
+        dueDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+        priority: 'high',
+        status: 'overdue',
+      },
+      {
+        id: '3',
+        patientId: 'pat-001',
+        patientName: 'María González García',
+        category: 'Diabetes',
+        recommendation: 'HbA1c trimestral',
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
+        priority: 'medium',
+        status: 'scheduled',
+      },
+      {
+        id: '4',
+        patientId: 'pat-002',
+        patientName: 'Juan Pérez López',
+        category: 'Hypertension',
+        recommendation: 'Monitoreo ambulatorio de presión arterial 24h',
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        priority: 'medium',
+        status: 'due_soon',
+      },
+      {
+        id: '5',
+        patientId: 'pat-003',
+        patientName: 'Carlos Ramírez',
+        category: 'Cancer Screening',
+        recommendation: 'Colonoscopía (Hombre, 50+ años)',
+        dueDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
+        priority: 'low',
+        status: 'scheduled',
+      },
+    ];
+  };
+
+  const overdueCount = recommendations.filter(r => r.status === 'overdue').length;
+  const dueSoonCount = recommendations.filter(r => r.status === 'due_soon').length;
+  const scheduledCount = recommendations.filter(r => r.status === 'scheduled').length;
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-600 bg-red-100 border-red-200';
+      case 'medium': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+      case 'low': return 'text-green-600 bg-green-100 border-green-200';
+      default: return 'text-gray-600 bg-gray-100 border-gray-200';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'overdue': return 'text-red-700 bg-red-100';
+      case 'due_soon': return 'text-orange-700 bg-orange-100';
+      case 'scheduled': return 'text-blue-700 bg-blue-100';
+      case 'completed': return 'text-green-700 bg-green-100';
+      default: return 'text-gray-700 bg-gray-100';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'overdue': return 'Atrasado';
+      case 'due_soon': return 'Próximo';
+      case 'scheduled': return 'Programado';
+      case 'completed': return 'Completado';
+      default: return status;
+    }
+  };
+
+  const formatDaysUntil = (dueDate: Date) => {
+    const now = new Date();
+    const diffTime = dueDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return `${Math.abs(diffDays)} días atrasado`;
+    } else if (diffDays === 0) {
+      return 'Hoy';
+    } else if (diffDays === 1) {
+      return 'Mañana';
+    } else {
+      return `En ${diffDays} días`;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
@@ -242,6 +398,163 @@ export default function PreventionPage() {
           </div>
         </div>
       </div>
+
+      {/* Patient-Specific Prevention Dashboard */}
+      {showDashboard && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                <span className="mr-3">📋</span>
+                Cuidado Preventivo Activo
+              </h2>
+              <p className="text-gray-600 mt-1">
+                Recomendaciones pendientes para tus pacientes
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDashboard(false)}
+              className="text-gray-400 hover:text-gray-600 p-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white border-2 border-red-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Atrasados</p>
+                  <p className="text-4xl font-bold text-red-600">{overdueCount}</p>
+                </div>
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl">⚠️</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border-2 border-orange-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Próximos (30 días)</p>
+                  <p className="text-4xl font-bold text-orange-600">{dueSoonCount}</p>
+                </div>
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl">🔔</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border-2 border-blue-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Programados</p>
+                  <p className="text-4xl font-bold text-blue-600">{scheduledCount}</p>
+                </div>
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-3xl">✅</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recommendations Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">Recomendaciones Pendientes</h3>
+            </div>
+
+            {loadingRecommendations ? (
+              <div className="p-12 text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="text-gray-500 mt-4">Cargando recomendaciones...</p>
+              </div>
+            ) : recommendations.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-6xl mb-4">✨</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Todas las recomendaciones están al día
+                </h3>
+                <p className="text-gray-600">
+                  Excelente trabajo manteniendo el cuidado preventivo actualizado
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Paciente
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoría
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Recomendación
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Prioridad
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {recommendations.map((rec) => (
+                      <tr key={rec.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{rec.patientName}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {rec.category}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900">{rec.recommendation}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{formatDaysUntil(rec.dueDate)}</div>
+                          <div className="text-xs text-gray-500">{rec.dueDate.toLocaleDateString('es-MX')}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${getPriorityColor(rec.priority)}`}>
+                            {rec.priority.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(rec.status)}`}>
+                            {getStatusLabel(rec.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-blue-600 hover:text-blue-900 mr-3">
+                            Agendar
+                          </button>
+                          <button className="text-gray-600 hover:text-gray-900">
+                            Ver detalles
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="mb-8">

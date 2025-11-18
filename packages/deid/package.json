@@ -1,31 +1,23 @@
 {
-  "name": "@holilabs/deid",
-  "version": "1.0.0",
-  "description": "HIPAA-compliant de-identification and differential privacy library",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "name": "@holi/deid",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "lint": "eslint src/",
+    "test": "vitest"
   },
-  "keywords": [
-    "deidentification",
-    "privacy",
-    "k-anonymity",
-    "differential-privacy",
-    "hipaa",
-    "healthcare"
-  ],
-  "author": "HoliLabs",
-  "license": "MIT",
   "dependencies": {
-    "zod": "^3.25.76"
+    "compromise": "^14.14.4",
+    "compromise-numbers": "^1.4.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
   }
 }

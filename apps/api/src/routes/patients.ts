@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../index';
-import { pseudonymize } from '@holilabs/deid';
+import { pseudonymize } from '@holi/deid';
 
 const CreateTokenSchema = z.object({
   subjectKeys: z.array(z.string()),
