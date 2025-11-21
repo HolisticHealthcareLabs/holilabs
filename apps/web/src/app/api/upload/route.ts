@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { uploadFile } from '@/lib/storage/file-storage';
+import { uploadFile, type MulterFile } from '@/lib/storage/file-storage';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 
@@ -68,15 +68,15 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Create Express.Multer.File-like object
-    const multerFile = {
+    // Create MulterFile object
+    const multerFile: MulterFile = {
       fieldname: 'file',
       originalname: file.name,
       encoding: '7bit',
       mimetype: file.type,
       buffer: buffer,
       size: buffer.length,
-    } as Express.Multer.File;
+    };
 
     // Upload to storage
     const result = await uploadFile(multerFile, {

@@ -54,11 +54,14 @@ export async function POST(
     }
 
     // Check if expired
-    if (new Date() > new Date(formInstance.expiresAt)) {
-      return NextResponse.json(
-        { error: 'Form has expired' },
-        { status: 410 }
-      );
+    if (formInstance.expiresAt) {
+      const expirationDate = new Date(formInstance.expiresAt);
+      if (new Date() > expirationDate) {
+        return NextResponse.json(
+          { error: 'Form has expired' },
+          { status: 410 }
+        );
+      }
     }
 
     // Check if already completed

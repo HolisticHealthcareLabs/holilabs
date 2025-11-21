@@ -1,0 +1,9 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="4" width="20" height="16" rx="1" fill="#0078D4"/>
+  <path d="M12 8L20 4V20L12 16V8Z" fill="#0364B8"/>
+  <path d="M12 8L4 4V20L12 16V8Z" fill="#0078D4"/>
+  <path d="M12 8V16L20 20V4L12 8Z" fill="#28A8EA"/>
+  <path d="M12 8V16L4 20V4L12 8Z" fill="#0078D4"/>
+  <circle cx="8" cy="12" r="3.5" fill="white"/>
+  <text x="8" y="13.5" font-family="Arial, sans-serif" font-size="5" font-weight="bold" fill="#0078D4" text-anchor="middle">O</text>
+</svg>

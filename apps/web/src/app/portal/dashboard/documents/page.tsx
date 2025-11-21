@@ -79,7 +79,11 @@ export default function DocumentsPage() {
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentsByType, setDocumentsByType] = useState<Record<string, Document[]>>({});
-  const [summary, setSummary] = useState({ total: 0, totalSizeMB: '0', byType: {} });
+  const [summary, setSummary] = useState<{ total: number; totalSizeMB: string; byType: Record<string, number> }>({
+    total: 0,
+    totalSizeMB: '0',
+    byType: {} as Record<string, number>
+  });
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);

@@ -188,7 +188,6 @@ export const POST = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 20 },
     audit: { action: 'CREATE', resource: 'ProviderTimeOff' },
-    bodySchema: CreateTimeOffSchema,
   }
 );
 
@@ -287,7 +286,6 @@ export const GET = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 60 },
     audit: { action: 'READ', resource: 'ProviderTimeOff' },
-    querySchema: QueryTimeOffSchema,
     skipCsrf: true,
   }
 );

@@ -48,7 +48,7 @@ export async function GET(
     }
 
     // Check if form is expired
-    if (new Date() > new Date(formInstance.expiresAt)) {
+    if (formInstance.expiresAt && new Date() > new Date(formInstance.expiresAt)) {
       return NextResponse.json(
         { error: 'This form has expired' },
         { status: 410 }
@@ -141,7 +141,7 @@ export async function POST(
     }
 
     // Check if expired
-    if (new Date() > new Date(formInstance.expiresAt)) {
+    if (formInstance.expiresAt && new Date() > new Date(formInstance.expiresAt)) {
       return NextResponse.json(
         { error: 'Form has expired' },
         { status: 410 }

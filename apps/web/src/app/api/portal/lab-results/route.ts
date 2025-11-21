@@ -31,39 +31,42 @@ export async function GET(request: NextRequest) {
         testCode: true,
         value: true,
         unit: true,
-        referenceMin: true,
-        referenceMax: true,
+        referenceRange: true,
         status: true,
         resultDate: true,
         category: true,
         notes: true,
-        clinician: {
-          select: {
-            firstName: true,
-            lastName: true,
-            specialty: true,
-          },
-        },
       },
     });
 
     // Transform results to match frontend interface
-    const transformedResults = labResults.map((result) => ({
-      id: result.id,
-      testName: result.testName,
-      testCode: result.testCode || 'N/A',
-      value: parseFloat(result.value || '0'),
-      unit: result.unit || '',
-      referenceMin: parseFloat(result.referenceMin || '0'),
-      referenceMax: parseFloat(result.referenceMax || '100'),
-      date: result.resultDate.toISOString(),
-      status: result.status as 'normal' | 'high' | 'low' | 'critical',
-      doctorNotes: result.notes || undefined,
-      category: result.category || 'General',
-      doctor: result.clinician
-        ? `Dr. ${result.clinician.firstName} ${result.clinician.lastName}`
-        : undefined,
-    }));
+    const transformedResults = labResults.map((result) => {
+      // Parse referenceRange to extract min/max
+      let referenceMin = 0;
+      let referenceMax = 100;
+      if (result.referenceRange) {
+        const match = result.referenceRange.match(/(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)/);
+        if (match) {
+          referenceMin = parseFloat(match[1]);
+          referenceMax = parseFloat(match[2]);
+        }
+      }
+
+      return {
+        id: result.id,
+        testName: result.testName,
+        testCode: result.testCode || 'N/A',
+        value: parseFloat(result.value || '0'),
+        unit: result.unit || '',
+        referenceMin,
+        referenceMax,
+        date: result.resultDate.toISOString(),
+        status: result.status as 'normal' | 'high' | 'low' | 'critical',
+        doctorNotes: result.notes || undefined,
+        category: result.category || 'General',
+        doctor: undefined,
+      };
+    });
 
     return NextResponse.json({
       success: true,

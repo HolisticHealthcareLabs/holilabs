@@ -25,7 +25,7 @@ import {
   dpCount,
   dpHistogram,
   PrivacyBudgetTracker,
-} from '@holilabs/deid';
+} from '@holi/deid';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -60,9 +60,8 @@ export const POST = createProtectedRoute(
       const body = await request.json();
       const validated = ExportSchema.parse(body);
 
-      const options = validated.options || {};
-      const k = options.k || 5;
-      const epsilon = options.epsilon || 0.1;
+      const k = validated.options?.k ?? 5;
+      const epsilon = validated.options?.epsilon ?? 0.1;
 
       // Build secure query (NO PHI fields)
       const where: any = {
@@ -104,18 +103,18 @@ export const POST = createProtectedRoute(
       let kAnonymousPatients = patients;
       let kAnonymityResult;
 
-      if (options.enforceKAnonymity) {
+      if (validated.options?.enforceKAnonymity ?? true) {
         kAnonymityResult = checkKAnonymity(patients, {
           k,
           quasiIdentifiers: ['ageBand', 'region', 'gender'],
         });
 
-        if (!kAnonymityResult.isKAnonymous) {
-          const { kAnonymousRecords, suppressedCount } = applyKAnonymity(patients, {
+        if (!kAnonymityResult.isAnonymous) {
+          kAnonymousPatients = applyKAnonymity(patients, {
             k,
             quasiIdentifiers: ['ageBand', 'region', 'gender'],
           });
-          kAnonymousPatients = kAnonymousRecords;
+          const suppressedCount = patients.length - kAnonymousPatients.length;
           console.warn(`⚠️ k-Anonymity: Suppressed ${suppressedCount} records`);
         }
       }
@@ -125,25 +124,23 @@ export const POST = createProtectedRoute(
 
       if (validated.format === 'AGGREGATE') {
         // PHASE 2: Differential Privacy
-        const budgetKey = `${context.user.id}:${new Date().toISOString().split('T')[0]}`;
-
-        if (options.applyDifferentialPrivacy && !privacyBudget.canExecuteQuery(budgetKey, epsilon)) {
+        if ((validated.options?.applyDifferentialPrivacy ?? true) && !privacyBudget.canQuery(epsilon)) {
           return NextResponse.json({
             success: false,
             error: 'PRIVACY_BUDGET_EXCEEDED',
             message: 'Daily privacy budget exceeded',
-            remainingBudget: privacyBudget.getRemainingBudget(budgetKey),
+            remainingBudget: privacyBudget.getRemaining(),
           }, { status: 429 });
         }
 
-        if (options.applyDifferentialPrivacy) {
-          privacyBudget.consumeBudget(budgetKey, epsilon);
+        if ((validated.options?.applyDifferentialPrivacy ?? true)) {
+          privacyBudget.consume(epsilon, 'patient-export', context.user.id);
         }
 
         const totalCount = kAnonymousPatients.length;
-        const noisyCount = options.applyDifferentialPrivacy
+        const noisyCount = (validated.options?.applyDifferentialPrivacy ?? true)
           ? dpCount(totalCount, epsilon)
-          : { noisyValue: totalCount, originalValue: totalCount, noise: 0, epsilon: 0 };
+          : totalCount;
 
         // Gender distribution with DP
         const genderCounts: Record<string, number> = {};
@@ -151,20 +148,20 @@ export const POST = createProtectedRoute(
           genderCounts[p.gender || 'UNKNOWN'] = (genderCounts[p.gender || 'UNKNOWN'] || 0) + 1;
         });
 
-        const noisyGender = options.applyDifferentialPrivacy
+        const noisyGender = (validated.options?.applyDifferentialPrivacy ?? true)
           ? dpHistogram(genderCounts, epsilon / 2)
-          : { noisyValue: genderCounts, originalValue: genderCounts, noise: 0, epsilon: 0 };
+          : genderCounts;
 
         exportData = {
-          totalCount: noisyCount.noisyValue,
-          genderDistribution: noisyGender.noisyValue,
+          totalCount: noisyCount,
+          genderDistribution: noisyGender,
         };
 
         privacyMetadata = {
           differentialPrivacy: {
-            applied: options.applyDifferentialPrivacy,
-            epsilon: options.applyDifferentialPrivacy ? epsilon : null,
-            remainingBudget: privacyBudget.getRemainingBudget(budgetKey),
+            applied: (validated.options?.applyDifferentialPrivacy ?? true),
+            epsilon: (validated.options?.applyDifferentialPrivacy ?? true) ? epsilon : null,
+            remainingBudget: privacyBudget.getRemaining(),
           },
         };
       } else {
@@ -201,10 +198,10 @@ export const POST = createProtectedRoute(
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         exportFormat: validated.format,
         recordCount: kAnonymousPatients.length,
-        kAnonymityEnforced: options.enforceKAnonymity,
+        kAnonymityEnforced: (validated.options?.enforceKAnonymity ?? true),
         k: k,
-        differentialPrivacyApplied: options.applyDifferentialPrivacy,
-        epsilon: options.applyDifferentialPrivacy ? epsilon : null,
+        differentialPrivacyApplied: (validated.options?.applyDifferentialPrivacy ?? true),
+        epsilon: (validated.options?.applyDifferentialPrivacy ?? true) ? epsilon : null,
       });
 
       return NextResponse.json({
@@ -216,9 +213,9 @@ export const POST = createProtectedRoute(
           originalRecordCount: patients.length,
           privacy: {
             kAnonymity: {
-              enforced: options.enforceKAnonymity,
+              enforced: (validated.options?.enforceKAnonymity ?? true),
               k: k,
-              satisfied: kAnonymityResult?.isKAnonymous ?? true,
+              satisfied: kAnonymityResult?.isAnonymous ?? true,
               suppressedRecords: kAnonymityResult ? (patients.length - kAnonymousPatients.length) : 0,
             },
             ...privacyMetadata,

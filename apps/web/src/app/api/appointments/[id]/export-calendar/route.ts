@@ -50,8 +50,7 @@ export async function GET(
       endTime: appointment.endTime,
       patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
       clinicianName: `${appointment.clinician.firstName} ${appointment.clinician.lastName}`,
-      branch: appointment.branch || undefined,
-      notes: appointment.notes || undefined,
+      notes: appointment.description || undefined,
       type: appointment.type || undefined,
     };
 

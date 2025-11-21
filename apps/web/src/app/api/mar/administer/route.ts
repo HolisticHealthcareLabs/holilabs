@@ -102,27 +102,29 @@ export async function POST(request: NextRequest) {
     });
 
     // Audit log
-    await logAuditEvent({
-      userId: session.user.id,
-      action: 'MEDICATION_ADMINISTERED',
-      resource: 'MedicationAdministration',
-      resourceId: administration.id,
-      details: {
-        medicationId,
-        medicationName: administration.medication.name,
-        patientId,
-        patientMRN: administration.patient.mrn,
-        status,
-        scheduledTime: scheduled.toISOString(),
-        actualTime: actualTime?.toISOString(),
-        onTime,
-        minutesLate,
-        isPRN,
-        adverseReaction,
+    await logAuditEvent(
+      {
+        action: 'CREATE',
+        resource: 'MedicationAdministration',
+        resourceId: administration.id,
+        details: {
+          medicationId,
+          medicationName: administration.medication.name,
+          patientId,
+          patientMRN: administration.patient.mrn,
+          status,
+          scheduledTime: scheduled.toISOString(),
+          actualTime: actualTime?.toISOString(),
+          onTime,
+          minutesLate,
+          isPRN,
+          adverseReaction,
+        },
       },
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown',
-    });
+      request,
+      session.user.id,
+      session.user.email || undefined
+    );
 
     // If adverse reaction, create urgent notification
     if (adverseReaction) {

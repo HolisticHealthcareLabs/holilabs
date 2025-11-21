@@ -368,7 +368,7 @@ export function CommandPalette({ customCommands = [] }: CommandPaletteProps) {
             >
               <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl transition-all border border-gray-200 dark:border-gray-700">
                 <Combobox
-                  onChange={(command: Command) => {
+                  onChange={(command: Command | null) => {
                     if (command) {
                       command.action();
                     }

@@ -73,7 +73,7 @@ export async function GET(
       status: invoice.status,
       patient: {
         name: invoice.patient.firstName + ' ' + invoice.patient.lastName,
-        email: invoice.patient.email,
+        email: invoice.patient.email || 'no-email@holilabs.com',
         phone: invoice.patient.phone || undefined,
       },
       billingName: invoice.billingName || undefined,

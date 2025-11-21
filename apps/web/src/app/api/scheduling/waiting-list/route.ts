@@ -119,7 +119,6 @@ export const POST = createProtectedRoute(
         priority: validated.priority,
         reason: validated.reason,
         expiresAt,
-        addedBy: context.user?.id,
       },
       include: {
         patient: {
@@ -170,7 +169,6 @@ export const POST = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'CREATE', resource: 'WaitingList' },
-    bodySchema: AddToWaitingListSchema,
   }
 );
 
@@ -224,14 +222,6 @@ export const GET = createProtectedRoute(
             lastName: true,
             email: true,
             specialty: true,
-          },
-        },
-        appointment: {
-          select: {
-            id: true,
-            startTime: true,
-            endTime: true,
-            status: true,
           },
         },
       },

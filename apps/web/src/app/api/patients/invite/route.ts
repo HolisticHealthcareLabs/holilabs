@@ -287,13 +287,6 @@ export const POST = createProtectedRoute(
       });
 
       // Update patient last contacted timestamp
-      await prisma.patient.update({
-        where: { id: patient.id },
-        data: {
-          lastContactedAt: new Date(),
-        },
-      });
-
       // ===================================================================
       // RESPONSE
       // ===================================================================

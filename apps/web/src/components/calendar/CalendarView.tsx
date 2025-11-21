@@ -28,6 +28,14 @@ interface CalendarViewProps {
   initialView?: CalendarViewMode;
   onDateChange?: (date: Date) => void;
   onViewChange?: (view: CalendarViewMode) => void;
+  appointments?: any[];
+  availableSituations?: any[];
+  onDateRangeChange?: (start: Date, end: Date) => void;
+  onAppointmentClick?: (appointmentId: string) => void;
+  onStatusChange?: (appointmentId: string, newStatus: any) => Promise<void>;
+  onNotificationSend?: (appointmentId: string, channel: 'whatsapp' | 'email' | 'all', type: 'notify' | 'followup-1' | 'followup-2') => Promise<void>;
+  onSituationsChange?: (appointmentId: string, situationIds: string[]) => Promise<void>;
+  onPaymentNotificationSend?: (appointmentId: string, channel: 'whatsapp' | 'email' | 'in-app' | 'all') => Promise<void>;
 }
 
 export function CalendarView({

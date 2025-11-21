@@ -91,6 +91,11 @@ export default function AIScribePage() {
     try {
       setShowAudioSourceModal(false);
 
+      // Validate patient is selected
+      if (!selectedPatient) {
+        throw new Error('Please select a patient before recording');
+      }
+
       // Create scribe session
       const sessionResponse = await fetch('/api/scribe/sessions', {
         method: 'POST',

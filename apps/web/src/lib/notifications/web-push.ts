@@ -14,9 +14,37 @@ const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:support@holilabs.com';
 
-// Configure web-push
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+// Track if VAPID has been configured
+let vapidConfigured = false;
+
+/**
+ * Configure VAPID details for web-push
+ * Called lazily when needed to avoid build-time errors
+ */
+function ensureVapidConfigured(): boolean {
+  if (vapidConfigured) {
+    return true;
+  }
+
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    return false;
+  }
+
+  try {
+    // Validate key length before setting (VAPID public key must be 65 bytes when decoded)
+    const decoded = Buffer.from(VAPID_PUBLIC_KEY.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    if (decoded.length === 65) {
+      webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+      vapidConfigured = true;
+      return true;
+    } else {
+      console.warn('[WebPush] Invalid VAPID public key length. Expected 65 bytes, got', decoded.length);
+      return false;
+    }
+  } catch (error) {
+    console.warn('[WebPush] Failed to validate VAPID keys:', error);
+    return false;
+  }
 }
 
 export interface PushSubscription {
@@ -51,7 +79,7 @@ export async function sendPushNotification(
   payload: PushNotificationPayload
 ): Promise<boolean> {
   try {
-    if (!isWebPushConfigured()) {
+    if (!ensureVapidConfigured()) {
       logger.warn({
         event: 'webpush_not_configured',
         message: 'VAPID keys not configured',
@@ -199,7 +227,7 @@ export async function sendLabResultsAvailablePush(
  * Check if web push is configured
  */
 export function isWebPushConfigured(): boolean {
-  return !!(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
+  return ensureVapidConfigured();
 }
 
 /**

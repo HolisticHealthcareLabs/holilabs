@@ -11,7 +11,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import logger from '@/lib/logger';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
 
   providers: [
     // Supabase authentication for clinicians
@@ -30,6 +30,7 @@ export const authOptions: NextAuthOptions = {
           id: profile.sub,
           email: profile.email,
           name: profile.name || profile.email,
+          role: 'CLINICIAN',
         };
       },
     },
@@ -87,7 +88,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email as string;
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as any;
       }
 
       return session;

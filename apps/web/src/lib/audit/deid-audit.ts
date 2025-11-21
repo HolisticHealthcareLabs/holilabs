@@ -49,16 +49,16 @@ export async function logDeIDOperation(
     await prisma.auditLog.create({
       data: {
         userId,
-        action: `DEID_${operation}`,
+        action: `DEID_${operation}` as any,
         resource: 'PATIENT_DATA',
         resourceId: patientIds[0] || 'BULK',
-        metadata: {
+        details: {
           operation,
           patientCount: patientIds.length,
           patientIds: patientIds.slice(0, 100), // Limit to first 100 to avoid huge logs
           ...metadata,
         },
-        ipAddress: metadata.ipAddress,
+        ipAddress: metadata.ipAddress || 'unknown',
         userAgent: metadata.userAgent,
       },
     });
@@ -91,20 +91,21 @@ async function detectSuspiciousActivity(
   const oneHourAgo = new Date(Date.now() - 3600000);
 
   // Check for bulk access in last hour
+  // Note: Prisma doesn't support startsWith on enum fields, so we fetch all logs and filter in memory
   const recentLogs = await prisma.auditLog.findMany({
     where: {
       userId,
-      action: { startsWith: 'DEID_' },
-      createdAt: { gte: oneHourAgo },
+      timestamp: { gte: oneHourAgo },
     },
     select: {
-      metadata: true,
+      action: true,
+      details: true,
     },
-  });
+  }).then(logs => logs.filter(log => String(log.action).startsWith('DEID_')));
 
   // Calculate total patients accessed in last hour
   const totalPatientsAccessed = recentLogs.reduce((sum, log) => {
-    const metadata = log.metadata as DeIDAuditMetadata;
+    const metadata = log.details as DeIDAuditMetadata;
     return sum + (metadata.patientCount || 0);
   }, 0) + patientCount;
 
@@ -157,10 +158,11 @@ async function createSecurityAlert(alert: {
     await prisma.auditLog.create({
       data: {
         userId: 'SYSTEM',
-        action: 'SECURITY_ALERT',
+        action: 'SECURITY_ALERT' as any,
         resource: 'USER',
         resourceId: alert.userId,
-        metadata: alert,
+        details: alert,
+        ipAddress: 'SYSTEM',
       },
     });
 
@@ -182,23 +184,27 @@ export async function getDeIDAuditLogs(
   userId: string,
   limit: number = 50
 ): Promise<any[]> {
-  return await prisma.auditLog.findMany({
+  const logs = await prisma.auditLog.findMany({
     where: {
       userId,
-      action: { startsWith: 'DEID_' },
     },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
+    orderBy: { timestamp: 'desc' },
+    take: limit * 2, // Fetch extra to account for filtering
     select: {
       id: true,
       action: true,
       resource: true,
       resourceId: true,
-      metadata: true,
+      details: true,
       ipAddress: true,
-      createdAt: true,
+      timestamp: true,
     },
   });
+
+  // Filter for DEID actions and limit results
+  return logs
+    .filter(log => String(log.action).startsWith('DEID_'))
+    .slice(0, limit);
 }
 
 /**
@@ -218,10 +224,9 @@ export async function getDeIDStatistics(
   uniqueUsers: number;
   securityAlerts: number;
 }> {
-  const logs = await prisma.auditLog.findMany({
+  const allLogs = await prisma.auditLog.findMany({
     where: {
-      action: { startsWith: 'DEID_' },
-      createdAt: {
+      timestamp: {
         gte: startDate,
         lte: endDate,
       },
@@ -229,9 +234,12 @@ export async function getDeIDStatistics(
     select: {
       action: true,
       userId: true,
-      metadata: true,
+      details: true,
     },
   });
+
+  // Filter for DEID actions in memory
+  const logs = allLogs.filter(log => String(log.action).startsWith('DEID_'));
 
   const operationsByType: Record<string, number> = {};
   const uniqueUsers = new Set<string>();
@@ -239,16 +247,18 @@ export async function getDeIDStatistics(
 
   logs.forEach((log) => {
     operationsByType[log.action] = (operationsByType[log.action] || 0) + 1;
-    uniqueUsers.add(log.userId);
+    if (log.userId) {
+      uniqueUsers.add(log.userId);
+    }
 
-    const metadata = log.metadata as DeIDAuditMetadata;
+    const metadata = log.details as DeIDAuditMetadata;
     totalPatientsAccessed += metadata.patientCount || 0;
   });
 
   const securityAlerts = await prisma.auditLog.count({
     where: {
-      action: 'SECURITY_ALERT',
-      createdAt: {
+      action: 'SECURITY_ALERT' as any,
+      timestamp: {
         gte: startDate,
         lte: endDate,
       },

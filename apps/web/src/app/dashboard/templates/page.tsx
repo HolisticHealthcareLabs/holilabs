@@ -231,7 +231,14 @@ export default function TemplatesPage() {
 
           {/* Editor */}
           <NotificationTemplateEditor
-            template={editingTemplate || undefined}
+            template={editingTemplate ? {
+              ...editingTemplate,
+              doctorId: editingTemplate.doctorId ?? undefined,
+              subject: editingTemplate.subject ?? undefined,
+              sendTiming: editingTemplate.sendTiming ?? undefined,
+              sendTimingUnit: editingTemplate.sendTimingUnit ?? undefined,
+              requireConfirmation: editingTemplate.requireConfirmation ?? undefined,
+            } : undefined}
             mode={editingTemplate ? 'edit' : 'create'}
             onSave={handleSaveTemplate}
             onCancel={() => {

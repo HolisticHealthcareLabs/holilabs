@@ -237,7 +237,11 @@ export function EnhancedStatCard({
   };
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
       <Card
         variant="elevated"
         padding="lg"
@@ -246,8 +250,6 @@ export function EnhancedStatCard({
         className={`relative overflow-visible transition-all duration-300 ${
           onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' : ''
         } ${className}`}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
       >
         {/* Badge */}
         {badge && (

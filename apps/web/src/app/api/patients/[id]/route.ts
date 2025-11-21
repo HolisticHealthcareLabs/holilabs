@@ -181,8 +181,8 @@ export async function PUT(
     ];
 
     for (const field of allowedFields) {
-      if (validatedData[field] !== undefined) {
-        updateData[field] = validatedData[field];
+      if (validatedData[field as keyof typeof validatedData] !== undefined) {
+        updateData[field as keyof typeof updateData] = validatedData[field as keyof typeof validatedData];
       }
     }
 
@@ -194,12 +194,17 @@ export async function PUT(
       validatedData.mrn;
 
     if (criticalFieldsChanged) {
+      const dobValue = validatedData.dateOfBirth
+        ? (typeof validatedData.dateOfBirth === 'string'
+            ? validatedData.dateOfBirth
+            : validatedData.dateOfBirth.toISOString())
+        : existingPatient.dateOfBirth.toISOString();
+
       updateData.dataHash = generatePatientDataHash({
         id: existingPatient.id,
         firstName: validatedData.firstName || existingPatient.firstName,
         lastName: validatedData.lastName || existingPatient.lastName,
-        dateOfBirth:
-          validatedData.dateOfBirth || existingPatient.dateOfBirth.toISOString(),
+        dateOfBirth: dobValue,
         mrn: validatedData.mrn || existingPatient.mrn,
       });
       updateData.lastHashUpdate = new Date();

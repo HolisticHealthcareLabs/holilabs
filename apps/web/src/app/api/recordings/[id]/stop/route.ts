@@ -47,7 +47,7 @@ export async function POST(
     }
 
     // Verify ownership
-    if (recording.appointment.clinician.id !== (session.user as any).id) {
+    if (recording.appointment?.clinician?.id !== (session.user as any).id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para detener esta grabación' },
         { status: 403 }
@@ -66,7 +66,7 @@ export async function POST(
     }
 
     // Calculate duration
-    const startedAt = new Date(recording.startedAt);
+    const startedAt = new Date(recording.startedAt || new Date());
     const endedAt = new Date();
     const durationSeconds = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
 

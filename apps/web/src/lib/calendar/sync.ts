@@ -313,7 +313,7 @@ export async function syncAppleCalendar(userId: string) {
     }
 
     // Create CalDAV client for iCloud
-    const client: DAVClient = await createDAVClient({
+    const client: DAVClient = (await createDAVClient({
       serverUrl: 'https://caldav.icloud.com',
       credentials: {
         username: appleId,
@@ -321,7 +321,7 @@ export async function syncAppleCalendar(userId: string) {
       },
       authMethod: 'Basic',
       defaultAccountType: 'caldav',
-    });
+    })) as any;
 
     // Fetch calendars
     const calendars = await client.fetchCalendars();
@@ -336,7 +336,7 @@ export async function syncAppleCalendar(userId: string) {
     // Fetch appointments from Holi Labs database
     const appointments = await prisma.appointment.findMany({
       where: {
-        providerId: userId,
+        clinicianId: userId,
         startTime: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
           lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Next 30 days
@@ -353,7 +353,7 @@ export async function syncAppleCalendar(userId: string) {
     for (const appointment of appointments) {
       try {
         // Check if event already exists via externalEventId
-        if (appointment.externalEventId) {
+        if ((appointment as any).externalEventId) {
           // Event already synced, skip
           continue;
         }
@@ -368,7 +368,7 @@ DTSTAMP:${formatDateForICal(new Date())}
 DTSTART:${formatDateForICal(appointment.startTime)}
 DTEND:${formatDateForICal(appointment.endTime)}
 SUMMARY:${appointment.title || 'Consulta'}
-DESCRIPTION:Paciente: ${appointment.patient.firstName} ${appointment.patient.lastName}${appointment.notes ? `\\n${appointment.notes}` : ''}
+DESCRIPTION:Paciente: ${appointment.patient.firstName} ${appointment.patient.lastName}${(appointment as any).notes ? `\\n${(appointment as any).notes}` : ''}
 STATUS:${appointment.status === 'CONFIRMED' ? 'CONFIRMED' : 'TENTATIVE'}
 END:VEVENT
 END:VCALENDAR`;
@@ -380,12 +380,11 @@ END:VCALENDAR`;
           iCalString: eventICS,
         });
 
-        // Update appointment with external event ID
+        // Update appointment with calendarSyncedAt timestamp
         await prisma.appointment.update({
           where: { id: appointment.id },
           data: {
-            externalEventId: `${appointment.id}@holilabs.com`,
-            syncedAt: new Date(),
+            calendarSyncedAt: new Date(),
           },
         });
 

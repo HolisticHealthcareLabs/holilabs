@@ -45,7 +45,7 @@ interface PriorityPatient {
   // Appointments
   todayAppointment?: {
     id: string;
-    scheduledFor: Date;
+    startTime: Date;
     type: string;
   };
 
@@ -191,20 +191,17 @@ export async function GET(request: NextRequest) {
     // Fetch patients with relevant data
     const patients = await prisma.patient.findMany({
       where: {
-        OR: [
-          { clinicianId: userId },
-          { primaryCaregiverId: userId },
-        ],
+        primaryCaregiverId: userId,
         isActive: true,
       },
       include: {
         painAssessments: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { assessedAt: 'desc' },
           take: 1,
         },
         appointments: {
           where: {
-            scheduledFor: {
+            startTime: {
               gte: new Date(new Date().setHours(0, 0, 0, 0)),
               lt: new Date(new Date().setHours(23, 59, 59, 999)),
             },
@@ -212,7 +209,7 @@ export async function GET(request: NextRequest) {
               notIn: ['CANCELLED', 'COMPLETED'],
             },
           },
-          orderBy: { scheduledFor: 'asc' },
+          orderBy: { startTime: 'asc' },
           take: 1,
         },
         soapNotes: {
@@ -229,17 +226,13 @@ export async function GET(request: NextRequest) {
           },
           orderBy: { createdAt: 'desc' },
         },
-        carePlan: {
-          include: {
-            goals: {
-              where: {
-                targetDate: {
-                  lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due within 7 days
-                },
-                status: {
-                  notIn: ['COMPLETED', 'CANCELLED'],
-                },
-              },
+        carePlans: {
+          where: {
+            targetDate: {
+              lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due within 7 days
+            },
+            status: {
+              notIn: ['COMPLETED', 'CANCELLED'],
             },
           },
         },
@@ -283,7 +276,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Count care plan goals due
-        const carePlanGoalsDue = patient.carePlan?.goals?.length || 0;
+        const carePlanGoalsDue = patient.carePlans?.reduce((total, plan) => total + (plan.goals?.length || 0), 0) || 0;
 
         return {
           id: patient.id,
@@ -301,7 +294,7 @@ export async function GET(request: NextRequest) {
           todayAppointment: todayAppointment
             ? {
                 id: todayAppointment.id,
-                scheduledFor: todayAppointment.scheduledFor,
+                startTime: todayAppointment.startTime,
                 type: todayAppointment.type,
               }
             : undefined,

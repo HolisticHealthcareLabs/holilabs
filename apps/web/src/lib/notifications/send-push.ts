@@ -11,8 +11,26 @@ const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 const vapidEmail = process.env.VAPID_EMAIL || 'mailto:notifications@holilabs.com';
 
-if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey);
+// Track if VAPID has been configured
+let vapidConfigured = false;
+
+function ensureVapidConfigured(): boolean {
+  if (vapidConfigured) {
+    return true;
+  }
+
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    return false;
+  }
+
+  try {
+    webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey);
+    vapidConfigured = true;
+    return true;
+  } catch (error) {
+    console.warn('[WebPush] Failed to configure VAPID:', error);
+    return false;
+  }
 }
 
 export interface PushNotificationPayload {
@@ -52,7 +70,7 @@ export async function sendPushNotification({
   failedCount: number;
   errors: string[];
 }> {
-  if (!vapidPublicKey || !vapidPrivateKey) {
+  if (!ensureVapidConfigured()) {
     console.warn('VAPID keys not configured - push notifications disabled');
     return { success: false, sentCount: 0, failedCount: 0, errors: ['VAPID keys not configured'] };
   }

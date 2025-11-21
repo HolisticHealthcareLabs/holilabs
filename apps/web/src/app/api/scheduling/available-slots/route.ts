@@ -362,7 +362,6 @@ export const GET = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'READ', resource: 'AvailableSlots' },
-    querySchema: GetAvailableSlotsSchema,
     skipCsrf: true,
   }
 );

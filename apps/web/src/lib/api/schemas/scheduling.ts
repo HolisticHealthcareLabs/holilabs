@@ -37,32 +37,36 @@ const DayOfWeekSchema = z
   .max(6, 'Day of week must be between 0 (Sunday) and 6 (Saturday)');
 
 /**
+ * Base Provider Availability Object (without refinements)
+ */
+const ProviderAvailabilityBaseSchema = z.object({
+  clinicianId: z.string().cuid({ message: 'Invalid clinician ID format' }),
+  dayOfWeek: DayOfWeekSchema,
+  startTime: TimeStringSchema,
+  endTime: TimeStringSchema,
+  breakStart: TimeStringSchema.optional().nullable(),
+  breakEnd: TimeStringSchema.optional().nullable(),
+  slotDuration: z
+    .number()
+    .int()
+    .min(5, 'Slot duration must be at least 5 minutes')
+    .max(240, 'Slot duration cannot exceed 240 minutes')
+    .default(30),
+  maxBookings: z
+    .number()
+    .int()
+    .min(1, 'Must allow at least 1 booking per slot')
+    .max(10, 'Cannot exceed 10 bookings per slot')
+    .default(1),
+  effectiveFrom: z.coerce.date().optional(),
+  effectiveUntil: z.coerce.date().optional().nullable(),
+});
+
+/**
  * Create Provider Availability
  */
-export const CreateProviderAvailabilitySchema = z
-  .object({
-    clinicianId: z.string().cuid({ message: 'Invalid clinician ID format' }),
-    dayOfWeek: DayOfWeekSchema,
-    startTime: TimeStringSchema,
-    endTime: TimeStringSchema,
-    breakStart: TimeStringSchema.optional().nullable(),
-    breakEnd: TimeStringSchema.optional().nullable(),
-    slotDuration: z
-      .number()
-      .int()
-      .min(5, 'Slot duration must be at least 5 minutes')
-      .max(240, 'Slot duration cannot exceed 240 minutes')
-      .default(30),
-    maxBookings: z
-      .number()
-      .int()
-      .min(1, 'Must allow at least 1 booking per slot')
-      .max(10, 'Cannot exceed 10 bookings per slot')
-      .default(1),
-    effectiveFrom: z.coerce.date().optional(),
-    effectiveUntil: z.coerce.date().optional().nullable(),
-  })
-  .refine(
+export const CreateProviderAvailabilitySchema =
+  ProviderAvailabilityBaseSchema.refine(
     (data) => {
       // Validate startTime < endTime
       const [startHour, startMin] = data.startTime.split(':').map(Number);
@@ -76,54 +80,54 @@ export const CreateProviderAvailabilitySchema = z
       path: ['endTime'],
     }
   )
-  .refine(
-    (data) => {
-      // Validate break times if provided
-      if (!data.breakStart || !data.breakEnd) return true;
+    .refine(
+      (data) => {
+        // Validate break times if provided
+        if (!data.breakStart || !data.breakEnd) return true;
 
-      const [breakStartHour, breakStartMin] = data.breakStart
-        .split(':')
-        .map(Number);
-      const [breakEndHour, breakEndMin] = data.breakEnd.split(':').map(Number);
-      const [startHour, startMin] = data.startTime.split(':').map(Number);
-      const [endHour, endMin] = data.endTime.split(':').map(Number);
+        const [breakStartHour, breakStartMin] = data.breakStart
+          .split(':')
+          .map(Number);
+        const [breakEndHour, breakEndMin] = data.breakEnd.split(':').map(Number);
+        const [startHour, startMin] = data.startTime.split(':').map(Number);
+        const [endHour, endMin] = data.endTime.split(':').map(Number);
 
-      const breakStartMinutes = breakStartHour * 60 + breakStartMin;
-      const breakEndMinutes = breakEndHour * 60 + breakEndMin;
-      const startMinutes = startHour * 60 + startMin;
-      const endMinutes = endHour * 60 + endMin;
+        const breakStartMinutes = breakStartHour * 60 + breakStartMin;
+        const breakEndMinutes = breakEndHour * 60 + breakEndMin;
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
 
-      // Break must be within working hours
-      const breakWithinHours =
-        breakStartMinutes >= startMinutes && breakEndMinutes <= endMinutes;
+        // Break must be within working hours
+        const breakWithinHours =
+          breakStartMinutes >= startMinutes && breakEndMinutes <= endMinutes;
 
-      // Break start must be before break end
-      const breakValid = breakStartMinutes < breakEndMinutes;
+        // Break start must be before break end
+        const breakValid = breakStartMinutes < breakEndMinutes;
 
-      return breakWithinHours && breakValid;
-    },
-    {
-      message: 'Break times must be within working hours and valid',
-      path: ['breakEnd'],
-    }
-  )
-  .refine(
-    (data) => {
-      // Validate effectiveUntil is after effectiveFrom
-      if (!data.effectiveFrom || !data.effectiveUntil) return true;
-      return data.effectiveUntil > data.effectiveFrom;
-    },
-    {
-      message: 'Effective until date must be after effective from date',
-      path: ['effectiveUntil'],
-    }
-  );
+        return breakWithinHours && breakValid;
+      },
+      {
+        message: 'Break times must be within working hours and valid',
+        path: ['breakEnd'],
+      }
+    )
+    .refine(
+      (data) => {
+        // Validate effectiveUntil is after effectiveFrom
+        if (!data.effectiveFrom || !data.effectiveUntil) return true;
+        return data.effectiveUntil > data.effectiveFrom;
+      },
+      {
+        message: 'Effective until date must be after effective from date',
+        path: ['effectiveUntil'],
+      }
+    );
 
 /**
  * Update Provider Availability
  */
 export const UpdateProviderAvailabilitySchema =
-  CreateProviderAvailabilitySchema.partial().omit({ clinicianId: true });
+  ProviderAvailabilityBaseSchema.partial().omit({ clinicianId: true });
 
 /**
  * Query Provider Availability

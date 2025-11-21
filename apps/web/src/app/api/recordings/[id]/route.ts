@@ -61,7 +61,7 @@ export async function GET(
 
     // Verify access (clinician who recorded it or patient)
     const isAuthorized =
-      recording.appointment.clinicianId === (session.user as any).id ||
+      recording.appointment?.clinicianId === (session.user as any).id ||
       recording.patientId === (session.user as any).id;
 
     if (!isAuthorized) {

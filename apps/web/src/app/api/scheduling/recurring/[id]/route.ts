@@ -196,7 +196,7 @@ export const PATCH = createProtectedRoute(
         frequency: existing.frequency,
         interval: existing.interval,
         daysOfWeek: existing.daysOfWeek,
-        dayOfMonth: existing.dayOfMonth,
+        dayOfMonth: existing.dayOfMonth ?? undefined,
         startTime: validated.startTime || existing.startTime,
         duration: validated.duration || existing.duration,
         seriesStart: existing.seriesStart,
@@ -230,7 +230,7 @@ export const PATCH = createProtectedRoute(
         frequency: existing.frequency,
         interval: existing.interval,
         daysOfWeek: existing.daysOfWeek,
-        dayOfMonth: existing.dayOfMonth,
+        dayOfMonth: existing.dayOfMonth ?? undefined,
         startTime: validated.startTime || existing.startTime,
         duration: validated.duration || existing.duration,
         seriesStart: existing.lastGeneratedDate || existing.seriesStart,
@@ -337,7 +337,6 @@ export const PATCH = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'UPDATE', resource: 'RecurringAppointment' },
-    bodySchema: UpdateRecurringAppointmentSchema,
   }
 );
 

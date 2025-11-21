@@ -249,7 +249,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
                     )}
                   </button>
 
-                  {navigator.share && (
+                  {typeof navigator !== 'undefined' && typeof navigator.share !== 'undefined' && (
                     <button
                       onClick={handleShareLink}
                       className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"

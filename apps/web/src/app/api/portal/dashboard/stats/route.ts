@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
           id: true,
           startTime: true,
           endTime: true,
-          notes: true,
+          description: true,
           status: true,
           clinician: {
             select: {
@@ -61,9 +61,10 @@ export async function GET(request: NextRequest) {
       }),
 
       // Unread notifications
-      prisma.patientNotification.count({
+      prisma.notification.count({
         where: {
-          patientUserId: session.patientUserId,
+          recipientId: patientId,
+          recipientType: 'PATIENT',
           isRead: false,
         },
       }),
@@ -87,15 +88,9 @@ export async function GET(request: NextRequest) {
         take: 3,
         select: {
           id: true,
-          noteType: true,
+          type: true,
           createdAt: true,
-          clinician: {
-            select: {
-              firstName: true,
-              lastName: true,
-              specialty: true,
-            },
-          },
+          authorId: true,
         },
       }),
 
@@ -143,7 +138,7 @@ export async function GET(request: NextRequest) {
             endTime: apt.endTime,
             clinician: `Dr. ${apt.clinician.firstName} ${apt.clinician.lastName}`,
             specialty: apt.clinician.specialty,
-            notes: apt.notes,
+            description: apt.description,
             status: apt.status,
           })),
         },
@@ -160,10 +155,9 @@ export async function GET(request: NextRequest) {
         consultations: {
           recent: recentConsultations.map((note) => ({
             id: note.id,
-            type: note.noteType,
+            type: note.type,
             date: note.createdAt,
-            clinician: `Dr. ${note.clinician.firstName} ${note.clinician.lastName}`,
-            specialty: note.clinician.specialty,
+            authorId: note.authorId,
           })),
         },
         forms: {

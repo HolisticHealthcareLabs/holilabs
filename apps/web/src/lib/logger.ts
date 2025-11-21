@@ -82,7 +82,7 @@ if (logtail) {
       if (typeof originalMethod === 'function' && ['trace', 'debug', 'info', 'warn', 'error', 'fatal'].includes(prop as string)) {
         return function(...args: any[]) {
           // Call original Pino logger
-          const result = originalMethod.apply(target, args);
+          const result = (originalMethod as any).apply(target, args);
 
           // Also send to Logtail
           const [objOrMsg, msg] = args;

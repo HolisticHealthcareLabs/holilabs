@@ -18,11 +18,11 @@ export interface CurrentUser {
  * Returns null if no user is logged in
  */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const supabase = createClient();
+  const supabase = createClient() as any;
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase?.auth?.getUser() ?? { data: { user: null } };
 
   if (!user) {
     return null;

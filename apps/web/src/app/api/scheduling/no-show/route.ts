@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { MarkNoShowSchema } from '@/lib/api/schemas/scheduling';
-import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { subDays, startOfDay, endOfDay, format } from 'date-fns';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -146,11 +146,10 @@ export const POST = createProtectedRoute(
         data: {
           appointmentId: validated.appointmentId,
           patientId: appointment.patientId,
-          clinicianId: appointment.clinicianId,
-          appointmentDate: appointment.startTime,
-          markedAt: new Date(),
+          scheduledDate: appointment.startTime,
+          scheduledTime: format(appointment.startTime, 'HH:mm'),
+          noShowMarkedAt: new Date(),
           markedBy: context.user?.id,
-          notes: validated.notes,
           contacted: validated.contacted,
           contactMethod: validated.contactMethod,
           contactNotes: validated.contactNotes,
@@ -169,15 +168,6 @@ export const POST = createProtectedRoute(
               phone: true,
             },
           },
-          clinician: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              specialty: true,
-            },
-          },
           appointment: {
             select: {
               id: true,
@@ -185,6 +175,15 @@ export const POST = createProtectedRoute(
               endTime: true,
               title: true,
               type: true,
+              clinician: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  specialty: true,
+                },
+              },
             },
           },
         },
@@ -213,7 +212,6 @@ export const POST = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'CREATE', resource: 'NoShowHistory' },
-    bodySchema: MarkNoShowSchema,
   }
 );
 
@@ -281,15 +279,6 @@ export const GET = createProtectedRoute(
             phone: true,
           },
         },
-        clinician: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            specialty: true,
-          },
-        },
         appointment: {
           select: {
             id: true,
@@ -297,10 +286,19 @@ export const GET = createProtectedRoute(
             endTime: true,
             title: true,
             type: true,
+            clinician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                specialty: true,
+              },
+            },
           },
         },
       },
-      orderBy: { appointmentDate: 'desc' },
+      orderBy: { scheduledDate: 'desc' },
     });
 
     // Calculate analytics
@@ -310,12 +308,12 @@ export const GET = createProtectedRoute(
     const feesCharged = noShowRecords.filter((r) => r.feeCharged).length;
     const feesPaid = noShowRecords.filter((r) => r.feePaid).length;
     const totalFeeAmount = noShowRecords.reduce(
-      (sum, r) => sum + (r.feeAmount || 0),
+      (sum, r) => sum + (r.feeAmount ? Number(r.feeAmount) : 0),
       0
     );
     const paidFeeAmount = noShowRecords
       .filter((r) => r.feePaid)
-      .reduce((sum, r) => sum + (r.feeAmount || 0), 0);
+      .reduce((sum, r) => sum + (r.feeAmount ? Number(r.feeAmount) : 0), 0);
 
     // Top offenders (patients with most no-shows)
     const patientNoShowCounts = noShowRecords.reduce((acc, record) => {
@@ -337,11 +335,11 @@ export const GET = createProtectedRoute(
 
     // No-show rate by clinician
     const clinicianNoShowCounts = noShowRecords.reduce((acc, record) => {
-      const key = record.clinicianId;
+      const key = record.appointment.clinician.id;
       if (!acc[key]) {
         acc[key] = {
-          clinicianId: record.clinicianId,
-          clinician: record.clinician,
+          clinicianId: record.appointment.clinician.id,
+          clinician: record.appointment.clinician,
           count: 0,
         };
       }
