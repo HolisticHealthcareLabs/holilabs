@@ -2,49 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 0G LABORATORY INDUSTRIAL AESTHETIC */
+/* APPLE CLINICAL DESIGN SYSTEM */
 
 @layer base {
   :root {
-    /* Clinical White Foundation */
+    /* Pure White Foundation */
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 210 11% 15%;
 
-    /* Card System */
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 0%;
+    /* Card System - Apple-style elevated surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 210 11% 15%;
 
     /* Popover System */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 210 11% 15%;
 
-    /* Electric Green Accent */
-    --primary: 160 100% 50%;
-    --primary-foreground: 0 0% 0%;
+    /* Brand Green (Visible on white) */
+    --primary: 142 76% 39%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Light Gray */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
+    /* Subtle Gray Backgrounds */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 210 11% 15%;
 
-    /* Muted System */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
+    /* Muted System - High readability */
+    --muted: 240 5% 96%;
+    --muted-foreground: 214 9% 54%;
 
-    /* Accent Purple (0g branding) */
-    --accent: 270 80% 70%;
-    --accent-foreground: 0 0% 0%;
+    /* Accent - Apple Blue */
+    --accent: 211 100% 50%;
+    --accent-foreground: 0 0% 100%;
 
     /* Destructive Red */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Border System */
-    --border: 0 0% 92%;
-    --input: 0 0% 92%;
-    --ring: 160 100% 50%;
+    /* Border System - Subtle dividers */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 142 76% 39%;
 
-    /* Radius */
-    --radius: 0.5rem;
+    /* Radius - Apple-style rounded corners */
+    --radius: 12px;
   }
 }
 
@@ -54,62 +54,94 @@
   }
 
   body {
-    @apply bg-white text-black antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-    /* CARTESIAN GRID OVERLAY - 24px Laboratory Precision */
-    background-color: #FFFFFF;
-    background-image:
-      linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: -1px -1px;
+    @apply bg-white text-gray-900 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Typography Hierarchy */
+  /* Typography Hierarchy - Apple-style readability */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    @apply text-gray-900;
+  }
+
+  h1 {
+    @apply text-5xl md:text-6xl lg:text-7xl;
     font-weight: 700;
-    letter-spacing: -0.04em;
-    @apply text-black;
+    letter-spacing: -0.03em;
+  }
+
+  h2 {
+    @apply text-4xl md:text-5xl;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  p {
+    @apply text-gray-600 leading-relaxed;
   }
 
   code, pre {
-    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-    font-feature-settings: 'liga' 1, 'calt' 1;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace;
   }
 }
 
-/* COMMAND ISLAND COMPONENTS */
+/* APPLE-STYLE COMPONENT PATTERNS */
 @layer components {
-  .command-island {
-    @apply bg-white/80 backdrop-blur-xl border border-black/5;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  /* Frosted Glass Navigation */
+  .nav-frosted {
+    @apply bg-white/70 backdrop-blur-xl border-b border-gray-200;
+    -webkit-backdrop-filter: blur(20px);
   }
 
-  .glass-card {
-    @apply bg-gray-50/50 backdrop-blur-sm border border-black/5;
+  /* Elevated Card - Apple style */
+  .card-elevated {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
   }
 
+  /* Subtle Card - Soft background */
+  .card-subtle {
+    @apply bg-gray-50 rounded-xl border border-gray-100;
+  }
+
+  /* Glass Effect - iOS style */
+  .glass {
+    @apply bg-white/80 backdrop-blur-lg;
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Button Primary - Brand Green */
+  .btn-primary {
+    @apply bg-brand-green text-white px-6 py-3 rounded-full font-semibold;
+    @apply hover:bg-green-600 transition-all duration-200;
+    @apply active:scale-95;
+  }
+
+  /* Button Secondary - Apple Blue */
+  .btn-secondary {
+    @apply bg-brand-blue text-white px-6 py-3 rounded-full font-semibold;
+    @apply hover:bg-blue-600 transition-all duration-200;
+    @apply active:scale-95;
+  }
+
+  /* Metric Display */
   .metric-display {
-    @apply font-mono text-gray-500;
-  }
-
-  /* Laboratory Glow Effect */
-  .glow-purple {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2), 0 0 40px rgba(139, 92, 246, 0.1);
-  }
-
-  .glow-green {
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.2), 0 0 40px rgba(0, 255, 136, 0.1);
+    @apply font-mono text-gray-600 tracking-tight;
   }
 }
 
-/* ANIMATIONS */
+/* ANIMATIONS - Apple-inspired */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -117,10 +149,10 @@
   }
 }
 
-@keyframes slideInFromTop {
+@keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(-16px);
   }
   to {
     opacity: 1;
@@ -128,63 +160,69 @@
   }
 }
 
-@keyframes pulse-metric {
-  0%, 100% {
-    opacity: 1;
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-  50% {
-    opacity: 0.7;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .animate-slide-in {
-  animation: slideInFromTop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.animate-pulse-metric {
-  animation: pulse-metric 3s ease-in-out infinite;
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* UTILITY CLASSES */
-.text-electric {
-  @apply text-[#00ff88];
+.text-brand {
+  color: #00C853;
 }
 
-.bg-electric {
-  @apply bg-[#00ff88];
+.bg-brand {
+  background-color: #00C853;
 }
 
-.border-electric {
-  @apply border-[#00ff88];
+.border-brand {
+  border-color: #00C853;
 }
 
-.bg-lavender {
-  background: linear-gradient(135deg, #f3e7ff 0%, #e9d5ff 100%);
-}
-
-/* Scrollbar Styling */
+/* Scrollbar Styling - Apple style */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+  background-color: #D2D2D7;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+  background-color: #AEAEB2;
 }
 
-/* Selection Color */
+/* Selection Color - Brand Green */
 ::selection {
-  @apply bg-[#00ff88] text-black;
+  background-color: rgba(0, 200, 83, 0.2);
+  color: #1D1D1F;
+}
+
+/* Focus Rings - Apple-style */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #00C853, 0 0 0 4px rgba(0, 200, 83, 0.2);
 }
