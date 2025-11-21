@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const age = calculateAge(patient.dateOfBirth);
 
     // Mock risk scores (in production, these would be calculated from actual health data)
-    const riskScores = generateMockRiskScores(age, patient.gender);
+    const riskScores = generateMockRiskScores(age, patient.gender || 'UNKNOWN');
 
     // Fetch upcoming appointments that are preventive screenings
     const preventiveAppointments = await prisma.appointment.findMany({
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         startTime: true,
-        notes: true,
+        description: true,
         clinician: {
           select: {
             firstName: true,
@@ -83,13 +83,13 @@ export async function GET(request: NextRequest) {
         type: apt.clinician.specialty || 'Consulta General',
         dueDate: apt.startTime.toISOString(),
         status,
-        description: apt.notes || 'Consulta preventiva programada',
+        description: apt.description || 'Consulta preventiva programada',
         importance: daysUntil <= 7 ? 'Tu cita está muy próxima. No olvides asistir.' : undefined,
       };
     });
 
     // Add age-appropriate screenings
-    const recommendedScreenings = getRecommendedScreenings(age, patient.gender);
+    const recommendedScreenings = getRecommendedScreenings(age, patient.gender || 'UNKNOWN');
     interventions.push(...recommendedScreenings);
 
     // Generate health goals (mock data)

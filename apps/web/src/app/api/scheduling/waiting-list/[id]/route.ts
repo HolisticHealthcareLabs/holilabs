@@ -48,16 +48,6 @@ export const GET = createProtectedRoute(
             specialty: true,
           },
         },
-        appointment: {
-          select: {
-            id: true,
-            startTime: true,
-            endTime: true,
-            title: true,
-            type: true,
-            status: true,
-          },
-        },
       },
     });
 
@@ -92,13 +82,22 @@ export const GET = createProtectedRoute(
       (new Date().getTime() - entry.createdAt.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Get queue position
+    // Get queue position - count entries with higher priority or same priority but earlier
+    const priorityOrder: Record<string, string[]> = {
+      LOW: ['NORMAL', 'HIGH', 'URGENT'],
+      NORMAL: ['HIGH', 'URGENT'],
+      HIGH: ['URGENT'],
+      URGENT: [],
+    };
+
+    const higherPriorities = priorityOrder[entry.priority] || [];
+
     const position = await prisma.waitingList.count({
       where: {
         clinicianId: entry.clinicianId,
         status: 'WAITING',
         OR: [
-          { priority: { gt: entry.priority } },
+          { priority: { in: higherPriorities as any } },
           {
             AND: [
               { priority: entry.priority },
@@ -284,16 +283,6 @@ export const PATCH = createProtectedRoute(
             specialty: true,
           },
         },
-        appointment: {
-          select: {
-            id: true,
-            startTime: true,
-            endTime: true,
-            title: true,
-            type: true,
-            status: true,
-          },
-        },
       },
     });
 
@@ -313,7 +302,6 @@ export const PATCH = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'UPDATE', resource: 'WaitingList' },
-    bodySchema: UpdateWaitingListSchema,
   }
 );
 

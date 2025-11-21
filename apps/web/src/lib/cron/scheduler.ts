@@ -5,12 +5,12 @@
  * Runs the reminder executor every minute
  */
 
-import cron from 'node-cron';
+import cron, { ScheduledTask } from 'node-cron';
 import { executeScheduledReminders } from '@/lib/jobs/reminder-executor';
 import logger from '@/lib/logger';
 
 let isSchedulerRunning = false;
-let reminderJob: cron.ScheduledTask | null = null;
+let reminderJob: ScheduledTask | null = null;
 
 /**
  * Initialize the cron scheduler

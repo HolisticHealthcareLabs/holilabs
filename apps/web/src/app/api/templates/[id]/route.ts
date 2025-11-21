@@ -205,16 +205,19 @@ export async function PATCH(
     });
 
     // Audit log
-    await logAudit({
-      action: 'TEMPLATE_UPDATED',
-      userId,
-      resourceType: 'ClinicalTemplate',
-      resourceId: id,
-      details: {
-        templateName: updatedTemplate.name,
-        changes: data,
+    await logAudit(
+      {
+        action: 'UPDATE',
+        resource: 'ClinicalTemplate',
+        resourceId: id,
+        details: {
+          templateName: updatedTemplate.name,
+          changes: data,
+        },
       },
-    });
+      undefined,
+      userId
+    );
 
     return NextResponse.json({
       success: true,
@@ -273,16 +276,19 @@ export async function DELETE(
     });
 
     // Audit log
-    await logAudit({
-      action: 'TEMPLATE_DELETED',
-      userId,
-      resourceType: 'ClinicalTemplate',
-      resourceId: id,
-      details: {
-        templateName: template.name,
-        category: template.category,
+    await logAudit(
+      {
+        action: 'DELETE',
+        resource: 'ClinicalTemplate',
+        resourceId: id,
+        details: {
+          templateName: template.name,
+          category: template.category,
+        },
       },
-    });
+      undefined,
+      userId
+    );
 
     return NextResponse.json({
       success: true,

@@ -72,14 +72,18 @@ export default function PatientFilters({ onFilterChange, activeCount = 0 }: Pati
   const handleToggle = (filterType: keyof FilterOptions, value: string) => {
     const newFilters = { ...filters };
 
-    if (filterType === 'search' || filterType === 'sortBy' || filterType === 'sortOrder') {
-      newFilters[filterType] = value as any;
+    if (filterType === 'search') {
+      newFilters.search = value;
+    } else if (filterType === 'sortBy') {
+      newFilters.sortBy = value as FilterOptions['sortBy'];
+    } else if (filterType === 'sortOrder') {
+      newFilters.sortOrder = value as FilterOptions['sortOrder'];
     } else {
-      const currentArray = newFilters[filterType] as string[];
+      const currentArray = newFilters[filterType];
       if (currentArray.includes(value)) {
-        newFilters[filterType] = currentArray.filter(v => v !== value) as any;
+        newFilters[filterType] = currentArray.filter(v => v !== value);
       } else {
-        newFilters[filterType] = [...currentArray, value] as any;
+        newFilters[filterType] = [...currentArray, value];
       }
     }
 

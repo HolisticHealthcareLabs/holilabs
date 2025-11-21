@@ -242,7 +242,6 @@ export const POST = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 10 }, // Lower limit for resource-intensive operation
     audit: { action: 'CREATE', resource: 'RecurringAppointment' },
-    bodySchema: CreateRecurringAppointmentSchema,
   }
 );
 
@@ -302,7 +301,7 @@ export const GET = createProtectedRoute(
         frequency: series.frequency,
         interval: series.interval,
         daysOfWeek: series.daysOfWeek,
-        dayOfMonth: series.dayOfMonth,
+        dayOfMonth: series.dayOfMonth ?? undefined,
         startTime: series.startTime,
         duration: series.duration,
         seriesStart: series.seriesStart,

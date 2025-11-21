@@ -6,6 +6,7 @@
  */
 
 import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 

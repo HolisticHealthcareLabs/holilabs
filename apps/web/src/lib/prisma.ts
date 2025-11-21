@@ -302,13 +302,24 @@ let prismaClient = globalForPrisma.prisma ?? createPrismaClient();
 // Export prisma client with runtime check wrapper
 // During build, this will be null (expected)
 // At runtime, if DATABASE_URL is set, re-initialize
-export const prisma = (() => {
+const _prisma = (() => {
   // If we're at runtime (not build) and DATABASE_URL is NOW available but wasn't during build
   if (!prismaClient && process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
     prismaClient = createPrismaClient();
   }
   return prismaClient;
-})() as PrismaClient | null;
+})();
+
+// Export as non-null for type safety
+// At runtime, throw an error if accessed without DATABASE_URL
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    if (!_prisma) {
+      throw new Error('Prisma client not initialized - DATABASE_URL is missing');
+    }
+    return (_prisma as any)[prop];
+  },
+}) as PrismaClient;
 
 // Attempt to connect with retry in production
 if (process.env.NODE_ENV === 'production' && prismaClient) {
@@ -329,15 +340,18 @@ if (process.env.NODE_ENV !== 'production' && prismaClient) {
 if (process.env.NODE_ENV === 'production' && prismaClient) {
   process.on('SIGTERM', async () => {
     logger.info({ event: 'shutdown', signal: 'SIGTERM' }, 'SIGTERM received, closing database connections...');
-    await prismaClient.$disconnect();
+    await prismaClient!.$disconnect();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
     logger.info({ event: 'shutdown', signal: 'SIGINT' }, 'SIGINT received, closing database connections...');
-    await prismaClient.$disconnect();
+    await prismaClient!.$disconnect();
     process.exit(0);
   });
 }
 
 export default prisma;
+
+// Also export _prisma for internal use when null checking is needed
+export { _prisma };

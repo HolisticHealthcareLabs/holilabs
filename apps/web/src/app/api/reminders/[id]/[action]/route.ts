@@ -181,7 +181,6 @@ export async function POST(
             status: reminder.recurrencePattern ? 'ACTIVE' : 'PENDING',
             scheduledFor: new Date(),
             nextExecution: reminder.recurrencePattern ? new Date() : null,
-            lastExecutionResults: null,
           },
         });
         logger.info({

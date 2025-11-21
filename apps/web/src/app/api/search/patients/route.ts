@@ -75,7 +75,6 @@ export async function GET(request: NextRequest) {
         mrn: true,
         phone: true,
         gender: true,
-        profilePictureUrl: true,
         isActive: true,
         isPalliativeCare: true,
         updatedAt: true,

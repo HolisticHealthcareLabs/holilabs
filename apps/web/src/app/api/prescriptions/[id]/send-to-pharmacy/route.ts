@@ -17,9 +17,17 @@ export const dynamic = 'force-dynamic';
  * Send a signed prescription to a pharmacy
  */
 export const POST = createProtectedRoute(
-  async (request: NextRequest, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context) => {
     try {
-      const prescriptionId = params.id;
+      const prescriptionId = context.params?.id;
+
+      if (!prescriptionId) {
+        return NextResponse.json(
+          { error: 'Prescription ID is required' },
+          { status: 400 }
+        );
+      }
+
       const body = await request.json();
 
       // Validate pharmacy ID
@@ -124,10 +132,11 @@ export const POST = createProtectedRoute(
           userId: (request as any).user.id,
           userEmail: (request as any).user.email,
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          action: 'SEND_TO_PHARMACY',
+          action: 'UPDATE',
           resource: 'Prescription',
           resourceId: prescriptionId,
           details: {
+            action: 'SEND_TO_PHARMACY',
             pharmacyId: body.pharmacyId,
             patientId: prescription.patientId,
             prescriptionHash: prescription.prescriptionHash,

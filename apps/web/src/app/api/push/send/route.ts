@@ -22,13 +22,8 @@ const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@holilabs.com';
 
-if (vapidPublicKey && vapidPrivateKey) {
-  webpush.setVapidDetails(
-    vapidSubject,
-    vapidPublicKey,
-    vapidPrivateKey
-  );
-}
+// VAPID configuration is deferred to runtime to avoid build-time errors
+// The POST handler will configure webpush.setVapidDetails() when actually sending notifications
 
 // Notification payload schema
 const NotificationSchema = z.object({
@@ -72,6 +67,9 @@ export const POST = createProtectedRoute(
           { status: 503 }
         );
       }
+
+      // Configure VAPID details at runtime (not at module level)
+      webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
       const body = await request.json();
 

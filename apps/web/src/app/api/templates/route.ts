@@ -230,17 +230,20 @@ export async function POST(request: NextRequest) {
     });
 
     // Audit log
-    await logAudit({
-      action: 'TEMPLATE_CREATED',
-      userId,
-      resourceType: 'ClinicalTemplate',
-      resourceId: template.id,
-      details: {
-        templateName: template.name,
-        category: template.category,
-        isPublic: template.isPublic,
+    await logAudit(
+      {
+        action: 'CREATE',
+        resource: 'ClinicalTemplate',
+        resourceId: template.id,
+        details: {
+          templateName: template.name,
+          category: template.category,
+          isPublic: template.isPublic,
+        },
       },
-    });
+      undefined,
+      userId
+    );
 
     return NextResponse.json({
       success: true,

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { generateMRN, generateTokenId } from '@/lib/fhir/patient-mapper';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,33 +60,26 @@ export async function POST(request: NextRequest) {
     // Process each patient
     for (const patientData of patients) {
       try {
-        // Generate unique patient code
-        const patientCode = `P${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        // Generate required identifiers
+        const mrn = generateMRN();
+        const tokenId = generateTokenId();
 
         // Create patient record
         const patient = await prisma.patient.create({
           data: {
-            code: patientCode,
+            mrn,
+            tokenId,
             firstName: patientData.firstName,
             lastName: patientData.lastName,
             email: patientData.email || null,
             phone: patientData.phone || null,
             dateOfBirth: new Date(patientData.dateOfBirth),
-            curp: patientData.curp?.toUpperCase() || null,
-            rfc: patientData.rfc?.toUpperCase() || null,
             gender: patientData.gender as any || null,
-            bloodType: patientData.bloodType || null,
-            address: patientData.street
-              ? {
-                  street: patientData.street,
-                  city: patientData.city || '',
-                  state: patientData.state || '',
-                  postalCode: patientData.postalCode || '',
-                  country: 'México',
-                }
-              : null,
-            status: 'ACTIVE',
-            createdBy: session.user.id,
+            address: patientData.street || null,
+            city: patientData.city || null,
+            state: patientData.state || null,
+            postalCode: patientData.postalCode || null,
+            country: 'México',
           },
         });
 

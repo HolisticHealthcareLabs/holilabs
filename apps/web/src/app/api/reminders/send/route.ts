@@ -63,9 +63,6 @@ async function getPatientVariables(patientId: string) {
         },
       },
       medications: {
-        where: {
-          status: 'ACTIVE',
-        },
         take: 1,
       },
     },
@@ -102,7 +99,7 @@ async function getPatientVariables(patientId: string) {
       : 'your next appointment',
     medication_name: patient.medications[0]?.name || '[Medication]',
     lab_result: 'your lab results',
-    condition: patient.conditions?.[0] || '[condition]',
+    condition: '[condition]', // TODO: Patient model doesn't have conditions field
     custom_message: '',
   };
 
@@ -273,11 +270,19 @@ export async function POST(request: NextRequest) {
           }
 
           // Create notification record
+          // Map reminder categories to NotificationType enum values
+          let notificationType: 'APPOINTMENT_REMINDER' | 'NEW_PRESCRIPTION' | 'NEW_DOCUMENT' = 'NEW_DOCUMENT';
+          if (template.category === 'appointment') {
+            notificationType = 'APPOINTMENT_REMINDER';
+          } else if (template.category === 'medication' || template.category === 'prescription') {
+            notificationType = 'NEW_PRESCRIPTION';
+          }
+
           const notification = await prisma.notification.create({
             data: {
               recipientId: patientId,
               recipientType: 'PATIENT',
-              type: template.category === 'appointment' ? 'APPOINTMENT_REMINDER' : 'REMINDER',
+              type: notificationType,
               title: template.name,
               message: personalizedMessage,
               actionUrl: '/portal/dashboard',

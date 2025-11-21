@@ -62,7 +62,7 @@ async function checkPatientConsent(
   try {
     // Find patient by phone number
     const patient = await prisma.patient.findFirst({
-      where: { phoneNumber: patientPhone },
+      where: { phone: patientPhone },
       select: {
         id: true,
         whatsappConsentGiven: true,

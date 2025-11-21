@@ -117,7 +117,6 @@ export default function ScheduleReminderModal({
     setScheduledTime('09:00');
     setIsRecurring(false);
     setSelectedPatients([]);
-    setStep('datetime');
   };
 
   if (!isOpen) return null;

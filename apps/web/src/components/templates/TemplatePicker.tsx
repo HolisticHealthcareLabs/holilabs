@@ -89,8 +89,9 @@ export function TemplatePicker({
 
   // Use external control if provided, otherwise use internal state
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
-  const setIsOpen = externalOnClose ? (value: boolean) => {
-    if (!value) externalOnClose();
+  const setIsOpen = externalOnClose ? (value: boolean | ((prev: boolean) => boolean)) => {
+    const newValue = typeof value === 'function' ? value(isOpen) : value;
+    if (!newValue) externalOnClose();
   } : setInternalIsOpen;
   const [query, setQuery] = useState('');
   const [templates, setTemplates] = useState<ClinicalTemplate[]>([]);
@@ -118,7 +119,7 @@ export function TemplatePicker({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 't') {
         e.preventDefault();
-        setIsOpen(prev => !prev);
+        setIsOpen((prev: boolean) => !prev);
       }
       if (e.key === 'Escape' && isOpen) {
         if (selectedTemplate) {

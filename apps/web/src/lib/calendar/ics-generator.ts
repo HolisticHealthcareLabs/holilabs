@@ -13,7 +13,6 @@ export interface AppointmentData {
   endTime: Date;
   patientName: string;
   clinicianName: string;
-  branch?: string;
   notes?: string;
   type?: string;
 }
@@ -36,7 +35,7 @@ export function generateAppointmentICS(appointment: AppointmentData): string {
   const description = [
     `Patient: ${appointment.patientName}`,
     `Provider: Dr. ${appointment.clinicianName}`,
-    appointment.branch ? `Location: ${appointment.branch}` : '',
+    '',
     appointment.type ? `Type: ${appointment.type}` : '',
     appointment.notes ? `Notes: ${appointment.notes}` : '',
     '',
@@ -53,7 +52,7 @@ export function generateAppointmentICS(appointment: AppointmentData): string {
     end: appointment.endTime,
     summary: title,
     description,
-    location: appointment.branch || 'Holi Labs Clinic',
+    location: 'Holi Labs Clinic',
     url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://aipathfinder.ai'}/portal/appointments/${appointment.id}`,
     organizer: {
       name: 'Holi Labs',
@@ -62,20 +61,20 @@ export function generateAppointmentICS(appointment: AppointmentData): string {
     // Add reminder: 24 hours before
     alarms: [
       {
-        type: 'display' as const,
+        type: 'display' as any,
         trigger: 24 * 60 * 60, // 24 hours in seconds
         description: 'Appointment Reminder - Tomorrow',
       },
       {
-        type: 'display' as const,
+        type: 'display' as any,
         trigger: 60 * 60, // 1 hour in seconds
         description: 'Appointment Reminder - 1 Hour',
       },
     ],
-    status: 'CONFIRMED' as const,
-    busystatus: 'BUSY' as const,
+    status: 'CONFIRMED' as any,
+    busystatus: 'BUSY' as any,
     sequence: 0,
-    uid: `appointment-${appointment.id}@aipathfinder.ai`,
+    uid: `appointment-${appointment.id}@aipathfinder.ai` as any,
   });
 
   return calendar.toString();
@@ -95,13 +94,13 @@ export function generateGoogleCalendarURL(appointment: AppointmentData): string 
     details: [
       `Patient: ${appointment.patientName}`,
       `Provider: Dr. ${appointment.clinicianName}`,
-      appointment.branch ? `Location: ${appointment.branch}` : '',
+      '',
       '',
       'Please arrive 15 minutes early.',
     ]
       .filter(Boolean)
       .join('\n'),
-    location: appointment.branch || 'Holi Labs Clinic',
+    location: 'Holi Labs Clinic',
     ctz: 'America/Mexico_City',
   });
 
@@ -122,13 +121,13 @@ export function generateOutlookCalendarURL(appointment: AppointmentData): string
     body: [
       `Patient: ${appointment.patientName}`,
       `Provider: Dr. ${appointment.clinicianName}`,
-      appointment.branch ? `Location: ${appointment.branch}` : '',
+      '',
       '',
       'Please arrive 15 minutes early.',
     ]
       .filter(Boolean)
       .join('\n'),
-    location: appointment.branch || 'Holi Labs Clinic',
+    location: 'Holi Labs Clinic',
     path: '/calendar/action/compose',
     rru: 'addevent',
   });

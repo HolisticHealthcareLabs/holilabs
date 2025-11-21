@@ -18,9 +18,17 @@ export const dynamic = 'force-dynamic';
  * Electronically sign a prescription
  */
 export const POST = createProtectedRoute(
-  async (request: NextRequest, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context) => {
     try {
-      const prescriptionId = params.id;
+      const prescriptionId = context.params?.id;
+
+      if (!prescriptionId) {
+        return NextResponse.json(
+          { error: 'Prescription ID is required' },
+          { status: 400 }
+        );
+      }
+
       const body = await request.json();
 
       // Validate required fields

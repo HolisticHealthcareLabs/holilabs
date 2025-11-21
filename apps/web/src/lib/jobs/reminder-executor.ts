@@ -26,7 +26,6 @@ interface PatientData {
   medications?: Array<{
     name: string;
   }>;
-  conditions?: string[];
 }
 
 /**
@@ -66,7 +65,7 @@ async function getPatientVariables(patientId: string): Promise<Record<string, st
       },
       medications: {
         where: {
-          status: 'ACTIVE',
+          isActive: true,
         },
         take: 1,
       },
@@ -103,7 +102,7 @@ async function getPatientVariables(patientId: string): Promise<Record<string, st
       : 'your next appointment',
     medication_name: patient.medications[0]?.name || '[Medication]',
     lab_result: 'your lab results',
-    condition: patient.conditions?.[0] || '[condition]',
+    condition: '[condition]',
     custom_message: '',
   };
 
@@ -245,7 +244,7 @@ async function executeReminder(reminderId: string): Promise<{
             include: { clinician: true },
           },
           medications: {
-            where: { status: 'ACTIVE' },
+            where: { isActive: true },
             take: 1,
           },
         },

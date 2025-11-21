@@ -39,15 +39,6 @@ export const GET = createProtectedRoute(
             phone: true,
           },
         },
-        clinician: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            specialty: true,
-          },
-        },
         appointment: {
           select: {
             id: true,
@@ -57,6 +48,15 @@ export const GET = createProtectedRoute(
             description: true,
             type: true,
             status: true,
+            clinician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                specialty: true,
+              },
+            },
           },
         },
       },
@@ -76,7 +76,7 @@ export const GET = createProtectedRoute(
     // Authorization check
     if (
       context.user?.role !== 'ADMIN' &&
-      context.user?.id !== noShowRecord.clinicianId
+      context.user?.id !== noShowRecord.appointment.clinician?.id
     ) {
       return NextResponse.json(
         {
@@ -141,11 +141,19 @@ export const PATCH = createProtectedRoute(
       where: { id },
       select: {
         id: true,
-        clinicianId: true,
         patientId: true,
         contacted: true,
         feeCharged: true,
         feePaid: true,
+        appointment: {
+          select: {
+            clinician: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -163,7 +171,7 @@ export const PATCH = createProtectedRoute(
     // Authorization: Only assigned clinician or admin can update
     if (
       context.user?.role !== 'ADMIN' &&
-      context.user?.id !== existing.clinicianId
+      context.user?.id !== existing.appointment.clinician?.id
     ) {
       return NextResponse.json(
         {
@@ -221,15 +229,6 @@ export const PATCH = createProtectedRoute(
             phone: true,
           },
         },
-        clinician: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            specialty: true,
-          },
-        },
         appointment: {
           select: {
             id: true,
@@ -237,6 +236,15 @@ export const PATCH = createProtectedRoute(
             endTime: true,
             title: true,
             type: true,
+            clinician: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                specialty: true,
+              },
+            },
           },
         },
       },
@@ -255,7 +263,6 @@ export const PATCH = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'UPDATE', resource: 'NoShowHistory' },
-    bodySchema: UpdateNoShowSchema,
   }
 );
 
@@ -274,7 +281,6 @@ export const DELETE = createProtectedRoute(
         id: true,
         appointmentId: true,
         patientId: true,
-        clinicianId: true,
       },
     });
 

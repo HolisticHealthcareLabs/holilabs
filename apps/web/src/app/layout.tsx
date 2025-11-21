@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import '@/styles/print.css';
 import '@/styles/mobile.css';
@@ -9,8 +8,6 @@ import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
 import { SkipLink } from '@/components/SkipLink';
 import { themeInitScript } from '@/scripts/theme-init';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
@@ -65,7 +62,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover" />
       </head>
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <SkipLink />
         <Providers>
           <OfflineIndicator />

@@ -40,6 +40,15 @@ export interface FileUploadOptions {
   generateThumbnail?: boolean;
 }
 
+export interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+}
+
 /**
  * Initialize upload directory
  */
@@ -66,7 +75,7 @@ function generateFileName(originalName: string): string {
  * Validate file
  */
 function validateFile(
-  file: Express.Multer.File,
+  file: MulterFile,
   options: FileUploadOptions
 ): void {
   const maxSize = options.maxSize || MAX_FILE_SIZE;
@@ -174,7 +183,7 @@ async function optimizeImage(
  * Upload file
  */
 export async function uploadFile(
-  file: Express.Multer.File,
+  file: MulterFile,
   options: FileUploadOptions
 ): Promise<FileUploadResult> {
   try {

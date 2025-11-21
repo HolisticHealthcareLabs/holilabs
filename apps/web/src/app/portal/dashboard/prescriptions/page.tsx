@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,32 +36,10 @@ export default function PatientPrescriptionsPage() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'history'>('active');
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (user?.email) {
-        // Get patient record for this user
-        try {
-          const response = await fetch(`/api/patients?email=${encodeURIComponent(user.email)}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.data && data.data.length > 0) {
-              const patient = data.data[0];
-              setPatientId(patient.id);
-              loadPrescriptions(patient.id);
-            } else {
-              setError('No patient record found');
-              setLoading(false);
-            }
-          } else {
-            setError('Failed to load patient data');
-            setLoading(false);
-          }
-        } catch (err: any) {
-          setError(err.message);
-          setLoading(false);
-        }
-      }
-    });
+    // TODO: Replace with proper patient portal authentication using NextAuth or session
+    // For now, this is a placeholder - patient authentication needs to be implemented
+    setError('Patient authentication not yet implemented');
+    setLoading(false);
   }, []);
 
   const loadPrescriptions = async (patientId: string) => {

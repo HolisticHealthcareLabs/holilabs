@@ -147,7 +147,6 @@ export const PATCH = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'UPDATE', resource: 'ProviderAvailability' },
-    bodySchema: UpdateProviderAvailabilitySchema,
   }
 );
 

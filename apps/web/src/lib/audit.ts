@@ -53,7 +53,7 @@ async function getCurrentUser(request?: NextRequest): Promise<{
     if (clinicianSession?.user?.id) {
       return {
         userId: clinicianSession.user.id,
-        userEmail: clinicianSession.user.email,
+        userEmail: clinicianSession.user.email || null,
         userType: 'CLINICIAN',
       };
     }
@@ -359,3 +359,13 @@ export async function auditLogout(
     userEmail
   );
 }
+
+/**
+ * Alias for createAuditLog (legacy compatibility)
+ */
+export const logAuditEvent = createAuditLog;
+
+/**
+ * Alias for createAuditLog (legacy compatibility)
+ */
+export const logAudit = createAuditLog;

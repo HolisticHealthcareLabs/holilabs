@@ -43,16 +43,21 @@ export async function sendEmail(options: SendEmailOptions) {
       return { success: false, error: 'Email service not configured' };
     }
 
-    // Send email
-    const response = await resend.emails.send({
+    // Build email options conditionally to satisfy Resend's strict types
+    const emailOptions: any = {
       from: FROM_EMAIL,
       to: Array.isArray(to) ? to : [to],
       subject,
-      html,
-      text,
       replyTo,
-      tags,
-    });
+    };
+
+    // Add html/text only if defined
+    if (html) emailOptions.html = html;
+    if (text) emailOptions.text = text;
+    if (tags) emailOptions.tags = tags;
+
+    // Send email
+    const response = await resend.emails.send(emailOptions);
 
     logger.info({
       event: 'email_sent',

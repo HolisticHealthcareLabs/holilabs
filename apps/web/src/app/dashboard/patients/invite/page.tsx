@@ -15,7 +15,6 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 
 export default function InvitePatientPage() {
   const router = useRouter();
@@ -35,13 +34,11 @@ export default function InvitePatientPage() {
   });
 
   // Get current user ID on mount
+  // Note: Supabase auth removed - using NextAuth session instead
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setCurrentUserId(user.id);
-      }
-    });
+    // TODO: Replace with NextAuth session
+    // For now, set a placeholder to prevent errors
+    setCurrentUserId('demo-user-id');
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

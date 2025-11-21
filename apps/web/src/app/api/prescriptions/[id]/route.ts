@@ -18,9 +18,16 @@ export const dynamic = 'force-dynamic';
  * Get a single prescription by ID
  */
 export const GET = createProtectedRoute(
-  async (request: NextRequest, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context) => {
     try {
-      const prescriptionId = params.id;
+      const prescriptionId = context.params?.id;
+
+      if (!prescriptionId) {
+        return NextResponse.json(
+          { error: 'Prescription ID is required' },
+          { status: 400 }
+        );
+      }
 
       const prescription = await prisma.prescription.findUnique({
         where: { id: prescriptionId },
@@ -89,9 +96,16 @@ export const GET = createProtectedRoute(
  * Update prescription (mainly for status changes)
  */
 export const PATCH = createProtectedRoute(
-  async (request: NextRequest, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context) => {
     try {
-      const prescriptionId = params.id;
+      const prescriptionId = context.params?.id;
+
+      if (!prescriptionId) {
+        return NextResponse.json(
+          { error: 'Prescription ID is required' },
+          { status: 400 }
+        );
+      }
       const body = await request.json();
 
       // Find existing prescription
@@ -188,9 +202,16 @@ export const PATCH = createProtectedRoute(
  * Delete a prescription (ADMIN only or if status is PENDING)
  */
 export const DELETE = createProtectedRoute(
-  async (request: NextRequest, { params }: { params: { id: string } }) => {
+  async (request: NextRequest, context) => {
     try {
-      const prescriptionId = params.id;
+      const prescriptionId = context.params?.id;
+
+      if (!prescriptionId) {
+        return NextResponse.json(
+          { error: 'Prescription ID is required' },
+          { status: 400 }
+        );
+      }
 
       // Find existing prescription
       const existingPrescription = await prisma.prescription.findUnique({

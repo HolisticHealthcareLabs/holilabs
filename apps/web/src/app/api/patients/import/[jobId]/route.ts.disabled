@@ -1,0 +1,123 @@
+/**
+ * Import Job Progress Tracking API
+ *
+ * GET /api/patients/import/[jobId] - Get import job status and progress
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
+import { prisma } from '@/lib/prisma';
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/patients/import/[jobId]
+ * Get import job status and progress
+ */
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const { params } = context;
+      const jobId = params?.jobId;
+
+      if (!jobId) {
+        return NextResponse.json(
+          { error: 'Job ID is required' },
+          { status: 400 }
+        );
+      }
+
+      // Fetch import job with errors
+      const importJob = await prisma.importJob.findUnique({
+        where: { id: jobId },
+        include: {
+          errors: {
+            orderBy: { rowNumber: 'asc' },
+            take: 100, // Limit errors returned
+          },
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!importJob) {
+        return NextResponse.json(
+          { error: 'Import job not found' },
+          { status: 404 }
+        );
+      }
+
+      // Check if user owns this import job
+      if (importJob.userId !== context.user.id && context.user.role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Unauthorized access to import job' },
+          { status: 403 }
+        );
+      }
+
+      // Calculate progress percentage
+      const progressPercentage =
+        importJob.totalRows > 0
+          ? Math.round((importJob.processedRows / importJob.totalRows) * 100)
+          : 0;
+
+      // Format response
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: importJob.id,
+          filename: importJob.filename,
+          fileSize: importJob.fileSize,
+          fileType: importJob.fileType,
+          status: importJob.status,
+          progress: {
+            total: importJob.totalRows,
+            processed: importJob.processedRows,
+            successful: importJob.successRows,
+            failed: importJob.errorRows,
+            percentage: progressPercentage,
+          },
+          error: importJob.error,
+          user: {
+            id: importJob.user.id,
+            email: importJob.user.email,
+            name: importJob.user.name,
+          },
+          timestamps: {
+            createdAt: importJob.createdAt,
+            updatedAt: importJob.updatedAt,
+            completedAt: importJob.completedAt,
+          },
+          errors: importJob.errors.map((e) => ({
+            id: e.id,
+            rowNumber: e.rowNumber,
+            rowData: e.rowData,
+            errorType: e.errorType,
+            errorMessage: e.errorMessage,
+            createdAt: e.createdAt,
+          })),
+        },
+      });
+    } catch (error: any) {
+      console.error('Error fetching import job:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to fetch import job',
+          message: error.message,
+        },
+        { status: 500 }
+      );
+    }
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN'],
+    rateLimit: { windowMs: 60000, maxRequests: 100 }, // 100 progress checks per minute
+     // GET requests don't need CSRF protection
+    audit: { action: 'READ', resource: 'ImportJob' },
+  }
+);

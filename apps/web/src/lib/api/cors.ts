@@ -41,7 +41,7 @@ const getAllowedOrigins = (): string[] => {
     const origins = ALLOWED_ORIGINS.filter((origin) => !origin.includes('localhost'));
 
     // Log allowed origins on startup (once)
-    if (!global.__corsOriginsLogged) {
+    if (!(global as any).__corsOriginsLogged) {
       logger.info({
         event: 'cors_config',
         allowedOrigins: origins.length,

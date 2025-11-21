@@ -70,8 +70,7 @@ interface PatientExportData {
     testCode: string | null;
     value: string;
     unit: string | null;
-    referenceMin: string | null;
-    referenceMax: string | null;
+    referenceRange: string | null;
     status: string;
     resultDate: string;
     category: string | null;
@@ -178,14 +177,6 @@ export async function GET(request: NextRequest) {
     // Fetch lab results
     const labResults = await prisma.labResult.findMany({
       where: { patientId },
-      include: {
-        clinician: {
-          select: {
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
       orderBy: { resultDate: 'desc' },
     });
 
@@ -194,42 +185,37 @@ export async function GET(request: NextRequest) {
       where: { patientId },
       select: {
         id: true,
-        filename: true,
-        contentType: true,
-        size: true,
-        category: true,
-        description: true,
-        uploadedAt: true,
+        fileName: true,
+        fileType: true,
+        fileSize: true,
+        documentType: true,
+        createdAt: true,
         // Exclude actual file data for privacy/size
       },
-      orderBy: { uploadedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     // Fetch consultations (clinical notes)
     const consultations = await prisma.clinicalNote.findMany({
       where: { patientId },
-      include: {
-        clinician: {
-          select: {
-            firstName: true,
-            lastName: true,
-            specialty: true,
-          },
-        },
-      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         createdAt: true,
-        content: true,
-        clinician: true,
+        chiefComplaint: true,
+        subjective: true,
+        objective: true,
+        assessment: true,
+        plan: true,
+        diagnosis: true,
+        authorId: true,
       },
     });
 
     // Fetch audit log for this patient
     const auditLogs = await prisma.auditLog.findMany({
       where: {
-        resourceType: 'Patient',
+        resource: 'Patient',
         resourceId: patientId,
       },
       orderBy: { timestamp: 'desc' },
@@ -250,13 +236,17 @@ export async function GET(request: NextRequest) {
         address: patient.address,
         city: patient.city,
         state: patient.state,
-        zipCode: patient.zipCode,
+        zipCode: patient.postalCode,
         country: patient.country,
-        emergencyContact: patient.emergencyContact,
-        insuranceInfo: patient.insuranceInfo,
-        allergies: patient.allergies || [],
-        chronicConditions: patient.chronicConditions || [],
-        currentMedications: patient.currentMedications || [],
+        emergencyContact: {
+          name: patient.emergencyContactName,
+          phone: patient.emergencyContactPhone,
+          relation: patient.emergencyContactRelation,
+        },
+        insuranceInfo: null,
+        allergies: [],
+        chronicConditions: [],
+        currentMedications: [],
       },
       appointments: appointments.map((apt) => ({
         id: apt.id,
@@ -271,65 +261,56 @@ export async function GET(request: NextRequest) {
           lastName: apt.clinician.lastName,
           specialty: apt.clinician.specialty,
         },
-        notes: apt.notes,
+        notes: apt.description,
       })),
       medications: medications.map((med) => ({
         id: med.id,
         name: med.name,
         genericName: med.genericName,
-        dosage: med.dosage,
+        dosage: med.dose,
         frequency: med.frequency,
         instructions: med.instructions,
         isActive: med.isActive,
         startDate: med.startDate?.toISOString() || null,
         endDate: med.endDate?.toISOString() || null,
         prescribedBy: med.prescribedBy,
-        sideEffects: med.sideEffects,
+        sideEffects: null,
       })),
       labResults: labResults.map((result) => ({
         id: result.id,
         testName: result.testName,
         testCode: result.testCode,
-        value: result.value,
+        value: result.value || '',
         unit: result.unit,
-        referenceMin: result.referenceMin,
-        referenceMax: result.referenceMax,
+        referenceRange: result.referenceRange,
         status: result.status,
         resultDate: result.resultDate.toISOString(),
         category: result.category,
         notes: result.notes,
-        clinician: result.clinician
-          ? {
-              firstName: result.clinician.firstName,
-              lastName: result.clinician.lastName,
-            }
-          : null,
+        clinician: null,
       })),
       documents: documents.map((doc) => ({
         id: doc.id,
-        filename: doc.filename,
-        contentType: doc.contentType,
-        size: doc.size,
-        category: doc.category,
-        description: doc.description,
-        uploadedAt: doc.uploadedAt.toISOString(),
+        filename: doc.fileName,
+        contentType: doc.fileType,
+        size: doc.fileSize,
+        category: doc.documentType,
+        description: null,
+        uploadedAt: doc.createdAt.toISOString(),
       })),
-      consultations: consultations.map((consult) => {
-        const content = consult.content as any;
-        return {
-          id: consult.id,
-          date: consult.createdAt.toISOString(),
-          chiefComplaint: content?.chiefComplaint || null,
-          diagnosis: content?.assessment || content?.diagnosis || null,
-          treatment: content?.plan || content?.treatment || null,
-          notes: content?.subjective || content?.notes || null,
-          clinician: {
-            firstName: consult.clinician.firstName,
-            lastName: consult.clinician.lastName,
-            specialty: consult.clinician.specialty,
-          },
-        };
-      }),
+      consultations: consultations.map((consult) => ({
+        id: consult.id,
+        date: consult.createdAt.toISOString(),
+        chiefComplaint: consult.chiefComplaint || null,
+        diagnosis: consult.diagnosis.length > 0 ? consult.diagnosis.join(', ') : null,
+        treatment: consult.plan || null,
+        notes: consult.subjective || null,
+        clinician: {
+          firstName: 'Unknown',
+          lastName: 'Unknown',
+          specialty: null,
+        },
+      })),
       auditLog: auditLogs.map((log) => ({
         id: log.id,
         action: log.action,

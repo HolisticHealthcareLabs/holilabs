@@ -19,7 +19,7 @@ export interface SOAPEditorCommandHandlers {
 
   // Content
   insertTemplate: (templateName: string) => void;
-  insertText: (section: string, text: string) => void;
+  insertText: (section: 'chiefComplaint' | 'subjective' | 'objective' | 'assessment' | 'plan', text: string) => void;
 
   // Actions
   save: () => void;

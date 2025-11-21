@@ -23,11 +23,12 @@ export const localeFlags: Record<Locale, string> = {
 
 export default getRequestConfig(async ({ locale }) => {
   // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as Locale)) {
+  if (!locale || !locales.includes(locale as Locale)) {
     notFound();
   }
 
   return {
+    locale: locale as string,
     messages: (await import(`./locales/${locale}/common.json`)).default,
   };
 });

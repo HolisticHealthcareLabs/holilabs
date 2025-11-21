@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   const [timeUntilWarning, setTimeUntilWarning] = useState<number | null>(null);
 
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const activityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle timeout logout
   const handleTimeoutLogout = useCallback(async () => {
     console.log('Session timed out due to inactivity');
-    await supabase.auth.signOut();
+    await supabase?.auth?.signOut();
     setUser(null);
     setSession(null);
     setShowTimeoutWarning(false);
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh session from Supabase
   const refreshSession = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.refreshSession();
+    const { data: { session } } = await supabase?.auth?.refreshSession() ?? { data: { session: null } };
     setSession(session);
     setUser(session?.user ?? null);
   }, [supabase]);
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -219,7 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {children as any}
       {showTimeoutWarning && user && <SessionTimeoutWarning onExtend={extendSession} />}
     </AuthContext.Provider>
   );

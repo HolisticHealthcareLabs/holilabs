@@ -151,11 +151,11 @@ export const PATCH = createProtectedRoute(
       ];
 
       for (const field of editableFields) {
-        if (validatedData[field] !== undefined && validatedData[field] !== (existingNote as any)[field]) {
+        if ((validatedData as any)[field] !== undefined && (validatedData as any)[field] !== (existingNote as any)[field]) {
           newEdits.push({
             field,
             oldValue: (existingNote as any)[field],
-            newValue: validatedData[field],
+            newValue: (validatedData as any)[field],
             editedAt: new Date().toISOString(),
             editedBy: context.user.id,
           });

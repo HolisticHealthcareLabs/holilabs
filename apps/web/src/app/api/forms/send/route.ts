@@ -99,19 +99,21 @@ export async function POST(request: NextRequest) {
     // Send email notification to patient
     const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/portal/forms/${accessToken}`;
 
-    try {
-      await sendFormNotificationEmail(
-        patient.email,
-        `${patient.firstName} ${patient.lastName}`,
-        template.title,
-        publicUrl,
-        expiresAtDate,
-        message || undefined,
-        undefined // TODO: Get clinician name from session
-      );
-    } catch (emailError) {
-      console.error('Error sending email notification:', emailError);
-      // Continue even if email fails - form was created successfully
+    if (patient.email) {
+      try {
+        await sendFormNotificationEmail(
+          patient.email,
+          `${patient.firstName} ${patient.lastName}`,
+          template.title,
+          publicUrl,
+          expiresAtDate,
+          message || undefined,
+          undefined // TODO: Get clinician name from session
+        );
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        // Continue even if email fails - form was created successfully
+      }
     }
 
     return NextResponse.json(

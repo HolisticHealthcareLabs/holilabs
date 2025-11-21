@@ -166,7 +166,7 @@ async function attemptAutoVerification(
 
       if (!nppesResult.verified) {
         return {
-          status: VerificationResult.REJECTED,
+          status: VerificationResult.NOT_FOUND,
           matchScore: 0,
           matchedData: null,
           discrepancies: {
@@ -214,7 +214,7 @@ async function attemptAutoVerification(
       } else if (matchScore >= 70) {
         status = VerificationResult.PENDING; // Needs manual review
       } else {
-        status = VerificationResult.REJECTED;
+        status = VerificationResult.NO_MATCH;
       }
 
       return {

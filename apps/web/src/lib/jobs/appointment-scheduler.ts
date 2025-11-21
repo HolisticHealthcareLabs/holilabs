@@ -4,7 +4,7 @@
  * Runs daily at 9 AM to send reminders for tomorrow's appointments
  */
 
-import cron from 'node-cron';
+import cron, { ScheduledTask } from 'node-cron';
 import { sendRemindersForTomorrow } from '../notifications/appointment-reminders';
 import logger from '../logger';
 
@@ -16,7 +16,7 @@ const REMINDER_SCHEDULE = process.env.REMINDER_CRON_SCHEDULE || '0 9 * * *'; // 
 let isRunning = false;
 let lastRun: Date | null = null;
 let lastResult: { total: number; sent: number; failed: number } | null = null;
-let scheduledTask: cron.ScheduledTask | null = null;
+let scheduledTask: ScheduledTask | null = null;
 
 /**
  * Execute the daily reminder task

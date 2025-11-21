@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         preferredContactTimeStart: true,
         preferredContactTimeEnd: true,
         doNotDisturbEnabled: true,
-        phoneNumber: true,
+        phone: true,
       },
     });
 
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
           consentMethod: patient.whatsappConsentMethod,
           withdrawnAt: patient.whatsappConsentWithdrawnAt,
           language: patient.whatsappConsentLanguage || 'en',
-          phoneNumber: patient.phoneNumber,
+          phoneNumber: patient.phone,
           preferences: {
             medicationReminders: patient.medicationRemindersEnabled,
             appointmentReminders: patient.appointmentRemindersEnabled,
@@ -139,10 +139,10 @@ export async function POST(request: NextRequest) {
     // Check if patient has phone number
     const patient = await prisma.patient.findUnique({
       where: { id: session.patientId },
-      select: { phoneNumber: true },
+      select: { phone: true },
     });
 
-    if (!patient?.phoneNumber) {
+    if (!patient?.phone) {
       return NextResponse.json(
         {
           success: false,

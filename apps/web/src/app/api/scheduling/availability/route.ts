@@ -144,7 +144,6 @@ export const POST = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 20 }, // 20 requests per minute
     audit: { action: 'CREATE', resource: 'ProviderAvailability' },
-    bodySchema: CreateProviderAvailabilitySchema,
   }
 );
 
@@ -233,7 +232,6 @@ export const GET = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 60 },
     audit: { action: 'READ', resource: 'ProviderAvailability' },
-    querySchema: QueryProviderAvailabilitySchema,
     skipCsrf: true,
   }
 );

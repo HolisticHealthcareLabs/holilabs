@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import { MARSheet } from '@/components/mar/MARSheet';
 
 /**
@@ -10,8 +9,8 @@ import { MARSheet } from '@/components/mar/MARSheet';
  * Primary interface for nurses to view and administer medications
  */
 
-export default function MARPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function MARPage({ params }: { params: { id: string } }) {
+  const { id } = params;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">

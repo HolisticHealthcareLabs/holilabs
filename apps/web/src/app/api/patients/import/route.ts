@@ -15,6 +15,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 import { createAuditLog } from '@/lib/audit';
+import { generateMRN, generateTokenId } from '@/lib/fhir/patient-mapper';
 import {
   sanitizeString,
   sanitizeCSVField,
@@ -261,11 +262,21 @@ export const POST = createProtectedRoute(
             continue;
           }
 
+          // Skip patients without dateOfBirth (required field)
+          if (!row.dateOfBirth) {
+            failed.push({
+              row: index + 2,
+              data: row,
+              reason: 'dateOfBirth is required',
+            });
+            continue;
+          }
+
           // Sanitize all inputs before database insertion
           const sanitizedData = {
             firstName: sanitizeString(row.firstName, 100),
             lastName: sanitizeString(row.lastName, 100),
-            dateOfBirth: row.dateOfBirth ? new Date(row.dateOfBirth) : null,
+            dateOfBirth: new Date(row.dateOfBirth),
             gender: row.gender?.toUpperCase() || 'UNKNOWN',
             email: row.email ? sanitizeString(row.email, 255) : null,
             phone: row.phone ? sanitizeString(row.phone, 20) : null,
@@ -276,17 +287,33 @@ export const POST = createProtectedRoute(
             isPalliativeCare: row.isPalliativeCare?.toLowerCase() === 'true',
           };
 
+          // Generate required identifiers
+          const tokenId = generateTokenId();
+          const mrn = sanitizedData.mrn || generateMRN();
+
           // Create patient
           const patient = await prisma.patient.create({
             data: {
               ...sanitizedData,
+              mrn,
+              tokenId,
               assignedClinicianId: context.user.id,
               isActive: true,
-              dataHash: await generatePatientDataHash({
-                firstName: sanitizedData.firstName,
-                lastName: sanitizedData.lastName,
-                dateOfBirth: row.dateOfBirth || '',
+            },
+          });
+
+          // Update with dataHash after creation
+          await prisma.patient.update({
+            where: { id: patient.id },
+            data: {
+              dataHash: generatePatientDataHash({
+                id: patient.id,
+                firstName: patient.firstName,
+                lastName: patient.lastName,
+                dateOfBirth: row.dateOfBirth,
+                mrn: patient.mrn,
               }),
+              lastHashUpdate: new Date(),
             },
           });
 

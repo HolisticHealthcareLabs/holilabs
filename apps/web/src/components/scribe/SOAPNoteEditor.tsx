@@ -170,42 +170,12 @@ export default function SOAPNoteEditor({
     }));
   }, []);
 
-  const insertTextToSection = useCallback((section: string, text: string) => {
+  const insertTextToSection = useCallback((section: keyof Pick<SOAPNote, 'chiefComplaint' | 'subjective' | 'objective' | 'assessment' | 'plan'>, text: string) => {
     setEditedNote((prev) => ({
       ...prev,
       [section]: prev[section] ? `${prev[section]}\n${text}` : text,
     }));
   }, []);
-
-  const voiceCommandHandlers: SOAPEditorCommandHandlers = {
-    jumpToSection,
-    insertTemplate: insertTemplateByName,
-    insertText: insertTextToSection,
-    save: handleSave,
-    saveAndSign: onSign,
-    cancel: handleCancel,
-    startEditing: () => setIsEditing(true),
-    addMedication: addMedicationVoice,
-    addDiagnosis: addDiagnosisVoice,
-    showTemplates: () => setShowTemplates(true),
-    hideTemplates: () => setShowTemplates(false),
-  };
-
-  // Create voice commands
-  const voiceCommands = createSOAPEditorCommands(voiceCommandHandlers);
-
-  // Initialize voice commands hook
-  const voiceCommandsState = useVoiceCommands({
-    commands: voiceCommands,
-    language: selectedLanguage === 'pt' ? 'pt' : 'es',
-    debug: true,
-    onCommandExecuted: (command) => {
-      console.log('[Voice Command] Executed:', command);
-    },
-    onError: (error) => {
-      console.error('[Voice Command] Error:', error);
-    },
-  });
 
   // ICD-10 validation regex
   const validateICD10 = (code: string): boolean => {
@@ -249,6 +219,37 @@ export default function SOAPNoteEditor({
     });
     setIsEditing(false);
   };
+
+  // Voice command handlers setup (after all handlers are declared)
+  const voiceCommandHandlers: SOAPEditorCommandHandlers = {
+    jumpToSection,
+    insertTemplate: insertTemplateByName,
+    insertText: insertTextToSection,
+    save: handleSave,
+    saveAndSign: onSign,
+    cancel: handleCancel,
+    startEditing: () => setIsEditing(true),
+    addMedication: addMedicationVoice,
+    addDiagnosis: addDiagnosisVoice,
+    showTemplates: () => setShowTemplates(true),
+    hideTemplates: () => setShowTemplates(false),
+  };
+
+  // Create voice commands
+  const voiceCommands = createSOAPEditorCommands(voiceCommandHandlers);
+
+  // Initialize voice commands hook
+  const voiceCommandsState = useVoiceCommands({
+    commands: voiceCommands,
+    language: selectedLanguage === 'pt' ? 'pt' : 'es',
+    debug: true,
+    onCommandExecuted: (command) => {
+      console.log('[Voice Command] Executed:', command);
+    },
+    onError: (error) => {
+      console.error('[Voice Command] Error:', error);
+    },
+  });
 
   const applyTemplate = (template: SOAPTemplate) => {
     setEditedNote({
