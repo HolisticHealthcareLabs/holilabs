@@ -56,7 +56,7 @@ export default function Home() {
           {/* Brand (Left) - Holi Labs Logo + Text */}
           <Link href="/" className="flex items-center space-x-3 group">
             <Image
-              src="/logos/Logo 1_Dark.svg"
+              src="/logos/Logo 1_Light.svg"
               alt="Holi Labs"
               width={32}
               height={32}
@@ -128,7 +128,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <a
                 href="#acceso"
-                className="inline-flex items-center justify-center bg-brand-green text-white px-8 py-4 rounded-full font-semibold hover:bg-green-600 transition active:scale-95 group shadow-sm"
+                className="inline-flex items-center justify-center bg-brand-green text-white px-10 py-5 rounded-full text-lg font-bold hover:bg-green-600 transition active:scale-95 group shadow-lg hover:shadow-xl"
               >
                 Prueba Gratis
                 <span className="ml-2 transform group-hover:translate-x-1 transition-transform">→</span>
@@ -300,9 +300,9 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-6">
             {/* Feature 1 */}
             <div className="card-elevated p-8 rounded-2xl hover:shadow-md transition-shadow">
-              <div className="flex flex-col gap-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">⚡</span>
+              <div className="flex flex-col gap-4 items-center text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <span className="text-3xl">⚡</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">IA Médica</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -313,9 +313,9 @@ export default function Home() {
 
             {/* Feature 2 */}
             <div className="card-elevated p-8 rounded-2xl hover:shadow-md transition-shadow">
-              <div className="flex flex-col gap-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">📱</span>
+              <div className="flex flex-col gap-4 items-center text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <span className="text-3xl">📱</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">Portal Pacientes</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -326,9 +326,9 @@ export default function Home() {
 
             {/* Feature 3 */}
             <div className="card-elevated p-8 rounded-2xl hover:shadow-md transition-shadow">
-              <div className="flex flex-col gap-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">💰</span>
+              <div className="flex flex-col gap-4 items-center text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <span className="text-3xl">💰</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">Facturación</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -339,9 +339,9 @@ export default function Home() {
 
             {/* Feature 4 */}
             <div className="card-elevated p-8 rounded-2xl hover:shadow-md transition-shadow">
-              <div className="flex flex-col gap-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">📋</span>
+              <div className="flex flex-col gap-4 items-center text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <span className="text-3xl">📋</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">Recetas Digitales</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -352,9 +352,9 @@ export default function Home() {
 
             {/* Feature 5 */}
             <div className="card-elevated p-8 rounded-2xl hover:shadow-md transition-shadow">
-              <div className="flex flex-col gap-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">📅</span>
+              <div className="flex flex-col gap-4 items-center text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <span className="text-3xl">📅</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">Agenda Inteligente</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -365,9 +365,9 @@ export default function Home() {
 
             {/* Feature 6 */}
             <div className="card-elevated p-8 rounded-2xl hover:shadow-md transition-shadow">
-              <div className="flex flex-col gap-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🌐</span>
+              <div className="flex flex-col gap-4 items-center text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <span className="text-3xl">🌐</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">Modo Offline</h3>
                 <p className="text-gray-600 leading-relaxed">
@@ -405,7 +405,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-brand-green text-white px-8 py-4 rounded-full font-semibold hover:bg-green-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-sm"
+                  className="bg-brand-green text-white px-10 py-5 rounded-full text-lg font-bold hover:bg-green-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-lg hover:shadow-xl"
                 >
                   {isSubmitting ? 'Procesando...' : 'Acceso Gratis →'}
                 </button>
