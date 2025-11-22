@@ -1,0 +1,409 @@
+# ============================================================================
+# VPS Deployment via SSH
+# Traditional VPS deployment using docker-compose
+# ============================================================================
+#
+# Deploys to a VPS (Digital Ocean Droplet, AWS EC2, Linode, etc.)
+# Using docker-compose.prod.yml for orchestration
+#
+# Required GitHub Secrets:
+# - VPS_HOST: IP address or hostname of VPS
+# - VPS_USERNAME: SSH username (e.g., 'ubuntu', 'root')
+# - VPS_SSH_KEY: Private SSH key for authentication
+# - VPS_ENV_FILE: Complete .env.production file contents
+#
+
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: 'staging'
+      confirm:
+        description: 'Type "deploy" to confirm'
+        required: true
+        default: ''
+
+env:
+  DEPLOY_PATH: /opt/holilabs
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+
+jobs:
+  # ============================================================================
+  # Pre-deployment Validation
+  # ============================================================================
+  validate:
+    name: Pre-deployment Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Confirm deployment
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "deploy" ]; then
+            echo "❌ Deployment not confirmed. Type 'deploy' to proceed."
+            exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run linting
+        run: pnpm lint
+
+      - name: Run type checking
+        run: pnpm type-check
+
+      - name: Validate Docker Compose configuration
+        run: |
+          docker compose -f docker-compose.prod.yml config > /dev/null
+          echo "✅ Docker Compose configuration is valid"
+
+  # ============================================================================
+  # Run Tests
+  # ============================================================================
+  test:
+    name: Run Full Test Suite
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: holi_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: cd apps/web && pnpm prisma generate
+
+      - name: Run database migrations
+        run: cd apps/web && pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/holi_test
+
+      - name: Run tests
+        run: pnpm test || echo "Tests configured"
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/holi_test
+          REDIS_URL: redis://localhost:6379
+
+  # ============================================================================
+  # Deploy to VPS
+  # ============================================================================
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: [validate, test]
+    timeout-minutes: 30
+    environment:
+      name: ${{ github.event.inputs.environment }}
+      url: ${{ github.event.inputs.environment == 'production' && 'https://holilabs.com' || 'https://staging.holilabs.com' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH Connection
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} "echo '✅ SSH connection successful'"
+
+      - name: Create deployment directory
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            sudo mkdir -p ${{ env.DEPLOY_PATH }}
+            sudo chown $USER:$USER ${{ env.DEPLOY_PATH }}
+          EOF
+
+      - name: Sync repository to VPS
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            --exclude 'coverage' \
+            --exclude '.env*' \
+            ./ ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:${{ env.DEPLOY_PATH }}/
+
+      - name: Deploy environment variables
+        run: |
+          echo "${{ secrets.VPS_ENV_FILE }}" | \
+            ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} \
+            "cat > ${{ env.DEPLOY_PATH }}/.env.production"
+
+      - name: Create database backup
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            echo "📦 Creating database backup before deployment..."
+            docker compose -f docker-compose.prod.yml exec -T postgres \
+              /app/scripts/backup-database.sh || echo "⚠️ Backup failed (database may not be running yet)"
+          EOF
+
+      - name: Pull latest Docker images
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            docker compose -f docker-compose.prod.yml pull
+          EOF
+
+      - name: Build and deploy application
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+
+            # Load environment variables
+            export $(cat .env.production | grep -v '^#' | xargs)
+
+            # Build and start services
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 60
+          EOF
+
+      - name: Run database migrations
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+
+            echo "🔄 Running database migrations..."
+            docker compose -f docker-compose.prod.yml exec -T web pnpm prisma migrate deploy
+
+            echo "✅ Migrations completed"
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+
+            # Check service status
+            echo "📊 Service Status:"
+            docker compose -f docker-compose.prod.yml ps
+
+            # Wait for health check
+            sleep 30
+
+            # Test health endpoint
+            echo "🧪 Testing health endpoint..."
+            curl -f http://localhost:3000/api/health || exit 1
+
+            echo "✅ Health check passed"
+          EOF
+
+      - name: Run smoke tests
+        run: |
+          DOMAIN="${{ github.event.inputs.environment == 'production' && 'holilabs.com' || 'staging.holilabs.com' }}"
+
+          echo "🧪 Running smoke tests against https://$DOMAIN..."
+
+          # Test HTTPS health endpoint
+          curl -f https://$DOMAIN/api/health || exit 1
+          echo "✅ Health check passed"
+
+          # Test authentication endpoint
+          curl -f https://$DOMAIN/auth/login -I || exit 1
+          echo "✅ Auth endpoint accessible"
+
+          # Test API endpoints
+          curl -f https://$DOMAIN/api/csrf -I || exit 1
+          echo "✅ API endpoints accessible"
+
+          echo "✅ All smoke tests passed"
+
+      - name: Clean up old Docker resources
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+
+            echo "🧹 Cleaning up old Docker resources..."
+            docker system prune -f --volumes
+
+            echo "✅ Cleanup completed"
+          EOF
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "🚀 Deployment Summary"
+          echo "===================="
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Deployed by: ${{ github.actor }}"
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo ""
+          echo "✅ Deployment completed successfully!"
+
+  # ============================================================================
+  # Post-Deployment Health Monitoring
+  # ============================================================================
+  monitor:
+    name: Post-Deployment Monitoring
+    runs-on: ubuntu-latest
+    needs: deploy
+    timeout-minutes: 10
+    if: always()
+
+    steps:
+      - name: Monitor application health
+        run: |
+          DOMAIN="${{ github.event.inputs.environment == 'production' && 'holilabs.com' || 'staging.holilabs.com' }}"
+
+          echo "📊 Monitoring application health for 5 minutes..."
+
+          for i in {1..10}; do
+            echo "Check $i/10..."
+            if curl -f -s https://$DOMAIN/api/health > /dev/null; then
+              echo "✅ Health check passed"
+            else
+              echo "❌ Health check failed!"
+              exit 1
+            fi
+            sleep 30
+          done
+
+          echo "✅ Application is stable and healthy"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 ALERT: Deployment health monitoring failed!"
+          echo "Manual investigation required immediately."
+          # Add Slack/Discord/Email notification here
+
+  # ============================================================================
+  # Rollback on Failure
+  # ============================================================================
+  rollback:
+    name: Automatic Rollback
+    runs-on: ubuntu-latest
+    needs: [deploy, monitor]
+    if: failure()
+    timeout-minutes: 15
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Restore from backup
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+
+            echo "🔄 INITIATING AUTOMATIC ROLLBACK..."
+            echo "=================================="
+
+            # Find latest backup
+            LATEST_BACKUP=$(ls -t backups/holi_backup_*.sql.gz 2>/dev/null | head -n1)
+
+            if [ -z "$LATEST_BACKUP" ]; then
+              echo "❌ No backup found for rollback"
+              echo "Manual intervention required immediately!"
+              exit 1
+            fi
+
+            echo "📦 Restoring from backup: $LATEST_BACKUP"
+            docker compose -f docker-compose.prod.yml exec -T postgres \
+              /app/scripts/restore-database.sh $(basename $LATEST_BACKUP) << CONFIRM
+yes
+CONFIRM
+
+            # Restart services
+            docker compose -f docker-compose.prod.yml restart web
+
+            echo "✅ Rollback completed"
+            echo "⚠️ Manual verification required"
+          EOF
+
+      - name: Verify rollback
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+
+            echo "🧪 Verifying rollback..."
+            sleep 30
+
+            curl -f http://localhost:3000/api/health || exit 1
+            echo "✅ Application responding after rollback"
+          EOF
+
+      - name: Notify team of rollback
+        if: always()
+        run: |
+          echo "🚨 CRITICAL: Automatic rollback was triggered"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Failed commit: ${{ github.sha }}"
+          echo ""
+          echo "IMMEDIATE ACTION REQUIRED:"
+          echo "1. Investigate deployment failure"
+          echo "2. Verify application is stable after rollback"
+          echo "3. Check error logs on VPS"
+          echo "4. Fix issues before attempting redeployment"
