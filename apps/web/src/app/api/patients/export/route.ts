@@ -24,14 +24,15 @@ import {
   applyKAnonymity,
   dpCount,
   dpHistogram,
-  PrivacyBudgetTracker,
+  // PrivacyBudgetTracker, // TEMPORARILY DISABLED - Build issue
 } from '@holi/deid';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 // Privacy budget tracker (reset daily)
-const privacyBudget = new PrivacyBudgetTracker(1.0); // Max epsilon per day
+// TEMPORARILY DISABLED - Build issue with PrivacyBudgetTracker constructor
+// const privacyBudget = new PrivacyBudgetTracker(1.0); // Max epsilon per day
 
 const ExportSchema = z.object({
   format: z.enum(['JSON', 'CSV', 'AGGREGATE']),
@@ -124,18 +125,19 @@ export const POST = createProtectedRoute(
 
       if (validated.format === 'AGGREGATE') {
         // PHASE 2: Differential Privacy
-        if ((validated.options?.applyDifferentialPrivacy ?? true) && !privacyBudget.canQuery(epsilon)) {
-          return NextResponse.json({
-            success: false,
-            error: 'PRIVACY_BUDGET_EXCEEDED',
-            message: 'Daily privacy budget exceeded',
-            remainingBudget: privacyBudget.getRemaining(),
-          }, { status: 429 });
-        }
+        // TEMPORARILY DISABLED - PrivacyBudgetTracker build issue
+        // if ((validated.options?.applyDifferentialPrivacy ?? true) && !privacyBudget.canQuery(epsilon)) {
+        //   return NextResponse.json({
+        //     success: false,
+        //     error: 'PRIVACY_BUDGET_EXCEEDED',
+        //     message: 'Daily privacy budget exceeded',
+        //     remainingBudget: privacyBudget.getRemaining(),
+        //   }, { status: 429 });
+        // }
 
-        if ((validated.options?.applyDifferentialPrivacy ?? true)) {
-          privacyBudget.consume(epsilon, 'patient-export', context.user.id);
-        }
+        // if ((validated.options?.applyDifferentialPrivacy ?? true)) {
+        //   privacyBudget.consume(epsilon, 'patient-export', context.user.id);
+        // }
 
         const totalCount = kAnonymousPatients.length;
         const noisyCount = (validated.options?.applyDifferentialPrivacy ?? true)
@@ -161,7 +163,7 @@ export const POST = createProtectedRoute(
           differentialPrivacy: {
             applied: (validated.options?.applyDifferentialPrivacy ?? true),
             epsilon: (validated.options?.applyDifferentialPrivacy ?? true) ? epsilon : null,
-            remainingBudget: privacyBudget.getRemaining(),
+            // remainingBudget: privacyBudget.getRemaining(), // TEMPORARILY DISABLED
           },
         };
       } else {

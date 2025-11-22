@@ -1,0 +1,8 @@
+# Ignore all SSL certificate files
+*.pem
+*.key
+*.crt
+*.csr
+
+# Keep README
+!README.md

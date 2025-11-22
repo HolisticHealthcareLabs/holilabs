@@ -164,12 +164,12 @@ export default function Home() {
       <section id="problema" className="py-20 px-6 bg-gray-50">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-5xl md:text-6xl font-bold mb-6">
-            Te volviste doctor para <span className="text-electric">ayudar pacientes</span>,
+            Te volviste doctor para <span className="text-brand-green">salvar vidas</span>,
             <br />
             no para ahogarte en papeleo
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            El 40% de tu día se va en documentación. Las soluciones gringas cuestan $200-300 USD/mes y no entienden español. Ya es hora de cambiar eso.
+            Estudios muestran que el 40% de tu día médico se pierde en la pantalla. Recupéralo. Las soluciones gringas cuestan $200-300 USD/mes y no entienden español. Ya es hora de cambiar eso.
           </p>
         </div>
       </section>
@@ -369,9 +369,9 @@ export default function Home() {
                 <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center">
                   <span className="text-3xl">🌐</span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">Modo Offline</h3>
+                <h3 className="text-2xl font-bold text-gray-900">Tecnología "Siempre Lista"</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  PWA que funciona sin internet. Perfecto para clínicas rurales con conectividad inestable
+                  Tu clínica no se detiene si falla el WiFi. Nuestra App sigue funcionando sin internet y se sincroniza cuando regresas.
                 </p>
               </div>
             </div>
