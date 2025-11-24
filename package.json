@@ -18,7 +18,7 @@
     "db:seed": "tsx scripts/seed/index.ts"
   },
   "devDependencies": {
-    "turbo": "^2.0.0",
+    "turbo": "^2.6.1",
     "typescript": "^5.3.3",
     "tsx": "^4.7.0",
     "@types/node": "^20.11.0"
