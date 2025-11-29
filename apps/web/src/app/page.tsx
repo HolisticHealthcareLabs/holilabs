@@ -143,8 +143,8 @@ export default function Home() {
         <nav className="container mx-auto px-6 py-3 flex items-center justify-between">
           
           {/* LOGO */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative w-10 h-10 md:w-12 md:h-12 transition-transform duration-300 group-hover:scale-105">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative w-10 h-10 transition-transform duration-300 group-hover:scale-105">
               <Image
                 src="/logos/Logo 1_Light.svg"
                 alt="Holi Labs"
@@ -154,10 +154,17 @@ export default function Home() {
               />
             </div>
             <span
-              className="font-bold text-2xl md:text-3xl tracking-tighter"
+              className="text-xl tracking-tight relative"
               style={{
-                color: theme === 'dark' ? BRAND_GREEN_HEX : '#0f172a',
-                textShadow: theme === 'dark' ? '0 0 12px rgba(0, 255, 136, 0.4)' : 'none',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                background: theme === 'dark' 
+                  ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #c0c0c0 75%, #ffffff 100%)'
+                  : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                filter: theme === 'dark' ? 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' : 'drop-shadow(0.5px 0.5px 1px rgba(0,0,0,0.1))',
               }}
             >
               Holi Labs
@@ -181,7 +188,7 @@ export default function Home() {
           <div className="flex items-center">
             <a
               href="#acceso"
-              className="bg-[#00FF88] text-black font-bold text-sm px-6 py-2.5 rounded-full hover:bg-[#00e97a] hover:shadow-[0_0_20px_rgba(0,255,136,0.3)] active:scale-95 transition-all duration-300"
+              className="bg-[linear-gradient(110deg,#00FF88,45%,#b0ffda,55%,#00FF88)] bg-[length:200%_100%] animate-shimmer-fast text-black font-bold text-sm px-6 py-2.5 rounded-full hover:shadow-[0_0_20px_rgba(0,255,136,0.3)] active:scale-95 transition-all duration-300"
             >
               Agendar Demo
             </a>
@@ -224,7 +231,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <a
               href="#acceso"
-              className="flex items-center justify-center bg-[#00FF88] text-black px-10 py-5 rounded-full text-lg font-bold hover:bg-[#00e97a] hover:shadow-[0_0_30px_rgba(0,255,136,0.4)] active:scale-95 transition-all duration-300 group shadow-xl shadow-[#00FF88]/20 animate-pulse-slow"
+              className="flex items-center justify-center bg-[linear-gradient(110deg,#00FF88,45%,#b0ffda,55%,#00FF88)] bg-[length:200%_100%] animate-shimmer-fast text-black px-10 py-5 rounded-full text-lg font-bold hover:shadow-[0_0_30px_rgba(0,255,136,0.4)] active:scale-95 transition-all duration-300 group shadow-xl shadow-[#00FF88]/20"
             >
               Agendar Demo
               <span className="ml-2 transform group-hover:translate-x-1 transition-transform">→</span>
@@ -289,6 +296,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+
 
       {/* PLATFORM (BENTO GRID) */}
       <section id="plataforma" className="py-24 px-6 bg-white dark:bg-[#0A0A0A] border-t border-gray-200 dark:border-white/5">
@@ -480,12 +488,21 @@ export default function Home() {
       {/* FOOTER */}
       <footer className="py-12 px-6 bg-white dark:bg-black border-t border-gray-200 dark:border-white/10">
         <div className="container mx-auto max-w-6xl flex flex-col md:flex-row justify-between items-center gap-6">
-           <div className="flex items-center gap-3 opacity-80">
+           <div className="flex items-center gap-2.5 opacity-80">
               <Image src="/logos/Logo 1_Light.svg" alt="Logo" width={30} height={30} />
-              <span className="font-bold text-gray-900 dark:text-white tracking-tight">HOLI LABS</span>
+              <span 
+                className="text-sm tracking-tight uppercase" 
+                style={{
+                  fontWeight: 600,
+                  letterSpacing: '0.05em',
+                  color: theme === 'dark' ? '#ffffff' : '#1a1a1a',
+                }}
+              >
+                Holi Labs
+              </span>
            </div>
            <div className="text-xs text-gray-500 dark:text-white/40">
-              © 2024 HOLI LABS • HIPAA/GDPR/LGPD Compliant
+              © 2024 Holi Labs • HIPAA/GDPR/LGPD Compliant
            </div>
         </div>
       </footer>

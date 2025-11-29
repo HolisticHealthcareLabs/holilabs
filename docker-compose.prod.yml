@@ -1,7 +1,9 @@
 # ============================================================================
 # Production Docker Compose Configuration
-# For VPS Deployment (Digital Ocean Droplet, EC2, etc.)
+# HARDENED FOR LATAM DEPLOYMENT - OOM Protected
 # ============================================================================
+
+version: '3.8'
 
 services:
   # PostgreSQL Database
@@ -18,6 +20,14 @@ services:
       - ./backups:/backups
     ports:
       - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-holi}"]
       interval: 10s
@@ -31,11 +41,19 @@ services:
   redis:
     image: redis:7-alpine
     container_name: holi-redis-prod
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     ports:
       - "6379:6379"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.125'
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
@@ -58,6 +76,14 @@ services:
       - meilisearch_data:/meili_data
     ports:
       - "7700:7700"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
       interval: 10s
@@ -67,11 +93,11 @@ services:
     networks:
       - holi-network
 
-  # Next.js Web Application
+  # Next.js Web Application (OOM PROTECTED)
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile.prod
+      dockerfile: apps/web/Dockerfile
       args:
         - NODE_ENV=production
     container_name: holi-web-prod
@@ -79,6 +105,7 @@ services:
       # Node
       NODE_ENV: production
       PORT: 3000
+      NODE_OPTIONS: "--max-old-space-size=512"
 
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-holi}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-holi_protocol}?schema=public
@@ -108,6 +135,11 @@ services:
       MEILI_HOST: http://meilisearch:7700
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
 
+      # Presidio
+      PRESIDIO_ANALYZER_URL: http://presidio-analyzer:5001
+      PRESIDIO_ANONYMIZER_URL: http://presidio-anonymizer:5002
+      PRESIDIO_TIMEOUT_MS: "8000"
+
       # Feature Flags
       ENABLE_BLOCKCHAIN: ${ENABLE_BLOCKCHAIN:-false}
       ENABLE_IPFS: ${ENABLE_IPFS:-false}
@@ -124,6 +156,16 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '1.5'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    # CRITICAL: Protect from OOM killer (lowest score = last to be killed)
+    oom_score_adj: -500
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
@@ -134,7 +176,106 @@ services:
     networks:
       - holi-network
 
-  # Nginx Reverse Proxy
+  # Presidio Analyzer (HIGH OOM PRIORITY - KILL THIS FIRST)
+  presidio-analyzer:
+    image: mcr.microsoft.com/presidio-analyzer:latest
+    container_name: holi-presidio-analyzer
+    environment:
+      - LOG_LEVEL=INFO
+      - GRPC_PORT=5001
+      - NLP_ENGINE_NAME=spacy
+      - MODELS_CACHE_DIR=/app/models
+      - NLP_WORKERS=1
+      - DEFAULT_LANGUAGE=es
+      - SUPPORTED_LANGUAGES=es,pt,en
+    volumes:
+      - presidio-models:/app/models
+    ports:
+      - "5001:5001"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 768M
+          cpus: '0.5'
+    # CRITICAL: Kill Presidio FIRST to protect Next.js (high score = first to die)
+    oom_score_adj: 500
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - holi-network
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=presidio-analyzer"
+      - "coolify.port=5001"
+
+  # Presidio Anonymizer
+  presidio-anonymizer:
+    image: mcr.microsoft.com/presidio-anonymizer:latest
+    container_name: holi-presidio-anonymizer
+    environment:
+      - LOG_LEVEL=INFO
+      - GRPC_PORT=5002
+      - DEFAULT_ANONYMIZER=replace
+      - CACHE_ENABLED=true
+    ports:
+      - "5002:5002"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - holi-network
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=presidio-anonymizer"
+      - "coolify.port=5002"
+
+  # Redis for Presidio Cache
+  presidio-redis:
+    image: redis:7-alpine
+    container_name: holi-presidio-redis
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - presidio-redis-data:/data
+    ports:
+      - "6380:6379"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - holi-network
+
+  # Nginx Reverse Proxy (optional)
   nginx:
     image: nginx:alpine
     container_name: holi-nginx-prod
@@ -147,6 +288,11 @@ services:
       - "443:443"
     depends_on:
       - web
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost/health"]
       interval: 10s
@@ -163,7 +309,25 @@ volumes:
     driver: local
   meilisearch_data:
     driver: local
+  presidio-models:
+    driver: local
+  presidio-redis-data:
+    driver: local
 
 networks:
   holi-network:
     driver: bridge
+    name: holi-network
+
+# ============================================================================
+# RESOURCE SUMMARY (4GB Droplet):
+# - PostgreSQL: 512MB
+# - Redis: 256MB
+# - Meilisearch: 512MB
+# - Next.js: 768MB (OOM protected, oom_score=-500)
+# - Presidio Analyzer: 1GB (Will be killed first, oom_score=500)
+# - Presidio Anonymizer: 512MB
+# - Presidio Redis: 256MB
+# - Nginx: 128MB
+# TOTAL: ~3.5GB + 512MB system overhead = Fits in 4GB with headroom
+# ============================================================================

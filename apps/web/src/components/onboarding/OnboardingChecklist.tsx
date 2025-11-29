@@ -23,9 +23,24 @@ interface ChecklistItem {
   };
 }
 
-export default function OnboardingChecklist() {
-  const [isVisible, setIsVisible] = useState(true);
+interface OnboardingChecklistProps {
+  autoShow?: boolean;
+}
+
+export default function OnboardingChecklist({ autoShow = false }: OnboardingChecklistProps) {
+  const [isVisible, setIsVisible] = useState(autoShow);
   const [items, setItems] = useState<ChecklistItem[]>([
+    {
+      id: 'demo-patient',
+      title: 'Crea un paciente demo',
+      description: 'Explora la plataforma con un caso clínico realista',
+      completed: false,
+      icon: '✨',
+      action: {
+        label: 'Crear demo',
+        href: '/onboarding',
+      },
+    },
     {
       id: 'invite-patient',
       title: 'Invita a tu primer paciente',

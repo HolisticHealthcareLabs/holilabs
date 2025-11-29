@@ -78,6 +78,11 @@ const config = {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
         },
+        // Liquid Metal Shimmer (faster for buttons)
+        "shimmer-fast": {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
         // The "Biological" Pulse
         "pulse-slow": {
           "0%, 100%": { opacity: "1" },
@@ -89,6 +94,7 @@ const config = {
         "accordion-up": "accordion-up 0.2s ease-out",
         // Custom Animations
         shimmer: "shimmer 8s ease-in-out infinite",
+        "shimmer-fast": "shimmer-fast 3s ease-in-out infinite",
         "pulse-slow": "pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },

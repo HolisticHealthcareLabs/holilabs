@@ -17,12 +17,15 @@ export async function GET(request: NextRequest) {
     const session = await requirePatientSession();
     const patientId = session.patientId;
 
-    // Fetch patient details for age calculation
+    // Fetch patient details for age calculation and risk scores
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
       select: {
         dateOfBirth: true,
         gender: true,
+        cvdRiskScore: true,
+        diabetesRiskScore: true,
+        diabetesRiskDate: true,
       },
     });
 
@@ -36,8 +39,82 @@ export async function GET(request: NextRequest) {
     // Calculate age
     const age = calculateAge(patient.dateOfBirth);
 
-    // Mock risk scores (in production, these would be calculated from actual health data)
-    const riskScores = generateMockRiskScores(age, patient.gender || 'UNKNOWN');
+    // Fetch real risk scores from patient record
+    const riskScores = [];
+
+    // CVD Risk
+    if (patient.cvdRiskScore) {
+      const level = patient.cvdRiskScore < 5 ? 'low' : patient.cvdRiskScore < 7.5 ? 'moderate' : patient.cvdRiskScore < 20 ? 'high' : 'very-high';
+      riskScores.push({
+        id: 'cvd',
+        name: 'Riesgo Cardiovascular (CVD)',
+        score: patient.cvdRiskScore,
+        level,
+        description: 'Probabilidad de enfermedad cardiovascular en los próximos 10 años',
+        explanation: 'Este score evalúa tu riesgo de infarto, derrame cerebral y otras enfermedades del corazón. Se basa en edad, presión arterial, colesterol y otros factores.',
+        lastCalculated: new Date().toISOString(),
+      });
+    }
+
+    // Diabetes Risk
+    if (patient.diabetesRiskScore) {
+      const level = patient.diabetesRiskScore < 7 ? 'low' : patient.diabetesRiskScore < 12 ? 'moderate' : patient.diabetesRiskScore < 15 ? 'high' : 'very-high';
+      riskScores.push({
+        id: 'diabetes',
+        name: 'Riesgo de Diabetes',
+        score: patient.diabetesRiskScore,
+        level,
+        description: 'Probabilidad de desarrollar diabetes tipo 2',
+        explanation: 'Este score considera tu IMC, circunferencia de cintura, actividad física, dieta y antecedentes familiares para estimar tu riesgo.',
+        lastCalculated: patient.diabetesRiskDate?.toISOString() || new Date().toISOString(),
+      });
+    }
+
+    // If no risk scores, generate mock ones
+    if (riskScores.length === 0) {
+      riskScores.push(...generateMockRiskScores(age, patient.gender || 'UNKNOWN'));
+    }
+
+    // Fetch ACTIVE prevention plans from database
+    const preventionPlans = await prisma.preventionPlan.findMany({
+      where: {
+        patientId,
+        status: 'ACTIVE',
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { scheduledDate: 'asc' },
+      ],
+      take: 20,
+    });
+
+    // Transform prevention plans to interventions format
+    const interventions = preventionPlans.map((plan) => {
+      const daysUntil = plan.scheduledDate
+        ? Math.ceil((plan.scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        : 0;
+
+      let status: 'overdue' | 'due-soon' | 'scheduled' | 'completed';
+      if (daysUntil < 0) {
+        status = 'overdue';
+      } else if (daysUntil <= 30) {
+        status = 'due-soon';
+      } else {
+        status = 'scheduled';
+      }
+
+      return {
+        id: plan.id,
+        name: plan.title,
+        type: plan.type === 'SCREENING_DUE' ? 'Screening Preventivo' :
+              plan.type === 'RISK_MITIGATION' ? 'Mitigación de Riesgo' :
+              plan.type === 'DISEASE_MANAGEMENT' ? 'Manejo de Enfermedad' : 'Prevención',
+        dueDate: plan.scheduledDate?.toISOString() || new Date().toISOString(),
+        status,
+        description: plan.description || '',
+        importance: plan.evidenceStrength || undefined,
+      };
+    });
 
     // Fetch upcoming appointments that are preventive screenings
     const preventiveAppointments = await prisma.appointment.findMany({
@@ -62,8 +139,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Transform to interventions format
-    const interventions = preventiveAppointments.map((apt) => {
+    // Add appointments to interventions
+    interventions.push(...preventiveAppointments.map((apt) => {
       const daysUntil = Math.ceil(
         (new Date(apt.startTime).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       );
@@ -86,17 +163,13 @@ export async function GET(request: NextRequest) {
         description: apt.description || 'Consulta preventiva programada',
         importance: daysUntil <= 7 ? 'Tu cita está muy próxima. No olvides asistir.' : undefined,
       };
-    });
+    }));
 
-    // Add age-appropriate screenings
-    const recommendedScreenings = getRecommendedScreenings(age, patient.gender || 'UNKNOWN');
-    interventions.push(...recommendedScreenings);
+    // Generate health goals based on prevention plans
+    const goals = generateHealthGoalsFromPlans(preventionPlans, riskScores);
 
-    // Generate health goals (mock data)
-    const goals = generateHealthGoals(riskScores);
-
-    // Generate personalized recommendations
-    const recommendations = generateRecommendations(age, riskScores);
+    // Generate personalized recommendations from prevention plans
+    const recommendations = generateRecommendationsFromPlans(preventionPlans, age, riskScores);
 
     return NextResponse.json({
       success: true,
@@ -230,108 +303,144 @@ function getRecommendedScreenings(age: number, gender: string) {
   return screenings;
 }
 
-function generateHealthGoals(riskScores: any[]) {
+function generateHealthGoalsFromPlans(preventionPlans: any[], riskScores: any[]) {
   const goals = [];
 
-  // Weight management goal
-  goals.push({
-    id: 'weight',
-    title: 'Control de Peso',
-    target: 'IMC entre 18.5 - 24.9',
-    current: 'IMC: 26.3',
-    progress: 65,
-    category: 'Nutrición',
-  });
+  // Extract goals from prevention plans with target metrics
+  for (const plan of preventionPlans) {
+    if (plan.targetMetrics) {
+      const metrics = plan.targetMetrics as any;
 
-  // Physical activity
-  goals.push({
-    id: 'exercise',
-    title: 'Actividad Física',
-    target: '150 minutos por semana',
-    current: '90 minutos esta semana',
-    progress: 60,
-    category: 'Ejercicio',
-  });
+      // HbA1c goal
+      if (metrics.hba1c && metrics.targetHbA1c) {
+        const progress = Math.max(0, Math.min(100, 100 - ((metrics.hba1c - metrics.targetHbA1c) / metrics.hba1c) * 100));
+        goals.push({
+          id: `hba1c-${plan.id}`,
+          title: 'Control de HbA1c',
+          target: `HbA1c < ${metrics.targetHbA1c}%`,
+          current: `HbA1c: ${metrics.hba1c}%`,
+          progress: Math.round(progress),
+          category: 'Diabetes',
+        });
+      }
 
-  // Blood pressure
-  const hasHighCardioRisk = riskScores.some(
-    (s) => s.id === 'ascvd' && (s.level === 'high' || s.level === 'very-high')
-  );
+      // LDL goal
+      if (metrics.ldl && metrics.targetLDL) {
+        const progress = Math.max(0, Math.min(100, (1 - (metrics.ldl - metrics.targetLDL) / metrics.ldl) * 100));
+        goals.push({
+          id: `ldl-${plan.id}`,
+          title: 'Control de Colesterol LDL',
+          target: `LDL < ${metrics.targetLDL} mg/dL`,
+          current: `LDL: ${metrics.ldl} mg/dL`,
+          progress: Math.round(progress),
+          category: 'Cardiovascular',
+        });
+      }
 
-  if (hasHighCardioRisk) {
+      // eGFR goal
+      if (metrics.egfr) {
+        const progress = Math.min(100, (metrics.egfr / 90) * 100);
+        goals.push({
+          id: `egfr-${plan.id}`,
+          title: 'Función Renal (eGFR)',
+          target: 'eGFR > 90 mL/min/1.73m²',
+          current: `eGFR: ${metrics.egfr} mL/min/1.73m²`,
+          progress: Math.round(progress),
+          category: 'Renal',
+        });
+      }
+    }
+  }
+
+  // Default goals if none from plans
+  if (goals.length === 0) {
     goals.push({
-      id: 'blood-pressure',
-      title: 'Presión Arterial',
-      target: 'Menos de 120/80 mmHg',
-      current: '128/82 mmHg',
-      progress: 75,
-      category: 'Cardiovascular',
+      id: 'weight',
+      title: 'Control de Peso',
+      target: 'IMC entre 18.5 - 24.9',
+      current: 'IMC: 26.3',
+      progress: 65,
+      category: 'Nutrición',
+    });
+
+    goals.push({
+      id: 'exercise',
+      title: 'Actividad Física',
+      target: '150 minutos por semana',
+      current: '90 minutos esta semana',
+      progress: 60,
+      category: 'Ejercicio',
     });
   }
 
   return goals;
 }
 
-function generateRecommendations(age: number, riskScores: any[]) {
+function generateRecommendationsFromPlans(preventionPlans: any[], age: number, riskScores: any[]) {
   const recommendations = [];
 
-  // High cardiovascular risk
-  const cvRisk = riskScores.find((s) => s.id === 'ascvd');
-  if (cvRisk && (cvRisk.level === 'high' || cvRisk.level === 'very-high')) {
-    recommendations.push({
-      id: 'cardio-lifestyle',
-      title: 'Mejora tu Salud Cardiovascular',
-      description:
-        'Considera aumentar tu actividad física a 30 minutos diarios, reducir el consumo de sal y mantener un peso saludable. Consulta con tu médico sobre posibles medicamentos preventivos.',
-      priority: 'high' as const,
-      category: 'Cardiovascular',
-    });
+  // Extract recommendations from prevention plans
+  for (const plan of preventionPlans) {
+    if (plan.clinicalRecommendations && Array.isArray(plan.clinicalRecommendations)) {
+      // Take the first 2-3 most important recommendations from each plan
+      const topRecommendations = plan.clinicalRecommendations.slice(0, 2);
+
+      for (let i = 0; i < topRecommendations.length; i++) {
+        const rec = topRecommendations[i];
+        const priority = plan.priority === 'HIGH' ? 'high' :
+                        plan.priority === 'MEDIUM' ? 'medium' : 'low';
+
+        recommendations.push({
+          id: `${plan.id}-rec-${i}`,
+          title: plan.title,
+          description: rec.replace(/\*\*/g, '').replace(/\*/g, ''),
+          priority,
+          category: plan.type === 'SCREENING_DUE' ? 'Screening' :
+                   plan.type === 'RISK_MITIGATION' ? 'Prevención' :
+                   plan.type === 'DISEASE_MANAGEMENT' ? 'Manejo' : 'Salud',
+        });
+      }
+    }
   }
 
-  // Diabetes risk
-  const diabetesRisk = riskScores.find((s) => s.id === 'diabetes');
-  if (diabetesRisk && (diabetesRisk.level === 'moderate' || diabetesRisk.level === 'high')) {
-    recommendations.push({
-      id: 'diabetes-prevention',
-      title: 'Prevención de Diabetes',
-      description:
-        'Reduce el consumo de azúcares refinados y carbohidratos simples. Aumenta la ingesta de fibra y verduras. El ejercicio regular es clave para prevenir la diabetes tipo 2.',
-      priority: 'high' as const,
-      category: 'Metabolismo',
-    });
-  }
+  // Add general recommendations if not enough from plans
+  if (recommendations.length < 3) {
+    // High cardiovascular risk
+    const cvRisk = riskScores.find((s) => s.id === 'ascvd');
+    if (cvRisk && (cvRisk.level === 'high' || cvRisk.level === 'very-high')) {
+      recommendations.push({
+        id: 'cardio-lifestyle',
+        title: 'Mejora tu Salud Cardiovascular',
+        description:
+          'Considera aumentar tu actividad física a 30 minutos diarios, reducir el consumo de sal y mantener un peso saludable.',
+        priority: 'high' as const,
+        category: 'Cardiovascular',
+      });
+    }
 
-  // General wellness
-  recommendations.push({
-    id: 'sleep-quality',
-    title: 'Mejora la Calidad del Sueño',
-    description:
-      'Dormir 7-8 horas cada noche mejora tu salud cardiovascular, metabolismo y sistema inmune. Establece una rutina de sueño consistente.',
-    priority: 'medium' as const,
-    category: 'Bienestar General',
-  });
+    // Diabetes risk
+    const diabetesRisk = riskScores.find((s) => s.id === 'diabetes');
+    if (diabetesRisk && (diabetesRisk.level === 'moderate' || diabetesRisk.level === 'high')) {
+      recommendations.push({
+        id: 'diabetes-prevention',
+        title: 'Prevención de Diabetes',
+        description:
+          'Reduce el consumo de azúcares refinados. Aumenta la ingesta de fibra y verduras. El ejercicio regular es clave.',
+        priority: 'high' as const,
+        category: 'Metabolismo',
+      });
+    }
 
-  // Stress management
-  if (age >= 30) {
+    // General wellness
     recommendations.push({
-      id: 'stress-management',
-      title: 'Manejo del Estrés',
+      id: 'sleep-quality',
+      title: 'Mejora la Calidad del Sueño',
       description:
-        'El estrés crónico aumenta el riesgo de enfermedades cardiovasculares. Considera practicar meditación, yoga o técnicas de respiración profunda.',
+        'Dormir 7-8 horas cada noche mejora tu salud cardiovascular, metabolismo y sistema inmune.',
       priority: 'medium' as const,
-      category: 'Salud Mental',
+      category: 'Bienestar General',
     });
   }
 
-  // Nutrition
-  recommendations.push({
-    id: 'nutrition',
-    title: 'Alimentación Balanceada',
-    description:
-      'Una dieta rica en frutas, verduras, granos enteros y proteínas magras reduce el riesgo de múltiples enfermedades crónicas.',
-    priority: 'low' as const,
-    category: 'Nutrición',
-  });
-
-  return recommendations;
+  return recommendations.slice(0, 10); // Limit to top 10
 }

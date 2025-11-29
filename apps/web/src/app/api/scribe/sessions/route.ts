@@ -10,6 +10,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import { verifyRecordingConsent } from '@/lib/consent/recording-consent';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,11 +22,34 @@ export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
       const body = await request.json();
-      const { patientId, appointmentId } = body;
+      const { patientId, appointmentId, accessReason, accessPurpose } = body;
 
       if (!patientId) {
         return NextResponse.json(
           { error: 'Patient ID is required' },
+          { status: 400 }
+        );
+      }
+
+      // HIPAA §164.502(b) - Access Reason Required
+      const validAccessReasons = [
+        'DIRECT_PATIENT_CARE',
+        'CARE_COORDINATION',
+        'EMERGENCY_ACCESS',
+        'ADMINISTRATIVE',
+        'QUALITY_IMPROVEMENT',
+        'BILLING',
+        'LEGAL_COMPLIANCE',
+        'RESEARCH_IRB_APPROVED',
+        'PUBLIC_HEALTH',
+      ];
+
+      if (!accessReason || !validAccessReasons.includes(accessReason)) {
+        return NextResponse.json(
+          {
+            error: 'Access reason is required for HIPAA compliance',
+            validReasons: validAccessReasons,
+          },
           { status: 400 }
         );
       }
@@ -42,6 +66,21 @@ export const POST = createProtectedRoute(
         return NextResponse.json(
           { error: 'Patient not found or access denied' },
           { status: 404 }
+        );
+      }
+
+      // Verify recording consent (two-party consent states)
+      const consentCheck = await verifyRecordingConsent(patientId, patient.state || undefined);
+
+      if (!consentCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Recording consent required',
+            reason: consentCheck.reason,
+            requiresConsent: consentCheck.requiresConsent,
+            patientState: patient.state,
+          },
+          { status: 403 }
         );
       }
 
@@ -91,6 +130,25 @@ export const POST = createProtectedRoute(
               lastName: true,
               specialty: true,
             },
+          },
+        },
+      });
+
+      // Create audit log with access reason (HIPAA §164.502(b))
+      await prisma.auditLog.create({
+        data: {
+          userId: context.user.id,
+          userEmail: context.user.email || '',
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          action: 'CREATE',
+          resource: 'ScribeSession',
+          resourceId: session.id,
+          success: true,
+          accessReason, // REQUIRED: HIPAA compliance
+          accessPurpose, // Optional: Additional context
+          details: {
+            patientId,
+            appointmentId,
           },
         },
       });

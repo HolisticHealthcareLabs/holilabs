@@ -27,6 +27,7 @@ model User {
   firstName     String
   lastName      String
   role          UserRole @default(CLINICIAN)
+  permissions   String[] @default([]) // Granular permissions (e.g., ["patient:read", "prescription:write"])
   specialty     String?
   licenseNumber String?
   npi           String? // National Provider Identifier (US only)
@@ -75,16 +76,28 @@ model User {
   imageAccessLogs       ImageAccessLog[]
   imageAnnotations      ImageAnnotation[]
 
+  // User Settings & BYOK
+  settings UserSettings?
+
+  // Referral System
+  referralCodes   ReferralCode[]
+  referredUsers   Referral[]       @relation("ReferredUsers")
+  referralRewards ReferralReward[] @relation("ReferralRewards")
+
   @@index([email])
   @@index([walletAddress])
   @@map("users")
 }
 
 enum UserRole {
-  ADMIN
-  CLINICIAN
-  NURSE
-  STAFF
+  ADMIN // Clinic owner - full system access
+  PHYSICIAN // Doctor - full patient care access
+  NURSE // Nurse - limited prescribing, full patient care
+  RECEPTIONIST // Front desk - scheduling, billing only
+  LAB_TECH // Laboratory technician - lab results entry
+  PHARMACIST // Pharmacist - prescription fulfillment
+  CLINICIAN // Legacy role - maps to PHYSICIAN
+  STAFF // Legacy role - maps to RECEPTIONIST
 }
 
 // ============================================================================
@@ -619,6 +632,21 @@ model Patient {
   doNotDisturbEnabled       Boolean @default(false)
 
   // ========================================================================
+  // RECORDING CONSENT (Two-Party Consent States)
+  // ========================================================================
+
+  // Two-party consent states: CA, CT, FL, IL, MD, MA, MT, NV, NH, PA, WA
+  // Recording requires explicit patient consent in these states
+  recordingConsentGiven       Boolean   @default(false)
+  recordingConsentDate        DateTime? // When consent was given
+  recordingConsentMethod      String? // e.g., "Portal", "In-Person", "Verbal", "Written"
+  recordingConsentState       String? // State where consent was obtained (for compliance tracking)
+  recordingConsentWithdrawnAt DateTime? // If patient withdraws consent
+  recordingConsentLanguage    String? // Language of consent (en/es/pt)
+  recordingConsentVersion     String? // Consent form version (for audit trail)
+  recordingConsentSignature   String? // Base64 signature or "VERBAL_ACKNOWLEDGED"
+
+  // ========================================================================
   // PREVENTIVE CARE SCREENING TRACKING
   // ========================================================================
 
@@ -711,6 +739,12 @@ model Patient {
   recurringAppointments RecurringAppointment[]
   noShowHistory         NoShowHistory[]
   waitingList           WaitingList[]
+
+  // Preventive Care & Risk Stratification
+  preventionPlans PreventionPlan[]
+  riskScores      RiskScore[]
+  nutritionPlans  NutritionPlan[]
+  exercisePlans   ExercisePlan[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -1480,6 +1514,10 @@ model AuditLog {
   details  Json? // Additional context
   dataHash String? // Hash of data accessed/modified
 
+  // LGPD/Law 25.326 Compliance - Access Justification
+  accessReason  AccessReason? // Mandatory for READ operations on PHI
+  accessPurpose String?       @db.Text // Optional free-text justification
+
   // Result
   success      Boolean @default(true)
   errorMessage String? @db.Text
@@ -1491,6 +1529,7 @@ model AuditLog {
   @@index([action])
   @@index([resourceId])
   @@index([timestamp])
+  @@index([accessReason])
   @@map("audit_logs")
 }
 
@@ -1512,6 +1551,19 @@ enum AuditAction {
   OPT_OUT // Patient preference opt-out action
   NOTIFY // WhatsApp/Email/SMS notifications
   DOCUMENT_UPLOADED // Document upload action
+}
+
+// LGPD Art. 6 (Purpose Limitation) + Law 25.326 Art. 5 (Purpose Specification)
+enum AccessReason {
+  DIRECT_PATIENT_CARE // Atendimento direto ao paciente (LGPD Art. 11, II, a)
+  CARE_COORDINATION // Coordenação de cuidados
+  EMERGENCY_ACCESS // Acesso emergencial (Art. 11, II, a - Proteção da vida)
+  ADMINISTRATIVE // Gestão administrativa (Art. 7, V - Execução de contrato)
+  QUALITY_IMPROVEMENT // Melhoria da qualidade (Art. 10 - Legítimo interesse)
+  BILLING // Faturamento (Art. 7, V - Execução de contrato)
+  LEGAL_COMPLIANCE // Conformidade legal (Art. 7, II - Obrigação legal)
+  RESEARCH_IRB_APPROVED // Pesquisa aprovada por comitê de ética
+  PUBLIC_HEALTH // Saúde pública (Art. 7, III - Políticas públicas)
 }
 
 // ============================================================================
@@ -2645,6 +2697,137 @@ enum SubscriptionStatus {
 enum BillingCycle {
   MONTHLY
   ANNUALLY
+}
+
+// ============================================================================
+// REFERRAL SYSTEM - VIRAL GROWTH MECHANICS
+// ============================================================================
+
+model ReferralCode {
+  id String @id @default(cuid())
+
+  // Owner of the referral code
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Referral code (unique, shareable)
+  code String @unique // e.g., "HOLI-DR-SMITH-X3K2"
+
+  // Referral stats
+  timesUsed         Int      @default(0)
+  successfulSignups Int      @default(0)
+  activeReferrals   Int      @default(0) // Users who completed trial
+  rewardsClaimed    Int      @default(0)
+
+  // Reward configuration
+  rewardType        ReferralRewardType @default(PREVENTION_UNLOCK)
+  rewardValue       Int                @default(6) // months of prevention alerts
+  requiredReferrals Int                @default(3) // threshold to unlock reward
+
+  // Status
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime? // Optional expiration for time-limited campaigns
+
+  // Relations
+  referrals Referral[]
+
+  @@index([userId])
+  @@index([code])
+  @@index([isActive])
+  @@map("referral_codes")
+}
+
+model Referral {
+  id String @id @default(cuid())
+
+  // Referrer (who shared the code)
+  referralCodeId String
+  referralCode   ReferralCode @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
+
+  // Referee (who used the code)
+  refereeEmail  String // Email of invited person
+  refereeUserId String? // Populated once they sign up
+  refereeUser   User?   @relation("ReferredUsers", fields: [refereeUserId], references: [id], onDelete: SetNull)
+
+  // Referral journey
+  status           ReferralStatus @default(INVITED)
+  invitedAt        DateTime       @default(now())
+  signedUpAt       DateTime?
+  completedTrialAt DateTime?
+  convertedToPaidAt DateTime?
+
+  // Attribution tracking
+  utmSource   String? // "email", "dashboard", "share-button"
+  utmMedium   String? // "referral"
+  utmCampaign String? // "founder-promo"
+  ipAddress   String?
+  userAgent   String?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([referralCodeId])
+  @@index([refereeEmail])
+  @@index([refereeUserId])
+  @@index([status])
+  @@map("referrals")
+}
+
+model ReferralReward {
+  id String @id @default(cuid())
+
+  // Who earned the reward
+  userId String
+  user   User   @relation("ReferralRewards", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Reward details
+  rewardType        ReferralRewardType
+  rewardValue       Int // e.g., 6 months
+  rewardDescription String             @db.Text
+
+  // Status
+  status       ReferralRewardStatus @default(PENDING)
+  earnedAt     DateTime             @default(now())
+  claimedAt    DateTime?
+  expiresAt    DateTime?
+
+  // Which referrals triggered this reward
+  triggeringReferralIds String[] // Array of Referral IDs
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("referral_rewards")
+}
+
+enum ReferralRewardType {
+  PREVENTION_UNLOCK // Unlock prevention alerts for N months
+  SUBSCRIPTION_CREDIT // Credit towards subscription
+  FEATURE_UNLOCK // Unlock specific feature
+  FREE_MONTHS // Free months of Professional tier
+}
+
+enum ReferralStatus {
+  INVITED // Email invitation sent
+  CLICKED // Clicked referral link
+  SIGNED_UP // Created account
+  TRIAL_ACTIVE // In trial period
+  TRIAL_COMPLETED // Completed 14-day trial
+  CONVERTED // Paid for subscription
+  CHURNED // Cancelled subscription
+}
+
+enum ReferralRewardStatus {
+  PENDING // Reward earned but not claimed
+  CLAIMED // Reward claimed and active
+  EXPIRED // Reward expired before claiming
+  REVOKED // Reward revoked (e.g., referee churned)
 }
 
 // ============================================================================
@@ -3994,4 +4177,376 @@ enum AnnotationType {
   CIRCLE // Circle annotation
   RECTANGLE // Rectangle annotation
   FREEHAND // Freehand drawing
+}
+
+// ============================================================================
+// PREVENTIVE CARE & RISK STRATIFICATION
+// ============================================================================
+
+model PreventionPlan {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Plan metadata
+  planName    String // e.g., "Cardiovascular Disease Prevention Plan"
+  planType    PreventionPlanType
+  description String?            @db.Text
+
+  // Risk stratification
+  riskScores RiskScore[]
+
+  // Goals
+  goals         Json // Array of {goal: string, targetDate: DateTime, status: string}
+  nutritionPlan Json? // Reference to nutrition recommendations
+  exercisePlan  Json? // Reference to exercise recommendations
+
+  // Clinical recommendations
+  recommendations   Json // Array of interventions with evidence
+  medicationChanges String? @db.Text
+  lifestyleChanges  String? @db.Text
+  screeningSchedule Json? // Preventive screenings needed
+  followUpSchedule  Json? // Follow-up cadence
+
+  // Evidence & Guidelines
+  guidelineSource   String? // USPSTF, ADA, AHA, ACC, etc.
+  evidenceLevel     String? // Grade A, B, C recommendations
+  clinicalTrialRefs String? @db.Text // References to trials
+
+  // Status
+  status      PreventionPlanStatus @default(ACTIVE)
+  activatedAt DateTime             @default(now())
+  completedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String? // User ID who last reviewed
+
+  // AI-generated insights
+  aiGeneratedBy    String? // Model used (gemini-1.5-flash, claude-sonnet-4.5)
+  aiConfidence     Float? // 0.0-1.0 confidence score
+  deidentifiedText String? @db.Text // PHI-masked version
+  mappingId        String? // For reversibility (AWS Comprehend Medical)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([planType])
+  @@index([status])
+  @@map("prevention_plans")
+}
+
+model RiskScore {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Prevention plan link (optional)
+  preventionPlanId String?
+  preventionPlan   PreventionPlan? @relation(fields: [preventionPlanId], references: [id], onDelete: SetNull)
+
+  // Risk type
+  riskType         RiskScoreType
+  algorithmVersion String // e.g., "ASCVD-2013-ACC-AHA", "ADA-Diabetes-2009"
+
+  // Score results
+  score           Float // Raw score (e.g., ASCVD = 0.125)
+  scorePercentage String // Formatted (e.g., "12.5%")
+  category        String // Low, Moderate, High, Very High
+  riskPercentile  Float? // Compared to population
+
+  // Input data (snapshot at time of calculation)
+  inputData Json // {age: 55, totalCholesterol: 200, ...}
+
+  // Recommendations
+  recommendation  String   @db.Text
+  nextSteps       String[] // Array of actionable steps
+  uspstfGrade     String? // USPSTF recommendation grade
+  treatmentTarget Json? // LDL target, BP target, etc.
+
+  // Clinical evidence
+  clinicalEvidence String[] // Array of trial references
+
+  // DPP/Metformin eligibility (diabetes-specific)
+  dppEligible          Boolean? @default(false)
+  dppExpectedOutcome   String?  @db.Text
+  metforminRecommended Boolean? @default(false)
+  metforminRationale   String?  @db.Text
+
+  // Validity
+  calculatedAt DateTime  @default(now())
+  expiresAt    DateTime? // When to recalculate
+  isActive     Boolean   @default(true)
+
+  @@index([patientId])
+  @@index([riskType])
+  @@index([calculatedAt])
+  @@map("risk_scores")
+}
+
+model NutritionPlan {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Plan type
+  dietType    NutritionPlanType
+  planName    String // e.g., "Mediterranean Diet for CVD Prevention"
+  description String?           @db.Text
+
+  // Caloric & Macro targets
+  dailyCalories Int? // Target kcal/day
+  proteinGrams  Int?
+  carbGrams     Int?
+  fatGrams      Int?
+  fiberGrams    Int?
+  sodiumMg      Int? // For hypertension
+  sugarGrams    Int? // For diabetes
+
+  // Meal plans
+  breakfastSuggestions String[] // Array of meal ideas
+  lunchSuggestions     String[]
+  dinnerSuggestions    String[]
+  snackSuggestions     String[]
+
+  // Foods to emphasize
+  recommendedFoods String[] // e.g., ["leafy greens", "fatty fish", "nuts"]
+  avoidFoods       String[] // e.g., ["processed meats", "added sugars"]
+
+  // Behavioral goals
+  behaviorGoals String[] // e.g., ["Track food intake daily", "Meal prep Sundays"]
+
+  // Evidence
+  evidenceBase     String? @db.Text // Clinical trials supporting this diet
+  guidelineSource  String? // ADA, DASH, Mediterranean Diet Study
+  expectedOutcomes String? @db.Text // e.g., "30% reduction in CV events"
+
+  // Status
+  status      NutritionPlanStatus @default(ACTIVE)
+  activatedAt DateTime            @default(now())
+  completedAt DateTime?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([dietType])
+  @@map("nutrition_plans")
+}
+
+model ExercisePlan {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Plan details
+  planName    String
+  description String? @db.Text
+
+  // FITT-VP Framework (Frequency, Intensity, Time, Type, Volume, Progression)
+  aerobicMinutesPerWeek     Int? // e.g., 150
+  resistanceSessionsPerWeek Int? // e.g., 2
+  intensityLevel            ExerciseIntensity? // LIGHT, MODERATE, VIGOROUS
+
+  // Specific exercises
+  aerobicExercises     String[] // ["brisk walking", "cycling", "swimming"]
+  resistanceExercises  String[] // ["squats", "push-ups", "resistance bands"]
+  flexibilityExercises String[] // ["yoga", "stretching"]
+
+  // Goals
+  weightLossGoalKg Float? // Target weight loss in kg
+  targetHeartRate  Int? // Target heart rate during exercise
+
+  // Behavioral support
+  behaviorGoals String[] // e.g., ["Schedule workouts in calendar", "Join group class"]
+
+  // Evidence
+  evidenceBase String? @db.Text // e.g., "DPP: 150 min/week reduces diabetes by 58%"
+
+  // Status
+  status      ExercisePlanStatus @default(ACTIVE)
+  activatedAt DateTime           @default(now())
+  completedAt DateTime?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@map("exercise_plans")
+}
+
+// ============================================================================
+// USER SETTINGS & BYOK (Bring Your Own Key)
+// ============================================================================
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // AI Preferences
+  preferredAIProvider AIProvider @default(GEMINI) // Default: Gemini
+  useCustomApiKey     Boolean    @default(false) // BYOK enabled?
+
+  // API Keys (encrypted at rest with AWS KMS or database-level encryption)
+  geminiApiKey     String? @db.Text // Encrypted Gemini API key
+  claudeApiKey     String? @db.Text // Encrypted Claude API key
+  openaiApiKey     String? @db.Text // Encrypted OpenAI API key
+  deepgramApiKey   String? @db.Text // Encrypted Deepgram API key (transcription)
+  assemblyaiApiKey String? @db.Text // Encrypted AssemblyAI API key
+
+  // API Key Metadata
+  geminiKeyLastUsed DateTime?
+  claudeKeyLastUsed DateTime?
+  openaiKeyLastUsed DateTime?
+  apiKeyRotatedAt   DateTime? // When keys were last rotated
+
+  // Security settings
+  apiKeyEncryptionKeyId String? // AWS KMS Key ID or encryption version
+
+  // UI Preferences
+  dashboardLayout Json? // Custom dashboard layout
+  theme           ThemeMode @default(LIGHT)
+  language        String    @default("en")
+  timezone        String    @default("UTC")
+  dateFormat      String    @default("MM/DD/YYYY")
+
+  // Notification preferences
+  emailNotifications Boolean @default(true)
+  smsNotifications   Boolean @default(false)
+  pushNotifications  Boolean @default(true)
+  reminderFrequency  String  @default("DAILY") // DAILY, WEEKLY, MONTHLY
+
+  // Clinical preferences
+  defaultNoteTemplate  String? // Template ID
+  autoSaveInterval     Int     @default(30) // Seconds
+  voiceCommandsEnabled Boolean @default(true)
+  aiSuggestionsEnabled Boolean @default(true)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+model APIKeyAuditLog {
+  id String @id @default(cuid())
+
+  // User reference
+  userId String
+  // Note: No FK constraint to allow auditing even after user deletion
+
+  // API Key action
+  action       APIKeyAction // CREATED, ROTATED, DELETED, ACCESSED, FAILED
+  provider     AIProvider
+  actionResult String? // SUCCESS, FAILURE, VALIDATION_ERROR
+  errorMessage String?      @db.Text
+
+  // Context
+  ipAddress String?
+  userAgent String? @db.Text
+  requestId String? // Trace ID for debugging
+
+  // Security
+  suspiciousActivity Boolean   @default(false)
+  failedAttempts     Int       @default(0)
+  blockedAt          DateTime?
+
+  // Metadata
+  timestamp DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@index([suspiciousActivity])
+  @@map("api_key_audit_logs")
+}
+
+// ============================================================================
+// ENUMS FOR PREVENTION & SETTINGS
+// ============================================================================
+
+enum PreventionPlanType {
+  CARDIOVASCULAR // ASCVD prevention
+  DIABETES // Type 2 diabetes prevention
+  HYPERTENSION // Blood pressure management
+  OBESITY // Weight management
+  CANCER_SCREENING // Preventive cancer screening
+  COMPREHENSIVE // Multi-risk prevention
+}
+
+enum PreventionPlanStatus {
+  ACTIVE // Currently active
+  PAUSED // Temporarily paused
+  COMPLETED // Goals achieved
+  ARCHIVED // No longer relevant
+}
+
+enum RiskScoreType {
+  ASCVD // Atherosclerotic cardiovascular disease (10-year risk)
+  DIABETES // Type 2 diabetes risk (ADA Risk Test)
+  HYPERTENSION // Blood pressure risk
+  FRAMINGHAM // Framingham Heart Study risk
+  REYNOLDS // Reynolds Risk Score
+  QRISK3 // UK cardiovascular risk
+  CUSTOM // Custom risk model
+}
+
+enum NutritionPlanType {
+  MEDITERRANEAN // Mediterranean diet
+  DASH // Dietary Approaches to Stop Hypertension
+  LOW_CARB // Low-carbohydrate diet
+  KETOGENIC // Ketogenic diet
+  PLANT_BASED // Plant-based/vegan
+  DIABETIC // Diabetic meal plan
+  HEART_HEALTHY // Heart-healthy diet
+  WEIGHT_LOSS // Weight loss diet
+  CUSTOM // Custom nutrition plan
+}
+
+enum NutritionPlanStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum ExercisePlanStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum ExerciseIntensity {
+  LIGHT // Light intensity (e.g., casual walking)
+  MODERATE // Moderate intensity (e.g., brisk walking, 50-70% max HR)
+  VIGOROUS // Vigorous intensity (e.g., running, >70% max HR)
+}
+
+enum AIProvider {
+  GEMINI // Google Gemini (default)
+  CLAUDE // Anthropic Claude
+  OPENAI // OpenAI GPT
+  CUSTOM // User's custom provider
+}
+
+enum ThemeMode {
+  LIGHT
+  DARK
+  SYSTEM // Follow system preference
+}
+
+enum APIKeyAction {
+  CREATED // API key first added
+  UPDATED // API key modified
+  ROTATED // API key rotated (security best practice)
+  DELETED // API key removed
+  ACCESSED // API key used for request
+  VALIDATED // API key validation check
+  FAILED // API key validation failed
+  REVOKED // API key revoked due to security
 }

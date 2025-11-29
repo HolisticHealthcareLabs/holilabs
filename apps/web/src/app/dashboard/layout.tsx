@@ -88,14 +88,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       shadowColor: 'sky-500/50'
     },
     {
-      name: 'Toolkit',
-      href: '/dashboard/scribe',
-      icon: '🧰',
-      emoji: '🧰',
-      gradient: 'from-fuchsia-500 to-pink-600',
-      hoverGradient: 'from-fuchsia-600 to-pink-700',
-      shadowColor: 'fuchsia-500/50',
+      name: 'Clinical Suite',
+      href: '/dashboard/co-pilot',
+      icon: '⚡️',
+      emoji: '⚡️',
+      gradient: 'from-yellow-500 to-amber-600',
+      hoverGradient: 'from-yellow-600 to-amber-700',
+      shadowColor: 'yellow-500/50',
       subItems: [
+        { name: '⚡️ Co-Pilot', href: '/dashboard/co-pilot', icon: '⚡️', emoji: '⚡️', gradient: 'from-yellow-500 to-amber-600' },
         { name: 'Scribe', href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️', gradient: 'from-purple-500 to-pink-600' },
         { name: 'Prevention', href: '/dashboard/prevention', icon: '🛡️', emoji: '🛡️', gradient: 'from-emerald-500 to-teal-600' },
         { name: 'Diagnosis', href: '/dashboard/diagnosis', icon: '🩺', emoji: '🩺', gradient: 'from-cyan-500 to-blue-600' },
@@ -132,14 +133,27 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-            <Link href="/dashboard" className="flex items-center space-x-2">
+            <Link href="/dashboard" className="flex items-center gap-2.5">
               <Image
                 src={theme === 'dark' ? "/logos/Logo 1_Dark (1).svg" : "/logos/Logo 1_Light.svg"}
                 alt="Holi Labs"
                 width={32}
                 height={32}
               />
-              <span className="font-bold text-xl text-gray-900 dark:text-white">
+              <span 
+                className="text-lg tracking-tight" 
+                style={{ 
+                  fontWeight: 600, 
+                  letterSpacing: '-0.02em',
+                  background: theme === 'dark'
+                    ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #c0c0c0 75%, #ffffff 100%)'
+                    : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: theme === 'dark' ? 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' : 'drop-shadow(0.5px 0.5px 1px rgba(0,0,0,0.1))',
+                }}
+              >
                 Holi Labs
               </span>
             </Link>
@@ -454,14 +468,29 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2.5">
               <Image
                 src={theme === 'dark' ? "/logos/Logo 1_Dark (1).svg" : "/logos/Logo 1_Light.svg"}
                 alt="Holi Labs"
                 width={32}
                 height={32}
               />
-              <span className="font-bold text-lg text-gray-900 dark:text-white">Holi Labs</span>
+              <span 
+                className="text-lg tracking-tight" 
+                style={{ 
+                  fontWeight: 600, 
+                  letterSpacing: '-0.02em',
+                  background: theme === 'dark'
+                    ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #c0c0c0 75%, #ffffff 100%)'
+                    : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  filter: theme === 'dark' ? 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' : 'drop-shadow(0.5px 0.5px 1px rgba(0,0,0,0.1))',
+                }}
+              >
+                Holi Labs
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />

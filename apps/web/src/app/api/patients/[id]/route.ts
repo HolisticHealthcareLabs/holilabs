@@ -12,6 +12,7 @@ import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 import { auditView, auditUpdate, auditDelete } from '@/lib/audit';
 import { UpdatePatientSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
+import { onPatientUpdated } from '@/lib/cache/patient-context-cache';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -20,12 +21,41 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/patients/[id]
  * Get detailed patient information
+ * HIPAA §164.502(b) - Requires access reason for PHI access
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // HIPAA §164.502(b) - Access Reason Required
+    const { searchParams } = new URL(request.url);
+    const accessReason = searchParams.get('accessReason');
+    const accessPurpose = searchParams.get('accessPurpose');
+
+    const validAccessReasons = [
+      'DIRECT_PATIENT_CARE',
+      'CARE_COORDINATION',
+      'EMERGENCY_ACCESS',
+      'ADMINISTRATIVE',
+      'QUALITY_IMPROVEMENT',
+      'BILLING',
+      'LEGAL_COMPLIANCE',
+      'RESEARCH_IRB_APPROVED',
+      'PUBLIC_HEALTH',
+    ];
+
+    if (!accessReason || !validAccessReasons.includes(accessReason)) {
+      return NextResponse.json(
+        {
+          error: 'Access reason is required for HIPAA compliance',
+          validReasons: validAccessReasons,
+          hipaaReference: 'HIPAA §164.502(b) - Minimum Necessary Standard',
+        },
+        { status: 400 }
+      );
+    }
+
     const patient = await prisma.patient.findUnique({
       where: { id: params.id },
       include: {
@@ -91,14 +121,21 @@ export async function GET(
       );
     }
 
-    // Create audit log for PHI access with full context
-    await auditView('Patient', patient.id, request, {
-      patientName: `${patient.firstName} ${patient.lastName}`,
-      mrn: patient.mrn,
-      includesAppointments: patient.appointments.length,
-      includesMedications: patient.medications.length,
-      includesClinicalNotes: patient.clinicalNotes.length,
-    });
+    // Create audit log for PHI access with full context and access reason (HIPAA §164.502(b))
+    await auditView(
+      'Patient',
+      patient.id,
+      request,
+      {
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        mrn: patient.mrn,
+        includesAppointments: patient.appointments.length,
+        includesMedications: patient.medications.length,
+        includesClinicalNotes: patient.clinicalNotes.length,
+      },
+      accessReason,
+      accessPurpose || undefined
+    );
 
     return NextResponse.json({
       success: true,
@@ -232,6 +269,15 @@ export async function PUT(
       patientName: `${patient.firstName} ${patient.lastName}`,
       mrn: patient.mrn,
     });
+
+    // Invalidate patient context cache (demographics and full context)
+    try {
+      await onPatientUpdated(patient.id);
+      console.log('[Cache] Invalidated patient context cache for patient update:', patient.id);
+    } catch (cacheError) {
+      // Don't fail the request if cache invalidation fails
+      console.error('[Cache] Cache invalidation error:', cacheError);
+    }
 
     return NextResponse.json({
       success: true,

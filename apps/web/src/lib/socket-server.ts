@@ -224,6 +224,37 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
       });
     });
 
+    // Co-Pilot handlers
+    socket.on('co_pilot:join_session', ({ sessionId }: { sessionId: string }) => {
+      const roomId = `co-pilot:${sessionId}`;
+      socket.join(roomId);
+      logger.info({
+        event: 'co_pilot_session_joined',
+        sessionId,
+        userId,
+        socketId: socket.id,
+      });
+    });
+
+    socket.on('co_pilot:audio_chunk', ({ sessionId, audioData }: { sessionId: string; audioData: ArrayBuffer }) => {
+      // Forward audio chunk to room for processing
+      socket.to(`co-pilot:${sessionId}`).emit('co_pilot:audio_received', {
+        sessionId,
+        audioData,
+        timestamp: Date.now(),
+      });
+    });
+
+    socket.on('co_pilot:leave_session', ({ sessionId }: { sessionId: string }) => {
+      socket.leave(`co-pilot:${sessionId}`);
+      logger.info({
+        event: 'co_pilot_session_left',
+        sessionId,
+        userId,
+        socketId: socket.id,
+      });
+    });
+
     // Error handling
     socket.on('error', (error) => {
       logger.error({

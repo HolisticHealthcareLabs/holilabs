@@ -60,6 +60,43 @@ export default function PrivacyControlPage() {
           </p>
         </div>
 
+        {/* Recording Consent Card */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mb-8">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">🎤</span>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Consentimiento para Grabación de Consultas
+                </h2>
+              </div>
+              <p className="text-sm text-gray-700 mb-4">
+                Gestiona tu consentimiento para grabar consultas médicas. La grabación permite una
+                documentación más precisa y genera automáticamente tus notas clínicas usando IA.
+              </p>
+              <div className="bg-white border border-purple-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Estado Actual:</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                    ✅ Consentimiento Otorgado
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600">
+                  Fecha de consentimiento: {new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm">
+                  📋 Ver Detalles del Consentimiento
+                </button>
+                <button className="px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
+                  🚫 Revocar Consentimiento
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white border border-gray-200 rounded-lg p-6">

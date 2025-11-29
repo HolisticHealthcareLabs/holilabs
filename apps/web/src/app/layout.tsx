@@ -7,6 +7,7 @@ import { Providers } from '@/components/Providers';
 import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
 import { SkipLink } from '@/components/SkipLink';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { themeInitScript } from '@/scripts/theme-init';
 
 export const metadata: Metadata = {
@@ -64,14 +65,16 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <SkipLink />
-        <Providers>
-          <OfflineIndicator />
-          <IOSInstallPrompt />
-          <FeedbackWidget />
-          <main id="main-content">
-            {children}
-          </main>
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            <OfflineIndicator />
+            <IOSInstallPrompt />
+            <FeedbackWidget />
+            <main id="main-content">
+              {children}
+            </main>
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );

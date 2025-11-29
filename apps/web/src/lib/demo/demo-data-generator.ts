@@ -4,6 +4,14 @@
  * FREE - No external services needed
  */
 
+export interface PreventiveCareFlag {
+  id: string;
+  name: string;
+  dueDate: Date;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  category: 'lab' | 'exam' | 'screening' | 'vaccination';
+}
+
 export interface DemoPatient {
   id: string;
   firstName: string;
@@ -27,6 +35,7 @@ export interface DemoPatient {
   lastVisit: Date;
   nextAppointment?: Date;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  preventiveCareFlags?: PreventiveCareFlag[];
 }
 
 export interface DemoAppointment {
@@ -108,6 +117,113 @@ export function generateDemoPatient(index: number): DemoPatient {
   const hasUpcoming = Math.random() > 0.5;
   const nextAppointment = hasUpcoming ? new Date(Date.now() + Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000) : undefined;
 
+  // Generate condition-aware preventive care flags
+  const preventiveCareFlags: PreventiveCareFlag[] = [];
+  
+  if (conditions.includes('Type 2 Diabetes')) {
+    // HbA1c should be checked every 3-6 months
+    const lastHbA1c = new Date(lastVisit);
+    lastHbA1c.setMonth(lastHbA1c.getMonth() - Math.floor(Math.random() * 6) - 3);
+    const nextHbA1c = new Date(lastHbA1c);
+    nextHbA1c.setMonth(nextHbA1c.getMonth() + 6);
+    
+    if (nextHbA1c <= new Date() || Math.random() > 0.3) {
+      preventiveCareFlags.push({
+        id: `hbA1c-${index}`,
+        name: 'HbA1c Due',
+        dueDate: nextHbA1c,
+        priority: 'HIGH',
+        category: 'lab',
+      });
+    }
+
+    // Retinal exam should be done annually for diabetics
+    const lastRetinal = new Date(lastVisit);
+    lastRetinal.setFullYear(lastRetinal.getFullYear() - Math.floor(Math.random() * 2));
+    const nextRetinal = new Date(lastRetinal);
+    nextRetinal.setFullYear(nextRetinal.getFullYear() + 1);
+    
+    if (nextRetinal <= new Date() || Math.random() > 0.4) {
+      preventiveCareFlags.push({
+        id: `retinal-${index}`,
+        name: 'Retinal Exam Due',
+        dueDate: nextRetinal,
+        priority: 'HIGH',
+        category: 'exam',
+      });
+    }
+
+    // Foot exam annually
+    const lastFootExam = new Date(lastVisit);
+    lastFootExam.setFullYear(lastFootExam.getFullYear() - Math.floor(Math.random() * 2));
+    const nextFootExam = new Date(lastFootExam);
+    nextFootExam.setFullYear(nextFootExam.getFullYear() + 1);
+    
+    if (nextFootExam <= new Date() || Math.random() > 0.5) {
+      preventiveCareFlags.push({
+        id: `foot-exam-${index}`,
+        name: 'Diabetic Foot Exam Due',
+        dueDate: nextFootExam,
+        priority: 'MEDIUM',
+        category: 'exam',
+      });
+    }
+  }
+
+  if (conditions.includes('Hypertension')) {
+    // Blood pressure monitoring
+    const lastBP = new Date(lastVisit);
+    lastBP.setDate(lastBP.getDate() - Math.floor(Math.random() * 30));
+    const nextBP = new Date(lastBP);
+    nextBP.setMonth(nextBP.getMonth() + 3);
+    
+    if (nextBP <= new Date() || Math.random() > 0.6) {
+      preventiveCareFlags.push({
+        id: `bp-monitor-${index}`,
+        name: 'Blood Pressure Check Due',
+        dueDate: nextBP,
+        priority: 'MEDIUM',
+        category: 'screening',
+      });
+    }
+  }
+
+  if (age >= 50) {
+    // Colonoscopy screening
+    const lastColonoscopy = new Date();
+    lastColonoscopy.setFullYear(lastColonoscopy.getFullYear() - Math.floor(Math.random() * 5) - 5);
+    const nextColonoscopy = new Date(lastColonoscopy);
+    nextColonoscopy.setFullYear(nextColonoscopy.getFullYear() + 10);
+    
+    if (nextColonoscopy <= new Date() || Math.random() > 0.7) {
+      preventiveCareFlags.push({
+        id: `colonoscopy-${index}`,
+        name: 'Colonoscopy Screening Due',
+        dueDate: nextColonoscopy,
+        priority: 'MEDIUM',
+        category: 'screening',
+      });
+    }
+  }
+
+  if (gender === 'FEMALE' && age >= 40) {
+    // Mammogram
+    const lastMammogram = new Date();
+    lastMammogram.setFullYear(lastMammogram.getFullYear() - Math.floor(Math.random() * 2));
+    const nextMammogram = new Date(lastMammogram);
+    nextMammogram.setFullYear(nextMammogram.getFullYear() + 1);
+    
+    if (nextMammogram <= new Date() || Math.random() > 0.5) {
+      preventiveCareFlags.push({
+        id: `mammogram-${index}`,
+        name: 'Mammogram Due',
+        dueDate: nextMammogram,
+        priority: 'HIGH',
+        category: 'screening',
+      });
+    }
+  }
+
   return {
     id: `demo-patient-${index}`,
     firstName,
@@ -126,6 +242,7 @@ export function generateDemoPatient(index: number): DemoPatient {
     lastVisit,
     nextAppointment,
     riskLevel,
+    preventiveCareFlags: preventiveCareFlags.length > 0 ? preventiveCareFlags : undefined,
   };
 }
 

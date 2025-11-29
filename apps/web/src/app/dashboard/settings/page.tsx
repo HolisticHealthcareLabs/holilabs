@@ -18,9 +18,13 @@ export default function SettingsPage() {
 
   // AI Settings
   const [aiConfig, setAiConfig] = useState({
-    provider: 'claude',
+    provider: 'gemini', // Default: Gemini (per user request)
+    useCustomApiKey: false, // BYOK toggle
+    geminiApiKey: '',
     anthropicKey: '',
     openaiKey: '',
+    deepgramApiKey: '', // Transcription
+    assemblyaiApiKey: '', // Transcription fallback
   });
 
   // Communications Settings
@@ -136,82 +140,210 @@ export default function SettingsPage() {
                       Configuración de IA Médica
                     </h2>
                     <p className="text-sm text-gray-600 mb-6">
-                      Conecta tu asistente de IA para soporte en decisiones clínicas
+                      Conecta tu asistente de IA para análisis de historiales médicos y planes de prevención
                     </p>
                   </div>
 
-                  {/* Provider Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Proveedor de IA
-                    </label>
-                    <select
-                      value={aiConfig.provider}
-                      onChange={(e) => setAiConfig({ ...aiConfig, provider: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    >
-                      <option value="claude">Claude 3.5 Sonnet (Recomendado para medicina)</option>
-                      <option value="openai">OpenAI GPT-4</option>
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      💡 Claude es HIPAA compliant y mejor para razonamiento médico
-                    </p>
+                  {/* BYOK Toggle */}
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">
+                          🔑 Bring Your Own Key (BYOK)
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Usa tus propias claves API para control total y costos optimizados
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={aiConfig.useCustomApiKey}
+                          onChange={(e) =>
+                            setAiConfig({ ...aiConfig, useCustomApiKey: e.target.checked })
+                          }
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
                   </div>
 
-                  {/* Anthropic API Key */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Anthropic API Key
-                    </label>
-                    <input
-                      type="password"
-                      value={aiConfig.anthropicKey}
-                      onChange={(e) => setAiConfig({ ...aiConfig, anthropicKey: e.target.value })}
-                      placeholder="sk-ant-api03-..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Obtén tu clave en{' '}
-                      <a
-                        href="https://console.anthropic.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        console.anthropic.com
-                      </a>
-                    </p>
-                  </div>
+                  {!aiConfig.useCustomApiKey && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-sm text-green-800">
+                        ✅ <strong>Modo Compartido:</strong> Usarás las claves API de Holi Labs (incluidas en tu suscripción). Límites de uso aplican según tu plan.
+                      </p>
+                    </div>
+                  )}
 
-                  {/* OpenAI API Key */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      OpenAI API Key (Opcional)
-                    </label>
-                    <input
-                      type="password"
-                      value={aiConfig.openaiKey}
-                      onChange={(e) => setAiConfig({ ...aiConfig, openaiKey: e.target.value })}
-                      placeholder="sk-..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Obtén tu clave en{' '}
-                      <a
-                        href="https://platform.openai.com/api-keys"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        platform.openai.com
-                      </a>
-                    </p>
-                  </div>
+                  {aiConfig.useCustomApiKey && (
+                    <>
+                      {/* Provider Selection */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Proveedor de IA Principal
+                        </label>
+                        <select
+                          value={aiConfig.provider}
+                          onChange={(e) => setAiConfig({ ...aiConfig, provider: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                          <option value="gemini">Google Gemini 1.5 Flash (Recomendado - Costo-efectivo)</option>
+                          <option value="claude">Claude 3.5 Sonnet (Mayor calidad clínica)</option>
+                          <option value="openai">OpenAI GPT-4 Turbo</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          💡 Gemini 1.5 Flash: ~$50/mes | Claude: ~$150/mes | GPT-4: ~$100/mes
+                        </p>
+                      </div>
+
+                      {/* Gemini API Key */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Google Gemini API Key {aiConfig.provider === 'gemini' && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          type="password"
+                          value={aiConfig.geminiApiKey}
+                          onChange={(e) => setAiConfig({ ...aiConfig, geminiApiKey: e.target.value })}
+                          placeholder="AIzaSy..."
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Obtén tu clave en{' '}
+                          <a
+                            href="https://aistudio.google.com/app/apikey"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            aistudio.google.com/apikey
+                          </a>{' '}
+                          (Gratis: 15 requests/min)
+                        </p>
+                      </div>
+
+                      {/* Anthropic API Key */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Anthropic Claude API Key {aiConfig.provider === 'claude' && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          type="password"
+                          value={aiConfig.anthropicKey}
+                          onChange={(e) => setAiConfig({ ...aiConfig, anthropicKey: e.target.value })}
+                          placeholder="sk-ant-api03-..."
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Obtén tu clave en{' '}
+                          <a
+                            href="https://console.anthropic.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            console.anthropic.com
+                          </a>{' '}
+                          (HIPAA compliant)
+                        </p>
+                      </div>
+
+                      {/* OpenAI API Key */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          OpenAI API Key {aiConfig.provider === 'openai' && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          type="password"
+                          value={aiConfig.openaiKey}
+                          onChange={(e) => setAiConfig({ ...aiConfig, openaiKey: e.target.value })}
+                          placeholder="sk-..."
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Obtén tu clave en{' '}
+                          <a
+                            href="https://platform.openai.com/api-keys"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            platform.openai.com
+                          </a>
+                        </p>
+                      </div>
+
+                      {/* Transcription Keys */}
+                      <div className="border-t border-gray-200 pt-6">
+                        <h3 className="font-semibold text-gray-900 mb-4">
+                          🎙️ Transcripción de Audio (Opcional)
+                        </h3>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Deepgram API Key (Recomendado para español)
+                            </label>
+                            <input
+                              type="password"
+                              value={aiConfig.deepgramApiKey}
+                              onChange={(e) =>
+                                setAiConfig({ ...aiConfig, deepgramApiKey: e.target.value })
+                              }
+                              placeholder="••••••••••••••••••"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Obtén tu clave en{' '}
+                              <a
+                                href="https://console.deepgram.com/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                console.deepgram.com
+                              </a>{' '}
+                              (~$0.0043/min)
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              AssemblyAI API Key (Fallback)
+                            </label>
+                            <input
+                              type="password"
+                              value={aiConfig.assemblyaiApiKey}
+                              onChange={(e) =>
+                                setAiConfig({ ...aiConfig, assemblyaiApiKey: e.target.value })
+                              }
+                              placeholder="••••••••••••••••••"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Obtén tu clave en{' '}
+                              <a
+                                href="https://www.assemblyai.com/dashboard/signup"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                assemblyai.com
+                              </a>{' '}
+                              (~$0.00025/sec)
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Info Box - Security & De-identification */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h3 className="font-semibold text-blue-900 mb-3">
-                      🔒 Seguridad y Privacidad Médica
+                      🔒 Seguridad y Privacidad Médica (BYOK)
                     </h3>
                     <p className="text-sm text-blue-800 mb-3">
                       Las claves API te permiten usar IA de manera segura y privada:
@@ -219,30 +351,31 @@ export default function SettingsPage() {
                     <ul className="text-sm text-blue-800 space-y-2">
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold">✓</span>
-                        <span>Información médica <strong>de-identificada</strong> antes de procesamiento</span>
+                        <span>Información médica <strong>de-identificada</strong> con AWS Comprehend Medical (F1 &gt; 0.95)</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold">✓</span>
-                        <span>Los datos del paciente nunca se comparten con terceros</span>
+                        <span>API keys <strong>encriptadas en reposo</strong> con AES-256 en PostgreSQL</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold">✓</span>
-                        <span>Cumplimiento HIPAA con Anthropic Claude</span>
+                        <span>Cumplimiento HIPAA con Anthropic Claude (BAA disponible)</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold">✓</span>
-                        <span>Encriptación end-to-end de toda la información</span>
+                        <span>Control total: tus keys, tus costos, sin límites de uso</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold">✓</span>
-                        <span>Control total sobre el uso de IA en tu práctica</span>
+                        <span>Auditoría completa de acceso a API keys (CREATED, ACCESSED, ROTATED, FAILED)</span>
                       </li>
                     </ul>
                     <div className="mt-4 pt-4 border-t border-blue-200">
                       <p className="text-xs text-blue-900 leading-relaxed">
-                        <strong>Protección de privacidad:</strong> Nuestro sistema automáticamente elimina
-                        información personal identificable (nombre, ID, fechas específicas) antes de enviar
-                        datos al modelo de IA, asegurando la máxima privacidad del paciente.
+                        <strong>Seguridad de Claves:</strong> API keys nunca se almacenan en texto plano. Se encriptan usando el encryption master key de tu organización antes de guardarlas en la base de datos. Solo usuarios autorizados pueden acceder a ellas, y cada acceso se registra para auditoría.
+                      </p>
+                      <p className="text-xs text-blue-700 mt-2">
+                        💡 <strong>Basado en:</strong> GitHub Models BYOK, Auth0 Tenant Key Management, OpenAI Best Practices
                       </p>
                     </div>
                   </div>
