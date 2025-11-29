@@ -187,16 +187,46 @@ export default function SOAPNoteEditor({
     return /^\d{5}$/.test(code);
   };
 
+  // Confidence thresholds (configurable for organization)
+  const CONFIDENCE_THRESHOLD_HIGH = 0.9;  // Green - High confidence
+  const CONFIDENCE_THRESHOLD_MEDIUM = 0.75; // Yellow - Medium confidence (review recommended)
+  const CONFIDENCE_THRESHOLD_LOW = 0.6;    // Red - Low confidence (review REQUIRED before signing)
+
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.9) return 'bg-green-100 text-green-700 border-green-300';
-    if (confidence >= 0.7) return 'bg-yellow-100 text-yellow-700 border-yellow-300';
-    return 'bg-red-100 text-red-700 border-red-300';
+    if (confidence >= CONFIDENCE_THRESHOLD_HIGH) return 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700';
+    if (confidence >= CONFIDENCE_THRESHOLD_MEDIUM) return 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700';
+    if (confidence >= CONFIDENCE_THRESHOLD_LOW) return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700';
+    return 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700';
   };
 
   const getConfidenceLabel = (confidence: number) => {
-    if (confidence >= 0.9) return 'Alta confianza';
-    if (confidence >= 0.7) return 'Confianza media';
-    return 'Baja confianza - Revisar';
+    if (confidence >= CONFIDENCE_THRESHOLD_HIGH) return 'Alta confianza';
+    if (confidence >= CONFIDENCE_THRESHOLD_MEDIUM) return 'Confianza media - Revisar recomendado';
+    if (confidence >= CONFIDENCE_THRESHOLD_LOW) return 'Confianza baja - Revisar REQUERIDO';
+    return 'Confianza muy baja - NO FIRMAR sin revisión manual';
+  };
+
+  const getConfidenceIcon = (confidence: number) => {
+    if (confidence >= CONFIDENCE_THRESHOLD_HIGH) return '✅';
+    if (confidence >= CONFIDENCE_THRESHOLD_MEDIUM) return '⚠️';
+    if (confidence >= CONFIDENCE_THRESHOLD_LOW) return '⚠️';
+    return '❌';
+  };
+
+  // Check if any section has critically low confidence (below threshold for signing)
+  const hasLowConfidenceSections = () => {
+    return (
+      note.subjectiveConfidence < CONFIDENCE_THRESHOLD_LOW ||
+      note.objectiveConfidence < CONFIDENCE_THRESHOLD_LOW ||
+      note.assessmentConfidence < CONFIDENCE_THRESHOLD_LOW ||
+      note.planConfidence < CONFIDENCE_THRESHOLD_LOW
+    );
+  };
+
+  // Check if overall confidence is acceptable for signing
+  const canSign = () => {
+    // Prevent signing if overall confidence is below threshold OR any individual section is critically low
+    return note.overallConfidence >= CONFIDENCE_THRESHOLD_LOW && !hasLowConfidenceSections();
   };
 
   const handleSave = async () => {
@@ -310,17 +340,69 @@ export default function SOAPNoteEditor({
 
   return (
     <div className="space-y-6">
-      {/* Overall Confidence Banner */}
+      {/* Overall Confidence Banner - Enhanced with visual indicators */}
       <div
-        className={`p-4 rounded-lg border ${getConfidenceColor(note.overallConfidence)}`}
+        className={`p-5 rounded-xl border-2 shadow-md ${getConfidenceColor(note.overallConfidence)}`}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="font-bold">Confianza General: </span>
-            <span>{getConfidenceLabel(note.overallConfidence)}</span>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{getConfidenceIcon(note.overallConfidence)}</span>
+            <div>
+              <div className="font-bold text-lg">Confianza General de IA</div>
+              <div className="text-sm opacity-90">{getConfidenceLabel(note.overallConfidence)}</div>
+            </div>
           </div>
-          <span className="text-2xl font-bold">{Math.round(note.overallConfidence * 100)}%</span>
+          <div className="text-right">
+            <div className="text-3xl font-bold">{Math.round(note.overallConfidence * 100)}%</div>
+            <div className="text-xs opacity-75">Precisión estimada</div>
+          </div>
         </div>
+
+        {/* Low Confidence Warning */}
+        {note.overallConfidence < CONFIDENCE_THRESHOLD_MEDIUM && (
+          <div className="mt-3 pt-3 border-t border-current/20">
+            <div className="flex items-start gap-2 text-sm">
+              <span>{note.overallConfidence < CONFIDENCE_THRESHOLD_LOW ? '🚨' : '⚠️'}</span>
+              <div>
+                <div className="font-semibold mb-1">
+                  {note.overallConfidence < CONFIDENCE_THRESHOLD_LOW
+                    ? 'Revisión OBLIGATORIA antes de firmar'
+                    : 'Se recomienda revisión manual'}
+                </div>
+                <div className="opacity-90">
+                  {note.overallConfidence < CONFIDENCE_THRESHOLD_LOW
+                    ? 'La confianza es demasiado baja para firmar automáticamente. Revise y edite todas las secciones manualmente.'
+                    : 'Algunas secciones pueden requerir correcciones. Revise cuidadosamente antes de firmar.'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confidence Breakdown */}
+        {note.overallConfidence < CONFIDENCE_THRESHOLD_HIGH && (
+          <div className="mt-3 pt-3 border-t border-current/20">
+            <div className="text-xs font-semibold mb-2">Confianza por sección:</div>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div className="text-center">
+                <div className="font-medium opacity-75">Subjetivo</div>
+                <div className="font-bold">{Math.round(note.subjectiveConfidence * 100)}%</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium opacity-75">Objetivo</div>
+                <div className="font-bold">{Math.round(note.objectiveConfidence * 100)}%</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium opacity-75">Evaluación</div>
+                <div className="font-bold">{Math.round(note.assessmentConfidence * 100)}%</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium opacity-75">Plan</div>
+                <div className="font-bold">{Math.round(note.planConfidence * 100)}%</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Voice Commands Toggle */}
@@ -500,15 +582,23 @@ export default function SOAPNoteEditor({
       {/* Subjective */}
       <div ref={subjectiveRef} className="border-l-4 border-blue-500 pl-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-blue-700 uppercase">Subjetivo (S)</h3>
-          <span
-            className={`text-xs px-2 py-1 rounded ${getConfidenceColor(
-              note.subjectiveConfidence
-            )}`}
-          >
-            {Math.round(note.subjectiveConfidence * 100)}%
-          </span>
+          <h3 className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase">Subjetivo (S)</h3>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2.5 py-1 rounded-full border font-bold ${getConfidenceColor(note.subjectiveConfidence)}`}>
+              {getConfidenceIcon(note.subjectiveConfidence)} {Math.round(note.subjectiveConfidence * 100)}%
+            </span>
+          </div>
         </div>
+        {note.subjectiveConfidence < CONFIDENCE_THRESHOLD_LOW && (
+          <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-800 dark:text-red-300">
+            <strong>⚠️ Confianza crítica:</strong> Revise y corrija esta sección manualmente antes de firmar.
+          </div>
+        )}
+        {note.subjectiveConfidence >= CONFIDENCE_THRESHOLD_LOW && note.subjectiveConfidence < CONFIDENCE_THRESHOLD_MEDIUM && (
+          <div className="mb-3 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs text-orange-800 dark:text-orange-300">
+            <strong>⚠️ Revisión recomendada:</strong> Verifique la precisión de esta sección.
+          </div>
+        )}
         {isEditing ? (
           <>
             <div className="flex items-center gap-2 mb-2">
@@ -555,15 +645,23 @@ export default function SOAPNoteEditor({
       {/* Objective */}
       <div ref={objectiveRef} className="border-l-4 border-green-500 pl-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-green-700 uppercase">Objetivo (O)</h3>
-          <span
-            className={`text-xs px-2 py-1 rounded ${getConfidenceColor(
-              note.objectiveConfidence
-            )}`}
-          >
-            {Math.round(note.objectiveConfidence * 100)}%
-          </span>
+          <h3 className="text-sm font-bold text-green-700 dark:text-green-400 uppercase">Objetivo (O)</h3>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2.5 py-1 rounded-full border font-bold ${getConfidenceColor(note.objectiveConfidence)}`}>
+              {getConfidenceIcon(note.objectiveConfidence)} {Math.round(note.objectiveConfidence * 100)}%
+            </span>
+          </div>
         </div>
+        {note.objectiveConfidence < CONFIDENCE_THRESHOLD_LOW && (
+          <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-800 dark:text-red-300">
+            <strong>⚠️ Confianza crítica:</strong> Revise y corrija esta sección manualmente antes de firmar.
+          </div>
+        )}
+        {note.objectiveConfidence >= CONFIDENCE_THRESHOLD_LOW && note.objectiveConfidence < CONFIDENCE_THRESHOLD_MEDIUM && (
+          <div className="mb-3 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs text-orange-800 dark:text-orange-300">
+            <strong>⚠️ Revisión recomendada:</strong> Verifique la precisión de esta sección.
+          </div>
+        )}
         {isEditing ? (
           <>
             <div className="flex items-center gap-2 mb-2">
@@ -647,15 +745,23 @@ export default function SOAPNoteEditor({
       {/* Assessment */}
       <div ref={assessmentRef} className="border-l-4 border-purple-500 pl-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-purple-700 uppercase">Evaluación (A)</h3>
-          <span
-            className={`text-xs px-2 py-1 rounded ${getConfidenceColor(
-              note.assessmentConfidence
-            )}`}
-          >
-            {Math.round(note.assessmentConfidence * 100)}%
-          </span>
+          <h3 className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase">Evaluación (A)</h3>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2.5 py-1 rounded-full border font-bold ${getConfidenceColor(note.assessmentConfidence)}`}>
+              {getConfidenceIcon(note.assessmentConfidence)} {Math.round(note.assessmentConfidence * 100)}%
+            </span>
+          </div>
         </div>
+        {note.assessmentConfidence < CONFIDENCE_THRESHOLD_LOW && (
+          <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-800 dark:text-red-300">
+            <strong>⚠️ Confianza crítica:</strong> Revise y corrija esta sección manualmente antes de firmar.
+          </div>
+        )}
+        {note.assessmentConfidence >= CONFIDENCE_THRESHOLD_LOW && note.assessmentConfidence < CONFIDENCE_THRESHOLD_MEDIUM && (
+          <div className="mb-3 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs text-orange-800 dark:text-orange-300">
+            <strong>⚠️ Revisión recomendada:</strong> Verifique la precisión de esta sección.
+          </div>
+        )}
         {isEditing ? (
           <>
             <div className="flex items-center gap-2 mb-2">
@@ -728,13 +834,23 @@ export default function SOAPNoteEditor({
       {/* Plan */}
       <div ref={planRef} className="border-l-4 border-orange-500 pl-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-orange-700 uppercase">Plan (P)</h3>
-          <span
-            className={`text-xs px-2 py-1 rounded ${getConfidenceColor(note.planConfidence)}`}
-          >
-            {Math.round(note.planConfidence * 100)}%
-          </span>
+          <h3 className="text-sm font-bold text-orange-700 dark:text-orange-400 uppercase">Plan (P)</h3>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2.5 py-1 rounded-full border font-bold ${getConfidenceColor(note.planConfidence)}`}>
+              {getConfidenceIcon(note.planConfidence)} {Math.round(note.planConfidence * 100)}%
+            </span>
+          </div>
         </div>
+        {note.planConfidence < CONFIDENCE_THRESHOLD_LOW && (
+          <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-800 dark:text-red-300">
+            <strong>⚠️ Confianza crítica:</strong> Revise y corrija esta sección manualmente antes de firmar.
+          </div>
+        )}
+        {note.planConfidence >= CONFIDENCE_THRESHOLD_LOW && note.planConfidence < CONFIDENCE_THRESHOLD_MEDIUM && (
+          <div className="mb-3 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs text-orange-800 dark:text-orange-300">
+            <strong>⚠️ Revisión recomendada:</strong> Verifique la precisión de esta sección.
+          </div>
+        )}
         {isEditing ? (
           <>
             <div className="flex items-center gap-2 mb-2">
@@ -856,12 +972,39 @@ export default function SOAPNoteEditor({
                   </button>
                   <button
                     onClick={onSign}
-                    disabled={note.status === 'SIGNED'}
+                    disabled={note.status === 'SIGNED' || !canSign()}
                     className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-lg hover:from-green-600 hover:to-teal-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!canSign() ? 'La confianza es demasiado baja para firmar. Revise y edite las secciones marcadas con baja confianza.' : 'Firmar y finalizar esta nota'}
                   >
                     ✅ Firmar y Finalizar
                   </button>
                 </div>
+
+                {/* Low Confidence Signing Block Alert */}
+                {!canSign() && note.status !== 'SIGNED' && (
+                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🚨</span>
+                      <div>
+                        <div className="font-bold text-red-800 dark:text-red-300 mb-1">
+                          No se puede firmar - Confianza insuficiente
+                        </div>
+                        <div className="text-sm text-red-700 dark:text-red-400 mb-2">
+                          La IA no tiene suficiente confianza en la precisión de esta nota. Debe revisar y editar manualmente las secciones marcadas antes de firmar.
+                        </div>
+                        <div className="text-xs text-red-600 dark:text-red-500">
+                          <strong>Secciones que requieren revisión:</strong>
+                          <ul className="list-disc list-inside mt-1">
+                            {note.subjectiveConfidence < CONFIDENCE_THRESHOLD_LOW && <li>Subjetivo ({Math.round(note.subjectiveConfidence * 100)}%)</li>}
+                            {note.objectiveConfidence < CONFIDENCE_THRESHOLD_LOW && <li>Objetivo ({Math.round(note.objectiveConfidence * 100)}%)</li>}
+                            {note.assessmentConfidence < CONFIDENCE_THRESHOLD_LOW && <li>Evaluación ({Math.round(note.assessmentConfidence * 100)}%)</li>}
+                            {note.planConfidence < CONFIDENCE_THRESHOLD_LOW && <li>Plan ({Math.round(note.planConfidence * 100)}%)</li>}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* WhatsApp Notification Button */}
                 {onNotifyPatient && note.status === 'SIGNED' && (

@@ -36,6 +36,9 @@ export interface AuditLogData {
   details?: Record<string, any>;
   success?: boolean;
   errorMessage?: string;
+  // LGPD/Law 25.326 Compliance
+  accessReason?: string; // Must be valid AccessReason enum value
+  accessPurpose?: string; // Optional free-text justification
 }
 
 /**
@@ -168,6 +171,9 @@ export async function createAuditLog(
         dataHash,
         success: data.success ?? true,
         errorMessage: data.errorMessage,
+        // LGPD/Law 25.326 Compliance
+        accessReason: data.accessReason as any, // Cast to AccessReason enum
+        accessPurpose: data.accessPurpose,
       },
     });
 
@@ -195,12 +201,15 @@ export async function createAuditLog(
 
 /**
  * Audit a resource view
+ * Updated for LGPD compliance - supports access reason logging
  */
 export async function auditView(
   resource: string,
   resourceId: string,
   request?: NextRequest,
-  details?: Record<string, any>
+  details?: Record<string, any>,
+  accessReason?: string,
+  accessPurpose?: string
 ): Promise<void> {
   return createAuditLog(
     {
@@ -208,6 +217,8 @@ export async function auditView(
       resource,
       resourceId,
       details,
+      accessReason,
+      accessPurpose,
     },
     request
   );

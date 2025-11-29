@@ -11,10 +11,23 @@ import logger from '@/lib/logger';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { verifyRecordingConsent } from '@/lib/consent/recording-consent';
 
 const StartRecordingSchema = z.object({
   appointmentId: z.string().uuid(),
   patientId: z.string().uuid(),
+  accessReason: z.enum([
+    'DIRECT_PATIENT_CARE',
+    'CARE_COORDINATION',
+    'EMERGENCY_ACCESS',
+    'ADMINISTRATIVE',
+    'QUALITY_IMPROVEMENT',
+    'BILLING',
+    'LEGAL_COMPLIANCE',
+    'RESEARCH_IRB_APPROVED',
+    'PUBLIC_HEALTH',
+  ]),
+  accessPurpose: z.string().optional(), // Free-text explanation
 });
 
 export async function POST(request: NextRequest) {
@@ -43,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { appointmentId, patientId } = validation.data;
+    const { appointmentId, patientId, accessReason, accessPurpose } = validation.data;
 
     // Verify appointment exists and belongs to this clinician
     const appointment = await prisma.appointment.findUnique({
@@ -64,6 +77,22 @@ export async function POST(request: NextRequest) {
     if (appointment.clinician.id !== (session.user as any).id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para grabar esta cita' },
+        { status: 403 }
+      );
+    }
+
+    // Verify recording consent (two-party consent states)
+    const consentCheck = await verifyRecordingConsent(patientId, appointment.patient.state || undefined);
+
+    if (!consentCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Recording consent required',
+          reason: consentCheck.reason,
+          requiresConsent: consentCheck.requiresConsent,
+          patientState: appointment.patient.state,
+        },
         { status: 403 }
       );
     }
@@ -113,7 +142,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create audit log
+    // Create audit log with access reason (HIPAA §164.502(b) Minimum Necessary)
     await prisma.auditLog.create({
       data: {
         userId: (session.user as any).id,
@@ -123,6 +152,8 @@ export async function POST(request: NextRequest) {
         resource: 'RecordingSession',
         resourceId: recording.id,
         success: true,
+        accessReason, // REQUIRED: HIPAA compliance
+        accessPurpose, // Optional: Additional context
         details: {
           appointmentId,
           patientId,

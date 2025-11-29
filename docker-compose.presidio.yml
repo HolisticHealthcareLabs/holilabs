@@ -1,0 +1,196 @@
+# Microsoft Presidio - Docker Compose Configuration
+#
+# Enterprise-grade PII detection and anonymization services
+# Optimized for Digital Ocean + Coolify deployment
+#
+# Services:
+# - presidio-analyzer: PII detection (port 5001)
+# - presidio-anonymizer: PII redaction (port 5002)
+# - redis: Cache for Presidio (port 6379)
+#
+# Resources:
+# - Analyzer: 1GB RAM, 1 CPU
+# - Anonymizer: 512MB RAM, 0.5 CPU
+# - Redis: 256MB RAM, 0.5 CPU
+# - Total: ~1.75GB RAM (fits in 2GB droplet with headroom)
+#
+# Cost: $12/month for 2GB Digital Ocean droplet
+#
+# Compliance: HIPAA Safe Harbor, LGPD Art. 46, Law 25.326 Art. 9
+
+version: '3.8'
+
+services:
+  # Presidio Analyzer - PII Detection Engine
+  presidio-analyzer:
+    image: mcr.microsoft.com/presidio-analyzer:latest
+    container_name: holilabs-presidio-analyzer
+    restart: unless-stopped
+
+    ports:
+      - "5001:5001"
+
+    environment:
+      # Logging configuration
+      - LOG_LEVEL=INFO
+      - GRPC_PORT=5001
+
+      # Performance tuning
+      - NLP_ENGINE_NAME=spacy
+      - MODELS_CACHE_DIR=/app/models
+      - NLP_WORKERS=1
+
+      # Language models (Spanish and Portuguese for LATAM)
+      - DEFAULT_LANGUAGE=es
+      - SUPPORTED_LANGUAGES=es,pt,en
+
+    volumes:
+      # Persistent cache for NLP models (speeds up cold starts)
+      - presidio-models:/app/models
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    networks:
+      - presidio-network
+
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 768M
+          cpus: '0.5'
+
+    # CRITICAL: Kill Presidio FIRST to protect Next.js (high score = first to die)
+    oom_score_adj: 500
+
+    labels:
+      # Coolify labels for automatic deployment
+      - "coolify.managed=true"
+      - "coolify.service=presidio-analyzer"
+      - "coolify.port=5001"
+      - "coolify.healthcheck=/health"
+
+  # Presidio Anonymizer - PII Redaction Engine
+  presidio-anonymizer:
+    image: mcr.microsoft.com/presidio-anonymizer:latest
+    container_name: holilabs-presidio-anonymizer
+    restart: unless-stopped
+
+    ports:
+      - "5002:5002"
+
+    environment:
+      # Logging configuration
+      - LOG_LEVEL=INFO
+      - GRPC_PORT=5002
+
+      # Anonymization defaults
+      - DEFAULT_ANONYMIZER=replace
+      - CACHE_ENABLED=true
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    networks:
+      - presidio-network
+
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=presidio-anonymizer"
+      - "coolify.port=5002"
+      - "coolify.healthcheck=/health"
+
+  # Redis - Cache for Presidio (optional but recommended)
+  presidio-redis:
+    image: redis:7-alpine
+    container_name: holilabs-presidio-redis
+    restart: unless-stopped
+
+    ports:
+      - "6380:6379"  # Non-standard port to avoid conflicts
+
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+
+    volumes:
+      - presidio-redis-data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    networks:
+      - presidio-network
+
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+    labels:
+      - "coolify.managed=true"
+      - "coolify.service=presidio-redis"
+
+networks:
+  presidio-network:
+    driver: bridge
+    name: presidio-network
+
+volumes:
+  # Persistent storage for NLP models (saves ~500MB downloads on restart)
+  presidio-models:
+    driver: local
+    labels:
+      - "backup=false"  # Models can be re-downloaded
+
+  # Redis data persistence (optional - can be disabled for ephemeral cache)
+  presidio-redis-data:
+    driver: local
+    labels:
+      - "backup=false"  # Cache data is ephemeral
+
+# Production Hardening Notes:
+# 1. Use environment variables for sensitive config (store in .env)
+# 2. Add Nginx reverse proxy for HTTPS termination
+# 3. Enable firewall rules (only allow internal traffic from web app)
+# 4. Set up monitoring with Prometheus/Grafana
+# 5. Configure log rotation to prevent disk fill
+# 6. Use Docker secrets for Redis password (if enabling AUTH)
+#
+# Coolify Deployment:
+# 1. Upload this file to your Coolify project
+# 2. Set environment variables in Coolify dashboard
+# 3. Deploy stack
+# 4. Verify health checks pass
+# 5. Test with: curl http://presidio-analyzer:5001/health
+#
+# Performance Tips:
+# - Warm up models on first request (~10 seconds)
+# - Use Redis caching for repeated texts
+# - Scale horizontally with multiple analyzer instances
+# - Monitor memory usage (SpaCy models are memory-intensive)

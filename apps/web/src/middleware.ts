@@ -1,13 +1,34 @@
 /**
- * Next.js Middleware for Authentication, i18n, and Security
+ * Next.js Middleware for Authentication, i18n, Security, and LGPD Compliance
  *
- * Protects dashboard routes, manages Supabase sessions, handles locale routing, and applies security headers
+ * Protects dashboard routes, manages sessions, enforces access reasons (LGPD Art. 18), and applies security headers
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 import { applySecurityHeaders, handleCORSPreflight } from '@/lib/security-headers';
 import { locales, defaultLocale } from '../i18n';
+
+// LGPD-protected endpoints (require access reason)
+const PHI_ENDPOINTS = [
+  '/api/patients/',
+  '/api/soap-notes/',
+  '/api/lab-results/',
+  '/api/prescriptions/',
+  '/api/consultations/',
+  '/api/medical-records/',
+  '/api/clinical-notes/',
+];
+
+const VALID_ACCESS_REASONS = [
+  'CLINICAL_CARE',
+  'EMERGENCY',
+  'ADMINISTRATIVE',
+  'PATIENT_REQUEST',
+  'LEGAL_OBLIGATION',
+  'RESEARCH',
+  'QUALITY_IMPROVEMENT',
+];
 
 function getLocale(request: NextRequest): string {
   // Check if locale is in the pathname
@@ -44,7 +65,44 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Skip locale handling for API routes, static files, auth, portal, dashboard, etc.
+  // ===== LGPD ACCESS REASON ENFORCEMENT =====
+  const isPHIRequest = PHI_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint));
+
+  if (isPHIRequest && request.method !== 'OPTIONS') {
+    const accessReason = request.headers.get('X-Access-Reason');
+
+    // Only require for READ operations (GET)
+    const isReadOperation = request.method === 'GET';
+
+    if (isReadOperation && !accessReason) {
+      console.warn(`[LGPD Violation] Missing access reason: ${pathname}`);
+
+      return NextResponse.json(
+        {
+          error: 'ACCESS_REASON_REQUIRED',
+          message: 'LGPD Art. 18 compliance: Access reason required for viewing PHI',
+          detail: 'Include X-Access-Reason header with valid reason code',
+          validReasons: VALID_ACCESS_REASONS,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Validate access reason enum
+    if (accessReason && !VALID_ACCESS_REASONS.includes(accessReason)) {
+      return NextResponse.json(
+        {
+          error: 'INVALID_ACCESS_REASON',
+          message: `Invalid access reason: ${accessReason}`,
+          validReasons: VALID_ACCESS_REASONS,
+        },
+        { status: 400 }
+      );
+    }
+  }
+  // ===== END LGPD ENFORCEMENT =====
+
+  // Skip locale handling for API routes, static files, auth, portal, dashboard, pricing, etc.
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
@@ -52,6 +110,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/portal') ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/shared') ||
+    pathname.startsWith('/pricing') ||
+    pathname.startsWith('/onboarding') ||
     pathname === '/' ||
     pathname.includes('.')
   ) {

@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ImprovedWelcomeModal from '@/components/onboarding/ImprovedWelcomeModal';
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist';
+import DashboardWalkthrough from '@/components/onboarding/DashboardWalkthrough';
 import DemoModeToggle from '@/components/demo/DemoModeToggle';
 
 // Demo data
@@ -42,6 +43,16 @@ import { SmartNotifications, NotificationBadge } from '@/components/dashboard/Sm
 import { ActivityTimeline, Activity } from '@/components/dashboard/ActivityTimeline';
 import { AIInsights } from '@/components/dashboard/AIInsights';
 import TaskManagementPanel from '@/components/tasks/TaskManagementPanel';
+import { FloatingActionButton } from '@/components/dashboard/FloatingActionButton';
+import { WidgetStore, type WidgetConfig } from '@/components/dashboard/WidgetStore';
+import { CommandKPatientSelector } from '@/components/dashboard/CommandKPatientSelector';
+import { FocusTimer } from '@/components/dashboard/FocusTimer';
+import {
+  AITimeReclaimedWidgetRadial,
+  PendingResultsWidget,
+  AdherenceScoreWidget,
+  BillableValueWidget,
+} from '@/components/dashboard/KPIWidgets';
 
 export default function DashboardCommandCenter() {
   const router = useRouter();
@@ -74,17 +85,34 @@ export default function DashboardCommandCenter() {
   // Notifications count
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(5);
   const [hasCriticalNotifications, setHasCriticalNotifications] = useState(true);
+  const [showWidgetStore, setShowWidgetStore] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(false);
+
+  // Widget configuration
+  const [widgets, setWidgets] = useState<WidgetConfig[]>([
+    { id: 'ai-time', name: 'AI Time Reclaimed', description: 'Track time saved with AI', enabled: true, category: 'kpi' },
+    { id: 'pending-results', name: 'Pending Results', description: 'Lab results awaiting review', enabled: true, category: 'clinical' },
+    { id: 'adherence', name: 'Adherence Score', description: 'Patient medication adherence', enabled: true, category: 'kpi' },
+    { id: 'billable', name: 'Billable Value', description: 'Monthly billable amount', enabled: true, category: 'kpi' },
+    { id: 'focus-timer', name: 'Flow State Timer', description: 'Focus timer with completion sounds', enabled: true, category: 'productivity' },
+  ]);
+
+  const toggleWidget = (widgetId: string) => {
+    setWidgets((prev) =>
+      prev.map((w) => (w.id === widgetId ? { ...w, enabled: !w.enabled } : w))
+    );
+  };
 
   useEffect(() => {
     // Set time-based greeting
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting(t('dashboard.greeting.morning'));
-    else if (hour < 18) setGreeting(t('dashboard.greeting.afternoon'));
-    else setGreeting(t('dashboard.greeting.evening'));
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 18) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
 
     // Fetch dashboard data
     fetchDashboardData();
-  }, [t]);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -170,7 +198,7 @@ export default function DashboardCommandCenter() {
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary-500 mb-4" />
           <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-            {t('dashboard.loading')}
+            Loading...
           </h3>
         </div>
       </div>
@@ -181,10 +209,26 @@ export default function DashboardCommandCenter() {
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900">
       {/* Onboarding */}
       <ImprovedWelcomeModal />
-      <OnboardingChecklist />
+      <DashboardWalkthrough onComplete={() => setShowChecklist(true)} />
+      {showChecklist && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <OnboardingChecklist autoShow={true} />
+        </div>
+      )}
 
       {/* Command Palette */}
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
+
+      {/* Widget Store */}
+      <WidgetStore
+        widgets={widgets}
+        onToggle={toggleWidget}
+        isOpen={showWidgetStore}
+        onClose={() => setShowWidgetStore(false)}
+      />
+
+      {/* FAB */}
+      <FloatingActionButton onClick={() => setShowWidgetStore(true)} />
 
       {/* Top Header - Redesigned */}
       <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 sticky top-0 z-20 shadow-sm backdrop-blur-sm bg-white/95 dark:bg-neutral-900/95">
@@ -209,24 +253,8 @@ export default function DashboardCommandCenter() {
               {/* Demo Mode Toggle */}
               <DemoModeToggle />
 
-              {/* Command palette hint */}
-              <button
-                onClick={() => {}}
-                className="hidden md:flex items-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition text-sm text-neutral-600 dark:text-neutral-400"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <span>Search</span>
-                <kbd className="px-1.5 py-0.5 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded text-[10px]">
-                  ⌘K
-                </kbd>
-              </button>
+              {/* Command K Patient Selector */}
+              <CommandKPatientSelector />
 
               {/* Notifications */}
               <NotificationBadge
@@ -240,7 +268,7 @@ export default function DashboardCommandCenter() {
                 onClick={() => router.push('/dashboard/patients')}
                 className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition font-medium shadow-lg hover:shadow-xl"
               >
-                {t('dashboard.viewPatients')}
+                View Patients
               </button>
             </div>
           </div>
@@ -249,10 +277,18 @@ export default function DashboardCommandCenter() {
 
       {/* Main Content - Command Center Layout */}
       <div className="container mx-auto px-6 py-8">
+        {/* New KPI Widgets Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {widgets.find((w) => w.id === 'ai-time')?.enabled && <AITimeReclaimedWidgetRadial />}
+          {widgets.find((w) => w.id === 'pending-results')?.enabled && <PendingResultsWidget />}
+          {widgets.find((w) => w.id === 'adherence')?.enabled && <AdherenceScoreWidget />}
+          {widgets.find((w) => w.id === 'billable')?.enabled && <BillableValueWidget />}
+        </div>
+
         {/* Key Metrics - Enhanced with trends */}
-        <EnhancedStatCardGrid columns={4} className="mb-8">
+        <EnhancedStatCardGrid columns={4} className="mb-8 dashboard-stats">
           <EnhancedStatCard
-            label={t('dashboard.stats.totalPatients')}
+            label="Total Active Patients"
             value={stats.totalPatients}
             change={{ value: 8.2, trend: 'up', period: 'vs last week' }}
             trendData={trendData.patients}
@@ -280,7 +316,7 @@ export default function DashboardCommandCenter() {
           />
 
           <EnhancedStatCard
-            label={t('dashboard.stats.scheduledAppointments')}
+            label="Scheduled Appointments"
             value={stats.todayAppointments}
             change={{ value: 12.5, trend: 'up', period: 'vs yesterday' }}
             trendData={trendData.appointments}
@@ -308,7 +344,7 @@ export default function DashboardCommandCenter() {
           />
 
           <EnhancedStatCard
-            label={t('dashboard.stats.signedPrescriptions')}
+            label="Signed Prescriptions"
             value={stats.prescriptionsToday}
             change={{ value: 5.3, trend: 'up', period: 'vs last week' }}
             trendData={trendData.prescriptions}
@@ -335,7 +371,7 @@ export default function DashboardCommandCenter() {
           />
 
           <EnhancedStatCard
-            label={t('dashboard.stats.clinicalNotes')}
+            label="Clinical Notes"
             value={24}
             change={{ value: 18.7, trend: 'up', period: 'vs last week' }}
             trendData={[18, 20, 19, 22, 21, 23, 24]}
@@ -413,7 +449,7 @@ export default function DashboardCommandCenter() {
             {/* Quick Actions Card */}
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-lg p-6">
               <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 mb-4">
-                {t('dashboard.quickActions')}
+                Quick Actions
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -536,6 +572,24 @@ export default function DashboardCommandCenter() {
                 </button>
               </div>
             </div>
+
+            {/* Focus Timer */}
+            {widgets.find((w) => w.id === 'focus-timer')?.enabled && (
+              <FocusTimer
+                onComplete={() => {
+                  console.log('Focus session complete!');
+                }}
+              />
+            )}
+
+            {/* Focus Timer */}
+            {widgets.find((w) => w.id === 'focus-timer')?.enabled && (
+              <FocusTimer
+                onComplete={() => {
+                  console.log('Focus session complete!');
+                }}
+              />
+            )}
 
             {/* Task Management Widget */}
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-lg p-6">

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { AccessReasonModal } from '@/components/compliance/AccessReasonModal';
+import { AccessReason } from '@prisma/client';
 import EPrescribingDrawer from '@/components/patient/EPrescribingDrawer';
 import ConsentManager from '@/components/patient/ConsentManager';
 import SchedulingModal from '@/components/patient/SchedulingModal';
@@ -12,48 +14,160 @@ import SupportContact from '@/components/SupportContact';
 
 type Tab = 'personal' | 'clinical' | 'history' | 'documents' | 'consents' | 'ai';
 
+/**
+ * LGPD/Law 25.326 Compliant Patient Profile
+ *
+ * Security Controls:
+ * - Mandatory access reason before PHI display
+ * - Zero-trust: No data preloading
+ * - 15-minute session timeout
+ * - Activity tracking for session extension
+ * - Full audit trail with justification
+ */
+
+interface AccessSession {
+  patientId: string;
+  accessReason: AccessReason;
+  accessPurpose?: string;
+  grantedAt: Date;
+  expiresAt: Date;
+}
+
+const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
 export default function PatientProfile() {
   const params = useParams();
+  const router = useRouter();
   const patientId = params.id as string;
+
   const [activeTab, setActiveTab] = useState<Tab>('clinical');
   const [isRxDrawerOpen, setIsRxDrawerOpen] = useState(false);
   const [isSchedulingOpen, setIsSchedulingOpen] = useState(false);
   const [isClinicalNotesOpen, setIsClinicalNotesOpen] = useState(false);
   const [aiContext, setAiContext] = useState<string>('Cargando contexto del paciente...');
 
-  // Real data from API
+  // LGPD Access Control State
+  const [showAccessModal, setShowAccessModal] = useState(true);
+  const [accessSession, setAccessSession] = useState<AccessSession | null>(null);
+  const [lastActivity, setLastActivity] = useState<Date>(new Date());
+
+  // Patient data state
   const [patient, setPatient] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch patient data from API
+  // Session timeout checker
   useEffect(() => {
-    async function fetchPatient() {
-      try {
-        const response = await fetch(`/api/patients/${patientId}`);
-        const data = await response.json();
+    if (!accessSession) return;
 
-        if (response.ok) {
-          setPatient(data.data);
+    const checkTimeout = setInterval(() => {
+      const now = new Date();
+      const inactiveTime = now.getTime() - lastActivity.getTime();
 
-          // Build AI context from real data
-          const age = new Date().getFullYear() - new Date(data.data.dateOfBirth).getFullYear();
-          const ageBand = data.data.ageBand || `${Math.floor(age / 10) * 10}-${Math.floor(age / 10) * 10 + 9}`;
-          const medList = data.data.medications?.map((m: any) => m.name).join(', ') || 'Ninguna';
-
-          setAiContext(`Banda de edad ${ageBand}, Medicación activa: ${medList}`);
-        } else {
-          setError(data.error || 'Failed to load patient');
-        }
-      } catch (err: any) {
-        setError(err.message || 'Network error');
-      } finally {
-        setLoading(false);
+      if (inactiveTime > SESSION_TIMEOUT_MS || now > accessSession.expiresAt) {
+        handleSessionExpiry();
       }
-    }
+    }, 60000); // Check every minute
 
-    fetchPatient();
-  }, [patientId]);
+    return () => clearInterval(checkTimeout);
+  }, [accessSession, lastActivity]);
+
+  // Activity tracker
+  useEffect(() => {
+    const updateActivity = () => setLastActivity(new Date());
+
+    window.addEventListener('mousemove', updateActivity);
+    window.addEventListener('keydown', updateActivity);
+    window.addEventListener('click', updateActivity);
+
+    return () => {
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('click', updateActivity);
+    };
+  }, []);
+
+  const handleSessionExpiry = () => {
+    setAccessSession(null);
+    setPatient(null);
+    setShowAccessModal(true);
+    setError('Sessão expirada por inatividade. Justifique o acesso novamente.');
+  };
+
+  const handleAccessReason = async (reason: AccessReason, purpose?: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Step 1: Log access with LGPD-compliant justification
+      const logResponse = await fetch(`/api/patients/${patientId}/log-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessReason: reason, accessPurpose: purpose }),
+      });
+
+      if (!logResponse.ok) {
+        const errorData = await logResponse.json();
+        throw new Error(errorData.error || 'Falha ao registrar acesso');
+      }
+
+      // Step 2: Create access session
+      const now = new Date();
+      const session: AccessSession = {
+        patientId,
+        accessReason: reason,
+        accessPurpose: purpose,
+        grantedAt: now,
+        expiresAt: new Date(now.getTime() + SESSION_TIMEOUT_MS),
+      };
+
+      setAccessSession(session);
+      setLastActivity(now);
+
+      // Step 3: Fetch patient data ONLY after audit logging
+      await fetchPatient(reason);
+      setShowAccessModal(false);
+
+      console.info('[LGPD Compliance] Patient access granted:', {
+        patientId,
+        reason,
+        expiresAt: session.expiresAt.toISOString(),
+      });
+    } catch (err) {
+      console.error('[Access Control Error]', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      setShowAccessModal(true);
+      setAccessSession(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch patient data - only called AFTER access reason is logged
+  async function fetchPatient(accessReason: AccessReason) {
+    try {
+      const response = await fetch(`/api/patients/${patientId}`, {
+        headers: { 'X-Access-Reason': accessReason },
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setPatient(data.data);
+
+        // Build AI context from real data
+        const age = new Date().getFullYear() - new Date(data.data.dateOfBirth).getFullYear();
+        const ageBand = data.data.ageBand || `${Math.floor(age / 10) * 10}-${Math.floor(age / 10) * 10 + 9}`;
+        const medList = data.data.medications?.map((m: any) => m.name).join(', ') || 'Ninguna';
+
+        setAiContext(`Banda de edad ${ageBand}, Medicación activa: ${medList}`);
+      } else {
+        setError(data.error || 'Failed to load patient');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Network error');
+      throw err;
+    }
+  }
 
   const handleContextUpdate = (metadata: any) => {
     // Update AI context with new data
@@ -61,6 +175,26 @@ export default function PatientProfile() {
     const newContext = `Contexto actualizado [${timestamp}]: ${aiContext} Nuevos datos: ${metadata.dataType} (${metadata.metrics.map((m: any) => `${m.code} ${m.value}${m.unit}`).join(', ')})`;
     setAiContext(newContext);
   };
+
+  // LGPD Access Control: Show modal BEFORE any PHI access
+  if (!accessSession || showAccessModal) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        {error && (
+          <div className="absolute top-4 right-4 max-w-md rounded-lg bg-red-50 p-4 border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+          </div>
+        )}
+        <AccessReasonModal
+          isOpen={showAccessModal}
+          patientName={`Paciente ${patientId.slice(0, 8)}...`}
+          onSelectReason={handleAccessReason}
+          onCancel={() => router.push('/dashboard/patients')}
+          autoSelectAfter={30}
+        />
+      </div>
+    );
+  }
 
   // Loading state
   if (loading) {
@@ -115,6 +249,33 @@ export default function PatientProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* LGPD Access Session Banner */}
+      {accessSession && (
+        <div className="bg-blue-50 border-b-2 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+          <div className="container mx-auto px-4 py-2">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>
+                  <strong>Acesso Autorizado:</strong> {accessSession.accessReason.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-blue-600 dark:text-blue-400">
+                <span>Expira: {accessSession.expiresAt.toLocaleTimeString('pt-BR')}</span>
+                <span className="text-blue-500">🔒 LGPD Compliant</span>
+              </div>
+            </div>
+            {accessSession.accessPurpose && (
+              <p className="mt-1 text-xs text-blue-700 dark:text-blue-300">
+                Finalidade: {accessSession.accessPurpose}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header with patient info banner - Dentalink style */}
       <div className="bg-gradient-to-r from-primary to-blue-600 text-white shadow-lg">
         <div className="container mx-auto px-4 py-6">

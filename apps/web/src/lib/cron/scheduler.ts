@@ -7,10 +7,12 @@
 
 import cron, { ScheduledTask } from 'node-cron';
 import { executeScheduledReminders } from '@/lib/jobs/reminder-executor';
+import { autoGenerateScreeningReminders } from '@/lib/prevention/screening-triggers';
 import logger from '@/lib/logger';
 
 let isSchedulerRunning = false;
 let reminderJob: ScheduledTask | null = null;
+let screeningTriggersJob: ScheduledTask | null = null;
 
 /**
  * Initialize the cron scheduler
@@ -48,6 +50,30 @@ export function initializeScheduler() {
     }
   });
 
+  // Schedule screening triggers to run daily at 2:00 AM
+  screeningTriggersJob = cron.schedule('0 2 * * *', async () => {
+    try {
+      logger.info({
+        event: 'cron_screening_triggers_start',
+        timestamp: new Date().toISOString(),
+      });
+
+      const result = await autoGenerateScreeningReminders();
+
+      logger.info({
+        event: 'cron_screening_triggers_complete',
+        result,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error({
+        event: 'cron_screening_triggers_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+    }
+  });
+
   isSchedulerRunning = true;
 
   logger.info({
@@ -58,6 +84,11 @@ export function initializeScheduler() {
         name: 'reminder-executor',
         schedule: '* * * * *',
         description: 'Execute scheduled reminders every minute',
+      },
+      {
+        name: 'screening-triggers',
+        schedule: '0 2 * * *',
+        description: 'Auto-generate screening reminders daily at 2:00 AM',
       },
     ],
   });
@@ -70,6 +101,11 @@ export function stopScheduler() {
   if (reminderJob) {
     reminderJob.stop();
     reminderJob = null;
+  }
+
+  if (screeningTriggersJob) {
+    screeningTriggersJob.stop();
+    screeningTriggersJob = null;
   }
 
   isSchedulerRunning = false;
@@ -92,6 +128,13 @@ export function getSchedulerStatus() {
             name: 'reminder-executor',
             schedule: '* * * * *',
             status: 'active',
+            description: 'Execute scheduled reminders every minute',
+          },
+          {
+            name: 'screening-triggers',
+            schedule: '0 2 * * *',
+            status: 'active',
+            description: 'Auto-generate screening reminders daily at 2:00 AM',
           },
         ]
       : [],

@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { monitorLabResult } from '@/lib/prevention/lab-result-monitors';
+import { onLabResultCreated } from '@/lib/cache/patient-context-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -165,9 +167,49 @@ export const POST = createProtectedRoute(
         },
       });
 
+      // Automatic lab result monitoring (HbA1c, LDL, etc.)
+      let monitoringResult = null;
+      try {
+        monitoringResult = await monitorLabResult({
+          id: labResult.id,
+          patientId: labResult.patientId,
+          testName: labResult.testName,
+          loincCode: labResult.testCode || undefined,
+          value: labResult.value || '',
+          unit: labResult.unit || '',
+          referenceRange: labResult.referenceRange || undefined,
+          flag: (labResult.isAbnormal ? 'HIGH' : 'NORMAL') as 'HIGH' | 'LOW' | 'CRITICAL' | 'NORMAL',
+          observedAt: labResult.resultDate,
+        });
+
+        console.log('[Lab Result] Monitoring result:', {
+          labResultId: labResult.id,
+          testName: labResult.testName,
+          monitored: monitoringResult.monitored,
+          preventionPlanCreated: monitoringResult.result?.preventionPlanCreated,
+        });
+      } catch (monitorError) {
+        // Don't fail the request if monitoring fails
+        console.error('[Lab Result] Monitoring error:', monitorError);
+      }
+
+      // Invalidate patient context cache (labs, prevention plans, full context)
+      try {
+        await onLabResultCreated(labResult.patientId);
+        console.log('[Cache] Invalidated patient context cache for lab result:', labResult.id);
+      } catch (cacheError) {
+        // Don't fail the request if cache invalidation fails
+        console.error('[Cache] Cache invalidation error:', cacheError);
+      }
+
       return NextResponse.json({
         success: true,
         data: labResult,
+        monitoring: monitoringResult ? {
+          monitored: monitoringResult.monitored,
+          testType: monitoringResult.testType,
+          preventionPlanCreated: monitoringResult.result?.preventionPlanCreated,
+        } : null,
       });
     } catch (error: any) {
       console.error('Error creating lab result:', error);

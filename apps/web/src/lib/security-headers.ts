@@ -100,6 +100,15 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
     ].join(', ')
   );
 
+  // Cache-Control - Prevent caching of sensitive data (HIPAA §164.312(a)(2)(iv))
+  // PHI must not be cached in browsers or intermediary proxies
+  response.headers.set(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, private, max-age=0'
+  );
+  response.headers.set('Pragma', 'no-cache'); // HTTP/1.0 compatibility
+  response.headers.set('Expires', '0'); // Proxy compatibility
+
   // CORS headers
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')
     .split(',')
