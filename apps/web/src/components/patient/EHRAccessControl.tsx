@@ -155,7 +155,7 @@ export function EHRAccessControl({
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               EHR Access Control
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-700 dark:text-gray-200">
               Manage who can access your medical records
             </p>
           </div>
@@ -175,7 +175,7 @@ export function EHRAccessControl({
           Active Permissions
         </h3>
         {permissions.filter(p => p.status === 'active').length === 0 ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-center py-8 text-gray-700 dark:text-gray-200">
             <p>No active permissions. Grant access to your doctors to enable Smart Diagnosis features.</p>
           </div>
         ) : (
@@ -194,12 +194,12 @@ export function EHRAccessControl({
                       {permission.scope === 'visit' ? 'Visit Only' : 'Ongoing'}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-gray-700 dark:text-gray-200">
                     Access to: {permission.dataTypes.map(dt =>
                       availableDataTypes.find(adt => adt.id === dt)?.name
                     ).join(', ')}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                     {permission.expiresAt
                       ? `Expires ${new Date(permission.expiresAt).toLocaleDateString()}`
                       : 'No expiration'}
@@ -233,11 +233,11 @@ export function EHRAccessControl({
                   <div className="font-medium text-gray-900 dark:text-white text-sm">
                     {permission.doctorName}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500">
+                  <div className="text-xs text-gray-600 dark:text-gray-300">
                     {permission.status === 'revoked' ? 'Revoked' : 'Expired'}
                   </div>
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-600 dark:text-gray-300">
                   {new Date(permission.grantedAt).toLocaleDateString()}
                 </span>
               </div>
@@ -277,7 +277,7 @@ export function EHRAccessControl({
                         <div className="font-semibold text-gray-900 dark:text-white">
                           {selectedDoctor.name}
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-gray-700 dark:text-gray-200">
                           {selectedDoctor.specialty}
                         </div>
                       </div>
@@ -289,7 +289,7 @@ export function EHRAccessControl({
                       </button>
                     </div>
                   ) : (
-                    <div className="text-gray-500 dark:text-gray-400 text-sm">
+                    <div className="text-gray-700 dark:text-gray-200 text-sm">
                       Doctor will be automatically selected from current consultation
                     </div>
                   )}
@@ -313,7 +313,7 @@ export function EHRAccessControl({
                     <div className="font-semibold text-gray-900 dark:text-white mb-1">
                       This Visit Only
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
                       Access expires after 24 hours
                     </div>
                   </button>
@@ -328,7 +328,7 @@ export function EHRAccessControl({
                     <div className="font-semibold text-gray-900 dark:text-white mb-1">
                       Ongoing Access
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
                       Until manually revoked
                     </div>
                   </button>

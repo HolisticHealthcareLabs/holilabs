@@ -344,7 +344,7 @@ function CoPilotContent() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               Co-Pilot
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-700 dark:text-gray-200">
               Unified AI-powered clinical workspace
             </p>
           </div>
@@ -382,7 +382,7 @@ function CoPilotContent() {
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                     Select Patient
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-200">
                     Choose the patient for this consultation
                   </p>
                 </div>
@@ -423,7 +423,7 @@ function CoPilotContent() {
                     <div className="text-xl font-bold text-gray-900 dark:text-white">
                       {selectedPatient.firstName} {selectedPatient.lastName}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-gray-700 dark:text-gray-200">
                       MRN: {selectedPatient.mrn} • DOB: {new Date(selectedPatient.dateOfBirth).toLocaleDateString()}
                     </div>
                   </div>
@@ -454,7 +454,7 @@ function CoPilotContent() {
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                     AI Clinical Assistants
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-700 dark:text-gray-200">
                     Select AI tools to assist with this consultation
                   </p>
                 </div>
@@ -548,7 +548,7 @@ function CoPilotContent() {
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-3">
                   {state.liveSoapNote.chiefComplaint && (
                     <div>
-                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">
+                      <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">
                         Chief Complaint
                       </div>
                       <div className="text-sm text-gray-900 dark:text-white">
@@ -558,7 +558,7 @@ function CoPilotContent() {
                   )}
                   {state.liveSoapNote.subjective && (
                     <div>
-                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">
+                      <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">
                         Subjective
                       </div>
                       <div className="text-sm text-gray-900 dark:text-white">
@@ -568,7 +568,7 @@ function CoPilotContent() {
                   )}
                   {state.liveSoapNote.objective && (
                     <div>
-                      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">
+                      <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">
                         Objective
                       </div>
                       <div className="text-sm text-gray-900 dark:text-white">
@@ -634,7 +634,7 @@ function CoPilotContent() {
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-gray-700 dark:text-gray-200 mb-4">
                 AI-powered diagnostic assistant with access to patient lab reports and medical history
               </p>
 
@@ -679,7 +679,7 @@ function CoPilotContent() {
                 <span className="text-lg mr-3">🎤</span>
                 <div>
                   <div className="font-semibold text-gray-900 dark:text-white">Microphone</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">For in-person consultations</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">For in-person consultations</div>
                 </div>
               </label>
               <label className="flex items-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -694,7 +694,7 @@ function CoPilotContent() {
                 <span className="text-lg mr-3">💻</span>
                 <div>
                   <div className="font-semibold text-gray-900 dark:text-white">System Audio</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">For video calls</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300">For video calls</div>
                 </div>
               </label>
             </div>

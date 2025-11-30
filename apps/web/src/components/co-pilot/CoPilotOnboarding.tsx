@@ -116,7 +116,7 @@ export function CoPilotOnboarding() {
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-3">
             {step.title}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+          <p className="text-gray-700 dark:text-gray-200 text-center mb-6">
             {step.description}
           </p>
 
