@@ -67,13 +67,13 @@ export function PatientConsentModal({
 
           {/* Consent Text */}
           <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 max-h-48 overflow-y-auto">
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed mb-3">
               I consent to the audio recording and transcription of this clinical consultation for documentation purposes.
             </p>
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed mb-3">
               I understand that:
             </p>
-            <ul className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed space-y-2 list-disc pl-5">
+            <ul className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed space-y-2 list-disc pl-5">
               <li>The recording will be used to generate clinical notes and documentation</li>
               <li>AI-powered transcription will process the audio in real-time</li>
               <li>All data is encrypted and stored securely per HIPAA/LGPD regulations</li>
@@ -90,7 +90,7 @@ export function PatientConsentModal({
               onChange={(e) => setHasRead(e.target.checked)}
               className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-gray-800 dark:text-gray-200">
               I have read and understood the above information, and I consent to this recording.
             </span>
           </label>
@@ -114,7 +114,7 @@ export function PatientConsentModal({
 
           {/* Footer */}
           <div className="mt-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-600 dark:text-gray-300">
               This consent complies with HIPAA (USA), LGPD (Brazil), and PDPA regulations.
             </p>
           </div>
