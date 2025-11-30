@@ -349,22 +349,22 @@ function CoPilotContent() {
             </p>
           </div>
 
-          {/* Live Clinical Reasoning Toggle */}
-          <div className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <Switch
-              enabled={useRealTimeMode}
-              onChange={setUseRealTimeMode}
-              label={useRealTimeMode ? 'Live Clinical Reasoning' : 'Standard Mode'}
-              disabled={state.isRecording}
-              size="md"
-              showPulse={useRealTimeMode && state.isRecording}
-            />
+          {/* Compact Live Mode Toggle */}
+          <div className="flex items-center gap-3">
             {useRealTimeMode && state.isRecording && (
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium">Listening & Analyzing</span>
+                <span className="text-sm font-medium">Live Mode Active</span>
               </div>
             )}
+            <Switch
+              enabled={useRealTimeMode}
+              onChange={setUseRealTimeMode}
+              label="Live Mode"
+              disabled={state.isRecording}
+              size="sm"
+              showPulse={false}
+            />
           </div>
         </div>
       </div>
@@ -486,30 +486,9 @@ function CoPilotContent() {
 
       {/* Split-Pane Layout */}
       <div className="flex flex-col lg:flex-row h-[calc(100vh-300px)]">
-        {/* Left Panel: The Ear (Scribe) */}
+        {/* Left Panel: The Ear (Scribe) - Transcript & SOAP */}
         <div className="flex-1 lg:w-1/2 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
           <div className="p-6">
-            {/* Recording Controls */}
-            <div className="mb-6">
-              {!state.isRecording ? (
-                <button
-                  onClick={handleStartRecording}
-                  disabled={!selectedPatient}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-red-500 to-pink-600 text-white font-bold rounded-lg hover:from-red-600 hover:to-pink-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <span className="text-2xl">🎙️</span>
-                  <span>Start Recording</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleStopRecording}
-                  className="w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-all shadow-lg flex items-center justify-center gap-2"
-                >
-                  <span className="text-xl">⏹</span>
-                  <span>Stop Recording</span>
-                </button>
-              )}
-            </div>
 
             {/* Audio Waveform */}
             {audioStream && (
@@ -610,7 +589,7 @@ function CoPilotContent() {
               before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-blue-500/5 before:to-purple-500/5 before:pointer-events-none
               relative">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
                     <Image
                       src="/icons/stethoscope (1).svg"
@@ -620,12 +599,39 @@ function CoPilotContent() {
                       className="dark:invert"
                     />
                   </div>
-                  Smart Diagnosis
-                </h2>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      Smart Diagnosis
+                    </h2>
+                    {selectedPatient && (
+                      <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold inline-block mt-1">
+                        EHR Access Granted
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Compact Recording Button */}
                 {selectedPatient && (
-                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-semibold">
-                    EHR Access Granted
-                  </span>
+                  <div>
+                    {!state.isRecording ? (
+                      <button
+                        onClick={handleStartRecording}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold transition-all shadow-lg hover:shadow-xl group"
+                      >
+                        <div className="w-3 h-3 bg-white rounded-full group-hover:animate-pulse"></div>
+                        <span>Record</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleStopRecording}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold transition-all shadow-lg animate-pulse"
+                      >
+                        <div className="w-3 h-3 bg-white rounded-sm"></div>
+                        <span>Stop</span>
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
