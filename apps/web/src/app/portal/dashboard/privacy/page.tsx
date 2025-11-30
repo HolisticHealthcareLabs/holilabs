@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import AccessGrantsList from '@/components/access-grants/AccessGrantsList';
 import AccessGrantForm from '@/components/access-grants/AccessGrantForm';
+import { ConsentManagementPanel } from '@/components/privacy/ConsentManagementPanel';
 
 export default function PrivacyControlPage() {
   const { patientId, loading } = useAuth();
@@ -47,18 +48,26 @@ export default function PrivacyControlPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="text-4xl">🔒</div>
-            <h1 className="text-3xl font-bold text-gray-900">Control de Privacidad</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Control de Privacidad</h1>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Gestiona quién puede acceder a tus datos médicos. Tu privacidad está en tus manos.
           </p>
         </div>
+
+        {/* Consent Management Section */}
+        <div className="mb-12">
+          <ConsentManagementPanel patientId={patientId} />
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 dark:border-gray-700 my-12" />
 
         {/* Recording Consent Card */}
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mb-8">

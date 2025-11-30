@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { validateBody, validateQuery } from '@/lib/api/middleware';
+import { consentGuard } from '@/lib/consent/consent-guard';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,61 @@ import {
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     const validated = context.validatedBody;
+
+    // ============================================================================
+    // CONSENT-GATED ACCESS: Check patient consent before booking
+    // ============================================================================
+    const consentCheck = await consentGuard.canBookAppointment(validated.patientId);
+
+    if (!consentCheck.allowed) {
+      // Log consent check for audit trail
+      await consentGuard.logConsentCheck(
+        validated.patientId,
+        'BOOK_APPOINTMENT',
+        consentCheck,
+        {
+          clinicianId: validated.clinicianId,
+          requestedBy: context.user?.id,
+          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+        }
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'CONSENT_REQUIRED',
+          message: 'Patient has not granted consent for appointment booking.',
+          missingConsents: consentCheck.missingConsents,
+          requiredActions: [
+            {
+              action: 'GRANT_CONSENT',
+              consentType: 'appointment_booking',
+              description: 'Allow doctors to view medical history when booking appointments',
+              url: '/portal/dashboard/privacy',
+            },
+            {
+              action: 'GRANT_CONSENT',
+              consentType: 'treatment_access',
+              description: 'Allow doctors to access medical records for treatment',
+              url: '/portal/dashboard/privacy',
+            },
+          ],
+        },
+        { status: 403 }
+      );
+    }
+
+    // Log successful consent check
+    await consentGuard.logConsentCheck(
+      validated.patientId,
+      'BOOK_APPOINTMENT',
+      consentCheck,
+      {
+        clinicianId: validated.clinicianId,
+        requestedBy: context.user?.id,
+        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+      }
+    );
 
     // Create appointment
     const appointment = await prisma!.appointment.create({
