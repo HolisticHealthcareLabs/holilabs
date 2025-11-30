@@ -17,7 +17,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'scribe',
     name: 'AI Scribe',
-    icon: '/icons/i-note_action.svg',
+    icon: '/icons/i-note_action (1).svg',
     description: 'Real-time clinical documentation',
     color: 'from-purple-500 to-pink-600',
     gradient: 'bg-gradient-to-br from-purple-500/20 to-pink-600/20',
@@ -25,7 +25,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'diagnosis',
     name: 'Diagnosis AI',
-    icon: '/icons/stethoscope.svg',
+    icon: '/icons/stethoscope (1).svg',
     description: 'Differential diagnosis assistant',
     color: 'from-cyan-500 to-blue-600',
     gradient: 'bg-gradient-to-br from-cyan-500/20 to-blue-600/20',
@@ -33,7 +33,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'imaging',
     name: 'Image Analysis',
-    icon: '/icons/diagnostics.svg',
+    icon: '/icons/diagnostics (1).svg',
     description: 'AI-powered radiology insights',
     color: 'from-indigo-500 to-purple-600',
     gradient: 'bg-gradient-to-br from-indigo-500/20 to-purple-600/20',
@@ -41,7 +41,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'prevention',
     name: 'Prevention Hub',
-    icon: '/icons/health.svg',
+    icon: '/icons/health (1).svg',
     description: 'Preventive care protocols',
     color: 'from-emerald-500 to-teal-600',
     gradient: 'bg-gradient-to-br from-emerald-500/20 to-teal-600/20',
@@ -49,7 +49,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'prescribe',
     name: 'Smart Rx',
-    icon: '/icons/rx.svg',
+    icon: '/icons/rx (1).svg',
     description: 'Intelligent prescribing',
     color: 'from-orange-500 to-red-600',
     gradient: 'bg-gradient-to-br from-orange-500/20 to-red-600/20',
@@ -57,7 +57,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'research',
     name: 'Evidence Search',
-    icon: '/icons/forum.svg',
+    icon: '/icons/forum (1).svg',
     description: 'Latest clinical evidence',
     color: 'from-blue-500 to-cyan-600',
     gradient: 'bg-gradient-to-br from-blue-500/20 to-cyan-600/20',
@@ -65,7 +65,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'lab-analysis',
     name: 'Lab Insights',
-    icon: '/icons/diagnostics.svg',
+    icon: '/icons/diagnostics (1).svg',
     description: 'Automated lab interpretation',
     color: 'from-fuchsia-500 to-pink-600',
     gradient: 'bg-gradient-to-br from-fuchsia-500/20 to-pink-600/20',
@@ -73,7 +73,7 @@ const AI_TOOLS: AITool[] = [
   {
     id: 'patient-education',
     name: 'Patient Ed',
-    icon: '/icons/health-worker_form.svg',
+    icon: '/icons/health-worker_form (1).svg',
     description: 'Auto-generate materials',
     color: 'from-amber-500 to-orange-600',
     gradient: 'bg-gradient-to-br from-amber-500/20 to-orange-600/20',

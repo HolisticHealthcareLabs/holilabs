@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 import { ClinicalSessionProvider, useClinicalSession } from '@/contexts/ClinicalSessionContext';
 import { Switch } from '@/components/ui/Switch';
 import AudioWaveform from '@/components/scribe/AudioWaveform';
@@ -11,6 +12,8 @@ import { RealTimeTranscription } from '@/components/scribe/RealTimeTranscription
 import DiagnosisAssistant from '@/components/clinical/DiagnosisAssistant';
 import { ToolDock } from '@/components/co-pilot/ToolDock';
 import { CoPilotIntegrationBubble } from '@/components/dashboard/CoPilotIntegrationBubble';
+import { PatientConsentModal } from '@/components/co-pilot/PatientConsentModal';
+import { CoPilotOnboarding } from '@/components/co-pilot/CoPilotOnboarding';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,6 +89,7 @@ function CoPilotContent() {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [useRealTimeMode, setUseRealTimeMode] = useState(true);
   const [showAudioSourceModal, setShowAudioSourceModal] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const [audioSource, setAudioSource] = useState<'microphone' | 'system' | 'both'>('microphone');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -204,7 +208,18 @@ function CoPilotContent() {
       return;
     }
 
+    // Show consent modal first
+    setShowConsentModal(true);
+  };
+
+  const handleConsentGranted = () => {
+    setShowConsentModal(false);
     setShowAudioSourceModal(true);
+  };
+
+  const handleConsentDeclined = () => {
+    setShowConsentModal(false);
+    alert('Recording cannot proceed without patient consent.');
   };
 
   const startRecording = async () => {
@@ -318,27 +333,20 @@ function CoPilotContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Onboarding Tour */}
+      <CoPilotOnboarding />
+
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                Co-Pilot
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Unified AI-powered clinical workspace
-              </p>
-            </div>
-
-            {/* Futuristic [+] Bubble Menu */}
-            <CoPilotIntegrationBubble
-              onToolSelect={(toolId) => {
-                console.log('Selected tool:', toolId);
-                // Handle tool selection - navigate or open modal
-              }}
-            />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              Co-Pilot
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Unified AI-powered clinical workspace
+            </p>
           </div>
 
           {/* Live Clinical Reasoning Toggle */}
@@ -361,6 +369,111 @@ function CoPilotContent() {
         </div>
       </div>
 
+      {/* Patient Selection Section - TOP ROW */}
+      <div className="bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 px-6 py-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto">
+          {!selectedPatient ? (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
+                  <span className="text-2xl">👤</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Select Patient
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Choose the patient for this consultation
+                  </p>
+                </div>
+              </div>
+              <input
+                type="text"
+                placeholder="Search by name or MRN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white mb-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                {filteredPatients.map((patient) => (
+                  <button
+                    key={patient.id}
+                    onClick={() => setSelectedPatient(patient)}
+                    className="text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
+                  >
+                    <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      {patient.firstName} {patient.lastName}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">MRN: {patient.mrn}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-2 border-blue-500 dark:border-blue-600">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-xl font-bold">
+                    {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase mb-1">
+                      Active Patient
+                    </div>
+                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                      {selectedPatient.firstName} {selectedPatient.lastName}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      MRN: {selectedPatient.mrn} • DOB: {new Date(selectedPatient.dateOfBirth).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedPatient(null)}
+                  disabled={state.isRecording}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Change Patient
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Co-Pilot AI Tools Section - BELOW PATIENT SELECTOR */}
+      {selectedPatient && (
+        <div className="bg-white dark:bg-gray-800 px-6 py-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500/20 to-amber-600/20 flex items-center justify-center">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    AI Clinical Assistants
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Select AI tools to assist with this consultation
+                  </p>
+                </div>
+              </div>
+
+              {/* [+] Customize Button */}
+              <div className="flex items-center gap-3" id="customize-button">
+                <CoPilotIntegrationBubble
+                  onToolSelect={(toolId) => {
+                    console.log('Selected tool:', toolId);
+                    // Handle tool selection - navigate or open modal
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tool Dock */}
       <ToolDock
         onToolSelect={(tool) => {
@@ -372,61 +485,10 @@ function CoPilotContent() {
       />
 
       {/* Split-Pane Layout */}
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-300px)]">
         {/* Left Panel: The Ear (Scribe) */}
         <div className="flex-1 lg:w-1/2 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
           <div className="p-6">
-            {/* Patient Selection (if not in patient context) */}
-            {!selectedPatient && (
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                  Select Patient
-                </h2>
-                <input
-                  type="text"
-                  placeholder="Search patients..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white mb-3"
-                />
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {filteredPatients.map((patient) => (
-                    <button
-                      key={patient.id}
-                      onClick={() => setSelectedPatient(patient)}
-                      className="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <div className="font-semibold text-gray-900 dark:text-white">
-                        {patient.firstName} {patient.lastName}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">MRN: {patient.mrn}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Selected Patient Info */}
-            {selectedPatient && (
-              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">Patient</div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
-                      {selectedPatient.firstName} {selectedPatient.lastName}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">MRN: {selectedPatient.mrn}</div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedPatient(null)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Recording Controls */}
             <div className="mb-6">
               {!state.isRecording ? (
@@ -541,18 +603,37 @@ function CoPilotContent() {
           </div>
         </div>
 
-        {/* Right Panel: The Brain (Diagnostic Co-Pilot) */}
+        {/* Right Panel: The Brain (Smart Diagnosis) */}
         <div className="flex-1 lg:w-1/2 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-y-auto">
           <div className="p-6">
-            <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-2xl p-6 
+            <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-2xl p-6
               before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-blue-500/5 before:to-purple-500/5 before:pointer-events-none
               relative">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <span>🧠</span> Diagnostic Assistant
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
+                    <Image
+                      src="/icons/stethoscope (1).svg"
+                      alt="Smart Diagnosis"
+                      width={20}
+                      height={20}
+                      className="dark:invert"
+                    />
+                  </div>
+                  Smart Diagnosis
+                </h2>
+                {selectedPatient && (
+                  <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-semibold">
+                    EHR Access Granted
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                AI-powered diagnostic assistant with access to patient lab reports and medical history
+              </p>
 
               {/* Diagnosis Assistant - Auto-filled from context */}
-              <DiagnosisAssistantWrapper 
+              <DiagnosisAssistantWrapper
                 chiefComplaint={state.liveSoapNote?.chiefComplaint}
                 extractedSymptoms={state.extractedSymptoms.map(s => s.symptom)}
                 patientId={selectedPatient?.id}
@@ -561,6 +642,16 @@ function CoPilotContent() {
           </div>
         </div>
       </div>
+
+      {/* Consent Modal */}
+      {selectedPatient && (
+        <PatientConsentModal
+          isOpen={showConsentModal}
+          onConsent={handleConsentGranted}
+          onDecline={handleConsentDeclined}
+          patientName={`${selectedPatient.firstName} ${selectedPatient.lastName}`}
+        />
+      )}
 
       {/* Audio Source Modal */}
       {showAudioSourceModal && (
