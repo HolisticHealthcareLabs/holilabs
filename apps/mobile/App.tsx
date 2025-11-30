@@ -16,13 +16,15 @@ import {
   SyncQueueManager,
 } from './src/config/queryClient';
 import { NotificationService } from './src/services/notificationService';
+import { AnalyticsService } from './src/services/analyticsService';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 export default function App() {
   const isHydrated = useAuthStore((state) => state._hasHydrated);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const [isReady, setIsReady] = useState(false);
 
-  // Initialize offline sync system, notifications, and auth
+  // Initialize offline sync system, notifications, analytics, and auth
   useEffect(() => {
     const initialize = async () => {
       // Initialize network status monitoring
@@ -38,6 +40,9 @@ export default function App() {
         // TODO: Send push token to backend for registration
       }
 
+      // Initialize analytics
+      await AnalyticsService.initialize();
+
       // Initialize auth
       if (isHydrated) {
         initializeAuth();
@@ -51,6 +56,7 @@ export default function App() {
     // Cleanup on unmount
     return () => {
       NotificationService.cleanup();
+      AnalyticsService.flushEvents();
     };
   }, [isHydrated, initializeAuth]);
 
@@ -59,19 +65,21 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{ persister: asyncStoragePersister }}
-      >
-        <ThemeProvider>
-          <SafeAreaProvider>
-            <RootNavigator />
-            <StatusBar style="auto" />
-          </SafeAreaProvider>
-        </ThemeProvider>
-      </PersistQueryClientProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.container}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister: asyncStoragePersister }}
+        >
+          <ThemeProvider>
+            <SafeAreaProvider>
+              <RootNavigator />
+              <StatusBar style="auto" />
+            </SafeAreaProvider>
+          </ThemeProvider>
+        </PersistQueryClientProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 
