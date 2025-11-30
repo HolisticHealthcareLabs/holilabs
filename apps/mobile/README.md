@@ -1,539 +1,422 @@
-# Holi Labs AI Medical Scribe - Mobile App
+# Holi Labs Mobile App
 
-Production-grade mobile application for AI-powered medical documentation using Expo/React Native.
+Production-ready iOS and Android mobile application for clinical workflows, featuring AI-powered clinical documentation, patient management, and smart diagnosis.
 
-## 🎯 Features
+## 🚀 Features
 
-### ✅ Implemented (Phase 1)
+### Core Functionality
 
-- **Authentication**
-  - Email/password login
-  - User registration
-  - Secure token storage with MMKV
-  - Auto token refresh
-  - Profile management
+- **Co-Pilot AI Clinical Assistant**
+  - Voice-to-text consultation recording
+  - Real-time transcription with speaker identification
+  - AI-powered SOAP note generation
+  - HIPAA/LGPD compliant consent workflow
+  - Offline recording support
 
-- **Patient Management**
-  - Patient list with search
-  - Patient details view
-  - Cached patient data
+- **Patient Dashboard**
+  - Comprehensive patient overview
+  - Real-time vital signs monitoring
+  - Lab results integration
+  - Medication tracking
+  - EHR access control with end-to-end encryption
+  - Patient privacy consent management
 
-- **Audio Recording**
-  - High-quality audio capture (expo-av)
-  - Record/pause/resume controls
-  - Real-time duration tracking
-  - Patient context association
-  - Background recording support
+- **Smart Diagnosis**
+  - AI-powered diagnostic suggestions
+  - EHR data integration
+  - Lab result analysis
+  - Differential diagnosis with probability scoring
+  - Evidence-based recommendations
+  - Clinical decision support
 
-- **Recording History**
-  - List of past recordings
-  - Recording details
-  - Status indicators
+- **Appointment Scheduling**
+  - Week/day calendar views
+  - Time slot management
+  - Virtual and in-person appointments
+  - Appointment reminders
+  - Patient booking flow
+  - Calendar synchronization
 
-- **AI Integration (Placeholders)**
-  - Anthropic Claude API service structure
-  - Transcription service interface
-  - SOAP note generation interface
+- **Settings & Preferences**
+  - Theme switching (Light/Dark/Auto)
+  - Push notification management
+  - Biometric authentication (Face ID/Touch ID/Fingerprint)
+  - Data sync preferences
+  - Language selection
+  - Privacy controls
 
-- **Design System**
-  - VidaBanq Health AI branding (Navy #0A3758, Blue #428CD4)
-  - Dark mode support
-  - Responsive UI components
-  - Consistent spacing and typography
+### Technical Features
 
-- **Technical Foundation**
-  - TypeScript strict mode
-  - Zustand state management
-  - React Query for API calls
+- **Offline-First Architecture**
+  - React Query with persistent cache
+  - Network status monitoring
+  - Sync queue for offline operations
+  - Background sync when online
   - MMKV for fast local storage
-  - Clean architecture
-  - Feature-based folder structure
 
----
+- **Push Notifications**
+  - Appointment reminders
+  - Lab result alerts
+  - Urgent clinical notifications
+  - Configurable notification preferences
+  - Badge count management
+  - Deep linking support
 
-## 📁 Project Structure
+- **Security & Compliance**
+  - HIPAA compliant data handling
+  - LGPD compliance for Brazil
+  - End-to-end encryption
+  - Secure credential storage (Expo SecureStore)
+  - Biometric authentication
+  - Session management
+  - Audit logging
+
+- **Performance & Monitoring**
+  - Error tracking and reporting
+  - Privacy-first analytics
+  - Performance monitoring
+  - Crash reporting
+  - User behavior tracking (no PHI)
+
+## 📋 Prerequisites
+
+- **Node.js** 18 or higher
+- **pnpm** package manager
+- **iOS Development** (Mac only):
+  - Xcode 14+
+  - iOS 15+ device or simulator
+- **Android Development**:
+  - Android Studio
+  - Android 11+ device or emulator
+
+## 🛠️ Installation
+
+```bash
+# Install dependencies
+pnpm install
+
+# iOS: Install CocoaPods dependencies (if needed)
+cd ios && pod install && cd ..
+
+# Start development server
+pnpm start
+
+# Run on iOS
+pnpm ios
+
+# Run on Android
+pnpm android
+```
+
+## 📱 Running the App
+
+### Development Mode
+
+```bash
+# Start Metro bundler
+pnpm start
+
+# Run on iOS simulator
+pnpm ios
+
+# Run on Android emulator
+pnpm android
+
+# Run on specific iOS device
+pnpm ios --device "iPhone 14 Pro"
+
+# Run on specific Android device
+pnpm android --device emulator-5554
+```
+
+### Preview/Production Mode
+
+```bash
+# Build development client
+eas build --profile development --platform ios
+
+# Build preview
+eas build --profile preview --platform all
+
+# Build production
+eas build --profile production --platform all
+```
+
+## 🏗️ Project Structure
 
 ```
 apps/mobile/
+├── App.tsx                 # Root component with providers
+├── app.json               # Expo configuration
+├── eas.json               # EAS Build configuration
+├── assets/                # Images, icons, splash screens
 ├── src/
-│   ├── features/              # Feature modules
-│   │   ├── auth/              # Authentication
-│   │   │   └── screens/
-│   │   ├── patients/          # Patient management
-│   │   │   └── screens/
-│   │   ├── recording/         # Audio recording
-│   │   │   └── screens/
-│   │   ├── transcription/     # AI transcription
-│   │   │   └── services/
-│   │   ├── soap-notes/        # SOAP note generation
-│   │   └── whatsapp/          # WhatsApp integration (future)
-│   ├── shared/                # Shared code
-│   │   ├── components/        # UI components (Button, Input, Card)
-│   │   ├── contexts/          # React contexts (Theme)
-│   │   ├── hooks/             # Custom hooks
-│   │   ├── services/          # API clients, storage
-│   │   ├── types/             # TypeScript types
-│   │   └── utils/             # Helper functions
-│   ├── navigation/            # Navigation setup
-│   │   ├── RootNavigator.tsx
-│   │   ├── AuthNavigator.tsx
-│   │   └── MainNavigator.tsx
-│   ├── store/                 # State management (Zustand)
-│   │   └── authStore.ts
-│   └── config/                # Configuration
-│       ├── theme.ts
-│       └── api.ts
-├── App.tsx                    # App entry point
-├── app.json                   # Expo configuration
-├── package.json
-├── tsconfig.json
-├── babel.config.js
-└── .env.example               # Environment variables template
+│   ├── components/        # Reusable UI components
+│   │   ├── ui/           # Base components (Button, Card)
+│   │   ├── ErrorBoundary.tsx
+│   │   └── OfflineBanner.tsx
+│   ├── config/           # Configuration files
+│   │   ├── appTheme.ts   # Theme configuration
+│   │   ├── designTokens.ts # Design system tokens
+│   │   └── queryClient.ts  # React Query config
+│   ├── hooks/            # Custom React hooks
+│   │   ├── useTheme.ts
+│   │   ├── useNotifications.ts
+│   │   └── useOfflineSync.ts
+│   ├── navigation/       # Navigation configuration
+│   │   ├── AppNavigator.tsx
+│   │   └── RootNavigator.tsx
+│   ├── screens/          # Screen components
+│   │   ├── AppointmentsScreen.tsx
+│   │   ├── CoPilotScreen.tsx
+│   │   ├── PatientDashboardScreen.tsx
+│   │   ├── SmartDiagnosisScreen.tsx
+│   │   ├── SettingsScreen.tsx
+│   │   └── EnhancedLoginScreen.tsx
+│   ├── services/         # Business logic services
+│   │   ├── analyticsService.ts
+│   │   └── notificationService.ts
+│   ├── shared/           # Shared utilities
+│   │   └── contexts/
+│   └── store/            # State management (Zustand)
+└── docs/
+    ├── DEPLOYMENT.md     # Deployment guide
+    ├── PERFORMANCE.md    # Performance optimization
+    └── assets/README.md  # Asset requirements
 ```
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js >= 20
-- pnpm >= 8
-- Expo CLI: `npm install -g expo-cli`
-- iOS: Xcode 14+ (Mac only)
-- Android: Android Studio with SDK 33+
-- **Expo Go app** on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
-
-### Installation
-
-```bash
-# From the monorepo root
-cd /Users/nicolacapriroloteran/holilabs-health-ai
-
-# Install dependencies for the entire monorepo
-pnpm install
-
-# Navigate to mobile app
-cd apps/mobile
-
-# Create environment file
-cp .env.example .env
-
-# Edit .env with your configuration
-# API_URL=http://your-backend-url.com
-# ANTHROPIC_API_KEY=your_key_here
-```
-
-### Running the App
-
-```bash
-# Start Expo dev server
-pnpm start
-
-# Or use shortcuts:
-pnpm ios        # Open in iOS simulator
-pnpm android    # Open in Android emulator
-```
-
-### Testing on Your Phone
-
-1. Install **Expo Go** from App Store/Play Store
-2. Run `pnpm start` in terminal
-3. Scan the QR code with:
-   - **iOS**: Camera app
-   - **Android**: Expo Go app
-
----
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create `.env` file in `apps/mobile/`:
-
-```bash
-# Backend API
-API_URL=http://localhost:3001           # Use your computer's IP for physical devices
-API_TIMEOUT=30000
-
-# Anthropic API for transcription
-ANTHROPIC_API_KEY=sk-ant-api03-...      # Get from console.anthropic.com
-
-# App Settings
-NODE_ENV=development
-ENABLE_BIOMETRIC_AUTH=true
-SESSION_TIMEOUT_MINUTES=15
-MAX_RECORDING_DURATION_MINUTES=60
-```
-
-**Important for Physical Device Testing:**
-- If testing on a real phone, replace `localhost` with your computer's IP address
-- Example: `API_URL=http://192.168.1.100:3001`
-- Find your IP: Mac/Linux: `ifconfig`, Windows: `ipconfig`
-
-### App Configuration
-
-Edit `app.json` to customize:
-- App name and slug
-- Bundle identifiers (iOS/Android)
-- Icon and splash screen
-- Permissions
-
----
-
-## 🏗️ Architecture
-
-### State Management
-
-- **Zustand**: Global state (auth, app settings)
-- **React Query**: Server state and caching
-- **MMKV**: Fast persistent storage
-
-### Navigation
-
-- **React Navigation 6**: Stack and tab navigation
-- **Auth flow**: Conditional rendering (logged in/out)
-
-### API Integration
-
-- **Axios**: HTTP client with interceptors
-- **Auto token refresh**: Handles 401 errors
-- **Retry logic**: Exponential backoff
-
-### Theme System
-
-```typescript
-import { useTheme } from '@/shared/contexts/ThemeContext';
-
-const MyComponent = () => {
-  const { theme, isDark, setThemeMode } = useTheme();
-
-  return (
-    <View style={{ backgroundColor: theme.colors.background }}>
-      <Text style={{ color: theme.colors.text }}>Hello</Text>
-    </View>
-  );
-};
-```
-
----
 
 ## 🎨 Design System
 
-### Brand Colors
+The app uses a comprehensive design system based on:
+- **Apple Human Interface Guidelines** for iOS
+- **Material Design 3** for Android
+- **8pt Grid System** for consistent spacing
+- **WCAG AA** compliant colors for accessibility
+
+### Theme
 
 ```typescript
-primary: '#428CD4'      // Blue
-primaryDark: '#0A3758'  // Navy
-secondary: '#031019'    // Charcoal
+import { useTheme } from './src/hooks/useTheme';
 
-success: '#10B981'      // Green
-warning: '#F59E0B'      // Orange
-error: '#EF4444'        // Red
+const { theme, themeMode, setThemeMode } = useTheme();
+
+// Available modes: 'light', 'dark', 'auto'
+setThemeMode('dark');
 ```
 
-### Components
+### Design Tokens
 
-```typescript
-import { Button, Input, Card } from '@/shared/components';
-
-// Button variants: primary, secondary, outline, ghost, danger
-<Button title="Save" onPress={handleSave} variant="primary" />
-
-// Input with validation
-<Input
-  label="Email"
-  value={email}
-  onChangeText={setEmail}
-  error={emailError}
-/>
-
-// Card with elevation
-<Card elevation="md" padding="lg">
-  <Text>Card content</Text>
-</Card>
-```
-
----
-
-## 📱 Key Features Walkthrough
-
-### 1. Authentication
-
-- Login with email/password
-- Register new clinician account
-- Secure token storage
-- Auto-logout on token expiration
-
-### 2. Recording Workflow
-
-1. **Select Patient**: Choose from patient list
-2. **Start Recording**: High-quality audio capture
-3. **Pause/Resume**: Control recording
-4. **Stop**: Save and process recording
-5. **View History**: Access past recordings
-
-### 3. Audio Recording
-
-```typescript
-// Recording uses expo-av
-import { Audio } from 'expo-av';
-
-// High-quality preset
-Audio.RecordingOptionsPresets.HIGH_QUALITY
-// - Sample rate: 44.1kHz
-// - Bit rate: 128kbps
-// - Format: AAC (iOS) / AMR (Android)
-```
-
-### 4. Data Flow
-
-```
-Recording → Upload → Backend → Anthropic Claude → Transcription → SOAP Note
-```
-
----
-
-## 🔒 Security
-
-### Current Implementation
-
-- ✅ Secure token storage (MMKV)
-- ✅ HTTPS enforcement
-- ✅ Auto token refresh
-- ✅ Session timeout
-- ✅ Encrypted local storage
-
-### Production Requirements (TODO)
-
-- ⚠️ Biometric authentication (Face ID/Touch ID)
-- ⚠️ Certificate pinning
-- ⚠️ AES-256 encryption for recordings
-- ⚠️ HIPAA compliance audit
-- ⚠️ Secure key management (iOS Keychain/Android Keystore)
-
----
+- Spacing: 4px increments (4, 8, 12, 16, 20, 24...)
+- Typography: xs (12), sm (14), base (16), lg (18), xl (20), 2xl (24)...
+- Colors: Full palette with semantic colors (primary, success, warning, error)
+- Shadows: Platform-specific elevation
+- Border Radius: sm (4), md (8), lg (12), xl (16), full (9999)
 
 ## 🧪 Testing
 
-### Run Tests (TODO)
+### Unit Tests
 
 ```bash
-# Unit tests
+# Run all tests
 pnpm test
 
-# E2E tests with Detox
-pnpm test:e2e
+# Run tests in watch mode
+pnpm test --watch
 
-# Type checking
-pnpm type-check
-
-# Linting
-pnpm lint
+# Run with coverage
+pnpm test --coverage
 ```
-
----
 
 ## 📦 Building for Production
 
-### iOS
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive deployment instructions.
+
+### Quick Build
 
 ```bash
-# Install EAS CLI
-npm install -g eas-cli
+# iOS
+eas build --profile production --platform ios
 
-# Login to Expo
-eas login
+# Android
+eas build --profile production --platform android
 
-# Configure build
-eas build:configure
+# Both platforms
+eas build --profile production --platform all
+```
 
-# Build for iOS
-eas build --platform ios
+### Submit to Stores
 
+```bash
 # Submit to App Store
-eas submit --platform ios
+eas submit --platform ios --latest
+
+# Submit to Play Store
+eas submit --platform android --latest
 ```
 
-### Android
+## 🔐 Environment Variables
 
-```bash
-# Build for Android
-eas build --platform android
+Configure in `app.json` under `extra`:
 
-# Submit to Google Play
-eas submit --platform android
-```
-
----
-
-## 🚧 Phase 2 TODO
-
-### High Priority
-
-- [ ] **Biometric Auth**: Implement Face ID/Touch ID
-- [ ] **Offline Mode**: Queue recordings when offline
-- [ ] **Real Transcription**: Connect to Anthropic API
-- [ ] **SOAP Generation**: Implement AI note generation
-- [ ] **Audio Playback**: Play recordings with transcription sync
-- [ ] **Export**: PDF/HL7/FHIR export
-
-### Medium Priority
-
-- [ ] **WhatsApp Integration**: Patient messages
-- [ ] **Waveform Visualization**: Real-time audio visualization
-- [ ] **Speaker Diarization**: Identify doctor vs patient
-- [ ] **Multi-language**: Spanish, Portuguese support
-- [ ] **Voice Commands**: Hands-free operation
-- [ ] **Templates**: Customizable SOAP templates
-
-### Nice to Have
-
-- [ ] **Apple Watch App**: Quick record trigger
-- [ ] **Voice Signature**: Dictate signature
-- [ ] **Differential Diagnosis**: AI suggestions
-- [ ] **ICD-10/CPT Codes**: Auto-suggest codes
-- [ ] **Analytics**: Usage metrics
-- [ ] **Team Collaboration**: Share notes with team
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**1. "Cannot connect to Metro bundler"**
-```bash
-# Clear cache and restart
-pnpm start --clear
-```
-
-**2. "Unable to resolve module"**
-```bash
-# Reinstall dependencies
-rm -rf node_modules
-pnpm install
-```
-
-**3. "Network request failed" on physical device**
-- Ensure phone and computer are on same WiFi
-- Use computer's IP address (not `localhost`)
-- Check firewall settings
-
-**4. "Permission denied" for microphone**
-- Check `app.json` has correct permissions
-- Restart app after granting permissions
-- iOS: Settings > Privacy > Microphone
-
-### Debug Mode
-
-```typescript
-// Enable debug logs
-import { LogBox } from 'react-native';
-
-// Ignore specific warnings (use sparingly)
-LogBox.ignoreLogs(['Warning: ...']);
-
-// View all logs
-console.log('Debug:', { user, tokens });
-```
-
----
-
-## 📚 API Integration
-
-### Connecting to Your Backend
-
-The app expects a REST API at `API_URL` with these endpoints:
-
-```typescript
-// Authentication
-POST   /auth/login         { email, password }
-POST   /auth/register      { name, email, password }
-POST   /auth/refresh       { refreshToken }
-
-// Patients
-GET    /patients           ?search=query
-GET    /patients/:id
-
-// Recordings
-POST   /recordings/upload  FormData with audio file
-GET    /recordings
-GET    /recordings/:id
-
-// Transcriptions
-POST   /transcriptions     { recordingId }
-GET    /transcriptions/:id
-
-// SOAP Notes
-POST   /soap-notes/generate  { transcriptionId }
-GET    /soap-notes/:id
-```
-
-### Response Format
-
-```typescript
-// Success
+```json
 {
-  "success": true,
-  "data": { ... }
-}
-
-// Error
-{
-  "success": false,
-  "error": "ERROR_CODE",
-  "message": "Human-readable message"
+  "expo": {
+    "extra": {
+      "SUPABASE_URL": "https://your-project.supabase.co",
+      "SUPABASE_ANON_KEY": "your-anon-key",
+      "API_URL": "https://api.holilabs.com",
+      "ANTHROPIC_API_KEY": "your-anthropic-key"
+    }
+  }
 }
 ```
 
----
+Or use EAS Secrets for sensitive values:
+
+```bash
+eas secret:create --scope project --name ANTHROPIC_API_KEY --value "sk-..."
+```
+
+## 📊 Analytics
+
+The app includes privacy-first analytics that:
+- **Never logs PHI** (Protected Health Information)
+- Tracks user interactions and app usage
+- Monitors performance metrics
+- Reports errors for debugging
+- Can be disabled by users in Settings
+
+```typescript
+import { AnalyticsService } from './src/services/analyticsService';
+
+// Track screen view
+AnalyticsService.trackScreenView('PatientDashboard');
+
+// Track event
+AnalyticsService.trackEvent({
+  category: AnalyticsCategory.APPOINTMENT,
+  action: 'appointment_created',
+});
+
+// Track error
+AnalyticsService.trackError(error, { context: 'patient-fetch' });
+```
+
+## 🐛 Error Tracking
+
+The app includes error boundary and error tracking:
+
+```typescript
+import { ErrorBoundary } from './src/components/ErrorBoundary';
+
+<ErrorBoundary>
+  <YourComponent />
+</ErrorBoundary>
+```
+
+For production, integrate with:
+- Sentry: https://sentry.io
+- BugSnag: https://www.bugsnag.com
+- Firebase Crashlytics: https://firebase.google.com/products/crashlytics
+
+## 🔔 Push Notifications
+
+Configure push notifications:
+
+```typescript
+import { useNotifications } from './src/hooks/useNotifications';
+
+const {
+  pushToken,
+  isEnabled,
+  scheduleAppointmentReminder,
+  notifyLabResult,
+} = useNotifications();
+
+// Schedule appointment reminder
+await scheduleAppointmentReminder(
+  appointmentId,
+  patientName,
+  appointmentDate,
+  30 // minutes before
+);
+```
+
+## 🌐 Offline Support
+
+The app works offline with:
+- Persistent query cache (React Query + AsyncStorage)
+- Network status monitoring
+- Sync queue for offline mutations
+- Background sync when connection restored
+
+```typescript
+import { useOfflineSync } from './src/hooks/useOfflineSync';
+
+const { isOnline, pendingSyncCount, syncNow } = useOfflineSync();
+```
+
+## 🚢 Release Checklist
+
+Before releasing to production:
+
+- [ ] Update version in `app.json`
+- [ ] Increment build numbers (iOS buildNumber, Android versionCode)
+- [ ] Test on physical devices (iOS and Android)
+- [ ] Verify all environment variables are set
+- [ ] Test offline functionality
+- [ ] Test push notifications
+- [ ] Verify biometric authentication
+- [ ] Check for memory leaks
+- [ ] Run performance profiling
+- [ ] Review error logs
+- [ ] Update CHANGELOG.md
+- [ ] Create git tag for release
+- [ ] Build production binaries
+- [ ] Submit to app stores
+- [ ] Monitor crash reports after launch
+
+## 📄 Documentation
+
+- [Deployment Guide](./DEPLOYMENT.md) - Complete guide for building and deploying
+- [Performance Guide](./PERFORMANCE.md) - Optimization strategies and monitoring
+- [Assets Guide](./assets/README.md) - App icons, splash screens, and assets
 
 ## 🤝 Contributing
 
+1. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Commit your changes (`git commit -m 'Add amazing feature'`)
+3. Push to the branch (`git push origin feature/amazing-feature`)
+4. Open a Pull Request
+
 ### Code Style
 
-- **TypeScript**: Strict mode enabled
-- **ESLint**: Follow Expo config
-- **Naming**:
-  - Components: PascalCase (`LoginScreen.tsx`)
-  - Functions: camelCase (`handleLogin()`)
-  - Constants: UPPER_SNAKE_CASE (`API_URL`)
+- Use TypeScript for all new code
+- Follow Expo and React Native best practices
+- Use functional components with hooks
+- Add proper TypeScript types
+- Write meaningful commit messages
+- Add comments for complex logic
 
-### Commit Messages
-
-```
-feat: Add biometric authentication
-fix: Resolve recording pause bug
-docs: Update README installation steps
-refactor: Improve API error handling
-test: Add unit tests for auth store
-```
-
----
-
-## 📄 License
+## 📝 License
 
 Proprietary - Holi Labs © 2025
 
----
+## 🆘 Support
 
-## 📞 Support
-
+- **Documentation**: See `/docs` folder
+- **Issues**: https://github.com/holilabs/mobile/issues
 - **Email**: support@holilabs.com
-- **Docs**: https://docs.holilabs.com
-- **Issues**: Create an issue in this repository
 
----
-
-## 🎉 Credits
+## 🙏 Acknowledgments
 
 Built with:
-- [Expo](https://expo.dev)
-- [React Native](https://reactnative.dev)
-- [React Navigation](https://reactnavigation.org)
-- [Zustand](https://github.com/pmndrs/zustand)
-- [React Query](https://tanstack.com/query)
-- [Anthropic Claude](https://anthropic.com)
+- [Expo](https://expo.dev) - React Native framework
+- [React Navigation](https://reactnavigation.org) - Navigation
+- [React Query](https://tanstack.com/query) - Data fetching
+- [Zustand](https://github.com/pmndrs/zustand) - State management
+- [date-fns](https://date-fns.org) - Date utilities
 
-Developed for **Holi Labs** - Revolutionizing healthcare documentation with AI.
+---
+
+**Production Ready** ✅ Ready for app store submission!
