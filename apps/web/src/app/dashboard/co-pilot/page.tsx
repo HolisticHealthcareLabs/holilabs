@@ -10,6 +10,7 @@ import SOAPNoteEditor from '@/components/scribe/SOAPNoteEditor';
 import { RealTimeTranscription } from '@/components/scribe/RealTimeTranscription';
 import DiagnosisAssistant from '@/components/clinical/DiagnosisAssistant';
 import { ToolDock } from '@/components/co-pilot/ToolDock';
+import { CoPilotIntegrationBubble } from '@/components/dashboard/CoPilotIntegrationBubble';
 
 export const dynamic = 'force-dynamic';
 
@@ -321,13 +322,23 @@ function CoPilotContent() {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-              Co-Pilot
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Unified AI-powered clinical workspace
-            </p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                Co-Pilot
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Unified AI-powered clinical workspace
+              </p>
+            </div>
+
+            {/* Futuristic [+] Bubble Menu */}
+            <CoPilotIntegrationBubble
+              onToolSelect={(toolId) => {
+                console.log('Selected tool:', toolId);
+                // Handle tool selection - navigate or open modal
+              }}
+            />
           </div>
 
           {/* Live Clinical Reasoning Toggle */}

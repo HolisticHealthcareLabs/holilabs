@@ -16,6 +16,7 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 interface NavItem {
   name: string;
@@ -35,6 +36,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { locale, t } = useLanguage();
   const { theme } = useTheme();
 
@@ -47,14 +50,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Demo mode - no authentication required
     setUser({ email: 'demo@holilabs.com', name: 'Demo User' });
+
+    // Check if this is the initial load (after sign in)
+    const hasSeenLoading = sessionStorage.getItem('hasSeenLoadingScreen');
+    if (hasSeenLoading) {
+      setShowLoadingScreen(false);
+      setIsInitialLoad(false);
+    }
   }, [router]);
+
+  const handleLoadingComplete = () => {
+    setShowLoadingScreen(false);
+    sessionStorage.setItem('hasSeenLoadingScreen', 'true');
+  };
 
   // Streamlined Navigation - Minimal & Elegant
   const navItems: NavItem[] = [
     {
       name: 'Dashboard',
       href: '/dashboard',
-      icon: '📊',
+      icon: '/icons/chart-cured-increasing.svg',
       emoji: '📊',
       gradient: 'from-blue-500 to-indigo-600',
       hoverGradient: 'from-blue-600 to-indigo-700',
@@ -63,7 +78,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     {
       name: 'Patients',
       href: '/dashboard/patients',
-      icon: '👥',
+      icon: '/icons/people (1).svg',
       emoji: '👥',
       gradient: 'from-violet-500 to-purple-600',
       hoverGradient: 'from-violet-600 to-purple-700',
@@ -72,7 +87,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     {
       name: 'Calendar',
       href: '/dashboard/appointments',
-      icon: '📅',
+      icon: '/icons/calendar.svg',
       emoji: '📅',
       gradient: 'from-green-500 to-emerald-600',
       hoverGradient: 'from-green-600 to-emerald-700',
@@ -81,7 +96,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     {
       name: 'Messages',
       href: '/dashboard/messages',
-      icon: '💬',
+      icon: '/icons/communication.svg',
       emoji: '💬',
       gradient: 'from-sky-500 to-cyan-600',
       hoverGradient: 'from-sky-600 to-cyan-700',
@@ -90,22 +105,22 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     {
       name: 'Clinical Suite',
       href: '/dashboard/co-pilot',
-      icon: '⚡️',
-      emoji: '⚡️',
+      icon: '/icons/crisis-response_center_person.svg',
+      emoji: '⚡',
       gradient: 'from-yellow-500 to-amber-600',
       hoverGradient: 'from-yellow-600 to-amber-700',
       shadowColor: 'yellow-500/50',
       subItems: [
-        { name: '⚡️ Co-Pilot', href: '/dashboard/co-pilot', icon: '⚡️', emoji: '⚡️', gradient: 'from-yellow-500 to-amber-600' },
-        { name: 'Scribe', href: '/dashboard/scribe', icon: '🎙️', emoji: '🎙️', gradient: 'from-purple-500 to-pink-600' },
-        { name: 'Prevention', href: '/dashboard/prevention', icon: '🛡️', emoji: '🛡️', gradient: 'from-emerald-500 to-teal-600' },
-        { name: 'Diagnosis', href: '/dashboard/diagnosis', icon: '🩺', emoji: '🩺', gradient: 'from-cyan-500 to-blue-600' },
-        { name: 'Prescriptions', href: '/dashboard/prescriptions', icon: '💊', emoji: '💊', gradient: 'from-orange-500 to-red-600' },
-        { name: 'Forms', href: '/dashboard/forms', icon: '📋', emoji: '📋', gradient: 'from-indigo-500 to-purple-600' },
-        { name: 'Templates', href: '/dashboard/templates', icon: '📝', emoji: '📝', gradient: 'from-rose-500 to-red-600' },
-        { name: 'Analytics', href: '/dashboard/analytics', icon: '📈', emoji: '📈', gradient: 'from-blue-500 to-cyan-600' },
-        { name: 'Share Profile', href: '/dashboard/share-profile', icon: '🔗', emoji: '🔗', gradient: 'from-teal-500 to-green-600' },
-        { name: 'Credentials', href: '/dashboard/credentials', icon: '🏅', emoji: '🏅', gradient: 'from-yellow-500 to-amber-600' },
+        { name: 'Co-Pilot', href: '/dashboard/co-pilot', icon: '/icons/artificial-intelligence.svg', emoji: '⚡', gradient: 'from-yellow-500 to-amber-600' },
+        { name: 'Scribe', href: '/dashboard/scribe', icon: '/icons/i-note_action.svg', emoji: '🎙️', gradient: 'from-purple-500 to-pink-600' },
+        { name: 'Prevention', href: '/dashboard/prevention', icon: '/icons/health (3).svg', emoji: '🛡️', gradient: 'from-emerald-500 to-teal-600' },
+        { name: 'Diagnosis', href: '/dashboard/diagnosis', icon: '/icons/stethoscope.svg', emoji: '🩺', gradient: 'from-cyan-500 to-blue-600' },
+        { name: 'Prescriptions', href: '/dashboard/prescriptions', icon: '/icons/rx.svg', emoji: '💊', gradient: 'from-orange-500 to-red-600' },
+        { name: 'Forms', href: '/dashboard/forms', icon: '/icons/clinical-f.svg', emoji: '📋', gradient: 'from-indigo-500 to-purple-600' },
+        { name: 'Templates', href: '/dashboard/templates', icon: '/icons/clinical-f (1).svg', emoji: '📝', gradient: 'from-rose-500 to-red-600' },
+        { name: 'Analytics', href: '/dashboard/analytics', icon: '/icons/diagnostics.svg', emoji: '📈', gradient: 'from-blue-500 to-cyan-600' },
+        { name: 'Share Profile', href: '/dashboard/share-profile', icon: '/icons/telemedicine.svg', emoji: '🔗', gradient: 'from-teal-500 to-green-600' },
+        { name: 'Credentials', href: '/dashboard/credentials', icon: '/icons/doctor.svg', emoji: '🏅', gradient: 'from-yellow-500 to-amber-600' },
       ]
     },
   ];
@@ -115,8 +130,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Mobile Sidebar Backdrop */}
+    <>
+      {/* Loading Screen - shown only on initial load after sign in */}
+      {showLoadingScreen && isInitialLoad && (
+        <LoadingScreen onComplete={handleLoadingComplete} />
+      )}
+
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Mobile Sidebar Backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -140,18 +161,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 width={32}
                 height={32}
               />
-              <span 
-                className="text-lg tracking-tight" 
-                style={{ 
-                  fontWeight: 600, 
+              <span
+                className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
+                style={{
+                  fontWeight: 600,
                   letterSpacing: '-0.02em',
-                  background: theme === 'dark'
-                    ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #c0c0c0 75%, #ffffff 100%)'
-                    : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: theme === 'dark' ? 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' : 'drop-shadow(0.5px 0.5px 1px rgba(0,0,0,0.1))',
                 }}
               >
                 Holi Labs
@@ -196,9 +210,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                       item.shadowColor ? `hover:shadow-${item.shadowColor}` : 'hover:shadow-gray-500/50'
                     } dark:hover:shadow-${item.shadowColor?.replace('500', '400')}/40`}
                   >
-                    <span className="text-2xl transition-transform duration-300 group-hover:scale-125">
-                      {item.emoji}
-                    </span>
+                    <div className="relative w-7 h-7 transition-transform duration-300 group-hover:scale-125">
+                      <Image
+                        src={item.icon}
+                        alt={item.name}
+                        width={28}
+                        height={28}
+                        className="dark:invert brightness-0 invert"
+                      />
+                    </div>
                   </div>
 
                   {/* Floating Text Label or Submenu - Appears on Hover */}
@@ -218,7 +238,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                               href={subItem.href}
                               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group/sub"
                             >
-                              <span className="text-lg">{subItem.emoji}</span>
+                              <div className="relative w-5 h-5 flex-shrink-0">
+                                <Image
+                                  src={subItem.icon}
+                                  alt={subItem.name}
+                                  width={20}
+                                  height={20}
+                                  className="dark:invert"
+                                />
+                              </div>
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover/sub:text-gray-900 dark:group-hover/sub:text-white whitespace-nowrap">
                                 {subItem.name}
                               </span>
@@ -475,28 +503,21 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 width={32}
                 height={32}
               />
-              <span 
-                className="text-lg tracking-tight" 
-                style={{ 
-                  fontWeight: 600, 
+              <span
+                className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
+                style={{
+                  fontWeight: 600,
                   letterSpacing: '-0.02em',
-                  background: theme === 'dark'
-                    ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #c0c0c0 75%, #ffffff 100%)'
-                    : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: theme === 'dark' ? 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' : 'drop-shadow(0.5px 0.5px 1px rgba(0,0,0,0.1))',
                 }}
               >
                 Holi Labs
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
               <LanguageSelector currentLocale={locale} />
               <GlobalSearch />
               <NotificationCenter />
+              <ThemeToggle />
             </div>
           </div>
         </header>
@@ -504,10 +525,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {/* Desktop Header */}
         <header className="hidden lg:block bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
           <div className="flex items-center justify-end h-16 px-6 gap-4">
-            <ThemeToggle />
             <LanguageSelector currentLocale={locale} />
             <GlobalSearch />
             <NotificationCenter />
+            <ThemeToggle />
           </div>
         </header>
 
@@ -527,7 +548,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         onExtend={extendSession}
         onLogout={logout}
       />
-    </div>
+      </div>
+    </>
   );
 }
 
