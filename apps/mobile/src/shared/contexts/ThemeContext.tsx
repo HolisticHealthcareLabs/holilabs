@@ -1,18 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
-import { Theme, lightTheme, darkTheme } from '@/config/theme';
+import { AppTheme, lightTheme, darkTheme } from '../../config/appTheme';
 import { storage } from '@/shared/services/storage';
 
 type ThemeMode = 'light' | 'dark' | 'auto';
 
 type ThemeContextType = {
-  theme: Theme;
+  theme: AppTheme;
   themeMode: ThemeMode;
   setThemeMode: (mode: ThemeMode) => void;
   isDark: boolean;
 };
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const systemColorScheme = useColorScheme();
