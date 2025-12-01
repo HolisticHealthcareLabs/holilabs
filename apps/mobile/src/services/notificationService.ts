@@ -391,3 +391,6 @@ export class NotificationService {
     return priorityMap[priority];
   }
 }
+
+// Default export for easier imports
+export default NotificationService;

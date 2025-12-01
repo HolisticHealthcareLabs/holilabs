@@ -8,6 +8,7 @@ import {
   TextStyle,
 } from 'react-native';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { HapticFeedback } from '@/services/haptics';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -22,6 +23,7 @@ type ButtonProps = {
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  hapticFeedback?: boolean; // Enable/disable haptic feedback (default: true)
 };
 
 export const Button = ({
@@ -34,8 +36,23 @@ export const Button = ({
   fullWidth = false,
   style,
   textStyle,
+  hapticFeedback = true,
 }: ButtonProps) => {
   const { theme } = useTheme();
+
+  const handlePress = () => {
+    // Trigger haptic feedback based on button variant
+    if (hapticFeedback && !disabled && !loading) {
+      if (variant === 'danger') {
+        HapticFeedback.heavy();
+      } else if (variant === 'primary') {
+        HapticFeedback.medium();
+      } else {
+        HapticFeedback.light();
+      }
+    }
+    onPress();
+  };
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
@@ -133,7 +150,7 @@ export const Button = ({
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled || loading}
       style={[getButtonStyle(), style]}
       activeOpacity={0.7}

@@ -14,9 +14,13 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
 import { Card } from '../components/ui/Card';
+import { AnimatedCard } from '../components/ui/AnimatedCard';
+import { SkeletonVitalSigns, SkeletonPatientCard } from '../components/ui/Skeleton';
 import { Button } from '../components/ui/Button';
+import { PatientsStackScreenProps } from '../navigation/types';
 
 const { width } = Dimensions.get('window');
 
@@ -74,7 +78,9 @@ interface EHRAccessPermission {
   status: 'active' | 'expired';
 }
 
-export const PatientDashboardScreen: React.FC = () => {
+export const PatientDashboardScreen: React.FC<
+  PatientsStackScreenProps<'PatientDashboard'>
+> = ({ navigation }) => {
   const { theme } = useTheme();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [vitalSigns, setVitalSigns] = useState<VitalSigns | null>(null);
@@ -82,6 +88,7 @@ export const PatientDashboardScreen: React.FC = () => {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [permissions, setPermissions] = useState<EHRAccessPermission[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'labs' | 'meds' | 'access'>(
     'overview'
   );
@@ -91,6 +98,7 @@ export const PatientDashboardScreen: React.FC = () => {
   }, []);
 
   const loadPatientData = async () => {
+    setLoading(true);
     // TODO: Fetch from API
     // Simulate loading
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -178,6 +186,8 @@ export const PatientDashboardScreen: React.FC = () => {
         status: 'active',
       },
     ]);
+
+    setLoading(false);
   };
 
   const onRefresh = async () => {
@@ -201,10 +211,25 @@ export const PatientDashboardScreen: React.FC = () => {
 
   const styles = createStyles(theme);
 
-  const renderOverview = () => (
-    <>
-      {/* Patient Info Card */}
-      <Card style={styles.infoCard}>
+  const renderOverview = () => {
+    if (loading) {
+      return (
+        <>
+          <SkeletonPatientCard style={{ marginBottom: 16 }} />
+          <SkeletonVitalSigns style={{ marginBottom: 16 }} />
+          <SkeletonPatientCard style={{ marginBottom: 16 }} />
+        </>
+      );
+    }
+
+    return (
+      <>
+        {/* Patient Info Card */}
+        <AnimatedCard
+          style={styles.infoCard}
+          accessibilityLabel="Patient information card"
+          accessibilityHint="Double tap to view full patient details"
+        >
         <View style={styles.patientHeader}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
@@ -251,10 +276,13 @@ export const PatientDashboardScreen: React.FC = () => {
             </View>
           </View>
         )}
-      </Card>
+      </AnimatedCard>
 
       {/* Vital Signs */}
-      <Card style={styles.card}>
+      <AnimatedCard
+        style={styles.card}
+        accessibilityLabel="Latest vital signs"
+      >
         <Text style={styles.cardTitle}>Latest Vital Signs</Text>
         <Text style={styles.cardSubtitle}>
           Recorded {vitalSigns?.recordedAt.toLocaleDateString()}
@@ -285,10 +313,13 @@ export const PatientDashboardScreen: React.FC = () => {
             <Text style={styles.vitalLabel}>SpO₂</Text>
           </View>
         </View>
-      </Card>
+      </AnimatedCard>
 
       {/* Quick Actions */}
-      <Card style={styles.card}>
+      <AnimatedCard
+        style={styles.card}
+        accessibilityLabel="Quick action buttons"
+      >
         <Text style={styles.cardTitle}>Quick Actions</Text>
         <View style={styles.actionsGrid}>
           <TouchableOpacity style={styles.actionButton}>
@@ -311,12 +342,16 @@ export const PatientDashboardScreen: React.FC = () => {
             <Text style={styles.actionText}>Appointments</Text>
           </TouchableOpacity>
         </View>
-      </Card>
+      </AnimatedCard>
     </>
-  );
+    );
+  };
 
   const renderLabResults = () => (
-    <Card style={styles.card}>
+    <AnimatedCard
+      style={styles.card}
+      accessibilityLabel="Recent lab results"
+    >
       <Text style={styles.cardTitle}>Recent Lab Results</Text>
       {labResults.map((result) => (
         <View key={result.id} style={styles.labResultItem}>
@@ -351,11 +386,14 @@ export const PatientDashboardScreen: React.FC = () => {
           </Text>
         </View>
       ))}
-    </Card>
+    </AnimatedCard>
   );
 
   const renderMedications = () => (
-    <Card style={styles.card}>
+    <AnimatedCard
+      style={styles.card}
+      accessibilityLabel="Current medications list"
+    >
       <Text style={styles.cardTitle}>Current Medications</Text>
       {medications.map((med) => (
         <View key={med.id} style={styles.medicationItem}>
@@ -373,12 +411,15 @@ export const PatientDashboardScreen: React.FC = () => {
           </View>
         </View>
       ))}
-    </Card>
+    </AnimatedCard>
   );
 
   const renderAccessControl = () => (
     <>
-      <Card style={styles.card}>
+      <AnimatedCard
+        style={styles.card}
+        accessibilityLabel="EHR access permissions"
+      >
         <Text style={styles.cardTitle}>EHR Access Permissions</Text>
         <Text style={styles.cardDescription}>
           Manage who can access your medical records
@@ -442,16 +483,19 @@ export const PatientDashboardScreen: React.FC = () => {
           fullWidth
           style={styles.grantAccessButton}
         />
-      </Card>
+      </AnimatedCard>
 
-      <Card style={styles.privacyNotice}>
+      <AnimatedCard
+        style={styles.privacyNotice}
+        accessibilityLabel="Privacy protection notice"
+      >
         <Text style={styles.privacyIcon}>🔒</Text>
         <Text style={styles.privacyTitle}>Your Privacy is Protected</Text>
         <Text style={styles.privacyText}>
           All access is logged and monitored. You can revoke access at any time. This complies
           with HIPAA, LGPD, and PDPA regulations.
         </Text>
-      </Card>
+      </AnimatedCard>
     </>
   );
 
@@ -460,6 +504,12 @@ export const PatientDashboardScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Patient Dashboard</Text>
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={() => navigation.navigate('PatientSearch')}
+        >
+          <Text style={styles.searchIcon}>🔍</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Tabs */}
@@ -537,6 +587,9 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.colors.background,
     },
     header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       paddingHorizontal: theme.spacing[4],
       paddingVertical: theme.spacing[3],
       borderBottomWidth: 1,
@@ -546,6 +599,17 @@ const createStyles = (theme: any) =>
       fontSize: theme.typography.fontSize['2xl'],
       fontWeight: theme.typography.fontWeight.bold,
       color: theme.colors.text,
+    },
+    searchButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    searchIcon: {
+      fontSize: 20,
     },
     tabs: {
       flexDirection: 'row',

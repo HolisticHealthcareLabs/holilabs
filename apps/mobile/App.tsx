@@ -5,9 +5,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/store/authStore';
+import { useOnboardingStore } from './src/stores/onboardingStore';
 import { ThemeProvider } from './src/shared/contexts/ThemeContext';
 import {
   queryClient,
@@ -18,37 +20,58 @@ import {
 import { NotificationService } from './src/services/notificationService';
 import { AnalyticsService } from './src/services/analyticsService';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { LoadingScreen } from './src/components/LoadingScreen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-  const isHydrated = useAuthStore((state) => state._hasHydrated);
+  const authHasHydrated = useAuthStore((state) => state._hasHydrated);
+  const onboardingHasHydrated = useOnboardingStore((state) => state._hasHydrated);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const [isReady, setIsReady] = useState(false);
 
   // Initialize offline sync system, notifications, analytics, and auth
   useEffect(() => {
     const initialize = async () => {
-      // Initialize network status monitoring
-      NetworkStatusManager.initialize();
+      try {
+        // Wait for store hydration
+        if (!authHasHydrated || !onboardingHasHydrated) {
+          return;
+        }
 
-      // Initialize sync queue
-      await SyncQueueManager.initialize();
+        // Initialize network status monitoring
+        NetworkStatusManager.initialize();
 
-      // Initialize push notifications
-      const pushToken = await NotificationService.initialize();
-      if (pushToken) {
-        console.log('Push token:', pushToken);
-        // TODO: Send push token to backend for registration
+        // Initialize sync queue
+        await SyncQueueManager.initialize();
+
+        // Initialize push notifications
+        const pushToken = await NotificationService.initialize();
+        if (pushToken) {
+          console.log('Push token:', pushToken);
+          // TODO: Send push token to backend for registration
+        }
+
+        // Initialize analytics
+        await AnalyticsService.initialize();
+
+        // Initialize auth
+        await initializeAuth();
+
+        // Smooth transition delay
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        setIsReady(true);
+
+        // Hide splash screen
+        await SplashScreen.hideAsync();
+      } catch (error) {
+        console.error('App initialization error:', error);
+        // Still set ready to true to prevent infinite loading
+        setIsReady(true);
+        await SplashScreen.hideAsync();
       }
-
-      // Initialize analytics
-      await AnalyticsService.initialize();
-
-      // Initialize auth
-      if (isHydrated) {
-        initializeAuth();
-      }
-
-      setIsReady(true);
     };
 
     initialize();
@@ -58,10 +81,10 @@ export default function App() {
       NotificationService.cleanup();
       AnalyticsService.flushEvents();
     };
-  }, [isHydrated, initializeAuth]);
+  }, [authHasHydrated, onboardingHasHydrated, initializeAuth]);
 
-  if (!isHydrated || !isReady) {
-    return null; // Or a splash screen
+  if (!authHasHydrated || !onboardingHasHydrated || !isReady) {
+    return <LoadingScreen />;
   }
 
   return (
