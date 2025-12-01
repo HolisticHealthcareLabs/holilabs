@@ -383,3 +383,6 @@ export const withScreenTracking = (ScreenComponent: React.ComponentType<any>, sc
     return <ScreenComponent {...props} />;
   };
 };
+
+// Default export for easier imports
+export default AnalyticsService;

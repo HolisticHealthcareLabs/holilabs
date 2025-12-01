@@ -79,18 +79,53 @@ You'll see:
 
 ## Step 5: Test the App
 
-### Login Screen
+### ⭐ NEW! Onboarding Flow (First Launch)
+
+On first launch, you'll see a complete 5-screen onboarding flow:
+
+1. **Welcome Screen** (30s)
+   - See value proposition and 4 key benefits
+   - Tap "Get Started"
+
+2. **Role Selection** (30s)
+   - Choose: Doctor 👨‍⚕️, Nurse 👩‍⚕️, or Admin 💼
+   - Each role shows specific features
+   - Tap "Continue"
+
+3. **Profile Setup** (1-2 min)
+   - Fill in your information (Step 2 of 3)
+   - Full Name, Specialty, License Number (if applicable), Institution
+   - Real-time validation
+   - Tap "Continue"
+
+4. **Permissions** (1 min)
+   - Grant Microphone permission (required) 🎙️
+   - Optionally grant Notifications 🔔 and Biometric 🔐
+   - Tap "Continue" or "Skip Optional Permissions"
+
+5. **Completion** (30s)
+   - Watch confetti celebration animation 🎉
+   - See "What you can do now" feature list
+   - Tap "Start Using Holi Labs"
+
+**Total time:** 3-4 minutes
+
+**Note:** Onboarding only shows once. To see it again, delete and reinstall the app.
+
+### Login Screen (After Onboarding)
 - **Demo Email**: `doctor@holilabs.com`
 - **Demo Password**: `password123`
+- **Biometric Login:** If enabled during onboarding, Face ID/Touch ID will auto-prompt
 
 ### Main Features to Test
 1. **Login** → Should see home screen with tabs
 2. **Record Tab** → Click "Select Patient" (uses mock data)
-3. **Start Recording** → Grant microphone permission
+3. **Start Recording** → Grant microphone permission (if not granted during onboarding)
 4. **Recording Controls** → Test pause/resume/stop
 5. **History Tab** → View recordings (mock data)
 6. **Patients Tab** → Browse patient list (mock data)
 7. **Profile Tab** → View your info, test theme toggle
+8. **Biometric Auth** → Close and reopen app to test auto-login
 
 ---
 
