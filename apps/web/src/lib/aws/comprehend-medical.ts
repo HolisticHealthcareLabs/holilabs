@@ -96,7 +96,10 @@ export async function identifyPHI(medicalText: string): Promise<PHIEntity[]> {
         beginOffset: entity.BeginOffset || 0,
         endOffset: entity.EndOffset || 0,
         category: entity.Category || 'PROTECTED_HEALTH_INFORMATION',
-        traits: entity.Traits,
+        traits: entity.Traits?.map((trait) => ({
+          name: trait.Name || 'UNKNOWN',
+          score: trait.Score || 0,
+        })),
       })) || []
     );
   } catch (error) {
@@ -256,8 +259,18 @@ export async function extractMedicalEntities(text: string): Promise<MedicalEntit
         score: entity.Score || 0,
         beginOffset: entity.BeginOffset || 0,
         endOffset: entity.EndOffset || 0,
-        attributes: entity.Attributes,
-        traits: entity.Traits,
+        attributes: entity.Attributes?.map((attribute) => ({
+          type: attribute.Type || 'UNKNOWN',
+          score: attribute.Score || 0,
+          relationshipScore: attribute.RelationshipScore || 0,
+          text: attribute.Text || '',
+          beginOffset: attribute.BeginOffset || 0,
+          endOffset: attribute.EndOffset || 0,
+        })),
+        traits: entity.Traits?.map((trait) => ({
+          name: trait.Name || 'UNKNOWN',
+          score: trait.Score || 0,
+        })),
       })) || [];
 
     return {

@@ -21,6 +21,8 @@ import { useTheme } from '../hooks/useTheme';
 import { useNotifications } from '../hooks/useNotifications';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { WebSocketStatus } from '../components/WebSocketStatus';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
 
 interface SettingItem {
   id: string;
@@ -41,6 +43,7 @@ export const SettingsScreen: React.FC = () => {
     requestPermission,
     cancelAll: cancelAllNotifications,
   } = useNotifications();
+  const { isConnected, status, connect, disconnect } = useWebSocketContext();
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
@@ -316,6 +319,34 @@ export const SettingsScreen: React.FC = () => {
           </Card>
         </View>
 
+        {/* Privacy & Consent */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Privacy & Consent</Text>
+          <Card>
+            <TouchableOpacity
+              style={styles.settingItem}
+              onPress={() => {
+                // TODO: Navigate to PrivacyConsentScreen
+                Alert.alert(
+                  'Privacy & Consent',
+                  'Navigate to Privacy & Consent screen. Implementation requires navigation setup with patient ID.'
+                );
+              }}
+            >
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingIcon}>🔒</Text>
+                <View style={styles.settingText}>
+                  <Text style={styles.settingTitle}>Consent Management</Text>
+                  <Text style={styles.settingDescription}>
+                    Manage your data sharing and privacy preferences
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.settingArrow}>›</Text>
+            </TouchableOpacity>
+          </Card>
+        </View>
+
         {/* Security */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Security</Text>
@@ -365,7 +396,21 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data & Sync</Text>
           <Card>
+            {/* WebSocket Connection Status */}
             <View style={styles.settingItem}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingIcon}>🔌</Text>
+                <View style={styles.settingText}>
+                  <Text style={styles.settingTitle}>Real-time Connection</Text>
+                  <Text style={styles.settingDescription}>
+                    WebSocket status for live updates
+                  </Text>
+                </View>
+              </View>
+              <WebSocketStatus minimal={true} />
+            </View>
+
+            <View style={[styles.settingItem, styles.settingItemBorder]}>
               <View style={styles.settingInfo}>
                 <Text style={styles.settingIcon}>🔄</Text>
                 <View style={styles.settingText}>

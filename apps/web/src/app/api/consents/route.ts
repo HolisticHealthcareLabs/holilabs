@@ -1,255 +1,335 @@
 /**
  * Consent Management API
- *
- * Handles patient consent CRUD operations with full audit logging
- *
- * Standards:
- * - HIPAA 45 CFR § 164.508 (Authorization)
- * - GDPR Article 7 (Conditions for consent)
- * - LGPD Article 8 (Consent)
- *
- * @route GET /api/consents - Fetch patient consents
- * @route POST /api/consents - Grant or revoke consent
+ * GET  /api/consents?patientId={id} - List patient consents
+ * POST /api/consents - Create/update consent
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/authOptions';
-import { prisma } from '@/lib/db';
-import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import crypto from 'crypto';
+import { checkPatientConsentExpiration, findExpiredConsents, expireConsent } from '@/lib/consent/expiration-checker';
 
-// Validation schemas
-const createConsentSchema = z.object({
-  patientId: z.string().uuid(),
-  consentTypeId: z.string(),
-  granted: z.boolean(),
-  version: z.string().default('1.0'),
-  expiresAt: z.string().datetime().optional(),
-  metadata: z.record(z.any()).optional(),
-});
+// Consent type metadata (matches ConsentManagementPanel expectations)
+const CONSENT_METADATA: Record<string, any> = {
+  GENERAL_CONSULTATION: {
+    id: 'GENERAL_CONSULTATION',
+    name: 'Treatment & General Consultation',
+    description: 'Consent to receive medical treatment and healthcare services from your assigned clinician',
+    required: true,
+    category: 'Essential',
+    icon: '🏥',
+  },
+  TELEHEALTH: {
+    id: 'TELEHEALTH',
+    name: 'Telemedicine Services',
+    description: 'Consent to receive healthcare via video/phone consultations',
+    required: false,
+    category: 'Care Delivery',
+    icon: '📱',
+  },
+  RECORDING: {
+    id: 'RECORDING',
+    name: 'Consultation Recording',
+    description: 'Allow recording of consultations for AI transcription and quality improvement',
+    required: false,
+    category: 'Technology',
+    icon: '🎙️',
+  },
+  DATA_RESEARCH: {
+    id: 'DATA_RESEARCH',
+    name: 'Anonymous Research',
+    description: 'Allow anonymized data for medical research and platform improvement',
+    required: false,
+    category: 'Research',
+    icon: '🔬',
+  },
+  APPOINTMENT_REMINDERS: {
+    id: 'APPOINTMENT_REMINDERS',
+    name: 'Appointment Reminders',
+    description: 'Receive automated appointment reminders via email/SMS',
+    required: false,
+    category: 'Communication',
+    icon: '📅',
+  },
+  MEDICATION_REMINDERS: {
+    id: 'MEDICATION_REMINDERS',
+    name: 'Medication Reminders',
+    description: 'Receive medication reminders via WhatsApp/SMS',
+    required: false,
+    category: 'Communication',
+    icon: '💊',
+  },
+  WELLNESS_TIPS: {
+    id: 'WELLNESS_TIPS',
+    name: 'Wellness & Health Tips',
+    description: 'Receive personalized health tips and preventive care recommendations',
+    required: false,
+    category: 'Communication',
+    icon: '🌱',
+  },
+};
+
+function getConsentMetadata(type: string) {
+  return CONSENT_METADATA[type] || {
+    id: type,
+    name: type,
+    description: '',
+    required: false,
+    category: 'Other',
+    icon: '📋',
+  };
+}
 
 /**
- * GET /api/consents
- * Fetch all consents for a patient
+ * GET /api/consents?patientId={id}
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
 
     if (!patientId) {
-      return NextResponse.json({ error: 'Patient ID required' }, { status: 400 });
+      return NextResponse.json({ error: 'patientId required' }, { status: 400 });
     }
 
-    // Authorization: User must be the patient or their doctor
-    const canAccess = await verifyConsentAccess(session.user.id, patientId);
-    if (!canAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // Check for and expire any expired consents for this patient
+    const hasExpired = await checkPatientConsentExpiration(patientId);
+    if (hasExpired) {
+      const expiredConsents = await findExpiredConsents();
+      const patientExpiredConsents = expiredConsents.filter(c => c.patientId === patientId);
+      for (const consent of patientExpiredConsents) {
+        await expireConsent(consent.id);
+      }
     }
 
-    // Fetch consents
-    const consents = await prisma.patientConsent.findMany({
+    // Fetch all consents
+    const consents = await prisma.consent.findMany({
       where: { patientId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        patient: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
+      orderBy: { signedAt: 'desc' },
     });
 
-    // Map to response format
-    const consentStatuses = consents.map((consent) => ({
-      consentType: {
-        id: consent.consentTypeId,
-        name: getConsentTypeName(consent.consentTypeId),
-        category: getConsentTypeCategory(consent.consentTypeId),
-      },
-      granted: consent.granted,
-      grantedAt: consent.grantedAt?.toISOString(),
-      revokedAt: consent.revokedAt?.toISOString(),
-      expiresAt: consent.expiresAt?.toISOString(),
+    // Get latest consent for each type
+    const latestConsents = new Map();
+    for (const consent of consents) {
+      if (!latestConsents.has(consent.type)) {
+        latestConsents.set(consent.type, consent);
+      }
+    }
+
+    // Map to format expected by ConsentManagementPanel
+    const consentStatuses = Array.from(latestConsents.values()).map((consent: any) => ({
+      consentType: getConsentMetadata(consent.type),
+      granted: consent.isActive,
+      grantedAt: consent.signedAt.toISOString(),
+      revokedAt: consent.revokedAt?.toISOString() || null,
       version: consent.version,
     }));
 
-    return NextResponse.json({
-      consents: consentStatuses,
-      patientId,
-    });
+    // Ensure all consent types are represented
+    for (const type of Object.values(CONSENT_METADATA)) {
+      if (!consentStatuses.find(c => c.consentType.id === type.id)) {
+        consentStatuses.push({
+          consentType: type,
+          granted: false,
+          grantedAt: null,
+          revokedAt: null,
+          version: '1.0',
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, consents: consentStatuses });
   } catch (error) {
     console.error('Error fetching consents:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch consents' }, { status: 500 });
   }
 }
 
 /**
  * POST /api/consents
- * Grant or revoke patient consent
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
-    const validation = createConsentSchema.safeParse(body);
+    const { patientId, consentTypeId, granted, version } = body;
 
-    if (!validation.success) {
+    if (!patientId || !consentTypeId || typeof granted !== 'boolean') {
       return NextResponse.json(
-        { error: 'Invalid request', details: validation.error },
+        { error: 'patientId, consentTypeId, and granted are required' },
         { status: 400 }
       );
     }
 
-    const { patientId, consentTypeId, granted, version, expiresAt, metadata } = validation.data;
-
-    // Authorization: Only the patient can grant/revoke their own consents
-    if (session.user.id !== patientId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Check if consent already exists
-    const existingConsent = await prisma.patientConsent.findFirst({
-      where: {
-        patientId,
-        consentTypeId,
-      },
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+      select: { id: true, firstName: true, lastName: true },
     });
 
-    let consent;
+    if (!patient) {
+      return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+    }
 
-    if (existingConsent) {
-      // Update existing consent
-      consent = await prisma.patientConsent.update({
+    const consentMetadata = getConsentMetadata(consentTypeId);
+
+    // Find existing consent
+    const existingConsent = await prisma.consent.findFirst({
+      where: { patientId, type: consentTypeId },
+      orderBy: { signedAt: 'desc' },
+    });
+
+    let result;
+
+    if (existingConsent && granted) {
+      // Reactivate
+      result = await prisma.consent.update({
+        where: { id: existingConsent.id },
+        data: { isActive: true, revokedAt: null, revokedReason: null },
+      });
+
+      // If reactivating GENERAL_CONSULTATION, reactivate data access grants
+      if (consentTypeId === 'GENERAL_CONSULTATION') {
+        // Get patient's assigned clinician
+        const patientData = await prisma.patient.findUnique({
+          where: { id: patientId },
+          select: { assignedClinicianId: true },
+        });
+
+        if (patientData?.assignedClinicianId) {
+          // Check if there's a revoked grant for the assigned clinician
+          const existingGrant = await prisma.dataAccessGrant.findFirst({
+            where: {
+              patientId,
+              grantedToId: patientData.assignedClinicianId,
+              grantedToType: 'USER',
+            },
+          });
+
+          if (existingGrant) {
+            // Reactivate existing grant
+            await prisma.dataAccessGrant.update({
+              where: { id: existingGrant.id },
+              data: {
+                revokedAt: null,
+                revokedReason: null,
+              },
+            });
+          } else {
+            // Create new grant if none exists
+            await prisma.dataAccessGrant.create({
+              data: {
+                patientId,
+                grantedToType: 'USER',
+                grantedToId: patientData.assignedClinicianId,
+                resourceType: 'ALL',
+                canView: true,
+                canDownload: false,
+                canShare: false,
+                purpose: 'Primary care physician - re-granted after consent reactivation',
+                grantedAt: new Date(),
+              },
+            });
+          }
+
+          console.log(`✅ Reactivated data access grant for patient ${patientId}`);
+        }
+      }
+    } else if (existingConsent && !granted) {
+      // Revoke
+      result = await prisma.consent.update({
         where: { id: existingConsent.id },
         data: {
-          granted,
-          grantedAt: granted ? new Date() : existingConsent.grantedAt,
-          revokedAt: !granted ? new Date() : null,
-          version,
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
-          metadata: metadata || {},
+          isActive: false,
+          revokedAt: new Date(),
+          revokedReason: 'Revoked by patient via portal',
+        },
+      });
+
+      // If revoking GENERAL_CONSULTATION, revoke all active data access grants
+      if (consentTypeId === 'GENERAL_CONSULTATION') {
+        await prisma.dataAccessGrant.updateMany({
+          where: {
+            patientId,
+            revokedAt: null,
+          },
+          data: {
+            revokedAt: new Date(),
+            revokedReason: 'Patient revoked general consultation consent',
+          },
+        });
+
+        console.log(`🔒 Revoked all data access grants for patient ${patientId} due to consent revocation`);
+      }
+    } else if (!existingConsent && granted) {
+      // Create new
+      const consentContent = `
+Consent for: ${consentMetadata.name}
+Description: ${consentMetadata.description}
+
+By granting this consent, you agree to the terms above.
+You may revoke this consent anytime through the patient portal.
+
+Patient: ${patient.firstName} ${patient.lastName}
+Date: ${new Date().toLocaleDateString()}
+      `.trim();
+
+      const consentHash = crypto
+        .createHash('sha256')
+        .update(consentContent + patientId + new Date().toISOString())
+        .digest('hex');
+
+      result = await prisma.consent.create({
+        data: {
+          patientId,
+          type: consentTypeId,
+          title: consentMetadata.name,
+          content: consentContent,
+          version: version || '1.0',
+          signatureData: 'PORTAL_CONSENT_CLICK',
+          signedAt: new Date(),
+          isActive: true,
+          consentHash,
         },
       });
     } else {
-      // Create new consent
-      consent = await prisma.patientConsent.create({
-        data: {
-          patientId,
-          consentTypeId,
-          granted,
-          grantedAt: granted ? new Date() : null,
-          revokedAt: !granted ? new Date() : null,
-          version,
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
-          metadata: metadata || {},
-        },
-      });
+      return NextResponse.json({ success: true, message: 'No action needed' });
     }
 
-    // Log consent change for audit trail
-    await prisma.consentAuditLog.create({
+    // Audit log
+    await prisma.auditLog.create({
       data: {
-        patientId,
-        operation: granted ? 'GRANT_CONSENT' : 'REVOKE_CONSENT',
-        allowed: true,
-        missingConsents: [],
-        metadata: {
-          consentTypeId,
-          version,
-          changedBy: session.user.id,
-          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          userAgent: request.headers.get('user-agent') || 'unknown',
-        },
-        timestamp: new Date(),
+        userId: patientId,
+        userEmail: 'patient',
+        action: granted ? 'SIGN' : 'REVOKE',
+        resource: 'Consent',
+        resourceId: result.id,
+        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+        details: { consentType: consentTypeId, consentName: consentMetadata.name },
+        success: true,
       },
     });
+
+    // Update patient flags
+    const updates: any = {};
+    if (consentTypeId === 'RECORDING') {
+      updates.recordingConsentGiven = granted;
+      updates.recordingConsentDate = granted ? new Date() : null;
+      updates.recordingConsentWithdrawnAt = granted ? null : new Date();
+    }
+    if (Object.keys(updates).length > 0) {
+      await prisma.patient.update({ where: { id: patientId }, data: updates });
+    }
 
     return NextResponse.json({
       success: true,
       consent: {
-        id: consent.id,
-        consentTypeId: consent.consentTypeId,
-        granted: consent.granted,
-        grantedAt: consent.grantedAt?.toISOString(),
-        revokedAt: consent.revokedAt?.toISOString(),
+        id: result.id,
+        type: result.type,
+        isActive: result.isActive,
+        signedAt: result.signedAt,
       },
     });
   } catch (error) {
     console.error('Error updating consent:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update consent' }, { status: 500 });
   }
-}
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-async function verifyConsentAccess(userId: string, patientId: string): Promise<boolean> {
-  // User is the patient themselves
-  if (userId === patientId) {
-    return true;
-  }
-
-  // User is a doctor with active access grant from the patient
-  const activeGrant = await prisma.accessGrant.findFirst({
-    where: {
-      patientId,
-      grantedToId: userId,
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } },
-      ],
-      canView: true,
-    },
-  });
-
-  return !!activeGrant;
-}
-
-function getConsentTypeName(consentTypeId: string): string {
-  const names: Record<string, string> = {
-    treatment_access: 'Treatment & Medical Care',
-    appointment_booking: 'Appointment Booking',
-    clinical_recording: 'Clinical Consultation Recording',
-    data_sharing_specialists: 'Data Sharing with Specialists',
-    anonymous_research: 'Anonymous Research Participation',
-    health_reminders: 'Health Reminders & Notifications',
-    wellness_programs: 'Wellness Programs',
-  };
-
-  return names[consentTypeId] || consentTypeId;
-}
-
-function getConsentTypeCategory(consentTypeId: string): string {
-  const categories: Record<string, string> = {
-    treatment_access: 'TREATMENT',
-    appointment_booking: 'TREATMENT',
-    clinical_recording: 'RECORDING',
-    data_sharing_specialists: 'DATA_SHARING',
-    anonymous_research: 'RESEARCH',
-    health_reminders: 'MARKETING',
-    wellness_programs: 'MARKETING',
-  };
-
-  return categories[consentTypeId] || 'OTHER';
 }

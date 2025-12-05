@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holi Labs - Expo Go QR Code</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        
+        .qr-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            display: inline-block;
+        }
+        
+        #qrcode {
+            display: inline-block;
+        }
+        
+        .url-display {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .instructions {
+            text-align: left;
+            margin-top: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            text-align: left;
+            color: #856404;
+        }
+        
+        .warning strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        .ip-info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            text-align: left;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📱</div>
+        <h1>Holi Labs Mobile App</h1>
+        <p class="subtitle">Test with Expo Go</p>
+        
+        <div class="status waiting" id="status">
+            ⏳ Checking server status...
+        </div>
+        
+        <div class="qr-container">
+            <div id="qrcode"></div>
+        </div>
+        
+        <div class="url-display" id="url"></div>
+        
+        <button onclick="copyToClipboard()">📋 Copy URL</button>
+        
+        <div class="ip-info">
+            <strong>📡 Your Local IP:</strong> 192.168.0.9<br>
+            <strong>🔌 Metro Port:</strong> 8081
+        </div>
+        
+        <div class="instructions">
+            <h3>📖 How to Test:</h3>
+            <ol>
+                <li><strong>Download Expo Go</strong> from the App Store on your iPhone</li>
+                <li><strong>Connect your iPhone to the same WiFi</strong> as this computer</li>
+                <li><strong>Open Expo Go app</strong></li>
+                <li><strong>Tap "Scan QR Code"</strong></li>
+                <li><strong>Scan the QR code above</strong> 📸</li>
+                <li>The app will load directly in Expo Go! 🎉</li>
+            </ol>
+        </div>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong>
+            Make sure the Expo development server is running in your terminal. If you see "Waiting for server", run:<br>
+            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin-top: 5px; display: inline-block;">cd apps/mobile && pnpm expo start</code>
+        </div>
+    </div>
+    
+    <script>
+        // Expo Go URL format
+        const localIP = '192.168.0.9';
+        const port = '8081';
+        const expoUrl = `exp://${localIP}:${port}`;
+        
+        // Display URL
+        document.getElementById('url').textContent = expoUrl;
+        
+        // Generate QR Code
+        new QRCode(document.getElementById("qrcode"), {
+            text: expoUrl,
+            width: 256,
+            height: 256,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // Copy to clipboard function
+        function copyToClipboard() {
+            navigator.clipboard.writeText(expoUrl).then(() => {
+                alert('✅ URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+        
+        // Check if server is running
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`http://${localIP}:${port}/status`, { mode: 'no-cors' });
+                document.getElementById('status').className = 'status online';
+                document.getElementById('status').innerHTML = '✅ Server is running!';
+            } catch (error) {
+                document.getElementById('status').className = 'status waiting';
+                document.getElementById('status').innerHTML = '⏳ Waiting for server...';
+                
+                // Retry after 3 seconds
+                setTimeout(checkServerStatus, 3000);
+            }
+        }
+        
+        // Start checking server status
+        checkServerStatus();
+        
+        // Recheck every 5 seconds
+        setInterval(checkServerStatus, 5000);
+    </script>
+</body>
+</html>
+

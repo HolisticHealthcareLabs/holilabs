@@ -307,7 +307,7 @@ export function DesktopPatientTable({
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
-                        )}
+                        ) as React.ReactNode}
                         {header.column.getIsSorted() && (
                           <span>
                             {header.column.getIsSorted() === 'desc' ? '↓' : '↑'}
@@ -370,7 +370,7 @@ export function DesktopPatientTable({
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
-                          )}
+                          ) as React.ReactNode}
                         </td>
                       ))}
                     </tr>

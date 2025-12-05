@@ -4,6 +4,8 @@
  * GET    /api/patients/[id] - Get patient details
  * PUT    /api/patients/[id] - Update patient
  * DELETE /api/patients/[id] - Soft delete patient
+ *
+ * @compliance Phase 2.4: Security Hardening - IDOR Protection
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,6 +15,7 @@ import { auditView, auditUpdate, auditDelete } from '@/lib/audit';
 import { UpdatePatientSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
 import { onPatientUpdated } from '@/lib/cache/patient-context-cache';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -22,12 +25,29 @@ export const dynamic = 'force-dynamic';
  * GET /api/patients/[id]
  * Get detailed patient information
  * HIPAA §164.502(b) - Requires access reason for PHI access
+ * @security IDOR protection - verifies user has access to patient
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
+export const GET = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
+
+    if (!patientId) {
+      return NextResponse.json(
+        { error: 'Patient ID required' },
+        { status: 400 }
+      );
+    }
+
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     // HIPAA §164.502(b) - Access Reason Required
     const { searchParams } = new URL(request.url);
     const accessReason = searchParams.get('accessReason');
@@ -57,7 +77,7 @@ export async function GET(
     }
 
     const patient = await prisma.patient.findUnique({
-      where: { id: params.id },
+      where: { id: patientId },
       include: {
         assignedClinician: {
           select: {
@@ -141,24 +161,39 @@ export async function GET(
       success: true,
       data: patient,
     });
-  } catch (error: any) {
-    console.error('Error fetching patient:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch patient', details: error.message },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'READ', resource: 'Patient' },
   }
-}
+);
 
 /**
  * PUT /api/patients/[id]
  * Update patient information
+ * @security IDOR protection - verifies user has access to patient
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
+export const PUT = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
+
+    if (!patientId) {
+      return NextResponse.json(
+        { error: 'Patient ID required' },
+        { status: 400 }
+      );
+    }
+
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     // Validate input with medical-grade Zod schema
@@ -184,7 +219,7 @@ export async function PUT(
 
     // Check if patient exists
     const existingPatient = await prisma.patient.findUnique({
-      where: { id: params.id },
+      where: { id: patientId },
     });
 
     if (!existingPatient) {
@@ -249,7 +284,7 @@ export async function PUT(
 
     // Update patient
     const patient = await prisma.patient.update({
-      where: { id: params.id },
+      where: { id: patientId },
       data: updateData,
       include: {
         assignedClinician: {
@@ -284,27 +319,42 @@ export async function PUT(
       data: patient,
       message: 'Patient updated successfully',
     });
-  } catch (error: any) {
-    console.error('Error updating patient:', error);
-    return NextResponse.json(
-      { error: 'Failed to update patient', details: error.message },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'UPDATE', resource: 'Patient' },
   }
-}
+);
 
 /**
  * DELETE /api/patients/[id]
  * Soft delete patient (set isActive = false)
+ * @security IDOR protection - verifies user has access to patient
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
+export const DELETE = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
+
+    if (!patientId) {
+      return NextResponse.json(
+        { error: 'Patient ID required' },
+        { status: 400 }
+      );
+    }
+
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     // Check if patient exists
     const existingPatient = await prisma.patient.findUnique({
-      where: { id: params.id },
+      where: { id: patientId },
     });
 
     if (!existingPatient) {
@@ -316,7 +366,7 @@ export async function DELETE(
 
     // Soft delete (set isActive = false)
     const patient = await prisma.patient.update({
-      where: { id: params.id },
+      where: { id: patientId },
       data: { isActive: false },
     });
 
@@ -331,11 +381,9 @@ export async function DELETE(
       success: true,
       message: 'Patient deactivated successfully',
     });
-  } catch (error: any) {
-    console.error('Error deleting patient:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete patient', details: error.message },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'DELETE', resource: 'Patient' },
   }
-}
+);

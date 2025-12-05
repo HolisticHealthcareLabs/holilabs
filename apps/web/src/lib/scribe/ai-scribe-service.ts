@@ -228,7 +228,6 @@ Generate a complete ${noteType} note following standard medical documentation fo
         model: anthropic('claude-3-5-sonnet-20241022'),
         prompt,
         temperature: 0.3, // Lower temperature for more consistent clinical documentation
-        maxTokens: 2000,
       });
 
       // Extract clinical entities (symptoms, diagnoses, treatments)

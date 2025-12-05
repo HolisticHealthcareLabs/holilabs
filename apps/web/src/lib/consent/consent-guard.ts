@@ -10,7 +10,8 @@
  * @compliance HIPAA, GDPR, LGPD
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
+import type { ConsentType as PrismaConsentType } from '@prisma/client';
 
 export type ConsentTypeId =
   | 'treatment_access'
@@ -20,6 +21,16 @@ export type ConsentTypeId =
   | 'anonymous_research'
   | 'health_reminders'
   | 'wellness_programs';
+
+const CONSENT_ID_MAP: Record<ConsentTypeId, PrismaConsentType> = {
+  treatment_access: 'GENERAL_CONSULTATION',
+  appointment_booking: 'APPOINTMENT_REMINDERS',
+  clinical_recording: 'RECORDING',
+  data_sharing_specialists: 'DATA_RESEARCH',
+  anonymous_research: 'DATA_RESEARCH',
+  health_reminders: 'MEDICATION_REMINDERS',
+  wellness_programs: 'WELLNESS_TIPS',
+};
 
 export interface ConsentCheckResult {
   allowed: boolean;
@@ -51,13 +62,14 @@ export class ConsentGuard {
   ): Promise<ConsentCheckResult> {
     try {
       // Fetch patient's consents from database
-      const consents = await prisma.patientConsent.findMany({
+      const mappedTypes = requiredConsents.map((id) => CONSENT_ID_MAP[id] || id);
+      const consents = await prisma.consent.findMany({
         where: {
           patientId,
-          consentTypeId: {
-            in: requiredConsents,
+          type: {
+            in: mappedTypes,
           },
-          granted: true,
+          isActive: true,
           // Check not expired
           OR: [
             { expiresAt: null },
@@ -67,12 +79,14 @@ export class ConsentGuard {
           revokedAt: null,
         },
         select: {
-          consentTypeId: true,
+          type: true,
         },
       });
 
-      const grantedConsentIds = new Set(consents.map((c) => c.consentTypeId));
-      const missingConsents = requiredConsents.filter((id) => !grantedConsentIds.has(id));
+      const grantedConsentIds = new Set(consents.map((c) => c.type));
+      const missingConsents = requiredConsents.filter(
+        (id) => !grantedConsentIds.has(CONSENT_ID_MAP[id] || id)
+      );
 
       if (missingConsents.length > 0) {
         return {
@@ -138,14 +152,22 @@ export class ConsentGuard {
     metadata?: Record<string, any>
   ): Promise<void> {
     try {
-      await prisma.consentAuditLog.create({
+      await prisma.auditLog.create({
         data: {
-          patientId,
-          operation,
-          allowed: result.allowed,
-          missingConsents: result.missingConsents,
-          metadata: metadata || {},
-          timestamp: new Date(),
+          userId: patientId,
+          userEmail: 'patient',
+          ipAddress: metadata?.ipAddress || 'unknown',
+          userAgent: metadata?.userAgent,
+          action: 'READ',
+          resource: 'ConsentGuard',
+          resourceId: operation,
+          details: {
+            missingConsents: result.missingConsents,
+            metadata: metadata || {},
+          },
+          success: result.allowed,
+          errorMessage: result.message,
+          accessReason: 'DIRECT_PATIENT_CARE',
         },
       });
     } catch (error) {

@@ -1,7 +1,9 @@
 /**
  * Email Notification Service
- * Sends emails via Resend API
+ * Sends emails via unified email service (supports multiple providers)
  */
+
+import { queueEmail } from '@/lib/email/email-service';
 
 interface EmailOptions {
   to: string;
@@ -9,45 +11,28 @@ interface EmailOptions {
   html: string;
 }
 
+/**
+ * Send email using unified email service
+ * Queues email for background processing with retry logic
+ */
 export async function sendEmail({
   to,
   subject,
   html,
 }: EmailOptions): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.EMAIL_FROM || 'Holi Labs <noreply@holilabs.com>';
-
-  if (!apiKey) {
-    console.warn('Resend API key not configured - email not sent');
-    return false;
-  }
-
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [to],
-        subject,
-        html,
-      }),
+    // Queue email for background processing
+    const emailId = await queueEmail({
+      to,
+      subject,
+      html,
+      text: undefined, // HTML-only for now
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Resend API error:', error);
-      return false;
-    }
-
-    const data = await response.json();
-    console.log('Email sent successfully:', data.id);
+    console.log('Email queued successfully:', emailId);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error queueing email:', error);
     return false;
   }
 }

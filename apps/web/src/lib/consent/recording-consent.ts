@@ -188,6 +188,7 @@ export async function recordConsent(
     await prisma.auditLog.create({
       data: {
         userId: consentData.clinicianId || null,
+        ipAddress: 'unknown',
         action: 'CREATE',
         resource: 'RecordingConsent',
         resourceId: patientId,
@@ -234,6 +235,7 @@ export async function withdrawConsent(
     await prisma.auditLog.create({
       data: {
         userId: clinicianId || null,
+        ipAddress: 'unknown',
         action: 'UPDATE',
         resource: 'RecordingConsent',
         resourceId: patientId,

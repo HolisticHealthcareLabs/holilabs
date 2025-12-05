@@ -21,6 +21,7 @@ import { NotificationService } from './src/services/notificationService';
 import { AnalyticsService } from './src/services/analyticsService';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { LoadingScreen } from './src/components/LoadingScreen';
+import { WebSocketProvider } from './src/providers/WebSocketProvider';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -96,8 +97,10 @@ export default function App() {
         >
           <ThemeProvider>
             <SafeAreaProvider>
-              <RootNavigator />
-              <StatusBar style="auto" />
+              <WebSocketProvider>
+                <RootNavigator />
+                <StatusBar style="auto" />
+              </WebSocketProvider>
             </SafeAreaProvider>
           </ThemeProvider>
         </PersistQueryClientProvider>
