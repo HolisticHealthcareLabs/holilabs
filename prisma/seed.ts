@@ -55,57 +55,57 @@ async function seedICD10Codes() {
 
   const icd10Codes = [
     // Diabetes
-    { code: 'E11', description: 'Type 2 diabetes mellitus', category: 'Endocrine, nutritional and metabolic diseases', billable: false },
-    { code: 'E11.9', description: 'Type 2 diabetes mellitus without complications', category: 'Endocrine, nutritional and metabolic diseases', billable: true },
-    { code: 'E11.65', description: 'Type 2 diabetes mellitus with hyperglycemia', category: 'Endocrine, nutritional and metabolic diseases', billable: true },
-    { code: 'E10', description: 'Type 1 diabetes mellitus', category: 'Endocrine, nutritional and metabolic diseases', billable: false },
-    { code: 'E10.9', description: 'Type 1 diabetes mellitus without complications', category: 'Endocrine, nutritional and metabolic diseases', billable: true },
+    { code: 'E11', description: 'Type 2 diabetes mellitus', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: false },
+    { code: 'E11.9', description: 'Type 2 diabetes mellitus without complications', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: true },
+    { code: 'E11.65', description: 'Type 2 diabetes mellitus with hyperglycemia', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: true },
+    { code: 'E10', description: 'Type 1 diabetes mellitus', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: false },
+    { code: 'E10.9', description: 'Type 1 diabetes mellitus without complications', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: true },
 
     // Hypertension
-    { code: 'I10', description: 'Essential (primary) hypertension', category: 'Diseases of the circulatory system', billable: true },
-    { code: 'I11', description: 'Hypertensive heart disease', category: 'Diseases of the circulatory system', billable: false },
-    { code: 'I11.9', description: 'Hypertensive heart disease without heart failure', category: 'Diseases of the circulatory system', billable: true },
-    { code: 'I12', description: 'Hypertensive chronic kidney disease', category: 'Diseases of the circulatory system', billable: false },
-    { code: 'I12.9', description: 'Hypertensive chronic kidney disease with stage 1 through stage 4 CKD', category: 'Diseases of the circulatory system', billable: true },
+    { code: 'I10', description: 'Essential (primary) hypertension', category: 'Diseases of the circulatory system', chapter: 'IX', billable: true },
+    { code: 'I11', description: 'Hypertensive heart disease', category: 'Diseases of the circulatory system', chapter: 'IX', billable: false },
+    { code: 'I11.9', description: 'Hypertensive heart disease without heart failure', category: 'Diseases of the circulatory system', chapter: 'IX', billable: true },
+    { code: 'I12', description: 'Hypertensive chronic kidney disease', category: 'Diseases of the circulatory system', chapter: 'IX', billable: false },
+    { code: 'I12.9', description: 'Hypertensive chronic kidney disease with stage 1 through stage 4 CKD', category: 'Diseases of the circulatory system', chapter: 'IX', billable: true },
 
     // COVID-19
-    { code: 'U07.1', description: 'COVID-19', category: 'Emergency use of U07.1', billable: true },
-    { code: 'U09.9', description: 'Post COVID-19 condition, unspecified', category: 'Emergency use of U09.9', billable: true },
+    { code: 'U07.1', description: 'COVID-19', category: 'Emergency use of U07.1', chapter: 'XXII', billable: true },
+    { code: 'U09.9', description: 'Post COVID-19 condition, unspecified', category: 'Emergency use of U09.9', chapter: 'XXII', billable: true },
 
     // Respiratory
-    { code: 'J44', description: 'Other chronic obstructive pulmonary disease', category: 'Diseases of the respiratory system', billable: false },
-    { code: 'J44.9', description: 'Chronic obstructive pulmonary disease, unspecified', category: 'Diseases of the respiratory system', billable: true },
-    { code: 'J45', description: 'Asthma', category: 'Diseases of the respiratory system', billable: false },
-    { code: 'J45.9', description: 'Asthma, unspecified', category: 'Diseases of the respiratory system', billable: true },
+    { code: 'J44', description: 'Other chronic obstructive pulmonary disease', category: 'Diseases of the respiratory system', chapter: 'X', billable: false },
+    { code: 'J44.9', description: 'Chronic obstructive pulmonary disease, unspecified', category: 'Diseases of the respiratory system', chapter: 'X', billable: true },
+    { code: 'J45', description: 'Asthma', category: 'Diseases of the respiratory system', chapter: 'X', billable: false },
+    { code: 'J45.9', description: 'Asthma, unspecified', category: 'Diseases of the respiratory system', chapter: 'X', billable: true },
 
     // Mental health
-    { code: 'F41', description: 'Other anxiety disorders', category: 'Mental, Behavioral and Neurodevelopmental disorders', billable: false },
-    { code: 'F41.9', description: 'Anxiety disorder, unspecified', category: 'Mental, Behavioral and Neurodevelopmental disorders', billable: true },
-    { code: 'F32', description: 'Major depressive disorder, single episode', category: 'Mental, Behavioral and Neurodevelopmental disorders', billable: false },
-    { code: 'F32.9', description: 'Major depressive disorder, single episode, unspecified', category: 'Mental, Behavioral and Neurodevelopmental disorders', billable: true },
+    { code: 'F41', description: 'Other anxiety disorders', category: 'Mental, Behavioral and Neurodevelopmental disorders', chapter: 'V', billable: false },
+    { code: 'F41.9', description: 'Anxiety disorder, unspecified', category: 'Mental, Behavioral and Neurodevelopmental disorders', chapter: 'V', billable: true },
+    { code: 'F32', description: 'Major depressive disorder, single episode', category: 'Mental, Behavioral and Neurodevelopmental disorders', chapter: 'V', billable: false },
+    { code: 'F32.9', description: 'Major depressive disorder, single episode, unspecified', category: 'Mental, Behavioral and Neurodevelopmental disorders', chapter: 'V', billable: true },
 
     // Obesity
-    { code: 'E66', description: 'Overweight and obesity', category: 'Endocrine, nutritional and metabolic diseases', billable: false },
-    { code: 'E66.9', description: 'Obesity, unspecified', category: 'Endocrine, nutritional and metabolic diseases', billable: true },
-    { code: 'E66.01', description: 'Morbid (severe) obesity due to excess calories', category: 'Endocrine, nutritional and metabolic diseases', billable: true },
+    { code: 'E66', description: 'Overweight and obesity', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: false },
+    { code: 'E66.9', description: 'Obesity, unspecified', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: true },
+    { code: 'E66.01', description: 'Morbid (severe) obesity due to excess calories', category: 'Endocrine, nutritional and metabolic diseases', chapter: 'IV', billable: true },
 
     // Cardiovascular
-    { code: 'I25', description: 'Chronic ischemic heart disease', category: 'Diseases of the circulatory system', billable: false },
-    { code: 'I25.10', description: 'Atherosclerotic heart disease of native coronary artery without angina pectoris', category: 'Diseases of the circulatory system', billable: true },
-    { code: 'I50', description: 'Heart failure', category: 'Diseases of the circulatory system', billable: false },
-    { code: 'I50.9', description: 'Heart failure, unspecified', category: 'Diseases of the circulatory system', billable: true },
+    { code: 'I25', description: 'Chronic ischemic heart disease', category: 'Diseases of the circulatory system', chapter: 'IX', billable: false },
+    { code: 'I25.10', description: 'Atherosclerotic heart disease of native coronary artery without angina pectoris', category: 'Diseases of the circulatory system', chapter: 'IX', billable: true },
+    { code: 'I50', description: 'Heart failure', category: 'Diseases of the circulatory system', chapter: 'IX', billable: false },
+    { code: 'I50.9', description: 'Heart failure, unspecified', category: 'Diseases of the circulatory system', chapter: 'IX', billable: true },
 
     // Cancer screening
-    { code: 'Z12', description: 'Encounter for screening for malignant neoplasms', category: 'Factors influencing health status', billable: false },
-    { code: 'Z12.11', description: 'Encounter for screening for malignant neoplasm of colon', category: 'Factors influencing health status', billable: true },
-    { code: 'Z12.31', description: 'Encounter for screening mammogram for malignant neoplasm of breast', category: 'Factors influencing health status', billable: true },
+    { code: 'Z12', description: 'Encounter for screening for malignant neoplasms', category: 'Factors influencing health status', chapter: 'XXI', billable: false },
+    { code: 'Z12.11', description: 'Encounter for screening for malignant neoplasm of colon', category: 'Factors influencing health status', chapter: 'XXI', billable: true },
+    { code: 'Z12.31', description: 'Encounter for screening mammogram for malignant neoplasm of breast', category: 'Factors influencing health status', chapter: 'XXI', billable: true },
 
     // General symptoms
-    { code: 'R50', description: 'Fever of other and unknown origin', category: 'Symptoms, signs and abnormal findings', billable: false },
-    { code: 'R50.9', description: 'Fever, unspecified', category: 'Symptoms, signs and abnormal findings', billable: true },
-    { code: 'R51', description: 'Headache', category: 'Symptoms, signs and abnormal findings', billable: true },
-    { code: 'R06', description: 'Abnormalities of breathing', category: 'Symptoms, signs and abnormal findings', billable: false },
-    { code: 'R06.02', description: 'Shortness of breath', category: 'Symptoms, signs and abnormal findings', billable: true },
+    { code: 'R50', description: 'Fever of other and unknown origin', category: 'Symptoms, signs and abnormal findings', chapter: 'XVIII', billable: false },
+    { code: 'R50.9', description: 'Fever, unspecified', category: 'Symptoms, signs and abnormal findings', chapter: 'XVIII', billable: true },
+    { code: 'R51', description: 'Headache', category: 'Symptoms, signs and abnormal findings', chapter: 'XVIII', billable: true },
+    { code: 'R06', description: 'Abnormalities of breathing', category: 'Symptoms, signs and abnormal findings', chapter: 'XVIII', billable: false },
+    { code: 'R06.02', description: 'Shortness of breath', category: 'Symptoms, signs and abnormal findings', chapter: 'XVIII', billable: true },
   ];
 
   await insertInChunks(
@@ -140,7 +140,9 @@ async function seedLOINCCodes() {
       loincNumber: '2093-3',
       component: 'Cholesterol',
       property: 'MCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Cholesterol [Mass/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -148,7 +150,9 @@ async function seedLOINCCodes() {
       loincNumber: '2085-9',
       component: 'Cholesterol in HDL',
       property: 'MCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Cholesterol in HDL [Mass/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -156,7 +160,9 @@ async function seedLOINCCodes() {
       loincNumber: '2089-1',
       component: 'Cholesterol in LDL',
       property: 'MCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Cholesterol in LDL [Mass/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -164,7 +170,9 @@ async function seedLOINCCodes() {
       loincNumber: '2571-8',
       component: 'Triglyceride',
       property: 'MCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Triglyceride [Mass/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -174,7 +182,9 @@ async function seedLOINCCodes() {
       loincNumber: '2345-7',
       component: 'Glucose',
       property: 'MCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Glucose [Mass/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -182,7 +192,9 @@ async function seedLOINCCodes() {
       loincNumber: '4548-4',
       component: 'Hemoglobin A1c',
       property: 'MFr',
+      timeAspect: 'Pt',
       system: 'Bld',
+      scale: 'Qn',
       longCommonName: 'Hemoglobin A1c/Hemoglobin.total in Blood',
       loincClass: 'CHEM'
     },
@@ -192,7 +204,9 @@ async function seedLOINCCodes() {
       loincNumber: '6690-2',
       component: 'Leukocytes',
       property: 'NCnc',
+      timeAspect: 'Pt',
       system: 'Bld',
+      scale: 'Qn',
       longCommonName: 'Leukocytes [#/volume] in Blood by Automated count',
       loincClass: 'HEM/BC'
     },
@@ -200,7 +214,9 @@ async function seedLOINCCodes() {
       loincNumber: '789-8',
       component: 'Erythrocytes',
       property: 'NCnc',
+      timeAspect: 'Pt',
       system: 'Bld',
+      scale: 'Qn',
       longCommonName: 'Erythrocytes [#/volume] in Blood by Automated count',
       loincClass: 'HEM/BC'
     },
@@ -208,7 +224,9 @@ async function seedLOINCCodes() {
       loincNumber: '718-7',
       component: 'Hemoglobin',
       property: 'MCnc',
+      timeAspect: 'Pt',
       system: 'Bld',
+      scale: 'Qn',
       longCommonName: 'Hemoglobin [Mass/volume] in Blood',
       loincClass: 'HEM/BC'
     },
@@ -216,7 +234,9 @@ async function seedLOINCCodes() {
       loincNumber: '4544-3',
       component: 'Hematocrit',
       property: 'VFr',
+      timeAspect: 'Pt',
       system: 'Bld',
+      scale: 'Qn',
       longCommonName: 'Hematocrit [Volume Fraction] of Blood by Automated count',
       loincClass: 'HEM/BC'
     },
@@ -224,7 +244,9 @@ async function seedLOINCCodes() {
       loincNumber: '777-3',
       component: 'Platelets',
       property: 'NCnc',
+      timeAspect: 'Pt',
       system: 'Bld',
+      scale: 'Qn',
       longCommonName: 'Platelets [#/volume] in Blood by Automated count',
       loincClass: 'HEM/BC'
     },
@@ -234,7 +256,9 @@ async function seedLOINCCodes() {
       loincNumber: '1742-6',
       component: 'Alanine aminotransferase',
       property: 'CCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -242,7 +266,9 @@ async function seedLOINCCodes() {
       loincNumber: '1920-8',
       component: 'Aspartate aminotransferase',
       property: 'CCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Aspartate aminotransferase [Enzymatic activity/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -252,7 +278,9 @@ async function seedLOINCCodes() {
       loincNumber: '2160-0',
       component: 'Creatinine',
       property: 'MCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Creatinine [Mass/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -260,7 +288,9 @@ async function seedLOINCCodes() {
       loincNumber: '33914-3',
       component: 'Glomerular filtration rate',
       property: 'VRat',
+      timeAspect: 'Pt',
       system: 'Kidney',
+      scale: 'Qn',
       longCommonName: 'Glomerular filtration rate/1.73 sq M.predicted [Volume Rate/Area] in Serum or Plasma by Creatinine-based formula (CKD-EPI)',
       loincClass: 'CHEM'
     },
@@ -270,7 +300,9 @@ async function seedLOINCCodes() {
       loincNumber: '3016-3',
       component: 'Thyrotropin',
       property: 'SCnc',
+      timeAspect: 'Pt',
       system: 'Ser/Plas',
+      scale: 'Qn',
       longCommonName: 'Thyrotropin [Units/volume] in Serum or Plasma',
       loincClass: 'CHEM'
     },
@@ -280,7 +312,9 @@ async function seedLOINCCodes() {
       loincNumber: '8867-4',
       component: 'Heart rate',
       property: 'NRat',
+      timeAspect: 'Pt',
       system: 'XXX',
+      scale: 'Qn',
       longCommonName: 'Heart rate',
       loincClass: 'CLINICAL'
     },
@@ -288,7 +322,9 @@ async function seedLOINCCodes() {
       loincNumber: '8480-6',
       component: 'Systolic blood pressure',
       property: 'Pres',
+      timeAspect: 'Pt',
       system: 'Arterial',
+      scale: 'Qn',
       longCommonName: 'Systolic blood pressure',
       loincClass: 'CLINICAL'
     },
@@ -296,7 +332,9 @@ async function seedLOINCCodes() {
       loincNumber: '8462-4',
       component: 'Diastolic blood pressure',
       property: 'Pres',
+      timeAspect: 'Pt',
       system: 'Arterial',
+      scale: 'Qn',
       longCommonName: 'Diastolic blood pressure',
       loincClass: 'CLINICAL'
     },
@@ -304,7 +342,9 @@ async function seedLOINCCodes() {
       loincNumber: '29463-7',
       component: 'Body weight',
       property: 'Mass',
+      timeAspect: 'Pt',
       system: 'Patient',
+      scale: 'Qn',
       longCommonName: 'Body weight',
       loincClass: 'CLINICAL'
     },
@@ -312,7 +352,9 @@ async function seedLOINCCodes() {
       loincNumber: '39156-5',
       component: 'Body mass index',
       property: 'Ratio',
+      timeAspect: 'Pt',
       system: 'Patient',
+      scale: 'Qn',
       longCommonName: 'Body mass index (BMI) [Ratio]',
       loincClass: 'CLINICAL'
     },
