@@ -307,9 +307,6 @@ importers:
       '@holi/utils':
         specifier: workspace:^
         version: link:../../packages/utils
-      '@prisma/client':
-        specifier: ^5.9.0
-        version: 5.22.0(prisma@5.22.0)
       '@radix-ui/react-avatar':
         specifier: ^1.0.4
         version: 1.1.10(@types/react-dom@18.2.18)(@types/react@18.2.46)(react-dom@18.3.1)(react@18.3.1)
@@ -424,9 +421,6 @@ importers:
       pino-pretty:
         specifier: ^10.3.1
         version: 10.3.1
-      prisma:
-        specifier: ^5.9.0
-        version: 5.22.0
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -506,6 +500,9 @@ importers:
       '@playwright/test':
         specifier: ^1.56.1
         version: 1.56.1
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
       '@types/canvas-confetti':
         specifier: ^1.9.0
         version: 1.9.0
@@ -548,6 +545,9 @@ importers:
       postcss:
         specifier: ^8
         version: 8.5.6
+      prisma:
+        specifier: ^5.22.0
+        version: 5.22.0
       tailwindcss:
         specifier: ^3.3.0
         version: 3.4.18(tsx@4.20.6)
@@ -5606,7 +5606,6 @@ packages:
         optional: true
     dependencies:
       prisma: 5.22.0
-    dev: false
 
   /@prisma/debug@5.22.0:
     resolution: {integrity: sha512-AUt44v3YJeggO2ZU5BkXI7M4hu9BF2zzH2iF2V5pyXT/lRTyWiElZ7It+bRH1EshoMRxHgpYg4VB6rCM+mG5jQ==}

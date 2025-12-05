@@ -707,27 +707,28 @@ model Patient {
   updatedAt DateTime @updatedAt
 
   // Relations
-  patientUser    PatientUser?
-  preferences    PatientPreferences?
-  medications    Medication[]
-  appointments   Appointment[]
-  consents       Consent[]
-  documents      Document[]
-  clinicalNotes  ClinicalNote[]
-  prescriptions  Prescription[]
-  scribeSessions ScribeSession[]
-  soapNotes      SOAPNote[]
-  messages       Message[]
-  healthMetrics  HealthMetric[]
-  documentShares DocumentShare[]
-  formInstances  FormInstance[]
-  labResults     LabResult[]
-  imagingStudies ImagingStudy[]
-  grantedAccess  DataAccessGrant[]   @relation("PatientAccess")
-  receivedAccess DataAccessGrant[]   @relation("GrantedToUser")
-  invoices       Invoice[]
-  payments       Payment[]
-  aiUsageLogs    AIUsageLog[]
+  patientUser      PatientUser?
+  preferences      PatientPreferences?
+  medications      Medication[]
+  appointments     Appointment[]
+  consents         Consent[]
+  deletionRequests DeletionRequest[]
+  documents        Document[]
+  clinicalNotes    ClinicalNote[]
+  prescriptions    Prescription[]
+  scribeSessions   ScribeSession[]
+  soapNotes        SOAPNote[]
+  messages         Message[]
+  healthMetrics    HealthMetric[]
+  documentShares   DocumentShare[]
+  formInstances    FormInstance[]
+  labResults       LabResult[]
+  imagingStudies   ImagingStudy[]
+  grantedAccess    DataAccessGrant[] @relation("PatientAccess")
+  receivedAccess   DataAccessGrant[] @relation("GrantedToUser")
+  invoices         Invoice[]
+  payments         Payment[]
+  aiUsageLogs      AIUsageLog[]
 
   // Palliative care relations
   carePlans                 CarePlan[]
@@ -1216,6 +1217,47 @@ enum ConsentType {
   PROCEDURE
   PHOTOGRAPHY
   CUSTOM
+}
+
+// ============================================================================
+// DELETION REQUESTS (GDPR/LGPD Compliance)
+// ============================================================================
+
+model DeletionRequest {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Request details
+  requestedAt DateTime @default(now())
+  requestedBy String // User ID or email who initiated the request
+  reason      String?  @db.Text
+  status      DeletionRequestStatus @default(PENDING)
+
+  // Processing
+  processedAt   DateTime?
+  processedBy   String? // User ID who processed the request
+  completedAt   DateTime?
+  rejectedAt    DateTime?
+  rejectionNote String?  @db.Text
+
+  // Audit trail
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([status])
+  @@map("deletion_requests")
+}
+
+enum DeletionRequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
 }
 
 // ============================================================================
