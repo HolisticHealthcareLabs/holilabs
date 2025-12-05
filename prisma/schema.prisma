@@ -703,6 +703,9 @@ model Patient {
   organizationId String?
   organization   Organization? @relation("PatientOrganization", fields: [organizationId], references: [id])
 
+  // GDPR/LGPD Deletion
+  deletedAt DateTime? // Soft delete timestamp
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1232,7 +1235,13 @@ model DeletionRequest {
   requestedAt DateTime @default(now())
   requestedBy String // User ID or email who initiated the request
   reason      String?  @db.Text
-  status      DeletionRequestStatus @default(PENDING)
+  legalBasis  String?  @db.Text // GDPR/LGPD legal basis for deletion
+  status      DeletionRequestStatus @default(PENDING_CONFIRMATION)
+
+  // Confirmation workflow
+  confirmationToken    String?   @unique // Token sent to user email for confirmation
+  confirmationDeadline DateTime? // Deadline for user to confirm
+  confirmedAt          DateTime? // When user confirmed the deletion
 
   // Processing
   processedAt   DateTime?
@@ -1250,14 +1259,17 @@ model DeletionRequest {
 
   @@index([patientId])
   @@index([status])
+  @@index([confirmationToken])
   @@map("deletion_requests")
 }
 
 enum DeletionRequestStatus {
-  PENDING
+  PENDING_CONFIRMATION
+  CONFIRMED
   IN_PROGRESS
   COMPLETED
   REJECTED
+  EXPIRED
 }
 
 // ============================================================================
