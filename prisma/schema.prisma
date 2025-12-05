@@ -31,6 +31,20 @@ model User {
   licenseNumber String?
   npi           String? // National Provider Identifier (US only)
 
+  // RNDS BRProfissional (Brazilian Ministry of Health)
+  cboCode        String? @db.VarChar(6) // Classificação Brasileira de Ocupações
+  cnesCode       String? @db.VarChar(7) // CNES where they practice
+  cpf            String? @unique @db.VarChar(11) // CPF do profissional
+  fhirResourceId String? @unique // RNDS Practitioner ID
+
+  // ICP-Brasil certificate
+  icpBrasilCertificateId String?
+  icpBrasilCertificate   ICPBrasilCertificate? @relation(fields: [icpBrasilCertificateId], references: [id])
+
+  // Organization
+  organizationId String?
+  organization   Organization? @relation("OrganizationPractitioners", fields: [organizationId], references: [id])
+
   // Security
   mfaEnabled  Boolean   @default(false)
   lastLoginAt DateTime?
@@ -77,6 +91,10 @@ model User {
 
   @@index([email])
   @@index([walletAddress])
+  @@index([cpf])
+  @@index([cboCode])
+  @@index([fhirResourceId])
+  @@index([organizationId])
   @@map("users")
 }
 
@@ -342,6 +360,10 @@ model HealthMetric {
   value      Json // Flexible structure based on metric type
   unit       String? // e.g., "kg", "mmHg", "mg/dL"
 
+  // LOINC standardization for interoperability
+  loincCode      String? // FK to LoincCode for standardized observations
+  loincReference LoincCode? @relation(fields: [loincCode], references: [loincNumber])
+
   // Timing
   recordedAt DateTime // When the measurement was taken
 
@@ -367,6 +389,7 @@ model HealthMetric {
   @@index([metricType])
   @@index([recordedAt])
   @@index([flaggedForReview])
+  @@index([loincCode])
   @@map("health_metrics")
 }
 
@@ -672,6 +695,14 @@ model Patient {
   assignedClinicianId String?
   assignedClinician   User?   @relation(fields: [assignedClinicianId], references: [id])
 
+  // ========================================================================
+  // WEB2 INTEROPERABILITY (RNDS/TISS/IPS)
+  // ========================================================================
+
+  // Organization affiliation (for RNDS BRPatient)
+  organizationId String?
+  organization   Organization? @relation("PatientOrganization", fields: [organizationId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -712,6 +743,14 @@ model Patient {
   noShowHistory         NoShowHistory[]
   waitingList           WaitingList[]
 
+  // ========================================================================
+  // WEB2 INTEROPERABILITY RELATIONS (IPS Clinical Sections)
+  // ========================================================================
+  diagnoses               Diagnosis[]
+  immunizations           Immunization[]
+  procedures              ProcedureRecord[]
+  insuranceAuthorizations InsuranceAuthorization[]
+
   @@index([mrn])
   @@index([tokenId])
   @@index([blockchainId])
@@ -719,6 +758,7 @@ model Patient {
   @@index([cns])
   @@index([cpf])
   @@index([isPalliativeCare])
+  @@index([organizationId])
   @@map("patients")
 }
 
@@ -888,7 +928,9 @@ model LabResult {
 
   // Lab details
   testName       String
-  testCode       String? // LOINC code
+  testCode       String? // LOINC code (legacy field, use loincCode relation)
+  loincCode      String? // FK to LoincCode for standardized lab tests
+  loincReference LoincCode? @relation(fields: [loincCode], references: [loincNumber])
   category       String? // e.g., "Hematology", "Chemistry", "Microbiology"
   orderingDoctor String?
   performingLab  String?
@@ -925,6 +967,7 @@ model LabResult {
   @@index([status])
   @@index([isAbnormal])
   @@index([isCritical])
+  @@index([loincCode])
   @@map("lab_results")
 }
 
@@ -986,6 +1029,11 @@ model ImagingStudy {
 
   // Privacy - Who can see this?
   accessGrants DataAccessGrant[]
+
+  // ========================================================================
+  // DICOM HIERARCHY (PACS Integration)
+  // ========================================================================
+  dicomSeries DicomSeries[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1089,6 +1137,11 @@ model Prescription {
   signatureData   String   @db.Text // Encrypted signature or PIN hash
   signedAt        DateTime @default(now())
 
+  // ICP-Brasil digital signature (Brazilian legal requirement)
+  icpBrasilCertificateId String? // FK to ICPBrasilCertificate
+  icpBrasilCertificate   ICPBrasilCertificate? @relation("ICPBrasilPrescriptions", fields: [icpBrasilCertificateId], references: [id])
+  icpBrasilSignature     String? @db.Text // CMS/PKCS#7 signature
+
   // Status
   status         PrescriptionStatus @default(PENDING)
   sentToPharmacy Boolean            @default(false)
@@ -1102,6 +1155,7 @@ model Prescription {
   @@index([clinicianId])
   @@index([prescriptionHash])
   @@index([txHash])
+  @@index([icpBrasilCertificateId])
   @@map("prescriptions")
 }
 
@@ -2362,8 +2416,9 @@ model Invoice {
   cfdiPaymentMethod String?    @default("PUE") // Método de pago (PUE = Pago en una sola exhibición)
 
   // Relations
-  lineItems InvoiceLineItem[]
-  payments  Payment[]
+  lineItems             InvoiceLineItem[]
+  payments              Payment[]
+  insuranceAuthorization InsuranceAuthorization? // TISS insurance authorization
 
   // Audit
   createdAt DateTime @default(now())
@@ -2412,9 +2467,15 @@ model InvoiceLineItem {
   taxable     Boolean @default(true)
 
   // CPT/ICD codes for insurance billing
-  cptCode   String? // Current Procedural Terminology code
-  icd10Code String? // ICD-10 diagnosis code
+  cptCode   String? // Current Procedural Terminology code (US)
   hcpcsCode String? // HCPCS code (US)
+
+  // Brazilian medical codes (TISS compliance)
+  cbhpmCode String? // CBHPM (Brazilian medical procedure code)
+
+  // ICD-10 diagnosis code with FK
+  icd10Code      String? // ICD-10 diagnosis code
+  icd10Reference ICD10Code? @relation(fields: [icd10Code], references: [code])
 
   // Metadata
   notes       String?   @db.Text
@@ -2426,6 +2487,8 @@ model InvoiceLineItem {
   updatedAt DateTime @updatedAt
 
   @@index([invoiceId])
+  @@index([icd10Code])
+  @@index([cbhpmCode])
   @@map("invoice_line_items")
 }
 
@@ -2837,6 +2900,10 @@ model Allergy {
   allergyType AllergyType
   category    AllergyCategory? // MEDICATION, FOOD, ENVIRONMENTAL, etc.
 
+  // SNOMED standardization for interoperability
+  snomedAllergenCode String? // FK to SnomedConcept for standardized allergens
+  snomedAllergen     SnomedConcept? @relation("AllergenConcept", fields: [snomedAllergenCode], references: [sctid])
+
   // Severity and reaction
   severity  AllergySeverity
   reactions String[] // e.g., ["Hives", "Anaphylaxis", "Rash"]
@@ -2866,6 +2933,7 @@ model Allergy {
   @@index([patientId])
   @@index([isActive])
   @@index([allergyType])
+  @@index([snomedAllergenCode])
   @@map("allergies")
 }
 
@@ -3994,4 +4062,663 @@ enum AnnotationType {
   CIRCLE // Circle annotation
   RECTANGLE // Rectangle annotation
   FREEHAND // Freehand drawing
+}
+
+// ============================================================================
+// WEB2 INTEROPERABILITY FOUNDATION (RNDS/TISS/IPS)
+// Added: 2025-12-05 - Principal Infrastructure Architect Audit
+// ============================================================================
+
+// ============================================================================
+// ORGANIZATION (RNDS BROrganizacao - Brazilian Ministry of Health)
+// ============================================================================
+
+model Organization {
+  id String @id @default(cuid())
+
+  // Brazilian identifiers (CRITICAL for RNDS)
+  cnesCode     String  @unique @db.VarChar(7) // CNES - Cadastro Nacional de Estabelecimentos de Saúde
+  cnpj         String  @unique @db.VarChar(14) // CNPJ - Cadastro Nacional da Pessoa Jurídica
+  razaoSocial  String // Legal name
+  nomeFantasia String? // Trade name
+
+  // RNDS integration
+  fhirResourceId String?    @unique // RNDS-assigned Organization ID
+  rndsStatus     RNDSStatus @default(NOT_SYNCED)
+  lastRNDSSync   DateTime?
+
+  // Address (RNDS requires full address)
+  street           String
+  number           String
+  complement       String?
+  neighborhood     String
+  city             String
+  state            String  @db.VarChar(2) // UF (e.g., "SP", "RJ")
+  postalCode       String  @db.VarChar(8) // CEP
+  municipalityCode String  @db.VarChar(7) // IBGE municipality code
+
+  // Contact
+  phone   String?
+  email   String?
+  website String?
+
+  // Type
+  organizationType OrgType @default(CLINIC)
+
+  // Relations
+  practitioners              User[]                      @relation("OrganizationPractitioners")
+  patients                   Patient[]                   @relation("PatientOrganization")
+  icpBrasilCertificates      ICPBrasilCertificate[]
+  insuranceAuthorizations    InsuranceAuthorization[]
+  rndsExchangeLogs           RNDSExchangeLog[]
+  dicomSeries                DicomSeries[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cnesCode])
+  @@index([cnpj])
+  @@index([rndsStatus])
+  @@map("organizations")
+}
+
+enum OrgType {
+  HOSPITAL
+  CLINIC
+  LABORATORY
+  IMAGING_CENTER
+  PHARMACY
+  PUBLIC_HEALTH_UNIT
+  DIAGNOSTIC_CENTER
+}
+
+enum RNDSStatus {
+  NOT_SYNCED
+  SYNCING
+  SYNCED
+  ERROR
+  PENDING_APPROVAL
+}
+
+// ============================================================================
+// ICP-BRASIL CERTIFICATE (Digital Signature - Legal Requirement)
+// ============================================================================
+
+model ICPBrasilCertificate {
+  id String @id @default(cuid())
+
+  // Organization ownership
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Certificate details
+  certificateType CertificateType // A1 (software) or A3 (hardware token)
+  subjectCN       String // Common Name (practitioner/org name)
+  subjectCPF      String          @db.VarChar(11) // CPF do titular
+  issuerName      String // Certification Authority (e.g., "Serasa", "Certisign")
+  serialNumber    String          @unique
+
+  // Validity
+  notBefore DateTime
+  notAfter  DateTime
+  isExpired Boolean  @default(false)
+
+  // Certificate data (PEM-encoded, public cert only - NEVER store private key)
+  certificatePEM String @db.Text
+
+  // Usage tracking
+  lastUsedAt DateTime?
+  usageCount Int       @default(0)
+
+  // Metadata
+  uploadedAt DateTime @default(now())
+  revokedAt  DateTime?
+
+  // Relations
+  users             User[]
+  rndsExchangeLogs  RNDSExchangeLog[]
+  prescriptions     Prescription[]        @relation("ICPBrasilPrescriptions")
+
+  @@index([subjectCPF])
+  @@index([serialNumber])
+  @@index([notAfter])
+  @@index([isExpired])
+  @@map("icp_brasil_certificates")
+}
+
+enum CertificateType {
+  A1 // Valid for 1 year, software-based
+  A3 // Valid for 3 years, hardware token (USB/smart card)
+}
+
+// ============================================================================
+// RNDS EXCHANGE LOG (Ministry of Health Audit Trail)
+// ============================================================================
+
+model RNDSExchangeLog {
+  id String @id @default(cuid())
+
+  // Organization context
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Resource identification
+  resourceType   String // "Patient", "Observation", "MedicationRequest", etc.
+  resourceId     String // Internal ID
+  rndsResourceId String? // RNDS-assigned ID
+
+  // Operation
+  operation RNDSOperation
+  direction RNDSDirection
+
+  // FHIR payload
+  fhirPayload Json // Complete FHIR R4 JSON
+  fhirVersion String  @default("4.0.1")
+
+  // Response
+  statusCode   Int
+  success      Boolean
+  errorMessage String? @db.Text
+  errorCode    String? // RNDS-specific error code
+
+  // Security (ICP-Brasil signature)
+  signature         String? @db.Text // Digital signature
+  certificateId     String?
+  certificate       ICPBrasilCertificate? @relation(fields: [certificateId], references: [id])
+  certificateSerial String? // Certificate serial for audit
+
+  // Audit
+  userId    String?
+  ipAddress String?
+  userAgent String? @db.Text
+
+  // Timing
+  requestedAt DateTime @default(now())
+  completedAt DateTime?
+  durationMs  Int? // Latency tracking
+
+  @@index([organizationId])
+  @@index([resourceType, resourceId])
+  @@index([rndsResourceId])
+  @@index([operation, direction])
+  @@index([requestedAt])
+  @@index([success])
+  @@index([certificateId])
+  @@map("rnds_exchange_logs")
+}
+
+enum RNDSOperation {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  SEARCH
+}
+
+enum RNDSDirection {
+  OUTBOUND // Holi → RNDS
+  INBOUND // RNDS → Holi
+}
+
+// ============================================================================
+// TISS INSURANCE AUTHORIZATION (Guia - Private Insurance Billing)
+// ============================================================================
+
+model InsuranceAuthorization {
+  id String @id @default(cuid())
+
+  // Organization context
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Guia identification
+  guiaNumber     String   @unique // Número da guia
+  guiaType       GuiaType
+  insurerANSCode String   @db.VarChar(6) // Código ANS da operadora (6 digits)
+  insurerName    String
+
+  // Patient
+  patientId           String
+  patient             Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  beneficiaryNumber   String // Número da carteirinha
+  beneficiaryPlanCode String? // Código do plano
+
+  // Authorization
+  authorizationNumber String? // Senha/número de autorização
+  authorizationDate   DateTime?
+  expirationDate      DateTime?
+  status              AuthorizationStatus @default(PENDING)
+
+  // Clinical
+  requestingDoctorCRM String // CRM do médico solicitante
+  performingDoctorCRM String? // CRM do médico executante
+  indication          String? @db.Text // Indicação clínica
+  cid10Code           String? // CID-10 principal
+
+  // Procedures authorized
+  authorizedProcedures Json // Array of { cbhpmCode, description, quantity, unitValue }
+
+  // Financials (stored in cents)
+  authorizedAmount Int // Valor autorizado
+
+  // Linkages
+  invoiceId String?  @unique
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+
+  // TISS XML exchange
+  tissXmlSent     String?   @db.Text // XML da guia enviada
+  tissXmlResponse String?   @db.Text // XML da resposta da operadora
+  tissSentAt      DateTime?
+  tissResponseAt  DateTime?
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([patientId])
+  @@index([guiaNumber])
+  @@index([insurerANSCode])
+  @@index([status])
+  @@index([authorizationDate])
+  @@map("insurance_authorizations")
+}
+
+enum GuiaType {
+  CONSULTA // Guia de consulta
+  SP_SADT // Guia de serviço/procedimento
+  INTERNACAO // Guia de internação
+  URGENCIA // Guia de urgência/emergência
+  HONORARIOS // Guia de honorários individuais
+}
+
+enum AuthorizationStatus {
+  PENDING
+  AUTHORIZED
+  DENIED
+  CANCELLED
+  USED
+  EXPIRED
+  PARTIALLY_USED
+}
+
+// ============================================================================
+// TERMINOLOGY REFERENCE TABLES (LOINC, SNOMED CT, ICD-10)
+// ============================================================================
+
+// LOINC (Logical Observation Identifiers Names and Codes)
+// Used for: Lab tests, vital signs, clinical observations
+model LoincCode {
+  loincNumber String @id @db.VarChar(10) // e.g., "2085-9"
+
+  // Core components (LOINC 6-part structure)
+  component   String // e.g., "HDL Cholesterol"
+  property    String // e.g., "MCnc" (Mass Concentration)
+  timeAspect  String // e.g., "Pt" (Point in time)
+  system      String // e.g., "Ser/Plas" (Serum/Plasma)
+  scale       String // e.g., "Qn" (Quantitative)
+  method      String? // e.g., "Enzymatic"
+
+  // Display names
+  longCommonName String @db.Text
+  shortName      String?
+
+  // Classification
+  loincClass String? // e.g., "CHEM" (Chemistry), "HEMA" (Hematology)
+
+  // Status
+  status LoincStatus @default(ACTIVE)
+
+  // Relations
+  labResults    LabResult[]
+  healthMetrics HealthMetric[]
+
+  @@index([component])
+  @@index([loincClass])
+  @@index([status])
+  @@map("loinc_codes")
+}
+
+enum LoincStatus {
+  ACTIVE
+  DEPRECATED
+  DISCOURAGED
+  TRIAL
+}
+
+// SNOMED CT (Systematized Nomenclature of Medicine - Clinical Terms)
+// Used for: Diagnoses, procedures, anatomy, findings
+model SnomedConcept {
+  sctid String @id @db.VarChar(18) // SNOMED CT Identifier (18-digit number)
+
+  // Terms
+  fsn           String @db.Text // Fully Specified Name
+  preferredTerm String @db.Text // Preferred Term (for display)
+  semanticTag   String // e.g., "(finding)", "(disorder)", "(procedure)"
+
+  // Hierarchy
+  parentSctid String? @db.VarChar(18)
+
+  // Status
+  active Boolean @default(true)
+
+  // Relations
+  diagnoses  Diagnosis[]
+  procedures ProcedureRecord[]
+  allergies  Allergy[]           @relation("AllergenConcept")
+
+  @@index([semanticTag])
+  @@index([preferredTerm])
+  @@index([active])
+  @@map("snomed_concepts")
+}
+
+// ICD-10 (International Classification of Diseases, 10th Revision)
+// Used for: Disease coding, mortality/morbidity statistics, billing
+model ICD10Code {
+  code String @id @db.VarChar(8) // e.g., "E11.9"
+
+  // Description
+  description String @db.Text
+
+  // Hierarchy
+  category String // e.g., "E11" (Type 2 diabetes mellitus)
+  chapter  String // e.g., "IV" (Endocrine, nutritional and metabolic diseases)
+
+  // Billing
+  billable Boolean @default(true) // Can this code be used for billing?
+
+  // Relations
+  diagnoses        Diagnosis[]
+  invoiceLineItems InvoiceLineItem[]
+
+  @@index([category])
+  @@index([description])
+  @@index([billable])
+  @@map("icd10_codes")
+}
+
+// ============================================================================
+// IPS CLINICAL MODELS (International Patient Summary)
+// ============================================================================
+
+// Diagnosis / Problem List (IPS Section: Problem List)
+model Diagnosis {
+  id String @id @default(cuid())
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Multi-terminology coding
+  snomedCode    String?
+  snomedConcept SnomedConcept? @relation(fields: [snomedCode], references: [sctid])
+
+  icd10Code String?
+  icd10     ICD10Code? @relation(fields: [icd10Code], references: [code])
+
+  ciap2Code String? @db.VarChar(7) // ICPC-2 for primary care (Brazil uses this)
+
+  // Clinical details
+  display            String                       @db.Text // Human-readable diagnosis
+  clinicalStatus     DiagnosisStatus              @default(ACTIVE)
+  verificationStatus DiagnosisVerificationStatus @default(CONFIRMED)
+
+  // Timing
+  onsetDate     DateTime? // When did it start?
+  abatementDate DateTime? // When did it resolve?
+  recordedDate  DateTime  @default(now())
+
+  // Severity
+  severity Severity?
+
+  // Context
+  notes      String? @db.Text
+  recordedBy String // User ID
+
+  // IPS export flag
+  includedInIPS Boolean @default(true)
+
+  // Content integrity (uses canonical-serializer)
+  contentHash String? // SHA-256 of canonical JSON
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([snomedCode])
+  @@index([icd10Code])
+  @@index([clinicalStatus])
+  @@index([recordedDate])
+  @@map("diagnoses")
+}
+
+enum DiagnosisStatus {
+  ACTIVE
+  RECURRENCE
+  RELAPSE
+  INACTIVE
+  REMISSION
+  RESOLVED
+}
+
+enum DiagnosisVerificationStatus {
+  UNCONFIRMED
+  PROVISIONAL
+  DIFFERENTIAL
+  CONFIRMED
+  REFUTED
+  ENTERED_IN_ERROR
+}
+
+enum Severity {
+  MILD
+  MODERATE
+  SEVERE
+  LIFE_THREATENING
+}
+
+// Immunization (IPS Section: Immunizations)
+model Immunization {
+  id String @id @default(cuid())
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Vaccine
+  vaccineCode String // CVX code (CDC) or WHO ATC code
+  vaccineName String
+
+  // Administration
+  dateAdministered DateTime
+  doseNumber       Int? // e.g., 1 for first dose, 2 for second
+  seriesCompleted  Boolean @default(false)
+
+  // Manufacturer
+  manufacturer   String?
+  lotNumber      String?
+  expirationDate DateTime?
+
+  // Location
+  site  String? // e.g., "Left arm", "Right deltoid"
+  route String? // e.g., "Intramuscular", "Subcutaneous"
+
+  // Provider
+  administeredBy String? // User ID
+  facility       String?
+
+  // Status
+  status ImmunizationStatus @default(COMPLETED)
+
+  // Notes
+  notes     String? @db.Text
+  reactions String? @db.Text // Adverse reactions
+
+  // IPS export
+  includedInIPS Boolean @default(true)
+
+  // Content integrity
+  contentHash String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([vaccineCode])
+  @@index([dateAdministered])
+  @@index([status])
+  @@map("immunizations")
+}
+
+enum ImmunizationStatus {
+  COMPLETED
+  NOT_DONE
+  ENTERED_IN_ERROR
+}
+
+// Procedure Record (IPS Section: History of Procedures)
+model ProcedureRecord {
+  id String @id @default(cuid())
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Codes
+  snomedCode    String?
+  snomedConcept SnomedConcept? @relation(fields: [snomedCode], references: [sctid])
+
+  cbhpmCode String? @db.VarChar(10) // Brazilian procedure code (CBHPM)
+
+  // Procedure details
+  display String        @db.Text
+  status  ProcedureStatus @default(COMPLETED)
+
+  // Timing
+  performedDate DateTime
+
+  // Performers
+  performedBy String // User ID
+  assistants  String[] // Array of User IDs
+
+  // Location
+  bodySite           String? // e.g., "Left knee"
+  bodySiteSnomedCode String? // SNOMED code for body site
+
+  // Outcome
+  outcome       String? @db.Text
+  complications String? @db.Text
+
+  // Documentation
+  report String? @db.Text
+
+  // Linkage
+  appointmentId String?
+
+  // IPS export
+  includedInIPS Boolean @default(true)
+
+  // Content integrity
+  contentHash String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([snomedCode])
+  @@index([performedDate])
+  @@index([status])
+  @@map("procedure_records")
+}
+
+enum ProcedureStatus {
+  PREPARATION
+  IN_PROGRESS
+  NOT_DONE
+  ON_HOLD
+  STOPPED
+  COMPLETED
+  ENTERED_IN_ERROR
+  UNKNOWN
+}
+
+// ============================================================================
+// DICOM SERIES & INSTANCE (PACS-Ready Hierarchy)
+// ============================================================================
+
+model DicomSeries {
+  id String @id @default(cuid())
+
+  // Parent study
+  imagingStudyId String
+  imagingStudy   ImagingStudy @relation(fields: [imagingStudyId], references: [id], onDelete: Cascade)
+
+  // Organization (performing facility)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  // DICOM identifiers (CRITICAL for PACS interop)
+  seriesInstanceUID String @unique // DICOM Series Instance UID
+  seriesNumber      Int?
+
+  // Metadata
+  modality          String // CT, MR, XR, US, etc.
+  seriesDescription String?
+  bodyPartExamined  String?
+  laterality        String? // LEFT, RIGHT, BILATERAL
+
+  // Acquisition
+  seriesDate DateTime?
+  seriesTime String?
+
+  // Protocol
+  protocolName String?
+
+  // Equipment
+  manufacturer String?
+  modelName    String?
+  stationName  String?
+
+  // Relations
+  instances DicomInstance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([imagingStudyId])
+  @@index([seriesInstanceUID])
+  @@index([modality])
+  @@index([organizationId])
+  @@map("dicom_series")
+}
+
+model DicomInstance {
+  id String @id @default(cuid())
+
+  // Parent series
+  seriesId String
+  series   DicomSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  // DICOM identifiers
+  sopInstanceUID String @unique // DICOM SOP Instance UID
+  sopClassUID    String // DICOM IOD (Information Object Definition)
+  instanceNumber Int?
+
+  // Storage
+  imageUrl     String @db.Text // R2/S3 URL
+  thumbnailUrl String? @db.Text
+
+  // Metadata
+  rows          Int?
+  columns       Int?
+  bitsAllocated Int?
+
+  // File
+  fileSize       BigInt?
+  transferSyntax String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([seriesId])
+  @@index([sopInstanceUID])
+  @@map("dicom_instances")
 }
