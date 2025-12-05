@@ -4,11 +4,13 @@
  *
  * GET /api/patients/[id]/preferences - Get preferences
  * PUT /api/patients/[id]/preferences - Update preferences
+ *
+ * @compliance Phase 2.4: Security Hardening - IDOR Protection
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 // Force dynamic rendering
@@ -58,6 +60,16 @@ export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     const { id } = context.params;
 
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, id);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { success: false, error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     // Check if patient exists
     const patient = await prisma.patient.findUnique({
       where: { id },
@@ -104,6 +116,17 @@ export const GET = createProtectedRoute(
 export const PUT = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     const { id } = context.params;
+
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, id);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { success: false, error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const validated = UpdatePreferencesSchema.parse(body);
 

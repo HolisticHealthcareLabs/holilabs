@@ -27,7 +27,20 @@ export type AuditAction =
   | 'PRESCRIBE'
   | 'SIGN'
   | 'REVOKE'
-  | 'NOTIFY';
+  | 'ROLLBACK'
+  | 'OPT_OUT'
+  | 'ACCESS'
+  | 'VIEW'
+  | 'NOTIFY'
+  | 'DOCUMENT_UPLOADED'
+  | 'SECURITY_ALERT'
+  | 'CREATE_GRANULAR_ACCESS_GRANT'
+  | 'REVOKE_GRANULAR_ACCESS_GRANT'
+  | 'EXPIRE_CONSENT'
+  | 'SEND_CONSENT_REMINDER'
+  | 'UPGRADE_CONSENT_VERSION'
+  | 'CONSENT_UPDATE_NOTIFIED'
+  | 'GRANT_DEFAULT_CONSENT';
 
 export interface AuditLogData {
   action: AuditAction;

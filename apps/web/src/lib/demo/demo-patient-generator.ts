@@ -141,13 +141,24 @@ export async function createDemoPatient(config: DemoPatientConfig): Promise<Pati
   };
 
   const patientData = scenarios[scenario];
+  const {
+    allergies: _allergies,
+    chronicConditions: _chronicConditions,
+    currentMedications: _currentMedications,
+    ...patientFields
+  } = patientData;
 
   // Create demo patient
+  const timestamp = Date.now();
+  const demoMrn = `DEMO-${timestamp}-${Math.floor(Math.random() * 1000)}`;
+  const demoToken = `TOKEN-${timestamp}-${Math.floor(Math.random() * 1000)}`;
+
   const patient = await prisma.patient.create({
     data: {
-      ...patientData,
-      providerId: userId,
-      isDemo: true, // Mark as demo patient
+      ...patientFields,
+      assignedClinicianId: userId,
+      mrn: demoMrn,
+      tokenId: demoToken,
     },
   });
 
@@ -169,6 +180,8 @@ export async function createDemoPatient(config: DemoPatientConfig): Promise<Pati
 }
 
 async function createDemoSOAPNote(patientId: string, userId: string, scenario: string) {
+  const { createHash } = await import('crypto');
+
   const soapNotes = {
     diabetes: {
       chiefComplaint: 'Control de diabetes - revisión trimestral',
@@ -196,7 +209,13 @@ Laboratorio reciente (hace 1 semana):
 5. Control en 3 meses con nuevos laboratorios
 6. Derivar a nutrición para plan alimentario personalizado
 7. Vacuna antigripal anual (pendiente)`,
-      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
+      diagnoses: [
+        { icd10Code: 'E11.9', description: 'Diabetes mellitus tipo 2', isPrimary: true },
+        { icd10Code: 'I10', description: 'Hipertensión arterial esencial', isPrimary: false },
+        { icd10Code: 'E78.5', description: 'Hiperlipidemia', isPrimary: false }
+      ],
+      vitalSigns: { bp: '135/85', hr: '78', temp: '36.5', weight: '78' },
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     },
 
     hypertension: {
@@ -226,7 +245,13 @@ Laboratorio (hace 2 semanas):
 7. Solicitar: Ecocardiograma (último hace 18 meses), MAPA de 24hs
 8. Control en 4 semanas para reevaluar PA
 9. Screening: Colonoscopía (65 años - pendiente)`,
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      diagnoses: [
+        { icd10Code: 'I10', description: 'Hipertensión arterial esencial', isPrimary: true },
+        { icd10Code: 'E78.5', description: 'Hiperlipidemia', isPrimary: false },
+        { icd10Code: 'E66.9', description: 'Obesidad', isPrimary: false }
+      ],
+      vitalSigns: { bp: '142/90', hr: '72', temp: '36.8', weight: '85' },
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     },
 
     preventive: {
@@ -251,7 +276,11 @@ Laboratorio (hoy):
 5. Consejería: mantener estilo de vida saludable, protección solar, autoexamen mamario mensual
 6. Próximo control: 1 año o ante síntomas
 7. Considerar screening colonoscopía a los 45 años`,
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      diagnoses: [
+        { icd10Code: 'Z00.00', description: 'Examen médico general sin queja', isPrimary: true }
+      ],
+      vitalSigns: { bp: '115/75', hr: '68', temp: '36.7', weight: '62' },
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     },
 
     general: {
@@ -269,20 +298,65 @@ Examen físico: BCEG, buen aspecto general. ORL: faringe levemente hiperémica, 
 6. Reposo laboral: 3 días
 7. Control evolutivo: solo si empeoramiento o no mejoría en 7 días
 8. No requiere antibióticos (cuadro viral)`,
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      diagnoses: [
+        { icd10Code: 'J06.9', description: 'Infección aguda de las vías respiratorias superiores', isPrimary: true },
+        { icd10Code: 'J45.20', description: 'Asma leve intermitente', isPrimary: false }
+      ],
+      vitalSigns: { bp: '125/80', hr: '76', temp: '36.9', spo2: '98' },
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
     },
   };
 
   const noteData = soapNotes[scenario as keyof typeof soapNotes];
 
-  await prisma.sOAPNote.create({
+  // Create a ScribeSession first
+  const session = await prisma.scribeSession.create({
     data: {
       patientId,
-      providerId: userId,
-      ...noteData,
-      sessionType: 'CONSULTATION',
+      clinicianId: userId,
       status: 'COMPLETED',
-      isDemo: true,
+      audioDuration: 300, // 5 minutes demo
+      startedAt: noteData.createdAt,
+      endedAt: new Date(noteData.createdAt.getTime() + 300000),
+      processingCompletedAt: new Date(noteData.createdAt.getTime() + 300000),
+    },
+  });
+
+  // Generate hash for blockchain
+  const noteContent = JSON.stringify({
+    patientId,
+    clinicianId: userId,
+    subjective: noteData.subjective,
+    objective: noteData.objective,
+    assessment: noteData.assessment,
+    plan: noteData.plan,
+    createdAt: noteData.createdAt.toISOString(),
+  });
+  const noteHash = createHash('sha256').update(noteContent).digest('hex');
+
+  // Create SOAP note with proper structure
+  await prisma.sOAPNote.create({
+    data: {
+      sessionId: session.id,
+      patientId,
+      clinicianId: userId,
+      noteHash,
+      chiefComplaint: noteData.chiefComplaint,
+      subjective: noteData.subjective,
+      subjectiveConfidence: 0.95,
+      objective: noteData.objective,
+      objectiveConfidence: 0.92,
+      assessment: noteData.assessment,
+      assessmentConfidence: 0.93,
+      plan: noteData.plan,
+      planConfidence: 0.91,
+      overallConfidence: 0.93,
+      vitalSigns: noteData.vitalSigns,
+      diagnoses: noteData.diagnoses,
+      status: 'SIGNED',
+      signedAt: noteData.createdAt,
+      signedBy: userId,
+      signatureMethod: 'digital',
     },
   });
 }
@@ -296,14 +370,15 @@ async function createDemoLabResults(patientId: string, scenario: string) {
       data: {
         patientId,
         testName: 'Hemoglobina A1c (HbA1c)',
-        testDate: oneWeekAgo,
-        resultValue: '7.2',
-        resultUnit: '%',
+        testCode: '4548-4', // LOINC code for HbA1c
+        resultDate: oneWeekAgo,
+        value: '7.2',
+        unit: '%',
         referenceRange: '4.0 - 5.6',
-        status: 'COMPLETED',
+        status: 'FINAL',
         category: 'CHEMISTRY',
         interpretation: 'Valor levemente elevado - indica control glucémico subóptimo en los últimos 3 meses',
-        isDemo: true,
+        isAbnormal: true,
       },
     });
 
@@ -311,14 +386,15 @@ async function createDemoLabResults(patientId: string, scenario: string) {
       data: {
         patientId,
         testName: 'Glucemia en ayunas',
-        testDate: oneWeekAgo,
-        resultValue: '128',
-        resultUnit: 'mg/dL',
+        testCode: '1558-6', // LOINC code for fasting glucose
+        resultDate: oneWeekAgo,
+        value: '128',
+        unit: 'mg/dL',
         referenceRange: '70 - 100',
-        status: 'COMPLETED',
+        status: 'FINAL',
         category: 'CHEMISTRY',
         interpretation: 'Hiperglucemia leve en ayunas',
-        isDemo: true,
+        isAbnormal: true,
       },
     });
   }
@@ -328,14 +404,15 @@ async function createDemoLabResults(patientId: string, scenario: string) {
       data: {
         patientId,
         testName: 'Colesterol LDL',
-        testDate: oneWeekAgo,
-        resultValue: '145',
-        resultUnit: 'mg/dL',
+        testCode: '13457-7', // LOINC code for LDL cholesterol
+        resultDate: oneWeekAgo,
+        value: '145',
+        unit: 'mg/dL',
         referenceRange: '< 100 (alto riesgo CV)',
-        status: 'COMPLETED',
+        status: 'FINAL',
         category: 'CHEMISTRY',
         interpretation: 'Valor por encima de la meta para paciente de alto riesgo cardiovascular',
-        isDemo: true,
+        isAbnormal: true,
       },
     });
   }
@@ -391,32 +468,33 @@ async function createDemoPreventionAlerts(patientId: string, scenario: string) {
     await prisma.preventionPlan.create({
       data: {
         patientId,
-        planName: 'Screening de retinopatía diabética',
-        planType: 'SCREENING_DUE',
-        description: 'Fondo de ojo para detección temprana de retinopatía diabética',
-        clinicalRecommendations: [
-          'Realizar fondo de ojo dilatado anualmente',
-          'Última realización hace 11 meses - vence próximo mes',
-          'Derivar a oftalmología si retinopatía detectada',
+        planName: 'Plan de prevención de complicaciones diabéticas',
+        planType: 'DIABETES',
+        description: 'Screening de retinopatía y nefropatía diabética para prevención de complicaciones',
+        goals: [
+          { goal: 'Realizar fondo de ojo dilatado anualmente', targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), status: 'pending' },
+          { goal: 'Control de microalbuminuria', targetDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), status: 'pending' }
         ],
-        evidenceLevel: 'A - Recomendación fuerte con evidencia de alta calidad',
-        isDemo: true,
-      },
-    });
-
-    await prisma.preventionPlan.create({
-      data: {
-        patientId,
-        planName: 'Screening de nefropatía diabética',
-        planType: 'SCREENING_DUE',
-        description: 'Microalbuminuria anual para detección de nefropatía',
-        clinicalRecommendations: [
-          'Solicitar microalbuminuria en orina de 24hs',
-          'Monitorear creatinina y eGFR cada 6 meses',
-          'Meta: eGFR >60 mL/min/1.73m²',
+        recommendations: [
+          {
+            category: 'screening',
+            intervention: 'Realizar fondo de ojo dilatado anualmente',
+            evidence: 'A - Recomendación fuerte con evidencia de alta calidad',
+            priority: 'high'
+          },
+          {
+            category: 'screening',
+            intervention: 'Solicitar microalbuminuria en orina de 24hs',
+            evidence: 'A - Recomendación fuerte',
+            priority: 'high'
+          }
         ],
-        evidenceLevel: 'A - Recomendación fuerte',
-        isDemo: true,
+        screeningSchedule: {
+          ophthalmology: { frequency: 'annual', nextDue: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() },
+          nephropathy: { frequency: 'biannual', nextDue: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() }
+        },
+        guidelineSource: 'ADA (American Diabetes Association)',
+        evidenceLevel: 'Grade A',
       },
     });
   }
@@ -425,13 +503,17 @@ async function createDemoPreventionAlerts(patientId: string, scenario: string) {
 /**
  * Delete all demo patients for a user
  *
+ * Note: Demo patients are identified by MRN starting with "DEMO-"
+ *
  * @param userId - User ID
  */
 export async function deleteDemoPatients(userId: string) {
   await prisma.patient.deleteMany({
     where: {
-      providerId: userId,
-      isDemo: true,
+      assignedClinicianId: userId,
+      mrn: {
+        startsWith: 'DEMO-',
+      },
     },
   });
 }
@@ -439,14 +521,18 @@ export async function deleteDemoPatients(userId: string) {
 /**
  * Check if user has demo patients
  *
+ * Note: Demo patients are identified by MRN starting with "DEMO-"
+ *
  * @param userId - User ID
  * @returns true if user has demo patients
  */
 export async function hasDemoPatients(userId: string): Promise<boolean> {
   const count = await prisma.patient.count({
     where: {
-      providerId: userId,
-      isDemo: true,
+      assignedClinicianId: userId,
+      mrn: {
+        startsWith: 'DEMO-',
+      },
     },
   });
 

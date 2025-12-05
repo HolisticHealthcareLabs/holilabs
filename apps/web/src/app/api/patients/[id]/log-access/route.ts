@@ -1,31 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { AccessReason } from '@prisma/client';
-import crypto from 'crypto';
-
 /**
  * Log patient data access with LGPD-compliant access reason
  *
  * LGPD Art. 11, II - Tutela da saúde
  * Law 25.326 (Argentina) Art. 5 - Purpose specification
+ * @compliance Phase 2.4: Security Hardening - IDOR Protection
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { AccessReason } from '@prisma/client';
+import crypto from 'crypto';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
+
+/**
+ * POST /api/patients/[id]/log-access
+ * Log access to patient data with LGPD compliance
+ * @security IDOR protection - verifies user has access to patient
+ */
+export const POST = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
+
+    if (!patientId) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: 'Patient ID required' },
+        { status: 400 }
       );
     }
 
-    const patientId = params.id;
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { accessReason, accessPurpose } = body;
 
@@ -81,8 +93,8 @@ export async function POST(
     // Log to audit with access reason (LGPD compliance)
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
-        userEmail: session.user.email || null,
+        userId: context.user!.id,
+        userEmail: context.user!.email || null,
         ipAddress,
         userAgent,
         action: 'READ',
@@ -111,15 +123,9 @@ export async function POST(
         article: 'LGPD Art. 11, II',
       },
     });
-  } catch (error) {
-    console.error('Access logging error:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Failed to log access',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'AUDIT', resource: 'PatientAccess' },
   }
-}
+);

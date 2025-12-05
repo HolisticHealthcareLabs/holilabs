@@ -53,6 +53,69 @@ export default function AdminPage() {
           </div>
         </div>
 
+        {/* Quick Actions */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a
+            href="/dashboard/admin/business-associate-agreement"
+            className="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-3 group"
+          >
+            <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+              <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">BAA Management</div>
+              <div className="text-sm text-gray-600">HIPAA Agreements</div>
+            </div>
+          </a>
+          <a
+            href="/dashboard/admin/audit-logs"
+            className="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-3 group"
+          >
+            <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+              <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">Audit Logs</div>
+              <div className="text-sm text-gray-600">View system logs</div>
+            </div>
+          </a>
+          <a
+            href="/legal/privacy-policy"
+            target="_blank"
+            className="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-3 group"
+          >
+            <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+              <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">Privacy Policy</div>
+              <div className="text-sm text-gray-600">GDPR/LGPD/HIPAA</div>
+            </div>
+          </a>
+          <a
+            href="/legal/data-processing-agreement"
+            target="_blank"
+            className="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-3 group"
+          >
+            <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+              <svg className="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">DPA</div>
+              <div className="text-sm text-gray-600">Data Processing</div>
+            </div>
+          </a>
+        </div>
+
         {/* Settings Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Security & Compliance */}

@@ -23,7 +23,7 @@ import {
   batchDeidentify,
   type DeidentificationResult,
   type HybridDeidentificationConfig,
-} from '@holilabs/deid';
+} from '@holi/deid';
 import { createAuditLog } from '@/lib/audit';
 
 /**

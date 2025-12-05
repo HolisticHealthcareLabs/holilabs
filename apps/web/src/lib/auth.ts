@@ -150,12 +150,27 @@ export const authOptions: NextAuthOptions = {
 
 /**
  * Get user session token for Socket.io authentication
+ * @compliance Phase 2.4: Security Hardening - Proper JWT signing
  */
 export async function getUserSessionToken(userId: string): Promise<string | null> {
   try {
-    // For JWT strategy, we'll need to generate a token
-    // This is a simplified version - in production, use proper JWT signing
-    const token = Buffer.from(JSON.stringify({ userId, type: 'CLINICIAN' })).toString('base64');
+    const { SignJWT } = await import('jose');
+
+    // Get JWT secret from environment - REQUIRED
+    const jwtSecretString = process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET;
+    if (!jwtSecretString) {
+      throw new Error('CRITICAL: JWT secret not configured. Set NEXTAUTH_SECRET or SESSION_SECRET');
+    }
+
+    const secret = new TextEncoder().encode(jwtSecretString);
+
+    // Generate signed JWT token with expiration
+    const token = await new SignJWT({ userId, type: 'CLINICIAN' })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('1h')
+      .setIssuedAt()
+      .sign(secret);
+
     return token;
   } catch (error) {
     logger.error({
@@ -169,6 +184,7 @@ export async function getUserSessionToken(userId: string): Promise<string | null
 
 /**
  * Verify Socket.io authentication token
+ * @compliance Phase 2.4: Security Hardening - Remove fallback secrets
  */
 export async function verifySocketToken(token: string): Promise<{ userId: string; userType: 'CLINICIAN' | 'PATIENT' } | null> {
   try {
@@ -177,9 +193,14 @@ export async function verifySocketToken(token: string): Promise<{ userId: string
       // This looks like a JWT token - likely from patient session
       try {
         const { jwtVerify } = await import('jose');
-        const JWT_SECRET = new TextEncoder().encode(
-          process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET || 'fallback-secret'
-        );
+
+        // Get JWT secret from environment - REQUIRED
+        const jwtSecretString = process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET;
+        if (!jwtSecretString) {
+          throw new Error('CRITICAL: JWT secret not configured. Set NEXTAUTH_SECRET or SESSION_SECRET');
+        }
+
+        const JWT_SECRET = new TextEncoder().encode(jwtSecretString);
 
         const { payload } = await jwtVerify(token, JWT_SECRET);
 

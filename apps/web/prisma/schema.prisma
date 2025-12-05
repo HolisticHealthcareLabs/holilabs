@@ -84,6 +84,11 @@ model User {
   referredUsers   Referral[]       @relation("ReferredUsers")
   referralRewards ReferralReward[] @relation("ReferralRewards")
 
+  // AI Quality Control (Phase 2.3)
+  aiContentFeedback      AIContentFeedback[]
+  aiQualityMetrics       AIQualityMetrics[]
+  manualReviewQueueItems ManualReviewQueueItem[]
+
   @@index([email])
   @@index([walletAddress])
   @@map("users")
@@ -700,6 +705,10 @@ model Patient {
   assignedClinicianId String?
   assignedClinician   User?   @relation(fields: [assignedClinicianId], references: [id])
 
+  // GDPR/LGPD Right to Be Forgotten (Priority 3: Legal Compliance)
+  deletedAt      DateTime? // Soft delete timestamp
+  deletionReason String? // Reason for deletion (GDPR_ARTICLE_17, etc.)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -745,6 +754,13 @@ model Patient {
   riskScores      RiskScore[]
   nutritionPlans  NutritionPlan[]
   exercisePlans   ExercisePlan[]
+
+  // AI Quality Control (Phase 2.3)
+  aiContentFeedback      AIContentFeedback[]
+  manualReviewQueueItems ManualReviewQueueItem[]
+
+  // GDPR/LGPD Compliance (Priority 3: Legal Compliance)
+  deletionRequests DeletionRequest[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -795,6 +811,9 @@ model Medication {
 
   @@index([patientId])
   @@index([isActive])
+  // Composite indexes for query optimization (Priority 2: SQL Performance)
+  @@index([patientId, isActive, startDate])
+  @@index([prescribedBy, startDate])
   @@map("medications")
 }
 
@@ -1178,6 +1197,13 @@ model Consent {
   revokedAt     DateTime?
   revokedReason String?   @db.Text
 
+  // Expiration
+  expiresAt DateTime? // Optional expiration date
+
+  // Reminder tracking
+  reminderSent   Boolean   @default(false)
+  reminderSentAt DateTime?
+
   // Audit
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1185,6 +1211,8 @@ model Consent {
   @@index([patientId])
   @@index([consentHash])
   @@index([txHash])
+  @@index([expiresAt])
+  @@index([reminderSent])
   @@map("consents")
 }
 
@@ -1195,7 +1223,66 @@ enum ConsentType {
   SURGERY
   PROCEDURE
   PHOTOGRAPHY
+  RECORDING
+  APPOINTMENT_REMINDERS
+  MEDICATION_REMINDERS
+  WELLNESS_TIPS
   CUSTOM
+}
+
+// ============================================================================
+// GDPR/LGPD RIGHT TO BE FORGOTTEN (Priority 3: Legal Compliance)
+// ============================================================================
+
+model DeletionRequest {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Request details
+  status               DeletionRequestStatus @default(PENDING_CONFIRMATION)
+  requestedAt          DateTime              @default(now())
+  confirmationToken    String                @unique @default(cuid())
+  confirmationDeadline DateTime // 30 days from request
+  confirmedAt          DateTime?
+
+  // Deletion execution
+  scheduledDeletionAt DateTime? // When deletion will occur (after 30-day cooling period)
+  executedAt          DateTime?
+  executedBy          String? // User ID who executed deletion
+
+  // Compliance tracking
+  reason             String? @db.Text // User-provided reason
+  legalBasis         String? // "GDPR_ARTICLE_17", "LGPD_ARTICLE_18", "CCPA"
+  ipAddress          String? // IP of request origin
+  userAgent          String? @db.Text
+  confirmationIp     String? // IP of confirmation
+  confirmationMethod String? // "email", "portal", "in_person"
+
+  // Cancellation
+  cancelledAt        DateTime?
+  cancellationReason String?   @db.Text
+
+  // Audit trail
+  metadata Json? // Additional compliance metadata
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([status])
+  @@index([confirmationToken])
+  @@index([confirmationDeadline])
+  @@map("deletion_requests")
+}
+
+enum DeletionRequestStatus {
+  PENDING_CONFIRMATION // Awaiting email confirmation
+  CONFIRMED // Confirmed, scheduled for deletion
+  EXECUTING // Currently being processed
+  COMPLETED // Successfully deleted
+  CANCELLED // User cancelled request
+  EXPIRED // Confirmation deadline passed
 }
 
 // ============================================================================
@@ -1273,6 +1360,10 @@ model Appointment {
   @@index([status])
   @@index([confirmationToken])
   @@index([confirmationStatus])
+  // Composite indexes for query optimization (Priority 2: SQL Performance)
+  @@index([patientId, startTime, status])
+  @@index([clinicianId, startTime, status])
+  @@index([startTime, status])
   @@map("appointments")
 }
 
@@ -1551,6 +1642,16 @@ enum AuditAction {
   OPT_OUT // Patient preference opt-out action
   NOTIFY // WhatsApp/Email/SMS notifications
   DOCUMENT_UPLOADED // Document upload action
+  SECURITY_ALERT // Suspicious or high-risk activity detected
+  ACCESS // Portal access events
+  VIEW // Read-only viewing actions
+  CREATE_GRANULAR_ACCESS_GRANT
+  REVOKE_GRANULAR_ACCESS_GRANT
+  EXPIRE_CONSENT
+  SEND_CONSENT_REMINDER
+  UPGRADE_CONSENT_VERSION
+  CONSENT_UPDATE_NOTIFIED
+  GRANT_DEFAULT_CONSENT
 }
 
 // LGPD Art. 6 (Purpose Limitation) + Law 25.326 Art. 5 (Purpose Specification)
@@ -1694,6 +1795,9 @@ model ScribeSession {
   transcription       Transcription?
   soapNote            SOAPNote?
   transcriptionErrors TranscriptionError[]
+
+  // AI Quality Control (Phase 2.3)
+  aiContentFeedback AIContentFeedback[]
 
   // Metadata
   createdAt DateTime @default(now())
@@ -1848,6 +1952,9 @@ model SOAPNote {
   @@index([sessionId])
   @@index([status])
   @@index([createdAt])
+  // Composite indexes for query optimization (Priority 2: SQL Performance)
+  @@index([patientId, createdAt])
+  @@index([clinicianId, createdAt])
   @@map("soap_notes")
 }
 
@@ -2714,10 +2821,10 @@ model ReferralCode {
   code String @unique // e.g., "HOLI-DR-SMITH-X3K2"
 
   // Referral stats
-  timesUsed         Int      @default(0)
-  successfulSignups Int      @default(0)
-  activeReferrals   Int      @default(0) // Users who completed trial
-  rewardsClaimed    Int      @default(0)
+  timesUsed         Int @default(0)
+  successfulSignups Int @default(0)
+  activeReferrals   Int @default(0) // Users who completed trial
+  rewardsClaimed    Int @default(0)
 
   // Reward configuration
   rewardType        ReferralRewardType @default(PREVENTION_UNLOCK)
@@ -2752,10 +2859,10 @@ model Referral {
   refereeUser   User?   @relation("ReferredUsers", fields: [refereeUserId], references: [id], onDelete: SetNull)
 
   // Referral journey
-  status           ReferralStatus @default(INVITED)
-  invitedAt        DateTime       @default(now())
-  signedUpAt       DateTime?
-  completedTrialAt DateTime?
+  status            ReferralStatus @default(INVITED)
+  invitedAt         DateTime       @default(now())
+  signedUpAt        DateTime?
+  completedTrialAt  DateTime?
   convertedToPaidAt DateTime?
 
   // Attribution tracking
@@ -2789,10 +2896,10 @@ model ReferralReward {
   rewardDescription String             @db.Text
 
   // Status
-  status       ReferralRewardStatus @default(PENDING)
-  earnedAt     DateTime             @default(now())
-  claimedAt    DateTime?
-  expiresAt    DateTime?
+  status    ReferralRewardStatus @default(PENDING)
+  earnedAt  DateTime             @default(now())
+  claimedAt DateTime?
+  expiresAt DateTime?
 
   // Which referrals triggered this reward
   triggeringReferralIds String[] // Array of Referral IDs
@@ -4549,4 +4656,270 @@ enum APIKeyAction {
   VALIDATED // API key validation check
   FAILED // API key validation failed
   REVOKED // API key revoked due to security
+}
+
+// ============================================================================
+// AI QUALITY CONTROL - Phase 2.3
+// ============================================================================
+
+// AI Content Feedback
+// Tracks doctor feedback on AI-generated content (SOAP notes, diagnoses, etc.)
+// Used to measure AI accuracy and improve models over time
+model AIContentFeedback {
+  id String @id @default(cuid())
+
+  // Content Reference
+  contentType String // "soap_note", "diagnosis", "prescription", "transcription"
+  contentId   String // ID of the content being rated (e.g., SOAPNote.id)
+  sectionType String? // For SOAP notes: "subjective", "objective", "assessment", "plan"
+
+  // Feedback
+  isCorrect Boolean // true = "This is correct", false = "This is incorrect"
+  rating    Int? // 1-5 star rating (optional)
+
+  // Original vs Edited Content
+  originalText String  @db.Text // AI-generated text
+  editedText   String? @db.Text // Doctor's corrected version (if isCorrect = false)
+  editDistance Int? // Levenshtein distance for ML metrics
+
+  // Confidence Score at Time of Feedback
+  aiConfidence Float? // 0-1, the AI's confidence when it generated this content
+
+  // Clinician who provided feedback
+  clinicianId String
+  clinician   User   @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+
+  // Patient context (optional, for analytics)
+  patientId String?
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  // Session context (for transcription feedback)
+  sessionId String?
+  session   ScribeSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  // Metadata
+  feedbackNotes String? @db.Text // Optional notes from clinician
+  timeToReview  Int? // Milliseconds spent reviewing before feedback
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([clinicianId])
+  @@index([patientId])
+  @@index([contentType])
+  @@index([isCorrect])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("ai_content_feedback")
+}
+
+// AI Sentence Confidence Scores
+// Stores per-sentence confidence scores for AI-generated content
+// Enables highlighting of low-confidence sections for manual review
+model AISentenceConfidence {
+  id String @id @default(cuid())
+
+  // Content Reference
+  contentType String // "soap_note", "diagnosis", "prescription"
+  contentId   String // ID of the content
+  sectionType String? // For SOAP notes: "subjective", "objective", "assessment", "plan"
+
+  // Sentence Details
+  sentenceIndex Int // 0-based index within the section
+  sentenceText  String @db.Text
+
+  // Confidence Metrics
+  confidence  Float // 0-1, overall confidence
+  perplexity  Float? // Language model perplexity score
+  uncertainty Float? // Model uncertainty metric
+
+  // Token-level confidence (for detailed analysis)
+  tokenScores Json? // Array of {token: string, score: float}
+
+  // Model Info
+  model        String // "gemini-pro", "claude-3", etc.
+  modelVersion String? // Specific version for tracking
+
+  // Flags
+  needsReview Boolean   @default(false) // Auto-flagged if confidence < threshold
+  reviewed    Boolean   @default(false) // Has clinician reviewed this?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([contentType, contentId])
+  @@index([confidence])
+  @@index([needsReview])
+  @@index([reviewed])
+  @@map("ai_sentence_confidence")
+}
+
+// AI Quality Metrics (Aggregated)
+// Pre-computed analytics for AI quality dashboard
+// Updated daily via cron job
+model AIQualityMetrics {
+  id String @id @default(cuid())
+
+  // Time Period
+  date       DateTime @unique // Date of metrics (YYYY-MM-DD)
+  periodType String   @default("daily") // "daily", "weekly", "monthly"
+
+  // Clinician (null = clinic-wide metrics)
+  clinicianId String?
+  clinician   User?   @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+
+  // Clinic (for multi-tenant)
+  clinicId String?
+
+  // Accuracy Metrics
+  totalFeedback  Int // Total feedback items received
+  correctCount   Int // Number of "This is correct" responses
+  incorrectCount Int // Number of "This is incorrect" responses
+  accuracyRate   Float // correctCount / totalFeedback (0-1)
+
+  // Confidence Metrics
+  avgConfidence              Float? // Average AI confidence across all content
+  avgConfidenceWhenCorrect   Float? // Average confidence when feedback was positive
+  avgConfidenceWhenIncorrect Float? // Average confidence when feedback was negative
+
+  // Content Type Breakdown (JSON)
+  soapNoteAccuracy      Float? // Accuracy for SOAP notes
+  diagnosisAccuracy     Float? // Accuracy for diagnoses
+  prescriptionAccuracy  Float? // Accuracy for prescriptions
+  transcriptionAccuracy Float? // Accuracy for transcriptions
+
+  // Time Saved Estimates
+  avgTimeToReview    Int? // Average milliseconds to review AI content
+  estimatedTimeSaved Int? // Estimated time saved in minutes
+
+  // Edit Distance Metrics
+  avgEditDistance  Float? // Average Levenshtein distance for corrections
+  minorCorrections Int // Edit distance < 10
+  majorCorrections Int // Edit distance >= 10
+
+  // Common Error Categories (JSON)
+  errorPatterns Json? // Array of {category: string, count: int, examples: string[]}
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([clinicianId])
+  @@index([periodType])
+  @@map("ai_quality_metrics")
+}
+
+// Manual Review Queue
+// Queue of AI-generated content flagged for manual review
+// Prioritized by confidence score and clinical importance
+model ManualReviewQueueItem {
+  id String @id @default(cuid())
+
+  // Content Reference
+  contentType String // "soap_note", "diagnosis", "prescription"
+  contentId   String
+  sectionType String? // For SOAP notes
+
+  // Priority
+  priority   Int   @default(5) // 1-10, higher = more urgent
+  confidence Float // AI confidence (lower = higher priority)
+
+  // Clinical Context
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  clinicianId String // Assigned clinician
+  clinician   User   @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+
+  // Flag Reason
+  flagReason  String // "low_confidence", "high_risk", "new_clinician", "manual_request"
+  flagDetails String? @db.Text
+
+  // Review Status
+  status      ReviewStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  reviewNotes String?      @db.Text
+
+  // Resolution
+  wasCorrect  Boolean? // null = not reviewed yet
+  corrections String?  @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([clinicianId])
+  @@index([patientId])
+  @@index([createdAt])
+  @@map("manual_review_queue")
+}
+
+enum ReviewStatus {
+  PENDING // Waiting for review
+  IN_REVIEW // Currently being reviewed
+  APPROVED // Reviewed and approved
+  CORRECTED // Reviewed and corrected
+  ESCALATED // Escalated to senior clinician
+}
+
+enum FeedbackCategory {
+  ACCURACY // Content accuracy
+  COMPLETENESS // Missing information
+  CLARITY // Unclear or confusing
+  TONE // Inappropriate tone
+  FORMAT // Formatting issues
+  OTHER // Other feedback
+}
+
+// ==============================================================================
+// EMAIL QUEUE SYSTEM
+// ==============================================================================
+
+model EmailQueue {
+  id String @id @default(cuid())
+
+  // Recipients
+  to      String @db.Text // Comma-separated if multiple
+  cc      String? @db.Text
+  bcc     String? @db.Text
+  from    String?
+  replyTo String?
+
+  // Content
+  subject String @db.Text
+  html    String @db.Text
+  text    String? @db.Text
+
+  // Status
+  status     EmailQueueStatus @default(PENDING)
+  attempts   Int              @default(0)
+  lastError  String?          @db.Text
+  messageId  String? // Provider's message ID after sending
+
+  // Scheduling
+  scheduledFor DateTime @default(now())
+  sentAt       DateTime?
+
+  // Metadata
+  metadata Json? // Additional data for tracking
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([createdAt])
+  @@map("email_queue")
+}
+
+enum EmailQueueStatus {
+  PENDING
+  SENT
+  FAILED
 }

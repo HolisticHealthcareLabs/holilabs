@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import AccessGrantsList from '@/components/access-grants/AccessGrantsList';
 import AccessGrantForm from '@/components/access-grants/AccessGrantForm';
 import { ConsentManagementPanel } from '@/components/privacy/ConsentManagementPanel';
+import { AccessLogViewer } from '@/components/privacy/AccessLogViewer';
 
 export default function PrivacyControlPage() {
   const { patientId, loading } = useAuth();
@@ -224,6 +225,14 @@ export default function PrivacyControlPage() {
             onGrantCreated={() => setRefreshKey((prev) => prev + 1)}
           />
         )}
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 dark:border-gray-700 my-12" />
+
+        {/* Access Log Section */}
+        <div className="mb-8">
+          <AccessLogViewer patientId={patientId} />
+        </div>
 
         {/* HIPAA Notice */}
         <div className="mt-8 bg-gray-100 border border-gray-300 rounded-lg p-6">

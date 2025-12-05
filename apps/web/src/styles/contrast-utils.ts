@@ -87,7 +87,7 @@ export const contrastBackgrounds = {
 } as const;
 
 // Helper function to get contrast-compliant text class
-export function getContrastText(variant: keyof typeof contrastColors = 'primary'): string {
+export function getContrastText(variant: keyof typeof contrastColors = 'primary'): typeof contrastColors[keyof typeof contrastColors] {
   return contrastColors[variant];
 }
 

@@ -4,12 +4,10 @@
     "slug": "holi-labs-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#428CD4"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -23,14 +21,13 @@
         "NSCameraUsageDescription": "This app needs access to your camera to capture patient documents.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to save and share documents.",
         "NSFaceIDUsageDescription": "Use Face ID to securely access your medical records.",
-        "UIBackgroundModes": ["fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      },
       "package": "com.holilabs.aiscribe",
       "versionCode": 1,
       "permissions": [
@@ -46,11 +43,8 @@
       ],
       "useNextNotificationsApi": true
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "web": {},
     "plugins": [
-      "expo-router",
       [
         "expo-av",
         {
@@ -61,9 +55,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#428CD4",
-          "sounds": ["./assets/notification.wav"]
+          "color": "#428CD4"
         }
       ],
       [

@@ -4,17 +4,18 @@
  * POST   /api/patients/[id]/recording-consent - Grant recording consent
  * GET    /api/patients/[id]/recording-consent - Get consent status
  * DELETE /api/patients/[id]/recording-consent - Withdraw consent
+ *
+ * @compliance Phase 2.4: Security Hardening - IDOR Protection
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import {
   recordConsent,
   withdrawConsent,
   getConsentStatus,
 } from '@/lib/consent/recording-consent';
 import { z } from 'zod';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,22 +30,29 @@ const ConsentSchema = z.object({
 /**
  * POST /api/patients/[id]/recording-consent
  * Grant recording consent
+ * @security IDOR protection - verifies user has access to patient
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
 
-    if (!session?.user?.id) {
+    if (!patientId) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: 'Patient ID required' },
+        { status: 400 }
       );
     }
 
-    const patientId = params.id;
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
     // Validate input
@@ -65,7 +73,7 @@ export async function POST(
     // Record consent
     const result = await recordConsent(patientId, {
       ...consentData,
-      clinicianId: session.user.id,
+      clinicianId: context.user!.id,
     });
 
     if (!result.success) {
@@ -79,38 +87,38 @@ export async function POST(
       success: true,
       message: result.message,
     });
-  } catch (error) {
-    console.error('Error recording consent:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Failed to record consent',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'CREATE', resource: 'RecordingConsent' },
   }
-}
+);
 
 /**
  * GET /api/patients/[id]/recording-consent
  * Get recording consent status
+ * @security IDOR protection - verifies user has access to patient
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const GET = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
 
-    if (!session?.user?.id) {
+    if (!patientId) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: 'Patient ID required' },
+        { status: 400 }
       );
     }
 
-    const patientId = params.id;
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
 
     // Get consent status
     const status = await getConsentStatus(patientId);
@@ -119,41 +127,41 @@ export async function GET(
       success: true,
       data: status,
     });
-  } catch (error) {
-    console.error('Error getting consent status:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Failed to get consent status',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'READ', resource: 'RecordingConsent' },
   }
-}
+);
 
 /**
  * DELETE /api/patients/[id]/recording-consent
  * Withdraw recording consent
+ * @security IDOR protection - verifies user has access to patient
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const DELETE = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
 
-    if (!session?.user?.id) {
+    if (!patientId) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: 'Patient ID required' },
+        { status: 400 }
       );
     }
 
-    const patientId = params.id;
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
 
     // Withdraw consent
-    const result = await withdrawConsent(patientId, session.user.id);
+    const result = await withdrawConsent(patientId, context.user!.id);
 
     if (!result.success) {
       return NextResponse.json(
@@ -166,15 +174,9 @@ export async function DELETE(
       success: true,
       message: result.message,
     });
-  } catch (error) {
-    console.error('Error withdrawing consent:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Failed to withdraw consent',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'DELETE', resource: 'RecordingConsent' },
   }
-}
+);

@@ -297,7 +297,7 @@ export function requireAuth() {
 // ROLE-BASED ACCESS CONTROL (RBAC)
 // ============================================================================
 
-export type UserRole = 'ADMIN' | 'CLINICIAN' | 'NURSE' | 'STAFF';
+export type UserRole = 'ADMIN' | 'CLINICIAN' | 'NURSE' | 'STAFF' | 'PATIENT';
 
 export function requireRole(...allowedRoles: UserRole[]) {
   return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
@@ -315,6 +315,142 @@ export function requireRole(...allowedRoles: UserRole[]) {
           required: allowedRoles,
           current: context.user.role,
         },
+        { status: 403 }
+      );
+    }
+
+    return next();
+  };
+}
+
+// ============================================================================
+// IDOR PROTECTION (Insecure Direct Object Reference)
+// @compliance Phase 2.4: Security Hardening
+// ============================================================================
+
+/**
+ * Verify patient access for IDOR protection
+ * Checks if the authenticated user has permission to access a patient's data
+ */
+export async function verifyPatientAccess(
+  userId: string,
+  patientId: string
+): Promise<boolean> {
+  try {
+    // Check if user is the patient themselves (for patient portal)
+    const patientUser = await prisma.patientUser.findUnique({
+      where: { id: userId },
+      select: { patientId: true },
+    });
+
+    if (patientUser && patientUser.patientId === patientId) {
+      return true;
+    }
+
+    // Check if patient exists and was created by this clinician
+    // OR if clinician has any records (SOAP notes, prescriptions, appointments) for this patient
+    const [patient, soapNotes, appointments] = await Promise.all([
+      prisma.patient.findFirst({
+        where: {
+          id: patientId,
+          // Patient record exists (basic check)
+        },
+        select: { id: true },
+      }),
+      prisma.sOAPNote.findFirst({
+        where: {
+          patientId,
+          clinicianId: userId,
+        },
+        select: { id: true },
+      }),
+      prisma.appointment.findFirst({
+        where: {
+          patientId,
+          clinicianId: userId,
+        },
+        select: { id: true },
+      }),
+    ]);
+
+    // If patient exists and user has any clinical records with them, grant access
+    if (patient && (soapNotes || appointments)) {
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    logger.error({
+      event: 'verify_patient_access_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId,
+      patientId,
+    });
+    return false;
+  }
+}
+
+/**
+ * Middleware to protect patient-specific routes from IDOR attacks
+ * Verifies that the authenticated user has permission to access the patient data
+ */
+export function requirePatientAccess() {
+  return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
+    if (!context.user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Extract patient ID from params or query
+    const patientId = context.params?.id || context.params?.patientId;
+
+    if (!patientId) {
+      // If no patient ID in route, check query params
+      const { searchParams } = new URL(request.url);
+      const queryPatientId = searchParams.get('patientId');
+
+      if (!queryPatientId) {
+        return NextResponse.json(
+          { error: 'Patient ID required' },
+          { status: 400 }
+        );
+      }
+
+      // Verify access for query param patient ID
+      const hasAccess = await verifyPatientAccess(context.user.id, queryPatientId);
+
+      if (!hasAccess) {
+        const log = createLogger({ requestId: context.requestId, userId: context.user.id });
+        log.warn({
+          event: 'unauthorized_patient_access_attempt',
+          patientId: queryPatientId,
+          path: request.url,
+        });
+
+        return NextResponse.json(
+          { error: 'You do not have permission to access this patient record' },
+          { status: 403 }
+        );
+      }
+
+      return next();
+    }
+
+    // Verify access for route param patient ID
+    const hasAccess = await verifyPatientAccess(context.user.id, patientId);
+
+    if (!hasAccess) {
+      const log = createLogger({ requestId: context.requestId, userId: context.user.id });
+      log.warn({
+        event: 'unauthorized_patient_access_attempt',
+        patientId,
+        path: request.url,
+      });
+
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
         { status: 403 }
       );
     }

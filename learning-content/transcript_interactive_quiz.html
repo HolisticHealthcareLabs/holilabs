@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz: transcript</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .quiz-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .category-tag {
+            background: #f0f0f0;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .importance {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .importance.critical {
+            background: #fee;
+            color: #c00;
+        }
+
+        .importance.high {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .importance.medium {
+            background: #dfe6e9;
+            color: #2d3436;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            margin: 20px 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .options {
+            list-style: none;
+        }
+
+        .option {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .option:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .option.correct {
+            background: #00b894;
+            color: white;
+            border-color: #00b894;
+        }
+
+        .option.incorrect {
+            background: #d63031;
+            color: white;
+            border-color: #d63031;
+        }
+
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .explanation.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .explanation-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .results {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .score-display {
+            font-size: 4em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .score-message {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .review-button {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Interactive Learning Quiz</h1>
+        <p style="color: #666; margin-bottom: 30px;">Test your knowledge from the Zoom call transcript</p>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="currentQuestion">1</div>
+                <div class="stat-label">Question</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="totalQuestions">29</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="correctAnswers">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="score">0%</div>
+                <div class="stat-label">Score</div>
+            </div>
+        </div>
+
+        <div id="quizContainer"></div>
+
+        <div class="results" id="results">
+            <h2>🎉 Quiz Complete!</h2>
+            <div class="score-display" id="finalScore"></div>
+            <div class="score-message" id="scoreMessage"></div>
+            <button class="btn-primary review-button" onclick="reviewAnswers()">📝 Review Answers</button>
+            <button class="btn-secondary review-button" onclick="restartQuiz()">🔄 Start Over</button>
+        </div>
+
+        <div class="buttons" id="navigation">
+            <button class="btn-secondary" id="prevBtn" onclick="previousQuestion()">← Previous</button>
+            <button class="btn-primary" id="nextBtn" onclick="nextQuestion()">Next →</button>
+            <button class="btn-primary" id="submitBtn" onclick="submitQuiz()" style="display: none;">Submit Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        const quizData = [{"id":1,"category":"AI Development Tools","importance":"critical","question":"Why should developers practice switching between different AI coding tools?","options":[{"text":"It's required by most companies","correct":false},{"text":"To remain flexible and not build dependency on any single tool","correct":true},{"text":"To compare pricing models","correct":false},{"text":"It makes code run faster","correct":false}],"explanation":"Claude Code is the best product for coding agents, Codex is the best model, and Google's Anti-Gravity is the new competitor targeting Cursor","relatedTopic":"Claude Code vs Cursor vs Codex"},{"id":2,"category":"AI Development Tools","importance":"critical","question":"What is Google's Anti-Gravity primarily competing against?","options":[{"text":"Claude Code exclusively","correct":false},{"text":"Cursor (targeting both consumers and developers)","correct":true},{"text":"Only ChatGPT","correct":false},{"text":"GitHub Copilot only","correct":false}],"explanation":"Don't build habits on any single AI coding tool. Practice switching between Claude Code, Codex, and Anti-Gravity to remain flexible","relatedTopic":"Tool Selection Strategy"},{"id":3,"category":"Product Development","importance":"critical","question":"Why is it recommended to start with mobile-first design?","options":[{"text":"It's easier to switch from mobile to desktop than desktop to mobile due to screen real estate constraints","correct":true},{"text":"It costs less money","correct":false},{"text":"Mobile is always faster to develop","correct":false},{"text":"Desktop users don't matter anymore","correct":false}],"explanation":"It's easier to switch from mobile to desktop than desktop to mobile due to screen real estate constraints. Start with mobile as a forcing function","relatedTopic":"Mobile-First Design Philosophy"},{"id":4,"category":"Developer Workflow","importance":"critical","question":"In Git workflow, what does red file color indicate in 'git status'?","options":[{"text":"Files have errors","correct":false},{"text":"Files need to be added (git add)","correct":true},{"text":"Files are ready to push","correct":false},{"text":"Files are being ignored","correct":false}],"explanation":"Red files = need to be added (git add), Green files = staged for commit (git commit), 'Nothing to commit' = ready to push","relatedTopic":"Git Status Colors"},{"id":5,"category":"Entrepreneurship","importance":"critical","question":"What's the recommended pricing strategy for early adopters?","options":[{"text":"Charge everyone full price immediately","correct":false},{"text":"First users free, then first 100 users get 50% discount","correct":true},{"text":"Charge more for early users","correct":false},{"text":"Everything free forever","correct":false}],"explanation":"Plan to ship next week 'ready or not' - better to get real user feedback than perfect the product in isolation","relatedTopic":"Shipping Strategy - Ready or Not"},{"id":6,"category":"Entrepreneurship","importance":"critical","question":"What's more important than competitions for startups?","options":[{"text":"Having a fancy office","correct":false},{"text":"Talking to users and getting direct feedback","correct":true},{"text":"Getting press coverage","correct":false},{"text":"Winning awards","correct":false}],"explanation":"Becoming a senior developer without working as one - knowing what to ask for and pushing back against AI when needed","relatedTopic":"The Last Developer Skill"},{"id":7,"category":"Career Development","importance":"critical","question":"What major paradigm shift does AI enable in software development?","options":[{"text":"Coding is now impossible","correct":false},{"text":"Development takes longer than before","correct":false},{"text":"Everyone must learn assembly language","correct":false},{"text":"People with zero coding background can build production apps in weeks","correct":true}],"explanation":"With AI tools, someone with zero coding background can build production apps in weeks - paradigm shift in development","relatedTopic":"Zero to Developer Journey"},{"id":8,"category":"AI Development Tools","importance":"high","question":"According to the discussion, what is the primary difference between Claude Code and Codex?","options":[{"text":"Claude Code is slower but more accurate","correct":false},{"text":"Codex has the best product","correct":false},{"text":"Claude Code has the best product, while Codex has the best model","correct":true},{"text":"Both are exactly the same","correct":false}],"explanation":"Google is targeting Cursor with Anti-Gravity rather than Claude Code and Codex directly, aiming for both consumers and developers","relatedTopic":"Google's Competitive Strategy"},{"id":9,"category":"AI Development Tools","importance":"high","question":"Why should developers practice switching between different AI coding tools?","options":[{"text":"To remain flexible and not build dependency on any single tool","correct":true},{"text":"It makes code run faster","correct":false},{"text":"To compare pricing models","correct":false},{"text":"It's required by most companies","correct":false}],"explanation":"Google made $110 billion this year, has TPUs (doesn't need Nvidia GPUs), and has a legion of ML programmers - positioned to dominate","relatedTopic":"Google's Competitive Advantage"},{"id":10,"category":"Product Development","importance":"high","question":"What is the proper deployment workflow mentioned in the discussion?","options":[{"text":"Make all edits locally, test them, then deploy to production","correct":true},{"text":"Test in production first","correct":false},{"text":"Skip local testing","correct":false},{"text":"Deploy directly to production","correct":false}],"explanation":"The proper workflow is: make all edits locally, test them, then deploy to production (e.g., Digital Ocean)","relatedTopic":"Deployment Workflow Best Practice"},{"id":11,"category":"Technical Architecture","importance":"high","question":"What are DKIM records used for in email?","options":[{"text":"Public keys to verify email signature authenticity","correct":true},{"text":"Blocking spam automatically","correct":false},{"text":"Compressing email attachments","correct":false},{"text":"Storing email passwords","correct":false}],"explanation":"WebSockets create a real-time connection between server and client, essential for live features like transcription during recording","relatedTopic":"WebSockets for Real-Time Features"},{"id":12,"category":"Technical Architecture","importance":"high","question":"What do WebSockets enable in web applications?","options":[{"text":"Reduced server costs","correct":false},{"text":"Faster file downloads","correct":false},{"text":"Better SEO rankings","correct":false},{"text":"Real-time bidirectional connection between server and client","correct":true}],"explanation":"DNS (Domain Name Service) translates human-readable domains to computer-readable numbers, fundamental to internet infrastructure","relatedTopic":"DNS Fundamentals"},{"id":13,"category":"Technical Architecture","importance":"high","question":"What does DNS (Domain Name Service) do?","options":[{"text":"Protects against viruses","correct":false},{"text":"Encrypts all web traffic","correct":false},{"text":"Speeds up internet connections","correct":false},{"text":"Translates human-readable domains to computer-readable IP addresses","correct":true}],"explanation":"DKIM records are public keys used to verify email signature authenticity, required for sending from verified domains","relatedTopic":"DKIM Records for Email"},{"id":14,"category":"Developer Workflow","importance":"high","question":"In Cursor, what's the difference between Command+K and Command+L?","options":[{"text":"Command+K is for searching","correct":false},{"text":"Command+K is for atomic changes in current page, Command+L opens agent for codebase-wide chat","correct":true},{"text":"They do the same thing","correct":false},{"text":"Command+L closes the editor","correct":false}],"explanation":"Always run 'git status' first to check where you are. Senior developers don't use coding agents for git commits","relatedTopic":"Git Commit Best Practice"},{"id":15,"category":"Developer Workflow","importance":"high","question":"Why is memorizing frequently used terminal commands important?","options":[{"text":"To reduce internet usage","correct":false},{"text":"To impress other developers","correct":false},{"text":"It's required for certification","correct":false},{"text":"To stay in flow state without constantly searching for commands","correct":true}],"explanation":"Command+K in Cursor is for atomic changes within a page. Command+L (or Command+I) opens the agent for codebase-wide conversations","relatedTopic":"Cursor Agent vs Atomic Changes"},{"id":16,"category":"Developer Workflow","importance":"high","question":"In Git workflow, what does red file color indicate in 'git status'?","options":[{"text":"Files need to be added (git add)","correct":true},{"text":"Files are ready to push","correct":false},{"text":"Files are being ignored","correct":false},{"text":"Files have errors","correct":false}],"explanation":"Build logging into the backend to catch errors and debug issues, especially important when moving from prototype to production","relatedTopic":"Backend Logging Importance"},{"id":17,"category":"Entrepreneurship","importance":"high","question":"What's the recommended pricing strategy for early adopters?","options":[{"text":"Everything free forever","correct":false},{"text":"Charge everyone full price immediately","correct":false},{"text":"Charge more for early users","correct":false},{"text":"First users free, then first 100 users get 50% discount","correct":true}],"explanation":"Give first users free access, then offer first 100 users 50% discount ($25-50 range) to build initial user base","relatedTopic":"Pricing Strategy for Early Adopters"},{"id":18,"category":"Entrepreneurship","importance":"high","question":"What's more important than competitions for startups?","options":[{"text":"Winning awards","correct":false},{"text":"Getting press coverage","correct":false},{"text":"Having a fancy office","correct":false},{"text":"Talking to users and getting direct feedback","correct":true}],"explanation":"Talking to users is more important than competitions, though competitions can improve public speaking","relatedTopic":"User Feedback vs Competitions"},{"id":19,"category":"Entrepreneurship","importance":"high","question":"What is 'the last developer skill' in the AI era?","options":[{"text":"Writing the fastest code","correct":false},{"text":"Knowing how to push back against AI and become a senior developer without traditional experience","correct":true},{"text":"Using only one programming language","correct":false},{"text":"Memorizing all syntax","correct":false}],"explanation":"Use prompt engineering to narrow down the planning phase as much as possible before executing any code","relatedTopic":"Planning Phase Before Coding"},{"id":20,"category":"Email Infrastructure","importance":"high","question":"What does Resend's testing mode restriction do?","options":[{"text":"Only allows sending emails to your own email address","correct":true},{"text":"Charges less money","correct":false},{"text":"Sends emails slower","correct":false},{"text":"Limits to 10 emails per day","correct":false}],"explanation":"Resend email service has a testing mode that only sends to your own email address - must configure DNS for production","relatedTopic":"Resend Testing Mode"},{"id":21,"category":"Email Infrastructure","importance":"high","question":"Why must email domain match website domain?","options":[{"text":"For proper authentication and to avoid being marked as spam","correct":true},{"text":"It makes emails send faster","correct":false},{"text":"It's a legal requirement","correct":false},{"text":"To save money on domains","correct":false}],"explanation":"Email sending domain must match website domain for proper authentication and to avoid being marked as spam","relatedTopic":"Domain Matching for Email"},{"id":22,"category":"Philosophy & Methodology","importance":"high","question":"How does the scientific method apply to development?","options":[{"text":"Form hypothesis, test repeatedly, and iterate based on results","correct":true},{"text":"Copy what others do","correct":false},{"text":"Never test anything","correct":false},{"text":"Avoid making changes","correct":false}],"explanation":"Ask questions constantly of AI and have it ask you questions until you're sure the image in its head matches yours","relatedTopic":"AI Communication Principle"},{"id":23,"category":"AI Development Tools","importance":"medium","question":"What advantage does OpenCode offer for advanced developers?","options":[{"text":"It's open-source and allows plugging in Chinese models with full programmability","correct":true},{"text":"It's completely free forever","correct":false},{"text":"It's the fastest AI model","correct":false},{"text":"It only works with Google services","correct":false}],"explanation":"OpenCode is the open-source version that allows plugging in Chinese models, offering more programmability for advanced users","relatedTopic":"Open Source Alternative - OpenCode"},{"id":24,"category":"Product Development","importance":"medium","question":"Why is it recommended to start with mobile-first design?","options":[{"text":"It's easier to switch from mobile to desktop than desktop to mobile due to screen real estate constraints","correct":true},{"text":"Desktop users don't matter anymore","correct":false},{"text":"It costs less money","correct":false},{"text":"Mobile is always faster to develop","correct":false}],"explanation":"Digital real estate refers to the limited space on screens, especially mobile. Designing for smaller screens forces better prioritization","relatedTopic":"Screen Real Estate Concept"},{"id":25,"category":"Product Development","importance":"medium","question":"What is the proper deployment workflow mentioned in the discussion?","options":[{"text":"Deploy directly to production","correct":false},{"text":"Skip local testing","correct":false},{"text":"Test in production first","correct":false},{"text":"Make all edits locally, test them, then deploy to production","correct":true}],"explanation":"Use Pavlovian associations in design - e.g., associating 'salvada vida' (saved life) with brand colors to create psychological connections","relatedTopic":"UI/UX Design - Psychological Effects"},{"id":26,"category":"Product Development","importance":"medium","question":"What is a Pavlovian association in UX design context?","options":[{"text":"Classical music in the background","correct":false},{"text":"Connecting emotional concepts (like 'saved life') with brand colors to create psychological effects","correct":true},{"text":"Testing with pets","correct":false},{"text":"Using dog images in the UI","correct":false}],"explanation":"Implement install prompts on mobile web to encourage users to add the app to their home screen for better engagement","relatedTopic":"Progressive Web App Installation"},{"id":27,"category":"Technical Architecture","importance":"medium","question":"What do WebSockets enable in web applications?","options":[{"text":"Better SEO rankings","correct":false},{"text":"Real-time bidirectional connection between server and client","correct":true},{"text":"Reduced server costs","correct":false},{"text":"Faster file downloads","correct":false}],"explanation":"Docker containers help manage different deployment targets (mobile vs desktop) with consistent environments","relatedTopic":"Docker Container Strategy"},{"id":28,"category":"Technical Architecture","importance":"medium","question":"What does DNS (Domain Name Service) do?","options":[{"text":"Speeds up internet connections","correct":false},{"text":"Encrypts all web traffic","correct":false},{"text":"Translates human-readable domains to computer-readable IP addresses","correct":true},{"text":"Protects against viruses","correct":false}],"explanation":"Email was originally decentralized until Gmail centralized it through better spam filtering and search monopoly","relatedTopic":"Email Protocol History"},{"id":29,"category":"Developer Workflow","importance":"medium","question":"What should you always run first before git operations?","options":[{"text":"git commit","correct":false},{"text":"git status - to check where you are","correct":true},{"text":"git push","correct":false},{"text":"git reset","correct":false}],"explanation":"Memorize frequently used commands (like npm run dev) to stay in flow state rather than constantly searching for them","relatedTopic":"Terminal Command Memorization"}];
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(quizData.length).fill(null);
+        let quizSubmitted = false;
+
+        function renderQuestion() {
+            const question = quizData[currentQuestionIndex];
+            const container = document.getElementById('quizContainer');
+
+            const importanceClass = question.importance || 'medium';
+
+            container.innerHTML = `
+                <div class="quiz-card">
+                    <div class="question-header">
+                        <span class="question-number">Question ${currentQuestionIndex + 1}</span>
+                        <div>
+                            <span class="category-tag">${question.category}</span>
+                            <span class="importance ${importanceClass}">${importanceClass.toUpperCase()}</span>
+                        </div>
+                    </div>
+
+                    <div class="question-text">${question.question}</div>
+
+                    <ul class="options" id="options">
+                        ${question.options.map((option, idx) => `
+                            <li class="option ${userAnswers[currentQuestionIndex] === idx ? 'selected' : ''} ${quizSubmitted ? (option.correct ? 'correct' : userAnswers[currentQuestionIndex] === idx ? 'incorrect' : '') : ''} ${quizSubmitted ? 'disabled' : ''}"
+                                onclick="selectOption(${idx})">
+                                ${String.fromCharCode(65 + idx)}. ${option.text}
+                            </li>
+                        `).join('')}
+                    </ul>
+
+                    <div class="explanation ${quizSubmitted ? 'show' : ''}" id="explanation">
+                        <div class="explanation-title">💡 Explanation</div>
+                        <p>${question.explanation}</p>
+                        <p style="margin-top: 10px;"><strong>Related Topic:</strong> ${question.relatedTopic}</p>
+                    </div>
+                </div>
+            `;
+
+            updateNavigation();
+            updateProgress();
+        }
+
+        function selectOption(optionIndex) {
+            if (quizSubmitted) return;
+
+            userAnswers[currentQuestionIndex] = optionIndex;
+            renderQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        function updateNavigation() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+
+            prevBtn.disabled = currentQuestionIndex === 0;
+
+            if (currentQuestionIndex === quizData.length - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            }
+
+            if (quizSubmitted) {
+                document.getElementById('navigation').style.display = 'none';
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
+
+            const correctCount = userAnswers.reduce((count, answer, idx) => {
+                if (answer !== null && quizData[idx].options[answer].correct) {
+                    return count + 1;
+                }
+                return count;
+            }, 0);
+
+            document.getElementById('correctAnswers').textContent = correctCount;
+
+            const answeredCount = userAnswers.filter(a => a !== null).length;
+            const score = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+            document.getElementById('score').textContent = score + '%';
+        }
+
+        function submitQuiz() {
+            const unanswered = userAnswers.filter(a => a === null).length;
+
+            if (unanswered > 0) {
+                if (!confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) {
+                    return;
+                }
+            }
+
+            quizSubmitted = true;
+            renderQuestion();
+            showResults();
+        }
+
+        function showResults() {
+            const correctCount = userAnswers.reduce((count, answer, idx) => {
+                if (answer !== null && quizData[idx].options[answer].correct) {
+                    return count + 1;
+                }
+                return count;
+            }, 0);
+
+            const percentage = Math.round((correctCount / quizData.length) * 100);
+
+            document.getElementById('finalScore').textContent = percentage + '%';
+            document.getElementById('scoreMessage').textContent = `You got ${correctCount} out of ${quizData.length} questions correct!`;
+
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('results').classList.add('show');
+        }
+
+        function reviewAnswers() {
+            currentQuestionIndex = 0;
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('results').classList.remove('show');
+            renderQuestion();
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            userAnswers = new Array(quizData.length).fill(null);
+            quizSubmitted = false;
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('results').classList.remove('show');
+            document.getElementById('navigation').style.display = 'flex';
+            renderQuestion();
+        }
+
+        // Initialize
+        renderQuestion();
+    </script>
+</body>
+</html>

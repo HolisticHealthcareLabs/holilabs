@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { generateUniquePatientTokenId } from '@/lib/security/token-generation';
 import { logDeIDOperation } from '@/lib/audit/deid-audit';
+import crypto from 'crypto';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -150,10 +151,12 @@ export const GET = createProtectedRoute(
 /**
  * POST /api/patients
  * Create new patient with blockchain hash
+ * @compliance Phase 2.4: Security Hardening
  */
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const body = await request.json();
 
     // Validate with medical-grade Zod schema
     let validatedData;
@@ -311,6 +314,93 @@ export async function POST(request: Request) {
       },
     });
 
+    // ============================================================================
+    // DEFAULT CONSENT & DATA ACCESS GRANT CREATION (HIPAA/GDPR COMPLIANCE)
+    // ============================================================================
+
+    if (validatedData.assignedClinicianId) {
+      console.log(`✅ Creating default consent for patient ${patient.id} with clinician ${validatedData.assignedClinicianId}`);
+
+      // 1. Create default treatment consent
+      const consentContent = `
+Default Consent for Medical Treatment
+
+This consent was automatically granted when you were registered as a patient on ${new Date().toLocaleDateString()}.
+
+By accepting this consent, you acknowledge that:
+- Your assigned clinician can access your medical records for treatment purposes
+- Your data will be used for diagnosis, treatment, and care coordination
+- You can revoke this consent at any time through the patient portal (some services may become unavailable)
+
+This consent complies with HIPAA, GDPR Article 7, and LGPD Article 8.
+
+Patient: ${validatedData.firstName} ${validatedData.lastName}
+Assigned Clinician ID: ${validatedData.assignedClinicianId}
+Registration Date: ${new Date().toISOString()}
+      `.trim();
+
+      const consentHash = crypto
+        .createHash('sha256')
+        .update(consentContent + patient.id + new Date().toISOString())
+        .digest('hex');
+
+      const defaultConsent = await prisma.consent.create({
+        data: {
+          patientId: patient.id,
+          type: 'GENERAL_CONSULTATION',
+          title: 'Consent for Medical Treatment',
+          content: consentContent,
+          version: '1.0',
+          signatureData: 'SYSTEM_DEFAULT_REGISTRATION',
+          signedAt: new Date(),
+          isActive: true,
+          consentHash,
+        },
+      });
+
+      console.log(`✅ Created default consent: ${defaultConsent.id}`);
+
+      // 2. Create data access grant for assigned clinician
+      const accessGrant = await prisma.dataAccessGrant.create({
+        data: {
+          patientId: patient.id,
+          grantedToType: 'USER',
+          grantedToId: validatedData.assignedClinicianId,
+          resourceType: 'ALL',
+          canView: true,
+          canDownload: false,
+          canShare: false,
+          purpose: 'Primary care physician - granted during patient registration',
+          grantedAt: new Date(),
+        },
+      });
+
+      console.log(`✅ Created data access grant: ${accessGrant.id}`);
+
+      // 3. Create audit log for consent creation
+      await prisma.auditLog.create({
+        data: {
+          userId: validatedData.assignedClinicianId,
+          userEmail: 'system',
+          action: 'GRANT_DEFAULT_CONSENT',
+          resource: 'Patient',
+          resourceId: patient.id,
+          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+          details: {
+            assignedClinicianId: validatedData.assignedClinicianId,
+            consentId: defaultConsent.id,
+            accessGrantId: accessGrant.id,
+            consentType: 'GENERAL_CONSULTATION',
+            accessGrantType: 'ALL',
+            timestamp: new Date().toISOString(),
+          },
+          success: true,
+        },
+      });
+
+      console.log(`✅ Default consent and access grant setup complete for patient ${patient.id}`);
+    }
+
     // Create audit log (using validated data)
     await prisma.auditLog.create({
       data: {
@@ -375,4 +465,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN'],
+    rateLimit: { windowMs: 60000, maxRequests: 20 },
+    audit: { action: 'CREATE', resource: 'Patient' },
+  }
+);

@@ -6,9 +6,6 @@ import {
   CheckCircle2,
   Calendar,
   Clock,
-  MapPin,
-  Phone,
-  Mail,
   Share2,
   Copy,
   CheckCheck,
@@ -16,6 +13,21 @@ import {
   Award,
 } from 'lucide-react';
 import { VerifiedBadge } from '@/components/credentials/VerifiedBadge';
+
+const createIconComponent = (Icon: any) =>
+  React.forwardRef<SVGSVGElement, React.SVGProps<SVGSVGElement>>((props, ref) => (
+    <Icon ref={ref} {...props} />
+  ));
+
+const ShieldIcon = createIconComponent(Shield);
+const CheckCircleIcon = createIconComponent(CheckCircle2);
+const CalendarIcon = createIconComponent(Calendar);
+const ClockIcon = createIconComponent(Clock);
+const ShareIcon = createIconComponent(Share2);
+const CopyIcon = createIconComponent(Copy);
+const CheckCheckIcon = createIconComponent(CheckCheck);
+const StethoscopeIcon = createIconComponent(Stethoscope);
+const AwardIcon = createIconComponent(Award);
 
 interface DoctorProfile {
   id: string;
@@ -102,7 +114,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-lg border border-gray-200 p-8 max-w-md text-center">
-          <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <ShieldIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Doctor Not Found</h2>
           <p className="text-gray-600">{error || "The doctor profile you're looking for doesn't exist."}</p>
         </div>
@@ -124,7 +136,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
               )}
             </div>
             <div className="bg-white/10 rounded-full p-4">
-              <Stethoscope className="w-12 h-12" />
+              <StethoscopeIcon className="w-12 h-12" />
             </div>
           </div>
         </div>
@@ -138,7 +150,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
             {doctor.credentials.length > 0 && (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                  <Award className="w-5 h-5 mr-2 text-green-600" />
+                  <AwardIcon className="w-5 h-5 mr-2 text-green-600" />
                   Verified Credentials
                 </h2>
                 <div className="space-y-3">
@@ -148,7 +160,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
                       className="flex items-start justify-between bg-green-50 rounded-lg p-4"
                     >
                       <div className="flex items-start space-x-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                         <div>
                           <h3 className="font-medium text-gray-900">
                             {formatCredentialType(credential.credentialType)}
@@ -168,7 +180,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
             {/* License Information */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <Shield className="w-5 h-5 mr-2 text-green-600" />
+                <ShieldIcon className="w-5 h-5 mr-2 text-green-600" />
                 License Information
               </h2>
               <div className="space-y-3">
@@ -215,14 +227,14 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
                   onClick={() => setShowBookingForm(true)}
                   className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center mb-4"
                 >
-                  <Calendar className="w-5 h-5 mr-2" />
+                  <CalendarIcon className="w-5 h-5 mr-2" />
                   Schedule Appointment
                 </button>
               ) : (
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-3">Select a date and time:</p>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                    <Clock className="w-4 h-4 inline mr-2" />
+                    <ClockIcon className="w-4 h-4 inline mr-2" />
                     Booking system integration coming soon! For now, please call to schedule.
                   </div>
                 </div>
@@ -238,12 +250,12 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
                   >
                     {copied ? (
                       <>
-                        <CheckCheck className="w-4 h-4 text-green-600" />
+                        <CheckCheckIcon className="w-4 h-4 text-green-600" />
                         <span className="text-green-600">Link Copied!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4" />
+                        <CopyIcon className="w-4 h-4" />
                         <span>Copy Link</span>
                       </>
                     )}
@@ -254,7 +266,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
                       onClick={handleShareLink}
                       className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <ShareIcon className="w-4 h-4" />
                       <span>Share</span>
                     </button>
                   )}
@@ -265,7 +277,7 @@ export default function BookDoctorPage({ params }: { params: { doctorId: string 
             {/* Trust Badge */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-start space-x-3">
-                <Shield className="w-8 h-8 text-green-600 flex-shrink-0" />
+                <ShieldIcon className="w-8 h-8 text-green-600 flex-shrink-0" />
                 <div>
                   <h4 className="font-medium text-green-900 mb-1">Verified Provider</h4>
                   <p className="text-sm text-green-800">

@@ -54,9 +54,9 @@ export interface PatientDemographics {
   firstName: string;
   lastName: string;
   dateOfBirth: Date;
-  gender: string;
-  email?: string;
-  phone?: string;
+  gender: string | null;
+  email?: string | null;
+  phone?: string | null;
   age: number;
 }
 
@@ -155,14 +155,17 @@ export async function getCachedLabResults(
           id: true,
           testName: true,
           testCode: true,
-          loincCode: true,
+          category: true,
           value: true,
           unit: true,
           referenceRange: true,
-          flag: true,
+          status: true,
+          interpretation: true,
           isAbnormal: true,
+          isCritical: true,
           resultDate: true,
-          observedAt: true,
+          orderedDate: true,
+          collectedDate: true,
           createdAt: true,
         },
       });
@@ -200,7 +203,7 @@ export async function getCachedMedications(patientId: string): Promise<any[]> {
         select: {
           id: true,
           name: true,
-          dosage: true,
+          dose: true,
           frequency: true,
           route: true,
           startDate: true,
@@ -244,8 +247,9 @@ export async function getCachedAllergies(patientId: string): Promise<any[]> {
           id: true,
           allergen: true,
           allergyType: true,
+          category: true,
           severity: true,
-          reaction: true,
+          reactions: true,
           onsetDate: true,
           notes: true,
           isActive: true,
@@ -282,21 +286,19 @@ export async function getCachedVitals(
     CACHE_NAMESPACE.VITALS,
     `${patientId}:${limit}`,
     async () => {
-      return await prisma.vitalSigns.findMany({
+      return await prisma.healthMetric.findMany({
         where: { patientId },
         orderBy: { recordedAt: 'desc' },
         take: limit,
         select: {
           id: true,
-          systolicBP: true,
-          diastolicBP: true,
-          heartRate: true,
-          temperature: true,
-          respiratoryRate: true,
-          oxygenSaturation: true,
-          weight: true,
-          height: true,
-          bmi: true,
+          metricType: true,
+          value: true,
+          unit: true,
+          source: true,
+          deviceName: true,
+          isOutOfRange: true,
+          flaggedForReview: true,
           recordedAt: true,
           createdAt: true,
         },
@@ -330,21 +332,21 @@ export async function getCachedPreventionPlans(patientId: string): Promise<any[]
     async () => {
       return await prisma.preventionPlan.findMany({
         where: { patientId, status: 'ACTIVE' },
-        orderBy: [{ priority: 'desc' }, { scheduledDate: 'asc' }],
+        orderBy: [{ updatedAt: 'desc' }, { activatedAt: 'desc' }],
         take: 20,
         select: {
           id: true,
-          type: true,
-          title: true,
+          planType: true,
+          planName: true,
           description: true,
-          priority: true,
           status: true,
-          scheduledDate: true,
-          completedDate: true,
-          clinicalRecommendations: true,
-          uspstfGrade: true,
-          evidenceStrength: true,
-          targetMetrics: true,
+          activatedAt: true,
+          completedAt: true,
+          reviewedAt: true,
+          recommendations: true,
+          goals: true,
+          followUpSchedule: true,
+          evidenceLevel: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -382,13 +384,13 @@ export async function getCachedRiskScores(patientId: string): Promise<{
       const patient = await prisma.patient.findUnique({
         where: { id: patientId },
         select: {
-          ascvdRiskScore: true,
+          cvdRiskScore: true,
           diabetesRiskScore: true,
         },
       });
 
       return {
-        ascvd: patient?.ascvdRiskScore ?? undefined,
+        ascvd: patient?.cvdRiskScore ?? undefined,
         diabetes: patient?.diabetesRiskScore ?? undefined,
       };
     },

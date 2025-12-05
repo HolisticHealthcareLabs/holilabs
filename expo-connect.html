@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect to Holi Labs App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .big-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 30px 0;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s;
+        }
+        
+        .big-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .big-button:active {
+            transform: scale(0.95);
+        }
+        
+        .url-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #333;
+            font-weight: bold;
+            border: 2px dashed #667eea;
+        }
+        
+        .instructions {
+            text-align: left;
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .instructions h3 {
+            color: #0d47a1;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #555;
+            line-height: 2;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .note {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            color: #856404;
+            font-size: 14px;
+        }
+        
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .status.checking {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📱</div>
+        <h1>Holi Labs Mobile App</h1>
+        
+        <div id="status" class="status checking">⏳ Checking server...</div>
+        
+        <div class="url-box" id="url">
+            exp://192.168.0.9:8081
+        </div>
+        
+        <a href="exp://192.168.0.9:8081" class="big-button">
+            🚀 OPEN IN EXPO GO
+        </a>
+        
+        <br>
+        
+        <button class="copy-btn" onclick="copyToClipboard()">
+            📋 Copy URL
+        </button>
+        
+        <div class="instructions">
+            <h3>📖 How to Connect:</h3>
+            <ol>
+                <li><strong>Open this page on your iPhone</strong> (text yourself this URL or email it)</li>
+                <li><strong>Make sure Expo Go is installed</strong> from App Store</li>
+                <li><strong>Tap the "OPEN IN EXPO GO" button</strong> above ☝️</li>
+                <li>It will automatically open in Expo Go! 🎉</li>
+            </ol>
+        </div>
+        
+        <div class="note">
+            <strong>💡 Alternative Method:</strong><br>
+            Open Expo Go → Type the URL above manually into any "Enter URL" field you can find in the app.
+        </div>
+        
+        <div class="note" style="background: #f8d7da; color: #721c24; margin-top: 10px;">
+            <strong>⚠️ Important:</strong><br>
+            Your iPhone and computer MUST be on the same WiFi network!
+        </div>
+    </div>
+    
+    <script>
+        const url = 'exp://192.168.0.9:8081';
+        const localIP = '192.168.0.9';
+        const port = '8081';
+        
+        function copyToClipboard() {
+            // Create temporary textarea
+            const textarea = document.createElement('textarea');
+            textarea.value = url;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                alert('✅ URL copied! You can paste it in Expo Go.');
+            } catch (err) {
+                // Fallback for newer browsers
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('✅ URL copied! You can paste it in Expo Go.');
+                }).catch(() => {
+                    alert('❌ Could not copy. Please manually copy: ' + url);
+                });
+            }
+            
+            document.body.removeChild(textarea);
+        }
+        
+        // Check server status
+        async function checkServer() {
+            const statusEl = document.getElementById('status');
+            
+            try {
+                const response = await fetch(`http://${localIP}:${port}/status`, { 
+                    mode: 'no-cors',
+                    signal: AbortSignal.timeout(3000)
+                });
+                statusEl.className = 'status online';
+                statusEl.innerHTML = '✅ Server is running!';
+            } catch (error) {
+                statusEl.className = 'status offline';
+                statusEl.innerHTML = '❌ Server not responding - make sure Expo is running!';
+            }
+        }
+        
+        // Check immediately
+        setTimeout(checkServer, 1000);
+        
+        // Check every 5 seconds
+        setInterval(checkServer, 5000);
+    </script>
+</body>
+</html>
+

@@ -9,22 +9,41 @@
  * - With cache (full hit): 15ms (single Redis read)
  *
  * @compliance HIPAA §164.502(b) - Access reason required
+ * @compliance Phase 2.4: Security Hardening - IDOR Protection
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCachedPatientFullContext } from '@/lib/cache/patient-context-cache';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/patients/[id]/context
  * Get full patient context with high-performance caching
+ * @security IDOR protection - verifies user has access to patient
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
+export const GET = createProtectedRoute(
+  async (request, context) => {
+    const patientId = context.params?.id;
+
+    if (!patientId) {
+      return NextResponse.json(
+        { error: 'Patient ID required' },
+        { status: 400 }
+      );
+    }
+
+    // IDOR Protection: Verify user has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'You do not have permission to access this patient record' },
+        { status: 403 }
+      );
+    }
+
     // HIPAA §164.502(b) - Access Reason Required
     const { searchParams } = new URL(request.url);
     const accessReason = searchParams.get('accessReason');
@@ -55,7 +74,7 @@ export async function GET(
     const startTime = Date.now();
 
     // Fetch full patient context with caching
-    const patientContext = await getCachedPatientFullContext(params.id);
+    const patientContext = await getCachedPatientFullContext(patientId);
 
     if (!patientContext) {
       return NextResponse.json(
@@ -67,7 +86,7 @@ export async function GET(
     const duration = Date.now() - startTime;
 
     // Log performance metrics
-    console.log(`[Patient Context] Loaded in ${duration}ms for patient ${params.id}`);
+    console.log(`[Patient Context] Loaded in ${duration}ms for patient ${patientId}`);
 
     return NextResponse.json({
       success: true,
@@ -77,11 +96,9 @@ export async function GET(
         cached: duration < 100, // Assume cached if < 100ms
       },
     });
-  } catch (error: any) {
-    console.error('Error fetching patient context:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch patient context', details: error.message },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'ADMIN'],
+    audit: { action: 'READ', resource: 'PatientContext' },
   }
-}
+);

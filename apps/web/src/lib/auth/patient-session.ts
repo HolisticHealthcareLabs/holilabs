@@ -3,6 +3,7 @@
  *
  * Utilities for verifying and managing patient authentication sessions
  * Features: Session timeouts, refresh tokens, Remember Me, activity tracking
+ * @compliance Phase 2.4: Security Hardening - Remove fallback secrets
  */
 
 import { cookies } from 'next/headers';
@@ -10,9 +11,17 @@ import { jwtVerify, SignJWT } from 'jose';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET || 'fallback-secret'
-);
+// Get JWT secret from environment - REQUIRED
+const jwtSecretString = process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET;
+if (!jwtSecretString) {
+  throw new Error(
+    'CRITICAL: JWT secret not configured. ' +
+    'Set NEXTAUTH_SECRET or SESSION_SECRET environment variable. ' +
+    'Server cannot start without authentication secret.'
+  );
+}
+
+const JWT_SECRET = new TextEncoder().encode(jwtSecretString);
 
 // Session configuration
 const SESSION_CONFIG = {

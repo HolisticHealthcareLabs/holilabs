@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import type { PreventionPlan } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,20 +83,28 @@ export async function GET(request: NextRequest) {
         status: 'ACTIVE',
       },
       orderBy: [
-        { priority: 'desc' },
-        { scheduledDate: 'asc' },
+        { updatedAt: 'desc' },
+        { activatedAt: 'desc' },
       ],
       take: 20,
     });
 
     // Transform prevention plans to interventions format
     const interventions = preventionPlans.map((plan) => {
-      const daysUntil = plan.scheduledDate
-        ? Math.ceil((plan.scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-        : 0;
+      const followUpSchedule = (plan.followUpSchedule as Record<string, any> | null) || null;
+      const nextDateValue =
+        (followUpSchedule && (followUpSchedule.nextDate || followUpSchedule.nextCheckIn || followUpSchedule.date)) || null;
+
+      const scheduledDate = nextDateValue
+        ? new Date(nextDateValue)
+        : plan.reviewedAt || plan.completedAt || plan.activatedAt || new Date();
+
+      const daysUntil = Math.ceil((scheduledDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
       let status: 'overdue' | 'due-soon' | 'scheduled' | 'completed';
-      if (daysUntil < 0) {
+      if (plan.status === 'COMPLETED') {
+        status = 'completed';
+      } else if (daysUntil < 0) {
         status = 'overdue';
       } else if (daysUntil <= 30) {
         status = 'due-soon';
@@ -105,14 +114,12 @@ export async function GET(request: NextRequest) {
 
       return {
         id: plan.id,
-        name: plan.title,
-        type: plan.type === 'SCREENING_DUE' ? 'Screening Preventivo' :
-              plan.type === 'RISK_MITIGATION' ? 'Mitigación de Riesgo' :
-              plan.type === 'DISEASE_MANAGEMENT' ? 'Manejo de Enfermedad' : 'Prevención',
-        dueDate: plan.scheduledDate?.toISOString() || new Date().toISOString(),
+        name: plan.planName,
+        type: formatPlanType(plan.planType),
+        dueDate: scheduledDate.toISOString(),
         status,
         description: plan.description || '',
-        importance: plan.evidenceStrength || undefined,
+        importance: plan.evidenceLevel || undefined,
       };
     });
 
@@ -303,53 +310,37 @@ function getRecommendedScreenings(age: number, gender: string) {
   return screenings;
 }
 
-function generateHealthGoalsFromPlans(preventionPlans: any[], riskScores: any[]) {
+function generateHealthGoalsFromPlans(preventionPlans: PreventionPlan[], riskScores: any[]) {
   const goals = [];
 
-  // Extract goals from prevention plans with target metrics
   for (const plan of preventionPlans) {
-    if (plan.targetMetrics) {
-      const metrics = plan.targetMetrics as any;
+    const planGoals = Array.isArray(plan.goals as any) ? ((plan.goals as any[]) ?? []) : [];
 
-      // HbA1c goal
-      if (metrics.hba1c && metrics.targetHbA1c) {
-        const progress = Math.max(0, Math.min(100, 100 - ((metrics.hba1c - metrics.targetHbA1c) / metrics.hba1c) * 100));
-        goals.push({
-          id: `hba1c-${plan.id}`,
-          title: 'Control de HbA1c',
-          target: `HbA1c < ${metrics.targetHbA1c}%`,
-          current: `HbA1c: ${metrics.hba1c}%`,
-          progress: Math.round(progress),
-          category: 'Diabetes',
-        });
+    planGoals.forEach((goalData: any, index: number) => {
+      if (!goalData || typeof goalData !== 'object') {
+        return;
       }
 
-      // LDL goal
-      if (metrics.ldl && metrics.targetLDL) {
-        const progress = Math.max(0, Math.min(100, (1 - (metrics.ldl - metrics.targetLDL) / metrics.ldl) * 100));
-        goals.push({
-          id: `ldl-${plan.id}`,
-          title: 'Control de Colesterol LDL',
-          target: `LDL < ${metrics.targetLDL} mg/dL`,
-          current: `LDL: ${metrics.ldl} mg/dL`,
-          progress: Math.round(progress),
-          category: 'Cardiovascular',
-        });
-      }
+      const title = goalData.title || goalData.goal || plan.planName || 'Meta de salud';
+      const target = goalData.target || goalData.targetValue || 'Objetivo personalizado';
+      const current = goalData.current || goalData.status || '';
+      let progress = typeof goalData.progress === 'number'
+        ? goalData.progress
+        : goalData.status === 'COMPLETED'
+          ? 100
+          : 50;
 
-      // eGFR goal
-      if (metrics.egfr) {
-        const progress = Math.min(100, (metrics.egfr / 90) * 100);
-        goals.push({
-          id: `egfr-${plan.id}`,
-          title: 'Función Renal (eGFR)',
-          target: 'eGFR > 90 mL/min/1.73m²',
-          current: `eGFR: ${metrics.egfr} mL/min/1.73m²`,
-          progress: Math.round(progress),
-          category: 'Renal',
-        });
-      }
-    }
+      progress = Math.max(0, Math.min(100, Math.round(progress)));
+
+      goals.push({
+        id: `${plan.id}-goal-${index}`,
+        title,
+        target,
+        current,
+        progress,
+        category: goalData.category || mapPlanTypeToCategory(plan.planType),
+      });
+    });
   }
 
   // Default goals if none from plans
@@ -376,36 +367,46 @@ function generateHealthGoalsFromPlans(preventionPlans: any[], riskScores: any[])
   return goals;
 }
 
-function generateRecommendationsFromPlans(preventionPlans: any[], age: number, riskScores: any[]) {
+function generateRecommendationsFromPlans(preventionPlans: PreventionPlan[], age: number, riskScores: any[]) {
   const recommendations = [];
 
-  // Extract recommendations from prevention plans
   for (const plan of preventionPlans) {
-    if (plan.clinicalRecommendations && Array.isArray(plan.clinicalRecommendations)) {
-      // Take the first 2-3 most important recommendations from each plan
-      const topRecommendations = plan.clinicalRecommendations.slice(0, 2);
+    const planRecs = Array.isArray(plan.recommendations as any) ? ((plan.recommendations as any[]) ?? []) : [];
 
-      for (let i = 0; i < topRecommendations.length; i++) {
-        const rec = topRecommendations[i];
-        const priority = plan.priority === 'HIGH' ? 'high' :
-                        plan.priority === 'MEDIUM' ? 'medium' : 'low';
+    planRecs.slice(0, 2).forEach((rec: any, index: number) => {
+      const description = typeof rec === 'string'
+        ? rec
+        : rec?.description || rec?.text || rec?.recommendation || '';
 
-        recommendations.push({
-          id: `${plan.id}-rec-${i}`,
-          title: plan.title,
-          description: rec.replace(/\*\*/g, '').replace(/\*/g, ''),
-          priority,
-          category: plan.type === 'SCREENING_DUE' ? 'Screening' :
-                   plan.type === 'RISK_MITIGATION' ? 'Prevención' :
-                   plan.type === 'DISEASE_MANAGEMENT' ? 'Manejo' : 'Salud',
-        });
+      if (!description) {
+        return;
       }
+
+      const priorityValue = typeof rec?.priority === 'string'
+        ? rec.priority.toLowerCase()
+        : derivePriorityFromPlan(plan);
+
+      recommendations.push({
+        id: `${plan.id}-rec-${index}`,
+        title: rec?.title || plan.planName,
+        description: description.replace(/\*\*/g, '').replace(/\*/g, ''),
+        priority: priorityValue,
+        category: rec?.category || mapPlanTypeToCategory(plan.planType),
+      });
+    });
+
+    if (plan.lifestyleChanges) {
+      recommendations.push({
+        id: `${plan.id}-lifestyle`,
+        title: `${plan.planName} - Cambios de estilo de vida`,
+        description: plan.lifestyleChanges,
+        priority: derivePriorityFromPlan(plan),
+        category: mapPlanTypeToCategory(plan.planType),
+      });
     }
   }
 
-  // Add general recommendations if not enough from plans
   if (recommendations.length < 3) {
-    // High cardiovascular risk
     const cvRisk = riskScores.find((s) => s.id === 'ascvd');
     if (cvRisk && (cvRisk.level === 'high' || cvRisk.level === 'very-high')) {
       recommendations.push({
@@ -418,7 +419,6 @@ function generateRecommendationsFromPlans(preventionPlans: any[], age: number, r
       });
     }
 
-    // Diabetes risk
     const diabetesRisk = riskScores.find((s) => s.id === 'diabetes');
     if (diabetesRisk && (diabetesRisk.level === 'moderate' || diabetesRisk.level === 'high')) {
       recommendations.push({
@@ -431,7 +431,6 @@ function generateRecommendationsFromPlans(preventionPlans: any[], age: number, r
       });
     }
 
-    // General wellness
     recommendations.push({
       id: 'sleep-quality',
       title: 'Mejora la Calidad del Sueño',
@@ -442,5 +441,56 @@ function generateRecommendationsFromPlans(preventionPlans: any[], age: number, r
     });
   }
 
-  return recommendations.slice(0, 10); // Limit to top 10
+  return recommendations.slice(0, 10);
+}
+
+function formatPlanType(planType: PreventionPlan['planType']): string {
+  switch (planType) {
+    case 'CARDIOVASCULAR':
+      return 'Prevención Cardiovascular';
+    case 'DIABETES':
+      return 'Prevención de Diabetes';
+    case 'HYPERTENSION':
+      return 'Manejo de Hipertensión';
+    case 'OBESITY':
+      return 'Control de Peso';
+    case 'CANCER_SCREENING':
+      return 'Screening Oncológico';
+    case 'COMPREHENSIVE':
+      return 'Prevención Integral';
+    default:
+      return 'Prevención';
+  }
+}
+
+function mapPlanTypeToCategory(planType: PreventionPlan['planType']): string {
+  switch (planType) {
+    case 'CARDIOVASCULAR':
+      return 'Cardiovascular';
+    case 'DIABETES':
+      return 'Metabolismo';
+    case 'HYPERTENSION':
+      return 'Presión arterial';
+    case 'OBESITY':
+      return 'Nutrición';
+    case 'CANCER_SCREENING':
+      return 'Screening';
+    case 'COMPREHENSIVE':
+      return 'Salud Integral';
+    default:
+      return 'Salud';
+  }
+}
+
+function derivePriorityFromPlan(plan: PreventionPlan): 'high' | 'medium' | 'low' {
+  switch (plan.planType) {
+    case 'CARDIOVASCULAR':
+    case 'DIABETES':
+      return 'high';
+    case 'CANCER_SCREENING':
+    case 'HYPERTENSION':
+      return 'medium';
+    default:
+      return 'low';
+  }
 }

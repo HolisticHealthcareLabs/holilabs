@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Holi Labs - AI-Powered Healthcare Platform for Modern Clinicians">
+    <meta name="keywords" content="healthcare, AI scribe, clinical notes, HIPAA compliant">
+    <title>Holi Labs - AI Healthcare Platform</title>
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #428CD4;
+            --primary-dark: #2E6FAF;
+            --secondary: #10B981;
+            --text: #1F2937;
+            --text-light: #6B7280;
+            --bg: #FFFFFF;
+            --bg-light: #F9FAFB;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        /* Header */
+        header {
+            background: var(--bg);
+            border-bottom: 1px solid #E5E7EB;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 140, 212, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text);
+            border: 2px solid #E5E7EB;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero .btn {
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            background: var(--bg-light);
+        }
+
+        .features-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-bottom: 4rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* Mobile Apps Section */
+        .mobile-apps {
+            padding: 6rem 2rem;
+            background: var(--bg);
+        }
+
+        .mobile-apps-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .app-info h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .app-info p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        .app-badges {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .app-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--text);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+
+        .app-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .app-badge-icon {
+            font-size: 1.5rem;
+        }
+
+        .phone-mockup {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone-frame {
+            width: 300px;
+            height: 600px;
+            border: 12px solid #1F2937;
+            border-radius: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            width: 150px;
+            height: 30px;
+            background: #1F2937;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .phone-content {
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 4rem 2rem;
+            background: var(--primary);
+            color: white;
+        }
+
+        .stats-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            text-align: center;
+        }
+
+        .stat h3 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 6rem 2rem;
+            background: var(--bg-light);
+            text-align: center;
+        }
+
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .cta p {
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text);
+            color: white;
+            padding: 3rem 2rem 1.5rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 1.5rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .mobile-apps-content {
+                grid-template-columns: 1fr;
+            }
+
+            .phone-frame {
+                width: 250px;
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="#" class="logo">
+                <span class="logo-icon">🏥</span>
+                <span>Holi Labs</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#mobile">Mobile App</a>
+                <a href="https://holilabs.xyz" class="btn btn-primary">Launch App</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>AI-Powered Healthcare Platform</h1>
+            <p>Streamline clinical workflows with intelligent documentation, voice-to-text transcription, and HIPAA-compliant patient management.</p>
+            <div class="hero-buttons">
+                <a href="https://holilabs.xyz" class="btn btn-primary">Get Started Free</a>
+                <a href="#features" class="btn btn-secondary" style="background: rgba(255,255,255,0.9); color: var(--primary);">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="features-content">
+            <h2 class="section-title">Everything You Need</h2>
+            <p class="section-subtitle">Powerful features designed for modern healthcare providers</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI Clinical Scribe</h3>
+                    <p>Transform voice recordings into structured clinical notes using Claude AI. Save hours of documentation time.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎤</div>
+                    <h3>Voice Recording</h3>
+                    <p>High-quality audio capture with automatic transcription. Record consultations and generate notes instantly.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Patient Management</h3>
+                    <p>Complete patient records, appointments, and clinical history in one secure platform.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>HIPAA Compliant</h3>
+                    <p>Enterprise-grade security with encryption, audit logs, and compliance features built-in.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Mobile First</h3>
+                    <p>Native iOS and Android apps. Access patient data anywhere, even offline.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Analytics & Insights</h3>
+                    <p>Track practice performance, patient outcomes, and workflow efficiency with built-in analytics.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile Apps Section -->
+    <section class="mobile-apps" id="mobile">
+        <div class="mobile-apps-content">
+            <div class="app-info">
+                <h2>Download Our Mobile App</h2>
+                <p>Take your practice mobile. Record consultations, access patient records, and generate clinical notes on the go.</p>
+
+                <div class="app-badges">
+                    <a href="#" class="app-badge">
+                        <span class="app-badge-icon">🍎</span>
+                        <div>
+                            <div style="font-size: 0.7rem; opacity: 0.8;">Download on the</div>
+                            <div>App Store</div>
+                        </div>
+                    </a>
+                    <a href="#" class="app-badge">
+                        <span class="app-badge-icon">🤖</span>
+                        <div>
+                            <div style="font-size: 0.7rem; opacity: 0.8;">Get it on</div>
+                            <div>Google Play</div>
+                        </div>
+                    </a>
+                </div>
+
+                <p style="margin-top: 2rem; font-size: 0.9rem;">
+                    <strong>Beta Testing:</strong> Join our TestFlight program for early access to new features.
+                </p>
+            </div>
+
+            <div class="phone-mockup">
+                <div class="phone-frame">
+                    <div class="phone-notch"></div>
+                    <div class="phone-content">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🏥</div>
+                        <div>Holi Labs</div>
+                        <div style="font-size: 1rem; opacity: 0.8; margin-top: 0.5rem;">AI Healthcare Platform</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-content">
+            <div class="stat">
+                <h3>10,000+</h3>
+                <p>Clinical Notes Generated</p>
+            </div>
+            <div class="stat">
+                <h3>95%</h3>
+                <p>Time Saved on Documentation</p>
+            </div>
+            <div class="stat">
+                <h3>500+</h3>
+                <p>Healthcare Providers</p>
+            </div>
+            <div class="stat">
+                <h3>100%</h3>
+                <p>HIPAA Compliant</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="cta-content">
+            <h2>Ready to Transform Your Practice?</h2>
+            <p>Join hundreds of healthcare providers who are saving time and improving patient care with Holi Labs.</p>
+            <a href="https://holilabs.xyz" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">Start Free Trial</a>
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-light);">No credit card required • 14-day free trial • Cancel anytime</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#mobile">Mobile App</a></li>
+                    <li><a href="https://holilabs.xyz">Web App</a></li>
+                    <li><a href="#">Pricing</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">HIPAA Compliance</a></li>
+                    <li><a href="#">BAA Agreement</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">API Reference</a></li>
+                    <li><a href="#">Status</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Holi Labs. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
