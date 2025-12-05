@@ -19,8 +19,9 @@ const CHUNK_SIZE = 100;
  * Helper function to insert data in chunks
  */
 async function insertInChunks<T>(
+  prismaClient: PrismaClient,
   data: T[],
-  insertFn: (chunk: T[]) => Promise<any>,
+  insertFn: (prisma: PrismaClient, chunk: T[]) => Promise<any>,
   chunkSize: number = CHUNK_SIZE
 ): Promise<void> {
   const totalChunks = Math.ceil(data.length / chunkSize);
@@ -32,7 +33,7 @@ async function insertInChunks<T>(
     console.log(`  Processing chunk ${chunkNumber}/${totalChunks} (${chunk.length} records)...`);
 
     try {
-      await insertFn(chunk);
+      await insertFn(prismaClient, chunk);
     } catch (error) {
       console.error(`  ❌ Error in chunk ${chunkNumber}:`, error);
       throw error;
@@ -109,9 +110,10 @@ async function seedICD10Codes() {
   ];
 
   await insertInChunks(
+    prisma,
     icd10Codes,
-    async (chunk) => {
-      await prisma.iCD10Code.createMany({
+    async (prismaClient, chunk) => {
+      await prismaClient.iCD10Code.createMany({
         data: chunk,
         skipDuplicates: true,
       });
@@ -361,9 +363,10 @@ async function seedLOINCCodes() {
   ];
 
   await insertInChunks(
+    prisma,
     loincCodes,
-    async (chunk) => {
-      await prisma.loincCode.createMany({
+    async (prismaClient, chunk) => {
+      await prismaClient.loincCode.createMany({
         data: chunk,
         skipDuplicates: true,
       });
