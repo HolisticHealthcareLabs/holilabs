@@ -100,8 +100,10 @@ model User {
 
 enum UserRole {
   ADMIN
+  PHYSICIAN
   CLINICIAN
   NURSE
+  RECEPTIONIST
   STAFF
 }
 
