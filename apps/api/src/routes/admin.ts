@@ -3,11 +3,9 @@ import { prisma } from '../index';
 
 const adminRoutes: FastifyPluginAsync = async (server) => {
   server.get('/audit/events', async (request, reply) => {
-    const orgId = 'demo-org-id'; // From JWT
-
-    const events = await prisma.auditEvent.findMany({
-      where: { orgId },
-      orderBy: { ts: 'desc' },
+    // TODO: Filter by organization when organizationId is added to AuditLog model
+    const events = await prisma.auditLog.findMany({
+      orderBy: { timestamp: 'desc' },
       take: 100,
     });
 
