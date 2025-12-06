@@ -195,30 +195,8 @@ export async function exportPatientIPS(
   const patient = await prisma.patient.findUnique({
     where: { id: patientId },
     include: {
-      diagnoses: {
-        where: { includedInIPS: true },
-        include: {
-          snomedReference: true,
-          icd10Reference: true
-        }
-      },
-      immunizations: {
-        where: { includedInIPS: true }
-      },
-      procedures: {
-        where: { includedInIPS: true },
-        include: {
-          snomedReference: true
-        }
-      },
       allergies: {
-        where: { isActive: true },
-        include: {
-          snomedAllergen: true
-        }
-      },
-      medications: {
-        where: { status: { in: ['ACTIVE', 'COMPLETED'] } }
+        where: { isActive: true }
       }
     }
   });
@@ -286,11 +264,6 @@ export async function exportPatientIPS(
     category: [mapAllergyCategory(allergy.allergyType)],
     criticality: mapAllergySeverity(allergy.severity),
     code: {
-      coding: allergy.snomedAllergenCode && allergy.snomedAllergen ? [{
-        system: 'http://snomed.info/sct',
-        code: allergy.snomedAllergenCode,
-        display: allergy.snomedAllergen.preferredTerm
-      }] : undefined,
       text: allergy.allergen
     },
     patient: {
@@ -306,104 +279,20 @@ export async function exportPatientIPS(
   }));
 
   // Build FHIR Medications
-  const medications: FHIRMedicationStatement[] = patient.medications.map(med => ({
-    resourceType: 'MedicationStatement',
-    id: med.id,
-    status: mapMedicationStatus(med.status),
-    medicationCodeableConcept: {
-      text: med.name
-    },
-    subject: {
-      reference: `Patient/${patient.id}`
-    },
-    effectiveDateTime: med.startDate.toISOString(),
-    dosage: [{
-      text: `${med.dosage} ${med.frequency}`
-    }]
-  }));
+  // TODO: Restore when medications relation is available
+  const medications: FHIRMedicationStatement[] = [];
 
   // Build FHIR Conditions (Problems)
-  const conditions: FHIRCondition[] = patient.diagnoses.map(diagnosis => ({
-    resourceType: 'Condition',
-    id: diagnosis.id,
-    clinicalStatus: {
-      coding: [{
-        system: 'http://terminology.hl7.org/CodeSystem/condition-clinical',
-        code: mapDiagnosisStatus(diagnosis.clinicalStatus)
-      }]
-    },
-    verificationStatus: {
-      coding: [{
-        system: 'http://terminology.hl7.org/CodeSystem/condition-ver-status',
-        code: mapDiagnosisVerificationStatus(diagnosis.verificationStatus)
-      }]
-    },
-    category: [{
-      coding: [{
-        system: 'http://terminology.hl7.org/CodeSystem/condition-category',
-        code: 'problem-list-item'
-      }]
-    }],
-    code: {
-      coding: [
-        ...(diagnosis.snomedCode && diagnosis.snomedReference ? [{
-          system: 'http://snomed.info/sct' as const,
-          code: diagnosis.snomedCode,
-          display: diagnosis.snomedReference.preferredTerm
-        }] : []),
-        ...(diagnosis.icd10Code && diagnosis.icd10Reference ? [{
-          system: 'http://hl7.org/fhir/sid/icd-10' as const,
-          code: diagnosis.icd10Code,
-          display: diagnosis.icd10Reference.description
-        }] : [])
-      ],
-      text: diagnosis.display
-    },
-    subject: {
-      reference: `Patient/${patient.id}`
-    },
-    onsetDateTime: diagnosis.onsetDate?.toISOString()
-  }));
+  // TODO: Restore when diagnoses relation is available
+  const conditions: FHIRCondition[] = [];
 
   // Build FHIR Immunizations
-  const immunizations: FHIRImmunization[] = patient.immunizations.map(imm => ({
-    resourceType: 'Immunization',
-    id: imm.id,
-    status: mapImmunizationStatus(imm.status),
-    vaccineCode: {
-      coding: [{
-        system: 'http://hl7.org/fhir/sid/cvx',
-        code: imm.vaccineCode
-      }],
-      text: imm.vaccineDisplay
-    },
-    patient: {
-      reference: `Patient/${patient.id}`
-    },
-    occurrenceDateTime: imm.dateAdministered.toISOString(),
-    protocolApplied: imm.doseNumber ? [{
-      doseNumberPositiveInt: imm.doseNumber
-    }] : undefined
-  }));
+  // TODO: Restore when immunizations relation is available
+  const immunizations: FHIRImmunization[] = [];
 
   // Build FHIR Procedures
-  const procedures: FHIRProcedure[] = patient.procedures.map(proc => ({
-    resourceType: 'Procedure',
-    id: proc.id,
-    status: 'completed',
-    code: {
-      coding: proc.snomedCode && proc.snomedReference ? [{
-        system: 'http://snomed.info/sct',
-        code: proc.snomedCode,
-        display: proc.snomedReference.preferredTerm
-      }] : undefined,
-      text: proc.display
-    },
-    subject: {
-      reference: `Patient/${patient.id}`
-    },
-    performedDateTime: proc.performedDate.toISOString()
-  }));
+  // TODO: Restore when procedures relation is available
+  const procedures: FHIRProcedure[] = [];
 
   // Build Composition (IPS Document structure)
   const composition: FHIRComposition = {
@@ -604,7 +493,7 @@ function mapMedicationStatus(status: string): 'active' | 'completed' | 'stopped'
     ACTIVE: 'active',
     COMPLETED: 'completed',
     DISCONTINUED: 'stopped',
-    PAUSED: 'on-hold'
+    PAUSED: 'stopped'
   };
   return (statusMap[status] || 'active') as 'active' | 'completed' | 'stopped';
 }
