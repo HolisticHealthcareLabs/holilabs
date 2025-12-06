@@ -89,6 +89,10 @@ model User {
   imageAccessLogs       ImageAccessLog[]
   imageAnnotations      ImageAnnotation[]
 
+  // AI Quality Control
+  reviewQueueItemsClinician ManualReviewQueueItem[] @relation("ReviewQueueClinician")
+  reviewQueueItemsReviewer  ManualReviewQueueItem[] @relation("ReviewQueueReviewer")
+
   @@index([email])
   @@index([walletAddress])
   @@index([cpf])
@@ -758,6 +762,9 @@ model Patient {
   immunizations           Immunization[]
   procedures              ProcedureRecord[]
   insuranceAuthorizations InsuranceAuthorization[]
+
+  // AI Quality Control
+  reviewQueueItems ManualReviewQueueItem[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -4779,4 +4786,97 @@ model DicomInstance {
   @@index([seriesId])
   @@index([sopInstanceUID])
   @@map("dicom_instances")
+}
+
+// ============================================================================
+// AI CONFIDENCE TRACKING
+// ============================================================================
+
+model AISentenceConfidence {
+  id String @id @default(cuid())
+
+  // Content reference
+  contentType   String // 'consultation', 'lab_result', 'prescription', etc.
+  contentId     String // ID of the parent resource
+  sectionType   String // 'subjective', 'objective', 'assessment', 'plan', etc.
+  sentenceIndex Int // Position in the section
+
+  // Content
+  sentenceText String @db.Text
+
+  // AI Confidence metrics
+  confidence  Float // Overall confidence score (0-1)
+  perplexity  Float // Language model perplexity
+  uncertainty Float // Epistemic uncertainty
+
+  // Token-level analysis
+  tokenScores Json // Array of per-token confidence scores
+
+  // Model metadata
+  model        String // e.g., 'gpt-4', 'claude-3'
+  modelVersion String // e.g., '2024-01-01'
+
+  // Review flags
+  needsReview Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contentType, contentId])
+  @@index([needsReview])
+  @@index([confidence])
+  @@map("ai_sentence_confidence")
+}
+
+// ============================================================================
+// MANUAL REVIEW QUEUE (AI Quality Control)
+// ============================================================================
+
+model ManualReviewQueueItem {
+  id String @id @default(cuid())
+
+  // Content reference
+  contentType String // 'consultation', 'lab_result', 'prescription', etc.
+  contentId   String // ID of the parent resource
+  sectionType String // 'subjective', 'objective', 'assessment', 'plan', etc.
+
+  // Patient & Clinician
+  patientId   String
+  patient     Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  clinicianId String
+  clinician   User    @relation("ReviewQueueClinician", fields: [clinicianId], references: [id])
+
+  // Flag details
+  flagReason  String // 'low_confidence', 'inconsistent_data', 'missing_info', etc.
+  flagDetails String @db.Text
+
+  // Status
+  status ReviewQueueStatus @default(PENDING)
+
+  // Review
+  reviewedBy String? // User ID
+  reviewer   User?   @relation("ReviewQueueReviewer", fields: [reviewedBy], references: [id])
+  reviewedAt DateTime?
+
+  // Priority
+  priority Int @default(5) // 1-10, higher is more urgent
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([patientId])
+  @@index([clinicianId])
+  @@index([contentType, contentId])
+  @@map("manual_review_queue")
+}
+
+enum ReviewQueueStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  ESCALATED
 }
