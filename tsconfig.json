@@ -10,6 +10,13 @@
     "declaration": true,
     "declarationMap": true,
     "incremental": true,
-    "composite": true
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@holi/deid": ["./packages/deid/src"],
+      "@holi/dp": ["./packages/dp/src"],
+      "@holi/utils": ["./packages/utils/src"],
+      "@holi/schemas": ["./packages/schemas/src"]
+    }
   }
 }

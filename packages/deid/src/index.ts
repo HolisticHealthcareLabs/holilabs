@@ -51,3 +51,9 @@ export {
   type DeidentificationResult,
   type HybridDeidentificationConfig,
 } from './hybrid-deid';
+
+// Pseudonymization exports
+export {
+  pseudonymize,
+  verifyPseudonym,
+} from './pseudonymization';
