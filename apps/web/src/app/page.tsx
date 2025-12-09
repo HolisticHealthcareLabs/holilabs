@@ -902,7 +902,6 @@ export default function Home() {
           <div className="mb-20">
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 border border-emerald-200 mb-6">
-                <span className="text-emerald-600">🤖</span>
                 <span className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Inteligencia Artificial Clínica</span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -948,7 +947,6 @@ export default function Home() {
           <div className="mb-20">
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-100 border border-indigo-200 mb-6">
-                <span className="text-indigo-600">📋</span>
                 <span className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">EHR Completo</span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
