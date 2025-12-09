@@ -2,18 +2,22 @@
  * Beta Signup API - Automated Credential Generation
  *
  * When a user signs up for beta:
- * 1. Validates email
- * 2. Sends welcome email with dashboard access link
- * 3. Notifies admin
+ * 1. Validates email and invitation code (if provided)
+ * 2. Checks if user is in first 100 (gets free year)
+ * 3. Sends welcome email with dashboard access link
+ * 4. Notifies admin
  */
 
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { sendEmail } from '@/lib/email';
 import logger from '@/lib/logger';
 
+const prisma = new PrismaClient();
+
 export async function POST(request: Request) {
   try {
-    const { email, name } = await request.json();
+    const { email, name, inviteCode } = await request.json();
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -24,13 +28,145 @@ export async function POST(request: Request) {
       );
     }
 
-    // Send beta access email with credentials
+    // Check if email already signed up
+    const existingSignup = await prisma.betaSignup.findUnique({
+      where: { email },
+    });
+
+    if (existingSignup) {
+      return NextResponse.json(
+        { error: 'Este email ya está registrado. Revisa tu correo para acceder.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate invitation code if provided
+    let validInviteCode = null;
+    if (inviteCode) {
+      validInviteCode = await prisma.invitationCode.findUnique({
+        where: { code: inviteCode },
+      });
+
+      if (!validInviteCode) {
+        return NextResponse.json(
+          { error: 'Código de invitación inválido' },
+          { status: 400 }
+        );
+      }
+
+      if (!validInviteCode.isActive) {
+        return NextResponse.json(
+          { error: 'Este código de invitación ya no está activo' },
+          { status: 400 }
+        );
+      }
+
+      if (validInviteCode.usedCount >= validInviteCode.maxUses) {
+        return NextResponse.json(
+          { error: 'Este código de invitación ha alcanzado su límite de usos' },
+          { status: 400 }
+        );
+      }
+
+      if (validInviteCode.expiresAt && new Date(validInviteCode.expiresAt) < new Date()) {
+        return NextResponse.json(
+          { error: 'Este código de invitación ha expirado' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Get or create signup counter
+    let counter = await prisma.signupCounter.findUnique({
+      where: { id: 'singleton' },
+    });
+
+    if (!counter) {
+      counter = await prisma.signupCounter.create({
+        data: { id: 'singleton', currentCount: 0 },
+      });
+    }
+
+    // Check if user is in first 100
+    const isFirst100 = counter.currentCount < 100;
+    const signupNumber = isFirst100 ? counter.currentCount + 1 : null;
+
+    // Calculate free year dates for first 100 or invited users
+    let freeYearStart = null;
+    let freeYearEnd = null;
+    
+    if (isFirst100 || inviteCode) {
+      freeYearStart = new Date();
+      freeYearEnd = new Date();
+      freeYearEnd.setFullYear(freeYearEnd.getFullYear() + 1);
+    }
+
+    // Create beta signup in transaction
+    const betaSignup = await prisma.$transaction(async (tx) => {
+      // Create signup
+      const signup = await tx.betaSignup.create({
+        data: {
+          email,
+          name: name || '',
+          invitationCode: inviteCode || null,
+          isFirst100,
+          signupNumber,
+          freeYearStart,
+          freeYearEnd,
+        },
+      });
+
+      // Update counter if first 100
+      if (isFirst100) {
+        await tx.signupCounter.update({
+          where: { id: 'singleton' },
+          data: { currentCount: counter!.currentCount + 1 },
+        });
+      }
+
+      // Update invitation code if used
+      if (validInviteCode) {
+        await tx.invitationCode.update({
+          where: { code: inviteCode },
+          data: {
+            usedCount: validInviteCode.usedCount + 1,
+            isUsed: validInviteCode.usedCount + 1 >= validInviteCode.maxUses,
+            usedAt: new Date(),
+          },
+        });
+      }
+
+      return signup;
+    });
+
+    // Prepare email content based on signup status
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://holilabs.xyz';
     const dashboardUrl = `${appUrl}/dashboard`;
 
+    const isFreeAccess = isFirst100 || !!inviteCode;
+    const freeAccessBadge = isFreeAccess
+      ? `<div style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; padding: 8px 20px; border-radius: 24px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 16px;">
+           🎁 ${isFirst100 ? `FIRST ${signupNumber} - FREE 1 YEAR` : 'FRIEND & FAMILY - FREE 1 YEAR'}
+         </div>`
+      : '';
+
+    const freeAccessMessage = isFreeAccess
+      ? `<div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; padding: 24px; margin: 24px 0;">
+           <p style="margin: 0; color: #92400e; font-size: 16px; font-weight: 700; text-align: center;">
+             🎉 ¡Felicidades! Tienes acceso GRATIS por 1 año completo
+           </p>
+           <p style="margin: 12px 0 0 0; color: #78350f; font-size: 14px; text-align: center;">
+             ${isFirst100 ? `Eres uno de los primeros ${signupNumber} usuarios` : 'Has sido invitado por un amigo/familiar'}
+             <br/>Expira: ${freeYearEnd ? new Date(freeYearEnd).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
+           </p>
+         </div>`
+      : '';
+
     const result = await sendEmail({
       to: email,
-      subject: '🎉 Welcome to Holi Labs BETA - Instant Access',
+      subject: isFreeAccess
+        ? `🎁 ${isFirst100 ? 'First ' + signupNumber : 'Friend & Family'} - FREE 1 Year Access to Holi Labs`
+        : '🎉 Welcome to Holi Labs BETA - Instant Access',
       html: `
         <!DOCTYPE html>
         <html>
@@ -48,11 +184,9 @@ export async function POST(request: Request) {
                     <!-- Header with BETA badge -->
                     <tr>
                       <td style="padding: 40px 40px 20px 40px; text-align: center;">
-                        <div style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; padding: 8px 20px; border-radius: 24px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 24px;">
-                          BETA ACCESS
-                        </div>
+                        ${freeAccessBadge || '<div style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; padding: 8px 20px; border-radius: 24px; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 24px;">BETA ACCESS</div>'}
                         <h1 style="margin: 0; color: #111827; font-size: 36px; font-weight: 800;">Welcome to Holi Labs!</h1>
-                        <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 18px;">Your BETA access is ready</p>
+                        <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 18px;">Your ${isFreeAccess ? 'FREE' : 'BETA'} access is ready</p>
                       </td>
                     </tr>
 
@@ -63,8 +197,10 @@ export async function POST(request: Request) {
                           Hi${name ? ` ${name}` : ''},
                         </p>
                         <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 26px;">
-                          Thank you for joining the Holi Labs BETA program! Your access is active and ready to use—no password needed.
+                          Thank you for joining the Holi Labs ${isFreeAccess ? 'community' : 'BETA program'}! Your access is active and ready to use—no password needed.
                         </p>
+
+                        ${freeAccessMessage}
 
                         <!-- Access Card -->
                         <div style="background: #f9fafb; border: 2px solid #10b981; border-radius: 12px; padding: 28px; margin: 32px 0;">
@@ -75,7 +211,7 @@ export async function POST(request: Request) {
                             <strong style="color: #059669;">Email:</strong> ${email}
                           </p>
                           <p style="margin: 0 0 14px 0; color: #111827; font-size: 16px;">
-                            <strong style="color: #059669;">Access:</strong> Full BETA Demo Mode
+                            <strong style="color: #059669;">Access:</strong> ${isFreeAccess ? 'FREE for 1 Year (Full Platform)' : 'Full BETA Demo Mode'}
                           </p>
                           <p style="margin: 0 0 0 0; color: #111827; font-size: 16px;">
                             <strong style="color: #059669;">Dashboard:</strong> <a href="${dashboardUrl}" style="color: #2563eb; text-decoration: underline;">${dashboardUrl}</a>
@@ -181,23 +317,28 @@ HIPAA | GDPR | LGPD Compliant
     // Send notification to admin
     await sendEmail({
       to: 'nicolacapriroloteran@gmail.com',
-      subject: `🎯 Nuevo Beta Signup: ${name || email}`,
+      subject: `${isFreeAccess ? '🎁' : '🎯'} Nuevo ${isFirst100 ? `First ${signupNumber}` : inviteCode ? 'Friend/Family' : 'Beta'} Signup: ${name || email}`,
       html: `
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
-          <div style="background: linear-gradient(135deg, #38F2AE 0%, #014751 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px;">
-            <h2 style="color: white; margin: 0; font-size: 24px;">🎯 Nuevo Beta Signup</h2>
+          <div style="background: linear-gradient(135deg, ${isFreeAccess ? '#f59e0b' : '#38F2AE'} 0%, ${isFreeAccess ? '#d97706' : '#014751'} 100%); border-radius: 12px; padding: 30px; margin-bottom: 20px;">
+            <h2 style="color: white; margin: 0; font-size: 24px;">
+              ${isFreeAccess ? '🎁' : '🎯'} Nuevo ${isFirst100 ? `First ${signupNumber}` : inviteCode ? 'Friend/Family' : 'Beta'} Signup
+            </h2>
           </div>
 
           <div style="background: white; border-radius: 8px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Email:</strong> ${email}</p>
             ${name ? `<p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Nombre:</strong> ${name}</p>` : ''}
             <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Registrado:</strong> ${new Date().toLocaleString('es-ES', { timeZone: 'America/Mexico_City' })}</p>
-            <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Dashboard URL:</strong> <a href="${dashboardUrl}" style="color: #38F2AE;">${dashboardUrl}</a></p>
+            ${isFirst100 ? `<p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Número de Signup:</strong> ${signupNumber} de 100</p>` : ''}
+            ${inviteCode ? `<p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Código usado:</strong> ${inviteCode}</p>` : ''}
+            ${isFreeAccess ? `<p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Acceso gratis hasta:</strong> ${freeYearEnd ? new Date(freeYearEnd).toLocaleDateString('es-ES') : 'N/A'}</p>` : ''}
+            <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px;"><strong>Dashboard URL:</strong> <a href="${dashboardUrl}" style="color: ${isFreeAccess ? '#f59e0b' : '#38F2AE'};">${dashboardUrl}</a></p>
           </div>
 
-          <div style="background: #e0f2f1; border-left: 4px solid #38F2AE; border-radius: 4px; padding: 16px; margin: 20px 0;">
-            <p style="margin: 0; color: #014751; font-size: 14px;">
-              ✅ Email de acceso enviado automáticamente con credenciales de demo.
+          <div style="background: ${isFreeAccess ? '#fef3c7' : '#e0f2f1'}; border-left: 4px solid ${isFreeAccess ? '#f59e0b' : '#38F2AE'}; border-radius: 4px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 0; color: ${isFreeAccess ? '#78350f' : '#014751'}; font-size: 14px;">
+              ✅ Email de acceso enviado automáticamente${isFreeAccess ? ' con beneficio de 1 año gratis' : ' con credenciales de demo'}.
             </p>
           </div>
         </div>
@@ -208,12 +349,21 @@ HIPAA | GDPR | LGPD Compliant
       event: 'beta_signup_success',
       email,
       name,
+      isFirst100,
+      signupNumber,
+      inviteCode: inviteCode || null,
       timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json({
       success: true,
-      message: '¡Perfecto! Revisa tu email para acceder inmediatamente a Holi Labs BETA.',
+      isFirst100,
+      signupNumber,
+      hasFreeYear: isFreeAccess,
+      freeYearEnd: freeYearEnd?.toISOString(),
+      message: isFreeAccess
+        ? `🎁 ¡Felicidades! ${isFirst100 ? `Eres el usuario #${signupNumber} y tienes` : 'Tienes'} acceso GRATIS por 1 año. Revisa tu email.`
+        : '¡Perfecto! Revisa tu email para acceder inmediatamente a Holi Labs BETA.',
     });
   } catch (error: any) {
     logger.error({

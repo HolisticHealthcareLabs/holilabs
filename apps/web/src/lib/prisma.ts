@@ -16,8 +16,9 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@bemi-db/prisma';
 import { logger } from '@/lib/logger';
-import { encryptPHI, decryptPHI } from '@/lib/security/encryption';
+import { encryptionExtension } from '@/lib/db/encryption-extension';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -96,9 +97,19 @@ function createPrismaClient(): PrismaClient | null {
     connectionTimeout: CONNECTION_TIMEOUT,
     queryTimeout: QUERY_TIMEOUT,
     poolTimeout: POOL_TIMEOUT,
+    bemiEnabled: process.env.ENABLE_BEMI_AUDIT === 'true',
   }, 'Initializing Prisma client with connection pool');
 
-  const client = new PrismaClient({
+  // Create Bemi-enhanced Prisma adapter for SOC 2 audit trail
+  // This captures all DB changes at the PostgreSQL WAL level
+  const adapter = process.env.ENABLE_BEMI_AUDIT === 'true'
+    ? PrismaPg({ connectionString: databaseUrl })
+    : undefined;
+
+  const baseClient = new PrismaClient({
+    // Use Bemi adapter if enabled (requires PostgreSQL with WAL replication)
+    ...(adapter ? { adapter } : {}),
+
     // Logging configuration
     log: process.env.NODE_ENV === 'development'
       ? [
@@ -118,6 +129,10 @@ function createPrismaClient(): PrismaClient | null {
       },
     },
   });
+
+  // Apply transparent encryption extension (SOC 2 Control CC6.7)
+  // This automatically encrypts/decrypts PHI fields on all operations
+  const client = baseClient.$extends(encryptionExtension) as unknown as PrismaClient;
 
   // Log slow queries in development
   if (process.env.NODE_ENV === 'development') {
@@ -148,82 +163,6 @@ function createPrismaClient(): PrismaClient | null {
       event: 'database_warning',
       message: e.message,
     }, 'Database warning');
-  });
-
-  // ============================================================================
-  // PHI ENCRYPTION MIDDLEWARE (HIPAA Compliance)
-  // ============================================================================
-  // Automatically encrypt/decrypt PHI fields on Patient model
-
-  client.$use(async (params, next) => {
-    // Fields that contain PHI and need encryption
-    const phiFields = ['firstName', 'lastName', 'email', 'phone', 'address'];
-
-    // ENCRYPT on write operations
-    if (params.model === 'Patient') {
-      if (params.action === 'create' || params.action === 'update' || params.action === 'upsert') {
-        const data = params.action === 'upsert' ? params.args.create : params.args.data;
-
-        if (data) {
-          for (const field of phiFields) {
-            if (data[field] !== undefined && data[field] !== null) {
-              try {
-                data[field] = encryptPHI(data[field]);
-              } catch (error) {
-                logger.error({ event: 'phi_encryption_failed', field, err: error }, 'Failed to encrypt PHI field');
-                throw error;
-              }
-            }
-          }
-
-          // Also encrypt update data in upsert
-          if (params.action === 'upsert' && params.args.update) {
-            for (const field of phiFields) {
-              if (params.args.update[field] !== undefined && params.args.update[field] !== null) {
-                try {
-                  params.args.update[field] = encryptPHI(params.args.update[field]);
-                } catch (error) {
-                  logger.error({ event: 'phi_encryption_failed', field, err: error }, 'Failed to encrypt PHI field');
-                  throw error;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Execute the query
-    const result = await next(params);
-
-    // DECRYPT on read operations
-    if (params.model === 'Patient' && result) {
-      const decryptPatient = (patient: any) => {
-        if (!patient) return patient;
-
-        for (const field of phiFields) {
-          if (patient[field]) {
-            try {
-              patient[field] = decryptPHI(patient[field]);
-            } catch (error) {
-              logger.error({ event: 'phi_decryption_failed', field, err: error }, 'Failed to decrypt PHI field');
-              // Don't throw - return encrypted value to prevent data loss
-            }
-          }
-        }
-        return patient;
-      };
-
-      if (Array.isArray(result)) {
-        // findMany
-        result.forEach(decryptPatient);
-      } else if (result) {
-        // findUnique, findFirst, create, update
-        decryptPatient(result);
-      }
-    }
-
-    return result;
   });
 
   return client;

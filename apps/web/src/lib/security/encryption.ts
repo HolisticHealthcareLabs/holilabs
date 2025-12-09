@@ -3,9 +3,18 @@
  * AES-256-GCM encryption for API keys and secrets
  *
  * SECURITY: Used for encrypting sensitive data at rest in database
+ * SOC 2 Control: CC6.7 (Data Encryption), CC6.8 (Key Management)
+ *
+ * Key Versioning Support:
+ * - Supports multiple key versions for rotation (blue-green deployment)
+ * - Current key (v1) encrypts new data
+ * - Previous key (v0) decrypts old data during rotation window
+ * - Format: v{version}:iv:authTag:encrypted
  */
 
 import crypto from 'crypto';
+import { getEncryptionKey as getEncryptionKeyFromAWS } from '@/lib/secrets/aws-secrets';
+import { logger } from '@/lib/logger';
 
 // ============================================================================
 // CONFIGURATION
@@ -16,9 +25,86 @@ const IV_LENGTH = 16; // 128 bits
 const AUTH_TAG_LENGTH = 16; // 128 bits
 const SALT_LENGTH = 64;
 
+// Key version management
+let currentKeyVersion = 1;
+const keyCache: Map<number, Buffer> = new Map();
+
 /**
- * Get encryption key from environment
+ * Set the current encryption key version
+ * Called during application startup or key rotation
+ */
+export function setCurrentKeyVersion(version: number): void {
+  currentKeyVersion = version;
+  logger.info({ version }, 'Set current encryption key version');
+}
+
+/**
+ * Get current key version
+ */
+export function getCurrentKeyVersion(): number {
+  return currentKeyVersion;
+}
+
+/**
+ * Load encryption key for a specific version
+ * Keys are cached in memory for performance
+ *
+ * @param version - Key version (default: current version)
+ * @returns Encryption key buffer
+ */
+async function loadEncryptionKeyForVersion(version: number): Promise<Buffer> {
+  // Check cache first
+  if (keyCache.has(version)) {
+    return keyCache.get(version)!;
+  }
+
+  try {
+    // In production, fetch from AWS Secrets Manager
+    if (process.env.NODE_ENV === 'production' && process.env.USE_AWS_SECRETS === 'true') {
+      const versionStage = version === currentKeyVersion ? 'current' : 'previous';
+      const { key } = await getEncryptionKeyFromAWS(versionStage);
+
+      if (key.length !== 64) {
+        throw new Error(`Encryption key v${version} must be 32 bytes (64 hex characters)`);
+      }
+
+      const keyBuffer = Buffer.from(key, 'hex');
+      keyCache.set(version, keyBuffer);
+
+      logger.info({ version }, 'Loaded encryption key from AWS Secrets Manager');
+      return keyBuffer;
+    }
+
+    // Fallback to environment variables (development)
+    const envKey = version === currentKeyVersion
+      ? process.env.ENCRYPTION_KEY
+      : process.env.ENCRYPTION_KEY_PREVIOUS;
+
+    if (!envKey) {
+      throw new Error(
+        `ENCRYPTION_KEY (v${version}) not found. Set USE_AWS_SECRETS=true for production or add to .env for development`
+      );
+    }
+
+    if (envKey.length !== 64) {
+      throw new Error(`Encryption key v${version} must be 32 bytes (64 hex characters)`);
+    }
+
+    const keyBuffer = Buffer.from(envKey, 'hex');
+    keyCache.set(version, keyBuffer);
+
+    return keyBuffer;
+  } catch (error) {
+    logger.error({ error, version }, 'Failed to load encryption key');
+    throw new Error(`Failed to load encryption key v${version}: ${(error as Error).message}`);
+  }
+}
+
+/**
+ * Get encryption key from environment (legacy support)
  * Key must be 32 bytes (256 bits) in hex format
+ *
+ * @deprecated Use loadEncryptionKeyForVersion for key versioning support
  */
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
@@ -35,6 +121,14 @@ function getEncryptionKey(): Buffer {
   }
 
   return Buffer.from(key, 'hex');
+}
+
+/**
+ * Clear key cache (call after key rotation)
+ */
+export function clearKeyCache(): void {
+  keyCache.clear();
+  logger.info('Encryption key cache cleared');
 }
 
 // ============================================================================
@@ -188,8 +282,126 @@ export function maskSensitiveString(value: string, showLast: number = 4): string
 // ============================================================================
 
 /**
- * Encrypt PHI field (returns base64 string for easy storage)
+ * Encrypt PHI field with key versioning support
+ * Format: v{version}:iv:authTag:encrypted (all base64)
+ *
+ * @param plaintext - PHI data to encrypt
+ * @param keyVersion - Optional key version (default: current version)
+ * @returns Encrypted string with version prefix
+ *
+ * @example
+ * ```typescript
+ * const encrypted = await encryptPHIWithVersion('John Doe');
+ * // Returns: "v1:abc123==:def456==:ghi789=="
+ * ```
+ */
+export async function encryptPHIWithVersion(
+  plaintext: string | null,
+  keyVersion?: number
+): Promise<string | null> {
+  if (!plaintext) return plaintext;
+
+  try {
+    const version = keyVersion || currentKeyVersion;
+    const key = await loadEncryptionKeyForVersion(version);
+
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+
+    let encrypted = cipher.update(plaintext, 'utf8', 'base64');
+    encrypted += cipher.final('base64');
+
+    const authTag = cipher.getAuthTag();
+
+    // Format: v{version}:iv:authTag:encryptedData
+    return `v${version}:${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
+  } catch (error: any) {
+    logger.error({ error }, 'PHI encryption error');
+    throw new Error('Failed to encrypt PHI');
+  }
+}
+
+/**
+ * Decrypt PHI field with automatic key version detection
+ * Supports legacy format (no version prefix) and versioned format (v{n}:...)
+ *
+ * @param ciphertext - Encrypted PHI data
+ * @returns Decrypted plaintext
+ *
+ * @example
+ * ```typescript
+ * // Versioned format
+ * const decrypted = await decryptPHIWithVersion('v1:abc123==:def456==:ghi789==');
+ *
+ * // Legacy format (no version)
+ * const decrypted = await decryptPHIWithVersion('abc123==:def456==:ghi789==');
+ * ```
+ */
+export async function decryptPHIWithVersion(ciphertext: string | null): Promise<string | null> {
+  if (!ciphertext) return ciphertext;
+
+  // If doesn't contain colons, assume it's not encrypted (plaintext migration data)
+  if (!ciphertext.includes(':')) {
+    logger.warn({ ciphertext: ciphertext.substring(0, 10) }, 'PHI appears to be unencrypted');
+    return ciphertext;
+  }
+
+  try {
+    const parts = ciphertext.split(':');
+
+    // Determine if versioned format (v{n}:iv:authTag:data) or legacy (iv:authTag:data)
+    let version = currentKeyVersion;
+    let ivBase64: string;
+    let authTagBase64: string;
+    let encryptedData: string;
+
+    if (parts[0].startsWith('v')) {
+      // Versioned format: v{n}:iv:authTag:data
+      if (parts.length !== 4) {
+        throw new Error(`Invalid versioned PHI format: expected 4 parts, got ${parts.length}`);
+      }
+
+      version = parseInt(parts[0].substring(1), 10);
+      ivBase64 = parts[1];
+      authTagBase64 = parts[2];
+      encryptedData = parts[3];
+    } else {
+      // Legacy format: iv:authTag:data (assume current version)
+      if (parts.length !== 3) {
+        throw new Error(`Invalid legacy PHI format: expected 3 parts, got ${parts.length}`);
+      }
+
+      ivBase64 = parts[0];
+      authTagBase64 = parts[1];
+      encryptedData = parts[2];
+
+      logger.debug('Decrypting legacy PHI format (no version)');
+    }
+
+    // Load appropriate key version
+    const key = await loadEncryptionKeyForVersion(version);
+
+    const iv = Buffer.from(ivBase64, 'base64');
+    const authTag = Buffer.from(authTagBase64, 'base64');
+
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(authTag);
+
+    let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return decrypted;
+  } catch (error: any) {
+    logger.error({ error, ciphertext: ciphertext.substring(0, 20) }, 'PHI decryption error');
+    throw new Error('Failed to decrypt PHI');
+  }
+}
+
+/**
+ * Encrypt PHI field (legacy synchronous version - backward compatibility)
  * Format: iv:authTag:encrypted (all base64)
+ *
+ * @deprecated Use encryptPHIWithVersion for key versioning support
  */
 export function encryptPHI(plaintext: string | null): string | null {
   if (!plaintext) return plaintext;
@@ -204,7 +416,7 @@ export function encryptPHI(plaintext: string | null): string | null {
 
     const authTag = cipher.getAuthTag();
 
-    // Format: iv:authTag:encryptedData
+    // Format: iv:authTag:encryptedData (legacy format without version)
     return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
   } catch (error: any) {
     console.error('PHI encryption error:', error.message);
@@ -213,8 +425,10 @@ export function encryptPHI(plaintext: string | null): string | null {
 }
 
 /**
- * Decrypt PHI field
+ * Decrypt PHI field (legacy synchronous version - backward compatibility)
  * Expects format: iv:authTag:encryptedData (all base64)
+ *
+ * @deprecated Use decryptPHIWithVersion for key versioning support
  */
 export function decryptPHI(ciphertext: string | null): string | null {
   if (!ciphertext) return ciphertext;

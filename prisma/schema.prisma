@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ============================================================================
@@ -45,11 +44,16 @@ model User {
   organizationId String?
   organization   Organization? @relation("OrganizationPractitioners", fields: [organizationId], references: [id])
 
-  // Security
-  mfaEnabled  Boolean   @default(false)
-  lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  // Security & MFA (SOC 2 Control CC6.1)
+  mfaEnabled       Boolean   @default(false)
+  mfaServiceSid    String?   // Twilio Verify Service SID
+  mfaPhoneNumber   String?   // Encrypted phone number (E.164 format)
+  mfaBackupCodes   String[]  @default([]) // Encrypted backup codes (single-use)
+  mfaEnrolledAt    DateTime? // When MFA was enabled
+  passwordChangedAt DateTime? // For session revocation tracking
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relations
   patients              Patient[]
@@ -4879,4 +4883,136 @@ enum ReviewQueueStatus {
   APPROVED
   REJECTED
   ESCALATED
+}
+
+// ============================================================================
+// BETA SIGNUP & INVITATION CODES
+// ============================================================================
+
+model BetaSignup {
+  id    String @id @default(cuid())
+  email String @unique
+  name  String @default("")
+
+  // Invitation tracking
+  invitationCode   String?         @unique
+  usedInviteCode   InvitationCode? @relation("UsedInvites", fields: [invitationCode], references: [code])
+  
+  // First 100 tracking
+  signupNumber     Int?     @unique // Sequential number (1-100 for first 100)
+  isFirst100       Boolean  @default(false)
+  
+  // Subscription status
+  hasSubscribed    Boolean  @default(false)
+  userId           String?  @unique // Link to User when they complete registration
+  
+  // Free year tracking
+  freeYearStart    DateTime?
+  freeYearEnd      DateTime?
+  
+  // Timestamps
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([email])
+  @@index([signupNumber])
+  @@index([isFirst100])
+  @@index([invitationCode])
+  @@index([createdAt])
+  @@map("beta_signups")
+}
+
+model InvitationCode {
+  id   String @id @default(cuid())
+  code String @unique @default(cuid())
+
+  // Code type
+  codeType  InvitationCodeType @default(FRIEND_FAMILY)
+  
+  // Status
+  isActive  Boolean @default(true)
+  isUsed    Boolean @default(false)
+  
+  // Usage tracking
+  maxUses   Int     @default(1) // How many times this code can be used
+  usedCount Int     @default(0)
+  
+  // Created by
+  createdByEmail String? // Email of the person who gets to generate this
+  createdByAdmin Boolean @default(true) // Was this created by an admin?
+  
+  // Metadata
+  notes String? @db.Text // Admin notes about this code
+  
+  // Relations
+  usedBy BetaSignup[] @relation("UsedInvites")
+  
+  // Timestamps
+  createdAt DateTime  @default(now())
+  expiresAt DateTime? // Optional expiration
+  usedAt    DateTime?
+  updatedAt DateTime  @updatedAt
+
+  @@index([code])
+  @@index([codeType])
+  @@index([isActive])
+  @@index([isUsed])
+  @@index([createdByEmail])
+  @@map("invitation_codes")
+}
+
+enum InvitationCodeType {
+  FIRST_100          // Automatically assigned to first 100
+  FRIEND_FAMILY      // Personal invite codes
+  PARTNER            // Partner/affiliate codes
+  ADMIN              // Admin-generated codes
+}
+
+// Global counter for tracking first 100 signups
+model SignupCounter {
+  id           String   @id @default("singleton") // Only one row
+  currentCount Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  @@map("signup_counter")
+}
+
+// ============================================================================
+// SOC 2 COMPLIANCE MODELS
+// ============================================================================
+
+// Casbin RBAC Policy Storage (SOC 2 Control CC6.3)
+// Stores access control policies for role-based and attribute-based access control
+model CasbinRule {
+  id    Int     @id @default(autoincrement())
+  ptype String  // Policy type (p = policy, g = grouping/role)
+  v0    String? // Subject (role or user)
+  v1    String? // Object (resource)
+  v2    String? // Action (read, write, delete, etc.)
+  v3    String? // Effect or condition (optional)
+  v4    String? // Additional attribute (optional)
+  v5    String? // Additional attribute (optional)
+
+  @@index([ptype])
+  @@index([v0])
+  @@index([v1])
+  @@map("casbin_rule")
+}
+
+// Session Revocation Tracking (SOC 2 Control CC6.1)
+// Optional database backup for Redis session store
+// Use only if you need persistent revocation history beyond 30 days
+model RevokedToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique // SHA-256 hash of JWT
+  userId    String   // User who owned the token
+  reason    String   // Why token was revoked
+  revokedBy String?  // Admin user ID if applicable
+  revokedAt DateTime @default(now())
+  expiresAt DateTime // When revocation can be purged
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("revoked_tokens")
 }

@@ -2,7 +2,8 @@
 // Blockchain-Ready | HIPAA-Compliant | Web3-Compatible
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -496,19 +497,25 @@ model Patient {
   lastHashUpdate DateTime?
 
   // Personal Info (ENCRYPTED in production)
-  firstName   String   @db.Text
-  lastName    String   @db.Text
-  dateOfBirth DateTime
-  gender      String?
+  // SOC 2 Control CC6.7: Field-level encryption with key versioning
+  firstName          String @db.Text
+  firstNameKeyVersion Int   @default(1) // Encryption key version for rotation
+  lastName           String @db.Text
+  lastNameKeyVersion Int    @default(1)
+  dateOfBirth        DateTime
+  gender             String?
 
   // Contact (ENCRYPTED)
-  email      String? @db.Text
-  phone      String? @db.Text
-  address    String? @db.Text
-  city       String?
-  state      String?
-  postalCode String?
-  country    String  @default("MX")
+  email          String? @db.Text
+  emailKeyVersion Int?    @default(1)
+  phone          String? @db.Text
+  phoneKeyVersion Int?    @default(1)
+  address        String? @db.Text
+  addressKeyVersion Int?  @default(1)
+  city           String?
+  state          String?
+  postalCode     String?
+  country        String  @default("MX")
 
   // Medical Record Number
   mrn         String  @unique // Internal MRN
@@ -571,16 +578,22 @@ model Patient {
   primaryContactName     String?
   primaryContactRelation String? // e.g., "Daughter", "Son", "Spouse"
   primaryContactPhone    String? @db.Text // Encrypted
+  primaryContactPhoneKeyVersion Int? @default(1)
   primaryContactEmail    String? @db.Text // Encrypted
+  primaryContactEmailKeyVersion Int? @default(1)
   primaryContactAddress  String? @db.Text // Encrypted
+  primaryContactAddressKeyVersion Int? @default(1)
 
   secondaryContactName     String?
   secondaryContactRelation String?
   secondaryContactPhone    String? @db.Text
+  secondaryContactPhoneKeyVersion Int? @default(1)
   secondaryContactEmail    String? @db.Text
+  secondaryContactEmailKeyVersion Int? @default(1)
 
   emergencyContactName     String?
   emergencyContactPhone    String? @db.Text
+  emergencyContactPhoneKeyVersion Int? @default(1)
   emergencyContactRelation String?
 
   // Family portal access

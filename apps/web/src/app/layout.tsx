@@ -5,7 +5,6 @@ import '@/styles/mobile.css';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { Providers } from '@/components/Providers';
 import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
-import { FeedbackWidget } from '@/components/FeedbackWidget';
 import { SkipLink } from '@/components/SkipLink';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
@@ -70,7 +69,6 @@ export default function RootLayout({
           <Providers>
             <OfflineIndicator />
             <IOSInstallPrompt />
-            <FeedbackWidget />
             <CookieConsentBanner />
             <main id="main-content">
               {children}

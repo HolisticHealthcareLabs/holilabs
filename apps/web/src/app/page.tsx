@@ -1,10 +1,15 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { IntroAnimation } from '@/components/IntroAnimation';
+import { AICommandCenter, AICommandButton, FeedbackButton } from '@/components/AICommandCenter';
+import { useLanguage } from '@/hooks/useLanguage';
+import { Language, languageCodes } from '@/lib/translations';
 
 // --- CONFIGURATION ---
 const BRAND_GREEN_HEX = '#00FF88';
@@ -93,9 +98,15 @@ function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTh
 
 export default function Home() {
   const [email, setEmail] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+  const [showInviteField, setShowInviteField] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showIntro, setShowIntro] = useState(true);
+  const [showAICommand, setShowAICommand] = useState(false);
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,19 +117,32 @@ export default function Home() {
       const response = await fetch('/api/beta-signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name: '' }),
+        body: JSON.stringify({ 
+          email, 
+          name: '', 
+          inviteCode: inviteCode || undefined 
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: '¡Éxito! Revisa tu email para acceso instantáneo' });
+        let successMessage = data.message || '¡Éxito! Revisa tu email para acceso instantáneo';
+        
+        if (data.isFirst100) {
+          successMessage = `🎉 ¡Felicidades! Eres el usuario #${data.signupNumber} y tienes acceso GRATIS por 1 año. Revisa tu email.`;
+        } else if (data.hasFreeYear) {
+          successMessage = '🎁 ¡Acceso GRATIS por 1 año activado! Revisa tu email.';
+        }
+        
+        setMessage({ type: 'success', text: successMessage });
         setEmail('');
+        setInviteCode('');
         confetti({
-          particleCount: 100,
-          spread: 70,
+          particleCount: data.isFirst100 ? 200 : 100,
+          spread: data.isFirst100 ? 90 : 70,
           origin: { y: 0.6 },
-          colors: [BRAND_GREEN_HEX, '#00cc6a', '#00aa55'],
+          colors: data.hasFreeYear ? ['#f59e0b', '#fbbf24', '#fcd34d'] : [BRAND_GREEN_HEX, '#00cc6a', '#00aa55'],
         });
       } else {
         setMessage({ type: 'error', text: data.error || 'Error. Por favor reintenta' });
@@ -131,22 +155,31 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen font-sans tracking-tight bg-white text-gray-900 dark:bg-[#0A0A0A] dark:text-white transition-colors duration-300 overflow-x-hidden selection:bg-[#00FF88]/30">
+    <>
+      {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} duration={3000} />}
+      <AICommandCenter isOpen={showAICommand} onClose={() => setShowAICommand(false)} />
+      <AICommandButton onClick={() => setShowAICommand(true)} />
+      <FeedbackButton />
       
-      {/* GLOBAL BACKGROUND GLOW (Dark Mode Only) */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-700">
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-[#00FF88]/10 via-transparent to-transparent blur-[120px]" />
+      <div className="min-h-screen font-sans tracking-tight text-gray-900 transition-colors duration-300 overflow-x-hidden selection:bg-[#00FF88]/30" style={{ background: 'linear-gradient(180deg, #f0f9ff 0%, #ffffff 20%, #ffffff 100%)' }}>
+        
+        {/* Subtle background pattern */}
+        <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.02]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(0 0 0 / 0.05) 1px, transparent 0)',
+          backgroundSize: '40px 40px'
+        }} />
       </div>
 
-      {/* NAVIGATION */}
-      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-gray-200/50 dark:border-white/5 bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl">
-        <nav className="container mx-auto px-6 py-3 flex items-center justify-between">
+      {/* NAVIGATION - PIPEFY STYLE WITH GAP */}
+      <header className="fixed top-4 left-0 right-0 z-50 px-4">
+        <nav className="container mx-auto max-w-[1400px] bg-white rounded-2xl shadow-lg border border-gray-200/50 px-8 py-4 flex items-center justify-between">
           
           {/* LOGO */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative w-10 h-10 transition-transform duration-300 group-hover:scale-105">
               <Image
-                src="/logos/Logo 1_Light.svg"
+                src="/logos/Logo 1_Dark.svg"
                 alt="Holi Labs"
                 fill
                 className="object-contain"
@@ -154,18 +187,8 @@ export default function Home() {
               />
             </div>
             <span
-              className="text-xl tracking-tight relative"
-              style={{
-                fontWeight: 600,
-                letterSpacing: '-0.02em',
-                background: theme === 'dark' 
-                  ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #c0c0c0 75%, #ffffff 100%)'
-                  : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                filter: theme === 'dark' ? 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' : 'drop-shadow(0.5px 0.5px 1px rgba(0,0,0,0.1))',
-              }}
+              className="text-xl font-semibold tracking-tight"
+              style={{ color: '#014751' }}
             >
               Holi Labs
             </span>
@@ -173,339 +196,1575 @@ export default function Home() {
 
           {/* DESKTOP LINKS */}
           <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
-            {['El Problema', 'Solución', 'Plataforma'].map((item) => (
+            {[
+              { labelKey: 'platform', href: '#plataforma' },
+              { labelKey: 'cases', href: '#casos' },
+              { labelKey: 'pricing', href: '#precios' }
+            ].map((item) => (
               <Link
-                key={item}
-                href={`#${item.toLowerCase().replace(' ', '')}`}
-                className="text-gray-600 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
+                key={item.href}
+                href={item.href}
+                className="text-gray-600 hover:text-gray-900 transition-colors"
               >
-                {item}
+                {t.nav[item.labelKey as keyof typeof t.nav]}
               </Link>
             ))}
           </div>
 
           {/* RIGHT ACTIONS */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
+            {/* Globe Icon with Language Dropdown - Pipefy Style */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+                aria-label="Language"
+              >
+                <svg 
+                  className="w-5 h-5 text-gray-600" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              </button>
+              
+              {/* Language Dropdown */}
+              {showLanguageMenu && (
+                <div className="absolute top-12 right-0 bg-white rounded-xl shadow-lg border border-gray-200 py-2 min-w-[120px] z-50">
+                  {(['en', 'es', 'pt'] as Language[]).map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => {
+                        setLanguage(lang);
+                        setShowLanguageMenu(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${
+                        language === lang ? 'font-semibold text-gray-900' : 'text-gray-600'
+                      }`}
+                    >
+                      {languageCodes[lang]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <a
-              href="#acceso"
-              className="bg-[linear-gradient(110deg,#00FF88,45%,#b0ffda,55%,#00FF88)] bg-[length:200%_100%] animate-shimmer-fast text-black font-bold text-sm px-6 py-2.5 rounded-full hover:shadow-[0_0_20px_rgba(0,255,136,0.3)] active:scale-95 transition-all duration-300"
+              href="/dashboard"
+              className="hidden md:block text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors px-4 py-2"
             >
-              Agendar Demo
+              {t.nav.signIn}
             </a>
-            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+            <a
+              href="#demo"
+              style={{ backgroundColor: '#014751' }}
+              className="hover:opacity-90 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              {t.nav.demo}
+            </a>
           </div>
         </nav>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="relative z-10 pt-32 pb-20 px-6 min-h-[90vh] flex items-center justify-center">
-        <div className="container mx-auto max-w-5xl text-center space-y-10">
+      <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden mt-20 px-4 bg-white">
+
+        {/* Content - Centered */}
+        <div className="container mx-auto px-10 md:px-16 relative z-10 max-w-7xl">
+          <div className="max-w-5xl mx-auto text-center">
+
+            {/* Vision Badge - Centered */}
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gray-100 border border-gray-200 mb-8">
+              <span className="text-sm font-semibold tracking-wide" style={{ color: '#014751' }}>{t.hero.badge}</span>
+            </div>
+
+            {/* Main Headline - Centered */}
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-[1.1] tracking-tight whitespace-pre-line" style={{ color: '#014751' }}>
+              {t.hero.headline}
+            </h1>
+
+            {/* Subheadline - Centered */}
+            <p className="text-xl md:text-2xl text-gray-700 mb-12 leading-relaxed font-light max-w-3xl mx-auto">
+              {t.hero.subheadline}
+            </p>
+
+            {/* CTA Button - Centered */}
+            <div className="flex items-center justify-center">
+              <a
+                href="/auth/register"
+                className="inline-flex items-center justify-center px-12 py-5 rounded-xl text-xl font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
+                style={{
+                  background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
+                }}
+              >
+                {t.hero.ctaPrimary}
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce">
+          <svg className="w-6 h-6" style={{ color: '#014751', opacity: 0.6 }} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </div>
+
+      </section>
+
+      {/* PROBLEM/SOLUTION CONTRAST - HEALTH 3.0 */}
+      <section id="problema" className="py-16 px-6 bg-white border-t border-gray-200">
+        <div className="container mx-auto max-w-6xl">
           
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 shadow-sm backdrop-blur-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00FF88]"></span>
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <span className="inline-block text-sm font-bold uppercase tracking-widest mb-6" style={{ color: '#014751' }}>
+              {t.paradigm.badge}
             </span>
-            <span className="text-xs font-bold uppercase tracking-widest text-gray-900 dark:text-[#00FF88]">
-              IA Médica para Latinoamérica
-            </span>
+            <h2 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+              {t.paradigm.headline} <span style={{ color: '#014751' }}>{t.paradigm.headlineHighlight}</span>
+            </h2>
+            <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
+              {t.paradigm.subheadline}
+            </p>
           </div>
 
-          {/* Headlines */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter leading-[1.1] text-gray-900 dark:text-white">
-            Moderniza tu clínica.<br />
-            <span 
-              className="text-[#00FF88]"
-              style={{ textShadow: theme === 'dark' ? '0 0 30px rgba(0, 255, 136, 0.2)' : 'none' }}
-            >
-              Sin papeleo.
-            </span>
-          </h1>
+          {/* Before/After Grid */}
+          <div className="grid md:grid-cols-2 gap-8">
+            
+            {/* BEFORE - Traditional */}
+            <div className="rounded-[2rem] p-10 bg-gradient-to-br from-red-50/80 to-pink-50/60 border-2 border-red-200/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center text-3xl shadow-sm">
+                  📝
+                </div>
+                <h3 className="text-3xl font-bold text-gray-900">{t.paradigm.legacyTitle}</h3>
+              </div>
+              <ul className="space-y-5">
+                {t.paradigm.legacyItems.map((item, i) => (
+                  <li key={i} className="flex items-start gap-4 text-lg text-gray-700">
+                    <span className="text-red-500 text-xl mt-0.5">❌</span>
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-white/70 max-w-2xl mx-auto leading-relaxed text-balance">
-            Recupera tu vida. <span className="font-bold text-gray-900 dark:text-white">Holi Labs</span> automatiza tu práctica, elimina el <span className="font-bold text-gray-900 dark:text-white">80% del papeleo</span> y protege tus ingresos sin que muevas un dedo.
-          </p>
-
-          {/* CTA Group */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <a
-              href="#acceso"
-              className="flex items-center justify-center bg-[linear-gradient(110deg,#00FF88,45%,#b0ffda,55%,#00FF88)] bg-[length:200%_100%] animate-shimmer-fast text-black px-10 py-5 rounded-full text-lg font-bold hover:shadow-[0_0_30px_rgba(0,255,136,0.4)] active:scale-95 transition-all duration-300 group shadow-xl shadow-[#00FF88]/20"
-            >
-              Agendar Demo
-              <span className="ml-2 transform group-hover:translate-x-1 transition-transform">→</span>
-            </a>
-            {/* Ghost Glass Button (Unified Style) */}
-            <a
-              href="#solucion"
-              className="flex items-center justify-center px-10 py-5 rounded-full text-lg font-semibold 
-                bg-gray-100 dark:bg-white/5 
-                border border-gray-200 dark:border-white/10 
-                text-gray-900 dark:text-white 
-                hover:bg-gray-200 dark:hover:bg-white/10 
-                hover:border-gray-300 dark:hover:border-[#00FF88]/30 
-                active:scale-95 transition-all duration-300"
-            >
-              Ver Plataforma
-            </a>
+            {/* AFTER - Health 3.0 */}
+            <div className="rounded-[2rem] p-10 bg-gradient-to-br from-emerald-50/80 to-teal-50/60 border-2 border-emerald-200/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm bg-emerald-100">
+                  <div className="relative w-10 h-10">
+                    <Image
+                      src="/logos/Logo 1_Dark.svg"
+                      alt="Holi Labs"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-900">{t.paradigm.health3Title}</h3>
+              </div>
+              <ul className="space-y-5">
+                {t.paradigm.health3Items.map((item, i) => (
+                  <li key={i} className="flex items-start gap-4 text-lg text-gray-800 font-medium">
+                    <span className="text-xl mt-0.5" style={{ color: '#014751' }}>✅</span>
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          {/* Micro Copy */}
-          <p className="text-xs font-medium text-gray-500 dark:text-white/50 pt-2 tracking-wide uppercase">
-            Atención Real • Tu Data es Tuya
-          </p>
+          {/* Bottom CTA */}
+          <div className="text-center mt-16">
+            <p className="text-2xl text-gray-700 mb-4">
+              <span className="font-bold text-gray-900">{language === 'en' ? 'Result:' : language === 'pt' ? 'Resultado:' : 'Resultado:'}</span> {t.paradigm.result}
+            </p>
+          </div>
+        </div>
+      </section>
 
-          {/* Metrics */}
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 pt-12 border-t border-gray-200 dark:border-white/5 w-full max-w-3xl mx-auto">
+
+      {/* ONE PLATFORM - PLANHAT STYLE */}
+      <section className="py-16 px-6 bg-white">
+        <div className="container mx-auto max-w-7xl">
+          
+          {/* Section Header */}
+          <div className="text-center mb-20">
+            <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block" style={{ color: '#014751' }}>
+              {t.onePlatform.badge}
+            </span>
+            <h2 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+              {t.onePlatform.headline}
+            </h2>
+            <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
+              {t.onePlatform.subheadline}
+            </p>
+          </div>
+
+          {/* Three Feature Pillars - Planhat Style */}
+          <div className="grid md:grid-cols-3 gap-8">
+            
+            {/* Pillar 1: AI Automation */}
+            <div className="rounded-[2rem] bg-gradient-to-br from-purple-50/40 to-indigo-50/40 p-8 border border-purple-200/50 hover:shadow-xl transition-all group">
+              <div className="mb-6 aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-purple-500 to-indigo-600 p-8 flex items-center justify-center shadow-lg overflow-hidden relative">
+                {/* Chat Interface Mockup */}
+                <div className="absolute inset-4 bg-white/95 rounded-2xl p-4 flex flex-col gap-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-sm">👤</div>
+                    <div className="flex-1 bg-gray-100 rounded-2xl px-3 py-2 text-xs text-gray-700">
+                      Generar nota SOAP para paciente diabético...
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: 'rgba(1, 71, 81, 0.1)' }}>✨</div>
+                    <div className="flex-1 rounded-2xl px-3 py-2 text-xs text-white" style={{ backgroundColor: '#014751' }}>
+                      Nota generada con HbA1c, plan de tx...
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Automation</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Conecta cualquier LLM a nuestra plataforma líder en datos médicos y usa tus datos como contexto para automatizar transcripciones, generar notas SOAP, y acelerar flujos clínicos.
+              </p>
+            </div>
+
+            {/* Pillar 2: Value-Based Care Tracking */}
+            <div className="rounded-[2rem] bg-gradient-to-br from-blue-50/40 to-cyan-50/40 p-8 border border-blue-200/50 hover:shadow-xl transition-all group">
+              <div className="mb-6 aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-blue-600 to-cyan-600 p-6 flex items-center justify-center shadow-lg overflow-hidden relative">
+                {/* Dashboard Chart Mockup */}
+                <div className="absolute inset-4 bg-white/95 rounded-2xl p-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full" style={{ width: '85%' }}></div>
+                    <div className="h-2 bg-gradient-to-r from-teal-400 to-emerald-400 rounded-full" style={{ width: '72%' }}></div>
+                    <div className="h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full" style={{ width: '90%' }}></div>
+                  </div>
+                  <div className="mt-4 text-xs text-gray-600 font-semibold">HbA1c Control: 85%</div>
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Value-Based Care</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Rastrea los resultados clínicos en tiempo real. Visualiza métricas de calidad, adherencia al tratamiento y desempeño poblacional para demostrar un valor tangible.
+              </p>
+            </div>
+
+            {/* Pillar 3: Prevention Hub */}
+            <div className="rounded-[2rem] bg-gradient-to-br from-emerald-50/40 to-teal-50/40 p-8 border border-emerald-200/50 hover:shadow-xl transition-all group">
+              <div className="mb-6 aspect-[4/3] rounded-[1.5rem] p-6 flex items-center justify-center shadow-lg overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #014751, #10b981)' }}>
+                {/* Protocol Cards */}
+                <div className="absolute inset-4 flex flex-col gap-2">
+                  <div className="bg-white/95 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 flex items-center gap-2">
+                    <span className="text-green-500">✓</span> WHO NCD Protocol
+                  </div>
+                  <div className="bg-white/95 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 flex items-center gap-2">
+                    <span className="text-blue-500">✓</span> USPSTF Screenings
+                  </div>
+                  <div className="bg-white/95 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 flex items-center gap-2">
+                    <span className="text-purple-500">✓</span> PAHO Guidelines
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Prevention Hub</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Accede a protocolos de prevención de WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera alertas automáticas para screenings vencidos.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* DISCOVER YOUR CO-PILOT SECTION */}
+      <section className="py-16 px-6 bg-gradient-to-b from-gray-50 to-white">
+        <div className="container mx-auto max-w-7xl">
+          
+          {/* Section Header */}
+          <div className="text-center mb-20">
+            <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block" style={{ color: '#014751' }}>
+              DESCUBRE TU CO-PILOT
+            </span>
+            <h2 className="text-6xl md:text-7xl font-bold mb-8 leading-tight" style={{ color: '#014751' }}>
+              Una biblioteca de soluciones inteligentes<br/>disponibles para automatizar tu práctica
+            </h2>
+            <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
+              Crea, ajusta y gestiona soluciones de IA para automatizar tus procesos clínicos rápidamente.
+            </p>
+          </div>
+
+          {/* Four Solution Cards */}
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
+            
+            {/* 1. Gobernanza Corporativa */}
+            <div className="rounded-[2rem] bg-white border-2 border-gray-200 p-10 hover:border-gray-300 hover:shadow-xl transition-all">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm" style={{ backgroundColor: 'rgba(1, 71, 81, 0.1)' }}>
+                  🏛️
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Gobernanza Corporativa Flexible</h3>
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    Implemente gobernanza bajo sus términos. Garantice conformidad regulatoria, protección de datos y control total a escala hospitalaria.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-6">
+                <span className="px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-700">HIPAA/LGPD</span>
+                <span className="px-4 py-2 rounded-full bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-700">Audit Logs</span>
+                <span className="px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-sm font-semibold text-emerald-700">Role-Based Access</span>
+              </div>
+            </div>
+
+            {/* 2. Value-Based Care Outcomes */}
+            <div className="rounded-[2rem] bg-white border-2 border-gray-200 p-10 hover:border-gray-300 hover:shadow-xl transition-all">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center text-3xl shadow-sm">
+                  📊
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Rastreo de Outcomes Basados en Valor</h3>
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    Dashboard extensivo que muestra outcomes tangibles: control de HbA1c, reducción de hospitalizaciones, adherencia a tratamientos, y métricas de calidad para contratos de valor.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-6">
+                <span className="px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-700">HEDIS Measures</span>
+                <span className="px-4 py-2 rounded-full bg-indigo-50 border border-indigo-200 text-sm font-semibold text-indigo-700">Quality Metrics</span>
+                <span className="px-4 py-2 rounded-full bg-cyan-50 border border-cyan-200 text-sm font-semibold text-cyan-700">Population Health</span>
+              </div>
+            </div>
+
+            {/* 3. Prevention Hub WHO/PAHO */}
+            <div className="rounded-[2rem] bg-white border-2 border-gray-200 p-10 hover:border-gray-300 hover:shadow-xl transition-all">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-3xl shadow-sm">
+                  🎯
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Hub de Prevención con Protocolos Globales</h3>
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    Accede a protocolos de prevención establecidos por WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera recordatorios automáticos para screenings.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-6">
+                <span className="px-4 py-2 rounded-full bg-green-50 border border-green-200 text-sm font-semibold text-green-700">WHO NCD</span>
+                <span className="px-4 py-2 rounded-full bg-teal-50 border border-teal-200 text-sm font-semibold text-teal-700">PAHO LATAM</span>
+                <span className="px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-sm font-semibold text-emerald-700">USPSTF A/B</span>
+              </div>
+            </div>
+
+            {/* 4. AI Command Center */}
+            <div className="rounded-[2rem] bg-white border-2 border-gray-200 p-10 hover:border-gray-300 hover:shadow-xl transition-all">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-3xl shadow-sm">
+                  🤖
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Navegación Inteligente Predictiva</h3>
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    Co-Pilot que predice qué herramientas necesitas según hora del día, tipo de paciente, y tus patrones de uso. Acceso instantáneo a cualquier función con comandos de voz.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-6">
+                <span className="px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-700">Voice Commands</span>
+                <span className="px-4 py-2 rounded-full bg-orange-50 border border-orange-200 text-sm font-semibold text-orange-700">Smart Navigation</span>
+                <span className="px-4 py-2 rounded-full bg-yellow-50 border border-yellow-200 text-sm font-semibold text-yellow-700">Predictive UI</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* COLLABORATION SECTION - PLANHAT STYLE */}
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-emerald-50/30">
+        <div className="container mx-auto max-w-7xl">
+          
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block" style={{ color: '#014751' }}>
+              COLABORACIÓN
+            </span>
+            <h2 className="text-6xl md:text-7xl font-bold mb-8 leading-tight" style={{ color: '#014751' }}>
+              Elimina Silos,<br/>Maximiza Colaboración.
+            </h2>
+            <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
+              Consolida tu información clínica y alinea a tu equipo médico alrededor de procesos que generan impacto real en la salud de tus pacientes.
+            </p>
+          </div>
+
+          {/* Collaboration Features Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+            
+            {/* Feature: Multi-User EHR */}
+            <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">EHR Multi-Usuario con Permisos</h3>
+              <p className="text-gray-700 text-base">
+                Médicos, enfermeras, y staff acceden al mismo expediente con roles diferenciados. Control granular de quién ve qué información.
+              </p>
+            </div>
+
+            {/* Feature: Real-Time Messaging */}
+            <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Mensajería HIPAA en Tiempo Real</h3>
+              <p className="text-gray-700 text-base">
+                Integra WhatsApp, Teams y comunicación interna directamente en los flujos clínicos. Centraliza comunicaciones con rastreabilidad y gobernanza de TI.
+              </p>
+            </div>
+
+            {/* Feature: Shared Care Plans */}
+            <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Planes de Cuidado Compartidos</h3>
+              <p className="text-gray-700 text-base">
+                Construye experiencias de atención coordinada. Todo el equipo ve las mismas metas, intervenciones, y progreso del paciente en tiempo real.
+              </p>
+            </div>
+
+            {/* Feature: Team Analytics */}
+            <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Analytics de Equipo</h3>
+              <p className="text-gray-700 text-base">
+                Monitorea productividad, carga de trabajo, y outcomes por proveedor. Identifica oportunidades de mejora y distribuye casos equitativamente.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* DATA MANAGEMENT SECTION - PLANHAT STYLE */}
+      <section className="py-16 px-6 bg-gradient-to-b from-blue-50/30 to-white">
+        <div className="container mx-auto max-w-7xl">
+          
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block" style={{ color: '#014751' }}>
+              DATA
+            </span>
+            <h2 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+              Gestión de Datos<br/>Líder en el Mercado
+            </h2>
+            <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
+              Conecta tus datos, personaliza cómo los ves, y luego automatiza acciones. La forma correcta de aprovechar IA a nivel hospitalario.
+            </p>
+          </div>
+
+          {/* Three Data Pillars */}
+          <div className="grid md:grid-cols-3 gap-8">
+            
+            {/* Pillar 1: Native Integrations */}
+            <div className="rounded-[2rem] bg-white border border-gray-200 p-8 hover:shadow-lg transition-all">
+              <div className="mb-6">
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="aspect-square rounded-xl bg-blue-50 flex items-center justify-center text-xl">💊</div>
+                  <div className="aspect-square rounded-xl bg-purple-50 flex items-center justify-center text-xl">🏥</div>
+                  <div className="aspect-square rounded-xl bg-emerald-50 flex items-center justify-center text-xl">🧪</div>
+                  <div className="aspect-square rounded-xl bg-pink-50 flex items-center justify-center text-xl">📅</div>
+                  <div className="aspect-square rounded-xl bg-cyan-50 flex items-center justify-center text-xl">💬</div>
+                  <div className="aspect-square rounded-xl bg-amber-50 flex items-center justify-center text-xl">📊</div>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Integraciones Nativas</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Conecta instantáneamente con labs, farmacias, y sistemas existentes. Sincroniza datos en minutos con 50+ integraciones nativas sin código.
+              </p>
+            </div>
+
+            {/* Pillar 2: Custom Connections */}
+            <div className="rounded-[2rem] bg-white border border-gray-200 p-8 hover:shadow-lg transition-all">
+              <div className="mb-6 aspect-[4/3] rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-6 flex items-center justify-center text-white text-sm font-mono shadow-lg">
+                <div className="text-center">
+                  API Webhooks<br/>FHIR R4<br/>HL7 | DICOM
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Conexiones Personalizadas</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Construye conexiones personalizadas a miles de herramientas usando nuestra API potente e intuitiva. Webhooks, FHIR, HL7, todo lo que necesites.
+              </p>
+            </div>
+
+            {/* Pillar 3: Transform & Automate */}
+            <div className="rounded-[2rem] bg-white border border-gray-200 p-8 hover:shadow-lg transition-all">
+              <div className="mb-6 aspect-[4/3] rounded-2xl p-6 flex flex-col gap-2" style={{ background: 'linear-gradient(135deg, #014751, #10b981)' }}>
+                <div className="bg-white/90 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800">Lab Result → Auto-Flag → Care Plan</div>
+                <div className="bg-white/90 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800">HbA1c ≥5.7% → Diabetes Prevention</div>
+                <div className="bg-white/90 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800">Missed Screening → Alert + Schedule</div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Combina y Transforma</h3>
+              <p className="text-gray-700 leading-relaxed">
+                Toma control transformando tus datos clínicos en lo que tu equipo necesita: workflows automatizados, fórmulas predictivas, y alertas inteligentes.
+              </p>
+            </div>
+
+          </div>
+
+          {/* Integrations Showcase */}
+          <div className="mt-20 rounded-[2rem] bg-white border-2 border-gray-200 p-12">
+            <h3 className="text-3xl font-bold text-gray-900 text-center mb-12">Integraciones Disponibles</h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {/* Medical Systems */}
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Sistemas Médicos</p>
+                <div className="space-y-3">
+                  <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">FHIR R4</div>
+                  <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">HL7</div>
+                  <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">DICOM</div>
+                  <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">RNDS Brasil</div>
+                </div>
+              </div>
+
+              {/* Pharmacies */}
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Farmacias</p>
+                <div className="space-y-3">
+                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">Guadalajara</div>
+                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">Benavides</div>
+                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">Del Ahorro</div>
+                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">+5 más</div>
+                </div>
+              </div>
+
+              {/* Communication */}
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Comunicación</p>
+                <div className="space-y-3">
+                  <div className="px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm font-semibold text-green-800">WhatsApp</div>
+                  <div className="px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm font-semibold text-green-800">Twilio SMS</div>
+                  <div className="px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm font-semibold text-green-800">SendGrid</div>
+                  <div className="px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm font-semibold text-green-800">Push Notifications</div>
+                </div>
+              </div>
+
+              {/* AI Models */}
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Modelos IA</p>
+                <div className="space-y-3">
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
+                    <span className="text-xs">🔮</span> GPT-4
+                  </div>
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
+                    <span className="text-xs">☀️</span> Claude
+                  </div>
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
+                    <span className="text-xs">✨</span> Gemini
+                  </div>
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
+                    <span className="text-xs">🦙</span> LLaMA
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-gray-600 text-base">
+                + Databases, ERP, Cloud Apps, Workflows y más
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* VALUE PROPOSITION CARDS - PIPEFY STYLE */}
+      <section className="py-20 px-6 bg-gradient-to-b from-blue-50/30 to-white">
+        <div className="container mx-auto max-w-6xl">
+          
+          <div className="grid md:grid-cols-2 gap-12 mb-20">
+            
+            {/* Card 1: AI Agents */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 border border-purple-200">
+                <span className="text-sm font-semibold text-purple-700">AI Agents prontos para usar</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+                En segundos, transforma consultas en notas clínicas perfectas
+              </h3>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Con AI que entiende español y portugués, el Pipefy médico automatiza documentación, genera notas SOAP y libera 3-4 horas diarias para que te enfoques en tus pacientes.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
+                  AI Medical Scribe
+                </span>
+                <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
+                  Transcripción en tiempo real
+                </span>
+                <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
+                  Notas SOAP automáticas
+                </span>
+              </div>
+            </div>
+
+            {/* Card 2: Integration */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 border border-blue-200">
+                <span className="text-sm font-semibold text-blue-700">Integración inteligente</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+                Gestiona todo en un solo lugar
+              </h3>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                Plataforma completa: EHR, prevención, telemedicina, e-prescribing, portal de pacientes, analytics y más. Todo lo que necesitas para crear una práctica moderna en minutos.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
+                  FHIR R4 compliant
+                </span>
+                <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
+                  HIPAA/LGPD
+                </span>
+                <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
+                  8+ farmacias integradas
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* COMPREHENSIVE PLATFORM FEATURES */}
+      <section id="plataforma" className="py-16 px-6 bg-white">
+        <div className="container mx-auto max-w-7xl">
+          
+          {/* Section Header */}
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+              Una plataforma completa y personalizable
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Todos los módulos que necesitas para operar tu clínica con eficiencia y escalar sin límites.
+            </p>
+          </div>
+
+          {/* Module 1: PREVENTION & POPULATION HEALTH */}
+          <div className="mb-20">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 border border-blue-200 mb-6">
+                <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Prevención & Manejo Poblacional</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Medicina preventiva a escala
+              </h3>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Automatiza screenings, identifica gaps de prevención y maneja poblaciones completas con protocolos WHO/PAHO/USPSTF.
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  title: 'Hub de Prevención Longitudinal',
+                  desc: 'Timeline visual de 30 años con todos los screenings. 7 dominios de salud organizados.',
+                  badge: '100+ intervenciones',
+                  icon: '📊',
+                  color: 'blue'
+                },
+                {
+                  title: 'Screening Triggers',
+                  desc: '15+ protocolos automatizados. Monitoreo diario de TODOS tus pacientes.',
+                  badge: '0 horas rastreando',
+                  icon: '⏰',
+                  color: 'indigo'
+                },
+                {
+                  title: 'Monitoreo de Labs',
+                  desc: 'Auto-flagging de resultados críticos con planes automáticos y cálculo de riesgo.',
+                  badge: 'Prevención 2ª',
+                  icon: '🧪',
+                  color: 'purple'
+                }
+              ].map((feat, i) => (
+                <div key={i} className="group p-8 rounded-xl bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 text-center">
+                  <div className="text-5xl mb-4 flex items-center justify-center">{feat.icon}</div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-3">{feat.title}</h4>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-4">{feat.desc}</p>
+                  <div className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-lg">
+                    {feat.badge}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Module 2: AI CLINICAL */}
+          <div className="mb-20">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 border border-emerald-200 mb-6">
+                <span className="text-emerald-600">🤖</span>
+                <span className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Inteligencia Artificial Clínica</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                IA que trabaja para ti 24/7
+              </h3>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Scribe médico, decisiones clínicas y co-pilot inteligente. Libera tu tiempo para lo que realmente importa.
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                {
+                  title: 'AI Medical Scribe',
+                  desc: 'Transcripción → Notas SOAP automáticas. Códigos ICD-10 sugeridos.',
+                  time: 'Ahorra 3-4h/día',
+                  icon: '🎙️'
+                },
+                {
+                  title: 'Clinical Decision Support',
+                  desc: '12+ reglas activas. Interacciones medicamentosas, protocolos WHO, alertas de riesgo.',
+                  time: 'Solo alertas útiles',
+                  icon: '⚕️'
+                },
+                {
+                  title: 'AI Co-Pilot',
+                  desc: 'Chatbot clínico contextual. Diagnósticos diferenciales, redacción de notas.',
+                  time: 'Inteligencia aumentada',
+                  icon: '💬'
+                }
+              ].map((feat, i) => (
+                <div key={i} className="group p-8 rounded-xl bg-white border border-gray-200 hover:border-emerald-300 hover:shadow-lg transition-all duration-200 text-center">
+                  <div className="text-5xl mb-4 flex items-center justify-center">{feat.icon}</div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-3">{feat.title}</h4>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-4">{feat.desc}</p>
+                  <div className="text-sm font-semibold text-emerald-600">{feat.time}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Module 3: COMPLETE EHR - Rectangular Grid */}
+          <div className="mb-20">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-100 border border-indigo-200 mb-6">
+                <span className="text-indigo-600">📋</span>
+                <span className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">EHR Completo</span>
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Registro médico electrónico de clase mundial
+              </h3>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Todo lo que necesitas para documentar, gestionar y compartir información clínica con total seguridad.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { icon: '👤', label: 'Demografía LGPD', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+                { icon: '📝', label: 'Notas SOAP', color: 'bg-purple-50 border-purple-200 text-purple-700' },
+                { icon: '💊', label: 'Medicamentos + MAR', color: 'bg-pink-50 border-pink-200 text-pink-700' },
+                { icon: '⚠️', label: 'Alergias', color: 'bg-red-50 border-red-200 text-red-700' },
+                { icon: '🩺', label: 'Signos Vitales', color: 'bg-green-50 border-green-200 text-green-700' },
+                { icon: '🧪', label: 'Labs LOINC', color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
+                { icon: '🏥', label: 'Imagenología DICOM', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
+                { icon: '🔬', label: 'Screening Protocols', color: 'bg-violet-50 border-violet-200 text-violet-700' }
+              ].map((item, i) => (
+                <div key={i} className={`p-6 rounded-xl border-2 ${item.color} hover:shadow-md transition-all duration-200 text-center`}>
+                  <div className="text-3xl mb-3">{item.icon}</div>
+                  <div className="text-sm font-semibold">{item.label}</div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-8 p-6 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200">
+              <p className="text-center text-gray-700 leading-relaxed">
+                <span className="font-bold text-gray-900">Por qué es diferente:</span> Humanización completa, historial familiar multinivel, FHIR R4 compliant, RNDS Brasil, IPS export internacional.
+              </p>
+            </div>
+          </div>
+
+          {/* Module 4: MORE FEATURES - Clean Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { val: '50+', label: 'Clínicas' },
-              { val: '100%', label: 'HIPAA / LGPD' },
-              { val: '24/7', label: 'Sin Cláusulas' }
-            ].map((metric) => (
-              <div key={metric.label} className="flex flex-col items-center">
-                <span className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{metric.val}</span>
-                <span className="text-sm font-medium text-gray-500 dark:text-white/60 uppercase tracking-wider">{metric.label}</span>
+              {
+                icon: '💊',
+                title: 'E-Prescribing',
+                desc: '8+ farmacias integradas. Firma digital ICP-Brasil.'
+              },
+              {
+                icon: '📅',
+                title: 'Telemedicina',
+                desc: 'Video HD, Google/Outlook sync, -40% no-shows.'
+              },
+              {
+                icon: '📱',
+                title: 'Portal Pacientes',
+                desc: 'Acceso completo, citas online, mensajería HIPAA.'
+              },
+              {
+                icon: '💬',
+                title: 'Omnicanal',
+                desc: 'WhatsApp, SMS, Email, Push. E2E encryption.'
+              },
+              {
+                icon: '📝',
+                title: 'Formularios IA',
+                desc: 'Drag-and-drop, generación AI, e-firma.'
+              },
+              {
+                icon: '🏥',
+                title: 'Especializado',
+                desc: 'Paliativos, MAR, planes de cuidado.'
+              },
+              {
+                icon: '💰',
+                title: 'Facturación',
+                desc: 'Auto-facturas, TISS Brasil, analytics.'
+              },
+              {
+                icon: '🔗',
+                title: 'Interoperabilidad',
+                desc: 'FHIR R4, RNDS, LOINC, SNOMED, DICOM.'
+              }
+            ].map((feat, i) => (
+              <div key={i} className="p-6 rounded-lg bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 text-center">
+                <div className="text-4xl mb-3 flex items-center justify-center">{feat.icon}</div>
+                <h4 className="text-base font-bold text-gray-900 mb-2">{feat.title}</h4>
+                <p className="text-gray-600 text-sm leading-relaxed">{feat.desc}</p>
               </div>
             ))}
           </div>
+
+          {/* Security Banner - Clean Design */}
+          <div className="mt-16 rounded-xl p-8 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-lg bg-white shadow-sm border border-emerald-200 flex items-center justify-center text-3xl">
+                  🔒
+                </div>
+                <div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-1">Seguridad & Compliance de Clase Mundial</h4>
+                  <p className="text-gray-700 text-sm">HIPAA Safe Harbor • LGPD/GDPR • AES-256 • E2E encryption • MFA/TOTP • Audit logs</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-4 py-2 rounded-lg bg-white border border-emerald-300 text-emerald-700 font-semibold text-sm shadow-sm">✓ HIPAA</span>
+                <span className="px-4 py-2 rounded-lg bg-white border border-emerald-300 text-emerald-700 font-semibold text-sm shadow-sm">✓ LGPD</span>
+                <span className="px-4 py-2 rounded-lg bg-white border border-emerald-300 text-emerald-700 font-semibold text-sm shadow-sm">✓ ISO 27269</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* PROBLEM SECTION - IDENTITY REFACTOR */}
-      <section id="problema" className="py-24 px-6 bg-gray-50 dark:bg-[#0F1214] border-t border-gray-200 dark:border-white/5">
-        <div className="container mx-auto max-w-4xl text-center flex flex-col gap-2">
-          {/* Line 1: Context */}
-          <span className="text-2xl md:text-4xl text-gray-500 dark:text-white/60 font-medium tracking-tight">
-            Te volviste doctor para
-          </span>
+      {/* CASE STUDIES - REAL WORLD IMPACT */}
+      <section id="casos" className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
+        <div className="container mx-auto max-w-7xl">
           
-          {/* Line 2: IDENTITY (Big & Glowing) */}
-          <h2 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00FF88] via-[#b0ffda] to-[#00cc6a] uppercase tracking-tighter leading-[0.9] py-4 drop-shadow-[0_0_25px_rgba(0,255,136,0.3)] animate-shimmer bg-[length:200%_auto]">
-            SALVAR VIDAS
-          </h2>
-
-          {/* Line 3: Conflict */}
-          <span className="text-2xl md:text-4xl text-gray-900 dark:text-white font-bold tracking-tight">
-            no para perder el tiempo.
-          </span>
-
-          {/* Body Text */}
-          <p className="mt-10 text-xl md:text-2xl text-gray-600 dark:text-white/70 max-w-xl mx-auto leading-relaxed text-balance">
-            Cada día, un <span className="font-bold text-gray-900 dark:text-white">40% de tu tiempo</span> se pierde en burocracia digital. El cambio ya no es opcional: es tu bienestar.
-          </p>
-        </div>
-      </section>
-
-
-      {/* PLATFORM (BENTO GRID) */}
-      <section id="plataforma" className="py-24 px-6 bg-white dark:bg-[#0A0A0A] border-t border-gray-200 dark:border-white/5">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-6xl font-bold mb-4 text-gray-900 dark:text-white tracking-tighter">
-              La Plataforma Integral que tu Clínica Merece.
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+              La elección de los líderes: IA y automatización para resultados inmediatos
             </h2>
-            <p className="text-xl text-gray-600 dark:text-white/60">
-              Todo lo esencial para operar con precisión y velocidad.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Con workflows automatizados y AI Agents, médicos y clínicas aceleraron operaciones, redujeron burnout y mejoraron outcomes clínicos.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-8 mb-20">
             
-            {/* CARD 1: NOTES (With Waveform Filler) */}
-            <div className="md:row-span-2 group relative overflow-hidden rounded-3xl p-10 
-              bg-gray-50 dark:bg-[#0F1214] border border-gray-200 dark:border-white/5
-              hover:border-[#00FF88]/50 hover:shadow-[0_10px_40px_-10px_rgba(0,255,136,0.15)] 
-              transition-all duration-300 hover:scale-[1.01]">
+            {/* Case Study 1: Individual Doctor */}
+            <div className="rounded-xl p-8 bg-white border border-gray-200 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-2xl shadow-md">
+                  👨‍⚕️
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Dr. García</h3>
+                  <p className="text-sm text-gray-600">Medicina Familiar</p>
+                </div>
+              </div>
               
-              <div className="flex flex-col justify-between h-full relative z-10">
-                <div className="space-y-6">
-                  <div className="w-14 h-14 rounded-2xl bg-[#00FF88]/10 flex items-center justify-center text-[#00FF88]">
-                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Notas Clínicas Automáticas</h3>
-                  <p className="text-lg text-gray-600 dark:text-white/70">
-                    Scribe IA en español/portugués. De consulta a nota perfecta, en segundos.
-                  </p>
+              <div className="space-y-6 mb-6">
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-3">Antes de Holi Labs:</p>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500">×</span>
+                      <span>4 horas/día documentando</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500">×</span>
+                      <span>15-20 llamadas diarias</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500">×</span>
+                      <span>Screenings olvidados</span>
+                    </li>
+                  </ul>
                 </div>
+                <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <p className="text-xs font-bold text-emerald-700 uppercase mb-3">Con Holi Labs:</p>
+                  <ul className="space-y-2 text-sm text-gray-900 font-medium">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      <span>30 min/día con AI Scribe</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      <span>5 llamadas (portal automatizado)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      <span>0 screenings olvidados</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
-                {/* VISUAL FILLER: Abstract Waveform */}
-                <div className="flex items-end justify-center gap-1 h-16 opacity-30 my-4">
-                   {[40, 70, 40, 90, 60, 30, 80, 50, 90, 40, 60, 70, 40, 30].map((h, i) => (
-                      <div key={i} className="w-2 bg-[#00FF88] rounded-full animate-pulse" style={{ height: `${h}%`, animationDelay: `${i * 0.1}s` }} />
-                   ))}
-                </div>
-
-                <div className="text-sm font-mono text-gray-500 dark:text-white/50 pt-4 border-t border-gray-200 dark:border-white/5">
-                  <span className="text-[#00FF88] font-bold">↗ 98%</span> precisión validada
-                </div>
+              <div className="pt-6 border-t border-gray-200">
+                <p className="text-3xl font-bold text-blue-600 mb-1">+20%</p>
+                <p className="text-sm text-gray-600">Aumento en ingresos año 1</p>
               </div>
             </div>
 
-            {/* CARD 2: WHATSAPP */}
-            <div className="group relative overflow-hidden rounded-3xl p-10 
-              bg-gray-50 dark:bg-[#0F1214] border border-gray-200 dark:border-white/5
-              hover:border-[#00FF88]/50 hover:shadow-[0_10px_40px_-10px_rgba(0,255,136,0.15)] 
-              transition-all duration-300 hover:scale-[1.01]">
-               <div className="flex items-start justify-between">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 flex items-center justify-center text-[#25D366]">
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                       </div>
-                       <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-white/60">Agenda Inteligente</span>
-                    </div>
-                    <div className="text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white">-40%</div>
-                    <p className="text-gray-600 dark:text-white/70">Ausentismo eliminado.</p>
-                  </div>
-               </div>
+            {/* Case Study 2: Community Clinic */}
+            <div className="rounded-xl p-8 bg-white border border-gray-200 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-2xl shadow-md">
+                  🏥
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Clínica Comunitaria</h3>
+                  <p className="text-sm text-gray-600">3 médicos, 200 pac/semana</p>
+                </div>
+              </div>
+              
+              <div className="space-y-6 mb-6">
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-3">Desafío:</p>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li>• Población vulnerable con múltiples comorbilidades</li>
+                    <li>• Recursos limitados, pérdida de seguimiento</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <p className="text-xs font-bold text-emerald-700 uppercase mb-3">Resultados (6 meses):</p>
+                  <ul className="space-y-2 text-sm text-gray-900 font-medium">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      <span>-45% screenings vencidos</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      <span>+30% adherencia meds</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600">✓</span>
+                      <span>-25% hospitalizaciones</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-200">
+                <p className="text-sm text-gray-600">
+                  Hub de Prevención + WhatsApp reminders = resultados mejorados
+                </p>
+              </div>
             </div>
 
-            {/* CARD 3: COST (With Emoji Watermark) */}
-            <div className="group relative overflow-hidden rounded-3xl p-10 
-              bg-gray-50 dark:bg-[#0F1214] border border-gray-200 dark:border-white/5
-              hover:border-[#00FF88]/50 hover:shadow-[0_10px_40px_-10px_rgba(0,255,136,0.15)] 
-              transition-all duration-300 hover:scale-[1.01] flex flex-col justify-center">
-                
-                {/* Badge */}
-                <div className="absolute top-6 right-6 bg-[#00FF88] text-black text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase shadow-lg shadow-brand-green/20">
-                  Founder Pricing
+            {/* Case Study 3: Telemedicine */}
+            <div className="rounded-xl p-8 bg-white border border-gray-200 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-2xl shadow-md">
+                  💻
                 </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Dr. Silva</h3>
+                  <p className="text-sm text-gray-600">Médico General + Tele</p>
+                </div>
+              </div>
+              
+              <div className="space-y-6 mb-6">
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-3">Objetivo:</p>
+                  <p className="text-sm text-gray-600">Expandir práctica a zonas rurales sin viajar</p>
+                </div>
+                <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
+                  <p className="text-xs font-bold text-purple-700 uppercase mb-3">Resultado (1 año):</p>
+                  <ul className="space-y-2 text-sm text-gray-900 font-medium">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600">✓</span>
+                      <span>40% consultas ahora tele</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-600">✓</span>
+                      <span>+35% ingresos sin más horas</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
-                {/* Background Watermark Emoji */}
-                <div className="absolute -right-4 -bottom-8 text-9xl opacity-10 dark:opacity-5 rotate-12 select-none pointer-events-none grayscale">
-                  📉
-                </div>
-
-                <div className="relative z-10">
-                   <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-white/60 mb-2 block">Costo Eficiente</span>
-                   <div className="text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white mb-2">10x</div>
-                   <p className="text-lg text-gray-600 dark:text-white/70">
-                     Más económico que sistemas heredados.
-                     <br />
-                     <span className="text-gray-900 dark:text-white font-bold">$25 USD/mes.</span>
-                   </p>
-                </div>
-            </div>
-
-            {/* CARD 4: SECURITY (Refactored Horizontal Banner) */}
-            <div className="md:col-span-2 rounded-2xl p-6 md:p-8 
-               bg-[#00FF88]/5 border border-[#00FF88]/20 flex flex-col md:flex-row items-center gap-6">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#00FF88]/20 flex items-center justify-center text-[#00FF88]">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <div className="flex-1 text-center md:text-left">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-1">
-                     Seguridad Nivel Hospital
-                  </h3>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm font-medium text-gray-600 dark:text-white/70">
-                     <span className="flex items-center gap-1">✅ HIPAA</span>
-                     <span className="flex items-center gap-1">✅ LGPD/GDPR</span>
-                     <span className="flex items-center gap-1">✅ Encriptación E2E</span>
-                  </div>
-                </div>
+              <div className="pt-6 border-t border-gray-200">
+                <p className="text-3xl font-bold text-purple-600 mb-1">Impacto social</p>
+                <p className="text-sm text-gray-600">Comunidades remotas con acceso a salud</p>
+              </div>
             </div>
 
           </div>
-        </div>
-      </section>
 
-      {/* SOLUTION LIST */}
-      <section id="solucion" className="py-24 px-6 bg-white dark:bg-[#0A0A0A] border-t border-gray-200 dark:border-white/5">
-        <div className="container mx-auto max-w-6xl">
-           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-              Plataforma Completa, No Solo Scribe
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-white/60">
-               Competencia: $200 USD/mes solo por notas. <br className="md:hidden"/> Holi Labs: Todo el EHR por <span className="text-gray-900 dark:text-white font-bold">$25 USD/mes.</span>
+          {/* COMPETITIVE COMPARISON */}
+          <div className="mt-20">
+            <h3 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">
+              Holi Labs vs. Competencia
+            </h3>
+            <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+              Comparación transparente de funcionalidades y precios
             </p>
-           </div>
-           
-           <div className="grid md:grid-cols-3 gap-6">
-              {[
-                { icon: '⚡', title: 'IA Médica', desc: 'Scribe con IA, alertas de interacciones, diagnóstico asistido.' },
-                { icon: '📱', title: 'Portal Pacientes', desc: 'Acceso a expedientes, citas en línea, historial completo.' },
-                { icon: '💰', title: 'Facturación', desc: 'Facturación automática, recordatorios de pago, reportes.' },
-                { icon: '📋', title: 'Recetas Digitales', desc: 'E-prescriptions con firma blockchain y envío directo.' },
-                { icon: '📅', title: 'Agenda Inteligente', desc: 'Sync con Google/Outlook, detección de conflictos.' },
-                { icon: '🌐', title: 'Modo Offline', desc: 'Tu clínica no se detiene si falla el WiFi. Sync automático.' },
-              ].map((feat, i) => (
-                <div key={i} className="group p-8 rounded-2xl bg-gray-50 dark:bg-[#0F1214] border border-gray-200 dark:border-white/5 hover:border-[#00FF88]/30 transition-all duration-300">
-                   <div className="text-4xl mb-4 grayscale group-hover:grayscale-0 transition-all">{feat.icon}</div>
-                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{feat.title}</h3>
-                   <p className="text-gray-600 dark:text-white/60 text-sm leading-relaxed">{feat.desc}</p>
-                </div>
-              ))}
-           </div>
+            
+            <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left p-4 text-sm font-semibold text-gray-900 tracking-wide">Funcionalidad</th>
+                    <th className="p-4 text-sm font-semibold text-blue-600 tracking-wide">Holi Labs</th>
+                    <th className="p-4 text-sm font-semibold text-gray-500 tracking-wide">Doctoralia</th>
+                    <th className="p-4 text-sm font-semibold text-gray-500 tracking-wide">OpenEMR</th>
+                    <th className="p-4 text-sm font-semibold text-gray-500 tracking-wide">Epic/Cerner</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {[
+                    { feature: 'AI Medical Scribe', holi: '✅ Incluido', doc: '❌', open: '❌', epic: '⚠️ Costo extra' },
+                    { feature: 'Prevención Longitudinal (30 años)', holi: '✅ Incluido', doc: '❌', open: '❌', epic: '⚠️ Limitado' },
+                    { feature: 'Auto-screening triggers', holi: '✅ 15+ protocolos', doc: '❌', open: '❌', epic: '⚠️ Limitado' },
+                    { feature: 'CDS Inteligente', holi: '✅ 12+ reglas', doc: '❌', open: '⚠️ Básico', epic: '✅ Sí (fatigue)' },
+                    { feature: 'Protocolos PAHO/WHO', holi: '✅ Latinoamérica', doc: '❌', open: '❌', epic: '⚠️ Solo EEUU' },
+                    { feature: 'Portal de pacientes', holi: '✅ Completo', doc: '✅ Básico', open: '⚠️ Limitado', epic: '✅ Completo' },
+                    { feature: 'Integración farmacias MX', holi: '✅ 8+ farmacias', doc: '❌', open: '❌', epic: '❌' },
+                    { feature: 'FHIR R4 + RNDS Brasil', holi: '✅ Completo', doc: '❌', open: '⚠️ Parcial', epic: '✅ Sí' },
+                    { feature: 'Audit trail completo', holi: '✅ Incluido', doc: '⚠️ Básico', open: '⚠️ Limitado', epic: '✅ Completo' },
+                    { feature: 'Precio/mes', holi: '$25 USD', doc: '$50-150', open: 'Gratis*', epic: '$500-1000+' },
+                    { feature: 'Setup time', holi: '1 día', doc: '3-5 días', open: 'Semanas', epic: 'Meses' },
+                    { feature: 'Support en español', holi: '✅ Nativo', doc: '⚠️ Limitado', open: '❌', epic: '⚠️ Limitado' },
+                  ].map((row, i) => (
+                    <tr key={i} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-4 font-medium text-gray-900">{row.feature}</td>
+                      <td className="p-4 text-center font-semibold text-blue-600">{row.holi}</td>
+                      <td className="p-4 text-center text-gray-600">{row.doc}</td>
+                      <td className="p-4 text-center text-gray-600">{row.open}</td>
+                      <td className="p-4 text-center text-gray-600">{row.epic}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <p className="text-center text-sm text-gray-500 mt-6 bg-gray-50 p-4 rounded-lg">
+              * OpenEMR es gratis pero requiere semanas de setup técnico complejo y no tiene soporte en español
+            </p>
+          </div>
+
         </div>
       </section>
 
-      {/* BETA FORM (NEW IDENTITY MARKETING) */}
-      <section id="acceso" className="py-24 px-6 bg-gray-50 dark:bg-[#0F1214] border-t border-gray-200 dark:border-white/5">
-        <div className="container mx-auto max-w-2xl text-center">
-          <h2 className="text-4xl md:text-6xl font-bold mb-4 text-gray-900 dark:text-white tracking-tighter">
-            Vuelve a Enamorarte de la Medicina.
+      {/* PRICING SECTION - PIPEFY STYLE */}
+      <section id="precios" className="py-16 px-6 bg-gradient-to-b from-gray-50 to-white">
+        <div className="container mx-auto max-w-7xl">
+          
+          {/* Pricing Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+              Automatización de procesos para<br/>todos los presupuestos
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Desde médicos individuales hasta redes hospitalarias. Encuentra el plan perfecto para ti.
+            </p>
+          </div>
+
+          {/* Pricing Cards Grid */}
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
+            
+            {/* STARTER TIER */}
+            <div className="rounded-xl bg-white border-2 border-gray-200 p-8 flex flex-col hover:border-gray-300 hover:shadow-lg transition-all duration-200">
+              
+              {/* Header */}
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Starter</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Para equipos pequeños, startups, freelancers y estudiantes que precisan organizar sus tareas
+                </p>
+              </div>
+
+              {/* Price */}
+              <div className="mb-8">
+                <div className="mb-3">
+                  <span className="text-5xl font-bold text-gray-900">Gratis</span>
+                </div>
+                <p className="text-sm text-gray-600">Não precisa de cartão de crédito</p>
+              </div>
+
+              {/* CTA */}
+              <a
+                href="#demo"
+                className="w-full py-4 px-6 rounded-lg text-center font-semibold mb-8 transition-all duration-200
+                  bg-gray-100 hover:bg-gray-200 
+                  border border-gray-300 
+                  text-gray-900 
+                  shadow-sm hover:shadow-md
+                  active:scale-[0.98]"
+              >
+                Comenzar agora
+              </a>
+
+              {/* Features */}
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-700 mb-4">
+                  O plano Starter inclui:
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'Pipefy AI',
+                    'Até 5 processos',
+                    'Até 10 pessoas',
+                    'Automações básicas',
+                    'Templates prontos para usar',
+                    'Status de solicitações',
+                    'Customização Visual'
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                      <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* PROFESSIONAL TIER - MOST POPULAR */}
+            <div className="rounded-xl bg-white border-2 border-blue-600 p-8 flex flex-col relative transform md:scale-105 shadow-xl">
+              
+              {/* Most Popular Badge */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-400 to-orange-500 text-white px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
+                Mais escolhido
+              </div>
+
+              {/* Header */}
+              <div className="mb-6 pt-4">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Professional</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Para pequeñas y medianas empresas que precisan centralizar y dimensionar procesos de negócios
+                </p>
+              </div>
+
+              {/* Price */}
+              <div className="mb-8">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-bold text-gray-900">$75</span>
+                  <span className="text-gray-600">USD/mes</span>
+                </div>
+                <p className="text-sm text-gray-600">por médico</p>
+              </div>
+
+              {/* CTA */}
+              <a
+                href="#demo"
+                className="w-full py-4 px-6 rounded-lg text-center font-semibold mb-8 transition-all duration-200
+                  text-white 
+                  shadow-md hover:shadow-lg"
+                style={{ backgroundColor: '#014751' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                Falar com vendas
+              </a>
+
+              {/* Features */}
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-700 mb-4">
+                  Recursos do Starter, mais:
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'Processos ilimitados',
+                    'Usuários ilimitados',
+                    'Usuários ilimitados (cobrança p/ usuário)',
+                    'Acesso a API do Pipefy',
+                    'Níveis de acesso e permissão',
+                    'Processos privados',
+                    'Lógica condicional',
+                    'Recuperação de dados',
+                    'Assinatura Eletrônica'
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* ENTERPRISE TIER */}
+            <div className="rounded-xl bg-white border-2 border-gray-200 p-8 flex flex-col hover:border-gray-300 hover:shadow-lg transition-all duration-200">
+              
+              {/* Header */}
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">Enterprise</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Para empresas que precisan de segurança, controle e suporte para gerenciar processos complexos
+                </p>
+              </div>
+
+              {/* Price */}
+              <div className="mb-8">
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-3xl font-bold text-gray-900">Custom</span>
+                </div>
+                <p className="text-sm text-gray-600">desde $500/médico/mes</p>
+              </div>
+
+              {/* CTA */}
+              <a
+                href="mailto:admin@holilabs.xyz"
+                className="w-full py-4 px-6 rounded-lg text-center font-semibold mb-8 transition-all duration-200
+                  text-white 
+                  shadow-md hover:shadow-lg"
+                style={{ backgroundColor: '#014751' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                Falar com vendas
+              </a>
+
+              {/* Features */}
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-700 mb-4">
+                  Recursos do Business, mais:
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'Pipefy AI',
+                    'Automações complexas',
+                    'Integrações',
+                    'Autenticação multifatorial',
+                    'Single Sign-On',
+                    'Domínio de email personalizado',
+                    'White label',
+                    'Assinatura Eletrônica',
+                    'Mais espaço de armazenamento'
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                      <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Comparison Link */}
+          <div className="text-center">
+            <a 
+              href="#comparacion" 
+              className="inline-flex items-center gap-2 text-gray-600 hover:opacity-80 dark:hover:opacity-80 transition-colors font-medium"
+            >
+              Veja todos os recursos e compare os planos
+              <span>→</span>
+            </a>
+          </div>
+
+        </div>
+      </section>
+
+      {/* DETAILED COMPARISON */}
+      <section id="comparacion" className="py-16 px-6 bg-white border-t border-gray-200">
+        <div className="container mx-auto max-w-6xl">
+          
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Comparación Detallada de Planes
+            </h2>
+            <p className="text-gray-600">
+              Todas las funciones que necesitas, sin importar el tamaño de tu práctica
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-200 dark:border-white/10">
+                  <th className="text-left p-4 text-sm font-bold text-gray-900">Funcionalidad</th>
+                  <th className="p-4 text-sm font-bold text-gray-700">Starter</th>
+                  <th className="p-4 text-sm font-bold text-[#00FF88]">Professional</th>
+                  <th className="p-4 text-sm font-bold text-gray-700">Enterprise</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                {[
+                  { category: 'IA & Automatización', features: [
+                    { name: 'AI Medical Scribe', starter: '✓', pro: '✓', enterprise: '✓' },
+                    { name: 'AI Co-Pilot clínico', starter: '—', pro: '✓', enterprise: '✓' },
+                    { name: 'Notas SOAP automáticas', starter: '✓', pro: '✓', enterprise: '✓' },
+                    { name: 'Clinical Decision Support', starter: '—', pro: '12+ reglas', enterprise: 'Ilimitadas' },
+                  ]},
+                  { category: 'Gestión de Pacientes', features: [
+                    { name: 'Pacientes activos', starter: '50', pro: 'Ilimitados', enterprise: 'Ilimitados' },
+                    { name: 'Citas por día', starter: '10', pro: 'Ilimitadas', enterprise: 'Ilimitadas' },
+                    { name: 'Portal de pacientes', starter: 'Básico', pro: 'Completo', enterprise: 'White-label' },
+                    { name: 'Recordatorios WhatsApp/SMS', starter: '✓', pro: '✓', enterprise: '✓' },
+                  ]},
+                  { category: 'Prevención & CDS', features: [
+                    { name: 'Hub de Prevención Longitudinal', starter: '—', pro: '✓', enterprise: '✓' },
+                    { name: 'Screening Triggers automatizados', starter: '—', pro: '15+ protocolos', enterprise: 'Personalizados' },
+                    { name: 'Monitoreo inteligente de labs', starter: '—', pro: '✓', enterprise: '✓' },
+                    { name: 'Cálculo de riesgo (ASCVD, FRAX)', starter: '—', pro: '✓', enterprise: '✓' },
+                  ]},
+                  { category: 'Colaboración & Equipo', features: [
+                    { name: 'Usuarios', starter: '1', pro: 'Hasta 10', enterprise: 'Ilimitados' },
+                    { name: 'Multi-sitio', starter: '—', pro: '—', enterprise: '✓' },
+                    { name: 'Roles y permisos', starter: '—', pro: '✓', enterprise: 'Avanzados' },
+                  ]},
+                  { category: 'Soporte & Seguridad', features: [
+                    { name: 'Soporte', starter: 'Email 48h', pro: 'Prioritario 12h', enterprise: '24/7 <2h' },
+                    { name: 'HIPAA/LGPD compliance', starter: '✓', pro: '✓', enterprise: '✓' },
+                    { name: 'SSO (Single Sign-On)', starter: '—', pro: '—', enterprise: '✓' },
+                    { name: 'SLA uptime garantizado', starter: '—', pro: '—', enterprise: '99.9%' },
+                  ]},
+                ].map((section, sIdx) => (
+                  <React.Fragment key={sIdx}>
+                    <tr className="bg-gray-50">
+                      <td colSpan={4} className="p-4 font-bold text-gray-900 text-xs uppercase tracking-wider">
+                        {section.category}
+                      </td>
+                    </tr>
+                    {section.features.map((feature, fIdx) => (
+                      <tr key={fIdx} className="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5">
+                        <td className="p-4 text-gray-700">{feature.name}</td>
+                        <td className="p-4 text-center text-gray-600">{feature.starter}</td>
+                        <td className="p-4 text-center text-[#00FF88] font-semibold">{feature.pro}</td>
+                        <td className="p-4 text-center text-gray-600">{feature.enterprise}</td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Money-Back Guarantee */}
+          <div className="mt-16 max-w-3xl mx-auto rounded-2xl p-8 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/10 dark:to-cyan-900/10 border-2 border-blue-200 dark:border-blue-800/30">
+            <div className="flex flex-col md:flex-row items-start gap-6">
+              <div className="flex-shrink-0 text-5xl">🛡️</div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  Garantía de Satisfacción 100%
+                </h3>
+                <p className="text-lg text-gray-700 mb-4">
+                  Si no ahorras al menos <span className="font-bold text-gray-900">2 horas/día</span> en el primer mes, 
+                  te devolvemos tu dinero. <span className="font-bold">Sin preguntas.</span>
+                </p>
+                <div className="flex flex-wrap gap-4 text-sm font-semibold text-gray-600">
+                  <span className="flex items-center gap-2">
+                    <span className="text-[#00FF88]">✓</span> 30 días de prueba gratis
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-[#00FF88]">✓</span> Sin compromiso
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-[#00FF88]">✓</span> Cancela cuando quieras
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-[#00FF88]">✓</span> Tu data es tuya
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section id="demo" className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
+        <div className="container mx-auto max-w-3xl text-center">
+          
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
+            Inteligencia artificial convirtiéndose en realidad en tus tareas diarias
           </h2>
-          <p className="text-lg text-gray-600 dark:text-white/60 mb-8">
-             Deja que Holi maneje la burocracia. Tú recupera el control de tu consultorio y de tu tiempo libre.
+          
+          <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
+            Solo Holi Labs une instalación simple, certificaciones de seguridad y una experiencia de uso increíble. Todo sin sobrecargar tu equipo técnico.
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto">
-            <div className="flex flex-col sm:flex-row gap-3 group focus-within:ring-4 focus-within:ring-[#00FF88]/20 rounded-full transition-all">
+          {/* Email Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-lg mx-auto mb-12">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu.email@clinica.com"
                 required
-                className="flex-1 px-6 py-4 rounded-full bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white focus:border-[#00FF88] focus:ring-0 outline-none transition"
+                className="flex-1 px-6 py-4 rounded-lg bg-white border-2 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"
               />
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#00FF88] text-black font-bold px-8 py-4 rounded-full hover:bg-[#00e97a] hover:shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                className="text-white font-semibold px-8 py-4 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#014751' }}
+                onMouseEnter={(e) => !isSubmitting && (e.currentTarget.style.opacity = '0.9')}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
-                {isSubmitting ? '...' : 'Acceso Gratis'}
+                {isSubmitting ? 'Enviando...' : 'Agende uma demo'}
               </button>
             </div>
+            
+            {/* Invite Code Toggle */}
+            {!showInviteField && (
+              <button
+                type="button"
+                onClick={() => setShowInviteField(true)}
+                className="text-sm text-gray-600 hover:opacity-80 transition-colors text-center"
+              >
+                ¿Tienes un código de invitación? Click aquí
+              </button>
+            )}
+            
+            {/* Invite Code Field */}
+            {showInviteField && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="Código de invitación (opcional)"
+                  className="flex-1 px-6 py-3 rounded-lg bg-white border-2 border-yellow-300 text-gray-900 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 outline-none transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowInviteField(false);
+                    setInviteCode('');
+                  }}
+                  className="px-4 py-3 text-sm text-gray-600 hover:text-red-500 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
+            
             {message && (
-              <div className={`p-3 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-[#00FF88]/10 text-green-800 dark:text-[#00FF88]' : 'bg-red-100 text-red-600'}`}>
+              <div className={`p-4 rounded-lg text-sm font-medium ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                 {message.text}
               </div>
             )}
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold mt-4">
-              Sin Contratos Forzosos • Cancela con un Click • Tu Data es Tuya
-            </p>
           </form>
+
+          {/* Trust Signals */}
+          <div className="flex flex-wrap items-center justify-center gap-8 text-sm font-medium text-gray-600">
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Setup en 1 día
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Migración incluida
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Soporte 24/7
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Sin compromiso
+            </span>
+          </div>
+
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="py-12 px-6 bg-white dark:bg-black border-t border-gray-200 dark:border-white/10">
-        <div className="container mx-auto max-w-6xl flex flex-col md:flex-row justify-between items-center gap-6">
-           <div className="flex items-center gap-2.5 opacity-80">
-              <Image src="/logos/Logo 1_Light.svg" alt="Logo" width={30} height={30} />
-              <span 
-                className="text-sm tracking-tight uppercase" 
-                style={{
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                  color: theme === 'dark' ? '#ffffff' : '#1a1a1a',
-                }}
-              >
-                Holi Labs
-              </span>
-           </div>
-           <div className="text-xs text-gray-500 dark:text-white/40">
-              © 2024 Holi Labs • HIPAA/GDPR/LGPD Compliant
-           </div>
+      <footer className="py-16 px-6 bg-gray-50 border-t border-gray-200">
+        <div className="container mx-auto max-w-7xl">
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+            
+            {/* Column 1 */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4 text-sm">Producto</h4>
+              <ul className="space-y-2.5 text-sm text-gray-600">
+                <li><a href="#plataforma" className="hover:opacity-80 transition-colors">Plataforma</a></li>
+                <li><a href="#precios" className="hover:opacity-80 transition-colors">Precios</a></li>
+                <li><a href="#casos" className="hover:opacity-80 transition-colors">Casos de Uso</a></li>
+                <li><a href="#demo" className="hover:opacity-80 transition-colors">Demo</a></li>
+              </ul>
+            </div>
+
+            {/* Column 2 */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4 text-sm">Empresa</h4>
+              <ul className="space-y-2.5 text-sm text-gray-600">
+                <li><a href="/about" className="hover:opacity-80 transition-colors">Sobre Nosotros</a></li>
+                <li><a href="/blog" className="hover:opacity-80 transition-colors">Blog</a></li>
+                <li><a href="/careers" className="hover:opacity-80 transition-colors">Carreras</a></li>
+                <li><a href="/contact" className="hover:opacity-80 transition-colors">Contacto</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3 */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4 text-sm">Legal</h4>
+              <ul className="space-y-2.5 text-sm text-gray-600">
+                <li><a href="/terms" className="hover:opacity-80 transition-colors">Términos</a></li>
+                <li><a href="/privacy" className="hover:opacity-80 transition-colors">Privacidad</a></li>
+                <li><a href="/hipaa" className="hover:opacity-80 transition-colors">HIPAA</a></li>
+                <li><a href="/security" className="hover:opacity-80 transition-colors">Seguridad</a></li>
+              </ul>
+            </div>
+
+            {/* Column 4 */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4 text-sm">Contacto</h4>
+              <ul className="space-y-2.5 text-sm text-gray-600">
+                <li><a href="mailto:admin@holilabs.xyz" className="hover:opacity-80 transition-colors">admin@holilabs.xyz</a></li>
+                <li><a href="https://wa.me/525555555555" className="hover:opacity-80 transition-colors">WhatsApp</a></li>
+              </ul>
+            </div>
+
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-gray-500">© 2025 Holi Labs. Todos los derechos reservados.</div>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-700">HIPAA</span>
+              <span className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-700">LGPD</span>
+              <span className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-700">ISO 27269</span>
+            </div>
+          </div>
+
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }

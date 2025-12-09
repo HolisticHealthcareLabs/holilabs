@@ -136,7 +136,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <LoadingScreen onComplete={handleLoadingComplete} />
       )}
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50">
         {/* Mobile Sidebar Backdrop */}
       {sidebarOpen && (
         <div
@@ -147,7 +147,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 shadow-sm transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -523,7 +523,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden lg:block bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+        <header className="hidden lg:block bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
           <div className="flex items-center justify-end h-16 px-6 gap-4">
             <LanguageSelector currentLocale={locale} />
             <GlobalSearch />
