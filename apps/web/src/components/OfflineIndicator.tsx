@@ -44,23 +44,22 @@ export default function OfflineIndicator() {
     };
   }, []);
 
-  // Persistent indicator (always visible)
-  const PersistentIndicator = () => (
-    <div
-      className={`fixed bottom-4 left-4 z-50 flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all ${
-        isOnline
-          ? 'bg-green-100 border-2 border-green-500'
-          : 'bg-red-100 border-2 border-red-500 animate-pulse'
-      }`}
-    >
+  // Persistent indicator (only visible when offline)
+  const PersistentIndicator = () => {
+    // Don't show when online - the feedback button will be in this position
+    if (isOnline) return null;
+    
+    return (
       <div
-        className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}
-      />
-      <span className={`text-xs font-medium ${isOnline ? 'text-green-700' : 'text-red-700'}`}>
-        {isOnline ? 'En línea' : 'Sin conexión'}
-      </span>
-    </div>
-  );
+        className="fixed bottom-4 left-4 z-50 flex items-center space-x-2 px-3 py-2 rounded-lg shadow-lg transition-all bg-red-100 border-2 border-red-500 animate-pulse"
+      >
+        <div className="w-2 h-2 rounded-full bg-red-500" />
+        <span className="text-xs font-medium text-red-700">
+          Sin conexión
+        </span>
+      </div>
+    );
+  };
 
   // Toast notification (appears on status change)
   const ToastNotification = () => {

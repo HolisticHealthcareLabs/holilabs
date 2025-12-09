@@ -8,32 +8,85 @@ import { NextAuthOptions } from 'next-auth';
 import { SupabaseAdapter } from '@auth/supabase-adapter';
 import { prisma } from '@/lib/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
+import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import logger from '@/lib/logger';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
 
   providers: [
-    // Supabase authentication for clinicians
-    {
-      id: 'supabase',
-      name: 'Supabase',
-      type: 'oauth',
-      wellKnown: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/.well-known/openid-configuration`,
-      authorization: { params: { scope: 'openid email' } },
-      checks: ['pkce', 'state'],
-      clientId: process.env.SUPABASE_CLIENT_ID,
-      clientSecret: process.env.SUPABASE_CLIENT_SECRET,
-      idToken: true,
+    // Google OAuth Provider
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      },
       profile(profile) {
         return {
           id: profile.sub,
           email: profile.email,
-          name: profile.name || profile.email,
+          name: profile.name,
+          image: profile.picture,
           role: 'CLINICIAN',
         };
       },
-    },
+    }),
+
+    // Development Credentials Provider (for testing)
+    CredentialsProvider({
+      id: 'dev-credentials',
+      name: 'Development Email',
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "doctor@holilabs.com" }
+      },
+      async authorize(credentials) {
+        // Only allow in development
+        if (process.env.NODE_ENV !== 'development') {
+          return null;
+        }
+
+        if (!credentials?.email) {
+          return null;
+        }
+
+        // In development, automatically create/login user with any email
+        return {
+          id: credentials.email,
+          email: credentials.email,
+          name: credentials.email.split('@')[0],
+          role: 'CLINICIAN',
+        };
+      },
+    }),
+
+    // Supabase authentication for clinicians (if configured)
+    ...(process.env.SUPABASE_CLIENT_ID && process.env.SUPABASE_CLIENT_SECRET
+      ? [{
+          id: 'supabase',
+          name: 'Supabase',
+          type: 'oauth' as const,
+          wellKnown: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/.well-known/openid-configuration`,
+          authorization: { params: { scope: 'openid email' } },
+          checks: ['pkce' as const, 'state' as const],
+          clientId: process.env.SUPABASE_CLIENT_ID,
+          clientSecret: process.env.SUPABASE_CLIENT_SECRET,
+          idToken: true,
+          profile(profile: any) {
+            return {
+              id: profile.sub,
+              email: profile.email,
+              name: profile.name || profile.email,
+              role: 'CLINICIAN',
+            };
+          },
+        }]
+      : []),
   ],
 
   session: {

@@ -196,10 +196,10 @@ export default function DashboardCommandCenter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:from-neutral-950 dark:to-neutral-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary-500 mb-4" />
-          <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+          <h3 className="text-xl font-bold text-gray-900">
             Loading...
           </h3>
         </div>
@@ -208,7 +208,7 @@ export default function DashboardCommandCenter() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:from-neutral-950 dark:to-neutral-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* Onboarding */}
       <ImprovedWelcomeModal />
       <DashboardWalkthrough onComplete={() => setShowChecklist(true)} />

@@ -582,45 +582,46 @@ function CoPilotContent() {
           </div>
         </div>
 
-        {/* Right Panel: The Brain (Smart Diagnosis) */}
+        {/* Right Panel: Co-Pilot Toolkit */}
         <div className="flex-1 lg:w-1/2 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-y-auto">
-          <div className="p-6">
-            <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-2xl p-6
-              before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-blue-500/5 before:to-purple-500/5 before:pointer-events-none
-              relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
-                    <Image
-                      src="/icons/stethoscope (1).svg"
-                      alt="Smart Diagnosis"
-                      width={20}
-                      height={20}
-                      className="dark:invert"
-                    />
+          <div className="p-6 space-y-6">
+            
+            {/* Header */}
+            <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-lg p-6 relative">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-600/20 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-violet-600 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        Co-Pilot
+                      </h2>
+                      {selectedPatient && (
+                        <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold inline-block mt-0.5">
+                          EHR Access Granted
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      Smart Diagnosis
-                    </h2>
-                    {selectedPatient && (
-                      <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold inline-block mt-1">
-                        EHR Access Granted
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Modular digital toolkit customizable to your specialty needs
+                  </p>
                 </div>
 
                 {/* Compact Recording Button */}
                 {selectedPatient && (
-                  <div>
+                  <div className="flex-shrink-0">
                     {!state.isRecording ? (
                       <button
                         onClick={handleStartRecording}
                         className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold transition-all shadow-lg hover:shadow-xl group"
                       >
                         <div className="w-3 h-3 bg-white rounded-full group-hover:animate-pulse"></div>
-                        <span>Record</span>
+                        <span className="text-sm">Record</span>
                       </button>
                     ) : (
                       <button
@@ -628,16 +629,101 @@ function CoPilotContent() {
                         className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full font-semibold transition-all shadow-lg animate-pulse"
                       >
                         <div className="w-3 h-3 bg-white rounded-sm"></div>
-                        <span>Stop</span>
+                        <span className="text-sm">Stop</span>
                       </button>
                     )}
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mb-4">
-                AI-powered diagnostic assistant with access to patient lab reports and medical history
-              </p>
 
+              {/* Modular Tools Grid */}
+              <div className="grid grid-cols-3 gap-3 mt-6">
+                {/* AI Scribe Tool */}
+                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-600/10 hover:from-purple-500/20 hover:to-pink-600/20 border border-purple-200/50 dark:border-purple-700/30 transition-all hover:shadow-lg">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">AI Scribe</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/0 to-pink-600/0 group-hover:from-purple-500/5 group-hover:to-pink-600/5 transition-all"></div>
+                </button>
+
+                {/* Clinical Decision Support Tool */}
+                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 hover:from-cyan-500/20 hover:to-blue-600/20 border border-cyan-200/50 dark:border-cyan-700/30 transition-all hover:shadow-lg">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">CDS</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-500/0 to-blue-600/0 group-hover:from-cyan-500/5 group-hover:to-blue-600/5 transition-all"></div>
+                </button>
+
+                {/* Risk Stratification Tool */}
+                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 hover:from-amber-500/20 hover:to-orange-600/20 border border-amber-200/50 dark:border-amber-700/30 transition-all hover:shadow-lg">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Risk Score</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-500/0 to-orange-600/0 group-hover:from-amber-500/5 group-hover:to-orange-600/5 transition-all"></div>
+                </button>
+
+                {/* Prevention Hub Tool */}
+                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 hover:from-emerald-500/20 hover:to-teal-600/20 border border-emerald-200/50 dark:border-emerald-700/30 transition-all hover:shadow-lg">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Prevention</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-500/0 to-teal-600/0 group-hover:from-emerald-500/5 group-hover:to-teal-600/5 transition-all"></div>
+                </button>
+
+                {/* Lab Insights Tool */}
+                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 hover:from-indigo-500/20 hover:to-purple-600/20 border border-indigo-200/50 dark:border-indigo-700/30 transition-all hover:shadow-lg">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Lab Insights</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-500/0 to-purple-600/0 group-hover:from-indigo-500/5 group-hover:to-purple-600/5 transition-all"></div>
+                </button>
+
+                {/* Add More Tools Button */}
+                <button className="group relative p-4 rounded-xl border-2 border-dashed border-amber-300/50 dark:border-amber-600/30 hover:border-amber-400 dark:hover:border-amber-500 bg-amber-50/30 dark:bg-amber-900/10 hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-all hover:shadow-lg">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                      {/* Golden ring effect */}
+                      <div className="absolute inset-0 rounded-lg border-2 border-amber-400/60 dark:border-amber-500/40 group-hover:border-amber-500 dark:group-hover:border-amber-400 transition-colors"></div>
+                      <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 text-center leading-tight">Add Tool</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-500/0 to-amber-600/0 group-hover:from-amber-500/5 group-hover:to-amber-600/5 transition-all"></div>
+                </button>
+              </div>
+            </div>
+
+            {/* Active Tool Content */}
+            <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-xl p-6 relative
+              before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-blue-500/5 before:to-purple-500/5 before:pointer-events-none">
+              
               {/* Diagnosis Assistant - Auto-filled from context */}
               <DiagnosisAssistantWrapper
                 chiefComplaint={state.liveSoapNote?.chiefComplaint}

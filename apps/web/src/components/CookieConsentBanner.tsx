@@ -270,8 +270,8 @@ export function CookieConsentBanner() {
 
   // Main banner
   return (
-    <div className="fixed bottom-0 inset-x-0 bg-gray-900 text-white p-4 shadow-lg z-50 border-t border-gray-700">
-      <div className="max-w-7xl mx-auto">
+    <div className="fixed bottom-0 inset-x-0 bg-gray-900 text-white shadow-lg z-40 border-t border-gray-700">
+      <div className="max-w-7xl mx-auto px-4 py-4 pb-24 md:pb-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex-1">
             <h3 className="font-semibold text-lg mb-1">We use cookies</h3>
