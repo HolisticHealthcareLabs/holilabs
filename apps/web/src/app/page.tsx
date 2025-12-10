@@ -102,7 +102,7 @@ export default function Home() {
   const [showInviteField, setShowInviteField] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(false);
   const [showAICommand, setShowAICommand] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -127,14 +127,14 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) {
-        let successMessage = data.message || '¡Éxito! Revisa tu email para acceso instantáneo';
-        
+        let successMessage = data.message || t.signup.success;
+
         if (data.isFirst100) {
-          successMessage = `🎉 ¡Felicidades! Eres el usuario #${data.signupNumber} y tienes acceso GRATIS por 1 año. Revisa tu email.`;
+          successMessage = t.signup.successFirst100.replace('{number}', data.signupNumber);
         } else if (data.hasFreeYear) {
-          successMessage = '🎁 ¡Acceso GRATIS por 1 año activado! Revisa tu email.';
+          successMessage = t.signup.successFreeYear;
         }
-        
+
         setMessage({ type: 'success', text: successMessage });
         setEmail('');
         setInviteCode('');
@@ -145,10 +145,10 @@ export default function Home() {
           colors: data.hasFreeYear ? ['#f59e0b', '#fbbf24', '#fcd34d'] : [BRAND_GREEN_HEX, '#00cc6a', '#00aa55'],
         });
       } else {
-        setMessage({ type: 'error', text: data.error || 'Error. Por favor reintenta' });
+        setMessage({ type: 'error', text: data.error || t.signup.error });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Falló la conexión. Verifica tu red' });
+      setMessage({ type: 'error', text: t.signup.networkError });
     } finally {
       setIsSubmitting(false);
     }
@@ -273,32 +273,45 @@ export default function Home() {
         </nav>
       </header>
 
-      <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden mt-20 px-4 bg-white">
+      <section className="relative h-screen min-h-screen flex items-center overflow-hidden pt-24">
 
-        {/* Content - Centered */}
+        {/* Full Screen Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/landing-hero.jpeg"
+            alt="Health 3.0 Platform"
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
+        </div>
+
+        {/* Content Overlay */}
         <div className="container mx-auto px-10 md:px-16 relative z-10 max-w-7xl">
-          <div className="max-w-5xl mx-auto text-center">
+          <div className="max-w-3xl">
 
-            {/* Vision Badge - Centered */}
-            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gray-100 border border-gray-200 mb-8">
+            {/* Vision Badge */}
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/90 backdrop-blur-sm border border-white/20 mb-8 shadow-lg">
               <span className="text-sm font-semibold tracking-wide" style={{ color: '#014751' }}>{t.hero.badge}</span>
             </div>
 
-            {/* Main Headline - Centered */}
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-[1.1] tracking-tight whitespace-pre-line" style={{ color: '#014751' }}>
+            {/* Main Headline */}
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-8 text-white drop-shadow-2xl">
               {t.hero.headline}
             </h1>
 
-            {/* Subheadline - Centered */}
-            <p className="text-xl md:text-2xl text-gray-700 mb-12 leading-relaxed font-light max-w-3xl mx-auto">
+            {/* Subheadline */}
+            <p className="text-xl md:text-2xl text-white/95 leading-relaxed font-light mb-12 drop-shadow-lg">
               {t.hero.subheadline}
             </p>
 
-            {/* CTA Button - Centered */}
-            <div className="flex items-center justify-center">
+            {/* CTA Button */}
+            <div className="flex items-start">
               <a
                 href="/auth/register"
-                className="inline-flex items-center justify-center px-12 py-5 rounded-xl text-xl font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-lg"
+                className="inline-flex items-center justify-center px-12 py-5 rounded-xl text-xl font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl shadow-2xl"
                 style={{
                   background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
                 }}
@@ -312,7 +325,7 @@ export default function Home() {
 
         {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-          <svg className="w-6 h-6" style={{ color: '#014751', opacity: 0.6 }} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-6 h-6 text-white drop-shadow-lg" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
             <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
           </svg>
         </div>
@@ -1612,7 +1625,7 @@ export default function Home() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu.email@clinica.com"
+                placeholder={t.signup.placeholder}
                 required
                 className="flex-1 px-6 py-4 rounded-lg bg-white border-2 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition"
               />

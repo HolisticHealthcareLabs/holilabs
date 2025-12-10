@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -257,11 +257,28 @@ Puedo ayudarte con:
 
 // Floating AI Button - Bottom Right Corner (Green Background)
 export function AICommandButton({ onClick }: { onClick: () => void }) {
+  const [hasCookieConsent, setHasCookieConsent] = useState(false);
+
+  useEffect(() => {
+    // Check if cookie consent has been given
+    const consent = localStorage.getItem('cookieConsent');
+    setHasCookieConsent(!!consent);
+
+    // Listen for consent changes
+    const handleConsentUpdate = () => {
+      const consent = localStorage.getItem('cookieConsent');
+      setHasCookieConsent(!!consent);
+    };
+
+    window.addEventListener('cookieConsentUpdated', handleConsentUpdate);
+    return () => window.removeEventListener('cookieConsentUpdated', handleConsentUpdate);
+  }, []);
+
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-4 right-4 z-50 w-16 h-16 rounded-2xl shadow-2xl hover:scale-110 transition-transform flex items-center justify-center group"
-      style={{ 
+      className={`fixed ${hasCookieConsent ? 'bottom-4' : 'bottom-28'} right-4 z-50 w-16 h-16 rounded-2xl shadow-2xl hover:scale-110 transition-all flex items-center justify-center group`}
+      style={{
         background: 'linear-gradient(135deg, #014751, #10b981)',
       }}
       aria-label="Open AI Command Center"
@@ -281,12 +298,28 @@ export function AICommandButton({ onClick }: { onClick: () => void }) {
 // Feedback Button - Bottom Left Corner
 export function FeedbackButton() {
   const [showFeedback, setShowFeedback] = useState(false);
+  const [hasCookieConsent, setHasCookieConsent] = useState(false);
   const { language } = useLanguage();
   const t = translations[language];
 
+  useEffect(() => {
+    // Check if cookie consent has been given
+    const consent = localStorage.getItem('cookieConsent');
+    setHasCookieConsent(!!consent);
+
+    // Listen for consent changes
+    const handleConsentUpdate = () => {
+      const consent = localStorage.getItem('cookieConsent');
+      setHasCookieConsent(!!consent);
+    };
+
+    window.addEventListener('cookieConsentUpdated', handleConsentUpdate);
+    return () => window.removeEventListener('cookieConsentUpdated', handleConsentUpdate);
+  }, []);
+
   return (
     <>
-      <div className="fixed bottom-4 left-4 z-50 group">
+      <div className={`fixed ${hasCookieConsent ? 'bottom-4' : 'bottom-28'} left-4 z-50 group transition-all`}>
         <div className="flex items-center gap-3">
           {/* Blue Circle Button with Message Icon */}
           <button
