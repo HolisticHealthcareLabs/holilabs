@@ -10,6 +10,16 @@ export const translations = {
     cancel: 'Cancel',
     send: 'Send',
     tellUsWhatYouThink: 'Tell us what you think...',
+
+    // Signup Messages
+    signup: {
+      success: 'Success! Check your email for instant access',
+      successFirst100: '🎉 Congratulations! You are user #{number} and have FREE access for 1 year. Check your email.',
+      successFreeYear: '🎁 FREE 1-year access activated! Check your email.',
+      error: 'Error. Please try again',
+      networkError: 'Connection failed. Check your network',
+      placeholder: 'your.email@clinic.com',
+    },
     
     // Navigation
     nav: {
@@ -24,7 +34,7 @@ export const translations = {
     hero: {
       badge: 'Health 3.0 Platform',
       headline: 'The Future of\nBio-Adaptive Health',
-      subheadline: 'Visionary HealthTech platform to transform reactive medicine into preventive medicine, AI-powered and patient-centered.',
+      subheadline: 'Holi Labs transforms reactive medicine into preventive medicine, AI-powered and patient-centered.',
       ctaPrimary: 'Get Started',
       ctaSecondary: '',
     },
@@ -96,7 +106,17 @@ export const translations = {
     cancel: 'Cancelar',
     send: 'Enviar',
     tellUsWhatYouThink: 'Cuéntanos lo que piensas...',
-    
+
+    // Signup Messages
+    signup: {
+      success: '¡Éxito! Revisa tu email para acceso instantáneo',
+      successFirst100: '🎉 ¡Felicidades! Eres el usuario #{number} y tienes acceso GRATIS por 1 año. Revisa tu email.',
+      successFreeYear: '🎁 ¡Acceso GRATIS por 1 año activado! Revisa tu email.',
+      error: 'Error. Por favor reintenta',
+      networkError: 'Falló la conexión. Verifica tu red',
+      placeholder: 'tu.email@clinica.com',
+    },
+
     // Navigation
     nav: {
       platform: 'Plataforma',
@@ -108,9 +128,9 @@ export const translations = {
     
     // Hero Section
     hero: {
-      badge: 'Health 3.0 Platform',
+      badge: 'Plataforma Health 3.0',
       headline: 'El Futuro de la Salud\nBio-Adaptativa',
-      subheadline: 'Plataforma visionaria de HealthTech para transformar la medicina reactiva en medicina preventiva, basada en IA y centrada en el paciente.',
+      subheadline: 'Holi Labs transforma la medicina reactiva en medicina preventiva, basada en IA y centrada en el paciente.',
       ctaPrimary: 'Regístrate',
       ctaSecondary: '',
     },
@@ -182,7 +202,17 @@ export const translations = {
     cancel: 'Cancelar',
     send: 'Enviar',
     tellUsWhatYouThink: 'Conte-nos o que você pensa...',
-    
+
+    // Signup Messages
+    signup: {
+      success: 'Sucesso! Verifique seu email para acesso instantâneo',
+      successFirst100: '🎉 Parabéns! Você é o usuário #{number} e tem acesso GRÁTIS por 1 ano. Verifique seu email.',
+      successFreeYear: '🎁 Acesso GRÁTIS por 1 ano ativado! Verifique seu email.',
+      error: 'Erro. Por favor, tente novamente',
+      networkError: 'Falha na conexão. Verifique sua rede',
+      placeholder: 'seu.email@clinica.com',
+    },
+
     // Navigation
     nav: {
       platform: 'Plataforma',
@@ -196,7 +226,7 @@ export const translations = {
     hero: {
       badge: 'Plataforma Health 3.0',
       headline: 'O Futuro da Saúde\nBio-Adaptativa',
-      subheadline: 'Plataforma visionária de HealthTech para transformar medicina reativa em medicina preventiva, baseada em IA e centrada no paciente.',
+      subheadline: 'Holi Labs transforma medicina reativa em medicina preventiva, baseada em IA e centrada no paciente.',
       ctaPrimary: 'Cadastre-se',
       ctaSecondary: '',
     },

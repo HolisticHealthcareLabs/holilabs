@@ -274,7 +274,58 @@ For issues or questions:
 
 ---
 
-**Last Updated**: December 9, 2025
-**Version**: 1.0.0
+## Recent Fixes (December 10, 2025)
+
+### Issue 1: Google OAuth Alert Message
+**Problem**: The "Sign up with Google" button was showing an alert saying "Google OAuth will be enabled in production" instead of actually triggering the OAuth flow.
+
+**Fixed**:
+- Updated `/apps/web/src/app/auth/register/page.tsx` to use `signIn('google', { callbackUrl: '/dashboard' })` from `next-auth/react`
+- Now properly initiates Google OAuth flow when clicked
+
+### Issue 2: Registration Error Handling
+**Problem**: When registration failed, users only saw "Failed to process registration request" without knowing why.
+
+**Fixed**:
+- Enhanced error messages in `/apps/web/src/app/api/auth/register/route.ts`
+- Added detailed error reporting in development mode
+- Updated frontend to display error details from API
+- Added stack traces in server logs for debugging
+
+### Issue 3: Missing Google OAuth Credentials
+**Problem**: `.env` file didn't have placeholders for Google OAuth credentials.
+
+**Fixed**:
+- Added `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to `.env` with placeholder values
+- You need to replace these with actual values from Google Cloud Console (see steps above)
+
+### How to Test the Fixes
+
+1. **Get Google OAuth Credentials** (follow steps 1-4 above)
+2. **Update your `.env` file**:
+   ```bash
+   GOOGLE_CLIENT_ID="your-actual-client-id-here"
+   GOOGLE_CLIENT_SECRET="your-actual-client-secret-here"
+   ```
+3. **Restart the development server**:
+   ```bash
+   # Stop server (Ctrl+C)
+   pnpm dev
+   ```
+4. **Test Google OAuth**:
+   - Go to `http://localhost:3000/auth/register`
+   - Click "Sign up with Google"
+   - Should redirect to Google's OAuth consent screen
+   - After authorization, redirects to dashboard
+
+5. **Test Email Registration**:
+   - Fill out the registration form
+   - If it fails, you should now see detailed error messages in development mode
+   - Check browser console for additional debugging info
+
+---
+
+**Last Updated**: December 10, 2025
+**Version**: 1.1.0
 **Author**: Holi Labs Development Team
 

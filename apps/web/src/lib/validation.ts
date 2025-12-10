@@ -76,7 +76,23 @@ export const registrationSchema = z.object({
   role: roleSchema,
   organization: z.string().min(1, 'Organization is required').max(200, 'Organization name too long').trim(),
   reason: textSchema.max(1000, 'Reason too long'),
-});
+  // Medical license fields (required for doctors)
+  licenseCountry: z.enum(['BR', 'AR', 'US']).optional(),
+  licenseNumber: z.string().optional(),
+  licenseState: z.string().optional(),
+}).refine(
+  (data) => {
+    // If role is doctor, license fields are required
+    if (data.role === 'doctor') {
+      return !!(data.licenseCountry && data.licenseNumber && data.licenseState);
+    }
+    return true;
+  },
+  {
+    message: 'Medical license information is required for doctors',
+    path: ['licenseNumber'],
+  }
+);
 
 /**
  * Patient Creation Validation

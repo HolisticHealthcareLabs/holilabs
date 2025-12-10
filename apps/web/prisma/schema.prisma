@@ -3985,6 +3985,7 @@ model ProviderCredential {
   // Relations
   verificationHistory CredentialVerification[]
 
+  @@unique([userId, credentialNumber])
   @@index([userId])
   @@index([verificationStatus])
   @@index([credentialType])
@@ -4065,6 +4066,10 @@ enum VerificationMethod {
   MANUAL_VERIFICATION // Manual review by admin
   DOCUMENT_VERIFICATION // OCR + manual review
   THIRD_PARTY_SERVICE // External verification service
+  CFM_VERIFICATION // Brazil: Conselho Federal de Medicina
+  CRM_VERIFICATION // Brazil: Conselho Regional de Medicina (state-level)
+  CONFEMED_VERIFICATION // Argentina: Confederación Médica Argentina
+  PROVINCIAL_MEDICAL_BOARD_AR // Argentina: Provincial medical boards
 }
 
 enum VerificationResult {
