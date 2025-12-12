@@ -11,6 +11,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import logger from '@/lib/logger';
+import { UserRole } from '@prisma/client';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -33,7 +34,7 @@ export const authOptions: NextAuthOptions = {
           email: profile.email,
           name: profile.name,
           image: profile.picture,
-          role: 'CLINICIAN',
+          role: UserRole.CLINICIAN,
         };
       },
     }),
@@ -60,7 +61,7 @@ export const authOptions: NextAuthOptions = {
           id: credentials.email,
           email: credentials.email,
           name: credentials.email.split('@')[0],
-          role: 'CLINICIAN',
+          role: UserRole.CLINICIAN,
         };
       },
     }),
@@ -82,7 +83,7 @@ export const authOptions: NextAuthOptions = {
               id: profile.sub,
               email: profile.email,
               name: profile.name || profile.email,
-              role: 'CLINICIAN',
+              role: UserRole.CLINICIAN,
             };
           },
         }]

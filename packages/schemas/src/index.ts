@@ -1,18 +1,18 @@
-import { z } from 'zod';
+/**
+ * @holi/schemas - Single Source of Truth for All Validation
+ *
+ * CRITICAL INVARIANT: All frontend forms and backend APIs MUST import from this package.
+ * No duplicate schema definitions allowed elsewhere in the codebase.
+ */
 
-// Common schemas for API validation
-export const PatientTokenSchema = z.object({
-  id: z.string().uuid(),
-  orgId: z.string().uuid(),
-  pointerHash: z.string(),
-});
+// Constants
+export * from './constants';
 
-export const DatasetSchema = z.object({
-  id: z.string().uuid(),
-  patientTokenId: z.string().uuid(),
-  sha256: z.string(),
-  policyVersion: z.string(),
-});
-
-export type PatientToken = z.infer<typeof PatientTokenSchema>;
-export type Dataset = z.infer<typeof DatasetSchema>;
+// Schemas
+export * from './patient.schema';
+export * from './clinical.schema';
+export * from './prescription.schema';
+export * from './appointment.schema';
+export * from './compliance.schema';
+export * from './user.schema';
+export * from './analytics.schema';

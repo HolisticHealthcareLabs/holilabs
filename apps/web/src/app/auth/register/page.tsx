@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 
 export default function ClinicianRegisterPage() {
   const router = useRouter();
@@ -20,10 +21,15 @@ export default function ClinicianRegisterPage() {
     role: 'doctor',
     organization: '',
     reason: '',
+    licenseCountry: 'BR',
+    licenseNumber: '',
+    licenseState: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'failed' | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +46,10 @@ export default function ClinicianRegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Registration failed. Please try again.');
+        const errorMsg = data.details
+          ? `${data.error}: ${data.details}`
+          : data.error || 'Registration failed. Please try again.';
+        setError(errorMsg);
         setIsLoading(false);
         return;
       }
@@ -125,10 +134,7 @@ export default function ClinicianRegisterPage() {
           {/* Google Sign Up Button */}
           <button
             type="button"
-            onClick={() => {
-              // In production, this will trigger Google OAuth
-              alert('Google OAuth will be enabled in production');
-            }}
+            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
             className="w-full mb-6 flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium text-gray-700"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -250,6 +256,178 @@ export default function ClinicianRegisterPage() {
                 <option value="admin">Administrator</option>
               </select>
             </div>
+
+            {/* Medical License Section */}
+            {formData.role === 'doctor' && (
+              <>
+                <div className="col-span-2 border-t border-gray-200 pt-4 mt-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Medical License Verification</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Your medical license will be automatically verified with official medical boards.
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="licenseCountry" className="block text-sm font-medium text-gray-700 mb-2">
+                    Country <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="licenseCountry"
+                    name="licenseCountry"
+                    value={formData.licenseCountry}
+                    onChange={handleChange}
+                    required
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                  >
+                    <option value="BR">Brazil (Brasil)</option>
+                    <option value="AR">Argentina</option>
+                    <option value="US">United States</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="licenseState" className="block text-sm font-medium text-gray-700 mb-2">
+                    {formData.licenseCountry === 'BR' && 'State (UF) '}
+                    {formData.licenseCountry === 'AR' && 'Province '}
+                    {formData.licenseCountry === 'US' && 'State '}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  {formData.licenseCountry === 'BR' && (
+                    <select
+                      id="licenseState"
+                      name="licenseState"
+                      value={formData.licenseState}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                    >
+                      <option value="">Select State...</option>
+                      <option value="AC">Acre (AC)</option>
+                      <option value="AL">Alagoas (AL)</option>
+                      <option value="AP">Amapá (AP)</option>
+                      <option value="AM">Amazonas (AM)</option>
+                      <option value="BA">Bahia (BA)</option>
+                      <option value="CE">Ceará (CE)</option>
+                      <option value="DF">Distrito Federal (DF)</option>
+                      <option value="ES">Espírito Santo (ES)</option>
+                      <option value="GO">Goiás (GO)</option>
+                      <option value="MA">Maranhão (MA)</option>
+                      <option value="MT">Mato Grosso (MT)</option>
+                      <option value="MS">Mato Grosso do Sul (MS)</option>
+                      <option value="MG">Minas Gerais (MG)</option>
+                      <option value="PA">Pará (PA)</option>
+                      <option value="PB">Paraíba (PB)</option>
+                      <option value="PR">Paraná (PR)</option>
+                      <option value="PE">Pernambuco (PE)</option>
+                      <option value="PI">Piauí (PI)</option>
+                      <option value="RJ">Rio de Janeiro (RJ)</option>
+                      <option value="RN">Rio Grande do Norte (RN)</option>
+                      <option value="RS">Rio Grande do Sul (RS)</option>
+                      <option value="RO">Rondônia (RO)</option>
+                      <option value="RR">Roraima (RR)</option>
+                      <option value="SC">Santa Catarina (SC)</option>
+                      <option value="SP">São Paulo (SP)</option>
+                      <option value="SE">Sergipe (SE)</option>
+                      <option value="TO">Tocantins (TO)</option>
+                    </select>
+                  )}
+                  {formData.licenseCountry === 'AR' && (
+                    <select
+                      id="licenseState"
+                      name="licenseState"
+                      value={formData.licenseState}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                    >
+                      <option value="">Select Province...</option>
+                      <option value="Buenos Aires">Buenos Aires</option>
+                      <option value="Catamarca">Catamarca</option>
+                      <option value="Chaco">Chaco</option>
+                      <option value="Chubut">Chubut</option>
+                      <option value="Córdoba">Córdoba</option>
+                      <option value="Corrientes">Corrientes</option>
+                      <option value="Entre Ríos">Entre Ríos</option>
+                      <option value="Formosa">Formosa</option>
+                      <option value="Jujuy">Jujuy</option>
+                      <option value="La Pampa">La Pampa</option>
+                      <option value="La Rioja">La Rioja</option>
+                      <option value="Mendoza">Mendoza</option>
+                      <option value="Misiones">Misiones</option>
+                      <option value="Neuquén">Neuquén</option>
+                      <option value="Río Negro">Río Negro</option>
+                      <option value="Salta">Salta</option>
+                      <option value="San Juan">San Juan</option>
+                      <option value="San Luis">San Luis</option>
+                      <option value="Santa Cruz">Santa Cruz</option>
+                      <option value="Santa Fe">Santa Fe</option>
+                      <option value="Santiago del Estero">Santiago del Estero</option>
+                      <option value="Tierra del Fuego">Tierra del Fuego</option>
+                      <option value="Tucumán">Tucumán</option>
+                      <option value="CABA">Ciudad Autónoma de Buenos Aires (CABA)</option>
+                    </select>
+                  )}
+                  {formData.licenseCountry === 'US' && (
+                    <input
+                      id="licenseState"
+                      name="licenseState"
+                      type="text"
+                      value={formData.licenseState}
+                      onChange={handleChange}
+                      placeholder="e.g., California, New York"
+                      required
+                      disabled={isLoading}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                    />
+                  )}
+                </div>
+
+                <div className="col-span-2">
+                  <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                    Medical License Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="licenseNumber"
+                    name="licenseNumber"
+                    type="text"
+                    value={formData.licenseNumber}
+                    onChange={handleChange}
+                    placeholder={
+                      formData.licenseCountry === 'BR' ? 'CRM Number (e.g., 123456)' :
+                      formData.licenseCountry === 'AR' ? 'Matrícula Number' :
+                      'License Number'
+                    }
+                    required
+                    disabled={isLoading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    {formData.licenseCountry === 'BR' && 'Enter your CRM number. Will be verified with CFM/CRM database.'}
+                    {formData.licenseCountry === 'AR' && 'Enter your Matrícula number. Will be verified with CONFEMED.'}
+                    {formData.licenseCountry === 'US' && 'Enter your NPI or State License number. Will be verified with NPPES.'}
+                  </p>
+                  {verificationStatus === 'verified' && (
+                    <div className="mt-2 flex items-center gap-2 text-green-600 text-sm">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-medium">License verified successfully!</span>
+                    </div>
+                  )}
+                  {verificationStatus === 'failed' && (
+                    <div className="mt-2 flex items-center gap-2 text-amber-600 text-sm">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-medium">Automatic verification pending. Manual review required.</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             <div>
               <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">

@@ -1,0 +1,128 @@
+/**
+ * RLHF Correction Aggregation Job Endpoint
+ *
+ * POST /api/jobs/aggregate-corrections - Trigger correction aggregation job
+ *
+ * This endpoint can be called:
+ * 1. Manually for testing
+ * 2. By a cron service (Vercel Cron, GitHub Actions, etc.)
+ * 3. From internal scheduled tasks
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { aggregateDailyCorrections, aggregateCorrectionsRange } from '@/lib/jobs/correction-aggregation';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes max
+
+/**
+ * POST /api/jobs/aggregate-corrections
+ *
+ * Triggers the RLHF correction aggregation job
+ *
+ * Query params:
+ * - mode: 'daily' | 'custom' (default: 'daily')
+ * - startDate: ISO date string (for custom mode)
+ * - endDate: ISO date string (for custom mode)
+ * - secret: Authorization secret (from env)
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Authorization check (prevent unauthorized job execution)
+    const authHeader = request.headers.get('authorization');
+    const urlSecret = request.nextUrl.searchParams.get('secret');
+    const expectedSecret = process.env.CRON_SECRET || process.env.INTERNAL_JOB_SECRET;
+
+    // Check authorization
+    if (expectedSecret) {
+      const providedSecret = authHeader?.replace('Bearer ', '') || urlSecret;
+
+      if (providedSecret !== expectedSecret) {
+        console.error('🔒 Unauthorized job execution attempt');
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Get job parameters
+    const mode = request.nextUrl.searchParams.get('mode') || 'daily';
+    const startDateParam = request.nextUrl.searchParams.get('startDate');
+    const endDateParam = request.nextUrl.searchParams.get('endDate');
+
+    console.log(`🚀 [Job] Starting correction aggregation job (mode: ${mode})`);
+
+    let result;
+
+    if (mode === 'custom' && startDateParam && endDateParam) {
+      // Custom date range
+      const startDate = new Date(startDateParam);
+      const endDate = new Date(endDateParam);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid date format. Use ISO 8601 format.' },
+          { status: 400 }
+        );
+      }
+
+      console.log(`📅 Running custom range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      result = await aggregateCorrectionsRange(startDate, endDate);
+    } else {
+      // Daily aggregation (default)
+      console.log('📆 Running daily aggregation');
+      result = await aggregateDailyCorrections();
+    }
+
+    if (result.processed) {
+      console.log('✅ [Job] Correction aggregation completed successfully');
+      return NextResponse.json({
+        success: true,
+        message: 'Correction aggregation completed successfully',
+        data: result.results,
+      });
+    } else {
+      console.log('� [Job] No corrections to process');
+      return NextResponse.json({
+        success: true,
+        message: 'No corrections to process',
+        data: null,
+      });
+    }
+  } catch (error: any) {
+    console.error('❌ [Job] Error running correction aggregation:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to run correction aggregation job',
+        message: error.message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/jobs/aggregate-corrections
+ *
+ * Get status/info about the aggregation job
+ */
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    job: 'correction-aggregation',
+    description: 'RLHF correction aggregation background job',
+    endpoints: {
+      trigger: 'POST /api/jobs/aggregate-corrections',
+      modes: {
+        daily: 'POST /api/jobs/aggregate-corrections?mode=daily',
+        custom: 'POST /api/jobs/aggregate-corrections?mode=custom&startDate=2025-01-01T00:00:00Z&endDate=2025-01-31T23:59:59Z',
+      },
+      authorization: 'Bearer token in Authorization header or ?secret= query param',
+    },
+    schedule: {
+      recommended: 'Daily at 2:00 AM UTC',
+      vercelCron: '0 2 * * *',
+    },
+    status: 'active',
+  });
+}

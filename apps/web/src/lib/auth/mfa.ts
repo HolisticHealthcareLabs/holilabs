@@ -258,7 +258,9 @@ export async function verifyMFAEnrollment(
     const backupCodes = generateBackupCodes(BACKUP_CODES_COUNT, BACKUP_CODE_LENGTH);
 
     // Encrypt backup codes for storage
-    const encryptedBackupCodes = backupCodes.map((code) => encryptPHI(code));
+    const encryptedBackupCodes = backupCodes
+      .map((code) => encryptPHI(code))
+      .filter((code): code is string => code !== null);
 
     // Update user with MFA enabled
     await prisma.user.update({
@@ -785,7 +787,9 @@ export async function regenerateBackupCodes(userId: string): Promise<string[]> {
     const backupCodes = generateBackupCodes(BACKUP_CODES_COUNT, BACKUP_CODE_LENGTH);
 
     // Encrypt backup codes
-    const encryptedBackupCodes = backupCodes.map((code) => encryptPHI(code));
+    const encryptedBackupCodes = backupCodes
+      .map((code) => encryptPHI(code))
+      .filter((code): code is string => code !== null);
 
     // Update user
     await prisma.user.update({

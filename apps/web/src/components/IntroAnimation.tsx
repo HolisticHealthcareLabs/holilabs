@@ -9,7 +9,7 @@ interface IntroAnimationProps {
   duration?: number;
 }
 
-export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationProps) {
+export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationProps) {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationPr
       return;
     }
 
-    // Auto-hide after duration (twice as fast)
+    // Auto-hide after duration (2x faster)
     const timer = setTimeout(() => {
       sessionStorage.setItem('hasSeenIntro', 'true');
       setShow(false);
@@ -51,7 +51,7 @@ export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationPr
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{
-              duration: 0.8,
+              duration: 0.4,
               ease: [0.43, 0.13, 0.23, 0.96],
             }}
             className="relative w-32 h-32 md:w-40 md:h-40 z-10"
@@ -70,9 +70,9 @@ export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationPr
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 2, 2.5], opacity: [0, 0.4, 0] }}
             transition={{
-              duration: 1.5,
+              duration: 0.75,
               repeat: Infinity,
-              repeatDelay: 0.5,
+              repeatDelay: 0.25,
               ease: "easeOut",
             }}
             className="absolute rounded-full border-4 border-[#014751]"
@@ -89,10 +89,10 @@ export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationPr
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 2.5, 3], opacity: [0, 0.3, 0] }}
             transition={{
-              duration: 1.5,
+              duration: 0.75,
               repeat: Infinity,
-              repeatDelay: 0.5,
-              delay: 0.3,
+              repeatDelay: 0.25,
+              delay: 0.15,
               ease: "easeOut",
             }}
             className="absolute rounded-full border-4 border-[#014751]"
@@ -109,10 +109,10 @@ export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationPr
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 3, 3.5], opacity: [0, 0.2, 0] }}
             transition={{
-              duration: 1.5,
+              duration: 0.75,
               repeat: Infinity,
-              repeatDelay: 0.5,
-              delay: 0.6,
+              repeatDelay: 0.25,
+              delay: 0.3,
               ease: "easeOut",
             }}
             className="absolute rounded-full border-4 border-[#014751]"
@@ -130,7 +130,7 @@ export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationPr
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
           className="absolute bottom-1/3"
         >
           <h1 
@@ -142,7 +142,7 @@ export function IntroAnimation({ onComplete, duration = 1500 }: IntroAnimationPr
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 1 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
             className="text-center text-gray-600 mt-2 text-sm md:text-base"
           >
             Health 3.0 Platform
