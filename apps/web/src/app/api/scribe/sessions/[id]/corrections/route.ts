@@ -11,6 +11,35 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 /**
+ * Calculate Levenshtein distance between two strings
+ * Used to measure edit distance for ML error analysis
+ */
+function calculateLevenshteinDistance(str1: string, str2: string): number {
+  const m = str1.length;
+  const n = str2.length;
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,     // deletion
+          dp[i][j - 1] + 1,     // insertion
+          dp[i - 1][j - 1] + 1  // substitution
+        );
+      }
+    }
+  }
+
+  return dp[m][n];
+}
+
+/**
  * POST /api/scribe/sessions/:id/corrections
  * Save a correction to a transcript segment
  */
@@ -97,15 +126,33 @@ export const POST = createProtectedRoute(
         },
       });
 
-      // TODO: Phase 1.3 - Log to TranscriptionError model for ML improvement
-      // For now, we'll log to console for tracking
-      console.log('📝 Transcript correction saved:', {
+      // Calculate Levenshtein distance for ML analysis
+      const editDistance = calculateLevenshteinDistance(originalText, correctedText);
+
+      // Log to TranscriptionError model for ML improvement (RLHF Loop)
+      await prisma.transcriptionError.create({
+        data: {
+          sessionId,
+          segmentIndex,
+          startTime,
+          endTime,
+          speaker,
+          confidence,
+          originalText,
+          correctedText,
+          editDistance,
+          correctedBy: context.user.id,
+          ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+          userAgent: request.headers.get('user-agent') || null,
+        },
+      });
+
+      console.log('✅ Correction saved to training queue:', {
         sessionId,
         segmentIndex,
         confidence,
+        editDistance,
         speaker,
-        originalLength: originalText.length,
-        correctedLength: correctedText.length,
         timestamp: new Date().toISOString(),
       });
 

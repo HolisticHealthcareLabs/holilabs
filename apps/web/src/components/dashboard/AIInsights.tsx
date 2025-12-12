@@ -19,7 +19,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -80,108 +80,59 @@ export function AIInsights({
   showConfidence = true,
   showEvidence = true,
 }: AIInsightsProps) {
-  const [insights, setInsights] = useState<AIInsight[]>([
-    {
-      id: '1',
-      type: 'risk_alert',
-      priority: 'critical',
-      title: 'High Sepsis Risk Detected',
-      description:
-        'Patient María González shows early signs of sepsis: elevated lactate (3.2 mmol/L), tachycardia (HR 115), fever (38.9°C). Immediate intervention recommended.',
-      confidence: 87,
-      category: 'clinical',
-      patientId: 'p1',
-      patientName: 'María González',
-      actionable: true,
-      actions: [
-        { label: 'Start Sepsis Protocol', type: 'primary', onClick: () => {} },
-        { label: 'Review Details', type: 'secondary', onClick: () => {} },
-      ],
-      evidence: [
-        {
-          source: 'Seymour et al.',
-          citation: 'JAMA 2016 - qSOFA Score for Sepsis Prediction',
-          url: 'https://pubmed.gov',
-        },
-      ],
-    },
-    {
-      id: '2',
-      type: 'interaction_warning',
-      priority: 'high',
-      title: 'Drug Interaction Warning',
-      description:
-        'Carlos Silva: Prescribed warfarin interacts with current aspirin regimen. Increased bleeding risk detected.',
-      confidence: 95,
-      category: 'clinical',
-      patientId: 'p2',
-      patientName: 'Carlos Silva',
-      actionable: true,
-      actions: [
-        { label: 'Adjust Dosage', type: 'primary', onClick: () => {} },
-        { label: 'View Interactions', type: 'secondary', onClick: () => {} },
-      ],
-      evidence: [
-        {
-          source: 'FDA Drug Safety Database',
-          citation: 'Major interaction: Warfarin + Aspirin',
-        },
-      ],
-    },
-    {
-      id: '3',
-      type: 'recommendation',
-      priority: 'medium',
-      title: 'Preventive Care Reminder',
-      description:
-        '12 patients due for annual wellness visits this month. Early scheduling improves outcomes and reduces no-show rates.',
-      confidence: 92,
-      category: 'operational',
-      actionable: true,
-      actions: [
-        { label: 'Schedule Visits', type: 'primary', onClick: () => {} },
-        { label: 'View List', type: 'secondary', onClick: () => {} },
-      ],
-    },
-    {
-      id: '4',
-      type: 'diagnostic_support',
-      priority: 'medium',
-      title: 'Differential Diagnosis Suggestion',
-      description:
-        'Ana Martínez: Symptoms consistent with hypothyroidism (fatigue, weight gain, cold intolerance). Consider TSH screening.',
-      confidence: 78,
-      category: 'clinical',
-      patientId: 'p3',
-      patientName: 'Ana Martínez',
-      actionable: true,
-      actions: [
-        { label: 'Order TSH Test', type: 'primary', onClick: () => {} },
-        { label: 'Review Symptoms', type: 'secondary', onClick: () => {} },
-      ],
-      evidence: [
-        {
-          source: 'UpToDate',
-          citation: 'Clinical manifestations of hypothyroidism',
-        },
-      ],
-    },
-    {
-      id: '5',
-      type: 'cost_saving',
-      priority: 'low',
-      title: 'Generic Alternative Available',
-      description:
-        'Switch 8 patients from brand-name statins to generic atorvastatin. Potential savings: $4,200/year with equivalent efficacy.',
-      confidence: 98,
-      category: 'financial',
-      actionable: true,
-      actions: [
-        { label: 'Review Patients', type: 'primary', onClick: () => {} },
-        { label: 'View Savings', type: 'secondary', onClick: () => {} },
-      ],
-    },
-  ]);
+  const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch insights from CDSS API
+  useEffect(() => {
+    async function fetchInsights() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch('/api/ai/insights');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch insights');
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          // Map actions to include onClick handlers
+          const insightsWithHandlers = result.data.insights.map((insight: any) => ({
+            ...insight,
+            actions: insight.actions?.map((action: any) => ({
+              ...action,
+              onClick: () => handleAction(insight.id, action),
+            })),
+          }));
+
+          setInsights(insightsWithHandlers);
+        }
+      } catch (err) {
+        console.error('Error fetching AI insights:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchInsights();
+  }, []);
+
+  // Handle action clicks
+  const handleAction = (insightId: string, action: any) => {
+    console.log('Action clicked:', {
+      insightId,
+      actionType: action.actionType,
+      metadata: action.metadata,
+    });
+
+    // TODO: Implement action handlers based on actionType
+    // e.g., navigate to patient, start protocol, order lab, etc.
+  };
 
   const [filter, setFilter] = useState<'all' | 'clinical' | 'operational' | 'financial'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -372,14 +323,40 @@ export function AIInsights({
 
       {/* Insights list */}
       <div className="overflow-y-auto p-4 space-y-3" style={{ maxHeight }}>
-        {filteredInsights.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin h-10 w-10 border-4 border-primary-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              Analyzing patient data...
+            </p>
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+              Generating clinical insights with AI
+            </p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-2">⚠️</div>
+            <p className="text-sm font-medium text-error-600 dark:text-error-400">
+              Failed to load insights
+            </p>
+            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+              {error}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
+            >
+              Retry
+            </button>
+          </div>
+        ) : filteredInsights.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-2">✨</div>
             <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               No insights available
             </p>
             <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-              AI is analyzing your patient data
+              AI has analyzed your patient data - no critical items detected
             </p>
           </div>
         ) : (

@@ -10,6 +10,7 @@
 
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { VerificationMethod } from '@prisma/client';
 
 // Supported countries for medical license verification
 export type SupportedCountry = 'BR' | 'AR' | 'US';
@@ -448,7 +449,7 @@ export async function createCredentialVerificationRecord(
         status: result.status,
         matchScore: result.matchScore,
         matchedData: result.matchedData,
-        discrepancies: result.discrepancies ? { items: result.discrepancies } : null,
+        discrepancies: result.discrepancies ? { items: result.discrepancies } : undefined,
         externalVerificationId: result.externalVerificationId,
         verificationNotes: result.verificationNotes,
       },
@@ -484,16 +485,16 @@ function getIssuingAuthority(country: SupportedCountry, state?: string): string 
 /**
  * Helper: Get verification method enum
  */
-function getVerificationMethod(country: SupportedCountry): string {
+function getVerificationMethod(country: SupportedCountry): VerificationMethod {
   switch (country) {
     case 'BR':
-      return 'CFM_VERIFICATION';
+      return VerificationMethod.CFM_VERIFICATION;
     case 'AR':
-      return 'CONFEMED_VERIFICATION';
+      return VerificationMethod.CONFEMED_VERIFICATION;
     case 'US':
-      return 'NPPES_LOOKUP';
+      return VerificationMethod.NPPES_LOOKUP;
     default:
-      return 'MANUAL_VERIFICATION';
+      return VerificationMethod.MANUAL_VERIFICATION;
   }
 }
 

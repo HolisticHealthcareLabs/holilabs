@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface TranscriptSegment {
   speaker: string;
@@ -8,6 +8,9 @@ interface TranscriptSegment {
   startTime: number;
   endTime: number;
   confidence: number;
+  correctedAt?: string; // ISO timestamp when segment was corrected
+  correctedBy?: string; // User ID who corrected it
+  originalText?: string; // Original AI-generated text before correction
 }
 
 interface TranscriptViewerProps {
@@ -24,6 +27,15 @@ export default function TranscriptViewer({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [showTrainingFeedback, setShowTrainingFeedback] = useState(false);
+  const [lastCorrectedIndex, setLastCorrectedIndex] = useState<number | null>(null);
+  const [totalCorrections, setTotalCorrections] = useState(0);
+
+  // Count corrections on mount and when segments change
+  useEffect(() => {
+    const corrected = segments.filter(s => s.correctedAt).length;
+    setTotalCorrections(corrected);
+  }, [segments]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -52,6 +64,17 @@ export default function TranscriptViewer({
   const handleSaveEdit = (index: number, originalText: string) => {
     if (editText.trim() && editText !== originalText) {
       onSegmentCorrect?.(index, editText.trim(), originalText);
+
+      // Show training feedback
+      setLastCorrectedIndex(index);
+      setShowTrainingFeedback(true);
+      setTotalCorrections(prev => prev + 1);
+
+      // Auto-hide feedback after 5 seconds
+      setTimeout(() => {
+        setShowTrainingFeedback(false);
+        setLastCorrectedIndex(null);
+      }, 5000);
     }
     setEditingIndex(null);
     setEditText('');
@@ -75,11 +98,51 @@ export default function TranscriptViewer({
   }
 
   return (
-    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+    <div className="relative space-y-3 max-h-[600px] overflow-y-auto pr-2">
+      {/* Training Feedback Toast */}
+      {showTrainingFeedback && (
+        <div className="sticky top-0 z-50 mb-4 animate-fade-in">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400 rounded-lg p-4 shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-green-900 mb-1">
+                  ✅ Corrección guardada y enviada a entrenamiento
+                </h4>
+                <p className="text-sm text-green-800 leading-relaxed">
+                  Tu corrección ayudará a mejorar la precisión de la IA en futuras transcripciones.
+                  Cada corrección se procesa diariamente para optimizar el modelo de transcripción médica.
+                </p>
+                <div className="mt-2 flex items-center gap-2 text-xs text-green-700">
+                  <span className="font-semibold">🧠 RLHF Loop:</span>
+                  <span className="bg-green-200 px-2 py-1 rounded">Retroalimentación activa</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTrainingFeedback(false)}
+                className="flex-shrink-0 text-green-600 hover:text-green-800 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {segments.map((segment, idx) => {
         const isLowConfidence = segment.confidence < 0.85;
         const isEditing = editingIndex === idx;
         const isHovered = hoveredIndex === idx;
+        const isCorrected = !!segment.correctedAt;
+        const isJustCorrected = lastCorrectedIndex === idx;
 
         return (
           <div
@@ -87,8 +150,12 @@ export default function TranscriptViewer({
             onMouseEnter={() => setHoveredIndex(idx)}
             onMouseLeave={() => setHoveredIndex(null)}
             className={`relative group p-4 rounded-lg border-2 transition-all ${
-              isEditing
+              isJustCorrected
+                ? 'bg-green-50 border-green-400 shadow-lg animate-pulse'
+                : isEditing
                 ? 'bg-blue-50 border-blue-400 shadow-lg'
+                : isCorrected
+                ? 'bg-emerald-50 border-emerald-300 hover:border-emerald-400'
                 : isLowConfidence
                 ? 'bg-yellow-50 border-yellow-300 hover:border-yellow-400'
                 : segment.speaker === 'Doctor'
@@ -96,8 +163,16 @@ export default function TranscriptViewer({
                 : 'bg-gray-50 border-gray-200 hover:border-gray-300'
             }`}
           >
+            {/* Corrected Badge */}
+            {isCorrected && !isEditing && (
+              <div className="absolute -top-2 left-4 bg-green-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
+                <span>✓</span>
+                <span>Corregido por médico</span>
+              </div>
+            )}
+
             {/* Low Confidence Warning Banner */}
-            {isLowConfidence && !isEditing && (
+            {isLowConfidence && !isEditing && !isCorrected && (
               <div className="absolute -top-2 left-4 bg-yellow-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
                 <span>⚠️</span>
                 <span>Baja confianza - Revisar</span>
@@ -211,9 +286,9 @@ export default function TranscriptViewer({
         );
       })}
 
-      {/* Summary Stats */}
+      {/* Summary Stats with Training Metrics */}
       <div className="sticky bottom-0 bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-300 p-4 rounded-lg mt-4">
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-4 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-gray-900">{segments.length}</p>
             <p className="text-xs text-gray-600 font-medium">Segmentos</p>
@@ -225,12 +300,30 @@ export default function TranscriptViewer({
             <p className="text-xs text-gray-600 font-medium">Alta confianza</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-red-600">
-              {segments.filter(s => s.confidence < 0.85).length}
+            <p className="text-2xl font-bold text-yellow-600">
+              {segments.filter(s => s.confidence < 0.85 && !s.correctedAt).length}
             </p>
             <p className="text-xs text-gray-600 font-medium">Requieren revisión</p>
           </div>
+          <div className="relative">
+            <p className="text-2xl font-bold text-emerald-600">{totalCorrections}</p>
+            <p className="text-xs text-gray-600 font-medium">Corregidos</p>
+            {totalCorrections > 0 && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-pulse" title="Contribuyendo al entrenamiento de IA" />
+            )}
+          </div>
         </div>
+
+        {/* Training Loop Indicator */}
+        {totalCorrections > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-300">
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-600">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+              <span className="font-semibold">RLHF Loop activo:</span>
+              <span>{totalCorrections} corrección{totalCorrections !== 1 ? 'es' : ''} contribuyendo a mejorar la IA</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

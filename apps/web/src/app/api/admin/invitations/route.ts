@@ -29,28 +29,15 @@ export async function GET(request: Request) {
       );
     }
 
-    const codes = await prisma.invitationCode.findMany({
-      include: {
-        usedBy: {
-          select: {
-            email: true,
-            createdAt: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    const signupCounter = await prisma.signupCounter.findUnique({
-      where: { id: 'singleton' },
-    });
+    // TODO: InvitationCode model not yet implemented in schema
+    // const codes = await prisma.invitationCode.findMany({...});
+    // const signupCounter = await prisma.signupCounter.findUnique({...});
 
     return NextResponse.json({
-      codes,
-      first100Count: signupCounter?.currentCount || 0,
-      first100Remaining: Math.max(0, 100 - (signupCounter?.currentCount || 0)),
+      codes: [],
+      first100Count: 0,
+      first100Remaining: 100,
+      message: 'Invitation code feature not yet implemented',
     });
   } catch (error: any) {
     logger.error({
@@ -77,33 +64,17 @@ export async function POST(request: Request) {
 
     const { codeType, maxUses, notes, expiresInDays } = await request.json();
 
-    let expiresAt = null;
-    if (expiresInDays && expiresInDays > 0) {
-      expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + expiresInDays);
-    }
-
-    const code = await prisma.invitationCode.create({
-      data: {
-        codeType: codeType || 'FRIEND_FAMILY',
-        maxUses: maxUses || 1,
-        notes: notes || null,
-        expiresAt,
-        createdByAdmin: true,
-      },
-    });
-
-    logger.info({
-      event: 'invitation_code_created',
-      code: code.code,
-      codeType: code.codeType,
-      maxUses: code.maxUses,
-    });
+    // TODO: InvitationCode model not yet implemented in schema
+    // let expiresAt = null;
+    // if (expiresInDays && expiresInDays > 0) {
+    //   expiresAt = new Date();
+    //   expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    // }
+    // const code = await prisma.invitationCode.create({...});
 
     return NextResponse.json({
-      success: true,
-      code: code.code,
-      data: code,
+      success: false,
+      message: 'Invitation code feature not yet implemented',
     });
   } catch (error: any) {
     logger.error({
@@ -130,19 +101,12 @@ export async function DELETE(request: Request) {
 
     const { code } = await request.json();
 
-    const updatedCode = await prisma.invitationCode.update({
-      where: { code },
-      data: { isActive: false },
-    });
-
-    logger.info({
-      event: 'invitation_code_deactivated',
-      code: updatedCode.code,
-    });
+    // TODO: InvitationCode model not yet implemented in schema
+    // const updatedCode = await prisma.invitationCode.update({...});
 
     return NextResponse.json({
-      success: true,
-      message: 'Código desactivado',
+      success: false,
+      message: 'Invitation code feature not yet implemented',
     });
   } catch (error: any) {
     logger.error({

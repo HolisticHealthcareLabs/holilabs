@@ -103,7 +103,7 @@ function createPrismaClient(): PrismaClient | null {
   // Create Bemi-enhanced Prisma adapter for SOC 2 audit trail
   // This captures all DB changes at the PostgreSQL WAL level
   const adapter = process.env.ENABLE_BEMI_AUDIT === 'true'
-    ? PrismaPg({ connectionString: databaseUrl })
+    ? new PrismaPg({ connectionString: databaseUrl })
     : undefined;
 
   const baseClient = new PrismaClient({
@@ -130,13 +130,12 @@ function createPrismaClient(): PrismaClient | null {
     },
   });
 
-  // Apply transparent encryption extension (SOC 2 Control CC6.7)
-  // This automatically encrypts/decrypts PHI fields on all operations
-  const client = baseClient.$extends(encryptionExtension) as unknown as PrismaClient;
+  // Set up event listeners on base client BEFORE applying extensions
+  // Extended clients don't have $on methods
 
   // Log slow queries in development
   if (process.env.NODE_ENV === 'development') {
-    client.$on('query' as never, (e: any) => {
+    baseClient.$on('query' as never, (e: any) => {
       if (e.duration > 1000) {
         logger.warn({
           event: 'slow_query',
@@ -149,7 +148,7 @@ function createPrismaClient(): PrismaClient | null {
   }
 
   // Log all database errors
-  client.$on('error' as never, (e: any) => {
+  baseClient.$on('error' as never, (e: any) => {
     logger.error({
       event: 'database_error',
       message: e.message,
@@ -158,12 +157,16 @@ function createPrismaClient(): PrismaClient | null {
   });
 
   // Log warnings
-  client.$on('warn' as never, (e: any) => {
+  baseClient.$on('warn' as never, (e: any) => {
     logger.warn({
       event: 'database_warning',
       message: e.message,
     }, 'Database warning');
   });
+
+  // Apply transparent encryption extension (SOC 2 Control CC6.7)
+  // This automatically encrypts/decrypts PHI fields on all operations
+  const client = baseClient.$extends(encryptionExtension) as unknown as PrismaClient;
 
   return client;
 }

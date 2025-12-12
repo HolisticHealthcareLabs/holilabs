@@ -34,10 +34,14 @@ model User {
   npi           String? // National Provider Identifier (US only)
 
   // Security
-  mfaEnabled  Boolean   @default(false)
-  lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  mfaEnabled      Boolean   @default(false)
+  mfaServiceSid   String? // Twilio Verify Service SID
+  mfaPhoneNumber  String? // Encrypted phone number for MFA
+  mfaBackupCodes  String[] @default([]) // Encrypted backup codes
+  mfaEnrolledAt   DateTime? // When MFA was enabled
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   patients              Patient[]
@@ -747,6 +751,8 @@ model Patient {
   invoices       Invoice[]
   payments       Payment[]
   aiUsageLogs    AIUsageLog[]
+  vitalSigns     VitalSign[]
+  diagnoses      Diagnosis[]
 
   // Palliative care relations
   carePlans                 CarePlan[]
@@ -783,6 +789,76 @@ model Patient {
   @@index([cpf])
   @@index([isPalliativeCare])
   @@map("patients")
+}
+
+// ============================================================================
+// VITAL SIGNS
+// ============================================================================
+
+model VitalSign {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Vital measurements
+  temperature      Float? // Celsius
+  heartRate        Int?   // bpm
+  systolicBP       Int?   // mmHg
+  diastolicBP      Int?   // mmHg
+  respiratoryRate  Int?   // breaths per minute
+  oxygenSaturation Float? // %
+  weight           Float? // kg
+  height           Float? // cm
+
+  // Metadata
+  recordedBy String?  // Clinician ID
+  recordedAt DateTime @default(now())
+  source     String?  @default("MANUAL") // MANUAL, DEVICE, IMPORT
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId, recordedAt])
+  @@index([patientId, createdAt])
+  @@map("vital_signs")
+}
+
+// ============================================================================
+// DIAGNOSES
+// ============================================================================
+
+model Diagnosis {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Diagnosis details
+  icd10Code   String
+  description String         @db.Text
+  isPrimary   Boolean        @default(false)
+  status      DiagnosisStatus @default(ACTIVE)
+
+  // Clinical context
+  diagnosedBy String?   // Clinician ID
+  diagnosedAt DateTime  @default(now())
+  resolvedAt  DateTime?
+  notes       String?   @db.Text
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId, diagnosedAt])
+  @@index([patientId, status])
+  @@index([icd10Code])
+  @@map("diagnoses")
+}
+
+enum DiagnosisStatus {
+  ACTIVE
+  RESOLVED
+  RULED_OUT
+  CHRONIC
 }
 
 // ============================================================================
@@ -4884,6 +4960,7 @@ enum ReviewStatus {
   APPROVED // Reviewed and approved
   CORRECTED // Reviewed and corrected
   ESCALATED // Escalated to senior clinician
+  REJECTED // Rejected by reviewer
 }
 
 enum FeedbackCategory {
@@ -4940,4 +5017,36 @@ enum EmailQueueStatus {
   PENDING
   SENT
   FAILED
+}
+
+// ============================================================================
+// AUTHORIZATION: CASBIN RULES
+// ============================================================================
+
+/**
+ * CasbinRule - Authorization policy storage
+ *
+ * Stores Casbin RBAC policies for role-based access control.
+ * SOC 2 Control: CC6.3 (Authorization & Principle of Least Privilege)
+ */
+model CasbinRule {
+  id Int @id @default(autoincrement())
+
+  // Policy type: "p" (policy) or "g" (grouping/role)
+  ptype String
+
+  // Policy values (v0-v5)
+  v0 String? // Subject (role or user)
+  v1 String? // Object (resource)
+  v2 String? // Action (read, write, delete, etc.)
+  v3 String? // Domain (organization ID or *)
+  v4 String? // Effect (allow, deny)
+  v5 String? // Condition (optional)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ptype])
+  @@index([v0])
+  @@map("casbin_rules")
 }

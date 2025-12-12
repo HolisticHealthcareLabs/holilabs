@@ -156,7 +156,7 @@ export default function Home() {
 
   return (
     <>
-      {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} duration={3000} />}
+      {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} duration={1500} />}
       <AICommandCenter isOpen={showAICommand} onClose={() => setShowAICommand(false)} />
       <AICommandButton onClick={() => setShowAICommand(true)} />
       <FeedbackButton />

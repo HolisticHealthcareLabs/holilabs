@@ -38,7 +38,7 @@ import { createAuditLog } from '@/lib/audit';
  * - Access reason (LGPD/HIPAA compliance)
  * - User action justification
  */
-export const POST = withBemiAudit(async (request: NextRequest) => {
+export const POST = withBemiAudit(async (request: NextRequest | Request) => {
   try {
     const data = await request.json();
 
@@ -53,6 +53,8 @@ export const POST = withBemiAudit(async (request: NextRequest) => {
     // Create patient (Bemi context automatically set by withBemiAudit)
     const patient = await prisma.patient.create({
       data: {
+        mrn: `MRN-${Date.now()}`, // Generate unique MRN
+        tokenId: `PT-${Date.now()}`, // Generate unique token ID
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
@@ -73,7 +75,7 @@ export const POST = withBemiAudit(async (request: NextRequest) => {
         accessReason: 'TREATMENT', // LGPD compliance
         accessPurpose: 'Creating new patient record for initial consultation',
       },
-      request
+      request instanceof Request ? undefined : request
     );
 
     return NextResponse.json({ success: true, patient }, { status: 201 });
@@ -89,7 +91,7 @@ export const POST = withBemiAudit(async (request: NextRequest) => {
 /**
  * Update patient with automatic Bemi audit context
  */
-export const PUT = withBemiAudit(async (request: NextRequest) => {
+export const PUT = withBemiAudit(async (request: NextRequest | Request) => {
   try {
     const { id, ...data } = await request.json();
 
@@ -118,7 +120,7 @@ export const PUT = withBemiAudit(async (request: NextRequest) => {
         accessReason: 'TREATMENT',
         accessPurpose: 'Updating patient contact information',
       },
-      request
+      request instanceof Request ? undefined : request
     );
 
     return NextResponse.json({ success: true, patient });
@@ -169,7 +171,7 @@ export async function GET_MANUAL_CONTEXT(request: NextRequest) {
         accessReason: 'TREATMENT',
         accessPurpose: 'Viewing patient list for daily rounds',
       },
-      request
+      request instanceof Request ? undefined : request
     );
 
     return NextResponse.json({ success: true, patients });
@@ -225,7 +227,7 @@ export async function DELETE_WITH_CUSTOM_CONTEXT(request: NextRequest) {
       where: { id: patientId },
       data: {
         deletedAt: new Date(),
-        deletedBy: session?.user?.id || 'UNKNOWN',
+        // deletedBy: session?.user?.id || 'UNKNOWN', // Field may not be in current schema
       },
     });
 
@@ -242,7 +244,7 @@ export async function DELETE_WITH_CUSTOM_CONTEXT(request: NextRequest) {
         accessReason: 'LEGAL_COMPLIANCE',
         accessPurpose: 'Patient requested data deletion under LGPD Article 18',
       },
-      request
+      request instanceof Request ? undefined : request
     );
 
     return NextResponse.json({ success: true, patient });

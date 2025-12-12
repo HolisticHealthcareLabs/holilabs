@@ -237,7 +237,7 @@ export const encryptionExtension = Prisma.defineExtension({
        */
       async create({ model, operation, args, query }) {
         if (args.data) {
-          args.data = await encryptPHIFields(model, args.data);
+          args.data = (await encryptPHIFields(model, args.data)) as typeof args.data;
         }
 
         const result = await query(args);
@@ -253,11 +253,11 @@ export const encryptionExtension = Prisma.defineExtension({
       async createMany({ model, operation, args, query }) {
         if (args.data) {
           if (Array.isArray(args.data)) {
-            args.data = await Promise.all(
+            args.data = (await Promise.all(
               args.data.map((record) => encryptPHIFields(model, record))
-            );
+            )) as typeof args.data;
           } else {
-            args.data = await encryptPHIFields(model, args.data);
+            args.data = (await encryptPHIFields(model, args.data)) as typeof args.data;
           }
         }
 
@@ -270,7 +270,7 @@ export const encryptionExtension = Prisma.defineExtension({
        */
       async update({ model, operation, args, query }) {
         if (args.data) {
-          args.data = await encryptPHIFields(model, args.data);
+          args.data = (await encryptPHIFields(model, args.data)) as typeof args.data;
         }
 
         const result = await query(args);
@@ -285,7 +285,7 @@ export const encryptionExtension = Prisma.defineExtension({
        */
       async updateMany({ model, operation, args, query }) {
         if (args.data) {
-          args.data = await encryptPHIFields(model, args.data);
+          args.data = (await encryptPHIFields(model, args.data)) as typeof args.data;
         }
 
         return query(args);
@@ -297,10 +297,10 @@ export const encryptionExtension = Prisma.defineExtension({
        */
       async upsert({ model, operation, args, query }) {
         if (args.create) {
-          args.create = await encryptPHIFields(model, args.create);
+          args.create = (await encryptPHIFields(model, args.create)) as typeof args.create;
         }
         if (args.update) {
-          args.update = await encryptPHIFields(model, args.update);
+          args.update = (await encryptPHIFields(model, args.update)) as typeof args.update;
         }
 
         const result = await query(args);
