@@ -10,3 +10,6 @@ export * from './CommandPalette';
 export * from './SmartNotifications';
 export * from './ActivityTimeline';
 export * from './AIInsights';
+
+// RLHF Loop Components
+export { default as CorrectionMetricsWidget } from './CorrectionMetricsWidget';

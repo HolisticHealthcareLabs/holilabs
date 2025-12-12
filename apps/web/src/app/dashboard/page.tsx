@@ -21,7 +21,6 @@ import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ImprovedWelcomeModal from '@/components/onboarding/ImprovedWelcomeModal';
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist';
-import DashboardWalkthrough from '@/components/onboarding/DashboardWalkthrough';
 import DemoModeToggle from '@/components/demo/DemoModeToggle';
 
 // Demo data
@@ -55,6 +54,8 @@ import {
   AdherenceScoreWidget,
   BillableValueWidget,
 } from '@/components/dashboard/KPIWidgets';
+import CorrectionMetricsWidget from '@/components/dashboard/CorrectionMetricsWidget';
+import { ReviewQueueWidget } from '@/components/dashboard/ReviewQueueWidget';
 
 export default function DashboardCommandCenter() {
   const router = useRouter();
@@ -88,7 +89,6 @@ export default function DashboardCommandCenter() {
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(5);
   const [hasCriticalNotifications, setHasCriticalNotifications] = useState(true);
   const [showWidgetStore, setShowWidgetStore] = useState(false);
-  const [showChecklist, setShowChecklist] = useState(false);
 
   // Widget configuration
   const [widgets, setWidgets] = useState<WidgetConfig[]>([
@@ -96,6 +96,7 @@ export default function DashboardCommandCenter() {
     { id: 'pending-results', name: 'Pending Results', description: 'Lab results awaiting review', enabled: true, category: 'clinical' },
     { id: 'adherence', name: 'Adherence Score', description: 'Patient medication adherence', enabled: true, category: 'kpi' },
     { id: 'billable', name: 'Billable Value', description: 'Monthly billable amount', enabled: true, category: 'kpi' },
+    { id: 'rlhf-metrics', name: 'AI Training Metrics', description: 'RLHF correction analytics', enabled: true, category: 'kpi' },
     { id: 'focus-timer', name: 'Flow State Timer', description: 'Focus timer with completion sounds', enabled: true, category: 'productivity' },
   ]);
 
@@ -211,12 +212,7 @@ export default function DashboardCommandCenter() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       {/* Onboarding */}
       <ImprovedWelcomeModal />
-      <DashboardWalkthrough onComplete={() => setShowChecklist(true)} />
-      {showChecklist && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <OnboardingChecklist autoShow={true} />
-        </div>
-      )}
+      <OnboardingChecklist />
 
       {/* Command Palette */}
       <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
@@ -285,6 +281,14 @@ export default function DashboardCommandCenter() {
           {widgets.find((w) => w.id === 'pending-results')?.enabled && <PendingResultsWidget />}
           {widgets.find((w) => w.id === 'adherence')?.enabled && <AdherenceScoreWidget />}
           {widgets.find((w) => w.id === 'billable')?.enabled && <BillableValueWidget />}
+          {widgets.find((w) => w.id === 'rlhf-metrics')?.enabled && (
+            <CorrectionMetricsWidget
+              dateRange={{
+                startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                endDate: new Date()
+              }}
+            />
+          )}
         </div>
 
         {/* Key Metrics - Enhanced with trends */}
@@ -435,6 +439,9 @@ export default function DashboardCommandCenter() {
 
           {/* Right Column - Notifications & Quick Actions */}
           <div className="space-y-6">
+            {/* Review Queue Widget */}
+            <ReviewQueueWidget />
+
             {/* Smart Notifications */}
             {showNotificationsPanel && (
               <SmartNotifications

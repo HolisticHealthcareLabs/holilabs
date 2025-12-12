@@ -140,6 +140,10 @@ function getVerificationSource(method: VerificationMethod): string {
     MANUAL_VERIFICATION: 'Manual Review',
     DOCUMENT_VERIFICATION: 'Document Review',
     THIRD_PARTY_SERVICE: 'Third-Party Verification Service',
+    CFM_VERIFICATION: 'CFM (Conselho Federal de Medicina - Brazil)',
+    CRM_VERIFICATION: 'CRM (Conselho Regional de Medicina - Brazil)',
+    CONFEMED_VERIFICATION: 'CONFEMED (Confederación Médica Argentina)',
+    PROVINCIAL_MEDICAL_BOARD_AR: 'Provincial Medical Board (Argentina)',
   };
   return sources[method];
 }
