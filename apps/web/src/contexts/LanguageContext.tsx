@@ -8,6 +8,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { type Locale, defaultLocale } from '@/i18n';
+import { logger } from '@/lib/logger';
 
 interface LanguageContextType {
   locale: Locale;
@@ -60,7 +61,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         const messages = await import(`../../messages/${locale}.json`);
         setTranslations(messages.default);
       } catch (error) {
-        console.error('Error loading translations:', error);
+        logger.error({
+          event: 'translation_load_failed',
+          locale,
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     };
     loadTranslations();
@@ -79,7 +84,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     for (const k of keys) {
       value = value?.[k];
       if (value === undefined) {
-        console.warn(`Translation missing for key: ${key}`);
+        logger.warn({
+          event: 'translation_key_missing',
+          translationKey: key,
+          locale
+        });
         return key;
       }
     }

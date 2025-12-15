@@ -195,6 +195,7 @@ export function VitalSignsTracker({
           <span className="text-2xl">❤️</span>
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Signos Vitales</h2>
+            {/* Decorative - low contrast intentional for subtitle */}
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Seguimiento y tendencias
             </p>
@@ -255,7 +256,7 @@ export function VitalSignsTracker({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
               <span>Presión Arterial (mmHg)</span>
               {vitalHistory.length > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {getTrendIcon(calculateTrend('bloodPressureSystolic'))}
                 </span>
               )}
@@ -271,7 +272,7 @@ export function VitalSignsTracker({
                   getStatusColor(getVitalStatus('bloodPressureSystolic', vitals.bloodPressureSystolic))
                 } ${readOnly || !isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               />
-              <span className="text-gray-500">/</span>
+              <span className="text-gray-500 dark:text-gray-400">/</span>
               <input
                 type="number"
                 value={vitals.bloodPressureDiastolic || ''}
@@ -290,7 +291,7 @@ export function VitalSignsTracker({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
               <span>Frecuencia Cardíaca (lpm)</span>
               {vitalHistory.length > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {getTrendIcon(calculateTrend('heartRate'))}
                 </span>
               )}
@@ -312,7 +313,7 @@ export function VitalSignsTracker({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
               <span>Temperatura (°C)</span>
               {vitalHistory.length > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {getTrendIcon(calculateTrend('temperature'))}
                 </span>
               )}
@@ -335,7 +336,7 @@ export function VitalSignsTracker({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
               <span>Frecuencia Respiratoria (rpm)</span>
               {vitalHistory.length > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {getTrendIcon(calculateTrend('respiratoryRate'))}
                 </span>
               )}
@@ -357,7 +358,7 @@ export function VitalSignsTracker({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
               <span>Saturación de O₂ (%)</span>
               {vitalHistory.length > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {getTrendIcon(calculateTrend('oxygenSaturation'))}
                 </span>
               )}
@@ -379,7 +380,7 @@ export function VitalSignsTracker({
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">
               <span>Peso (kg)</span>
               {vitalHistory.length > 0 && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {getTrendIcon(calculateTrend('weight'))}
                 </span>
               )}
@@ -514,25 +515,25 @@ export function VitalSignsTracker({
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                     {record.bloodPressureSystolic && (
                       <div>
-                        <span className="text-gray-500">PA: </span>
+                        <span className="text-gray-500 dark:text-gray-400">PA: </span>
                         <span className="font-medium">{record.bloodPressureSystolic}/{record.bloodPressureDiastolic}</span>
                       </div>
                     )}
                     {record.heartRate && (
                       <div>
-                        <span className="text-gray-500">FC: </span>
+                        <span className="text-gray-500 dark:text-gray-400">FC: </span>
                         <span className="font-medium">{record.heartRate} lpm</span>
                       </div>
                     )}
                     {record.temperature && (
                       <div>
-                        <span className="text-gray-500">Temp: </span>
+                        <span className="text-gray-500 dark:text-gray-400">Temp: </span>
                         <span className="font-medium">{record.temperature}°C</span>
                       </div>
                     )}
                     {record.oxygenSaturation && (
                       <div>
-                        <span className="text-gray-500">SpO₂: </span>
+                        <span className="text-gray-500 dark:text-gray-400">SpO₂: </span>
                         <span className="font-medium">{record.oxygenSaturation}%</span>
                       </div>
                     )}

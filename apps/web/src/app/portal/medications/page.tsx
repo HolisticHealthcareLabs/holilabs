@@ -303,6 +303,7 @@ export default function MedicationsPage() {
             exit={{ opacity: 0 }}
             className="bg-white rounded-xl border border-gray-200 p-12 text-center"
           >
+            {/* Decorative - low contrast intentional for empty state icon */}
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-8 h-8 text-gray-400"
@@ -366,6 +367,7 @@ export default function MedicationsPage() {
                             {medication.genericName}
                           </p>
                         )}
+                        {/* Decorative - low contrast intentional for bullet separators */}
                         <div className="flex items-center gap-3 text-sm">
                           <span className="font-semibold text-green-600">
                             {medication.dose}
@@ -413,6 +415,7 @@ export default function MedicationsPage() {
                   {/* Prescription Info */}
                   {medication.prescription && (
                     <div className="border-t border-gray-200 pt-4">
+                      {/* Decorative - low contrast intentional for field labels */}
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500 mb-1">Inicio</p>

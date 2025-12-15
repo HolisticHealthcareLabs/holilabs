@@ -111,7 +111,7 @@ export default function ClinicalNotesTab({
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
           <div className="text-6xl mb-4">📝</div>
           <h3 className="text-xl font-bold text-gray-700 mb-2">Sin notas clínicas</h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             No hay notas clínicas registradas para este paciente.
           </p>
           <Link
@@ -300,7 +300,8 @@ export default function ClinicalNotesTab({
                     )}
 
                     {/* Metadata */}
-                    <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-200">
+                    {/* Decorative - low contrast intentional for metadata timestamps */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
                       <span>Creado por ID: {note.createdBy}</span>
                       <span>ID de Nota: {note.id.slice(0, 12)}...</span>
                     </div>

@@ -318,7 +318,8 @@ export function ClinicalDecisionSupport({
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   Alertas Clínicas
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                {/* Decorative - low contrast intentional for alert count metadata */}
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {criticalAlerts.length} críticas • {warningAlerts.length} advertencias •{' '}
                   {infoAlerts.length} informativas
                 </p>
@@ -379,6 +380,7 @@ export function ClinicalDecisionSupport({
                             </div>
                           )}
                           {alert.source && (
+                            {/* Decorative - low contrast intentional for metadata */}
                             <p className="text-xs text-gray-600 dark:text-gray-400">
                               Fuente: {alert.source}
                             </p>
@@ -440,7 +442,8 @@ export function ClinicalDecisionSupport({
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Guías Clínicas Relevantes
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              {/* Decorative - low contrast intentional for guidelines subtitle */}
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Basadas en condiciones del paciente
               </p>
             </div>
@@ -475,9 +478,9 @@ export function ClinicalDecisionSupport({
                         Evidencia {guideline.evidence === 'high' ? 'Alta' : guideline.evidence === 'medium' ? 'Media' : 'Baja'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      Condición: {guideline.condition}
-                    </p>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <span className="font-medium">Condición:</span> {guideline.condition}
+                    </div>
 
                     <AnimatePresence>
                       {selectedGuideline?.id === guideline.id && (
@@ -503,6 +506,7 @@ export function ClinicalDecisionSupport({
                               ))}
                             </ul>
                           </div>
+                          {/* Decorative - low contrast intentional for metadata */}
                           <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
                             Fuente: {guideline.source} •{' '}
                             Actualizado: {new Date(guideline.lastUpdated).toLocaleDateString('es-ES')}
@@ -511,6 +515,7 @@ export function ClinicalDecisionSupport({
                       )}
                     </AnimatePresence>
                   </div>
+                  {/* Decorative - low contrast intentional for UI chrome element */}
                   <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     {selectedGuideline?.id === guideline.id ? '▼' : '▶'}
                   </button>

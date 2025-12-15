@@ -1,0 +1,38 @@
+
+RECETA MÉDICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Jorge Pérez
+Fecha de Nacimiento: 12/12/1962
+Dirección: São Paulo
+
+MEDICAMENTO PRESCRITO
+Nombre: Omeprazole
+Dosis: 20mg
+Frecuencia: 1x daily
+Vía de Administración: Oral
+Duración del Tratamiento: 30 días
+
+INDICACIONES
+
+
+
+
+Tomar 30 minutos antes del desayuno.
+
+
+
+RECOMENDACIONES
+• No suspender el tratamiento sin consultar al médico
+• Reportar efectos adversos inmediatamente
+• Mantener en lugar fresco y seco
+
+MÉDICO PRESCRIPTOR
+Nombre: Dr. Ana López
+Cédula Profesional: 8002468
+Teléfono: +52 55 1222 2444
+
+Fecha de Emisión: 2 de octubre de 2025
+Vigencia: 30 días
+
+Esta receta es válida por única vez. No se aceptan alteraciones.

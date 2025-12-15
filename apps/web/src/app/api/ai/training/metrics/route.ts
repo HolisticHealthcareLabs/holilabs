@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { transcriptionCorrectionService } from '@/lib/services/transcription-correction.service';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,14 +107,14 @@ export const GET = createProtectedRoute(
           : 0;
 
       // Log for monitoring
-      console.log('📊 Metrics requested:', {
+      logger.info({
+        event: 'ai_training_metrics_requested',
+        userId: context.user.id,
         startDate,
         endDate,
         totalCorrections: analytics.totalCorrections,
         avgErrorRate: avgErrorRate.toFixed(4),
         improvementPercentage: improvementPercentage.toFixed(2) + '%',
-        userId: context.user.id,
-        timestamp: new Date().toISOString(),
       });
 
       return NextResponse.json({
@@ -146,7 +147,12 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error fetching training metrics:', error);
+      logger.error({
+        event: 'ai_training_metrics_fetch_failed',
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to fetch training metrics',

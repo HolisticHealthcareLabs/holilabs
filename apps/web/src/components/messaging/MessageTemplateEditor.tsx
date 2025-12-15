@@ -330,7 +330,7 @@ export default function MessageTemplateEditor() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Message Templates</h1>
-          <p className="text-gray-600">Create and manage automated reminder templates for your patients</p>
+          <p className="text-gray-600 dark:text-gray-400">Create and manage automated reminder templates for your patients</p>
         </div>
 
         {/* Category Tabs */}
@@ -387,9 +387,10 @@ export default function MessageTemplateEditor() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 line-clamp-2">{template.message}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{template.message}</p>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-500 capitalize">{template.category}</span>
+                      {/* Decorative - low contrast intentional for category tag */}
+                      <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{template.category}</span>
                       <div className="flex gap-1">
                         <button
                           onClick={(e) => {
@@ -532,7 +533,8 @@ export default function MessageTemplateEditor() {
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
                         placeholder="Type your message here... Use {{variable_name}} to insert dynamic data."
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      {/* Decorative - low contrast intentional for help text */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Click variables below to insert them into your message
                       </p>
                     </div>
@@ -604,11 +606,13 @@ export default function MessageTemplateEditor() {
                     {/* Template Details */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">Category</p>
+                        {/* Decorative - low contrast intentional for label */}
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Category</p>
                         <p className="font-semibold text-gray-900 capitalize">{selectedTemplate.category}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 mb-1">Variables Used</p>
+                        {/* Decorative - low contrast intentional for label */}
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Variables Used</p>
                         <p className="font-semibold text-gray-900">{selectedTemplate.variables.length}</p>
                       </div>
                     </div>
@@ -675,7 +679,7 @@ export default function MessageTemplateEditor() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Template</h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Choose a template from the list to preview or edit it
                   </p>
                   <button

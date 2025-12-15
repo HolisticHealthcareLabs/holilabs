@@ -239,7 +239,7 @@ export const HomeDashboardScreen: React.FC = () => {
     switch (type) {
       case 'urgent': return theme.colors.error;
       case 'new': return theme.colors.primary;
-      case 'followup': return theme.colors.accent;
+      case 'followup': return theme.colors.warning;
       default: return theme.colors.success;
     }
   };

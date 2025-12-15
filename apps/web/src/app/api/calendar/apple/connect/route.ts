@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { encryptToken } from '@/lib/calendar/token-encryption';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -115,7 +116,12 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Apple Calendar connect error:', error);
+      logger.error({
+        event: 'calendar_apple_connect_failed',
+        userId: context.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return NextResponse.json(
         { error: 'Failed to connect Apple Calendar', details: error.message },
         { status: 500 }

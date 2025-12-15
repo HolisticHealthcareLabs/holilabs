@@ -27,6 +27,7 @@ describe('GET /api/ai/insights', () => {
     user: {
       id: 'clinician-1',
       email: 'dr.smith@holilabs.com',
+      role: 'clinician',
     },
   };
 
@@ -115,7 +116,7 @@ describe('GET /api/ai/insights', () => {
 
   it('should require authentication', async () => {
     const request = new NextRequest('http://localhost:3000/api/ai/insights');
-    const contextNoUser = { user: null };
+    const contextNoUser = {};
 
     // This would normally be handled by middleware, but we're testing the route handler
     await expect(async () => {
@@ -129,6 +130,7 @@ describe('POST /api/ai/insights', () => {
     user: {
       id: 'clinician-1',
       email: 'dr.smith@holilabs.com',
+      role: 'clinician',
     },
   };
 
@@ -170,7 +172,7 @@ describe('POST /api/ai/insights', () => {
     const request = new NextRequest('http://localhost:3000/api/ai/insights', {
       method: 'POST',
     });
-    const contextNoUser = { user: null };
+    const contextNoUser = {};
 
     await expect(async () => {
       await POST(request, contextNoUser);

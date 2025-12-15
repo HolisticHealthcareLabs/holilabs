@@ -87,12 +87,14 @@ export default function TranscriptViewer({
 
   if (!segments || segments.length === 0) {
     return (
-      <div className="text-center text-gray-500 py-8">
-        <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+        {/* Decorative - low contrast intentional for empty state icon */}
+        <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
         </svg>
         <p className="font-medium">No hay transcripción disponible</p>
-        <p className="text-sm text-gray-400 mt-1">La transcripción aparecerá aquí después de procesar el audio</p>
+        {/* Decorative - low contrast intentional for empty state helper text */}
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">La transcripción aparecerá aquí después de procesar el audio</p>
       </div>
     );
   }
@@ -191,7 +193,8 @@ export default function TranscriptViewer({
                 >
                   {segment.speaker === 'Doctor' ? '👨‍⚕️' : '🧑'} {segment.speaker}
                 </span>
-                <span className="text-xs text-gray-500 font-mono bg-white px-2 py-1 rounded">
+                {/* Decorative - low contrast intentional for timestamp badge */}
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-mono bg-white dark:bg-gray-700 px-2 py-1 rounded">
                   {formatTime(segment.startTime)} → {formatTime(segment.endTime)}
                 </span>
               </div>
@@ -237,7 +240,7 @@ export default function TranscriptViewer({
                 />
 
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-600 italic">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 italic">
                     💡 Presiona ⌘+Enter para guardar rápidamente
                   </p>
                   <div className="flex items-center gap-2">
@@ -261,7 +264,7 @@ export default function TranscriptViewer({
 
                 {/* Original text for reference */}
                 <div className="p-3 bg-gray-100 border-l-4 border-gray-400 rounded">
-                  <p className="text-xs text-gray-600 font-semibold mb-1">Original (AI):</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">Original (AI):</p>
                   <p className="text-sm text-gray-700 italic">{segment.text}</p>
                 </div>
               </div>
@@ -290,24 +293,28 @@ export default function TranscriptViewer({
       <div className="sticky bottom-0 bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-300 p-4 rounded-lg mt-4">
         <div className="grid grid-cols-4 gap-4 text-center">
           <div>
-            <p className="text-2xl font-bold text-gray-900">{segments.length}</p>
-            <p className="text-xs text-gray-600 font-medium">Segmentos</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{segments.length}</p>
+            {/* Decorative - low contrast intentional for statistics label */}
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Segmentos</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-green-600 dark:text-green-500">
               {segments.filter(s => s.confidence >= 0.9).length}
             </p>
-            <p className="text-xs text-gray-600 font-medium">Alta confianza</p>
+            {/* Decorative - low contrast intentional for statistics label */}
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Alta confianza</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-yellow-600">
+            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
               {segments.filter(s => s.confidence < 0.85 && !s.correctedAt).length}
             </p>
-            <p className="text-xs text-gray-600 font-medium">Requieren revisión</p>
+            {/* Decorative - low contrast intentional for statistics label */}
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Requieren revisión</p>
           </div>
           <div className="relative">
-            <p className="text-2xl font-bold text-emerald-600">{totalCorrections}</p>
-            <p className="text-xs text-gray-600 font-medium">Corregidos</p>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-500">{totalCorrections}</p>
+            {/* Decorative - low contrast intentional for statistics label */}
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Corregidos</p>
             {totalCorrections > 0 && (
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-pulse" title="Contribuyendo al entrenamiento de IA" />
             )}
@@ -316,8 +323,9 @@ export default function TranscriptViewer({
 
         {/* Training Loop Indicator */}
         {totalCorrections > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-300">
-            <div className="flex items-center justify-center gap-2 text-xs text-gray-600">
+          <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+            {/* Decorative - low contrast intentional for training loop metadata */}
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
               <span className="font-semibold">RLHF Loop activo:</span>
               <span>{totalCorrections} corrección{totalCorrections !== 1 ? 'es' : ''} contribuyendo a mejorar la IA</span>

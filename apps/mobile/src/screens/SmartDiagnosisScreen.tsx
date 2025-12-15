@@ -482,7 +482,7 @@ export const SmartDiagnosisScreen: React.FC = () => {
             key={insight.id}
             style={[
               styles.insightCard,
-              { borderLeftColor: getInsightColor(insight.type), borderLeftWidth: 4 },
+              { borderLeftColor: getInsightColor(insight.type), borderLeftWidth: 4 } as const,
             ]}
           >
             <View style={styles.insightHeader}>

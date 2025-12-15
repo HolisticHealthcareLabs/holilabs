@@ -27,6 +27,7 @@ import {
   Edit2,
   AlertCircle,
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface Patient {
   id: string;
@@ -102,7 +103,11 @@ export default function ReviewQueuePage() {
         setStats(data.stats || {});
       }
     } catch (error) {
-      console.error('Error fetching review queue:', error);
+      logger.error({
+        event: 'review_queue_fetch_error',
+        statusFilter,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +135,12 @@ export default function ReviewQueuePage() {
         alert('Failed to update review status');
       }
     } catch (error) {
-      console.error('Error updating review:', error);
+      logger.error({
+        event: 'review_queue_update_error',
+        itemId,
+        newStatus,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       alert('Error updating review');
     } finally {
       setIsSubmitting(false);

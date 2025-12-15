@@ -360,7 +360,8 @@ export default function DiagnosisAssistant() {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Co-Pilot
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              {/* Decorative - low contrast intentional for subtitle */}
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
                 Clinical decision support powered by AI • Evidence-based recommendations
               </p>
             </div>
@@ -418,8 +419,9 @@ export default function DiagnosisAssistant() {
                     <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <span>👤</span> Demographics
                     </span>
+                    {/* Decorative - low contrast intentional for UI chrome element */}
                     <svg
-                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedSections.demographics ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedSections.demographics ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -504,8 +506,9 @@ export default function DiagnosisAssistant() {
                     <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <span>💬</span> Clinical Presentation
                     </span>
+                    {/* Decorative - low contrast intentional for UI chrome element */}
                     <svg
-                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedSections.presentation ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedSections.presentation ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -624,8 +627,9 @@ export default function DiagnosisAssistant() {
                     <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <span>📜</span> Medical History
                     </span>
+                    {/* Decorative - low contrast intentional for UI chrome element */}
                     <svg
-                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedSections.history ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedSections.history ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -815,8 +819,9 @@ export default function DiagnosisAssistant() {
                     <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <span>❤️</span> Vital Signs
                     </span>
+                    {/* Decorative - low contrast intentional for UI chrome element */}
                     <svg
-                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedSections.vitals ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedSections.vitals ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -889,8 +894,9 @@ export default function DiagnosisAssistant() {
                     <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <span>🔍</span> Physical Examination
                     </span>
+                    {/* Decorative - low contrast intentional for UI chrome element */}
                     <svg
-                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedSections.physical ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${expandedSections.physical ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

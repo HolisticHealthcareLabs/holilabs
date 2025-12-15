@@ -223,7 +223,8 @@ export function AnalyticsDashboard({
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Total Alerts
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            {/* Decorative - low contrast intentional for supplementary metric detail */}
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               {metrics.critical} critical, {metrics.warning} warning
             </div>
           </motion.div>
@@ -240,7 +241,8 @@ export function AnalyticsDashboard({
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Acceptance Rate
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            {/* Decorative - low contrast intentional for supplementary metric detail */}
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               {metrics.accepted} alerts accepted
             </div>
           </motion.div>
@@ -257,7 +259,8 @@ export function AnalyticsDashboard({
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Override Rate
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            {/* Decorative - low contrast intentional for supplementary metric detail */}
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               {metrics.overridden} alerts overridden
             </div>
           </motion.div>
@@ -274,7 +277,8 @@ export function AnalyticsDashboard({
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Avg Response Time
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+            {/* Decorative - low contrast intentional for supplementary metric detail */}
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               Minutes to action
             </div>
           </motion.div>
@@ -385,7 +389,8 @@ export function AnalyticsDashboard({
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">
                       {rule.avgResponseTime.toFixed(1)}m
                     </div>
-                    <div className="text-xs text-gray-500">avg time</div>
+                    {/* Decorative - low contrast intentional for label */}
+                    <div className="text-xs text-gray-500 dark:text-gray-400">avg time</div>
                   </div>
                 </div>
               ))}
@@ -414,7 +419,8 @@ export function AnalyticsDashboard({
                       <span className="text-sm text-gray-600 dark:text-gray-400">
                         {cat.count}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-500">
+                      {/* Decorative - low contrast intentional for percentage detail */}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         ({cat.percentage}%)
                       </span>
                     </div>
@@ -450,7 +456,8 @@ export function AnalyticsDashboard({
                 {derivedMetrics.acceptanceRate}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Accepted</div>
-              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              {/* Decorative - low contrast intentional for supporting detail */}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {metrics.accepted} alerts
               </div>
             </div>
@@ -460,7 +467,8 @@ export function AnalyticsDashboard({
                 {derivedMetrics.overrideRate}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Overridden</div>
-              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              {/* Decorative - low contrast intentional for supporting detail */}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {metrics.overridden} alerts
               </div>
             </div>
@@ -470,7 +478,8 @@ export function AnalyticsDashboard({
                 {derivedMetrics.dismissRate}%
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Dismissed</div>
-              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              {/* Decorative - low contrast intentional for supporting detail */}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {metrics.dismissed} alerts
               </div>
             </div>

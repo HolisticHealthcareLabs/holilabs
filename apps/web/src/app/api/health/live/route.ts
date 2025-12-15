@@ -8,13 +8,14 @@
  */
 
 import { NextResponse } from 'next/server';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // Simple liveness check - if we can respond, we're alive
-  return NextResponse.json(
-    {
+  try {
+    // Simple liveness check - if we can respond, we're alive
+    const healthData = {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -28,7 +29,31 @@ export async function GET() {
         heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
         external: Math.round(process.memoryUsage().external / 1024 / 1024) + 'MB',
       },
-    },
-    { status: 200 }
-  );
+    };
+
+    logger.debug({
+      event: 'health_check_live',
+      uptime: healthData.uptime,
+      heapUsed: healthData.memory.heapUsed,
+    });
+
+    return NextResponse.json(healthData, { status: 200 });
+  } catch (error) {
+    logger.error({
+      event: 'health_check_live_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // Even if there's an error gathering metrics, we want to return that we're alive
+    // This is a liveness check, not a readiness check
+    return NextResponse.json(
+      {
+        status: 'degraded',
+        timestamp: new Date().toISOString(),
+        error: 'Failed to gather complete health metrics',
+      },
+      { status: 200 } // Still return 200 so k8s doesn't restart the pod
+    );
+  }
 }

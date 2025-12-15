@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { logger } from '@/lib/logger';
 
 interface LoadingScreenProps {
   onComplete?: () => void;
@@ -10,7 +10,6 @@ interface LoadingScreenProps {
 export function LoadingScreen({ onComplete }: LoadingScreenProps) {
   const [videoEnded, setVideoEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { theme } = useTheme();
 
   useEffect(() => {
     // Play video when component mounts
@@ -20,12 +19,18 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
       // Attempt to play with audio
       videoRef.current.play().catch((error) => {
-        console.error('Error playing video:', error);
+        logger.error({
+          event: 'loading_video_play_error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
         // If autoplay with audio fails (browser policy), try muted
         if (videoRef.current) {
           videoRef.current.muted = true;
           videoRef.current.play().catch((e) => {
-            console.error('Error playing muted video:', e);
+            logger.error({
+              event: 'loading_video_muted_play_error',
+              error: e instanceof Error ? e.message : 'Unknown error'
+            });
           });
         }
       });

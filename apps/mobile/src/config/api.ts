@@ -55,5 +55,29 @@ export const API_CONFIG = {
     // WhatsApp
     SEND_MESSAGE: '/whatsapp/send',
     MESSAGE_TEMPLATES: '/whatsapp/templates',
+
+    // Prevention Plan Templates
+    PREVENTION_TEMPLATES: '/prevention/templates',
+    PREVENTION_TEMPLATE_BY_ID: (id: string) => `/prevention/templates/${id}`,
+    PREVENTION_TEMPLATE_VERSIONS: (id: string) => `/prevention/templates/${id}/versions`,
+    PREVENTION_TEMPLATE_VERSION_BY_ID: (templateId: string, versionId: string) => `/prevention/templates/${templateId}/versions/${versionId}`,
+    PREVENTION_TEMPLATE_COMMENTS: (id: string) => `/prevention/templates/${id}/comments`,
+    PREVENTION_TEMPLATE_COMMENT_BY_ID: (templateId: string, commentId: string) => `/prevention/templates/${templateId}/comments/${commentId}`,
+    PREVENTION_TEMPLATE_SHARES: (id: string) => `/prevention/templates/${id}/share`,
+    PREVENTION_TEMPLATE_SHARE_BY_USER: (templateId: string, userId: string) => `/prevention/templates/${templateId}/share/${userId}`,
+    PREVENTION_TEMPLATES_SHARED_WITH_ME: '/prevention/templates/shared-with-me',
+    PREVENTION_TEMPLATE_COMPARE: (id: string) => `/prevention/templates/${id}/compare`,
+    PREVENTION_TEMPLATE_REVERT: (id: string) => `/prevention/templates/${id}/revert`,
+
+    // Prevention Plans (Patient-specific)
+    PREVENTION_PLANS: (patientId: string) => `/prevention/plans/${patientId}`,
+    PREVENTION_PLAN_REMINDERS: (planId: string) => `/prevention/plans/${planId}/reminders`,
+    PREVENTION_PLAN_AUTO_GENERATE_REMINDERS: (planId: string) => `/prevention/plans/${planId}/reminders/auto-generate`,
+
+    // Bulk Operations
+    PREVENTION_TEMPLATES_BULK_ACTIVATE: '/prevention/templates/bulk/activate',
+    PREVENTION_TEMPLATES_BULK_DEACTIVATE: '/prevention/templates/bulk/deactivate',
+    PREVENTION_TEMPLATES_BULK_DELETE: '/prevention/templates/bulk/delete',
+    PREVENTION_TEMPLATES_BULK_DUPLICATE: '/prevention/templates/bulk/duplicate',
   },
 } as const;

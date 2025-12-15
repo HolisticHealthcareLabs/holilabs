@@ -50,6 +50,7 @@ export default function ChatList({
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center">
         <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          {/* Decorative - low contrast intentional for empty state icon */}
           <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -62,7 +63,7 @@ export default function ChatList({
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           No hay conversaciones
         </h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Las conversaciones aparecerán aquí cuando recibas mensajes
         </p>
       </div>
@@ -117,7 +118,8 @@ export default function ChatList({
                   }`}>
                     {displayName}
                   </h3>
-                  <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                  {/* Meta info - low contrast intentional for timestamp */}
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
                     {formatDistanceToNow(new Date(conversation.lastMessageAt), {
                       addSuffix: true,
                       locale: es,
@@ -125,7 +127,7 @@ export default function ChatList({
                   </span>
                 </div>
                 <p className={`text-sm truncate ${
-                  conversation.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'
+                  conversation.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-600 dark:text-gray-400'
                 }`}>
                   {conversation.lastMessage}
                 </p>

@@ -132,6 +132,7 @@ export default function SupportContact({
       </div>
 
       {/* Additional Help Text */}
+      {/* Hours metadata - low contrast intentional */}
       <div className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
         Horario de atención: Lunes a Viernes, 9:00 AM - 6:00 PM (GMT-6)
       </div>

@@ -13,12 +13,12 @@ export function FloatingActionButton({ onClick, className = '' }: FloatingAction
     <motion.button
       onClick={onClick}
       className={`
-        fixed bottom-8 right-8 z-30
+        fixed bottom-24 right-8 z-50
         w-14 h-14 rounded-full
-        bg-gradient-to-br from-blue-500 to-purple-600
+        bg-gradient-to-br from-blue-600 to-indigo-600
         text-white
-        shadow-2xl
-        hover:shadow-blue-500/50
+        shadow-lg hover:shadow-xl
+        hover:shadow-blue-500/30
         flex items-center justify-center
         transition-all duration-300
         ${className}

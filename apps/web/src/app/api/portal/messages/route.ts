@@ -36,12 +36,7 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true,
             specialty: true,
-            // TODO: user relation doesn't exist in Prisma schema yet
-            // user: {
-            //   select: {
-            //     profilePictureUrl: true,
-            //   },
-            // },
+            profilePictureUrl: true,
           },
         },
       },

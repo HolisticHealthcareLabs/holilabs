@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { logger } from '@/lib/logger';
 
 interface WaitingRoomProps {
   userName: string;
@@ -53,7 +54,11 @@ export default function WaitingRoom({
         setHasPermissions(true);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error accessing media devices:', error);
+        logger.error({
+          event: 'media_device_permission_failed',
+          userType,
+          error: error instanceof Error ? error.message : String(error)
+        });
         setIsLoading(false);
       }
     };
@@ -207,7 +212,7 @@ export default function WaitingRoom({
                     </svg>
                   </motion.button>
                 </div>
-                <p className="text-center text-sm text-gray-500 mt-4">
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
                   Prueba tu cámara y micrófono antes de unirte
                 </p>
               </div>
@@ -241,7 +246,7 @@ export default function WaitingRoom({
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   Listo para tu consulta
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   {userType === 'clinician'
                     ? 'El paciente será notificado cuando entres'
                     : 'Tu médico te está esperando'}
@@ -268,7 +273,7 @@ export default function WaitingRoom({
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">Te unirás como</p>
-                    <p className="text-sm text-gray-600">{userName}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{userName}</p>
                   </div>
                 </div>
 
@@ -291,7 +296,7 @@ export default function WaitingRoom({
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900">Hora de la cita</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {appointmentTime.toLocaleString('es-MX', {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -319,7 +324,7 @@ export default function WaitingRoom({
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">Conexión segura</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Cifrado de extremo a extremo
                     </p>
                   </div>

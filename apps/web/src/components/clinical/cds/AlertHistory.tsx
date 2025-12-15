@@ -425,6 +425,7 @@ export function AlertHistory({
                         <span className={`text-sm font-semibold ${config.color}`}>
                           {config.label}
                         </span>
+                        {/* Decorative - low contrast intentional for relative timestamp */}
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatRelativeTime(entry.actionAt)}
                         </span>
@@ -447,6 +448,7 @@ export function AlertHistory({
                       </div>
                     </div>
 
+                    {/* Decorative - low contrast intentional for timestamp metadata */}
                     <time className="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400">
                       {entry.actionAt.toLocaleString('en-US', {
                         month: 'short',

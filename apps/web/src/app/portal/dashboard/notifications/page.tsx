@@ -261,6 +261,7 @@ export default function NotificationsPage() {
         {notifications.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              {/* Decorative - low contrast intentional for visual hierarchy */}
               <BellIcon className="h-10 w-10 text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -311,13 +312,14 @@ export default function NotificationsPage() {
 
                     <p
                       className={`text-sm mb-3 ${
-                        notification.isRead ? 'text-gray-500' : 'text-gray-700'
+                        notification.isRead ? 'text-gray-600 dark:text-gray-400' : 'text-gray-700'
                       }`}
                     >
                       {notification.message}
                     </p>
 
                     <div className="flex items-center justify-between">
+                      {/* Decorative - low contrast intentional for timestamp meta info */}
                       <p className="text-xs text-gray-500">
                         {format(new Date(notification.createdAt), "d 'de' MMMM, HH:mm", {
                           locale: es,

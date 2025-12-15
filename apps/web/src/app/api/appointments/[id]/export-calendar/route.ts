@@ -11,6 +11,7 @@ import {
   generateICSFilename,
   type AppointmentData,
 } from '@/lib/calendar/ics-generator';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/appointments/[id]/export-calendar
@@ -70,7 +71,12 @@ export async function GET(
       },
     });
   } catch (error: any) {
-    console.error('Error generating calendar export:', error);
+    logger.error({
+      event: 'appointment_calendar_export_failed',
+      appointmentId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to generate calendar export' },
       { status: 500 }

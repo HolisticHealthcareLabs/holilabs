@@ -25,27 +25,29 @@ model User {
   publicKey     String?
 
   // Profile
-  firstName     String
-  lastName      String
-  role          UserRole @default(CLINICIAN)
-  permissions   String[] @default([]) // Granular permissions (e.g., ["patient:read", "prescription:write"])
-  specialty     String?
-  licenseNumber String?
-  npi           String? // National Provider Identifier (US only)
+  firstName         String
+  lastName          String
+  profilePictureUrl String? // Profile picture URL
+  role              UserRole @default(CLINICIAN)
+  permissions       String[] @default([]) // Granular permissions (e.g., ["patient:read", "prescription:write"])
+  specialty         String?
+  licenseNumber     String?
+  npi               String? // National Provider Identifier (US only)
 
   // Security
-  mfaEnabled      Boolean   @default(false)
-  mfaServiceSid   String? // Twilio Verify Service SID
-  mfaPhoneNumber  String? // Encrypted phone number for MFA
-  mfaBackupCodes  String[] @default([]) // Encrypted backup codes
-  mfaEnrolledAt   DateTime? // When MFA was enabled
-  lastLoginAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  mfaEnabled     Boolean   @default(false)
+  mfaServiceSid  String? // Twilio Verify Service SID
+  mfaPhoneNumber String? // Encrypted phone number for MFA
+  mfaBackupCodes String[]  @default([]) // Encrypted backup codes
+  mfaEnrolledAt  DateTime? // When MFA was enabled
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relations
   patients              Patient[]
   primaryCarePatients   Patient[]              @relation("PrimaryCaregiver")
+  prescribedMedications Medication[]           @relation("MedicationPrescriber")
   auditLogs             AuditLog[]
   prescriptions         Prescription[]
   appointments          Appointment[]
@@ -61,6 +63,13 @@ model User {
   doctorPreferences     DoctorPreferences?
   notificationTemplates NotificationTemplate[]
   createdTemplates      ClinicalTemplate[]     @relation("CreatedTemplates")
+
+  // Prevention Hub
+  preventionTemplates        PreventionPlanTemplate[]        @relation("CreatedTemplates")
+  preventionTemplateVersions PreventionPlanTemplateVersion[] @relation("CreatedVersions")
+  preventionTemplateComments PreventionTemplateComment[]     @relation("TemplateComments")
+  sharedTemplates            PreventionTemplateShare[]       @relation("SharedTemplates")
+  receivedTemplateShares     PreventionTemplateShare[]       @relation("ReceivedTemplateShares")
 
   // Phase 5: Advanced Scheduling
   recurringAppointments RecurringAppointment[]
@@ -84,6 +93,9 @@ model User {
   // User Settings & BYOK
   settings UserSettings?
 
+  // Notification Preferences
+  clinicianPreferences ClinicianPreferences? @relation("ClinicianPreferences")
+
   // Referral System
   referralCodes   ReferralCode[]
   referredUsers   Referral[]       @relation("ReferredUsers")
@@ -94,8 +106,17 @@ model User {
   aiQualityMetrics       AIQualityMetrics[]
   manualReviewQueueItems ManualReviewQueueItem[]
 
+  // Invitation System
+  invitationCodeId   String?
+  invitationCode     InvitationCode?  @relation("UserInvitationCode", fields: [invitationCodeId], references: [id])
+  createdInvitations InvitationCode[] @relation("CreatedInvitations")
+
+  // Device Pairing (QR Code System)
+  devicePairings DevicePairing[]
+
   @@index([email])
   @@index([walletAddress])
+  @@index([invitationCodeId])
   @@map("users")
 }
 
@@ -128,6 +149,7 @@ model PatientUser {
   phoneVerifiedAt DateTime?
 
   // Security
+  passwordHash  String? // Optional - for password-based authentication
   mfaEnabled    Boolean   @default(false)
   lastLoginAt   DateTime?
   lastLoginIp   String?
@@ -210,6 +232,39 @@ enum OTPChannel {
   SMS
   EMAIL
   WHATSAPP
+}
+
+// ============================================================================
+// PASSWORD RESET TOKENS (Session Security)
+// ============================================================================
+
+model PasswordResetToken {
+  id            String  @id @default(cuid())
+  userId        String? // For clinicians
+  patientUserId String? // For patients
+  userType      UserType
+
+  // Token details
+  token     String @unique @default(cuid())
+  tokenHash String @unique // SHA-256 hash of token for lookup
+
+  // Expiration (1 hour)
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  // Security
+  ipAddress String?
+  userAgent String?
+
+  // Metadata
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([patientUserId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 // ============================================================================
@@ -502,24 +557,24 @@ model Patient {
 
   // Personal Info (ENCRYPTED in production)
   // SOC 2 Control CC6.7: Field-level encryption with key versioning
-  firstName          String @db.Text
-  firstNameKeyVersion Int   @default(1) // Encryption key version for rotation
-  lastName           String @db.Text
-  lastNameKeyVersion Int    @default(1)
-  dateOfBirth        DateTime
-  gender             String?
+  firstName           String   @db.Text
+  firstNameKeyVersion Int      @default(1) // Encryption key version for rotation
+  lastName            String   @db.Text
+  lastNameKeyVersion  Int      @default(1)
+  dateOfBirth         DateTime
+  gender              String?
 
   // Contact (ENCRYPTED)
-  email          String? @db.Text
-  emailKeyVersion Int?    @default(1)
-  phone          String? @db.Text
-  phoneKeyVersion Int?    @default(1)
-  address        String? @db.Text
-  addressKeyVersion Int?  @default(1)
-  city           String?
-  state          String?
-  postalCode     String?
-  country        String  @default("MX")
+  email             String? @db.Text
+  emailKeyVersion   Int?    @default(1)
+  phone             String? @db.Text
+  phoneKeyVersion   Int?    @default(1)
+  address           String? @db.Text
+  addressKeyVersion Int?    @default(1)
+  city              String?
+  state             String?
+  postalCode        String?
+  country           String  @default("MX")
 
   // Medical Record Number
   mrn         String  @unique // Internal MRN
@@ -579,26 +634,26 @@ model Patient {
   // FAMILY CONTACTS (Hierarchical)
   // ========================================================================
 
-  primaryContactName     String?
-  primaryContactRelation String? // e.g., "Daughter", "Son", "Spouse"
-  primaryContactPhone    String? @db.Text // Encrypted
-  primaryContactPhoneKeyVersion Int? @default(1)
-  primaryContactEmail    String? @db.Text // Encrypted
-  primaryContactEmailKeyVersion Int? @default(1)
-  primaryContactAddress  String? @db.Text // Encrypted
-  primaryContactAddressKeyVersion Int? @default(1)
+  primaryContactName              String?
+  primaryContactRelation          String? // e.g., "Daughter", "Son", "Spouse"
+  primaryContactPhone             String? @db.Text // Encrypted
+  primaryContactPhoneKeyVersion   Int?    @default(1)
+  primaryContactEmail             String? @db.Text // Encrypted
+  primaryContactEmailKeyVersion   Int?    @default(1)
+  primaryContactAddress           String? @db.Text // Encrypted
+  primaryContactAddressKeyVersion Int?    @default(1)
 
-  secondaryContactName     String?
-  secondaryContactRelation String?
-  secondaryContactPhone    String? @db.Text
-  secondaryContactPhoneKeyVersion Int? @default(1)
-  secondaryContactEmail    String? @db.Text
-  secondaryContactEmailKeyVersion Int? @default(1)
+  secondaryContactName            String?
+  secondaryContactRelation        String?
+  secondaryContactPhone           String? @db.Text
+  secondaryContactPhoneKeyVersion Int?    @default(1)
+  secondaryContactEmail           String? @db.Text
+  secondaryContactEmailKeyVersion Int?    @default(1)
 
-  emergencyContactName     String?
-  emergencyContactPhone    String? @db.Text
-  emergencyContactPhoneKeyVersion Int? @default(1)
-  emergencyContactRelation String?
+  emergencyContactName            String?
+  emergencyContactPhone           String? @db.Text
+  emergencyContactPhoneKeyVersion Int?    @default(1)
+  emergencyContactRelation        String?
 
   // Family portal access
   familyPortalEnabled    Boolean   @default(false)
@@ -730,29 +785,30 @@ model Patient {
   updatedAt DateTime @updatedAt
 
   // Relations
-  patientUser    PatientUser?
-  preferences    PatientPreferences?
-  medications    Medication[]
-  appointments   Appointment[]
-  consents       Consent[]
-  documents      Document[]
-  clinicalNotes  ClinicalNote[]
-  prescriptions  Prescription[]
-  scribeSessions ScribeSession[]
-  soapNotes      SOAPNote[]
-  messages       Message[]
-  healthMetrics  HealthMetric[]
-  documentShares DocumentShare[]
-  formInstances  FormInstance[]
-  labResults     LabResult[]
-  imagingStudies ImagingStudy[]
-  grantedAccess  DataAccessGrant[]   @relation("PatientAccess")
-  receivedAccess DataAccessGrant[]   @relation("GrantedToUser")
-  invoices       Invoice[]
-  payments       Payment[]
-  aiUsageLogs    AIUsageLog[]
-  vitalSigns     VitalSign[]
-  diagnoses      Diagnosis[]
+  patientUser         PatientUser?
+  preferences         PatientPreferences?
+  medications         Medication[]
+  medicationDispenses MedicationDispense[] // Pharmacy fills
+  appointments        Appointment[]
+  consents            Consent[]
+  documents           Document[]
+  clinicalNotes       ClinicalNote[]
+  prescriptions       Prescription[]
+  scribeSessions      ScribeSession[]
+  soapNotes           SOAPNote[]
+  messages            Message[]
+  healthMetrics       HealthMetric[]
+  documentShares      DocumentShare[]
+  formInstances       FormInstance[]
+  labResults          LabResult[]
+  imagingStudies      ImagingStudy[]
+  grantedAccess       DataAccessGrant[]    @relation("PatientAccess")
+  receivedAccess      DataAccessGrant[]    @relation("GrantedToUser")
+  invoices            Invoice[]
+  payments            Payment[]
+  aiUsageLogs         AIUsageLog[]
+  vitalSigns          VitalSign[]
+  diagnoses           Diagnosis[]
 
   // Palliative care relations
   carePlans                 CarePlan[]
@@ -796,22 +852,22 @@ model Patient {
 // ============================================================================
 
 model VitalSign {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Vital measurements
   temperature      Float? // Celsius
-  heartRate        Int?   // bpm
-  systolicBP       Int?   // mmHg
-  diastolicBP      Int?   // mmHg
-  respiratoryRate  Int?   // breaths per minute
+  heartRate        Int? // bpm
+  systolicBP       Int? // mmHg
+  diastolicBP      Int? // mmHg
+  respiratoryRate  Int? // breaths per minute
   oxygenSaturation Float? // %
   weight           Float? // kg
   height           Float? // cm
 
   // Metadata
-  recordedBy String?  // Clinician ID
+  recordedBy String? // Clinician ID
   recordedAt DateTime @default(now())
   source     String?  @default("MANUAL") // MANUAL, DEVICE, IMPORT
 
@@ -828,18 +884,18 @@ model VitalSign {
 // ============================================================================
 
 model Diagnosis {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Diagnosis details
   icd10Code   String
-  description String         @db.Text
-  isPrimary   Boolean        @default(false)
+  description String          @db.Text
+  isPrimary   Boolean         @default(false)
   status      DiagnosisStatus @default(ACTIVE)
 
   // Clinical context
-  diagnosedBy String?   // Clinician ID
+  diagnosedBy String? // Clinician ID
   diagnosedAt DateTime  @default(now())
   resolvedAt  DateTime?
   notes       String?   @db.Text
@@ -890,6 +946,11 @@ model Medication {
 
   // Prescriber
   prescribedBy String?
+  prescriber   User?   @relation("MedicationPrescriber", fields: [prescribedBy], references: [id])
+
+  // Prescription tracking (optional - links back to original e-prescription)
+  prescriptionId String?
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id], onDelete: SetNull)
 
   // Relations
   schedules       MedicationSchedule[]
@@ -900,6 +961,7 @@ model Medication {
 
   @@index([patientId])
   @@index([isActive])
+  @@index([prescriptionId])
   // Composite indexes for query optimization (Priority 2: SQL Performance)
   @@index([patientId, isActive, startDate])
   @@index([prescribedBy, startDate])
@@ -1067,6 +1129,7 @@ model LabResult {
   @@index([status])
   @@index([isAbnormal])
   @@index([isCritical])
+  @@index([testCode]) // Index for LOINC code lookups
   @@map("lab_results")
 }
 
@@ -1226,6 +1289,11 @@ model Prescription {
   instructions String? @db.Text
   diagnosis    String? @db.Text
 
+  // Refill tracking
+  refillsAuthorized Int  @default(0) // Total refills authorized by prescriber
+  refillsRemaining  Int  @default(0) // Remaining refills
+  daysSupply        Int? // Days supply per fill (e.g., 30, 90)
+
   // Electronic signature
   signatureMethod String // "pin" or "signature_pad"
   signatureData   String   @db.Text // Encrypted signature or PIN hash
@@ -1235,6 +1303,10 @@ model Prescription {
   status         PrescriptionStatus @default(PENDING)
   sentToPharmacy Boolean            @default(false)
   pharmacyId     String?
+
+  // Relations
+  activeMedications Medication[]         @relation() // Active medications from this prescription
+  dispenses         MedicationDispense[] // Pharmacy fills
 
   // Audit
   createdAt DateTime @default(now())
@@ -1253,6 +1325,79 @@ enum PrescriptionStatus {
   SENT
   FILLED
   CANCELLED
+}
+
+// ============================================================================
+// MEDICATION DISPENSES (Pharmacy Fills)
+// ============================================================================
+
+model MedicationDispense {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  patientId      String
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Pharmacy information
+  pharmacyId      String? // Pharmacy identifier (NPI, chain ID, etc.)
+  pharmacyName    String?
+  pharmacistName  String?
+  pharmacistPhone String?
+
+  // Medication details (may differ slightly from original prescription)
+  medicationName String // Brand or generic name
+  ndcCode        String? // National Drug Code (US)
+  strength       String // e.g., "500mg"
+  quantity       Float // Quantity dispensed (e.g., 30 tablets, 100ml)
+  unit           String // Unit of measure (tablets, ml, capsules, etc.)
+  daysSupply     Int // Days supply for this fill (usually 30, 60, or 90)
+  instructions   String? @db.Text // Sig (directions for use)
+
+  // Refill tracking
+  fillNumber Int     @default(1) // 1st fill, 2nd fill (refill), etc.
+  isRefill   Boolean @default(false)
+
+  // Financial
+  cost            Float? // Medication cost
+  copay           Float? // Patient copay
+  insuranceClaim  String? // Insurance claim number
+  insuranceStatus String? // APPROVED, DENIED, PENDING
+
+  // Dates
+  dispensedAt    DateTime  @default(now()) // When medication was dispensed
+  expirationDate DateTime? // Medication expiration date
+  pickupDate     DateTime? // When patient picked up medication
+
+  // Status
+  status DispenseStatus @default(DISPENSED)
+
+  // Blockchain/verification (future)
+  dispenseHash String? // Hash for verification
+  verified     Boolean @default(false)
+
+  // Notes
+  pharmacistNotes String? @db.Text // Clinical notes from pharmacist
+  patientConsult  Boolean @default(false) // Did pharmacist consult with patient?
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([prescriptionId])
+  @@index([patientId])
+  @@index([pharmacyId])
+  @@index([dispensedAt])
+  @@index([fillNumber])
+  @@map("medication_dispenses")
+}
+
+enum DispenseStatus {
+  PENDING // Prescription sent to pharmacy, not yet filled
+  DISPENSED // Medication dispensed by pharmacy
+  PICKED_UP // Patient picked up medication
+  NOT_PICKED_UP // Patient failed to pick up
+  CANCELLED // Dispense cancelled
+  RETURNED // Medication returned to pharmacy
 }
 
 // ============================================================================
@@ -1317,6 +1462,14 @@ enum ConsentType {
   MEDICATION_REMINDERS
   WELLNESS_TIPS
   CUSTOM
+  // Legal consents
+  TERMS_OF_SERVICE // Acceptance of Terms of Service
+  PRIVACY_POLICY // Acknowledgment of Privacy Policy
+  HIPAA_NOTICE // Acknowledgment of HIPAA Notice of Privacy Practices
+  EHR_CONSENT // Consent to use Electronic Health Records
+  TELEMEDICINE_CONSENT // Consent to telemedicine services
+  DATA_SHARING_CONSENT // Authorization to share PHI
+  MARKETING_CONSENT // Opt-in for marketing communications
 }
 
 // ============================================================================
@@ -1471,6 +1624,7 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
   NO_SHOW
+  RESCHEDULED
 }
 
 enum ConfirmationStatus {
@@ -2541,6 +2695,72 @@ model PatientPreferences {
   @@map("patient_preferences")
 }
 
+model ClinicianPreferences {
+  id         String @id @default(cuid())
+  clinicianId String @unique
+  clinician   User   @relation("ClinicianPreferences", fields: [clinicianId], references: [id], onDelete: Cascade)
+
+  // Email Preferences
+  emailEnabled                Boolean @default(true)
+  emailNewAppointments        Boolean @default(true)
+  emailAppointmentChanges     Boolean @default(true)
+  emailAppointmentCancellations Boolean @default(true)
+  emailPatientMessages        Boolean @default(true)
+  emailFormCompletions        Boolean @default(true)
+  emailLabResults             Boolean @default(true)
+  emailSystemUpdates          Boolean @default(true)
+  emailMarketing              Boolean @default(false)
+
+  // Email Consent
+  emailConsentedAt   DateTime?
+  emailOptedOutAt    DateTime?
+
+  // SMS Preferences
+  smsEnabled              Boolean @default(false) // Default off for clinicians
+  smsUrgentAppointments   Boolean @default(false)
+  smsUrgentMessages       Boolean @default(false)
+  smsSystemAlerts         Boolean @default(false)
+
+  // SMS Consent
+  smsConsentedAt   DateTime?
+  smsOptedOutAt    DateTime?
+
+  // Push Notification Preferences
+  pushEnabled             Boolean @default(true)
+  pushNewAppointments     Boolean @default(true)
+  pushAppointmentChanges  Boolean @default(true)
+  pushPatientMessages     Boolean @default(true)
+  pushFormCompletions     Boolean @default(true)
+  pushLabResults          Boolean @default(true)
+  pushSystemAlerts        Boolean @default(true)
+
+  // WhatsApp Preferences (for international use)
+  whatsappEnabled     Boolean   @default(false)
+  whatsappConsented   Boolean   @default(false)
+  whatsappConsentedAt DateTime?
+
+  // Global Settings
+  allowEmergencyOverride Boolean @default(true)
+  quietHoursEnabled      Boolean @default(false)
+  quietHoursStart        String? // e.g., "22:00"
+  quietHoursEnd          String? // e.g., "08:00"
+  timezone               String  @default("America/Mexico_City")
+
+  // Language
+  preferredLanguage String @default("es") // 'es', 'en', 'pt'
+
+  // Daily Summary Email
+  dailySummaryEnabled Boolean @default(true)
+  dailySummaryTime    String  @default("08:00") // Time to send daily summary
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clinicianId])
+  @@map("clinician_preferences")
+}
+
 // ============================================================================
 // BILLING & PAYMENTS
 // ============================================================================
@@ -3312,6 +3532,11 @@ model PreventiveCareReminder {
   guidelineSource String? // e.g., "USPSTF", "ADA", "AHA"
   evidenceLevel   String? // e.g., "Grade A", "Strong Recommendation"
 
+  // Prevention Plan Link (Phase 7 Feature 5)
+  preventionPlanId String? // Link to associated prevention plan
+  preventionPlan   PreventionPlan? @relation(fields: [preventionPlanId], references: [id], onDelete: SetNull)
+  goalIndex        Int? // Index of the goal in the plan's goals array
+
   // Status
   status      PreventiveCareStatus @default(DUE)
   completedAt DateTime?
@@ -3335,6 +3560,7 @@ model PreventiveCareReminder {
   @@index([status])
   @@index([dueDate])
   @@index([screeningType])
+  @@index([preventionPlanId])
   @@map("preventive_care_reminders")
 }
 
@@ -4414,12 +4640,21 @@ model PreventionPlan {
   evidenceLevel     String? // Grade A, B, C recommendations
   clinicalTrialRefs String? @db.Text // References to trials
 
+  // Relations (Phase 7 Feature 5)
+  reminders PreventiveCareReminder[] // Associated reminders
+
   // Status
-  status      PreventionPlanStatus @default(ACTIVE)
-  activatedAt DateTime             @default(now())
-  completedAt DateTime?
-  reviewedAt  DateTime?
-  reviewedBy  String? // User ID who last reviewed
+  status             PreventionPlanStatus @default(ACTIVE)
+  activatedAt        DateTime             @default(now())
+  completedAt        DateTime?
+  completedBy        String? // User ID who completed the plan
+  completionReason   String? // Reason for completion
+  deactivatedAt      DateTime?
+  deactivatedBy      String? // User ID who deactivated
+  deactivationReason String? // Reason for deactivation
+  statusChanges      Json? // History of status changes [{timestamp, userId, fromStatus, toStatus, reason}]
+  reviewedAt         DateTime?
+  reviewedBy         String? // User ID who last reviewed
 
   // AI-generated insights
   aiGeneratedBy    String? // Model used (gemini-1.5-flash, claude-sonnet-4.5)
@@ -4435,6 +4670,116 @@ model PreventionPlan {
   @@index([planType])
   @@index([status])
   @@map("prevention_plans")
+}
+
+model PreventionPlanTemplate {
+  id          String  @id @default(cuid())
+
+  // Template metadata
+  templateName    String // e.g., "Standard Diabetes Prevention Plan"
+  planType        PreventionPlanType
+  description     String? @db.Text
+
+  // Evidence & Guidelines
+  guidelineSource  String? // USPSTF, ADA, AHA, ACC, etc.
+  evidenceLevel    String? // Grade A, B, C recommendations
+  targetPopulation String? @db.Text // Target patient population
+
+  // Template content
+  goals           Json // Array of {goal, category, timeframe, priority}
+  recommendations Json // Array of {title, description, category, priority}
+
+  // Template status
+  isActive     Boolean   @default(true)
+  useCount     Int       @default(0) // How many times this template has been used
+  lastUsedAt   DateTime? // Last time this template was used
+
+  // Relations
+  versions  PreventionPlanTemplateVersion[] @relation("TemplateVersions")
+  comments  PreventionTemplateComment[]     @relation("TemplateComments")
+  shares    PreventionTemplateShare[]       @relation("TemplateShares")
+  createdByUser User @relation("CreatedTemplates", fields: [createdBy], references: [id])
+
+  // Audit
+  createdBy String // User ID who created the template
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([planType])
+  @@index([isActive])
+  @@index([useCount])
+  @@map("prevention_plan_templates")
+}
+
+model PreventionPlanTemplateVersion {
+  id              String   @id @default(cuid())
+  templateId      String
+  template        PreventionPlanTemplate @relation("TemplateVersions", fields: [templateId], references: [id], onDelete: Cascade)
+
+  // Version info
+  versionNumber   Int      // 1, 2, 3, etc.
+  versionLabel    String?  // "v1.0", "Initial", "Updated 2025"
+
+  // Complete template snapshot
+  templateData    Json     @db.JsonB // Full template state at this version
+
+  // Change tracking
+  changeLog       String?  @db.Text // Description of changes
+  changedFields   Json?    // Array of changed field names
+
+  // Metadata
+  createdBy       String
+  createdByUser   User     @relation("CreatedVersions", fields: [createdBy], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([templateId, versionNumber])
+  @@index([templateId, createdAt])
+  @@map("prevention_plan_template_versions")
+}
+
+model PreventionTemplateComment {
+  id          String   @id @default(cuid())
+  templateId  String
+  template    PreventionPlanTemplate @relation("TemplateComments", fields: [templateId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User     @relation("TemplateComments", fields: [userId], references: [id], onDelete: Cascade)
+
+  content     String   @db.Text
+  mentions    String[] @default([]) // Array of mentioned user IDs
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([templateId, createdAt])
+  @@index([userId])
+  @@map("prevention_template_comments")
+}
+
+model PreventionTemplateShare {
+  id          String   @id @default(cuid())
+  templateId  String
+  template    PreventionPlanTemplate @relation("TemplateShares", fields: [templateId], references: [id], onDelete: Cascade)
+
+  sharedBy    String
+  sharedByUser User    @relation("SharedTemplates", fields: [sharedBy], references: [id], onDelete: Cascade)
+
+  sharedWith  String
+  sharedWithUser User  @relation("ReceivedTemplateShares", fields: [sharedWith], references: [id], onDelete: Cascade)
+
+  // Permissions
+  permission  SharePermission @default(VIEW) // VIEW, EDIT, ADMIN
+
+  // Metadata
+  message     String?  @db.Text // Optional message when sharing
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime? // Optional expiration date
+
+  @@unique([templateId, sharedWith]) // Can't share same template to same user twice
+  @@index([sharedWith, createdAt])
+  @@index([templateId])
+  @@map("prevention_template_shares")
 }
 
 model RiskScore {
@@ -4676,13 +5021,22 @@ enum PreventionPlanType {
   HYPERTENSION // Blood pressure management
   OBESITY // Weight management
   CANCER_SCREENING // Preventive cancer screening
+  IMMUNIZATION // Vaccination and immunization
+  GENERAL_WELLNESS // General health and wellness
   COMPREHENSIVE // Multi-risk prevention
+}
+
+enum SharePermission {
+  VIEW // Can only view the template
+  EDIT // Can view and edit the template
+  ADMIN // Can view, edit, share, and delete
 }
 
 enum PreventionPlanStatus {
   ACTIVE // Currently active
   PAUSED // Temporarily paused
   COMPLETED // Goals achieved
+  DEACTIVATED // Deactivated by clinician
   ARCHIVED // No longer relevant
 }
 
@@ -4980,25 +5334,25 @@ model EmailQueue {
   id String @id @default(cuid())
 
   // Recipients
-  to      String @db.Text // Comma-separated if multiple
+  to      String  @db.Text // Comma-separated if multiple
   cc      String? @db.Text
   bcc     String? @db.Text
   from    String?
   replyTo String?
 
   // Content
-  subject String @db.Text
-  html    String @db.Text
+  subject String  @db.Text
+  html    String  @db.Text
   text    String? @db.Text
 
   // Status
-  status     EmailQueueStatus @default(PENDING)
-  attempts   Int              @default(0)
-  lastError  String?          @db.Text
-  messageId  String? // Provider's message ID after sending
+  status    EmailQueueStatus @default(PENDING)
+  attempts  Int              @default(0)
+  lastError String?          @db.Text
+  messageId String? // Provider's message ID after sending
 
   // Scheduling
-  scheduledFor DateTime @default(now())
+  scheduledFor DateTime  @default(now())
   sentAt       DateTime?
 
   // Metadata
@@ -5020,12 +5374,105 @@ enum EmailQueueStatus {
 }
 
 // ============================================================================
+// INVITATION & BETA SIGNUP SYSTEM
+// ============================================================================
+
+/**
+ * InvitationCode - Invitation code management
+ * Tracks invitation codes for beta access and friend/family invitations
+ */
+model InvitationCode {
+  id        String   @id @default(cuid())
+  code      String   @unique // e.g., "HOLI-BETA-2024"
+  email     String? // Optionally tied to specific email
+  role      String? // Target role (DOCTOR, NURSE, ADMIN)
+  expiresAt DateTime
+  maxUses   Int      @default(1)
+  uses      Int      @default(0)
+  isActive  Boolean  @default(true)
+
+  // Audit fields
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdByUser User   @relation("CreatedInvitations", fields: [createdBy], references: [id])
+  users         User[] @relation("UserInvitationCode")
+
+  @@index([code, expiresAt])
+  @@index([createdBy])
+  @@map("invitation_codes")
+}
+
+/**
+ * BetaSignup - Beta program signup tracking
+ * Manages beta signups, approvals, and conversions
+ */
+model BetaSignup {
+  id             String  @id @default(cuid())
+  email          String  @unique
+  fullName       String
+  organization   String?
+  role           String? // DOCTOR, NURSE, ADMIN, etc.
+  country        String?
+  referralSource String? // How they heard about us
+  interests      Json? // Array of interest areas
+
+  // Status tracking
+  status      String    @default("pending") // pending, approved, rejected, converted
+  approvedAt  DateTime?
+  convertedAt DateTime? // When they became a full user
+  approvedBy  String?
+
+  // Communication
+  notified    Boolean   @default(false)
+  emailsSent  Int       @default(0)
+  lastEmailAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status, createdAt])
+  @@index([approvedAt])
+  @@map("beta_signups")
+}
+
+/**
+ * SignupCounter - Daily signup metrics
+ * Tracks signup statistics and conversions
+ */
+model SignupCounter {
+  id          String   @id @default(cuid())
+  date        DateTime @unique @default(now()) // Daily counter
+  signups     Int      @default(0)
+  conversions Int      @default(0) // Beta -> Full user
+  invitations Int      @default(0) // Invites sent
+
+  // Breakdown by type
+  doctorSignups Int @default(0)
+  nurseSignups  Int @default(0)
+  adminSignups  Int @default(0)
+
+  // Sources
+  organicSignups  Int @default(0)
+  referralSignups Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@map("signup_counters")
+}
+
+// ============================================================================
 // AUTHORIZATION: CASBIN RULES
 // ============================================================================
 
 /**
  * CasbinRule - Authorization policy storage
- *
  * Stores Casbin RBAC policies for role-based access control.
  * SOC 2 Control: CC6.3 (Authorization & Principle of Least Privilege)
  */
@@ -5049,4 +5496,90 @@ model CasbinRule {
   @@index([ptype])
   @@index([v0])
   @@map("casbin_rules")
+}
+
+// ============================================================================
+// DEVICE PAIRING & PERMISSIONS (QR Code System)
+// ============================================================================
+
+/**
+ * DevicePairing - Device pairing management for QR code system
+ * Tracks paired devices for mobile-desktop synchronization
+ * SOC 2 Control: CC6.1 (Logical access controls)
+ */
+model DevicePairing {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId    String     @unique // Unique device identifier
+  deviceType  DeviceType
+  deviceName  String? // Optional friendly name
+
+  // Session management
+  sessionToken String   @unique // Token for this pairing session
+  expiresAt    DateTime // When the pairing expires
+
+  // Security tracking
+  ipAddress String?
+  userAgent String? @db.Text
+
+  // Status
+  isActive   Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+
+  // Relations
+  permissions DevicePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("device_pairings")
+}
+
+/**
+ * DevicePermission - Permission management for paired devices
+ * Controls what actions each paired device can perform
+ * Implements principle of least privilege
+ */
+model DevicePermission {
+  id              String        @id @default(cuid())
+  devicePairingId String
+  devicePairing   DevicePairing @relation(fields: [devicePairingId], references: [id], onDelete: Cascade)
+
+  // Permission scope
+  permission PermissionScope
+
+  // Metadata
+  grantedAt DateTime @default(now())
+  expiresAt DateTime? // Optional expiration for temporary permissions
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([devicePairingId, permission])
+  @@index([devicePairingId])
+  @@index([permission])
+  @@map("device_permissions")
+}
+
+enum DeviceType {
+  DESKTOP
+  MOBILE_IOS
+  MOBILE_ANDROID
+  TABLET
+}
+
+enum PermissionScope {
+  READ_PATIENT_DATA
+  WRITE_NOTES
+  VIEW_TRANSCRIPT
+  CONTROL_RECORDING
+  ACCESS_DIAGNOSIS
+  VIEW_MEDICATIONS
+  EDIT_SOAP_NOTES
+  FULL_ACCESS
 }

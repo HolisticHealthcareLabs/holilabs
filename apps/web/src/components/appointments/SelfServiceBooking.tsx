@@ -225,7 +225,7 @@ END:VCALENDAR`;
                     {provider.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <h4 className="font-bold text-gray-900 group-hover:text-green-600">{provider.name}</h4>
-                  <p className="text-sm text-gray-600">{provider.specialty}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{provider.specialty}</p>
                 </button>
               ))}
             </div>
@@ -385,9 +385,9 @@ END:VCALENDAR`;
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Provider</div>
-                  <div className="font-bold text-gray-900">{selectedProvider?.name}</div>
-                  <div className="text-sm text-gray-600">{selectedProvider?.specialty}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Provider</div>
+                  <div className="font-bold text-gray-900 dark:text-white">{selectedProvider?.name}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{selectedProvider?.specialty}</div>
                 </div>
               </div>
 
@@ -398,7 +398,7 @@ END:VCALENDAR`;
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Reason</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Reason</div>
                   <div className="font-bold text-gray-900">{selectedReason}</div>
                 </div>
               </div>
@@ -410,11 +410,11 @@ END:VCALENDAR`;
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-600">Date & Time</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Date & Time</div>
                   <div className="font-bold text-gray-900">
                     {selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   </div>
-                  <div className="text-sm text-gray-600">{selectedTime}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{selectedTime}</div>
                 </div>
               </div>
             </div>
@@ -460,7 +460,7 @@ END:VCALENDAR`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <div>
-                    <div className="text-sm text-gray-600">When</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">When</div>
                     <div className="font-bold text-gray-900">
                       {selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} at {selectedTime}
                     </div>
@@ -471,7 +471,7 @@ END:VCALENDAR`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   <div>
-                    <div className="text-sm text-gray-600">Provider</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Provider</div>
                     <div className="font-bold text-gray-900">{selectedProvider?.name} - {selectedProvider?.specialty}</div>
                   </div>
                 </div>
@@ -480,7 +480,7 @@ END:VCALENDAR`;
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                   <div>
-                    <div className="text-sm text-gray-600">Reason</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Reason</div>
                     <div className="font-bold text-gray-900">{selectedReason}</div>
                   </div>
                 </div>
@@ -510,7 +510,8 @@ END:VCALENDAR`;
                       </div>
                       <div className="text-center">
                         <div className="font-bold text-gray-900 group-hover:text-red-600">Google Calendar</div>
-                        <div className="text-xs text-gray-500 mt-1">Add to Google</div>
+                        {/* Calendar service label - low contrast intentional */}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Add to Google</div>
                       </div>
                     </a>
 
@@ -530,7 +531,8 @@ END:VCALENDAR`;
                       </div>
                       <div className="text-center">
                         <div className="font-bold text-gray-900 group-hover:text-blue-600">Outlook</div>
-                        <div className="text-xs text-gray-500 mt-1">Add to Outlook</div>
+                        {/* Calendar service label - low contrast intentional */}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Add to Outlook</div>
                       </div>
                     </a>
 
@@ -548,7 +550,8 @@ END:VCALENDAR`;
                       </div>
                       <div className="text-center">
                         <div className="font-bold text-gray-900 group-hover:text-gray-700">Apple Calendar</div>
-                        <div className="text-xs text-gray-500 mt-1">Download .ics file</div>
+                        {/* Calendar service label - low contrast intentional */}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Download .ics file</div>
                       </div>
                     </a>
                   </>

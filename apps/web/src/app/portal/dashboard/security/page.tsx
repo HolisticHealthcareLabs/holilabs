@@ -20,6 +20,7 @@ import {
   MapPinIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 interface LoginHistory {
   id: string;
@@ -88,7 +89,7 @@ export default function SecurityPage() {
       ]);
 
     } catch (error) {
-      console.error('Error fetching security data:', error);
+      logger.error('Error fetching security data:', error);
     } finally {
       setLoading(false);
     }
@@ -148,7 +149,7 @@ export default function SecurityPage() {
               Seguridad y Actividad
             </h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Revisa tu actividad de inicio de sesión y eventos de seguridad
           </p>
         </div>
@@ -173,31 +174,33 @@ export default function SecurityPage() {
                   <p className="text-sm font-medium text-gray-900">
                     {getDeviceLabel(currentSession.userAgent)}
                   </p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {getBrowserLabel(currentSession.userAgent)}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
+                {/* Decorative - low contrast intentional for icon visual hierarchy */}
                 <MapPinIcon className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
                     {currentSession.location || currentSession.ipAddress}
                   </p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     IP: {currentSession.ipAddress}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
+                {/* Decorative - low contrast intentional for icon visual hierarchy */}
                 <ClockIcon className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
                     Última actividad
                   </p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {format(new Date(currentSession.lastActivity), "d 'de' MMMM, HH:mm", {
                       locale: es,
                     })}
@@ -226,7 +229,8 @@ export default function SecurityPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900">{event.title}</p>
-                    <p className="text-sm text-gray-600">{event.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{event.description}</p>
+                    {/* Decorative - low contrast intentional for timestamp meta info */}
                     <p className="text-xs text-gray-500 mt-1">
                       {format(new Date(event.timestamp), "d 'de' MMMM 'a las' HH:mm", {
                         locale: es,

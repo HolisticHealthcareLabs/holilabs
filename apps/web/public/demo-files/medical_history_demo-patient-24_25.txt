@@ -1,0 +1,35 @@
+
+FORMULARIO DE HISTORIA CLÍNICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Carlos Álvarez
+Fecha de Nacimiento: 12 de diciembre de 1960
+Género: Masculino
+Teléfono: +55 11 10346-7400
+Email: carlos.álvarez@demo.com
+
+ANTECEDENTES MÉDICOS
+Condiciones Actuales:
+• Type 2 Diabetes
+
+Medicamentos Actuales:
+• Albuterol 90mcg - As needed
+
+ALERGIAS
+Sin alergias conocidas
+
+ANTECEDENTES FAMILIARES
+Sin antecedentes familiares relevantes
+
+HÁBITOS
+Tabaquismo: No
+Alcohol: No
+Ejercicio: 3 veces por semana
+
+VACUNACIÓN
+✓ Influenza (2025)
+✓ COVID-19 (Refuerzo 2024)
+✓ Neumococo
+
+Fecha de elaboración: 25/3/2025
+Elaborado por: Dr. Elena Sánchez

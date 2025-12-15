@@ -142,7 +142,8 @@ export default function PatientRowActions({ patientId, patientName, onAction }: 
           >
             <div className="py-2">
               <div className="px-4 py-2 border-b border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Quick Actions</p>
+                {/* Decorative - low contrast intentional for section header */}
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Quick Actions</p>
                 <p className="text-sm font-medium text-gray-900 truncate">{patientName}</p>
               </div>
 

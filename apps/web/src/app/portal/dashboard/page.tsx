@@ -164,6 +164,7 @@ export default async function PatientDashboardPage() {
             <span className="text-2xl font-bold text-gray-900">{stats.notifications.unread}</span>
           </div>
           <h3 className="text-sm font-semibold text-gray-700 mb-1">Notifications</h3>
+          {/* Decorative - low contrast intentional for notification status helper text */}
           <p className="text-xs text-gray-500">
             {stats.notifications.unread > 0 ? `${stats.notifications.unread} unread` : 'All caught up'}
           </p>
@@ -190,6 +191,7 @@ export default async function PatientDashboardPage() {
             <span className="text-2xl font-bold text-gray-900">{stats.documents.total}</span>
           </div>
           <h3 className="text-sm font-semibold text-gray-700 mb-1">Documents</h3>
+          {/* Decorative - low contrast intentional for upload helper text */}
           <p className="text-xs text-gray-500">Click to upload</p>
         </a>
       </div>
@@ -235,6 +237,7 @@ export default async function PatientDashboardPage() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">Follow-up visit</h3>
                   <p className="text-sm text-gray-600 mt-1">Dr. Juan Pérez - General Medicine</p>
+                  {/* Decorative - low contrast intentional for appointment metadata (date and time) */}
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,6 +288,7 @@ export default async function PatientDashboardPage() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">Laboratory - Blood test</h3>
                   <p className="text-sm text-gray-600 mt-1">Lab. Central - Dr. María López</p>
+                  {/* Decorative - low contrast intentional for consultation metadata (date and time) */}
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

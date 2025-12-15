@@ -17,9 +17,10 @@ function getCSP() {
     "default-src 'self'",
 
     // Scripts - allow same origin, specific CDNs, and unsafe-inline/eval for Next.js in dev
+    // In production, remove unsafe-eval and be more restrictive
     isDev
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com"
-      : "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com",
+      : "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://vercel.live",
 
     // Styles - allow same origin and unsafe-inline for Tailwind/styled-components
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -84,19 +85,27 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
   // Enable XSS protection
   response.headers.set('X-XSS-Protection', '1; mode=block');
 
-  // Referrer policy - protect privacy
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Referrer policy - protect privacy (more restrictive)
+  response.headers.set('Referrer-Policy', 'no-referrer-when-downgrade');
 
-  // Permissions policy - restrict features
+  // Permissions policy - restrict dangerous features
   response.headers.set(
     'Permissions-Policy',
     [
-      'camera=()',
-      'microphone=()',
-      'geolocation=(self)',
-      'interest-cohort=()',
-      'payment=(self)',
-      'usb=()',
+      'camera=()',           // No camera access
+      'microphone=()',       // No microphone access
+      'geolocation=(self)',  // Geolocation only from same origin
+      'interest-cohort=()',  // Disable FLoC tracking
+      'payment=(self)',      // Payment only from same origin
+      'usb=()',             // No USB access
+      'magnetometer=()',    // No magnetometer access
+      'gyroscope=()',       // No gyroscope access
+      'accelerometer=()',   // No accelerometer access
+      'ambient-light-sensor=()', // No ambient light sensor
+      'autoplay=(self)',    // Autoplay only from same origin
+      'encrypted-media=(self)', // Encrypted media only from same origin
+      'fullscreen=(self)',  // Fullscreen only from same origin
+      'picture-in-picture=()', // No picture-in-picture
     ].join(', ')
   );
 

@@ -107,6 +107,8 @@ export default function Home() {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const isEn = language === 'en';
+  const isPt = language === 'pt';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,7 +173,7 @@ export default function Home() {
         }} />
       </div>
 
-      {/* NAVIGATION - PIPEFY STYLE WITH GAP */}
+      {/* NAVIGATION */}
       <header className="fixed top-4 left-0 right-0 z-50 px-4">
         <nav className="container mx-auto max-w-[1400px] bg-white rounded-2xl shadow-lg border border-gray-200/50 px-8 py-4 flex items-center justify-between">
           
@@ -213,7 +215,7 @@ export default function Home() {
 
           {/* RIGHT ACTIONS */}
           <div className="flex items-center gap-4">
-            {/* Globe Icon with Language Dropdown - Pipefy Style */}
+            {/* Globe Icon with Language Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowLanguageMenu(!showLanguageMenu)}
@@ -342,7 +344,11 @@ export default function Home() {
               {t.paradigm.badge}
             </span>
             <h2 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              {t.paradigm.headline} <span style={{ color: '#014751' }}>{t.paradigm.headlineHighlight}</span>
+              {t.paradigm.headline}
+              <br />
+              <span className="block w-full text-center whitespace-nowrap" style={{ color: '#014751' }}>
+                {t.paradigm.headlineHighlight}
+              </span>
             </h2>
             <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
               {t.paradigm.subheadline}
@@ -434,20 +440,22 @@ export default function Home() {
                   <div className="flex items-start gap-2">
                     <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-sm">👤</div>
                     <div className="flex-1 bg-gray-100 rounded-2xl px-3 py-2 text-xs text-gray-700">
-                      Generar nota SOAP para paciente diabético...
+                      {isEn ? 'Generate a SOAP note for a diabetic patient…' : 'Generar nota SOAP para paciente diabético...'}
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: 'rgba(1, 71, 81, 0.1)' }}>✨</div>
                     <div className="flex-1 rounded-2xl px-3 py-2 text-xs text-white" style={{ backgroundColor: '#014751' }}>
-                      Nota generada con HbA1c, plan de tx...
+                      {isEn ? 'Note generated with HbA1c and treatment plan…' : 'Nota generada con HbA1c, plan de tx...'}
                     </div>
                   </div>
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Automation</h3>
               <p className="text-gray-700 leading-relaxed">
-                Conecta cualquier LLM a nuestra plataforma líder en datos médicos y usa tus datos como contexto para automatizar transcripciones, generar notas SOAP, y acelerar flujos clínicos.
+                {isEn
+                  ? 'Connect any LLM to our medical-data platform and use your data as context to automate transcripts, generate SOAP notes, and accelerate clinical workflows.'
+                  : 'Conecta cualquier LLM a nuestra plataforma líder en datos médicos y usa tus datos como contexto para automatizar transcripciones, generar notas SOAP, y acelerar flujos clínicos.'}
               </p>
             </div>
 
@@ -466,7 +474,9 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Value-Based Care</h3>
               <p className="text-gray-700 leading-relaxed">
-                Rastrea los resultados clínicos en tiempo real. Visualiza métricas de calidad, adherencia al tratamiento y desempeño poblacional para demostrar un valor tangible.
+                {isEn
+                  ? 'Track clinical outcomes in real time. Visualize quality metrics, treatment adherence, and population performance to prove tangible value.'
+                  : 'Rastrea los resultados clínicos en tiempo real. Visualiza métricas de calidad, adherencia al tratamiento y desempeño poblacional para demostrar un valor tangible.'}
               </p>
             </div>
 
@@ -488,7 +498,9 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Prevention Hub</h3>
               <p className="text-gray-700 leading-relaxed">
-                Accede a protocolos de prevención de WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera alertas automáticas para screenings vencidos.
+                {isEn
+                  ? 'Access prevention protocols from WHO, PAHO, and USPSTF. Track adherence to preventive care and generate automatic alerts for overdue screenings.'
+                  : 'Accede a protocolos de prevención de WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera alertas automáticas para screenings vencidos.'}
               </p>
             </div>
 
@@ -503,13 +515,21 @@ export default function Home() {
           {/* Section Header */}
           <div className="text-center mb-20">
             <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block" style={{ color: '#014751' }}>
-              DESCUBRE TU CO-PILOT
+              {isEn ? 'DISCOVER YOUR CO-PILOT' : isPt ? 'DESCUBRA SEU CO-PILOT' : 'DESCUBRE TU CO-PILOT'}
             </span>
             <h2 className="text-6xl md:text-7xl font-bold mb-8 leading-tight" style={{ color: '#014751' }}>
-              Una biblioteca de soluciones inteligentes<br/>disponibles para automatizar tu práctica
+              {isEn
+                ? 'An intelligent clinical suite that elevates your practice'
+                : isPt
+                  ? 'Uma suíte clínica inteligente que eleva sua prática'
+                  : 'Un suite clínico inteligente que eleva tu práctica'}
             </h2>
             <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
-              Crea, ajusta y gestiona soluciones de IA para automatizar tus procesos clínicos rápidamente.
+              {isEn
+                ? 'Create, tune, and manage your co-pilot to automate clinical workflows fast.'
+                : isPt
+                  ? 'Crie, ajuste e gerencie seu co-pilot para automatizar fluxos clínicos rapidamente.'
+                  : 'Crea, ajusta y gestiona tu co-piloto para automatizar tus procesos clínicos rápidamente.'}
             </p>
           </div>
 
@@ -580,7 +600,7 @@ export default function Home() {
             <div className="rounded-[2rem] bg-white border-2 border-gray-200 p-10 hover:border-gray-300 hover:shadow-xl transition-all">
               <div className="flex items-start gap-4 mb-6">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-3xl shadow-sm">
-                  🤖
+                  📈
                 </div>
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">Navegación Inteligente Predictiva</h3>
@@ -607,13 +627,21 @@ export default function Home() {
           {/* Section Header */}
           <div className="text-center mb-16">
             <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block" style={{ color: '#014751' }}>
-              COLABORACIÓN
+              {isEn ? 'COLLABORATION' : isPt ? 'COLABORAÇÃO' : 'COLABORACIÓN'}
             </span>
             <h2 className="text-6xl md:text-7xl font-bold mb-8 leading-tight" style={{ color: '#014751' }}>
-              Elimina Silos,<br/>Maximiza Colaboración.
+              {isEn
+                ? <>Break down silos,<br />maximize collaboration.</>
+                : isPt
+                  ? <>Elimine silos,<br />maximize a colaboração.</>
+                  : <>Elimina Silos,<br />Maximiza Colaboración.</>}
             </h2>
             <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
-              Consolida tu información clínica y alinea a tu equipo médico alrededor de procesos que generan impacto real en la salud de tus pacientes.
+              {isEn
+                ? 'Consolidate clinical information and align your care team around workflows that drive real patient outcomes.'
+                : isPt
+                  ? 'Consolide informações clínicas e alinhe sua equipe em torno de processos que geram impacto real na saúde dos pacientes.'
+                  : 'Consolida tu información clínica y alinea a tu equipo médico alrededor de procesos que generan impacto real en la salud de tus pacientes.'}
             </p>
           </div>
 
@@ -666,10 +694,14 @@ export default function Home() {
               DATA
             </span>
             <h2 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              Gestión de Datos<br/>Líder en el Mercado
+              {isEn ? <>Data Management<br />That Leads the Market</> : isPt ? <>Gestão de Dados<br />Líder no Mercado</> : <>Gestión de Datos<br />Líder en el Mercado</>}
             </h2>
             <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed">
-              Conecta tus datos, personaliza cómo los ves, y luego automatiza acciones. La forma correcta de aprovechar IA a nivel hospitalario.
+              {isEn
+                ? 'Connect your data, customize how you view it, then automate actions. The right way to deploy AI at hospital scale.'
+                : isPt
+                  ? 'Conecte seus dados, personalize como você os vê e depois automatize ações. O jeito certo de usar IA em escala hospitalar.'
+                  : 'Conecta tus datos, personaliza cómo los ves, y luego automatiza acciones. La forma correcta de aprovechar IA a nivel hospitalario.'}
             </p>
           </div>
 
@@ -688,9 +720,15 @@ export default function Home() {
                   <div className="aspect-square rounded-xl bg-amber-50 flex items-center justify-center text-xl">📊</div>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Integraciones Nativas</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {isEn ? 'Native Integrations' : isPt ? 'Integrações Nativas' : 'Integraciones Nativas'}
+              </h3>
               <p className="text-gray-700 leading-relaxed">
-                Conecta instantáneamente con labs, farmacias, y sistemas existentes. Sincroniza datos en minutos con 50+ integraciones nativas sin código.
+                {isEn
+                  ? 'Connect instantly to labs and existing systems. Sync data in minutes with 50+ no-code native integrations.'
+                  : isPt
+                    ? 'Conecte instantaneamente a laboratórios e sistemas existentes. Sincronize dados em minutos com 50+ integrações nativas sem código.'
+                    : 'Conecta instantáneamente con labs, farmacias, y sistemas existentes. Sincroniza datos en minutos con 50+ integraciones nativas sin código.'}
               </p>
             </div>
 
@@ -726,7 +764,7 @@ export default function Home() {
           <div className="mt-20 rounded-[2rem] bg-white border-2 border-gray-200 p-12">
             <h3 className="text-3xl font-bold text-gray-900 text-center mb-12">Integraciones Disponibles</h3>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
               {/* Medical Systems */}
               <div>
                 <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Sistemas Médicos</p>
@@ -735,17 +773,6 @@ export default function Home() {
                   <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">HL7</div>
                   <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">DICOM</div>
                   <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">RNDS Brasil</div>
-                </div>
-              </div>
-
-              {/* Pharmacies */}
-              <div>
-                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Farmacias</p>
-                <div className="space-y-3">
-                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">Guadalajara</div>
-                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">Benavides</div>
-                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">Del Ahorro</div>
-                  <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm font-semibold text-blue-800">+5 más</div>
                 </div>
               </div>
 
@@ -764,17 +791,17 @@ export default function Home() {
               <div>
                 <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Modelos IA</p>
                 <div className="space-y-3">
-                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
-                    <span className="text-xs">🔮</span> GPT-4
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800">
+                    GPT-4
                   </div>
-                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
-                    <span className="text-xs">☀️</span> Claude
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800">
+                    Claude
                   </div>
-                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
-                    <span className="text-xs">✨</span> Gemini
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800">
+                    Gemini
                   </div>
-                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800 flex items-center gap-2">
-                    <span className="text-xs">🦙</span> LLaMA
+                  <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800">
+                    LLaMA
                   </div>
                 </div>
               </div>
@@ -789,7 +816,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* VALUE PROPOSITION CARDS - PIPEFY STYLE */}
+      {/* VALUE PROPOSITION CARDS */}
       <section className="py-20 px-6 bg-gradient-to-b from-blue-50/30 to-white">
         <div className="container mx-auto max-w-6xl">
           
@@ -804,7 +831,7 @@ export default function Home() {
                 En segundos, transforma consultas en notas clínicas perfectas
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Con AI que entiende español y portugués, el Pipefy médico automatiza documentación, genera notas SOAP y libera 3-4 horas diarias para que te enfoques en tus pacientes.
+                Con AI que entiende español y portugués, HoliLabs automatiza documentación, genera notas SOAP y libera 3-4 horas diarias para que te enfoques en tus pacientes.
               </p>
               <div className="flex flex-wrap gap-3">
                 <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
@@ -931,7 +958,7 @@ export default function Home() {
                   title: 'AI Medical Scribe',
                   desc: 'Transcripción → Notas SOAP automáticas. Códigos ICD-10 sugeridos.',
                   time: 'Ahorra 3-4h/día',
-                  icon: '🎙️'
+                  icon: '✍️'
                 },
                 {
                   title: 'Clinical Decision Support',
@@ -1281,7 +1308,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PRICING SECTION - PIPEFY STYLE */}
+      {/* PRICING SECTION */}
       <section id="precios" className="py-16 px-6 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto max-w-7xl">
           
@@ -1327,7 +1354,7 @@ export default function Home() {
                   shadow-sm hover:shadow-md
                   active:scale-[0.98]"
               >
-                Comenzar agora
+                {isEn ? 'Get started' : isPt ? 'Começar agora' : 'Comenzar ahora'}
               </a>
 
               {/* Features */}
@@ -1337,13 +1364,13 @@ export default function Home() {
                 </p>
                 <ul className="space-y-2.5">
                   {[
-                    'Pipefy AI',
-                    'Até 5 processos',
-                    'Até 10 pessoas',
-                    'Automações básicas',
-                    'Templates prontos para usar',
-                    'Status de solicitações',
-                    'Customização Visual'
+                    'HoliLabs AI Scribe',
+                    'Até 5 pacientes ativos',
+                    'Até 10 usuários',
+                    'Automação básica de notas',
+                    'Templates clínicos prontos',
+                    'Portal do paciente',
+                    'Customização visual'
                   ].map((feature, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
                       <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1361,7 +1388,7 @@ export default function Home() {
               
               {/* Most Popular Badge */}
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-400 to-orange-500 text-white px-6 py-2 rounded-full text-xs font-bold uppercase tracking-wide shadow-lg">
-                Mais escolhido
+                {isEn ? 'Most popular' : isPt ? 'Mais escolhido' : 'Más elegido'}
               </div>
 
               {/* Header */}
@@ -1391,7 +1418,7 @@ export default function Home() {
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
-                Falar com vendas
+                {isEn ? 'Talk to sales' : isPt ? 'Falar com vendas' : 'Hablar con ventas'}
               </a>
 
               {/* Features */}
@@ -1401,14 +1428,14 @@ export default function Home() {
                 </p>
                 <ul className="space-y-2.5">
                   {[
-                    'Processos ilimitados',
+                    'Pacientes ilimitados',
                     'Usuários ilimitados',
-                    'Usuários ilimitados (cobrança p/ usuário)',
-                    'Acesso a API do Pipefy',
+                    'Cobrança por usuário',
+                    'Acesso completo à API',
                     'Níveis de acesso e permissão',
-                    'Processos privados',
-                    'Lógica condicional',
-                    'Recuperação de dados',
+                    'Dados clínicos privados',
+                    'Protocolos personalizados',
+                    'Backup e recuperação',
                     'Assinatura Eletrônica'
                   ].map((feature, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
@@ -1451,7 +1478,7 @@ export default function Home() {
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
-                Falar com vendas
+                {isEn ? 'Talk to sales' : isPt ? 'Falar com vendas' : 'Hablar con ventas'}
               </a>
 
               {/* Features */}
@@ -1461,15 +1488,15 @@ export default function Home() {
                 </p>
                 <ul className="space-y-2.5">
                   {[
-                    'Pipefy AI',
+                    'HoliLabs AI Premium',
                     'Automações complexas',
-                    'Integrações',
+                    'Integrações FHIR',
                     'Autenticação multifatorial',
-                    'Single Sign-On',
+                    'Single Sign-On (SSO)',
                     'Domínio de email personalizado',
                     'White label',
                     'Assinatura Eletrônica',
-                    'Mais espaço de armazenamento'
+                    'Armazenamento ilimitado'
                   ].map((feature, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
                       <svg className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1637,7 +1664,17 @@ export default function Home() {
                 onMouseEnter={(e) => !isSubmitting && (e.currentTarget.style.opacity = '0.9')}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
-                {isSubmitting ? 'Enviando...' : 'Agende uma demo'}
+                {isSubmitting
+                  ? isEn
+                    ? 'Sending...'
+                    : isPt
+                      ? 'Enviando...'
+                      : 'Enviando...'
+                  : isEn
+                    ? 'Book a demo'
+                    : isPt
+                      ? 'Agende uma demo'
+                      : 'Agenda una demo'}
               </button>
             </div>
             
@@ -1745,10 +1782,11 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-4 text-sm">Legal</h4>
               <ul className="space-y-2.5 text-sm text-gray-600">
-                <li><a href="/terms" className="hover:opacity-80 transition-colors">Términos</a></li>
-                <li><a href="/privacy" className="hover:opacity-80 transition-colors">Privacidad</a></li>
-                <li><a href="/hipaa" className="hover:opacity-80 transition-colors">HIPAA</a></li>
-                <li><a href="/security" className="hover:opacity-80 transition-colors">Seguridad</a></li>
+                <li><a href="/legal/terms-of-service" className="hover:opacity-80 transition-colors">Terms of Service</a></li>
+                <li><a href="/legal/privacy-policy" className="hover:opacity-80 transition-colors">Privacy Policy</a></li>
+                <li><a href="/legal/hipaa-notice" className="hover:opacity-80 transition-colors">HIPAA Notice</a></li>
+                <li><a href="/legal/baa" className="hover:opacity-80 transition-colors">Business Associate Agreement</a></li>
+                <li><a href="/legal/consent" className="hover:opacity-80 transition-colors">Consent Forms</a></li>
               </ul>
             </div>
 

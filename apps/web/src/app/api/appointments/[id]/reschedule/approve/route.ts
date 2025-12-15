@@ -4,21 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-// FIXME: Old rate limiting API - needs refactor
-// import { rateLimit } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { notifyAppointmentReminder } from '@/lib/notifications/whatsapp';
 import { sendEmail } from '@/lib/notifications/email';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-// FIXME: Old rate limiting - commented out for now
-// const limiter = rateLimit({
-//   interval: 60 * 1000,
-//   uniqueTokenPerInterval: 500,
-// });
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/appointments/[id]/reschedule/approve
@@ -29,8 +23,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 20, 'RESCHEDULE_APPROVE');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -137,7 +134,12 @@ export async function POST(
       message: 'Reschedule request approved',
     });
   } catch (error: any) {
-    console.error('Error approving reschedule:', error);
+    logger.error({
+      event: 'appointment_reschedule_approve_failed',
+      appointmentId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to approve reschedule' },
       { status: 500 }

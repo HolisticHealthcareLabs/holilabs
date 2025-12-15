@@ -8,9 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/ai/confidence
@@ -72,9 +73,14 @@ export async function POST(request: NextRequest) {
     // Count how many need review
     const needsReviewCount = confidenceRecords.filter(r => r.needsReview).length;
 
-    console.log(
-      `📊 [AI Confidence] Stored ${confidenceRecords.length} sentence scores for ${contentType} ${contentId} (${needsReviewCount} flagged for review)`
-    );
+    logger.info({
+      event: 'ai_confidence_stored',
+      contentType,
+      contentId,
+      sentenceCount: confidenceRecords.length,
+      needsReviewCount,
+      userId: session.user.id,
+    });
 
     return NextResponse.json({
       success: true,
@@ -83,8 +89,12 @@ export async function POST(request: NextRequest) {
       ids: confidenceRecords.map(r => r.id),
     });
 
-  } catch (error) {
-    console.error('❌ [AI Confidence API] Error:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'ai_confidence_store_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
@@ -166,8 +176,12 @@ export async function GET(request: NextRequest) {
       })),
     });
 
-  } catch (error) {
-    console.error('❌ [AI Confidence API] Error fetching scores:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'ai_confidence_fetch_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

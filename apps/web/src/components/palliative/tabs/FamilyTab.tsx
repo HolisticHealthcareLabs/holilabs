@@ -208,7 +208,7 @@ export default function FamilyTab({
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
           <div className="text-6xl mb-4">👨‍👩‍👧</div>
           <h3 className="text-xl font-bold text-gray-700 mb-2">Sin familiares registrados</h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             No hay familiares o contactos registrados para este paciente.
           </p>
           <button
@@ -372,7 +372,8 @@ export default function FamilyTab({
                     )}
 
                     {/* Metadata */}
-                    <div className="text-xs text-gray-500 pt-3 border-t border-gray-200">
+                    {/* Decorative - low contrast intentional for metadata timestamp */}
+                    <div className="text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
                       Registrado: {format(createdDate, "dd/MM/yyyy 'a las' HH:mm", { locale: es })}
                     </div>
 

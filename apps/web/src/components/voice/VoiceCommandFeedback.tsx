@@ -170,6 +170,7 @@ export function VoiceCommandFeedback({
                 <div className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   {cmd.description}
                 </div>
+                {/* Command example - low contrast intentional */}
                 <div className="text-xs text-gray-500 dark:text-gray-400 italic">
                   &quot;{cmd.examples[0]}&quot;
                 </div>

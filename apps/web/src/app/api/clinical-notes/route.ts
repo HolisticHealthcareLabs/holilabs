@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -142,7 +143,10 @@ export const POST = createProtectedRoute(
         { status: 201 }
       );
     } catch (error: any) {
-      console.error('Error creating clinical note:', error);
+      logger.error({
+        event: 'clinical_note_create_error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return NextResponse.json(
         { error: 'Failed to create clinical note', details: error.message },
         { status: 500 }
@@ -213,7 +217,10 @@ export const GET = createProtectedRoute(
         data: notes,
       });
     } catch (error: any) {
-      console.error('Error fetching clinical notes:', error);
+      logger.error({
+        event: 'clinical_notes_fetch_error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return NextResponse.json(
         { error: 'Failed to fetch clinical notes', details: error.message },
         { status: 500 }

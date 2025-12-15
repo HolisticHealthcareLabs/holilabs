@@ -16,6 +16,7 @@ type InputProps = TextInputProps & {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
+  required?: boolean;
 };
 
 export const Input = ({
@@ -25,6 +26,7 @@ export const Input = ({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  required = false,
   style,
   ...props
 }: InputProps) => {
@@ -72,7 +74,12 @@ export const Input = ({
 
   return (
     <View style={containerStyle}>
-      {label && <Text style={labelStyle}>{label}</Text>}
+      {label && (
+        <Text style={labelStyle}>
+          {label}
+          {required && <Text style={{ color: theme.colors.error }}> *</Text>}
+        </Text>
+      )}
 
       <View style={inputContainerStyle}>
         {leftIcon && <View style={{ marginRight: theme.spacing.sm }}>{leftIcon}</View>}

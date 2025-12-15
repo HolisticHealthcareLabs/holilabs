@@ -621,7 +621,7 @@ export default function PrescriptionsPage() {
                             ? 'bg-white text-purple-600 shadow-lg scale-110'
                             : wizardStep > s.step
                             ? 'bg-white/80 text-purple-600'
-                            : 'bg-white/30 text-white'
+                            : 'bg-purple-700/50 text-white'
                         } transition-all`}>
                           {s.icon}
                         </div>

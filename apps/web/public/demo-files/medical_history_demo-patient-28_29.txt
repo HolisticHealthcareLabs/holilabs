@@ -1,0 +1,38 @@
+
+FORMULARIO DE HISTORIA CLÍNICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Paula Ramírez
+Fecha de Nacimiento: 12 de diciembre de 1948
+Género: Femenino
+Teléfono: +55 11 77645-9673
+Email: paula.ramírez@demo.com
+
+ANTECEDENTES MÉDICOS
+Condiciones Actuales:
+• COPD
+• Hypothyroidism
+
+Medicamentos Actuales:
+• Atorvastatin 20mg - 1x daily
+• Omeprazole 20mg - 1x daily
+
+ALERGIAS
+Sin alergias conocidas
+
+ANTECEDENTES FAMILIARES
+• Diabetes tipo 2 (padre)
+• Hipertensión (madre)
+
+HÁBITOS
+Tabaquismo: No
+Alcohol: Ocasional (1-2 copas/semana)
+Ejercicio: 3 veces por semana
+
+VACUNACIÓN
+✓ Influenza (2025)
+✓ COVID-19 (Refuerzo 2024)
+✓ Neumococo
+
+Fecha de elaboración: 27/4/2025
+Elaborado por: Dr. José García

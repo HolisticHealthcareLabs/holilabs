@@ -1,0 +1,52 @@
+
+NOTA DE CONSULTA MÉDICA
+
+FECHA: 2 de octubre de 2025, 08:56 p.m.
+MÉDICO: Dr. José García
+
+DATOS DEL PACIENTE
+Nombre: Roberto Gómez
+Edad: 43 años
+Género: Masculino
+
+MOTIVO DE CONSULTA
+Dolor torácico ocasional
+
+HISTORIA DE LA ENFERMEDAD ACTUAL
+Paciente refiere síntomas de 7 días de evolución.
+Síntomas se mantienen estables.
+
+
+SIGNOS VITALES
+Presión Arterial: 122/76 mmHg
+Frecuencia Cardíaca: 79 lpm
+Frecuencia Respiratoria: 15 rpm
+Temperatura: 37.43584616957779°C
+Saturación O2: 98%
+Peso: 52 kg
+IMC: 29.64073170331268
+
+EXAMEN FÍSICO
+General: Paciente consciente, orientado
+Cardiopulmonar: Ruidos cardíacos rítmicos, sin soplos. Campos pulmonares bien ventilados.
+Abdomen: Blando, depresible, no doloroso a la palpación.
+
+DIAGNÓSTICO
+Dolor torácico ocasional - En evaluación
+
+PLAN DE TRATAMIENTO
+
+• Control glucémico
+
+• Levothyroxine 75mcg - 1x daily
+• Control en 15 días
+
+
+RECOMENDACIONES
+• Dieta balanceada
+• Ejercicio moderado 30 min/día
+• Evitar automedicación
+• Acudir a urgencias si los síntomas empeoran
+
+Dr. José García
+Cédula Profesional: 8028382

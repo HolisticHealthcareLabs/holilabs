@@ -163,6 +163,7 @@ export default function PatientOnboardingWizard() {
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1">
+                  {/* Decorative - low contrast intentional for inactive step indicator and helper text */}
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all ${
                       step.completed
@@ -180,6 +181,7 @@ export default function PatientOnboardingWizard() {
                       step.id
                     )}
                   </div>
+                  {/* Decorative - low contrast intentional for step indicator helper text */}
                   <div className="text-xs mt-2 text-center font-medium text-gray-600">
                     Step {step.id}
                   </div>
@@ -195,7 +197,7 @@ export default function PatientOnboardingWizard() {
           {currentStepData && (
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-3">{currentStepData.title}</h3>
-              <p className="text-gray-600 text-lg">{currentStepData.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">{currentStepData.description}</p>
             </div>
           )}
 
@@ -211,7 +213,7 @@ export default function PatientOnboardingWizard() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Basic Information</h4>
-                    <p className="text-sm text-gray-600">Date of birth, contact details, emergency contacts</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Date of birth, contact details, emergency contacts</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -222,7 +224,7 @@ export default function PatientOnboardingWizard() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Medical History</h4>
-                    <p className="text-sm text-gray-600">Allergies, current medications, past surgeries</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Allergies, current medications, past surgeries</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -233,7 +235,7 @@ export default function PatientOnboardingWizard() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Family History</h4>
-                    <p className="text-sm text-gray-600">Genetic conditions, family health history</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Genetic conditions, family health history</p>
                   </div>
                 </div>
               </div>
@@ -247,7 +249,7 @@ export default function PatientOnboardingWizard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     Take a clear photo of both sides of your insurance card
                   </p>
                   <p className="text-sm text-gray-500 mt-2">
@@ -265,21 +267,21 @@ export default function PatientOnboardingWizard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Schedule your first visit with your healthcare provider
                   </p>
                   <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">10+</div>
-                      <div className="text-xs text-gray-600">Providers</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Providers</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">24/7</div>
-                      <div className="text-xs text-gray-600">Available</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Available</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">30min</div>
-                      <div className="text-xs text-gray-600">Avg Wait</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">Avg Wait</div>
                     </div>
                   </div>
                 </div>

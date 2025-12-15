@@ -115,7 +115,7 @@ export default function ShareProfilePage() {
               </div>
               <button
                 onClick={handlePreview}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center backdrop-blur-sm border border-white/30"
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Preview

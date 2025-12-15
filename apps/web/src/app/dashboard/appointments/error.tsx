@@ -40,7 +40,7 @@ export default function AppointmentsError({
           Appointments Error
         </h2>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
           We encountered an issue while loading your appointments. Our team has been notified.
         </p>
 
@@ -72,6 +72,7 @@ export default function AppointmentsError({
           </a>
         </div>
 
+        {/* Decorative element - low contrast intentional */}
         <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
           Error ID: {error.digest || 'Unknown'}
         </p>

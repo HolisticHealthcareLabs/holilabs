@@ -297,12 +297,14 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Otorgado A</p>
+                    {/* Label - upgraded for WCAG AA */}
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Otorgado A</p>
                     <p className="text-sm text-gray-900">{getRecipientDisplay(grant)}</p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Permisos</p>
+                    {/* Label - upgraded for WCAG AA */}
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Permisos</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       {grant.canView && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -323,14 +325,16 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha de Concesión</p>
+                    {/* Label - upgraded for WCAG AA */}
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Fecha de Concesión</p>
                     <p className="text-sm text-gray-900">
                       {format(new Date(grant.grantedAt), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                    {/* Label - upgraded for WCAG AA */}
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">
                       {grant.expiresAt ? 'Expira' : 'Vencimiento'}
                     </p>
                     <p className="text-sm text-gray-900">
@@ -342,7 +346,8 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
 
                   {grant.accessCount > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Accesos</p>
+                      {/* Label - upgraded for WCAG AA */}
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Accesos</p>
                       <p className="text-sm text-gray-900">
                         {grant.accessCount} {grant.accessCount === 1 ? 'vez' : 'veces'}
                         {grant.lastAccessedAt && (
@@ -357,7 +362,8 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
 
                   {grant.purpose && (
                     <div className="md:col-span-2">
-                      <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Propósito</p>
+                      {/* Label - upgraded for WCAG AA */}
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Propósito</p>
                       <p className="text-sm text-gray-900">{grant.purpose}</p>
                     </div>
                   )}
@@ -457,6 +463,7 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">Detalles del Permiso</h3>
+              {/* Decorative button - low contrast intentional */}
               <button
                 onClick={() => setSelectedGrant(null)}
                 aria-label="Cerrar detalles"
@@ -470,30 +477,35 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <h4 className="text-sm font-semibold text-gray-500 uppercase mb-1">Recurso</h4>
+                    {/* Label - upgraded for WCAG AA */}
+                    <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Recurso</h4>
                     <p className="text-base text-gray-900">{getResourceDisplay(selectedGrant)}</p>
                   </div>
 
                   <div className="col-span-2">
-                    <h4 className="text-sm font-semibold text-gray-500 uppercase mb-1">Destinatario</h4>
+                    {/* Label - upgraded for WCAG AA */}
+                    <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Destinatario</h4>
                     <p className="text-base text-gray-900">{getRecipientDisplay(selectedGrant)}</p>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-500 uppercase mb-1">Estado</h4>
+                    {/* Label - upgraded for WCAG AA */}
+                    <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Estado</h4>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getGrantStatusColor(selectedGrant)}`}>
                       {getGrantStatusLabel(selectedGrant)}
                     </span>
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-500 uppercase mb-1">Accesos Totales</h4>
+                    {/* Label - upgraded for WCAG AA */}
+                    <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Accesos Totales</h4>
                     <p className="text-base text-gray-900">{selectedGrant.accessCount}</p>
                   </div>
 
                   {selectedGrant.lastAccessedAt && (
                     <div className="col-span-2">
-                      <h4 className="text-sm font-semibold text-gray-500 uppercase mb-1">Último Acceso</h4>
+                      {/* Label - upgraded for WCAG AA */}
+                      <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Último Acceso</h4>
                       <p className="text-base text-gray-900">
                         {format(new Date(selectedGrant.lastAccessedAt), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
                       </p>
@@ -502,7 +514,8 @@ export default function AccessGrantsList({ patientId, onGrantCreated }: AccessGr
 
                   {selectedGrant.purpose && (
                     <div className="col-span-2">
-                      <h4 className="text-sm font-semibold text-gray-500 uppercase mb-1">Propósito</h4>
+                      {/* Label - upgraded for WCAG AA */}
+                      <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Propósito</h4>
                       <p className="text-base text-gray-900">{selectedGrant.purpose}</p>
                     </div>
                   )}

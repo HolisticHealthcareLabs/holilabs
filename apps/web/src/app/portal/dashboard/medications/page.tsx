@@ -18,6 +18,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { MedicationsListSkeleton } from '@/components/skeletons/PortalSkeletons';
+import { logger } from '@/lib/logger';
 
 interface Medication {
   id: string;
@@ -85,7 +86,7 @@ export default function MedicationsPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching medications:', err);
+      logger.error('Error fetching medications:', err);
     } finally {
       setLoading(false);
     }
@@ -180,6 +181,7 @@ export default function MedicationsPage() {
 
           {activeMedications.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              {/* Decorative - low contrast intentional for empty state icon */}
               <BeakerIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 No tienes medicamentos activos
@@ -239,6 +241,7 @@ export default function MedicationsPage() {
 
                   {/* Prescribed By */}
                   {medication.prescribedBy && (
+                    // Decorative - low contrast intentional for prescriber meta info
                     <p className="text-xs text-gray-500">
                       Prescrito por: {medication.prescribedBy}
                     </p>

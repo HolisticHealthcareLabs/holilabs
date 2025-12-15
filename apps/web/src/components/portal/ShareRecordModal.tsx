@@ -158,6 +158,7 @@ export default function ShareRecordModal({
                   </h2>
                   <p className="text-sm text-gray-600 mt-1">{recordTitle}</p>
                 </div>
+                {/* Decorative - low contrast intentional for close button icon */}
                 <button
                   ref={closeButtonRef}
                   onClick={handleClose}

@@ -223,7 +223,8 @@ export default function VoiceActivityDetector({
 
       {/* Debug Info (only in development) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="mt-2 text-xs text-gray-500 font-mono">
+        // Decorative - low contrast intentional for debug info text
+        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
           Volume: {currentVolume} / Threshold: {volumeThreshold} / Active: {isVoiceActive ? 'YES' : 'NO'}
         </div>
       )}

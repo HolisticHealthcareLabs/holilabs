@@ -7,7 +7,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import WebSocketService from '../services/websocket';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../store/authStore';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface UseWebSocketOptions {
@@ -194,7 +194,7 @@ export function useConversationWebSocket(conversationId: string | null) {
 
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Join/leave conversation room
   useEffect(() => {

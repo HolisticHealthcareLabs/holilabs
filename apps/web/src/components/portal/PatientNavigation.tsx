@@ -19,6 +19,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { ThemeToggleIcon } from '@/providers/ThemeProvider';
 
 interface NavigationItem {
   name: string;
@@ -167,7 +168,7 @@ export default function PatientNavigation() {
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white border-r border-gray-200 px-6 pb-4">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-6 pb-4">
           {/* Logo & Notifications */}
           <div className="flex h-16 shrink-0 items-center justify-between">
             <Link href="/portal/dashboard" className="flex items-center gap-2">
@@ -181,6 +182,7 @@ export default function PatientNavigation() {
             <div className="flex items-center gap-2">
               <GlobalSearch />
               <NotificationCenter />
+              <ThemeToggleIcon />
             </div>
           </div>
 
@@ -260,8 +262,10 @@ export default function PatientNavigation() {
               </div>
               <span className="flex-1 text-left">
                 <span className="block">María González</span>
+                {/* Decorative - low contrast intentional for profile subtitle */}
                 <span className="text-xs text-gray-500">Ver perfil</span>
               </span>
+              {/* Decorative - low contrast intentional for chevron icon */}
               <svg
                 className={`h-5 w-5 text-gray-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
                 fill="none"
@@ -306,7 +310,7 @@ export default function PatientNavigation() {
       </aside>
 
       {/* Mobile Top Bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/portal/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
@@ -320,6 +324,7 @@ export default function PatientNavigation() {
           <div className="flex items-center gap-2">
             <GlobalSearch />
             <NotificationCenter />
+            <ThemeToggleIcon />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -353,7 +358,7 @@ export default function PatientNavigation() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="border-t border-gray-200 bg-white"
+              className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
             >
               <nav className="px-4 py-4 space-y-1">
                 {navigationItems.map((item) => {

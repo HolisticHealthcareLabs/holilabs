@@ -13,6 +13,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentPatient } from '@/lib/auth/patient-session';
 import PreventionClient from './PreventionClient';
+import { logger } from '@/lib/logger';
 
 async function fetchPreventionData(patientId: string) {
   try {
@@ -31,7 +32,7 @@ async function fetchPreventionData(patientId: string) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching prevention data:', error);
+    logger.error('Error fetching prevention data:', error);
     return {
       riskScores: [],
       interventions: [],

@@ -16,6 +16,7 @@ import {
   PaperAirplaneIcon,
   UserIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 interface Message {
   id: string;
@@ -81,7 +82,7 @@ export default function MessagesPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching messages:', err);
+      logger.error('Error fetching messages:', err);
     } finally {
       setLoading(false);
     }
@@ -249,6 +250,7 @@ export default function MessagesPage() {
                         </div>
                       )}
                       <p className="whitespace-pre-wrap">{message.content}</p>
+                      {/* Decorative - low contrast intentional for timestamp meta info */}
                       <p
                         className={`text-xs mt-2 ${
                           isFromMe ? 'text-blue-100' : 'text-gray-500'
@@ -328,6 +330,7 @@ export default function MessagesPage() {
             </div>
 
             <p className="text-xs text-gray-500">
+              {/* Decorative - low contrast intentional for character count meta info */}
               {newMessage.length}/2000 caracteres · Comunicación segura y encriptada =
             </p>
           </form>

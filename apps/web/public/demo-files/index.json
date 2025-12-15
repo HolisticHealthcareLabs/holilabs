@@ -1,0 +1,317 @@
+{
+  "generated": "2025-12-12T23:56:08.739Z",
+  "totalDocuments": 30,
+  "documents": [
+    {
+      "id": "demo-doc-history-0",
+      "patientId": "demo-patient-0",
+      "patientName": "Sergio Pérez",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-06-02T23:56:08.727Z",
+      "provider": "Dr. María Rodríguez",
+      "filename": "medical_history_demo-patient-0_1.txt"
+    },
+    {
+      "id": "demo-doc-lab-1",
+      "patientId": "demo-patient-1",
+      "patientName": "Pablo Rodríguez",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-10-28T23:56:08.727Z",
+      "provider": "Dr. Carlos Martínez",
+      "filename": "lab_result_demo-patient-1_2.txt"
+    },
+    {
+      "id": "demo-doc-rx-2",
+      "patientId": "demo-patient-2",
+      "patientName": "Jorge Pérez",
+      "type": "prescription",
+      "title": "Prescripción: Omeprazole",
+      "date": "2025-10-02T23:56:08.727Z",
+      "provider": "Dr. Ana López",
+      "filename": "prescription_demo-patient-2_3.txt"
+    },
+    {
+      "id": "demo-doc-note-3",
+      "patientId": "demo-patient-3",
+      "patientName": "Pablo Silva",
+      "type": "consultation_note",
+      "title": "Consulta: Dificultad para dormir",
+      "date": "2025-10-13T23:56:08.727Z",
+      "provider": "Dr. José García",
+      "filename": "consultation_note_demo-patient-3_4.txt"
+    },
+    {
+      "id": "demo-doc-history-4",
+      "patientId": "demo-patient-4",
+      "patientName": "María Ortiz",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-06-07T23:56:08.727Z",
+      "provider": "Dr. Elena Sánchez",
+      "filename": "medical_history_demo-patient-4_5.txt"
+    },
+    {
+      "id": "demo-doc-lab-5",
+      "patientId": "demo-patient-5",
+      "patientName": "Antonio Díaz",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-09-23T23:56:08.727Z",
+      "provider": "Dr. María Rodríguez",
+      "filename": "lab_result_demo-patient-5_6.txt"
+    },
+    {
+      "id": "demo-doc-rx-6",
+      "patientId": "demo-patient-6",
+      "patientName": "Lucía Silva",
+      "type": "prescription",
+      "title": "Prescripción: Levothyroxine",
+      "date": "2025-11-28T23:56:08.727Z",
+      "provider": "Dr. Carlos Martínez",
+      "filename": "prescription_demo-patient-6_7.txt"
+    },
+    {
+      "id": "demo-doc-note-7",
+      "patientId": "demo-patient-7",
+      "patientName": "Mariana Pérez",
+      "type": "consultation_note",
+      "title": "Consulta: Dolor de cabeza persistente",
+      "date": "2025-09-28T23:56:08.727Z",
+      "provider": "Dr. Ana López",
+      "filename": "consultation_note_demo-patient-7_8.txt"
+    },
+    {
+      "id": "demo-doc-history-8",
+      "patientId": "demo-patient-8",
+      "patientName": "María Cruz",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-04-12T23:56:08.727Z",
+      "provider": "Dr. José García",
+      "filename": "medical_history_demo-patient-8_9.txt"
+    },
+    {
+      "id": "demo-doc-lab-9",
+      "patientId": "demo-patient-9",
+      "patientName": "Rafael Castillo",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-08-24T23:56:08.727Z",
+      "provider": "Dr. Elena Sánchez",
+      "filename": "lab_result_demo-patient-9_10.txt"
+    },
+    {
+      "id": "demo-doc-rx-10",
+      "patientId": "demo-patient-10",
+      "patientName": "Sofia Álvarez",
+      "type": "prescription",
+      "title": "Prescripción: Acetaminofén",
+      "date": "2025-12-12T23:56:08.727Z",
+      "provider": "Dr. María Rodríguez",
+      "filename": "prescription_demo-patient-10_11.txt"
+    },
+    {
+      "id": "demo-doc-note-11",
+      "patientId": "demo-patient-11",
+      "patientName": "Diana Jiménez",
+      "type": "consultation_note",
+      "title": "Consulta: Dolor abdominal",
+      "date": "2025-11-09T23:56:08.727Z",
+      "provider": "Dr. Carlos Martínez",
+      "filename": "consultation_note_demo-patient-11_12.txt"
+    },
+    {
+      "id": "demo-doc-history-12",
+      "patientId": "demo-patient-12",
+      "patientName": "Manuel Álvarez",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-04-07T23:56:08.727Z",
+      "provider": "Dr. Ana López",
+      "filename": "medical_history_demo-patient-12_13.txt"
+    },
+    {
+      "id": "demo-doc-lab-13",
+      "patientId": "demo-patient-13",
+      "patientName": "Juan Rivera",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-10-21T23:56:08.727Z",
+      "provider": "Dr. José García",
+      "filename": "lab_result_demo-patient-13_14.txt"
+    },
+    {
+      "id": "demo-doc-rx-14",
+      "patientId": "demo-patient-14",
+      "patientName": "Fernando Ortiz",
+      "type": "prescription",
+      "title": "Prescripción: Metformin",
+      "date": "2025-10-28T23:56:08.727Z",
+      "provider": "Dr. Elena Sánchez",
+      "filename": "prescription_demo-patient-14_15.txt"
+    },
+    {
+      "id": "demo-doc-note-15",
+      "patientId": "demo-patient-15",
+      "patientName": "Diana Rivera",
+      "type": "consultation_note",
+      "title": "Consulta: Fatiga generalizada",
+      "date": "2025-10-22T23:56:08.727Z",
+      "provider": "Dr. María Rodríguez",
+      "filename": "consultation_note_demo-patient-15_16.txt"
+    },
+    {
+      "id": "demo-doc-history-16",
+      "patientId": "demo-patient-16",
+      "patientName": "Sofia Cruz",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-04-17T23:56:08.727Z",
+      "provider": "Dr. Carlos Martínez",
+      "filename": "medical_history_demo-patient-16_17.txt"
+    },
+    {
+      "id": "demo-doc-lab-17",
+      "patientId": "demo-patient-17",
+      "patientName": "Rafael Flores",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-11-03T23:56:08.727Z",
+      "provider": "Dr. Ana López",
+      "filename": "lab_result_demo-patient-17_18.txt"
+    },
+    {
+      "id": "demo-doc-rx-18",
+      "patientId": "demo-patient-18",
+      "patientName": "Alejandra Álvarez",
+      "type": "prescription",
+      "title": "Prescripción: Metformin",
+      "date": "2025-11-05T23:56:08.727Z",
+      "provider": "Dr. José García",
+      "filename": "prescription_demo-patient-18_19.txt"
+    },
+    {
+      "id": "demo-doc-note-19",
+      "patientId": "demo-patient-19",
+      "patientName": "Miguel Cruz",
+      "type": "consultation_note",
+      "title": "Consulta: Tos seca",
+      "date": "2025-11-02T23:56:08.727Z",
+      "provider": "Dr. Elena Sánchez",
+      "filename": "consultation_note_demo-patient-19_20.txt"
+    },
+    {
+      "id": "demo-doc-history-20",
+      "patientId": "demo-patient-20",
+      "patientName": "Francisco Jiménez",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-06-01T23:56:08.727Z",
+      "provider": "Dr. María Rodríguez",
+      "filename": "medical_history_demo-patient-20_21.txt"
+    },
+    {
+      "id": "demo-doc-lab-21",
+      "patientId": "demo-patient-21",
+      "patientName": "Manuel Pérez",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-11-06T23:56:08.727Z",
+      "provider": "Dr. Carlos Martínez",
+      "filename": "lab_result_demo-patient-21_22.txt"
+    },
+    {
+      "id": "demo-doc-rx-22",
+      "patientId": "demo-patient-22",
+      "patientName": "Jorge Morales",
+      "type": "prescription",
+      "title": "Prescripción: Acetaminofén",
+      "date": "2025-10-21T23:56:08.727Z",
+      "provider": "Dr. Ana López",
+      "filename": "prescription_demo-patient-22_23.txt"
+    },
+    {
+      "id": "demo-doc-note-23",
+      "patientId": "demo-patient-23",
+      "patientName": "Roberto Gómez",
+      "type": "consultation_note",
+      "title": "Consulta: Dolor torácico ocasional",
+      "date": "2025-10-02T23:56:08.727Z",
+      "provider": "Dr. José García",
+      "filename": "consultation_note_demo-patient-23_24.txt"
+    },
+    {
+      "id": "demo-doc-history-24",
+      "patientId": "demo-patient-24",
+      "patientName": "Carlos Álvarez",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-03-25T23:56:08.727Z",
+      "provider": "Dr. Elena Sánchez",
+      "filename": "medical_history_demo-patient-24_25.txt"
+    },
+    {
+      "id": "demo-doc-lab-25",
+      "patientId": "demo-patient-25",
+      "patientName": "Francisco Flores",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-09-01T23:56:08.727Z",
+      "provider": "Dr. María Rodríguez",
+      "filename": "lab_result_demo-patient-25_26.txt"
+    },
+    {
+      "id": "demo-doc-rx-26",
+      "patientId": "demo-patient-26",
+      "patientName": "Antonio Cruz",
+      "type": "prescription",
+      "title": "Prescripción: Acetaminofén",
+      "date": "2025-10-08T23:56:08.727Z",
+      "provider": "Dr. Carlos Martínez",
+      "filename": "prescription_demo-patient-26_27.txt"
+    },
+    {
+      "id": "demo-doc-note-27",
+      "patientId": "demo-patient-27",
+      "patientName": "Jorge Vargas",
+      "type": "consultation_note",
+      "title": "Consulta: Mareos",
+      "date": "2025-11-10T23:56:08.727Z",
+      "provider": "Dr. Ana López",
+      "filename": "consultation_note_demo-patient-27_28.txt"
+    },
+    {
+      "id": "demo-doc-history-28",
+      "patientId": "demo-patient-28",
+      "patientName": "Paula Ramírez",
+      "type": "medical_history",
+      "title": "Historia Clínica",
+      "date": "2025-04-27T23:56:08.727Z",
+      "provider": "Dr. José García",
+      "filename": "medical_history_demo-patient-28_29.txt"
+    },
+    {
+      "id": "demo-doc-lab-29",
+      "patientId": "demo-patient-29",
+      "patientName": "Patricia Sánchez",
+      "type": "lab_result",
+      "title": "Laboratorio: Perfil Lipídico",
+      "date": "2025-11-18T23:56:08.727Z",
+      "provider": "Dr. Elena Sánchez",
+      "filename": "lab_result_demo-patient-29_30.txt"
+    }
+  ],
+  "statistics": {
+    "total": 30,
+    "byType": {
+      "medical_history": 8,
+      "lab_result": 8,
+      "prescription": 7,
+      "consultation_note": 7
+    },
+    "totalSize": 23657,
+    "withPHI": 30
+  }
+}

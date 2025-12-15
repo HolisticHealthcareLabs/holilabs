@@ -18,19 +18,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 
 /**
- * Allowed origins - UPDATE THIS LIST with your actual domains
+ * Allowed origins - Production domains
  * Add multiple origins for staging, production, custom domains
+ *
+ * SECURITY: Never use wildcards (*) in production
  */
 const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   'http://localhost:3000',
   'http://localhost:3001',
   'https://holilabs-lwp6y.ondigitalocean.app', // DigitalOcean app URL
-  // Add your custom domains here:
-  // 'https://holilabs.io',
-  // 'https://www.holilabs.io',
-  // 'https://app.holilabs.io',
-];
+  'https://app.holilabs.com',
+  'https://holilabs.com',
+  'https://www.holilabs.com',
+  'https://holilabs.xyz',
+  'https://www.holilabs.xyz',
+].filter(Boolean); // Remove undefined/empty values
 
 /**
  * Get allowed origins based on environment
@@ -81,13 +84,21 @@ export function corsHeaders(request: NextRequest): Headers {
     headers.set('Access-Control-Allow-Origin', allowedOrigins[0]);
   }
 
-  // Standard CORS headers
-  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  // Standard CORS headers - restrictive by default
+  // Only allow necessary HTTP methods
+  const allowedMethods = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+
+  headers.set('Access-Control-Allow-Methods', allowedMethods);
   headers.set(
     'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-CSRF-Token, X-Request-ID'
+    'Content-Type, Authorization, X-CSRF-Token, X-Request-ID, X-Access-Reason'
   );
-  headers.set('Access-Control-Allow-Credentials', 'true');
+
+  // Only allow credentials when origin is whitelisted
+  if (origin && allowedOrigins.includes(origin)) {
+    headers.set('Access-Control-Allow-Credentials', 'true');
+  }
+
   headers.set('Access-Control-Max-Age', '86400'); // 24 hours preflight cache
 
   return headers;

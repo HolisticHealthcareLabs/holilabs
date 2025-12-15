@@ -2,8 +2,10 @@
 export const dynamic = 'force-dynamic';
 
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { PreventionHubSidebar } from '@/components/prevention/PreventionHubSidebar';
 
 // Mock patient data
 const PATIENTS = [
@@ -11,31 +13,90 @@ const PATIENTS = [
     id: 'pt-001',
     name: 'María González',
     age: '45-54',
+    ageNumeric: 50,
+    gender: 'female' as const,
     condition: 'Diabetes Tipo 2',
     lastVisit: '2025-01-15',
     status: 'active',
     emoji: '👩',
     summary: 'Paciente con diabetes tipo 2, hipertensión controlada. Última HbA1c: 7.2%',
+    medications: [
+      { name: 'Metformin 1000mg', startDate: new Date('2023-06-15') },
+      { name: 'Lisinopril 10mg', startDate: new Date('2024-01-20') },
+      { name: 'Atorvastatin 20mg', startDate: new Date('2024-03-10') },
+    ],
+    icd10Codes: ['E11.9', 'I10'], // Type 2 diabetes, Essential hypertension
+    labValues: {
+      hba1c: 7.2,
+      ldl: 120,
+      systolicBP: 135,
+      diastolicBP: 85,
+    } as Record<string, number>,
   },
   {
     id: 'pt-002',
     name: 'Carlos Silva',
     age: '60-69',
+    ageNumeric: 65,
+    gender: 'male' as const,
     condition: 'Post-IAM',
     lastVisit: '2025-01-10',
     status: 'monitoring',
     emoji: '👨',
     summary: 'Recuperación post-infarto. Función cardiaca estable. EF: 45%',
+    medications: [
+      { name: 'Aspirin 81mg', startDate: new Date('2024-08-01') },
+      { name: 'Atorvastatin 80mg', startDate: new Date('2024-08-01') },
+      { name: 'Metoprolol 50mg', startDate: new Date('2024-08-01') },
+      { name: 'Lisinopril 20mg', startDate: new Date('2024-08-05') },
+    ],
+    icd10Codes: ['I21.9', 'I25.10', 'I50.9'], // MI, Coronary artery disease, Heart failure
+    labValues: {
+      ldl: 85,
+      systolicBP: 128,
+      diastolicBP: 78,
+      ejectionFraction: 45,
+    } as Record<string, number>,
   },
   {
     id: 'pt-003',
     name: 'Ana Rodríguez',
     age: '30-39',
+    ageNumeric: 35,
+    gender: 'female' as const,
     condition: 'Asma',
     lastVisit: '2025-01-20',
     status: 'stable',
     emoji: '👩‍🦰',
     summary: 'Asma moderada persistente. Buen control con tratamiento actual',
+    medications: [
+      { name: 'Fluticasone inhaler', startDate: new Date('2022-03-10') },
+      { name: 'Albuterol inhaler PRN', startDate: new Date('2022-03-10') },
+    ],
+    icd10Codes: ['J45.40'], // Moderate persistent asthma
+    labValues: {} as Record<string, number>,
+  },
+  {
+    id: 'pt-004',
+    name: 'Fatima Hassan',
+    age: '25-34',
+    ageNumeric: 28,
+    gender: 'female' as const,
+    condition: 'Sickle Cell Disease',
+    lastVisit: '2025-01-18',
+    status: 'monitoring',
+    emoji: '👩🏾',
+    summary: 'Enfermedad de células falciformes (HbSS). Actualmente embarazada (16 semanas). Dolor controlado con hidroxiurea.',
+    medications: [
+      { name: 'Hydroxyurea 500mg', startDate: new Date('2020-05-10') },
+      { name: 'Folic acid 5mg', startDate: new Date('2024-10-15') },
+    ],
+    icd10Codes: ['D57.1', 'Z34.00'], // Sickle cell disease with crisis, Pregnant state
+    labValues: {
+      hemoglobin: 9.2,
+      fetalHemoglobin: 18.5,
+    } as Record<string, number>,
+    isPregnant: true,
   },
 ];
 
@@ -54,6 +115,7 @@ type Message = {
 };
 
 export default function AICopilotPage() {
+  const router = useRouter();
   const [selectedPatient, setSelectedPatient] = useState(PATIENTS[0]);
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0]);
   const [messages, setMessages] = useState<Message[]>([
@@ -68,6 +130,14 @@ export default function AICopilotPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [showApiSetup, setShowApiSetup] = useState(false);
+  const [clinicalNoteContext, setClinicalNoteContext] = useState('');
+
+  // Initialize clinical context when patient is selected
+  useEffect(() => {
+    // Build initial clinical context from patient summary
+    const initialContext = `${selectedPatient.summary}`;
+    setClinicalNoteContext(initialContext);
+  }, [selectedPatient]);
 
   const handleSendMessage = () => {
     if (!input.trim() || !isConnected) return;
@@ -80,6 +150,10 @@ export default function AICopilotPage() {
     };
 
     setMessages([...messages, userMessage]);
+
+    // Accumulate clinical context for prevention hub detection
+    setClinicalNoteContext((prev) => prev + '\n' + input);
+
     setInput('');
 
     // Simulate AI response
@@ -91,6 +165,9 @@ export default function AICopilotPage() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
+
+      // Add AI response to clinical context as well
+      setClinicalNoteContext((prev) => prev + '\n' + aiMessage.content);
     }, 1000);
   };
 
@@ -108,6 +185,72 @@ export default function AICopilotPage() {
     }
   };
 
+  const handleProtocolApply = async (protocol: any) => {
+    try {
+      // Show loading message
+      const loadingMsg: Message = {
+        id: Date.now().toString(),
+        role: 'system',
+        content: `⏳ Aplicando protocolo "${protocol.name}"...`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, loadingMsg]);
+
+      // Call API to create prevention plan
+      const response = await fetch('/api/prevention/plans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: selectedPatient.id,
+          protocol,
+        }),
+      });
+
+      const result = await response.json();
+
+      // Remove loading message
+      setMessages((prev) => prev.filter((m) => m.id !== loadingMsg.id));
+
+      if (result.success) {
+        // Add success message
+        const successMsg: Message = {
+          id: Date.now().toString(),
+          role: 'system',
+          content: `✅ Protocolo aplicado exitosamente: "${protocol.name}"\n\n📋 Plan de prevención creado para ${selectedPatient.name}\n• ${protocol.interventions.length} intervenciones agregadas\n• Fuente: ${protocol.source} ${protocol.guidelineVersion}\n• Nivel de evidencia: Grade ${protocol.evidenceGrade}\n\nID del Plan: ${result.data.preventionPlanId}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, successMsg]);
+      } else {
+        // Add error message
+        const errorMsg: Message = {
+          id: Date.now().toString(),
+          role: 'system',
+          content: `❌ Error al aplicar protocolo: ${result.error || 'Unknown error'}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+      }
+    } catch (error) {
+      console.error('Error applying prevention protocol:', error);
+
+      // Add error message
+      const errorMsg: Message = {
+        id: Date.now().toString(),
+        role: 'system',
+        content: `❌ Error de conexión al aplicar protocolo. Por favor, intente nuevamente.`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    }
+  };
+
+  const handleViewFullHub = () => {
+    // Navigate to prevention plans history page
+    router.push(`/dashboard/prevention/plans?patientId=${selectedPatient.id}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -122,6 +265,13 @@ export default function AICopilotPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                href={`/dashboard/prevention/plans?patientId=${selectedPatient.id}`}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
+              >
+                <span>🛡️</span>
+                <span>Ver Planes de Prevención</span>
+              </Link>
               <button
                 onClick={() => setShowApiSetup(!showApiSetup)}
                 className={`px-4 py-2 rounded-lg font-medium transition-all ${
@@ -206,6 +356,7 @@ export default function AICopilotPage() {
                   key={patient.id}
                   onClick={() => {
                     setSelectedPatient(patient);
+                    setClinicalNoteContext(''); // Reset clinical context for new patient
                     setMessages([
                       {
                         id: Date.now().toString(),
@@ -396,6 +547,22 @@ export default function AICopilotPage() {
           </div>
         </div>
       </div>
+
+      {/* Prevention Hub Sidebar - Real-time protocol suggestions */}
+      <PreventionHubSidebar
+        patientId={selectedPatient.id}
+        patientData={{
+          age: selectedPatient.ageNumeric,
+          gender: selectedPatient.gender,
+          isPregnant: (selectedPatient as any).isPregnant,
+          labValues: selectedPatient.labValues,
+        }}
+        clinicalNote={clinicalNoteContext}
+        medications={selectedPatient.medications || []}
+        icd10Codes={selectedPatient.icd10Codes || []}
+        onProtocolApply={handleProtocolApply}
+        onViewFullHub={handleViewFullHub}
+      />
     </div>
   );
 }

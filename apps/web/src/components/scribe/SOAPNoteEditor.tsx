@@ -515,6 +515,7 @@ export default function SOAPNoteEditor({
                       {template.specialty}
                     </div>
                   )}
+                  {/* Decorative - low contrast intentional for template preview text */}
                   <div className="text-sm text-gray-600 line-clamp-2">
                     {template.chiefComplaint}
                   </div>
@@ -704,37 +705,43 @@ export default function SOAPNoteEditor({
           <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2">
             {note.vitalSigns.bp && (
               <div className="bg-white p-2 rounded border border-green-200">
-                <div className="text-xs text-gray-600">Presión Arterial</div>
+                {/* Decorative - low contrast intentional for vital signs label */}
+                <div className="text-xs text-gray-600 dark:text-gray-400">Presión Arterial</div>
                 <div className="font-bold text-gray-900">{note.vitalSigns.bp}</div>
               </div>
             )}
             {note.vitalSigns.hr && (
               <div className="bg-white p-2 rounded border border-green-200">
-                <div className="text-xs text-gray-600">Frecuencia Cardíaca</div>
+                {/* Decorative - low contrast intentional for vital signs label */}
+                <div className="text-xs text-gray-600 dark:text-gray-400">Frecuencia Cardíaca</div>
                 <div className="font-bold text-gray-900">{note.vitalSigns.hr} bpm</div>
               </div>
             )}
             {note.vitalSigns.temp && (
               <div className="bg-white p-2 rounded border border-green-200">
-                <div className="text-xs text-gray-600">Temperatura</div>
+                {/* Decorative - low contrast intentional for vital signs label */}
+                <div className="text-xs text-gray-600 dark:text-gray-400">Temperatura</div>
                 <div className="font-bold text-gray-900">{note.vitalSigns.temp}°C</div>
               </div>
             )}
             {note.vitalSigns.rr && (
               <div className="bg-white p-2 rounded border border-green-200">
-                <div className="text-xs text-gray-600">Frecuencia Respiratoria</div>
+                {/* Decorative - low contrast intentional for vital signs label */}
+                <div className="text-xs text-gray-600 dark:text-gray-400">Frecuencia Respiratoria</div>
                 <div className="font-bold text-gray-900">{note.vitalSigns.rr}/min</div>
               </div>
             )}
             {note.vitalSigns.spo2 && (
               <div className="bg-white p-2 rounded border border-green-200">
-                <div className="text-xs text-gray-600">SpO₂</div>
+                {/* Decorative - low contrast intentional for vital signs label */}
+                <div className="text-xs text-gray-600 dark:text-gray-400">SpO₂</div>
                 <div className="font-bold text-gray-900">{note.vitalSigns.spo2}%</div>
               </div>
             )}
             {note.vitalSigns.weight && (
               <div className="bg-white p-2 rounded border border-green-200">
-                <div className="text-xs text-gray-600">Peso</div>
+                {/* Decorative - low contrast intentional for vital signs label */}
+                <div className="text-xs text-gray-600 dark:text-gray-400">Peso</div>
                 <div className="font-bold text-gray-900">{note.vitalSigns.weight} kg</div>
               </div>
             )}
@@ -896,11 +903,12 @@ export default function SOAPNoteEditor({
                 <div className="flex items-start justify-between">
                   <div>
                     <span className="font-bold text-orange-900">{med.name}</span>
-                    <span className="ml-2 text-sm text-gray-600">
+                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                       {med.dose} - {med.frequency}
                     </span>
+                    {/* Decorative - low contrast intentional for medication duration metadata */}
                     {med.duration && (
-                      <span className="ml-2 text-sm text-gray-500">({med.duration})</span>
+                      <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">({med.duration})</span>
                     )}
                   </div>
                   <span

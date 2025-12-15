@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { markNotificationAsRead, deleteNotification } from '@/lib/notifications';

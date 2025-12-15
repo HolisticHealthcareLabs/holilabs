@@ -161,7 +161,10 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error verifying OTP:', error);
+    logger.error({
+      event: 'portal_otp_verify_error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return NextResponse.json(
       {
         error: 'Failed to verify OTP',

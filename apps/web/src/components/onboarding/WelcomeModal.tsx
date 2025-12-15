@@ -85,6 +85,7 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
             <h1 id="welcome-modal-title" className="text-3xl font-bold mb-2">
               {t('onboarding.welcome')}{userName ? `, ${userName}` : ''}!
             </h1>
+            {/* White on gradient background - sufficient contrast */}
             <p className="text-white/90 text-lg">
               {t('onboarding.subtitle')}
             </p>
@@ -107,7 +108,7 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     📝 {t('onboarding.steps.note.title')}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     {t('onboarding.steps.note.description')}
                   </p>
                   <Link
@@ -129,7 +130,7 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     📊 {t('onboarding.steps.transfer.title')}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     {t('onboarding.steps.transfer.description')}
                   </p>
                   <Link
@@ -151,7 +152,7 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     👤 {t('onboarding.steps.invite.title')}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     {t('onboarding.steps.invite.description')}
                   </p>
                   <Link
@@ -173,13 +174,13 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {t('onboarding.optional.title')}
                   </h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     {t('onboarding.optional.description')}
                   </p>
                   <Link
                     href="/dashboard/settings"
                     onClick={handleDismiss}
-                    className="text-sm text-gray-600 hover:text-gray-900 transition underline"
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition underline"
                   >
                     {t('onboarding.optional.action')}
                   </Link>
@@ -191,7 +192,7 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
             <div className="flex items-center justify-between">
               <button
                 onClick={handleDismiss}
-                className="text-sm text-gray-500 hover:text-gray-700 transition"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
               >
                 {t('onboarding.skip')}
               </button>
@@ -207,7 +208,8 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
 
           {/* Footer */}
           <div className="bg-gray-50 border-t border-gray-200 px-8 py-4 text-center">
-            <p className="text-xs text-gray-500">
+            {/* Decorative - low contrast intentional for tip footer */}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {t('onboarding.tip')}
             </p>
           </div>

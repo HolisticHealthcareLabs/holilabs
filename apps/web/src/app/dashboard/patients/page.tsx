@@ -303,7 +303,7 @@ export default function UnifiedPatientsPage() {
   // Typing indicators for patient messages
   const handlePatientTyping = () => {
     if (selectedPatientConversationId && session?.user?.id) {
-      emitTypingStart(selectedPatientConversationId, session.user.id, `Dr. ${session.user.firstName || 'Doctor'}`);
+      emitTypingStart(selectedPatientConversationId, session.user.id, `Dr. ${(session.user as any).firstName || 'Doctor'}`);
     }
   };
 

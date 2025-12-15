@@ -200,7 +200,7 @@ export default function OnboardingChecklist({ autoShow = false }: OnboardingChec
     return (
       <button
         onClick={() => setIsExpanded(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-[#014751] hover:bg-[#014751]/90 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 transition-all z-40 group"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-[#014751] hover:bg-[#014751]/90 rounded-full shadow-lg flex items-center justify-center text-white hover:scale-110 transition-all z-30 group"
         title="Getting started checklist"
       >
         <div className="relative">
@@ -219,7 +219,7 @@ export default function OnboardingChecklist({ autoShow = false }: OnboardingChec
 
   // Expanded checklist panel
   return (
-    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-40 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-6 right-6 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-30 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
       {/* Header */}
       <div className="bg-[#014751] text-white p-5">
         <div className="flex items-center justify-between mb-3">
@@ -293,7 +293,7 @@ export default function OnboardingChecklist({ autoShow = false }: OnboardingChec
                     {getItemIcon(item.id)}
                   </span>
                   <h4 className={`font-medium text-sm ${
-                    item.completed ? 'line-through text-gray-500' : 'text-gray-900'
+                    item.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900'
                   }`}>
                     {item.title}
                   </h4>

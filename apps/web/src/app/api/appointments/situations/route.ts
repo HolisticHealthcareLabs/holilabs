@@ -4,9 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 // FIXME: Old rate limiting API - needs refactor
 // import { rateLimit } from '@/lib/rate-limit';
 
@@ -49,7 +50,11 @@ export async function GET(request: NextRequest) {
       data: { situations },
     });
   } catch (error: any) {
-    console.error('Error fetching situations:', error);
+    logger.error({
+      event: 'situations_fetch_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to fetch situations' },
       { status: 500 }
@@ -118,7 +123,11 @@ export async function POST(request: NextRequest) {
       message: 'Situation created successfully',
     });
   } catch (error: any) {
-    console.error('Error creating situation:', error);
+    logger.error({
+      event: 'situation_create_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to create situation' },
       { status: 500 }

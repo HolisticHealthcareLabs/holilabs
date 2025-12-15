@@ -14,6 +14,7 @@ import {
   formatPatientContextForScribe,
   formatPatientSummary,
 } from '@/lib/ai/patient-context-formatter';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,8 +88,14 @@ export async function GET(request: NextRequest) {
       format,
       context,
     });
-  } catch (error) {
-    console.error('Error generating patient context:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'patient_context_generation_failed',
+      patientId: request.nextUrl.searchParams.get('patientId'),
+      format: request.nextUrl.searchParams.get('format'),
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

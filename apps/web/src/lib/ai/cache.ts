@@ -15,6 +15,7 @@
 import { Redis } from '@upstash/redis';
 import { createHash } from 'crypto';
 import type { ChatRequest, ChatResponse } from './chat';
+import { logger } from '@/lib/logger';
 
 // Initialize Upstash Redis client
 const redis =
@@ -55,7 +56,10 @@ export async function getCachedResponse(
   request: ChatRequest
 ): Promise<ChatResponse | null> {
   if (!redis) {
-    console.warn('[AI Cache] Redis not configured, cache disabled');
+    logger.warn({
+      event: 'ai_cache_redis_not_configured',
+      context: 'cache_disabled'
+    });
     return null;
   }
 
@@ -64,7 +68,10 @@ export async function getCachedResponse(
     const cached = await redis.get<ChatResponse>(cacheKey);
 
     if (cached) {
-      console.log(`[AI Cache] HIT - Key: ${cacheKey.substring(0, 40)}...`);
+      logger.info({
+        event: 'ai_cache_hit',
+        cacheKeyPrefix: cacheKey.substring(0, 40)
+      });
       return {
         ...cached,
         // Add indicator that this was from cache
@@ -72,10 +79,16 @@ export async function getCachedResponse(
       } as ChatResponse & { cached?: boolean };
     }
 
-    console.log(`[AI Cache] MISS - Key: ${cacheKey.substring(0, 40)}...`);
+    logger.info({
+      event: 'ai_cache_miss',
+      cacheKeyPrefix: cacheKey.substring(0, 40)
+    });
     return null;
   } catch (error) {
-    console.error('[AI Cache] Error fetching from cache:', error);
+    logger.error({
+      event: 'ai_cache_fetch_error',
+      error: error instanceof Error ? error.message : String(error)
+    });
     return null;
   }
 }
@@ -97,11 +110,16 @@ export async function setCachedResponse(
     // Store response with TTL
     await redis.setex(cacheKey, CACHE_TTL, response);
 
-    console.log(
-      `[AI Cache] STORED - Key: ${cacheKey.substring(0, 40)}... | TTL: ${CACHE_TTL}s`
-    );
+    logger.info({
+      event: 'ai_cache_stored',
+      cacheKeyPrefix: cacheKey.substring(0, 40),
+      ttl: CACHE_TTL
+    });
   } catch (error) {
-    console.error('[AI Cache] Error storing in cache:', error);
+    logger.error({
+      event: 'ai_cache_store_error',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }
 
@@ -117,9 +135,15 @@ export async function invalidateCache(request: ChatRequest): Promise<void> {
     const cacheKey = generateCacheKey(request);
     await redis.del(cacheKey);
 
-    console.log(`[AI Cache] INVALIDATED - Key: ${cacheKey.substring(0, 40)}...`);
+    logger.info({
+      event: 'ai_cache_invalidated',
+      cacheKeyPrefix: cacheKey.substring(0, 40)
+    });
   } catch (error) {
-    console.error('[AI Cache] Error invalidating cache:', error);
+    logger.error({
+      event: 'ai_cache_invalidate_error',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }
 
@@ -149,7 +173,10 @@ export async function getCacheStats(): Promise<{
       estimatedSize: `${estimatedMB} MB`,
     };
   } catch (error) {
-    console.error('[AI Cache] Error fetching stats:', error);
+    logger.error({
+      event: 'ai_cache_stats_error',
+      error: error instanceof Error ? error.message : String(error)
+    });
     return { totalKeys: 0, estimatedSize: '0 MB' };
   }
 }
@@ -167,17 +194,25 @@ export async function clearAllCache(): Promise<number> {
     const keys = await redis.keys(`${CACHE_PREFIX}*`);
 
     if (!keys || !Array.isArray(keys) || keys.length === 0) {
-      console.log('[AI Cache] No keys to clear');
+      logger.info({
+        event: 'ai_cache_clear_no_keys'
+      });
       return 0;
     }
 
     // Delete all keys in batch
     await Promise.all(keys.map(key => redis.del(key)));
 
-    console.log(`[AI Cache] CLEARED ${keys.length} keys`);
+    logger.info({
+      event: 'ai_cache_cleared',
+      keysCleared: keys.length
+    });
     return keys.length;
   } catch (error) {
-    console.error('[AI Cache] Error clearing cache:', error);
+    logger.error({
+      event: 'ai_cache_clear_error',
+      error: error instanceof Error ? error.message : String(error)
+    });
     return 0;
   }
 }

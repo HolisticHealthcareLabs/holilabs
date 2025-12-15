@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,9 +108,13 @@ export const GET = createProtectedRoute(
         data: payments,
       });
     } catch (error: any) {
-      console.error('Error fetching payments:', error);
+      logger.error({
+        event: 'payments_fetch_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch payments', message: error.message },
+        { error: 'Failed to fetch payments' },
         { status: 500 }
       );
     }
@@ -339,9 +344,15 @@ export const POST = createProtectedRoute(
         { status: 201 }
       );
     } catch (error: any) {
-      console.error('Error processing payment:', error);
+      logger.error({
+        event: 'payment_processing_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        patientId: body?.patientId,
+        invoiceId: body?.invoiceId,
+      });
       return NextResponse.json(
-        { error: 'Failed to process payment', message: error.message },
+        { error: 'Failed to process payment' },
         { status: 500 }
       );
     }

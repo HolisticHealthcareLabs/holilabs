@@ -244,7 +244,7 @@ export function TemplatePicker({
       >
         <SparklesIcon className="w-4 h-4" />
         <span>Templates</span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-semibold text-gray-500 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">
           <span>Cmd</span>+<span>Shift</span>+<span>T</span>
         </kbd>
       </button>
@@ -321,7 +321,7 @@ export function TemplatePicker({
                 {query === '' && recentTemplateObjects.length > 0 && (
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 mb-3">
-                      <ClockIcon className="w-4 h-4 text-gray-500" />
+                      <ClockIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                       <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
                         Recently Used
                       </h3>
@@ -502,15 +502,16 @@ function TemplateItem({
               {template.description}
             </p>
           )}
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+          {/* Decorative - low contrast intentional for template metadata */}
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <span>{template.category.replace(/_/g, ' ')}</span>
             {template.specialty && (
               <>
-                <span>"</span>
+                <span>•</span>
                 <span>{template.specialty}</span>
               </>
             )}
-            <span>"</span>
+            <span>•</span>
             <span>Used {template.useCount} times</span>
           </div>
         </div>

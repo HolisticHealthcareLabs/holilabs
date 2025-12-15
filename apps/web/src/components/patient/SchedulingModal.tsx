@@ -121,11 +121,12 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 id="scheduling-modal-title" className="text-2xl font-bold text-gray-800">Agendar Cita</h2>
+              {/* Decorative - low contrast intentional for close button */}
               <button
                 ref={closeButtonRef}
                 onClick={onClose}
                 aria-label="Cerrar diálogo"
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
               >
                 ×
               </button>
@@ -228,6 +229,7 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                     <div className="border-2 border-gray-200 rounded-lg p-4 max-h-80 overflow-y-auto">
                       {selectedDate ? (
                         <div className="grid grid-cols-3 gap-2">
+                          {/* Decorative - low contrast intentional for disabled/busy slot text */}
                           {generateTimeSlots().map((slot, i) => (
                             <button
                               key={i}
@@ -249,9 +251,12 @@ export default function SchedulingModal({ isOpen, onClose }: SchedulingModalProp
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-500 text-center py-8">
-                          Seleccione una fecha para ver horarios disponibles
-                        </p>
+                        <>
+                          {/* Decorative - low contrast intentional for empty state helper text */}
+                          <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                            Seleccione una fecha para ver horarios disponibles
+                          </p>
+                        </>
                       )}
                     </div>
                   </div>

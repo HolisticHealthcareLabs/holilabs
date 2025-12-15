@@ -153,6 +153,7 @@ export function AIFeedbackButton({
           <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
             Provide Correction
           </h4>
+          {/* Decorative button - low contrast intentional */}
           <button
             onClick={handleCancelEdit}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -283,6 +284,7 @@ export function AIFeedbackButton({
         </div>
 
         {aiConfidence !== undefined && (
+          {/* Decorative - low contrast intentional for AI confidence metadata */}
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <span>AI Confidence:</span>
             <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -320,6 +322,7 @@ export function AIFeedbackButton({
           </button>
         </div>
 
+        {/* Decorative - low contrast intentional for helper text */}
         <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
           Your feedback helps improve AI accuracy
         </p>

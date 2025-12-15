@@ -258,6 +258,7 @@ function LoginContent() {
             )}
 
             {/* Security Note */}
+            {/* Decorative - low contrast intentional for security notice helper text */}
             <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg p-3 mb-6">
               <svg
                 className="w-4 h-4 text-green-500 flex-shrink-0"
@@ -498,6 +499,7 @@ function LoginContent() {
                   disabled={isLoading}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
                 />
+                {/* Decorative - low contrast intentional for input helper text */}
                 <p className="text-xs text-gray-500 mt-1">
                   Incluye código de país (ej: +52 para México)
                 </p>
@@ -586,6 +588,7 @@ function LoginContent() {
                   maxLength={6}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 text-center text-2xl tracking-widest font-mono"
                 />
+                {/* Decorative - low contrast intentional for OTP expiry helper text */}
                 <p className="text-xs text-gray-500 mt-1 text-center">
                   Válido por 10 minutos
                 </p>
@@ -698,6 +701,7 @@ function LoginContent() {
               Contáctanos
             </a>
           </p>
+          {/* Decorative - low contrast intentional for terms disclaimer */}
           <p className="text-xs text-gray-500 mt-4">
             Al iniciar sesión, aceptas nuestros{' '}
             <a href="/terms" className="text-green-600 hover:underline">

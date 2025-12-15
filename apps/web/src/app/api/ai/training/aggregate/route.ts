@@ -14,6 +14,7 @@ import {
   aggregateCorrectionsRange,
 } from '@/lib/jobs/correction-aggregation';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,11 @@ export const POST = createProtectedRoute(
 
       if (type === 'daily') {
         // Run daily aggregation (yesterday's corrections)
-        console.log('⚡ Starting daily correction aggregation...');
+        logger.info({
+          event: 'correction_aggregation_started',
+          type: 'daily',
+          userId: context.user.id,
+        });
         result = await aggregateDailyCorrections();
       } else {
         // Run custom range aggregation
@@ -87,9 +92,12 @@ export const POST = createProtectedRoute(
           );
         }
 
-        console.log('⚡ Starting range correction aggregation:', {
+        logger.info({
+          event: 'correction_aggregation_started',
+          type: 'range',
           startDate: start.toISOString(),
           endDate: end.toISOString(),
+          userId: context.user.id,
         });
 
         result = await aggregateCorrectionsRange(start, end);
@@ -103,7 +111,12 @@ export const POST = createProtectedRoute(
         });
       }
 
-      console.log('✅ Correction aggregation complete:', result.results);
+      logger.info({
+        event: 'correction_aggregation_completed',
+        type,
+        results: result.results,
+        userId: context.user.id,
+      });
 
       return NextResponse.json({
         success: true,
@@ -111,7 +124,12 @@ export const POST = createProtectedRoute(
         data: result.results,
       });
     } catch (error: any) {
-      console.error('Error running correction aggregation:', error);
+      logger.error({
+        event: 'correction_aggregation_failed',
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to run correction aggregation',

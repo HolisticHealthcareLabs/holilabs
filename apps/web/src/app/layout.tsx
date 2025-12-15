@@ -9,11 +9,13 @@ import { SkipLink } from '@/components/SkipLink';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 import { themeInitScript } from '@/scripts/theme-init';
+// Validate environment variables at app startup
+import '@/lib/env';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: 'Holi Labs - AI Medical Scribe',
-  description: 'Professional AI medical scribe with voice detection, SOAP templates, and billing export for LATAM doctors',
+  title: 'Holi Labs - Clinical Co-Pilot',
+  description: 'Clinical co-pilot for modern care teams: AI scribe, decision support, prevention workflows, and interoperable data.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -26,13 +28,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Holi Labs',
-    title: 'Holi Labs - AI Medical Scribe',
-    description: 'Professional AI medical scribe for LATAM doctors',
+    title: 'Holi Labs - Clinical Co-Pilot',
+    description: 'Clinical co-pilot for modern care teams.',
   },
   twitter: {
     card: 'summary',
-    title: 'Holi Labs - AI Medical Scribe',
-    description: 'Professional AI medical scribe for LATAM doctors',
+    title: 'Holi Labs - Clinical Co-Pilot',
+    description: 'Clinical co-pilot for modern care teams.',
   },
 };
 
@@ -50,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Theme initialization script - prevents FOUC */}
         <script

@@ -1,18 +1,19 @@
 /**
  * Drug Interaction Rules
  *
- * Common drug-drug interactions database
- * Adapted from ONCHigh priority interactions and DrugBank
+ * Drug-drug interactions with live RxNav API integration
+ * Falls back to hardcoded database when API unavailable
  *
  * Sources:
- * - NLM RxNav Drug Interaction API
- * - ONCHigh Priority Drug-Drug Interactions
- * - DrugBank
+ * - NLM RxNav Drug Interaction API (PRIMARY - 1000+ interactions)
+ * - ONCHigh Priority Drug-Drug Interactions (FALLBACK)
+ * - DrugBank (FALLBACK)
  *
  * @compliance ONC, FDA
  */
 
 import type { DrugInteraction } from '../types';
+import { rxNavClient } from '@/lib/integrations/rxnav-api';
 
 /**
  * High-priority drug-drug interactions
@@ -214,9 +215,53 @@ export const DRUG_INTERACTIONS: DrugInteraction[] = [
 ];
 
 /**
- * Check for drug-drug interactions
+ * Check for drug-drug interactions (with RxNav API)
+ *
+ * Primary: Uses NLM RxNav API for comprehensive interaction checking (1000+ interactions)
+ * Fallback: Uses hardcoded database if API unavailable
  */
-export function checkDrugInteractions(medications: Array<{ name: string; rxNormCode?: string }>): DrugInteraction[] {
+export async function checkDrugInteractionsWithAPI(
+  medications: Array<{ name: string; rxNormCode?: string }>
+): Promise<DrugInteraction[]> {
+  const startTime = Date.now();
+
+  try {
+    // Try RxNav API first
+    const interactions = await rxNavClient.checkMultipleInteractions(medications);
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[Drug Interactions] RxNav API returned ${interactions.length} interactions in ${elapsed}ms`);
+
+    // If API returned results, use them
+    if (interactions.length > 0) {
+      return interactions;
+    }
+
+    // If no interactions found, still check hardcoded database as supplement
+    const fallbackInteractions = checkDrugInteractionsHardcoded(medications);
+    if (fallbackInteractions.length > 0) {
+      console.log(`[Drug Interactions] Supplementing with ${fallbackInteractions.length} hardcoded interactions`);
+      return fallbackInteractions;
+    }
+
+    return interactions; // Return empty array from API
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    console.error(`[Drug Interactions] RxNav API failed after ${elapsed}ms:`, error);
+    console.warn('[Drug Interactions] Falling back to hardcoded database');
+
+    // Fallback to hardcoded database
+    return checkDrugInteractionsHardcoded(medications);
+  }
+}
+
+/**
+ * Check for drug-drug interactions (synchronous, hardcoded database)
+ * Used as fallback when RxNav API is unavailable
+ */
+export function checkDrugInteractionsHardcoded(
+  medications: Array<{ name: string; rxNormCode?: string }>
+): DrugInteraction[] {
   const interactions: DrugInteraction[] = [];
 
   // Check all medication pairs
@@ -248,6 +293,16 @@ export function checkDrugInteractions(medications: Array<{ name: string; rxNormC
   }
 
   return interactions;
+}
+
+/**
+ * Check for drug-drug interactions (legacy synchronous version)
+ * @deprecated Use checkDrugInteractionsWithAPI for live data
+ */
+export function checkDrugInteractions(
+  medications: Array<{ name: string; rxNormCode?: string }>
+): DrugInteraction[] {
+  return checkDrugInteractionsHardcoded(medications);
 }
 
 /**

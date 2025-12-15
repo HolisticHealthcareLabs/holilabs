@@ -43,7 +43,7 @@
 import { setBemiContext as _setBemiContext } from '@bemi-db/prisma';
 import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
-import type { Session } from 'next-auth';
+import type { Session } from '@/lib/auth';
 
 /**
  * Bemi context interface
@@ -319,10 +319,9 @@ export function withBemiAudit(
     context?: { params?: any }
   ): Promise<Response> => {
     // Import dynamically to avoid circular dependencies
-    const { getServerSession } = await import('next-auth');
-    const { authOptions } = await import('@/lib/auth');
+    const { getServerSession } = await import('@/lib/auth');
 
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
 
     setBemiContextFromRequest(request, session, {
       requestId: crypto.randomUUID(),

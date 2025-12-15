@@ -58,6 +58,7 @@ export default function PatientSearch({ onSelectPatient, showMostViewed = true }
       {/* Search Bar */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          {/* Decorative - low contrast intentional for visual hierarchy */}
           <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -92,13 +93,14 @@ export default function PatientSearch({ onSelectPatient, showMostViewed = true }
                   <div className="text-3xl">{patient.emoji}</div>
                   <div>
                     <p className="font-semibold text-gray-900">{patient.name}</p>
-                    <p className="text-sm text-gray-500 font-mono">{patient.token}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">{patient.token}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
                   <span className="px-3 py-1 bg-accent/10 text-primary rounded-full text-xs font-medium">
                     {patient.condition}
                   </span>
+                  {/* Decorative - low contrast intentional for meta info */}
                   <span className="text-xs text-gray-400">{patient.viewCount} views</span>
                 </div>
               </div>
@@ -125,7 +127,7 @@ export default function PatientSearch({ onSelectPatient, showMostViewed = true }
                     <div className="text-3xl">{patient.emoji}</div>
                     <div>
                       <p className="font-semibold text-gray-900">{patient.name}</p>
-                      <p className="text-sm text-gray-500 font-mono">{patient.token}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">{patient.token}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
@@ -142,7 +144,8 @@ export default function PatientSearch({ onSelectPatient, showMostViewed = true }
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-gray-600 dark:text-gray-400">
+                {/* Decorative - low contrast intentional for visual hierarchy */}
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>

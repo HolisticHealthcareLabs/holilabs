@@ -220,10 +220,11 @@ export default function FileUploadZone({
               <p className="text-lg font-semibold text-gray-900 mb-1">
                 Drag & drop files here
               </p>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 or click to browse from your computer
               </p>
-              <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+              {/* Decorative - low contrast intentional for helper text */}
+              <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                 <span>Max {maxFiles} files</span>
                 <span>•</span>
                 <span>Up to {(maxSizeBytes / 1024 / 1024).toFixed(0)}MB each</span>
@@ -296,7 +297,8 @@ export default function FileUploadZone({
                       {uploadingFile.file.name}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-gray-500">
+                      {/* Decorative - low contrast intentional for file size metadata */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {formatFileSize(uploadingFile.file.size)}
                       </p>
                       {uploadingFile.status === 'uploading' && (

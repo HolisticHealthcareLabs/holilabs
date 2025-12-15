@@ -134,7 +134,8 @@ export const CredentialUpload: React.FC<CredentialUploadProps> = ({
           <p className="text-sm font-medium text-gray-900 mb-1">
             Drop your credential document here, or click to browse
           </p>
-          <p className="text-xs text-gray-500">
+          {/* Decorative - low contrast intentional for file format helper text */}
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Supports: JPG, PNG, WEBP, PDF (max 10MB)
           </p>
         </div>
@@ -146,7 +147,8 @@ export const CredentialUpload: React.FC<CredentialUploadProps> = ({
               <FileText className="w-8 h-8 text-gray-400" />
               <div>
                 <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                <p className="text-xs text-gray-500">
+                {/* Decorative - low contrast intentional for file size metadata */}
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {(file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>

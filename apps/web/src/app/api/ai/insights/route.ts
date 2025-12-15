@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdssService } from '@/lib/services/cdss.service';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,11 @@ export const GET = createProtectedRoute(
       // Check cache
       const cached = insightsCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION * 1000) {
-        console.log('✅ Returning cached insights for clinician:', clinicianId);
+        logger.info({
+          event: 'ai_insights_cache_hit',
+          clinicianId,
+          cacheAge: Date.now() - cached.timestamp,
+        });
 
         return NextResponse.json({
           success: true,
@@ -51,7 +56,10 @@ export const GET = createProtectedRoute(
       }
 
       // Generate fresh insights
-      console.log('🧠 Generating CDSS insights for clinician:', clinicianId);
+      logger.info({
+        event: 'ai_insights_generation_started',
+        clinicianId,
+      });
 
       const insights = await cdssService.generateInsights(clinicianId);
 
@@ -85,11 +93,12 @@ export const GET = createProtectedRoute(
         timestamp: Date.now(),
       });
 
-      console.log('✅ CDSS insights generated:', {
-        total: insights.length,
-        critical: priorityCounts.critical,
-        high: priorityCounts.high,
+      logger.info({
+        event: 'ai_insights_generation_completed',
         clinicianId,
+        totalInsights: insights.length,
+        criticalCount: priorityCounts.critical,
+        highCount: priorityCounts.high,
       });
 
       return NextResponse.json({
@@ -103,7 +112,12 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error generating AI insights:', error);
+      logger.error({
+        event: 'ai_insights_generation_failed',
+        clinicianId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to generate AI insights',
@@ -128,14 +142,22 @@ export const POST = createProtectedRoute(
       // Clear cache
       insightsCache.delete(cacheKey);
 
-      console.log('🔄 Cache cleared for clinician:', clinicianId);
+      logger.info({
+        event: 'ai_insights_cache_cleared',
+        clinicianId,
+      });
 
       return NextResponse.json({
         success: true,
         message: 'Insights cache cleared. Next GET request will generate fresh insights.',
       });
     } catch (error: any) {
-      console.error('Error clearing insights cache:', error);
+      logger.error({
+        event: 'ai_insights_cache_clear_failed',
+        clinicianId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to clear cache',

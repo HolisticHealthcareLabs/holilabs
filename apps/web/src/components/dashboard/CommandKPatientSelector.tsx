@@ -165,7 +165,7 @@ export function CommandKPatientSelector({ onSelect }: CommandKPatientSelectorPro
               {/* Results */}
               <div className="max-h-96 overflow-y-auto">
                 {filteredPatients.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <div className="p-8 text-center text-gray-600 dark:text-gray-400">
                     No patients found
                   </div>
                 ) : (
@@ -186,6 +186,7 @@ export function CommandKPatientSelector({ onSelect }: CommandKPatientSelectorPro
                       <div className="font-semibold text-gray-900 dark:text-white">
                         {patient.firstName} {patient.lastName}
                       </div>
+                      {/* Decorative - low contrast intentional for MRN identifier */}
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         MRN: {patient.mrn}
                       </div>

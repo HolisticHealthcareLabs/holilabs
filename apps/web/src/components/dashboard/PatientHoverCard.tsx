@@ -125,7 +125,8 @@ export default function PatientHoverCard({ patient, children }: PatientHoverCard
             {/* Active Conditions */}
             {patient.conditions && patient.conditions.length > 0 && (
               <div className="mb-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                {/* Decorative - low contrast intentional for section header */}
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                   Active Conditions
                 </p>
                 <div className="flex flex-wrap gap-1">

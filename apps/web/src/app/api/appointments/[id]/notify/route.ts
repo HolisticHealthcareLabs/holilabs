@@ -4,23 +4,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-// FIXME: Old rate limiting API - needs refactor to use checkRateLimit from @/lib/rate-limit
-// import { rateLimit } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { notifyAppointmentReminder } from '@/lib/notifications/whatsapp';
 import { sendEmail } from '@/lib/notifications/email';
 import { sendSMS } from '@/lib/notifications/sms';
 import { sendPushNotification } from '@/lib/notifications/send-push';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-// FIXME: Old rate limiting - commented out for now
-// const limiter = rateLimit({
-//   interval: 60 * 1000,
-//   uniqueTokenPerInterval: 500,
-// });
+import { logger } from '@/lib/logger';
 
 type NotificationChannel = 'whatsapp' | 'email' | 'sms' | 'push' | 'in-app' | 'all';
 type NotificationType = 'payment_reminder' | 'appointment_reminder' | 'followup';
@@ -34,8 +28,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 20, 'APPOINTMENT_NOTIFY');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -149,7 +146,14 @@ export async function POST(
           results.push({ channel: 'push', success: pushResult.success });
         }
       } catch (error: any) {
-        console.error(`Error sending via ${ch}:`, error);
+        logger.error({
+          event: 'appointment_notification_channel_failed',
+          appointmentId,
+          channel: ch,
+          userId: (session.user as any).id,
+          error: error.message,
+          stack: error.stack,
+        });
         results.push({ channel: ch, success: false, error: error.message });
       }
     }
@@ -187,7 +191,12 @@ export async function POST(
       message: 'Notifications sent',
     });
   } catch (error: any) {
-    console.error('Error sending notifications:', error);
+    logger.error({
+      event: 'appointment_notifications_failed',
+      appointmentId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to send notifications' },
       { status: 500 }

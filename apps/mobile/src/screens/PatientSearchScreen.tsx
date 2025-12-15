@@ -30,7 +30,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { Badge } from '../components/ui/Badge';
-import { usePatientStore } from '../store/patientStore';
+import { usePatientStore } from '../stores/patientStore';
 import { PatientsStackScreenProps } from '../navigation/types';
 import { useAccessibility, getAccessibilityProps } from '../hooks/useAccessibility';
 
@@ -73,7 +73,7 @@ export const PatientSearchScreen: React.FC<
   const [showHistory, setShowHistory] = useState(false);
 
   const searchInputRef = useRef<TextInput>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const styles = createStyles(theme);
 
@@ -343,25 +343,46 @@ export const PatientSearchScreen: React.FC<
         <Text style={styles.activeFiltersLabel}>Active Filters:</Text>
         <View style={styles.filterChips}>
           {filters.gender && filters.gender !== 'all' && (
-            <Badge
-              label={`Gender: ${filters.gender}`}
-              variant="info"
+            <TouchableOpacity
               onPress={() => setFilters({ ...filters, gender: 'all' })}
-            />
+              {...getAccessibilityProps(`Remove gender filter: ${filters.gender}`, {
+                role: 'button',
+                hint: 'Clears this filter',
+              })}
+            >
+              <Badge
+                label={`Gender: ${filters.gender}`}
+                variant="info"
+              />
+            </TouchableOpacity>
           )}
           {filters.ageRange && (filters.ageRange.min || filters.ageRange.max) && (
-            <Badge
-              label={`Age: ${filters.ageRange.min || 0}-${filters.ageRange.max || '∞'}`}
-              variant="info"
+            <TouchableOpacity
               onPress={() => setFilters({ ...filters, ageRange: undefined })}
-            />
+              {...getAccessibilityProps(`Remove age filter: ${filters.ageRange.min || 0}-${filters.ageRange.max || '∞'}`, {
+                role: 'button',
+                hint: 'Clears this filter',
+              })}
+            >
+              <Badge
+                label={`Age: ${filters.ageRange.min || 0}-${filters.ageRange.max || '∞'}`}
+                variant="info"
+              />
+            </TouchableOpacity>
           )}
           {filters.lastVisit && filters.lastVisit !== 'all' && (
-            <Badge
-              label={`Last Visit: ${filters.lastVisit}`}
-              variant="info"
+            <TouchableOpacity
               onPress={() => setFilters({ ...filters, lastVisit: 'all' })}
-            />
+              {...getAccessibilityProps(`Remove last visit filter: ${filters.lastVisit}`, {
+                role: 'button',
+                hint: 'Clears this filter',
+              })}
+            >
+              <Badge
+                label={`Last Visit: ${filters.lastVisit}`}
+                variant="info"
+              />
+            </TouchableOpacity>
           )}
           <TouchableOpacity onPress={clearFilters} style={styles.clearFiltersButton}>
             <Text style={styles.clearFiltersText}>Clear All</Text>
@@ -471,9 +492,11 @@ export const PatientSearchScreen: React.FC<
     );
   };
 
-  const renderFilterSheet = () => (
+  const renderFilterSheet = () => {
+    if (!showFilters) return null;
+
+    return (
     <BottomSheet
-      visible={showFilters}
       onClose={() => setShowFilters(false)}
       title="Filter Patients"
     >
@@ -604,7 +627,8 @@ export const PatientSearchScreen: React.FC<
         </View>
       </View>
     </BottomSheet>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

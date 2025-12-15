@@ -378,6 +378,7 @@ export default function PatientFormPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-gray-900">{formData.template.title}</h1>
+            {/* Decorative - low contrast intentional for patient info subheader and autosave status */}
             <p className="text-sm text-gray-500">Para: {formData.patient.firstName} {formData.patient.lastName}</p>
           </div>
           <div className="text-right">
@@ -410,6 +411,7 @@ export default function PatientFormPage() {
               )}
 
               {/* Question Number */}
+              {/* Decorative - low contrast intentional for question number metadata */}
               <div className="text-sm text-gray-500 mb-2">
                 Pregunta {currentSectionIndex + 1}.{currentFieldIndex + 1}
               </div>
@@ -462,6 +464,7 @@ export default function PatientFormPage() {
 
           {/* Helper Text */}
           <div className="mt-6 text-center">
+            {/* Decorative - low contrast intentional for keyboard shortcut helper text */}
             <p className="text-sm text-gray-500">
               Presiona <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">Enter</kbd> para continuar
             </p>

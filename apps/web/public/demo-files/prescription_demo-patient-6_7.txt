@@ -1,0 +1,38 @@
+
+RECETA MÉDICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Lucía Silva
+Fecha de Nacimiento: 12/12/1948
+Dirección: São Paulo
+
+MEDICAMENTO PRESCRITO
+Nombre: Levothyroxine
+Dosis: 75mcg
+Frecuencia: 1x daily
+Vía de Administración: Oral
+Duración del Tratamiento: 30 días
+
+INDICACIONES
+
+
+
+
+
+Tomar en ayunas, 30 minutos antes del desayuno.
+
+
+RECOMENDACIONES
+• No suspender el tratamiento sin consultar al médico
+• Reportar efectos adversos inmediatamente
+• Mantener en lugar fresco y seco
+
+MÉDICO PRESCRIPTOR
+Nombre: Dr. Carlos Martínez
+Cédula Profesional: 8007404
+Teléfono: +52 55 1666 3332
+
+Fecha de Emisión: 28 de noviembre de 2025
+Vigencia: 30 días
+
+Esta receta es válida por única vez. No se aceptan alteraciones.

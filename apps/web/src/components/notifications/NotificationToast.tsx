@@ -116,6 +116,7 @@ export default function NotificationToast({ toasts, onDismiss }: NotificationToa
                   </button>
                 )}
               </div>
+              {/* Decorative - low contrast intentional for close button icon */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();

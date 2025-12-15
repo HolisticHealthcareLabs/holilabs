@@ -197,7 +197,7 @@ export function ContextMenu({
                         <CheckIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       )}
 
-                      {/* Shortcut */}
+                      {/* Shortcut - Decorative - low contrast intentional for keyboard shortcut */}
                       {item.shortcut && !item.submenu && (
                         <kbd className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                           {formatShortcut(item.shortcut)}

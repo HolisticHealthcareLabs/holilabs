@@ -29,7 +29,11 @@ export type OnboardingStackParamList = {
   };
   Complete: {
     role: 'doctor' | 'nurse' | 'admin';
-    permissions: Record<string, boolean>;
+    permissions?: {
+      microphone: boolean;
+      notifications: boolean;
+      biometric: boolean;
+    };
   };
 };
 

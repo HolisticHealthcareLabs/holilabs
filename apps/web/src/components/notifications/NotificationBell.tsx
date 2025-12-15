@@ -154,12 +154,13 @@ export default function NotificationBell({
               {notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    {/* Decorative - low contrast intentional for visual hierarchy */}
                     <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
                   </div>
                   <p className="text-gray-600 font-medium">No notifications</p>
-                  <p className="text-sm text-gray-500 mt-1">You're all caught up!</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">You're all caught up!</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
@@ -191,7 +192,8 @@ export default function NotificationBell({
                             )}
                           </div>
                           <p className="text-sm text-gray-600 mb-1">{notification.message}</p>
-                          <p className="text-xs text-gray-500">
+                          {/* Decorative - low contrast intentional for timestamp meta info */}
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
                           </p>
                         </div>

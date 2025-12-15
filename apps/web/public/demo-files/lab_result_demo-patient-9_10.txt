@@ -1,0 +1,42 @@
+
+RESULTADOS DE LABORATORIO
+
+PACIENTE: Rafael Castillo
+FECHA DE NACIMIENTO: 12/12/1968
+FECHA DE RECOLECCIÓN: 24 de agosto de 2025, 08:56 p.m.
+
+ESTUDIO: Perfil Lipídico
+
+RESULTADOS:
+
+Colesterol Total:
+  Valor: 118.1 mg/dL
+  Rango de Referencia: <200
+  Estado: NORMAL
+
+
+LDL:
+  Valor: 3.1 mg/dL
+  Rango de Referencia: <100
+  Estado: NORMAL
+
+
+HDL:
+  Valor: 57.7 mg/dL
+  Rango de Referencia: >40 (M) / >50 (F)
+  Estado: NORMAL
+
+
+Triglicéridos:
+  Valor: 55.8 mg/dL
+  Rango de Referencia: <150
+  Estado: NORMAL
+
+
+OBSERVACIONES:
+Todos los parámetros dentro de rangos normales.
+
+MÉDICO TRATANTE: Dr. Elena Sánchez
+LABORATORIO: LabMéxico - Certificación ISO 15189
+
+Este reporte es confidencial y está destinado únicamente para el paciente y su médico tratante.

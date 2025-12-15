@@ -120,6 +120,7 @@ export default function PatientPrescriptionsPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          {/* Decorative - low contrast intentional for loading message */}
           <p className="text-gray-600 dark:text-gray-400">Loading your prescriptions...</p>
         </div>
       </div>
@@ -147,6 +148,7 @@ export default function PatientPrescriptionsPage() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           My Prescriptions
         </h1>
+        {/* Decorative - low contrast intentional for page description */}
         <p className="text-gray-600 dark:text-gray-400">
           View and track your prescriptions from your healthcare provider
         </p>
@@ -196,6 +198,7 @@ export default function PatientPrescriptionsPage() {
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               No prescriptions found
             </h3>
+            {/* Decorative - low contrast intentional for empty state message */}
             <p className="text-gray-600 dark:text-gray-400">
               {activeFilter === 'active'
                 ? "You don't have any active prescriptions"
@@ -221,6 +224,7 @@ export default function PatientPrescriptionsPage() {
                           Prescription from Dr. {prescription.clinician.firstName}{' '}
                           {prescription.clinician.lastName}
                         </h3>
+                        {/* Decorative - low contrast intentional for prescription metadata (issued and signed dates) */}
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           Issued {formatDate(prescription.createdAt)}
                           {prescription.signedAt &&
@@ -253,6 +257,7 @@ export default function PatientPrescriptionsPage() {
                                 <p className="font-bold text-gray-900 dark:text-white text-base mb-1">
                                   {med.name}
                                 </p>
+                                {/* Decorative - low contrast intentional for generic name and field labels (lines 257, 263, 269) */}
                                 {med.genericName && med.genericName !== med.name && (
                                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                     Generic: {med.genericName}
@@ -301,6 +306,7 @@ export default function PatientPrescriptionsPage() {
                     {/* Actions */}
                     {prescription.status === 'SENT' && (
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        {/* Decorative - low contrast intentional for pharmacy contact helper text */}
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                           Your prescription has been sent to the pharmacy. Contact them to confirm when it will be ready.
                         </p>

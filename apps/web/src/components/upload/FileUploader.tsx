@@ -155,7 +155,7 @@ export default function FileUploader({
               className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
             />
           </div>
-          <p className="text-sm text-gray-600">{progress}%</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{progress}%</p>
         </motion.div>
       </div>
     );
@@ -238,10 +238,10 @@ export default function FileUploader({
           <h3 className="text-xl font-bold text-gray-900 mb-2">
             {isDragging ? 'Suelta el archivo aquí' : 'Arrastra y suelta tu archivo'}
           </h3>
-          <p className="text-gray-600 mb-4">o haz clic para seleccionar</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">o haz clic para seleccionar</p>
 
-          {/* Info */}
-          <div className="text-sm text-gray-500">
+          {/* Decorative - low contrast intentional for helper text */}
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             <p>Tipos permitidos: PDF, Imágenes, Word</p>
             <p>Tamaño máximo: {maxSize}MB</p>
           </div>

@@ -14,6 +14,7 @@ export const colors = {
   light: {
     background: '#FFFFFF',
     surface: '#F9FAFB',
+    surfaceSecondary: '#F3F4F6',
     surfaceVariant: '#F3F4F6',
     text: '#111827',
     textSecondary: '#6B7280',
@@ -28,6 +29,7 @@ export const colors = {
   dark: {
     background: '#0F172A',
     surface: '#1E293B',
+    surfaceSecondary: '#334155',
     surfaceVariant: '#334155',
     text: '#F8FAFC',
     textSecondary: '#CBD5E1',
@@ -125,7 +127,20 @@ export const shadows = {
 };
 
 export type Theme = {
-  colors: typeof colors;
+  colors: typeof colors & {
+    background: string;
+    surface: string;
+    surfaceSecondary: string;
+    surfaceVariant: string;
+    text: string;
+    textSecondary: string;
+    textTertiary: string;
+    border: string;
+    borderFocused: string;
+    disabled: string;
+    overlay: string;
+    card?: string;
+  };
   spacing: typeof spacing;
   borderRadius: typeof borderRadius;
   typography: typeof typography;
@@ -138,6 +153,7 @@ export const lightTheme: Theme = {
     ...colors,
     background: colors.light.background,
     surface: colors.light.surface,
+    surfaceSecondary: colors.light.surfaceSecondary,
     surfaceVariant: colors.light.surfaceVariant,
     text: colors.light.text,
     textSecondary: colors.light.textSecondary,
@@ -168,6 +184,7 @@ export const darkTheme: Theme = {
     ...colors,
     background: colors.dark.background,
     surface: colors.dark.surface,
+    surfaceSecondary: colors.dark.surfaceSecondary,
     surfaceVariant: colors.dark.surfaceVariant,
     text: colors.dark.text,
     textSecondary: colors.dark.textSecondary,

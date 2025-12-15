@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getMinutesLate, getDoseStatus } from '@/lib/mar/schedule-generator';
 import { logAuditEvent } from '@/lib/audit';
+import { logger } from '@/lib/logger';
 
 /**
  * MAR Administration API
@@ -129,10 +130,12 @@ export async function POST(request: NextRequest) {
     // If adverse reaction, create urgent notification
     if (adverseReaction) {
       // TODO: Send urgent notification to physician and pharmacy
-      console.warn('ADVERSE REACTION REPORTED:', {
-        patient: administration.patient.mrn,
-        medication: administration.medication.name,
-        reaction: reactionDetails,
+      logger.warn({
+        event: 'mar_adverse_reaction_reported',
+        patientMRN: administration.patient.mrn,
+        medicationName: administration.medication.name,
+        reactionDetails,
+        administrationId: administration.id,
       });
     }
 
@@ -142,7 +145,11 @@ export async function POST(request: NextRequest) {
       message: getAdministrationMessage(status, administration.medication.name),
     });
   } catch (error) {
-    console.error('Medication administration error:', error);
+    logger.error({
+      event: 'mar_administration_failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to record administration', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -241,7 +248,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Fetch MAR error:', error);
+    logger.error({
+      event: 'mar_fetch_failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json({ error: 'Failed to fetch MAR' }, { status: 500 });
   }
 }

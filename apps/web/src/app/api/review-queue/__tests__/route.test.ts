@@ -28,6 +28,7 @@ describe('GET /api/review-queue', () => {
     user: {
       id: 'clinician-1',
       email: 'dr.smith@holilabs.com',
+      role: 'clinician',
     },
   };
 
@@ -168,6 +169,7 @@ describe('POST /api/review-queue', () => {
     user: {
       id: 'clinician-1',
       email: 'dr.smith@holilabs.com',
+      role: 'clinician',
     },
   };
 

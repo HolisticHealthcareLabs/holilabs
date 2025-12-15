@@ -20,6 +20,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 interface SOAPNote {
   id: string;
@@ -121,7 +122,7 @@ export default function MedicalRecordsPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching records:', err);
+      logger.error('Error fetching records:', err);
     } finally {
       setLoading(false);
     }
@@ -171,6 +172,7 @@ export default function MedicalRecordsPage() {
           <div className="flex flex-col md:flex-row gap-4 mb-4">
             {/* Search */}
             <div className="flex-1 relative">
+              {/* Decorative - low contrast intentional for search icon */}
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
@@ -285,6 +287,7 @@ export default function MedicalRecordsPage() {
           </div>
         ) : records.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            {/* Decorative - low contrast intentional for empty state icon */}
             <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No se encontraron registros
@@ -343,6 +346,7 @@ export default function MedicalRecordsPage() {
 
                   {/* Arrow Icon */}
                   <div className="ml-4">
+                    {/* Decorative - low contrast intentional for navigation arrow icon */}
                     <ChevronRightIcon className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                   </div>
                 </div>

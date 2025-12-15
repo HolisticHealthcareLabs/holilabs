@@ -12,11 +12,10 @@ import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import LanguageSelector from '@/components/LanguageSelector';
 import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
-import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-import ThemeToggle from '@/components/ThemeToggle';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface NavItem {
   name: string;
@@ -36,10 +35,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false); // Disabled by default
+  const [isInitialLoad, setIsInitialLoad] = useState(false);
   const { locale, t } = useLanguage();
-  const { theme } = useTheme();
 
   // Session timeout (15 min idle for HIPAA compliance)
   const { showWarning, timeRemaining, extendSession, logout } = useSessionTimeout({
@@ -136,7 +134,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <LoadingScreen onComplete={handleLoadingComplete} />
       )}
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Mobile Sidebar Backdrop */}
       {sidebarOpen && (
         <div
@@ -147,7 +145,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 shadow-sm transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -156,7 +154,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
             <Link href="/dashboard" className="flex items-center gap-2.5">
               <Image
-                src={theme === 'dark' ? "/logos/Logo 1_Dark (1).svg" : "/logos/Logo 1_Light.svg"}
+                src="/logos/Logo 1_Light.svg"
                 alt="Holi Labs"
                 width={32}
                 height={32}
@@ -196,19 +194,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 >
                   {/* Circular Gradient Tile */}
                   <div
-                    className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 ${
-                      item.gradient ? `bg-gradient-to-br ${item.gradient}` : 'bg-gradient-to-br from-gray-400 to-gray-600'
-                    } ${
-                      isActive
-                        ? 'scale-110 ring-4 ring-white/50 dark:ring-gray-700/50'
-                        : ''
-                    } ${
-                      item.hoverGradient
-                        ? `hover:bg-gradient-to-br hover:${item.hoverGradient}`
-                        : ''
-                    } hover:scale-110 hover:shadow-xl ${
-                      item.shadowColor ? `hover:shadow-${item.shadowColor}` : 'hover:shadow-gray-500/50'
-                    } dark:hover:shadow-${item.shadowColor?.replace('500', '400')}/40`}
+                    className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 backdrop-blur-sm
+                      ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
+                      ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
+                      ${item.name === 'Calendar' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}
+                      ${item.name === 'Messages' ? 'bg-gradient-to-br from-sky-400/70 to-cyan-500/70 hover:from-sky-500 hover:to-cyan-600 hover:shadow-2xl hover:shadow-sky-400/50' : ''}
+                      ${item.name === 'Clinical Suite' ? 'bg-gradient-to-br from-fuchsia-400/70 to-pink-500/70 hover:from-fuchsia-500 hover:to-pink-600 hover:shadow-2xl hover:shadow-fuchsia-400/50' : ''}
+                      ${item.name === 'Clinical Toolkit' ? 'bg-gradient-to-br from-orange-400/70 to-amber-500/70 hover:from-orange-500 hover:to-amber-600 hover:shadow-2xl hover:shadow-orange-400/50' : ''}
+                      ${!['Dashboard', 'Patients', 'Calendar', 'Messages', 'Clinical Suite', 'Clinical Toolkit'].includes(item.name) ? 'bg-gradient-to-br from-gray-300/70 to-gray-400/70' : ''}
+                      ${isActive ? 'scale-110 ring-4 ring-white/60 shadow-2xl' : 'shadow-md'}
+                      hover:scale-110 hover:ring-4 hover:ring-white/40`}
                   >
                     <div className="relative w-7 h-7 transition-transform duration-300 group-hover:scale-125">
                       <Image
@@ -470,6 +465,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{user?.email}</p>
               </div>
+              {/* Decorative - low contrast intentional for dropdown chevron icon */}
               <svg
                 className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
                 fill="none"
@@ -486,7 +482,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="lg:pl-64">
         {/* Top Mobile Header */}
-        <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+        <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -498,7 +494,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </button>
             <div className="flex items-center gap-2.5">
               <Image
-                src={theme === 'dark' ? "/logos/Logo 1_Dark (1).svg" : "/logos/Logo 1_Light.svg"}
+                src="/logos/Logo 1_Light.svg"
                 alt="Holi Labs"
                 width={32}
                 height={32}
@@ -523,7 +519,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden lg:block bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
+        <header className="hidden lg:block bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30">
           <div className="flex items-center justify-end h-16 px-6 gap-4">
             <LanguageSelector currentLocale={locale} />
             <GlobalSearch />
@@ -559,10 +555,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <DashboardContent>{children}</DashboardContent>
-      </LanguageProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </LanguageProvider>
   );
 }

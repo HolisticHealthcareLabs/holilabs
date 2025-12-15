@@ -120,7 +120,7 @@ export default function PainHistoryTab({
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
           <div className="text-6xl mb-4">😣</div>
           <h3 className="text-xl font-bold text-gray-700 mb-2">Sin evaluaciones de dolor</h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             No hay evaluaciones de dolor registradas para este paciente.
           </p>
           <button
@@ -317,7 +317,8 @@ export default function PainHistoryTab({
                         )}
 
                         {/* Metadata */}
-                        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-200">
+                        {/* Decorative - low contrast intentional for metadata timestamps */}
+                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-700">
                           <span>Evaluado por ID: {assessment.assessedBy}</span>
                           <span>ID de Evaluación: {assessment.id.slice(0, 12)}...</span>
                         </div>

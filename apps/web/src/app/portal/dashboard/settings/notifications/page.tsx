@@ -26,6 +26,7 @@ import {
   isPushSubscribed,
   getVapidPublicKey,
 } from '@/lib/notifications/web-push-client';
+import { logger } from '@/lib/logger';
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
@@ -114,7 +115,7 @@ export default function NotificationSettingsPage() {
         alert('Permiso de notificaciones denegado');
       }
     } catch (error) {
-      console.error('Error enabling push:', error);
+      logger.error('Error enabling push:', error);
       alert('Error al habilitar notificaciones push');
     } finally {
       setLoading(false);
@@ -133,7 +134,7 @@ export default function NotificationSettingsPage() {
         alert('Error al deshabilitar notificaciones push');
       }
     } catch (error) {
-      console.error('Error disabling push:', error);
+      logger.error('Error disabling push:', error);
       alert('Error al deshabilitar notificaciones push');
     } finally {
       setLoading(false);
@@ -155,7 +156,7 @@ export default function NotificationSettingsPage() {
         alert('Error al enviar notificación de prueba');
       }
     } catch (error) {
-      console.error('Error sending test notification:', error);
+      logger.error('Error sending test notification:', error);
       alert('Error al enviar notificación de prueba');
     } finally {
       setLoading(false);
@@ -278,6 +279,7 @@ export default function NotificationSettingsPage() {
                 {pushEnabled ? (
                   <CheckCircleIcon className="h-6 w-6 text-green-600" />
                 ) : (
+                  // Decorative - low contrast intentional for status icon
                   <XCircleIcon className="h-6 w-6 text-gray-400" />
                 )}
               </div>

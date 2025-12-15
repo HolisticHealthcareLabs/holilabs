@@ -150,7 +150,7 @@ export function CookieConsentBanner() {
               </button>
             </div>
 
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               We use cookies to improve your experience. You can choose which cookies you want to accept.
               For more information, see our{' '}
               <Link href="/legal/cookie-policy" className="text-blue-600 hover:underline">
@@ -164,10 +164,11 @@ export function CookieConsentBanner() {
                 <div className="flex justify-between items-center mb-2">
                   <div>
                     <h3 className="font-semibold text-gray-900">Essential Cookies</h3>
-                    <p className="text-sm text-gray-600">Required for the platform to function</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Required for the platform to function</p>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-2">Always Active</span>
+                    {/* Decorative - low contrast intentional for status text */}
+                    <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Always Active</span>
                     <input
                       type="checkbox"
                       checked={true}
@@ -176,7 +177,8 @@ export function CookieConsentBanner() {
                     />
                   </div>
                 </div>
-                <p className="text-sm text-gray-500">
+                {/* Decorative - low contrast intentional for helper text */}
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   These cookies are necessary for authentication, security, and core platform functionality.
                   They cannot be disabled.
                 </p>
@@ -187,7 +189,7 @@ export function CookieConsentBanner() {
                 <div className="flex justify-between items-center mb-2">
                   <div>
                     <h3 className="font-semibold text-gray-900">Functional Cookies</h3>
-                    <p className="text-sm text-gray-600">Remember your preferences</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Remember your preferences</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -199,7 +201,8 @@ export function CookieConsentBanner() {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
-                <p className="text-sm text-gray-500">
+                {/* Decorative - low contrast intentional for helper text */}
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   These cookies remember your language preference, theme (dark/light mode), and other settings.
                 </p>
               </div>
@@ -209,7 +212,7 @@ export function CookieConsentBanner() {
                 <div className="flex justify-between items-center mb-2">
                   <div>
                     <h3 className="font-semibold text-gray-900">Analytics Cookies</h3>
-                    <p className="text-sm text-gray-600">Help us improve the platform</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Help us improve the platform</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -221,7 +224,8 @@ export function CookieConsentBanner() {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
-                <p className="text-sm text-gray-500">
+                {/* Decorative - low contrast intentional for helper text */}
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   These cookies help us understand how users interact with the platform using anonymized data.
                   No PHI is tracked.
                 </p>
@@ -232,7 +236,7 @@ export function CookieConsentBanner() {
                 <div className="flex justify-between items-center mb-2">
                   <div>
                     <h3 className="font-semibold text-gray-900">Marketing Cookies</h3>
-                    <p className="text-sm text-gray-600">Not currently used</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Not currently used</p>
                   </div>
                   <input
                     type="checkbox"
@@ -241,7 +245,8 @@ export function CookieConsentBanner() {
                     className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded cursor-not-allowed"
                   />
                 </div>
-                <p className="text-sm text-gray-500">
+                {/* Decorative - low contrast intentional for helper text */}
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   We do not use marketing or advertising cookies. This option is reserved for future use.
                 </p>
               </div>

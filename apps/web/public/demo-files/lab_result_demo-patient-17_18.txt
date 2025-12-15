@@ -1,0 +1,42 @@
+
+RESULTADOS DE LABORATORIO
+
+PACIENTE: Rafael Flores
+FECHA DE NACIMIENTO: 12/12/1966
+FECHA DE RECOLECCIÓN: 3 de noviembre de 2025, 08:56 p.m.
+
+ESTUDIO: Perfil Lipídico
+
+RESULTADOS:
+
+Colesterol Total:
+  Valor: 34.1 mg/dL
+  Rango de Referencia: <200
+  Estado: NORMAL
+
+
+LDL:
+  Valor: 13.5 mg/dL
+  Rango de Referencia: <100
+  Estado: NORMAL
+
+
+HDL:
+  Valor: 48.1 mg/dL
+  Rango de Referencia: >40 (M) / >50 (F)
+  Estado: NORMAL
+
+
+Triglicéridos:
+  Valor: 172.2 mg/dL
+  Rango de Referencia: <150
+  Estado: ANORMAL
+
+
+OBSERVACIONES:
+Se detectan valores fuera del rango normal. Se recomienda consulta con especialista.
+
+MÉDICO TRATANTE: Dr. Ana López
+LABORATORIO: LabMéxico - Certificación ISO 15189
+
+Este reporte es confidencial y está destinado únicamente para el paciente y su médico tratante.

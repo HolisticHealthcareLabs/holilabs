@@ -14,6 +14,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentPatient } from '@/lib/auth/patient-session';
 import LabResultsClient from './LabResultsClient';
+import { logger } from '@/lib/logger';
 
 async function fetchLabResults(patientId: string) {
   try {
@@ -32,7 +33,7 @@ async function fetchLabResults(patientId: string) {
     const data = await response.json();
     return data.results || [];
   } catch (error) {
-    console.error('Error fetching lab results:', error);
+    logger.error('Error fetching lab results:', error);
     return [];
   }
 }

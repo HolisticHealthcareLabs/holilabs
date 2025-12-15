@@ -46,19 +46,20 @@ export function AccessLogViewer({ patientId }: { patientId: string }) {
       </p>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-500">Loading access log...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading access log...</div>
       ) : logs.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No access records found</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">No access records found</div>
       ) : (
         <>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Accessed By</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                  {/* Section headers - low contrast intentional */}
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date & Time</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Accessed By</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -69,8 +70,9 @@ export function AccessLogViewer({ patientId }: { patientId: string }) {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
                       {log.accessedBy}
+                      {/* Specialty metadata - low contrast intentional */}
                       {log.specialty && (
-                        <span className="text-xs text-gray-500 block">{log.specialty}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 block">{log.specialty}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">{log.role}</td>

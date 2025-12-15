@@ -1,0 +1,36 @@
+
+FORMULARIO DE HISTORIA CLÍNICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: María Ortiz
+Fecha de Nacimiento: 12 de diciembre de 1976
+Género: Femenino
+Teléfono: +55 11 31858-8645
+Email: maría.ortiz@demo.com
+
+ANTECEDENTES MÉDICOS
+Condiciones Actuales:
+
+
+Medicamentos Actuales:
+
+
+ALERGIAS
+Sin alergias conocidas
+
+ANTECEDENTES FAMILIARES
+• Diabetes tipo 2 (padre)
+• Hipertensión (madre)
+
+HÁBITOS
+Tabaquismo: No
+Alcohol: Ocasional (1-2 copas/semana)
+Ejercicio: Sedentario
+
+VACUNACIÓN
+✓ Influenza (2025)
+✓ COVID-19 (Refuerzo 2024)
+
+
+Fecha de elaboración: 7/6/2025
+Elaborado por: Dr. Elena Sánchez

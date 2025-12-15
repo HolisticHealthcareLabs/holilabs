@@ -14,7 +14,11 @@ import { MeiliSearch, Index } from 'meilisearch';
 // Initialize Meilisearch client
 const getMeiliClient = () => {
   const host = process.env.MEILI_HOST || 'http://localhost:7700';
-  const masterKey = process.env.MEILI_MASTER_KEY || 'development_master_key_change_in_prod';
+  const masterKey = process.env.MEILI_MASTER_KEY;
+
+  if (!masterKey) {
+    throw new Error('MEILI_MASTER_KEY environment variable is required for Meilisearch authentication');
+  }
 
   return new MeiliSearch({
     host,

@@ -32,15 +32,15 @@ export async function GET(request: NextRequest) {
     const medications = await prisma.medication.findMany({
       where,
       include: {
-        // TODO: prescriber relation doesn't exist in Prisma schema yet
-        // prescriber: {
-        //   select: {
-        //     id: true,
-        //     firstName: true,
-        //     lastName: true,
-        //     specialty: true,
-        //   },
-        // },
+        prescriber: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
+            profilePictureUrl: true,
+          },
+        },
         // TODO: prescription relation doesn't exist in Prisma schema yet
         // prescription: {
         //   select: {

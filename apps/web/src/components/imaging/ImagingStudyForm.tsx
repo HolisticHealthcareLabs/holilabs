@@ -453,7 +453,8 @@ export default function ImagingStudyForm({ patientId, onSuccess, onCancel }: Ima
                     </button>
                   </div>
                 ))}
-                <p className="text-xs text-gray-500">{formData.imageUrls.length} imagen(es) agregada(s)</p>
+                {/* Decorative - low contrast intentional for count indicator */}
+                <p className="text-xs text-gray-500 dark:text-gray-400">{formData.imageUrls.length} imagen(es) agregada(s)</p>
               </div>
             )}
           </div>

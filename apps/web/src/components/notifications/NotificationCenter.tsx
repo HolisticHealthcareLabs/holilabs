@@ -248,6 +248,7 @@ export default function NotificationCenter() {
               {notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    {/* Decorative - low contrast intentional for empty state icon */}
                     <svg
                       className="w-8 h-8 text-gray-400"
                       fill="none"

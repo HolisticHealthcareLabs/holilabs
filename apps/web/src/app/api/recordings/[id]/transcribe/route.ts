@@ -3,12 +3,66 @@
  *
  * POST /api/recordings/[id]/transcribe
  * Transcribe audio using OpenAI Whisper and generate SOAP notes with GPT-4
+ *
+ * DATA STRUCTURES:
+ *
+ * Patient.allergies - Relation to Allergy model:
+ * [
+ *   {
+ *     allergen: string,          // e.g., "Penicillin", "Peanuts"
+ *     severity: AllergySeverity, // MILD, MODERATE, SEVERE, LIFE_THREATENING
+ *     reactions: string[],       // e.g., ["Hives", "Anaphylaxis", "Rash"]
+ *     allergyType: AllergyType   // MEDICATION, FOOD, ENVIRONMENTAL, etc.
+ *   }
+ * ]
+ *
+ * Patient.diagnoses - Relation to Diagnosis model (filtered by status: CHRONIC):
+ * [
+ *   {
+ *     icd10Code: string,    // e.g., "E11.9"
+ *     description: string,  // e.g., "Type 2 diabetes mellitus"
+ *     diagnosedAt: DateTime // When diagnosis was made
+ *   }
+ * ]
+ *
+ * Transcription model structure:
+ * {
+ *   sessionId: string,        // Foreign key to ScribeSession
+ *   rawText: string,          // Full transcript text
+ *   segments: Json,           // Array of { speaker, text, startTime, endTime, confidence }
+ *   speakerCount: number,     // Number of speakers (default 2: clinician + patient)
+ *   confidence: number,       // 0-1 confidence score
+ *   wordCount: number,        // Total words in transcript
+ *   durationSeconds: number,  // Audio duration
+ *   model: string,            // AI model used (e.g., "whisper-1")
+ *   language: string          // Language code (e.g., "es")
+ * }
+ *
+ * SOAPNote model structure:
+ * {
+ *   sessionId: string,           // Foreign key to ScribeSession
+ *   patientId: string,           // Foreign key to Patient
+ *   clinicianId: string,         // Foreign key to User (clinician)
+ *   noteHash: string,            // SHA-256 hash for tamper detection
+ *   subjective: string,          // Subjective section (patient's narrative)
+ *   subjectiveConfidence: number, // AI confidence 0-1
+ *   objective: string,           // Objective section (physical findings)
+ *   objectiveConfidence: number,
+ *   assessment: string,          // Assessment section (diagnosis)
+ *   assessmentConfidence: number,
+ *   plan: string,                // Plan section (treatment plan)
+ *   planConfidence: number,
+ *   chiefComplaint: string,      // Primary complaint/diagnosis
+ *   diagnoses: Json,             // Array of { icd10Code, description, isPrimary }
+ *   overallConfidence: number,   // Overall AI confidence 0-1
+ *   status: SOAPStatus           // DRAFT, REVIEWED, FINALIZED
+ * }
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import OpenAI from 'openai';
 import { z } from 'zod';
@@ -66,9 +120,23 @@ export async function POST(
             lastName: true,
             dateOfBirth: true,
             gender: true,
-            // TODO: allergies and chronicConditions fields don't exist in Patient model
-            // allergies: true,
-            // chronicConditions: true,
+            allergies: {
+              where: { isActive: true },
+              select: {
+                allergen: true,
+                severity: true,
+                reactions: true,
+                allergyType: true,
+              },
+            },
+            diagnoses: {
+              where: { status: 'CHRONIC' },
+              select: {
+                icd10Code: true,
+                description: true,
+                diagnosedAt: true,
+              },
+            },
           },
         },
       },
@@ -148,12 +216,20 @@ export async function POST(
         recordingId,
       });
 
+      // Build patient info with allergies and chronic conditions
+      const allergiesText = recording.patient.allergies?.length
+        ? `\nAlergias: ${recording.patient.allergies.map(a => `${a.allergen} (${a.severity}, ${a.reactions.join(', ')})`).join('; ')}`
+        : '';
+
+      const chronicConditionsText = recording.patient.diagnoses?.length
+        ? `\nCondiciones Crónicas: ${recording.patient.diagnoses.map(d => `${d.description} (ICD-10: ${d.icd10Code})`).join('; ')}`
+        : '';
+
       const patientInfo = `
 Paciente: ${recording.patient.firstName} ${recording.patient.lastName}
 Edad: ${new Date().getFullYear() - new Date(recording.patient.dateOfBirth).getFullYear()} años
-Género: ${recording.patient.gender === 'M' ? 'Masculino' : recording.patient.gender === 'F' ? 'Femenino' : 'Otro'}
+Género: ${recording.patient.gender === 'M' ? 'Masculino' : recording.patient.gender === 'F' ? 'Femenino' : 'Otro'}${allergiesText}${chronicConditionsText}
 `.trim();
-      // TODO: Allergies and chronic conditions removed - fields don't exist in Patient model
 
       const soapPrompt = `Eres un médico experto. A partir de la siguiente transcripción de una consulta médica, genera notas clínicas estructuradas en formato SOAP (Subjetivo, Objetivo, Análisis, Plan).
 
@@ -206,53 +282,92 @@ Responde en formato JSON con esta estructura:
       icd10Codes = soapResponse.icd10Codes || [];
     }
 
-    // Update recording with transcript and AI-generated data
-    // TODO: audioUrl, transcript, aiGeneratedNotes fields don't exist in ScribeSession
-    // These should be stored in separate Transcription and SOAPNote models
+    // Store transcript in Transcription model
+    const transcriptionRecord = await prisma.transcription.upsert({
+      where: { sessionId: recordingId },
+      create: {
+        sessionId: recordingId,
+        rawText: transcript,
+        segments: (transcription as any).segments || [],
+        speakerCount: 2, // Default to 2 (clinician + patient)
+        confidence: 0.95, // Whisper default confidence
+        wordCount: transcript.split(/\s+/).length,
+        durationSeconds: recording.audioDuration,
+        model: 'whisper-1',
+        language: 'es',
+      },
+      update: {
+        rawText: transcript,
+        segments: (transcription as any).segments || [],
+        wordCount: transcript.split(/\s+/).length,
+        confidence: 0.95,
+      },
+    });
+
+    // Update recording status and audio URL
     const updatedRecording = await prisma.scribeSession.update({
       where: { id: recordingId },
       data: {
         status: 'COMPLETED',
-        audioFileUrl: audioUrl, // TODO: Changed from audioUrl to audioFileUrl
-        // transcript: transcript, // TODO: Should be in Transcription model
-        // aiGeneratedNotes: soapNotes ? JSON.stringify(soapNotes) : null, // TODO: Should be in SOAPNote model
+        audioFileUrl: audioUrl,
+        processingCompletedAt: new Date(),
       },
     });
 
-    // Auto-create clinical note if SOAP was generated
-    // TODO: ClinicalNote schema doesn't match - needs noteHash, authorId (not clinicianId)
-    // Commenting out for now to allow build to pass
-    let clinicalNote: { id: string } | null = null;
-    // if (soapNotes && diagnosis) {
-    //   const crypto = require('crypto');
-    //   const noteHash = crypto.createHash('sha256')
-    //     .update(JSON.stringify({ soapNotes, diagnosis, recordingId }))
-    //     .digest('hex');
-    //
-    //   clinicalNote = await prisma.clinicalNote.create({
-    //     data: {
-    //       patientId: recording.patientId,
-    //       authorId: recording.appointment.clinicianId, // TODO: Changed from clinicianId to authorId
-    //       // appointmentId: recording.appointmentId, // TODO: Field doesn't exist
-    //       type: 'FOLLOW_UP', // TODO: Changed from noteType to type
-    //       chiefComplaint: diagnosis.substring(0, 200),
-    //       subjective: soapNotes.subjective,
-    //       objective: soapNotes.objective,
-    //       assessment: soapNotes.assessment,
-    //       plan: soapNotes.plan,
-    //       diagnosis: icd10Codes, // TODO: Changed from diagnoses to diagnosis
-    //       noteHash, // TODO: Required field
-    //       // status: 'DRAFT', // TODO: Field doesn't exist
-    //       // source: 'AI_GENERATED', // TODO: Field doesn't exist
-    //     },
-    //   });
-    //
-    //   logger.info({
-    //     event: 'clinical_note_auto_created',
-    //     recordingId,
-    //     clinicalNoteId: clinicalNote.id,
-    //   });
-    // }
+    // Store SOAP notes if generated
+    let soapNoteRecord: { id: string } | null = null;
+    if (soapNotes && diagnosis) {
+      const crypto = require('crypto');
+      const noteHash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify({ soapNotes, diagnosis, recordingId, timestamp: new Date().toISOString() }))
+        .digest('hex');
+
+      // Format diagnoses for storage
+      const diagnosesJson = icd10Codes.map((code, idx) => ({
+        icd10Code: code,
+        description: idx === 0 ? diagnosis : '', // Primary diagnosis gets the description
+        isPrimary: idx === 0,
+      }));
+
+      soapNoteRecord = await prisma.sOAPNote.upsert({
+        where: { sessionId: recordingId },
+        create: {
+          sessionId: recordingId,
+          patientId: recording.patientId,
+          clinicianId: recording.clinicianId,
+          noteHash,
+          subjective: soapNotes.subjective,
+          subjectiveConfidence: 0.85,
+          objective: soapNotes.objective,
+          objectiveConfidence: 0.85,
+          assessment: soapNotes.assessment,
+          assessmentConfidence: 0.85,
+          plan: soapNotes.plan,
+          planConfidence: 0.85,
+          chiefComplaint: diagnosis.substring(0, 500),
+          diagnoses: diagnosesJson,
+          overallConfidence: 0.85,
+          status: 'DRAFT', // Start as draft for clinician review
+        },
+        update: {
+          subjective: soapNotes.subjective,
+          objective: soapNotes.objective,
+          assessment: soapNotes.assessment,
+          plan: soapNotes.plan,
+          chiefComplaint: diagnosis.substring(0, 500),
+          diagnoses: diagnosesJson,
+          wasEdited: true,
+          editCount: { increment: 1 },
+        },
+      });
+
+      logger.info({
+        event: 'soap_note_created',
+        recordingId,
+        soapNoteId: soapNoteRecord.id,
+      });
+    }
 
     // Create audit log
     await prisma.auditLog.create({
@@ -266,8 +381,9 @@ Responde en formato JSON con esta estructura:
         success: true,
         details: {
           transcriptionLength: transcript.length,
+          transcriptionId: transcriptionRecord.id,
           soapGenerated: !!soapNotes,
-          clinicalNoteCreated: !!clinicalNote,
+          soapNoteId: soapNoteRecord?.id,
         },
       },
     });
@@ -285,11 +401,12 @@ Responde en formato JSON con esta estructura:
         message: 'Transcripción completada',
         data: {
           recording: updatedRecording,
-          transcript,
+          transcription: transcriptionRecord,
+          transcript, // Keep for backward compatibility
           soapNotes,
+          soapNote: soapNoteRecord,
           diagnosis,
           icd10Codes,
-          clinicalNote: null, // TODO: Auto-creation disabled - schema mismatch
         },
       },
       { status: 200 }

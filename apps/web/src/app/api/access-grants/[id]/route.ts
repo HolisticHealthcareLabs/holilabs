@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +90,12 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error fetching access grant:', error);
+      logger.error({
+        event: 'access_grant_fetch_failed',
+        grantId: context.params.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to fetch access grant', message: error.message },
         { status: 500 }
@@ -218,7 +224,13 @@ export const PATCH = createProtectedRoute(
         message: revoke ? 'Access grant revoked successfully' : 'Access grant updated successfully',
       });
     } catch (error: any) {
-      console.error('Error updating access grant:', error);
+      logger.error({
+        event: 'access_grant_update_failed',
+        grantId: context.params.id,
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to update access grant', message: error.message },
         { status: 500 }
@@ -305,7 +317,13 @@ export const DELETE = createProtectedRoute(
         message: 'Access grant deleted successfully',
       });
     } catch (error: any) {
-      console.error('Error deleting access grant:', error);
+      logger.error({
+        event: 'access_grant_delete_failed',
+        grantId: context.params.id,
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to delete access grant', message: error.message },
         { status: 500 }

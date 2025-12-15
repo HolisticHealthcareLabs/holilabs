@@ -83,7 +83,7 @@ export default function ChatThread({
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Inicia una conversación
         </h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Envía un mensaje a {recipientName} para comenzar
         </p>
       </div>
@@ -139,7 +139,8 @@ export default function ChatThread({
                 <div className={`flex items-center gap-1.5 mt-1 px-2 ${
                   isSentByMe ? 'justify-end' : 'justify-start'
                 }`}>
-                  <span className="text-xs text-gray-500">
+                  {/* Decorative - low contrast intentional for timestamp metadata */}
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {formatMessageDate(new Date(message.createdAt))}
                   </span>
                   {isSentByMe && (

@@ -1,0 +1,51 @@
+
+NOTA DE CONSULTA MÉDICA
+
+FECHA: 13 de octubre de 2025, 08:56 p.m.
+MÉDICO: Dr. José García
+
+DATOS DEL PACIENTE
+Nombre: Pablo Silva
+Edad: 49 años
+Género: Masculino
+
+MOTIVO DE CONSULTA
+Dificultad para dormir
+
+HISTORIA DE LA ENFERMEDAD ACTUAL
+Paciente refiere síntomas de 2 días de evolución.
+Síntomas se mantienen estables.
+
+
+SIGNOS VITALES
+Presión Arterial: 110/80 mmHg
+Frecuencia Cardíaca: 65 lpm
+Frecuencia Respiratoria: 17 rpm
+Temperatura: 36.19760558924035°C
+Saturación O2: 99%
+Peso: 88 kg
+IMC: 27.840236366167396
+
+EXAMEN FÍSICO
+General: Paciente consciente, orientado
+Cardiopulmonar: Ruidos cardíacos rítmicos, sin soplos. Campos pulmonares bien ventilados.
+Abdomen: Blando, depresible, no doloroso a la palpación.
+
+DIAGNÓSTICO
+Dificultad para dormir - En evaluación
+
+PLAN DE TRATAMIENTO
+
+
+• Gabapentin 300mg - 3x daily
+• Control en 15 días
+• Solicitar estudios de laboratorio
+
+RECOMENDACIONES
+• Dieta balanceada
+• Ejercicio moderado 30 min/día
+• Evitar automedicación
+• Acudir a urgencias si los síntomas empeoran
+
+Dr. José García
+Cédula Profesional: 8003702

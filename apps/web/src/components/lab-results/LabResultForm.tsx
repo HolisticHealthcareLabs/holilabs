@@ -392,7 +392,8 @@ export default function LabResultForm({ patientId, onSuccess, onCancel }: LabRes
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="https://ejemplo.com/documento.pdf"
             />
-            <p className="mt-1 text-xs text-gray-500">URL del documento PDF o imagen del resultado</p>
+            {/* Decorative - low contrast intentional for help text detail */}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">URL del documento PDF o imagen del resultado</p>
           </div>
         </div>
       </div>

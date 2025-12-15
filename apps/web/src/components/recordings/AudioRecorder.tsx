@@ -192,7 +192,7 @@ export default function AudioRecorder({
         <p className="text-gray-600 mb-4">
           Transcribiendo audio y generando notas SOAP
         </p>
-        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <span>Esto puede tomar 1-2 minutos</span>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { createPatientSession } from '@/lib/auth/patient-session';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,7 +111,10 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error verifying magic link:', error);
+    logger.error({
+      event: 'portal_magic_link_verify_error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return NextResponse.json(
       {
         error: 'Failed to verify magic link',

@@ -31,7 +31,7 @@ export default function PrivacyControlPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Acceso Denegado
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Debes iniciar sesión como paciente para acceder a esta página.
           </p>
         </div>
@@ -112,7 +112,7 @@ export default function PrivacyControlPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Permisos Activos</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Permisos Activos</p>
                 <p className="text-3xl font-bold text-green-600 mt-2">-</p>
               </div>
               <div className="text-4xl">✅</div>
@@ -122,7 +122,7 @@ export default function PrivacyControlPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Permisos Revocados</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Permisos Revocados</p>
                 <p className="text-3xl font-bold text-red-600 mt-2">-</p>
               </div>
               <div className="text-4xl">🚫</div>
@@ -132,7 +132,7 @@ export default function PrivacyControlPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Accesos Este Mes</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Accesos Este Mes</p>
                 <p className="text-3xl font-bold text-blue-600 mt-2">-</p>
               </div>
               <div className="text-4xl">👁️</div>

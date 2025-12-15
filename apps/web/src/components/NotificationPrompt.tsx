@@ -112,7 +112,8 @@ export default function NotificationPrompt() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Recordatorios de citas</p>
-              <p className="text-xs text-gray-500">Nunca olvides una consulta programada</p>
+              {/* Decorative - low contrast intentional for helper text */}
+              <p className="text-xs text-gray-500 dark:text-gray-400">Nunca olvides una consulta programada</p>
             </div>
           </div>
 
@@ -128,7 +129,8 @@ export default function NotificationPrompt() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Transcripciones listas</p>
-              <p className="text-xs text-gray-500">Te avisamos cuando tu nota SOAP esté lista</p>
+              {/* Decorative - low contrast intentional for helper text */}
+              <p className="text-xs text-gray-500 dark:text-gray-400">Te avisamos cuando tu nota SOAP esté lista</p>
             </div>
           </div>
 
@@ -144,7 +146,8 @@ export default function NotificationPrompt() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">Sincronización completa</p>
-              <p className="text-xs text-gray-500">Confirma cuando tus cambios offline se suban</p>
+              {/* Decorative - low contrast intentional for helper text */}
+              <p className="text-xs text-gray-500 dark:text-gray-400">Confirma cuando tus cambios offline se suban</p>
             </div>
           </div>
         </div>
@@ -175,7 +178,8 @@ export default function NotificationPrompt() {
         </div>
 
         {/* Privacy note */}
-        <p className="text-xs text-gray-500 text-center mt-4">
+        {/* Decorative - low contrast intentional for helper text */}
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
           Puedes desactivar las notificaciones en cualquier momento desde la configuración
         </p>
       </div>

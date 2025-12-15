@@ -130,7 +130,8 @@ export default function AudioWaveform({ stream, isRecording, className = '' }: A
         className="w-full h-full rounded-lg border border-slate-700 bg-slate-900"
       />
       {!isRecording && (
-        <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">
+        <div className="absolute inset-0 flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm">
+          {/* Decorative - low contrast intentional for empty state prompt */}
           Click "Start Recording" to begin
         </div>
       )}

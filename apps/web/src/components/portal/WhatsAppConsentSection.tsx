@@ -172,6 +172,7 @@ export default function WhatsAppConsentSection() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
               WhatsApp Adherence Monitoring
             </h2>
+            {/* Decorative - low contrast intentional for description text, helper text, and terms list */}
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               Stay on track with automated medication reminders, appointment notifications, and health alerts via WhatsApp.
             </p>
@@ -254,7 +255,7 @@ export default function WhatsAppConsentSection() {
                   <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value as 'en' | 'es' | 'pt')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   >
                     <option value="en">English</option>
                     <option value="es">Español</option>
@@ -312,7 +313,7 @@ export default function WhatsAppConsentSection() {
                       type="time"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                   <div>
@@ -323,7 +324,7 @@ export default function WhatsAppConsentSection() {
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                 </div>

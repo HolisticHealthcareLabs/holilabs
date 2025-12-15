@@ -31,6 +31,7 @@ import {
   isDemoModeEnabled,
   type DemoPatient
 } from '@/lib/demo/demo-data-generator';
+import { logger } from '@/lib/logger';
 
 // Phase 1 Components
 import {
@@ -64,7 +65,8 @@ export default function DashboardCommandCenter() {
 
   // State
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState('');
+  const [greeting, setGreeting] = useState('Good morning'); // Default to avoid hydration mismatch
+  const [currentDate, setCurrentDate] = useState('');
   const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
 
   // Stats data
@@ -107,11 +109,20 @@ export default function DashboardCommandCenter() {
   };
 
   useEffect(() => {
-    // Set time-based greeting
-    const hour = new Date().getHours();
+    // Set time-based greeting and current date
+    const now = new Date();
+    const hour = now.getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 18) setGreeting('Good afternoon');
     else setGreeting('Good evening');
+
+    // Set formatted date
+    setCurrentDate(now.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }));
 
     // Fetch dashboard data
     fetchDashboardData();
@@ -189,7 +200,10 @@ export default function DashboardCommandCenter() {
 
       setRecentActivities(activities);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      logger.error({
+        event: 'dashboard_data_fetch_error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
       setLoading(false);
     }
@@ -197,9 +211,9 @@ export default function DashboardCommandCenter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary-500 mb-4" />
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4" />
           <h3 className="text-xl font-bold text-gray-900">
             Loading...
           </h3>
@@ -209,7 +223,7 @@ export default function DashboardCommandCenter() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* Onboarding */}
       <ImprovedWelcomeModal />
       <OnboardingChecklist />
@@ -229,20 +243,15 @@ export default function DashboardCommandCenter() {
       <FloatingActionButton onClick={() => setShowWidgetStore(true)} />
 
       {/* Top Header - Redesigned */}
-      <header className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 sticky top-0 z-20 shadow-sm backdrop-blur-sm bg-white/95 dark:bg-neutral-900/95">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-[#E5E4E2]">
+              <h1 className="text-3xl font-bold text-gray-900" suppressHydrationWarning>
                 {greeting}, Dr.
               </h1>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                {new Date().toLocaleDateString('es-ES', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+              <p className="text-sm text-gray-600 mt-1" suppressHydrationWarning>
+                {currentDate || 'Loading...'}
               </p>
             </div>
 
@@ -264,7 +273,7 @@ export default function DashboardCommandCenter() {
               {/* View patients button */}
               <button
                 onClick={() => router.push('/dashboard/patients')}
-                className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition font-medium shadow-lg hover:shadow-xl"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium shadow-sm hover:shadow-md"
               >
                 View Patients
               </button>
@@ -430,7 +439,11 @@ export default function DashboardCommandCenter() {
             <AIInsights
               maxHeight="600px"
               onInsightAction={(id, action) => {
-                console.log(`Insight ${id} ${action}`);
+                logger.info({
+                  event: 'dashboard_insight_action',
+                  insightId: id,
+                  action: action
+                });
               }}
               showConfidence={true}
               showEvidence={true}
@@ -447,7 +460,11 @@ export default function DashboardCommandCenter() {
               <SmartNotifications
                 maxHeight="500px"
                 onNotificationClick={(notification) => {
-                  console.log('Notification clicked:', notification);
+                  logger.info({
+                    event: 'dashboard_notification_clicked',
+                    notificationId: notification.id,
+                    notificationType: notification.type
+                  });
                 }}
                 onDismiss={(id) => {
                   setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
@@ -466,20 +483,23 @@ export default function DashboardCommandCenter() {
             {widgets.find((w) => w.id === 'focus-timer')?.enabled && (
               <FocusTimer
                 onComplete={() => {
-                  console.log('Focus session complete!');
+                  logger.info({
+                    event: 'dashboard_focus_session_complete',
+                    timestamp: new Date().toISOString()
+                  });
                 }}
               />
             )}
 
             {/* Task Management Widget */}
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                <h2 className="text-lg font-bold text-gray-900">
                   My Tasks
                 </h2>
                 <button
                   onClick={() => router.push('/dashboard/tasks')}
-                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors"
                 >
                   View All →
                 </button>

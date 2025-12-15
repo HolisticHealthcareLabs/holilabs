@@ -56,7 +56,7 @@ export const CoPilotScreen: React.FC = () => {
   const [hasConsent, setHasConsent] = useState(false);
 
   const recordingRef = useRef<Audio.Recording | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Request audio permissions
   useEffect(() => {

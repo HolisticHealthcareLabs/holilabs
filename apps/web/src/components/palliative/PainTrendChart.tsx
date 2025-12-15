@@ -45,7 +45,7 @@ export default function PainTrendChart({
       <div className={`bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center ${className}`}>
         <div className="text-5xl mb-3">📊</div>
         <h3 className="text-lg font-bold text-gray-700 mb-2">Sin datos de dolor</h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Las evaluaciones de dolor aparecerán aquí una vez registradas.
         </p>
       </div>

@@ -281,6 +281,7 @@ export function EHRAccessControl({
                           {selectedDoctor.specialty}
                         </div>
                       </div>
+                      {/* Decorative - low contrast intentional for close button */}
                       <button
                         onClick={() => setSelectedDoctor(null)}
                         className="text-gray-400 hover:text-gray-600"

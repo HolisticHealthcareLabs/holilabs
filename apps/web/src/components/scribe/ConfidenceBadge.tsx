@@ -72,6 +72,7 @@ export function ConfidenceBar({ confidence, label }: ConfidenceBarProps) {
   return (
     <div className="space-y-1">
       {label && (
+        // Decorative - low contrast intentional for confidence bar metadata text
         <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
           <span>{label}</span>
           <span className="font-semibold">{percentage.toFixed(0)}%</span>

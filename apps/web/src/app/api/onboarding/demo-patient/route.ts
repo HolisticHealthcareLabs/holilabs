@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { createDemoPatient, DemoPatientConfig } from '@/lib/demo/demo-patient-generator';
 import { createAuditLog } from '@/lib/audit';

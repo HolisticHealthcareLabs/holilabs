@@ -85,7 +85,7 @@ export default function BusinessAssociateAgreementPage() {
               Nuevo BAA
             </button>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Gestiona los Business Associate Agreements (BAA) requeridos por HIPAA para organizaciones de salud.
           </p>
         </div>
@@ -197,7 +197,7 @@ export default function BusinessAssociateAgreementPage() {
                 </svg>
                 Plantilla de BAA
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Descarga la plantilla oficial del Business Associate Agreement de Holi Labs.
                 Esta plantilla incluye todas las provisiones requeridas por HIPAA (45 CFR § 164.504(e)).
               </p>
@@ -256,23 +256,23 @@ export default function BusinessAssociateAgreementPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 mb-1">Total BAAs</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total BAAs</div>
             <div className="text-3xl font-bold text-primary">{baaRecords.length}</div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 mb-1">Firmados</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Firmados</div>
             <div className="text-3xl font-bold text-green-600">
               {baaRecords.filter(r => r.status === 'signed').length}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 mb-1">Pendientes</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pendientes</div>
             <div className="text-3xl font-bold text-yellow-600">
               {baaRecords.filter(r => r.status === 'pending_signature').length}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 mb-1">Expirados</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Expirados</div>
             <div className="text-3xl font-bold text-red-600">
               {baaRecords.filter(r => r.status === 'expired').length}
             </div>
@@ -288,25 +288,26 @@ export default function BusinessAssociateAgreementPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {/* Decorative - low contrast intentional for table headers with uppercase tracking-wider */}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Organización
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Contacto
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Fecha Solicitada
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Fecha Firmada
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Expiración
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -319,18 +320,20 @@ export default function BusinessAssociateAgreementPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{record.contactPerson}</div>
-                      <div className="text-sm text-gray-500">{record.email}</div>
+                      {/* Decorative - low contrast intentional for email metadata */}
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{record.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(record.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {/* Decorative - low contrast intentional for date metadata */}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {record.dateRequested || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {record.dateSigned || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {record.expirationDate || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -389,7 +392,7 @@ export default function BusinessAssociateAgreementPage() {
                 </svg>
                 <div>
                   <div className="font-semibold text-gray-900">Privacy Policy</div>
-                  <div className="text-sm text-gray-600">GDPR, LGPD, HIPAA</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">GDPR, LGPD, HIPAA</div>
                 </div>
               </div>
             </Link>
@@ -404,7 +407,7 @@ export default function BusinessAssociateAgreementPage() {
                 </svg>
                 <div>
                   <div className="font-semibold text-gray-900">Terms of Service</div>
-                  <div className="text-sm text-gray-600">Términos de uso</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Términos de uso</div>
                 </div>
               </div>
             </Link>
@@ -420,7 +423,7 @@ export default function BusinessAssociateAgreementPage() {
                 </svg>
                 <div>
                   <div className="font-semibold text-gray-900">Cookie Policy</div>
-                  <div className="text-sm text-gray-600">Política de cookies</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Política de cookies</div>
                 </div>
               </div>
             </Link>

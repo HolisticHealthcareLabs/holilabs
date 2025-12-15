@@ -133,7 +133,7 @@ export function SituationBadges({
                               {situation.name}
                             </div>
                             {situation.requiresAction && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
                                 Requiere acción
                               </div>
                             )}
@@ -243,6 +243,7 @@ export function SituationBadges({
 
             {/* Modal Footer */}
             <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4">
+              {/* Helper text - low contrast intentional */}
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 El paciente recibirá un recordatorio de pago inmediatamente
               </p>

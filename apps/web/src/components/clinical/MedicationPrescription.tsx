@@ -531,19 +531,19 @@ export function MedicationPrescription({
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-2">
                       <div>
-                        <span className="text-gray-500">Dosis: </span>
+                        <span className="text-gray-600 dark:text-gray-400">Dosis: </span>
                         <span className="font-medium">{med.dosage}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Vía: </span>
+                        <span className="text-gray-600 dark:text-gray-400">Vía: </span>
                         <span className="font-medium">{med.route}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Frecuencia: </span>
+                        <span className="text-gray-600 dark:text-gray-400">Frecuencia: </span>
                         <span className="font-medium">{med.frequency}</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Duración: </span>
+                        <span className="text-gray-600 dark:text-gray-400">Duración: </span>
                         <span className="font-medium">{med.duration}</span>
                       </div>
                     </div>

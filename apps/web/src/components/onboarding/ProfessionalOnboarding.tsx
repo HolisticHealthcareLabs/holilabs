@@ -421,6 +421,7 @@ export function ProfessionalOnboarding() {
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                       {option.title}
                     </h3>
+                    {/* Decorative - low contrast intentional for subtitle metadata */}
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-3">
                       {option.subtitle}
                     </p>

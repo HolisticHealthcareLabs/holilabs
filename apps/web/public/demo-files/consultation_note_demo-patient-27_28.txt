@@ -1,0 +1,51 @@
+
+NOTA DE CONSULTA MÉDICA
+
+FECHA: 10 de noviembre de 2025, 08:56 p.m.
+MÉDICO: Dr. Ana López
+
+DATOS DEL PACIENTE
+Nombre: Jorge Vargas
+Edad: 75 años
+Género: Masculino
+
+MOTIVO DE CONSULTA
+Mareos
+
+HISTORIA DE LA ENFERMEDAD ACTUAL
+Paciente refiere síntomas de 7 días de evolución.
+Síntomas se mantienen estables.
+
+
+SIGNOS VITALES
+Presión Arterial: 118/85 mmHg
+Frecuencia Cardíaca: 83 lpm
+Frecuencia Respiratoria: 17 rpm
+Temperatura: 36.524824141716195°C
+Saturación O2: 99%
+Peso: 76 kg
+IMC: 21.452016231593436
+
+EXAMEN FÍSICO
+General: Paciente consciente, orientado
+Cardiopulmonar: Ruidos cardíacos rítmicos, sin soplos. Campos pulmonares bien ventilados.
+Abdomen: Blando, depresible, no doloroso a la palpación.
+
+DIAGNÓSTICO
+Mareos - En evaluación
+
+PLAN DE TRATAMIENTO
+
+
+• Acetaminofén 500mg - 3 veces al día
+• Control en 15 días
+• Solicitar estudios de laboratorio
+
+RECOMENDACIONES
+• Dieta balanceada
+• Ejercicio moderado 30 min/día
+• Evitar automedicación
+• Acudir a urgencias si los síntomas empeoran
+
+Dr. Ana López
+Cédula Profesional: 8033318

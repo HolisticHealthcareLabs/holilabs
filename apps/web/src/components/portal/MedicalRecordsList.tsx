@@ -284,6 +284,7 @@ export default function MedicalRecordsList() {
       {records.length === 0 ? (
         // Empty State
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-12 text-center">
+          {/* Decorative - low contrast intentional for empty state icon */}
           <svg
             className="w-16 h-16 text-gray-400 mx-auto mb-4"
             fill="none"
@@ -327,6 +328,7 @@ export default function MedicalRecordsList() {
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">
                         {record.chiefComplaint || 'Consulta Médica'}
                       </h3>
+                      {/* Decorative - low contrast intentional for specialty separator bullet and field labels */}
                       <p className="text-sm text-gray-600">
                         Dr. {record.clinician.firstName} {record.clinician.lastName}
                         {record.clinician.specialty && (
@@ -360,6 +362,7 @@ export default function MedicalRecordsList() {
                   </div>
 
                   {/* Footer */}
+                  {/* Decorative - low contrast intentional for date metadata text */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <span className="flex items-center gap-1">

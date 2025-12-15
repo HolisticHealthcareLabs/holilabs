@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext, CDSHookType } from '@/lib/cds/types';

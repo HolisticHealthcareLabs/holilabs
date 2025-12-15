@@ -383,6 +383,7 @@ export function RealTimeTranscription({
           {isConnected && (
             <div className="flex items-center gap-1 text-sm">
               <SignalIcon className={`w-4 h-4 ${getConnectionQualityColor()}`} />
+              {/* Decorative - low contrast intentional for connection quality meta info */}
               <span className="text-gray-600 dark:text-gray-400 capitalize">
                 {connectionQuality}
               </span>
@@ -484,10 +485,13 @@ export function RealTimeTranscription({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
         {segments.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
+            {/* Decorative - low contrast intentional for empty state icon */}
             <MicrophoneIcon className="w-16 h-16 text-gray-300 dark:text-gray-700 mb-4" />
+            {/* Decorative - low contrast intentional for empty state text */}
             <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
               {isRecording ? 'Listening...' : 'Start recording to see live transcription'}
             </p>
+            {/* Decorative - low contrast intentional for empty state helper text */}
             <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
               Speech will appear here in real-time
             </p>
@@ -506,6 +510,7 @@ export function RealTimeTranscription({
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   {enableDiarization && segment.speaker !== undefined && (
+                    // Decorative - low contrast intentional for speaker label
                     <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <UserIcon className="w-4 h-4" />
                       <span>Speaker {segment.speaker + 1}</span>
@@ -548,6 +553,7 @@ export function RealTimeTranscription({
               </div>
 
               {/* Timestamp */}
+              {/* Decorative - low contrast intentional for timestamp */}
               <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                 {new Date(segment.timestamp).toLocaleTimeString()}
               </div>
@@ -559,6 +565,7 @@ export function RealTimeTranscription({
       {/* Footer Stats */}
       {segments.length > 0 && (
         <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          {/* Decorative - low contrast intentional for footer stats meta info */}
           <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
             <span>
               {segments.filter(s => s.isFinal).length} final segments

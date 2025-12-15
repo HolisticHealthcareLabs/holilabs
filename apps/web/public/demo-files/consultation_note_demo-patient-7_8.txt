@@ -1,0 +1,52 @@
+
+NOTA DE CONSULTA MÉDICA
+
+FECHA: 28 de septiembre de 2025, 08:56 p.m.
+MÉDICO: Dr. Ana López
+
+DATOS DEL PACIENTE
+Nombre: Mariana Pérez
+Edad: 63 años
+Género: Femenino
+
+MOTIVO DE CONSULTA
+Dolor de cabeza persistente
+
+HISTORIA DE LA ENFERMEDAD ACTUAL
+Paciente refiere síntomas de 13 días de evolución.
+Síntomas han empeorado gradualmente.
+
+
+SIGNOS VITALES
+Presión Arterial: 125/83 mmHg
+Frecuencia Cardíaca: 75 lpm
+Frecuencia Respiratoria: 16 rpm
+Temperatura: 37.04486912509292°C
+Saturación O2: 99%
+Peso: 66 kg
+IMC: 23.9401485450941
+
+EXAMEN FÍSICO
+General: Paciente consciente, orientado
+Cardiopulmonar: Ruidos cardíacos rítmicos, sin soplos. Campos pulmonares bien ventilados.
+Abdomen: Blando, depresible, no doloroso a la palpación.
+
+DIAGNÓSTICO
+Dolor de cabeza persistente - En evaluación
+
+PLAN DE TRATAMIENTO
+• Continuar con antihipertensivos
+
+
+• Lisinopril 10mg - 1x daily
+• Control en 15 días
+• Solicitar estudios de laboratorio
+
+RECOMENDACIONES
+• Dieta balanceada
+• Ejercicio moderado 30 min/día
+• Evitar automedicación
+• Acudir a urgencias si los síntomas empeoran
+
+Dr. Ana López
+Cédula Profesional: 8008638

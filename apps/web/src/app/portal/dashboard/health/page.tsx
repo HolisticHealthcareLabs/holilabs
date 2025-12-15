@@ -20,6 +20,7 @@ import {
   ArrowTrendingUpIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 interface HealthMetric {
   id: string;
@@ -175,7 +176,7 @@ export default function HealthMetricsPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching metrics:', err);
+      logger.error('Error fetching metrics:', err);
     } finally {
       setLoading(false);
     }
@@ -317,6 +318,7 @@ export default function HealthMetricsPage() {
                     <div className={`w-12 h-12 bg-gradient-to-br ${config.gradient} rounded-lg flex items-center justify-center`}>
                       <Icon className="h-6 w-6 text-white" />
                     </div>
+                    {/* Decorative - low contrast intentional for record count badges */}
                     <span className="text-sm text-gray-500">
                       {metrics.length} registro{metrics.length !== 1 ? 's' : ''}
                     </span>
@@ -336,6 +338,7 @@ export default function HealthMetricsPage() {
                         </span>
                         <span className="text-gray-600">{latest.unit}</span>
                       </div>
+                      {/* Decorative - low contrast intentional for timestamp metadata */}
                       <p className="text-sm text-gray-500">
                         {format(new Date(latest.recordedAt), "d MMM, HH:mm", {
                           locale: es,

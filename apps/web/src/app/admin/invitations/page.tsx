@@ -180,7 +180,7 @@ export default function AdminInvitationsPage() {
             onChange={(e) => setAdminKey(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && authenticate()}
             placeholder="Admin API Key"
-            className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white mb-4 focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-gray-100 mb-4 focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
           />
           <button
             onClick={authenticate}
@@ -268,7 +268,7 @@ export default function AdminInvitationsPage() {
                 min="1"
                 value={maxUses}
                 onChange={(e) => setMaxUses(parseInt(e.target.value) || 1)}
-                className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
+                className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-gray-100 focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
               />
             </div>
             
@@ -282,7 +282,7 @@ export default function AdminInvitationsPage() {
                 value={expiresInDays}
                 onChange={(e) => setExpiresInDays(e.target.value)}
                 placeholder="Sin expiración"
-                className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
+                className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-gray-100 focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
               />
             </div>
             
@@ -295,7 +295,7 @@ export default function AdminInvitationsPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Para: Juan Pérez"
-                className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-white focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
+                className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/10 text-gray-900 dark:text-gray-100 focus:border-[#00FF88] focus:ring-2 focus:ring-[#00FF88]/20 outline-none"
               />
             </div>
           </div>

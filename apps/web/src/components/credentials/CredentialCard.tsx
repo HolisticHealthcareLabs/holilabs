@@ -141,7 +141,8 @@ export const CredentialCard: React.FC<CredentialCardProps> = ({
             <h3 className="text-base font-semibold text-gray-900">
               {formatCredentialType(credential.credentialType)}
             </h3>
-            <p className="text-sm text-gray-500 mt-0.5">#{credential.credentialNumber}</p>
+            {/* Decorative - low contrast intentional for credential number metadata */}
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">#{credential.credentialNumber}</p>
           </div>
         </div>
         {getStatusBadge()}

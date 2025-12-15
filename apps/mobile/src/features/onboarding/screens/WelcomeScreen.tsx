@@ -79,7 +79,7 @@ export const WelcomeScreen = () => {
           {BENEFITS.map((benefit, index) => (
             <AnimatedCard
               key={index}
-              style={[styles.benefitCard, { backgroundColor: theme.colors.surface }]}
+              style={[styles.benefitCard, { backgroundColor: theme.colors.surface } as const]}
             >
               <Text style={styles.benefitIcon}>{benefit.icon}</Text>
               <View style={styles.benefitContent}>

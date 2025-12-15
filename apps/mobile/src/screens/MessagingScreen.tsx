@@ -459,23 +459,16 @@ export const MessagingScreen: React.FC = () => {
         renderInputToolbar={renderInputToolbar}
         renderSend={renderSend}
         renderFooter={renderFooter}
-        alwaysShowSend
-        scrollToBottom
         scrollToBottomComponent={() => (
           <View style={styles.scrollToBottom}>
             <Text>↓</Text>
           </View>
         )}
-        placeholder="Type a secure message..."
         textInputProps={{
           style: styles.textInput,
+          placeholder: 'Type a secure message...',
+          placeholderTextColor: theme.colors.textTertiary,
         }}
-        minInputToolbarHeight={60}
-        bottomOffset={Platform.OS === 'ios' ? 0 : 0}
-        keyboardShouldPersistTaps="never"
-        renderAvatarOnTop
-        showUserAvatar={false}
-        // Typing indicator
         isTyping={isTyping}
       />
     </SafeAreaView>

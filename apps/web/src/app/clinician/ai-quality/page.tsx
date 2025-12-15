@@ -29,6 +29,7 @@ import {
   ThumbsDown,
   RefreshCw,
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface QualitySummary {
   totalFeedback: number;
@@ -70,7 +71,11 @@ export default function AIQualityDashboard() {
         setRecentFeedback(data.items.slice(0, 10));
       }
     } catch (error) {
-      console.error('Error fetching AI quality analytics:', error);
+      logger.error({
+        event: 'ai_quality_analytics_fetch_error',
+        timeRange,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
       setIsLoading(false);
     }

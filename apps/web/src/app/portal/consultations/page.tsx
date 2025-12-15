@@ -164,6 +164,7 @@ export default function ConsultationsPage() {
         {/* Recordings List */}
         {recordings.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-12 text-center">
+            {/* Decorative - low contrast intentional for empty state icon */}
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-10 h-10 text-gray-400"

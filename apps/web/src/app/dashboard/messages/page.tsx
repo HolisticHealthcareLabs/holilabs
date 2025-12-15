@@ -212,7 +212,7 @@ export default function ClinicianMessagesPage() {
   // Typing indicators
   const handleTyping = () => {
     if (selectedConversationId && session?.user?.id) {
-      emitTypingStart(selectedConversationId, session.user.id, `Dr. ${session.user.firstName || 'Doctor'}`);
+      emitTypingStart(selectedConversationId, session.user.id, `Dr. ${(session.user as any).firstName || 'Doctor'}`);
     }
   };
 

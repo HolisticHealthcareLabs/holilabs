@@ -3,38 +3,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/providers/ThemeProvider';
 
 // --- CONFIGURATION ---
 const BRAND_GREEN_HEX = '#00FF88';
-const THEME_KEY = 'holilabs_theme';
-
-// --- HOOKS ---
-function useTheme() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window === 'undefined') return 'dark';
-    if (localStorage.getItem(THEME_KEY) === 'light') return 'light';
-    return 'dark';
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
-    }
-    localStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-  return { theme, toggleTheme };
-}
 
 // --- COMPONENTS ---
 
-function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTheme: () => void }) {
+function ThemeToggle({ resolvedTheme, toggleTheme }: { resolvedTheme: 'light' | 'dark'; toggleTheme: () => void }) {
+  const theme = resolvedTheme;
   return (
     <button
       onClick={toggleTheme}
@@ -303,12 +280,12 @@ const faqs = [
 
 // --- MAIN PAGE ---
 export default function PricingPage() {
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen font-sans tracking-tight bg-white text-gray-900 dark:bg-[#0A0A0A] dark:text-white transition-colors duration-300 overflow-x-hidden selection:bg-[#00FF88]/30">
+    <div className="min-h-screen font-sans tracking-tight bg-white dark:bg-[#0A0A0A] text-gray-900 dark:text-white transition-colors duration-300 overflow-x-hidden selection:bg-[#00FF88]/30">
       {/* GLOBAL BACKGROUND GLOW (Dark Mode Only) */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-700">
         <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-[#00FF88]/10 via-transparent to-transparent blur-[120px]" />
@@ -334,14 +311,14 @@ export default function PricingPage() {
                 fontWeight: 600,
                 letterSpacing: '-0.02em',
                 background:
-                  theme === 'dark'
+                  resolvedTheme === 'dark'
                     ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 25%, #ffffff 50%, #c0c0c0 75%, #ffffff 100%)'
                     : 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 filter:
-                  theme === 'dark'
+                  resolvedTheme === 'dark'
                     ? 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))'
                     : 'drop-shadow(0.5px 0.5px 1px rgba(0,0,0,0.1))',
               }}
@@ -371,7 +348,7 @@ export default function PricingPage() {
             >
               Empezar Gratis
             </a>
-            <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+            <ThemeToggle resolvedTheme={resolvedTheme} toggleTheme={toggleTheme} />
           </div>
         </nav>
       </header>
@@ -391,7 +368,7 @@ export default function PricingPage() {
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] text-gray-900 dark:text-white">
             Pricing Simple.
             <br />
-            <span className="text-[#00FF88]" style={{ textShadow: theme === 'dark' ? '0 0 30px rgba(0, 255, 136, 0.2)' : 'none' }}>
+            <span className="text-[#00FF88]" style={{ textShadow: resolvedTheme === 'dark' ? '0 0 30px rgba(0, 255, 136, 0.2)' : 'none' }}>
               Sin Sorpresas.
             </span>
           </h1>
@@ -496,7 +473,7 @@ export default function PricingPage() {
                   className={`block w-full text-center font-bold py-4 px-6 rounded-full transition-all duration-300 mb-8 ${
                     tier.recommended
                       ? 'bg-[linear-gradient(110deg,#00FF88,45%,#b0ffda,55%,#00FF88)] bg-[length:200%_100%] animate-shimmer-fast text-black hover:shadow-[0_0_30px_rgba(0,255,136,0.4)] active:scale-95'
-                      : 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20 active:scale-95'
+                      : 'bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-white/20 active:scale-95'
                   }`}
                 >
                   {tier.cta.text}
@@ -506,7 +483,7 @@ export default function PricingPage() {
                 <div className="space-y-6">
                   {tier.features.map((category) => (
                     <div key={category.category}>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-white/60 mb-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-white/70 mb-3">
                         {category.category}
                       </h4>
                       <ul className="space-y-2">
@@ -516,7 +493,7 @@ export default function PricingPage() {
                               className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
                                 item.included
                                   ? 'bg-[#00FF88]/10 text-[#00FF88]'
-                                  : 'bg-gray-200 dark:bg-white/5 text-gray-400 dark:text-white/40'
+                                  : 'bg-gray-200 dark:bg-white/5 text-gray-600 dark:text-gray-400'
                               }`}
                             >
                               {item.included ? (
@@ -554,7 +531,7 @@ export default function PricingPage() {
             </p>
             <a
               href="/contact?plan=enterprise"
-              className="inline-block bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white font-semibold px-8 py-3 rounded-full hover:bg-gray-300 dark:hover:bg-white/20 active:scale-95 transition-all"
+              className="inline-block bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-gray-100 font-semibold px-8 py-3 rounded-full hover:bg-gray-300 dark:hover:bg-white/20 active:scale-95 transition-all"
             >
               Contactar Ventas Enterprise
             </a>
@@ -612,7 +589,7 @@ export default function PricingPage() {
                             </svg>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-white/5 text-gray-400 dark:text-white/40">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-white/5 text-gray-600 dark:text-gray-400">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -625,13 +602,13 @@ export default function PricingPage() {
                     <td className="py-4 px-4 text-center">
                       {typeof row.competitor === 'boolean' ? (
                         row.competitor ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-white/60">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-white/5 text-gray-400 dark:text-white/40">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 dark:bg-white/5 text-gray-600 dark:text-gray-400">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -699,7 +676,7 @@ export default function PricingPage() {
           <h2 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white tracking-tighter">
             Empieza Hoy.
             <br />
-            <span className="text-[#00FF88]" style={{ textShadow: theme === 'dark' ? '0 0 30px rgba(0, 255, 136, 0.2)' : 'none' }}>
+            <span className="text-[#00FF88]" style={{ textShadow: resolvedTheme === 'dark' ? '0 0 30px rgba(0, 255, 136, 0.2)' : 'none' }}>
               Gratis por 14 Días.
             </span>
           </h2>
@@ -716,7 +693,7 @@ export default function PricingPage() {
             </a>
             <a
               href="/contact?plan=enterprise"
-              className="flex items-center justify-center px-10 py-5 rounded-full text-lg font-semibold bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-[#00FF88]/30 active:scale-95 transition-all duration-300"
+              className="flex items-center justify-center px-10 py-5 rounded-full text-lg font-semibold bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-white/10 hover:border-gray-300 dark:hover:border-[#00FF88]/30 active:scale-95 transition-all duration-300"
             >
               Contactar Ventas
             </a>
@@ -768,7 +745,7 @@ export default function PricingPage() {
               style={{
                 fontWeight: 600,
                 letterSpacing: '0.05em',
-                color: theme === 'dark' ? '#ffffff' : '#1a1a1a',
+                color: resolvedTheme === 'dark' ? '#ffffff' : '#1a1a1a',
               }}
             >
               Holi Labs

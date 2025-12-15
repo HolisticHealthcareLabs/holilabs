@@ -22,6 +22,7 @@ import {
   ArrowRightOnRectangleIcon,
   PencilIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 interface PatientProfile {
   patient: {
@@ -85,7 +86,7 @@ export default function ProfilePage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching profile:', err);
+      logger.error('Error fetching profile:', err);
     } finally {
       setLoading(false);
     }
@@ -171,7 +172,7 @@ export default function ProfilePage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             =d Mi Perfil
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Informaci�n personal y configuraci�n de cuenta
           </p>
         </div>
@@ -215,7 +216,7 @@ export default function ProfilePage() {
                   <IdentificationIcon className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">N�mero de Registro M�dico</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">N�mero de Registro M�dico</p>
                   <p className="font-semibold text-gray-900">{profile.patient.mrn}</p>
                 </div>
               </div>
@@ -226,7 +227,7 @@ export default function ProfilePage() {
                   <EnvelopeIcon className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Correo Electr�nico</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Correo Electr�nico</p>
                   <p className="font-semibold text-gray-900">
                     {profile.patient.email || profile.user.email}
                   </p>
@@ -246,7 +247,7 @@ export default function ProfilePage() {
                     <PhoneIcon className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Tel�fono</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tel�fono</p>
                     <p className="font-semibold text-gray-900">{profile.patient.phone}</p>
                   </div>
                 </div>
@@ -258,7 +259,7 @@ export default function ProfilePage() {
                   <CalendarIcon className="h-5 w-5 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Fecha de Nacimiento</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Fecha de Nacimiento</p>
                   <p className="font-semibold text-gray-900">
                     {format(new Date(profile.patient.dateOfBirth), "d 'de' MMMM, yyyy", {
                       locale: es,
@@ -273,7 +274,7 @@ export default function ProfilePage() {
                   <UserIcon className="h-5 w-5 text-pink-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">G�nero</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">G�nero</p>
                   <p className="font-semibold text-gray-900">
                     {genderLabels[profile.patient.gender] || profile.patient.gender}
                   </p>
@@ -299,9 +300,10 @@ export default function ProfilePage() {
                 <ShieldCheckIcon className="h-6 w-6 text-purple-600" />
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">Actividad de Sesión</p>
-                  <p className="text-sm text-gray-600">Ver inicios de sesión y eventos de seguridad</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Ver inicios de sesión y eventos de seguridad</p>
                 </div>
               </div>
+              {/* Decorative - low contrast intentional for icon visual hierarchy */}
               <PencilIcon className="h-5 w-5 text-gray-400" />
             </button>
 
@@ -314,9 +316,10 @@ export default function ProfilePage() {
                 <ShieldCheckIcon className="h-6 w-6 text-blue-600" />
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">Cambiar Contraseña</p>
-                  <p className="text-sm text-gray-600">Actualiza tu contraseña de acceso</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Actualiza tu contraseña de acceso</p>
                 </div>
               </div>
+              {/* Decorative - low contrast intentional for icon visual hierarchy */}
               <PencilIcon className="h-5 w-5 text-gray-400" />
             </button>
 
@@ -329,9 +332,10 @@ export default function ProfilePage() {
                 <ShieldCheckIcon className="h-6 w-6 text-green-600" />
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">Autenticación de Dos Factores</p>
-                  <p className="text-sm text-gray-600">Añade una capa extra de seguridad</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Añade una capa extra de seguridad</p>
                 </div>
               </div>
+              {/* Decorative - low contrast intentional for badge visual hierarchy */}
               <div className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                 Próximamente
               </div>
@@ -350,7 +354,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
               <div>
                 <p className="font-semibold text-gray-900">Notificaciones por Email</p>
-                <p className="text-sm text-gray-600">Recibe actualizaciones importantes</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Recibe actualizaciones importantes</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -362,7 +366,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
               <div>
                 <p className="font-semibold text-gray-900">Notificaciones por SMS</p>
-                <p className="text-sm text-gray-600">Recordatorios de citas</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Recordatorios de citas</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -374,7 +378,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
               <div>
                 <p className="font-semibold text-gray-900">Idioma</p>
-                <p className="text-sm text-gray-600">Espa�ol</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Espa�ol</p>
               </div>
               <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                 Cambiar

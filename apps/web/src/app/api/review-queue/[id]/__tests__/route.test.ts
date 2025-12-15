@@ -26,6 +26,7 @@ describe('PATCH /api/review-queue/[id]', () => {
     user: {
       id: 'clinician-1',
       email: 'dr.smith@holilabs.com',
+      role: 'clinician',
     },
     params: {
       id: 'item-1',
