@@ -79,6 +79,7 @@ export function TemplatePreview({ template, className = '' }: TemplatePreviewPro
               <span className="text-sm font-semibold text-gray-900 dark:text-white">
                 👁️ Vista Previa
               </span>
+              {/* Decorative - low contrast intentional for variable count metadata */}
               {hasVariables && (
                 <span className="text-xs text-gray-600 dark:text-gray-400">
                   {usedVariables.length} variable{usedVariables.length !== 1 ? 's' : ''} detectada{usedVariables.length !== 1 ? 's' : ''}
@@ -89,6 +90,7 @@ export function TemplatePreview({ template, className = '' }: TemplatePreviewPro
 
           {/* Preview Content */}
           <div className="bg-white dark:bg-gray-800 p-4">
+            {/* Decorative - low contrast intentional for empty state text */}
             {template.trim() === '' ? (
               <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
                 Escribe tu mensaje para ver la vista previa
@@ -123,6 +125,7 @@ export function TemplatePreview({ template, className = '' }: TemplatePreviewPro
 
                 {/* Sample data note */}
                 <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                  {/* Decorative - low contrast intentional for sample data disclaimer */}
                   <p className="text-xs text-gray-500 dark:text-gray-400 italic">
                     💡 Esta es una vista previa con datos de ejemplo. Los datos reales se insertarán al enviar el mensaje.
                   </p>

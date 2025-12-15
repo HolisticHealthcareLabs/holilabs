@@ -103,7 +103,7 @@ export function SessionTimeoutWarning({
           </div>
 
           {/* Footer Note */}
-          <p className="text-xs text-gray-500 text-center mt-4">
+          <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-4">
             Cualquier actividad (clic, tecla, scroll) extenderá tu sesión automáticamente.
           </p>
         </div>

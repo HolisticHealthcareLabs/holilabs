@@ -126,7 +126,7 @@ Puedo ayudarte con:
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">AI Command Center</h3>
-                <p className="text-sm text-gray-600">Tu asistente inteligente de navegación</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Tu asistente inteligente de navegación</p>
               </div>
             </div>
             <button
@@ -245,7 +245,8 @@ Puedo ayudarte con:
                 </svg>
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-3 text-center">
+            {/* Decorative - low contrast intentional for helper text */}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
               Puedo llevarte a cualquier sección o explicarte nuestras soluciones
             </p>
           </form>

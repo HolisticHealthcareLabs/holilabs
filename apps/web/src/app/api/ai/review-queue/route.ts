@@ -9,9 +9,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/ai/review-queue
@@ -84,9 +85,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(
-      `🔍 [Review Queue] Added ${contentType} ${contentId} to manual review queue (reason: ${flagReason}, priority: ${priority})`
-    );
+    logger.info({
+      event: 'review_queue_item_added',
+      contentType,
+      contentId,
+      flagReason,
+      priority,
+      userId: session.user.id,
+    });
 
     return NextResponse.json({
       success: true,
@@ -97,8 +103,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    console.error('❌ [Review Queue API] Error:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'review_queue_add_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
@@ -192,8 +202,12 @@ export async function GET(request: NextRequest) {
       })),
     });
 
-  } catch (error) {
-    console.error('❌ [Review Queue API] Error fetching queue:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'review_queue_fetch_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
@@ -247,9 +261,15 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    console.log(
-      `✅ [Review Queue] Updated ${updated.contentType} ${updated.contentId} to status: ${status} (reviewer: ${session.user.id})`
-    );
+    logger.info({
+      event: 'review_queue_item_updated',
+      queueItemId,
+      contentType: updated.contentType,
+      contentId: updated.contentId,
+      status,
+      reviewerId: session.user.id,
+      wasCorrect,
+    });
 
     return NextResponse.json({
       success: true,
@@ -261,8 +281,12 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    console.error('❌ [Review Queue API] Error updating queue item:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'review_queue_update_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

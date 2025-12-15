@@ -6,13 +6,14 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
+import { spacing } from '@/config/theme';
 
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   variant?: 'elevated' | 'outlined' | 'filled';
   onPress?: () => void;
-  padding?: keyof typeof import('../config/designTokens').spacing;
+  padding?: keyof typeof spacing;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -20,7 +21,7 @@ export const Card: React.FC<CardProps> = ({
   style,
   variant = 'elevated',
   onPress,
-  padding = 4,
+  padding = 'md',
 }) => {
   const { theme } = useTheme();
 
@@ -49,9 +50,11 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
+  const paddingValue = spacing[padding];
+
   const containerStyle: ViewStyle = {
     borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing[padding],
+    padding: paddingValue,
     ...getVariantStyles(),
   };
 

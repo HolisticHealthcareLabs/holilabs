@@ -60,7 +60,7 @@ export function IOSInstallPrompt() {
           className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           aria-label="Cerrar"
         >
-          <XMarkIcon className="w-5 h-5 text-gray-500" />
+          <XMarkIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
         </button>
 
         {/* Icon */}
@@ -120,6 +120,7 @@ export function IOSInstallPrompt() {
 
         {/* Benefits */}
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-4">
+          {/* Benefits text - descriptive content */}
           <p className="text-xs text-gray-600 dark:text-gray-400">
             ✨ Acceso instantáneo • 🚀 Carga más rápida • 📱 Experiencia nativa
           </p>

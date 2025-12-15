@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,8 +24,12 @@ export async function GET(req: NextRequest) {
     ).toString('base64');
 
     return NextResponse.json({ token });
-  } catch (error) {
-    console.error('Error generating socket token:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'socket_token_generation_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Failed to generate token' },
       { status: 500 }

@@ -15,6 +15,7 @@ import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analyt
 import { generateUniquePatientTokenId } from '@/lib/security/token-generation';
 import { logDeIDOperation } from '@/lib/audit/deid-audit';
 import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -134,7 +135,11 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error fetching patients:', error);
+      logger.error({
+        event: 'patients_fetch_error',
+        clinicianId: context.user.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return NextResponse.json(
         { error: 'Failed to fetch patients' },
         { status: 500 }
@@ -319,7 +324,11 @@ export const POST = createProtectedRoute(
     // ============================================================================
 
     if (validatedData.assignedClinicianId) {
-      console.log(`✅ Creating default consent for patient ${patient.id} with clinician ${validatedData.assignedClinicianId}`);
+      logger.info({
+        event: 'patient_default_consent_creating',
+        patientId: patient.id,
+        clinicianId: validatedData.assignedClinicianId
+      });
 
       // 1. Create default treatment consent
       const consentContent = `
@@ -358,7 +367,12 @@ Registration Date: ${new Date().toISOString()}
         },
       });
 
-      console.log(`✅ Created default consent: ${defaultConsent.id}`);
+      logger.info({
+        event: 'patient_default_consent_created',
+        patientId: patient.id,
+        consentId: defaultConsent.id,
+        clinicianId: validatedData.assignedClinicianId
+      });
 
       // 2. Create data access grant for assigned clinician
       const accessGrant = await prisma.dataAccessGrant.create({
@@ -375,7 +389,12 @@ Registration Date: ${new Date().toISOString()}
         },
       });
 
-      console.log(`✅ Created data access grant: ${accessGrant.id}`);
+      logger.info({
+        event: 'patient_access_grant_created',
+        patientId: patient.id,
+        accessGrantId: accessGrant.id,
+        clinicianId: validatedData.assignedClinicianId
+      });
 
       // 3. Create audit log for consent creation
       await prisma.auditLog.create({
@@ -398,7 +417,11 @@ Registration Date: ${new Date().toISOString()}
         },
       });
 
-      console.log(`✅ Default consent and access grant setup complete for patient ${patient.id}`);
+      logger.info({
+        event: 'patient_default_setup_complete',
+        patientId: patient.id,
+        clinicianId: validatedData.assignedClinicianId
+      });
     }
 
     // Create audit log (using validated data)
@@ -450,7 +473,11 @@ Registration Date: ${new Date().toISOString()}
       message: 'Patient created successfully',
     }, { status: 201 });
   } catch (error: any) {
-    console.error('Error creating patient:', error);
+    logger.error({
+      event: 'patient_create_error',
+      errorCode: error.code,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
 
     // Handle unique constraint violations
     if (error.code === 'P2002') {

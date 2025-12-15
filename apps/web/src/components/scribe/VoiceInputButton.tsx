@@ -136,7 +136,7 @@ export default function VoiceInputButton({
       <div className={`flex items-center space-x-2 ${className}`}>
         <button
           disabled
-          className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed flex items-center space-x-2"
+          className="px-4 py-2 bg-gray-200 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed flex items-center space-x-2"
           title={t('soapTemplates.voiceInput.unsupportedBrowser')}
         >
           <span>🎤</span>

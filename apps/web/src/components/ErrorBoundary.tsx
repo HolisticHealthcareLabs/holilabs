@@ -249,7 +249,7 @@ function DefaultErrorFallback({
           <div className="mt-4 text-center">
             <a
               href="mailto:support@holilabs.com"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
               ¿Necesitas ayuda? Contacta soporte
             </a>

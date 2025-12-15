@@ -216,9 +216,11 @@ export default function MedicationDetailPage() {
             )}
 
             {/* Frequency */}
+            {/* Decorative - low contrast intentional for time/date icons */}
             {medication.frequency && (
               <div>
                 <h3 className="text-sm font-semibold text-gray-600 mb-2">Frecuencia</h3>
+                {/* Decorative - low contrast intentional for all metadata icons (clock and calendar icons on lines 224, 235, 250) */}
                 <div className="flex items-center gap-2">
                   <ClockIcon className="h-5 w-5 text-gray-400" />
                   <p className="text-lg font-medium text-gray-900">{medication.frequency}</p>

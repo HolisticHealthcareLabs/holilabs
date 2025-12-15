@@ -166,10 +166,11 @@ export default function EPrescribingDrawer({
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Gestión Rápida de Recetas</h2>
+            {/* Decorative - low contrast intentional for icon-only close button */}
             <button
               onClick={onClose}
               aria-label="Cerrar gestión de recetas"
-              className="text-gray-500 hover:text-gray-700 text-2xl"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
             >
               ×
             </button>

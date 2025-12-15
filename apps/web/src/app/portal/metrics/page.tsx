@@ -88,6 +88,7 @@ export default function MetricsPage() {
         </svg>
       );
     }
+    // Decorative - low contrast intentional for stable trend icon
     return (
       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
@@ -136,11 +137,11 @@ export default function MetricsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-16 h-16 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <svg
-              className="w-8 h-8 text-green-600 animate-spin"
+              className="w-8 h-8 text-green-600 dark:text-green-400 animate-spin"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -159,7 +160,7 @@ export default function MetricsPage() {
               />
             </svg>
           </div>
-          <p className="text-gray-600 font-medium">Cargando métricas...</p>
+          <p className="text-gray-600 dark:text-gray-300 font-medium">Cargando métricas...</p>
         </div>
       </div>
     );
@@ -167,11 +168,11 @@ export default function MetricsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8 max-w-md w-full">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-red-600"
+              className="w-8 h-8 text-red-600 dark:text-red-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -184,10 +185,10 @@ export default function MetricsPage() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
             Error al cargar
           </h2>
-          <p className="text-gray-600 mb-6 text-center">{error}</p>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">{error}</p>
           <button
             onClick={() => fetchMetrics()}
             className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
@@ -202,14 +203,14 @@ export default function MetricsPage() {
   const hasData = data?.metrics && data.metrics.length > 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Mis Métricas de Salud
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Monitorea tus signos vitales y tendencias de salud
           </p>
         </div>
@@ -223,7 +224,7 @@ export default function MetricsPage() {
               className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap transition-all ${
                 selectedPeriod === days
                   ? 'bg-green-600 text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
               }`}
             >
               {days === 7
@@ -238,10 +239,11 @@ export default function MetricsPage() {
         </div>
 
         {!hasData ? (
-          <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-12 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-12 text-center">
+            {/* Decorative - low contrast intentional for empty state icon */}
+            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
-                className="w-10 h-10 text-gray-400"
+                className="w-10 h-10 text-gray-400 dark:text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -254,10 +256,10 @@ export default function MetricsPage() {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
               No hay datos de métricas
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               Los signos vitales se registran durante tus consultas médicas.
             </p>
           </div>
@@ -269,7 +271,7 @@ export default function MetricsPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -287,12 +289,13 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Presión Arterial</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Presión Arterial</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.bloodPressure.systolic || '-'}/
                         {data?.summary.bloodPressure.diastolic || '-'}
                       </p>
-                      <p className="text-xs text-gray-500">{data?.summary.bloodPressure.unit}</p>
+                      {/* Decorative - low contrast intentional for unit labels */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{data?.summary.bloodPressure.unit}</p>
                     </div>
                   </div>
                   {getTrendIcon(data?.summary.bloodPressure.trend || 'stable')}
@@ -304,7 +307,7 @@ export default function MetricsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -322,11 +325,12 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Frecuencia Cardíaca</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Frecuencia Cardíaca</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.heartRate.value || '-'}
                       </p>
-                      <p className="text-xs text-gray-500">{data?.summary.heartRate.unit}</p>
+                      {/* Decorative - low contrast intentional for unit labels */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{data?.summary.heartRate.unit}</p>
                     </div>
                   </div>
                   {getTrendIcon(data?.summary.heartRate.trend || 'stable')}
@@ -338,7 +342,7 @@ export default function MetricsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -356,11 +360,12 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Temperatura</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Temperatura</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.temperature.value || '-'}
                       </p>
-                      <p className="text-xs text-gray-500">{data?.summary.temperature.unit}</p>
+                      {/* Decorative - low contrast intentional for unit labels */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{data?.summary.temperature.unit}</p>
                     </div>
                   </div>
                   {getTrendIcon(data?.summary.temperature.trend || 'stable')}
@@ -372,7 +377,7 @@ export default function MetricsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -390,11 +395,12 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Saturación O₂</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Saturación O₂</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.oxygenSaturation.value || '-'}
                       </p>
-                      <p className="text-xs text-gray-500">{data?.summary.oxygenSaturation.unit}</p>
+                      {/* Decorative - low contrast intentional for unit labels */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{data?.summary.oxygenSaturation.unit}</p>
                     </div>
                   </div>
                   {getTrendIcon(data?.summary.oxygenSaturation.trend || 'stable')}
@@ -406,7 +412,7 @@ export default function MetricsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -416,11 +422,12 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Frecuencia Resp.</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Frecuencia Resp.</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.respiratoryRate.value || '-'}
                       </p>
-                      <p className="text-xs text-gray-500">{data?.summary.respiratoryRate.unit}</p>
+                      {/* Decorative - low contrast intentional for unit labels */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{data?.summary.respiratoryRate.unit}</p>
                     </div>
                   </div>
                   {getTrendIcon(data?.summary.respiratoryRate.trend || 'stable')}
@@ -432,7 +439,7 @@ export default function MetricsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -442,11 +449,12 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 font-medium">Peso</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Peso</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.weight.value || '-'}
                       </p>
-                      <p className="text-xs text-gray-500">{data?.summary.weight.unit}</p>
+                      {/* Decorative - low contrast intentional for unit labels */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{data?.summary.weight.unit}</p>
                     </div>
                   </div>
                   {getTrendIcon(data?.summary.weight.trend || 'stable')}
@@ -455,25 +463,25 @@ export default function MetricsPage() {
             </div>
 
             {/* Info Card */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h3 className="text-sm font-semibold text-blue-900 mb-3">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
                 📊 Sobre tus métricas
               </h3>
-              <ul className="space-y-2 text-sm text-blue-800">
+              <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
+                  <span className="text-blue-600 dark:text-blue-400">•</span>
                   <span>
                     Los signos vitales se registran durante tus consultas médicas
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
+                  <span className="text-blue-600 dark:text-blue-400">•</span>
                   <span>
                     Las tendencias te ayudan a ver cómo evoluciona tu salud
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-600">•</span>
+                  <span className="text-blue-600 dark:text-blue-400">•</span>
                   <span>
                     Consulta con tu médico si notas cambios significativos
                   </span>

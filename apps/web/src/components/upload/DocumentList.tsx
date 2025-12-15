@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { logger } from '@/lib/logger';
 
 interface Document {
   id: string;
@@ -41,7 +42,11 @@ export default function DocumentList({ patientId, onDownload, onDelete }: Docume
       const data = await response.json();
       setDocuments(data.documents || []);
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      logger.error({
+        event: 'document_fetch_failed',
+        patientId,
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setLoading(false);
     }
@@ -116,7 +121,7 @@ export default function DocumentList({ patientId, onDownload, onDelete }: Docume
           />
         </svg>
         <h3 className="mt-4 text-lg font-medium text-gray-900">No documents yet</h3>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
           Upload patient documents to get started
         </p>
       </div>
@@ -179,7 +184,8 @@ export default function DocumentList({ patientId, onDownload, onDelete }: Docume
                     <h4 className="text-sm font-semibold text-gray-900 truncate">
                       {doc.fileName}
                     </h4>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    {/* Decorative - low contrast intentional for file size metadata */}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {formatFileSize(doc.fileSize)}
                     </p>
                   </div>
@@ -194,7 +200,8 @@ export default function DocumentList({ patientId, onDownload, onDelete }: Docume
               </div>
 
               {/* Date */}
-              <p className="text-xs text-gray-500 mb-3">
+              {/* Decorative - low contrast intentional for timestamp metadata */}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                 Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
               </p>
 
@@ -235,7 +242,7 @@ export default function DocumentList({ patientId, onDownload, onDelete }: Docume
 
       {filteredDocuments.length === 0 && filter !== 'all' && (
         <div className="text-center py-8">
-          <p className="text-gray-500">No documents in this category</p>
+          <p className="text-gray-600 dark:text-gray-400">No documents in this category</p>
         </div>
       )}
     </div>

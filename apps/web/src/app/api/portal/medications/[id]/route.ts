@@ -32,18 +32,17 @@ export async function GET(
     // Fetch medication with full details
     const medication = await prisma.medication.findUnique({
       where: { id },
-      // TODO: prescriber relation doesn't exist in Prisma schema yet
-      // include: {
-      //   prescriber: {
-      //     select: {
-      //       id: true,
-      //       firstName: true,
-      //       lastName: true,
-      //       specialty: true,
-      //       phone: true,
-      //     },
-      //   },
-      // },
+      include: {
+        prescriber: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            specialty: true,
+            profilePictureUrl: true,
+          },
+        },
+      },
     });
 
     if (!medication) {

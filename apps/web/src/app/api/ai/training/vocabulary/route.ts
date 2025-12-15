@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { transcriptionCorrectionService } from '@/lib/services/transcription-correction.service';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,14 +84,14 @@ export const GET = createProtectedRoute(
       const filteredVocabulary = vocabulary;
 
       // Log vocabulary generation
-      console.log('📚 Custom vocabulary generated:', {
+      logger.info({
+        event: 'ai_custom_vocabulary_generated',
+        userId: context.user.id,
         startDate,
         endDate,
         totalTerms: vocabulary.length,
         filteredTerms: filteredVocabulary.length,
         minFrequency: minFrequency || 'none',
-        userId: context.user.id,
-        timestamp: new Date().toISOString(),
       });
 
       // Return based on format
@@ -137,7 +138,12 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error generating vocabulary:', error);
+      logger.error({
+        event: 'ai_vocabulary_generation_failed',
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to generate vocabulary',

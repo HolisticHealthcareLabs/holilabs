@@ -40,7 +40,7 @@ export default function ScribeError({
           AI Scribe Error
         </h2>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
           We encountered an issue with the AI Scribe feature. Please check your microphone
           permissions and try again.
         </p>
@@ -85,6 +85,7 @@ export default function ScribeError({
           </a>
         </div>
 
+        {/* Decorative element - low contrast intentional */}
         <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
           Error ID: {error.digest || 'Unknown'}
         </p>

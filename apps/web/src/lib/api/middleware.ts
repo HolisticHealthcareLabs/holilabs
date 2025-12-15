@@ -230,6 +230,8 @@ export function rateLimit(config: RateLimitConfig) {
 export function requireAuth() {
   return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
     try {
+      const log = createLogger({ requestId: context.requestId });
+
       // Skip authentication in test environment
       if (process.env.NODE_ENV === 'test') {
         context.user = {
@@ -241,44 +243,59 @@ export function requireAuth() {
       }
 
       // ===================================================================
-      // DEMO MODE AUTHENTICATION (MVP)
+      // NEXTAUTH v5 SESSION AUTHENTICATION
       // ===================================================================
-      // TODO: Replace with NextAuth or proper authentication system
-      // For MVP development, use demo user from database
+      // Use proper NextAuth v5 session validation for HIPAA compliance
       // ===================================================================
 
-      const demoEmail = process.env.DEMO_USER_EMAIL || 'doctor@holilabs.com';
+      // Import NextAuth auth function
+      const { getServerSession } = await import('@/lib/auth');
+      const session = await getServerSession();
 
-      // Fetch demo user from database
+      // Validate session exists and has user
+      if (!session || !session.user || !session.user.id) {
+        log.warn({
+          event: 'auth_session_missing',
+          path: request.url,
+        }, 'No valid session found');
+
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+
+      // Verify user exists in database
       const dbUser = await prisma.user.findUnique({
-        where: { email: demoEmail },
+        where: { id: session.user.id },
         select: { id: true, email: true, role: true, firstName: true, lastName: true },
       });
 
       if (!dbUser) {
-        // If demo user doesn't exist, create one
-        const log = createLogger({ requestId: context.requestId });
         log.warn({
-          event: 'demo_user_not_found',
-          email: demoEmail,
-          msg: 'Demo user not found in database. Please seed the database.',
-        });
+          event: 'auth_user_not_found',
+          userId: session.user.id,
+          email: session.user.email,
+        }, 'User from session not found in database');
 
         return NextResponse.json(
-          {
-            error: 'Demo user not configured',
-            details: 'Please run database seed to create demo users',
-          },
-          { status: 500 }
+          { error: 'User not found' },
+          { status: 401 }
         );
       }
 
-      // Attach user to context
+      // Attach validated user to context
       context.user = {
         id: dbUser.id,
         email: dbUser.email,
         role: dbUser.role,
       };
+
+      log.debug({
+        event: 'auth_success',
+        userId: dbUser.id,
+        role: dbUser.role,
+      }, 'Authentication successful');
 
       return next();
     } catch (error) {

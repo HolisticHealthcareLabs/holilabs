@@ -167,6 +167,7 @@ export function ClinicalDecisionSupportPanel({
           <ShieldCheckIcon className="w-5 h-5 text-blue-600" />
           Clinical Decision Support
         </h2>
+        {/* Decorative - low contrast intentional for UI chrome element */}
         <button
           onClick={() => setShowPanel(false)}
           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
@@ -182,7 +183,8 @@ export function ClinicalDecisionSupportPanel({
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
             <ExclamationTriangleIcon className="w-4 h-4 text-red-600" />
             Drug Interactions
-            {loadingInteractions && <span className="text-xs text-gray-500">(Checking...)</span>}
+            {/* Decorative - low contrast intentional for transient loading state */}
+            {loadingInteractions && <span className="text-xs text-gray-500 dark:text-gray-400">(Checking...)</span>}
           </h3>
 
           {drugInteractions.length === 0 ? (

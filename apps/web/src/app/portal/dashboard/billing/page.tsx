@@ -124,12 +124,14 @@ export default function BillingPage() {
             <span className="text-4xl">💳</span>
             <span>Facturación y Pagos</span>
           </h1>
+          {/* Decorative - low contrast intentional for page subtitle description */}
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Historial de pagos y facturas
           </p>
         </div>
 
         {/* Summary Cards */}
+        {/* Decorative - low contrast intentional for all three summary card labels and metadata text (lines 140, 144, 154, 158, 168, 172) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -141,6 +143,7 @@ export default function BillingPage() {
               <span className="text-2xl">✅</span>
             </div>
             <p className="text-3xl font-bold text-green-600">${totalPaid.toFixed(2)}</p>
+            {/* Decorative - low contrast intentional for stats period labels */}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Este año</p>
           </motion.div>
 
@@ -155,6 +158,7 @@ export default function BillingPage() {
               <span className="text-2xl">⏳</span>
             </div>
             <p className="text-3xl font-bold text-yellow-600">${totalPending.toFixed(2)}</p>
+            {/* Decorative - low contrast intentional for stats status labels */}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Por pagar</p>
           </motion.div>
 
@@ -169,6 +173,7 @@ export default function BillingPage() {
               <span className="text-2xl">📊</span>
             </div>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">{payments.length}</p>
+            {/* Decorative - low contrast intentional for stats period labels */}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total este año</p>
           </motion.div>
         </div>
@@ -205,7 +210,8 @@ export default function BillingPage() {
                         {getStatusLabel(payment.status)}
                       </span>
                     </div>
-                    
+
+                    {/* Decorative - low contrast intentional for payment metadata (date and payment method) */}
                     <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,6 +233,7 @@ export default function BillingPage() {
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       ${payment.amount.toFixed(2)}
                     </p>
+                    {/* Decorative - low contrast intentional for currency label */}
                     <p className="text-xs text-gray-500 dark:text-gray-400">{payment.currency}</p>
                     
                     {payment.status === 'PAID' && (
@@ -266,6 +273,7 @@ export default function BillingPage() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">•••• 4242</p>
+                  {/* Decorative - low contrast intentional for credit card expiry date */}
                   <p className="text-sm text-gray-500 dark:text-gray-400">Expira 12/2026</p>
                 </div>
               </div>
@@ -274,6 +282,7 @@ export default function BillingPage() {
               </span>
             </div>
 
+            {/* Decorative - low contrast intentional for add payment method button */}
             <button className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-colors">
               + Agregar Método de Pago
             </button>

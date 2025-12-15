@@ -196,6 +196,7 @@ export function ICD10Search({
             placeholder={placeholder}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white"
           />
+          {/* Decorative - low contrast intentional for search icon */}
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             🔍
           </div>
@@ -206,7 +207,7 @@ export function ICD10Search({
                 setSearchResults([]);
                 inputRef.current?.focus();
               }}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               ✕
             </button>
@@ -269,7 +270,7 @@ export function ICD10Search({
             </h4>
             <button
               onClick={() => setShowCommonDiagnoses(false)}
-              className="text-xs text-gray-500 hover:text-gray-700"
+              className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
               Ocultar
             </button>

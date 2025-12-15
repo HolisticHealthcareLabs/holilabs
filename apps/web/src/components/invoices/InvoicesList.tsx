@@ -299,7 +299,7 @@ export default function InvoicesList({
                   {/* Invoice Details */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                         Fecha de Emisión
                       </div>
                       <div className="text-sm font-medium text-gray-900">
@@ -307,7 +307,7 @@ export default function InvoicesList({
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                         Fecha de Vencimiento
                       </div>
                       <div className="text-sm font-medium text-gray-900">
@@ -315,13 +315,13 @@ export default function InvoicesList({
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">Subtotal</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Subtotal</div>
                       <div className="text-sm font-medium text-gray-900">
                         {formatMXN(invoice.subtotal)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 mb-1">IVA (16%)</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">IVA (16%)</div>
                       <div className="text-sm font-medium text-gray-900">
                         {formatMXN(invoice.taxAmount)}
                       </div>
@@ -377,7 +377,7 @@ export default function InvoicesList({
                               <div className="text-sm font-medium text-gray-900">
                                 {item.description}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
                                 Cantidad: {item.quantity} × {formatMXN(item.unitPrice)}
                               </div>
                             </div>
@@ -405,7 +405,7 @@ export default function InvoicesList({
                                 <div className="text-sm font-medium text-gray-900">
                                   {payment.paymentNumber}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
                                   {payment.processedAt
                                     ? formatDate(payment.processedAt)
                                     : 'Pendiente'}
@@ -415,7 +415,7 @@ export default function InvoicesList({
                                 <div className="text-sm font-bold text-green-600">
                                   {formatMXN(payment.amount)}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
                                   {payment.status}
                                 </div>
                               </div>

@@ -15,6 +15,7 @@ export interface AppTheme {
     // Backgrounds
     background: string;
     surface: string;
+    surfaceSecondary: string;
     surfaceVariant: string;
     card: string;
 
@@ -77,6 +78,7 @@ export const lightTheme: AppTheme = {
     // Backgrounds
     background: '#FFFFFF',
     surface: colorPalette.gray[50],
+    surfaceSecondary: colorPalette.gray[100],
     surfaceVariant: colorPalette.gray[100],
     card: '#FFFFFF',
 
@@ -139,6 +141,7 @@ export const darkTheme: AppTheme = {
     // Backgrounds
     background: '#0F172A',
     surface: '#1E293B',
+    surfaceSecondary: '#334155',
     surfaceVariant: '#334155',
     card: '#1E293B',
 

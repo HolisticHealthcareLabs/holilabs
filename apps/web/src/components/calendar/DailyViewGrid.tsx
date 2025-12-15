@@ -167,6 +167,7 @@ export function DailyViewGrid({
                     <div className="text-lg font-bold text-gray-900 dark:text-white">
                       {format(appointment.startTime, 'HH:mm', { locale: es })}
                     </div>
+                    {/* Time metadata - low contrast intentional */}
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {format(appointment.endTime, 'HH:mm', { locale: es })}
                     </div>
@@ -193,6 +194,7 @@ export function DailyViewGrid({
                       <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                         {appointment.patient.firstName} {appointment.patient.lastName}
                       </div>
+                      {/* Preferred name metadata - low contrast intentional */}
                       {appointment.patient.preferredName && (
                         <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                           "{appointment.patient.preferredName}"
@@ -211,6 +213,7 @@ export function DailyViewGrid({
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       Dr(a). {appointment.clinician.lastName}
                     </div>
+                    {/* Specialty metadata - low contrast intentional */}
                     {appointment.clinician.specialty && (
                       <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {appointment.clinician.specialty}

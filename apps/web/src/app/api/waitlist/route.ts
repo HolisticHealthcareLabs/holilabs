@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { logger } from '@/lib/logger';
 
 // Initialize Resend only if API key is available
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -19,7 +20,10 @@ export async function POST(request: Request) {
 
     // Check if Resend is configured
     if (!resend) {
-      console.error('Resend API key not configured');
+      logger.error({
+        event: 'waitlist_email_service_not_configured',
+        error: 'Resend API key not configured',
+      });
       return NextResponse.json(
         { error: 'Email service not configured. Please contact support.' },
         { status: 503 }
@@ -120,7 +124,11 @@ export async function POST(request: Request) {
       message: 'Successfully joined the waitlist!',
     });
   } catch (error: any) {
-    console.error('Waitlist signup error:', error);
+    logger.error({
+      event: 'waitlist_signup_failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to join waitlist. Please try again.' },
       { status: 500 }

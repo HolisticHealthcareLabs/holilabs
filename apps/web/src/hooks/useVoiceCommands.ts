@@ -21,6 +21,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 // ============================================================================
 // Types
@@ -207,7 +208,12 @@ export function useVoiceCommands({
 
         if (parsedCommand) {
           if (debug) {
-            console.log('[Voice Command] Matched:', parsedCommand);
+            logger.debug({
+              event: 'voice_command_matched',
+              commandId: parsedCommand.commandId,
+              confidence: parsedCommand.confidence,
+              pattern: parsedCommand.pattern
+            });
           }
 
           // Find command handler
@@ -236,7 +242,11 @@ export function useVoiceCommands({
           // No matching command found
           const error = `Command not recognized: "${transcript}"`;
           if (debug) {
-            console.log('[Voice Command]', error);
+            logger.debug({
+              event: 'voice_command_not_recognized',
+              transcript,
+              language
+            });
           }
 
           setState((prev) => ({
@@ -324,7 +334,11 @@ export function useVoiceCommands({
     };
 
     recognition.onerror = (event: any) => {
-      console.error('[Voice Command] Error:', event.error);
+      logger.error({
+        event: 'voice_command_error',
+        errorType: event.error,
+        language
+      });
 
       let errorMsg = 'Voice recognition error';
       if (event.error === 'not-allowed') {
@@ -359,7 +373,10 @@ export function useVoiceCommands({
       try {
         recognition.start();
       } catch (error) {
-        console.error('[Voice Command] Auto-start failed:', error);
+        logger.error({
+          event: 'voice_command_autostart_failed',
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     }
 
@@ -383,7 +400,10 @@ export function useVoiceCommands({
     try {
       recognitionRef.current.start();
     } catch (error) {
-      console.error('[Voice Command] Start error:', error);
+      logger.error({
+        event: 'voice_command_start_failed',
+        error: error instanceof Error ? error.message : String(error)
+      });
       setState((prev) => ({
         ...prev,
         error: 'Failed to start voice recognition',
@@ -400,7 +420,10 @@ export function useVoiceCommands({
     try {
       recognitionRef.current.stop();
     } catch (error) {
-      console.error('[Voice Command] Stop error:', error);
+      logger.error({
+        event: 'voice_command_stop_failed',
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }, []);
 

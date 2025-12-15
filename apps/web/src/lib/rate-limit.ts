@@ -21,13 +21,33 @@ const redis = process.env.UPSTASH_REDIS_REST_URL
  * Rate limit configurations for different endpoint types
  */
 export const rateLimiters = {
-  // Authentication endpoints - 5 requests per minute
+  // Authentication endpoints - 5 requests per 15 minutes (stricter for signin)
   auth: redis
     ? new Ratelimit({
         redis,
-        limiter: Ratelimit.slidingWindow(5, '1 m'),
+        limiter: Ratelimit.slidingWindow(5, '15 m'),
         analytics: true,
         prefix: '@ratelimit/auth',
+      })
+    : null,
+
+  // Registration endpoints - 3 requests per hour (prevent abuse)
+  registration: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(3, '1 h'),
+        analytics: true,
+        prefix: '@ratelimit/registration',
+      })
+    : null,
+
+  // Password reset endpoints - 3 requests per hour (prevent enumeration)
+  passwordReset: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(3, '1 h'),
+        analytics: true,
+        prefix: '@ratelimit/password-reset',
       })
     : null,
 
@@ -68,6 +88,16 @@ export const rateLimiters = {
         limiter: Ratelimit.slidingWindow(20, '1 m'),
         analytics: true,
         prefix: '@ratelimit/search',
+      })
+    : null,
+
+  // Appointment endpoints - 60 requests per minute
+  appointments: redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(60, '1 m'),
+        analytics: true,
+        prefix: '@ratelimit/appointments',
       })
     : null,
 };

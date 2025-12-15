@@ -62,20 +62,20 @@ export const Button: React.FC<ButtonProps> = ({
   // Size configurations
   const sizeConfig = {
     sm: {
-      paddingVertical: theme.spacing[2],
-      paddingHorizontal: theme.spacing[3],
+      paddingVertical: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.md,
       fontSize: theme.typography.fontSize.sm,
       minHeight: 36,
     },
     md: {
-      paddingVertical: theme.spacing[3],
-      paddingHorizontal: theme.spacing[4],
+      paddingVertical: theme.spacing.md,
+      paddingHorizontal: theme.spacing.lg,
       fontSize: theme.typography.fontSize.base,
       minHeight: 44, // iOS minimum touch target
     },
     lg: {
-      paddingVertical: theme.spacing[4],
-      paddingHorizontal: theme.spacing[6],
+      paddingVertical: theme.spacing.lg,
+      paddingHorizontal: theme.spacing.xxl,
       fontSize: theme.typography.fontSize.lg,
       minHeight: 52,
     },

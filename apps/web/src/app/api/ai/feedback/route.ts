@@ -8,9 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * Calculate Levenshtein distance for ML metrics
@@ -102,15 +103,25 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(
-      `✅ [AI Feedback] Clinician ${session.user.id} marked ${contentType} ${contentId} as ${isCorrect ? 'CORRECT' : 'INCORRECT'}`
-    );
+    logger.info({
+      event: 'ai_feedback_submitted',
+      clinicianId: session.user.id,
+      contentType,
+      contentId,
+      isCorrect,
+      editDistance,
+      rating,
+    });
 
     // If feedback is negative and edit distance is significant, auto-flag for review queue
     if (!isCorrect && editDistance && editDistance > 10) {
-      console.log(
-        `⚠️  [AI Feedback] Significant edit distance (${editDistance}) - may need review queue entry`
-      );
+      logger.warn({
+        event: 'ai_feedback_significant_edit',
+        contentType,
+        contentId,
+        editDistance,
+        clinicianId: session.user.id,
+      });
     }
 
     return NextResponse.json({
@@ -122,8 +133,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error) {
-    console.error('❌ [AI Feedback API] Error:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'ai_feedback_submit_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
@@ -226,8 +241,12 @@ export async function GET(request: NextRequest) {
       })),
     });
 
-  } catch (error) {
-    console.error('❌ [AI Feedback API] Error fetching feedback:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'ai_feedback_fetch_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

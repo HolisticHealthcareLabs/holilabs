@@ -52,11 +52,11 @@ export function WidgetStore({ widgets, onToggle, isOpen, onClose }: WidgetStoreP
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-x-4 top-20 bottom-20 md:inset-x-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[600px] md:max-h-[80vh] z-50
-              bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl
+            className="fixed inset-x-4 top-20 bottom-20 md:inset-x-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[600px] md:h-[600px] z-50
+              bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl
               border border-white/20 dark:border-gray-700/50
               rounded-3xl shadow-2xl
-              overflow-hidden"
+              flex flex-col"
           >
             {/* Header */}
             <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
@@ -85,7 +85,7 @@ export function WidgetStore({ widgets, onToggle, isOpen, onClose }: WidgetStoreP
             </div>
 
             {/* Widget List */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+            <div className="flex-1 p-6 overflow-y-auto">
               {Object.entries(widgetsByCategory).map(([category, categoryWidgets]) => {
                 if (categoryWidgets.length === 0) return null;
 
@@ -115,16 +115,36 @@ export function WidgetStore({ widgets, onToggle, isOpen, onClose }: WidgetStoreP
                           </div>
                           <button
                             onClick={() => onToggle(widget.id)}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${
+                            className={`relative w-16 h-8 rounded-full transition-all flex items-center ${
                               widget.enabled
                                 ? 'bg-green-500'
                                 : 'bg-gray-300 dark:bg-gray-600'
                             }`}
+                            style={{
+                              WebkitTapHighlightColor: 'transparent'
+                            }}
                           >
+                            {/* On/Off Text */}
+                            <span 
+                              className={`absolute left-2 text-[10px] font-semibold transition-opacity ${
+                                widget.enabled ? 'opacity-0' : 'opacity-100 text-gray-700'
+                              }`}
+                            >
+                              OFF
+                            </span>
+                            <span 
+                              className={`absolute right-2 text-[10px] font-semibold transition-opacity ${
+                                widget.enabled ? 'opacity-100 text-white' : 'opacity-0'
+                              }`}
+                            >
+                              ON
+                            </span>
+                            
+                            {/* Sliding Circle */}
                             <motion.span
-                              className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                              className="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md"
                               animate={{
-                                x: widget.enabled ? 24 : 0,
+                                x: widget.enabled ? 32 : 0,
                               }}
                               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                             />

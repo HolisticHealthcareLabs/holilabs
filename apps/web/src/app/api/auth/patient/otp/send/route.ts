@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateOTP } from '@/lib/auth/otp';
 import logger from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Validation schema
 const SendOTPSchema = z.object({
@@ -17,6 +18,12 @@ const SendOTPSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting - 5 requests per 15 minutes for auth endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'auth');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     // Parse and validate request body
     const body = await request.json();

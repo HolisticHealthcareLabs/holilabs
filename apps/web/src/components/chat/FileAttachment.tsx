@@ -106,7 +106,8 @@ export default function FileAttachmentDisplay({
             </svg>
           </div>
         </div>
-        <div className="mt-1 text-xs text-gray-500 truncate max-w-[300px]">
+        {/* Decorative - low contrast intentional for file metadata */}
+        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[300px]">
           {attachment.originalName}
         </div>
       </motion.div>
@@ -127,7 +128,8 @@ export default function FileAttachmentDisplay({
         <p className="text-sm font-medium text-gray-900 truncate">
           {attachment.originalName}
         </p>
-        <p className="text-xs text-gray-500">
+        {/* Decorative - low contrast intentional for file size metadata */}
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           {formatFileSize(attachment.fileSize)}
         </p>
       </div>

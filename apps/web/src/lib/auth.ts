@@ -4,12 +4,15 @@
  * Handles clinician authentication via Supabase
  */
 
-import { NextAuthOptions } from 'next-auth';
+// Re-export NextAuth types for backward compatibility
+export type { Session } from 'next-auth';
+export type NextAuthOptions = any; // v5 doesn't use NextAuthOptions anymore
 import { SupabaseAdapter } from '@auth/supabase-adapter';
 import { prisma } from '@/lib/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import crypto from 'crypto';
 import logger from '@/lib/logger';
 import { UserRole } from '@prisma/client';
 
@@ -52,15 +55,17 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        if (!credentials?.email) {
+        if (!credentials?.email || typeof credentials.email !== 'string') {
           return null;
         }
 
+        const email = credentials.email as string;
+
         // In development, automatically create/login user with any email
         return {
-          id: credentials.email,
-          email: credentials.email,
-          name: credentials.email.split('@')[0],
+          id: email,
+          email: email,
+          name: email.split('@')[0],
           role: UserRole.CLINICIAN,
         };
       },
@@ -92,7 +97,12 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 15 * 60, // 15 minutes idle timeout (sliding window)
+    updateAge: 5 * 60, // Update session every 5 minutes of activity
+  },
+
+  jwt: {
+    maxAge: 8 * 60 * 60, // 8 hours absolute timeout
   },
 
   pages: {
@@ -101,11 +111,13 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }: { token: any; user: any; account: any; trigger?: string }) {
       // Initial sign in
       if (user) {
         token.id = user.id;
         token.email = user.email;
+        token.iat = Math.floor(Date.now() / 1000); // Issued at
+        token.sessionId = crypto.randomBytes(16).toString('hex'); // Unique session ID
 
         // Fetch user details from database
         const dbUser = await prisma.user.findUnique({
@@ -133,10 +145,33 @@ export const authOptions: NextAuthOptions = {
         });
       }
 
+      // Token rotation: Refresh token on update trigger
+      if (trigger === 'update' && token.iat) {
+        const now = Math.floor(Date.now() / 1000);
+        const tokenAge = now - (token.iat as number);
+
+        // Rotate token if older than 5 minutes
+        if (tokenAge > 5 * 60) {
+          token.iat = now;
+          token.rotatedAt = now;
+
+          logger.info({
+            event: 'token_rotated',
+            userId: token.id,
+            tokenAge,
+          });
+        }
+      }
+
+      // Store refresh token if available
+      if (account?.refresh_token) {
+        token.refreshToken = account.refresh_token;
+      }
+
       return token;
     },
 
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
@@ -148,7 +183,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
 
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: { user: any; account: any; profile: any }) {
       try {
         if (!user.email) {
           return false;
@@ -190,7 +225,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   events: {
-    async signOut({ token }) {
+    async signOut({ token }: { token: any }) {
       logger.info({
         event: 'user_signed_out',
         userId: token?.id,
@@ -201,6 +236,40 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
 };
+
+/**
+ * NextAuth v5 Compatibility Wrapper
+ *
+ * NextAuth v5 removed getServerSession() in favor of auth()
+ * This wrapper provides backward compatibility for existing code
+ */
+import NextAuth from 'next-auth';
+
+// Convert v4 authOptions to v5 config
+const clinicianAuthConfig = {
+  adapter: authOptions.adapter,
+  providers: authOptions.providers,
+  session: authOptions.session,
+  pages: authOptions.pages,
+  callbacks: authOptions.callbacks,
+  events: authOptions.events,
+  secret: authOptions.secret,
+  debug: authOptions.debug,
+};
+
+// Create v5 auth instance for clinicians
+const clinicianAuth = NextAuth(clinicianAuthConfig);
+
+/**
+ * Backward compatible getServerSession function
+ * Drop-in replacement for NextAuth v4's getServerSession()
+ */
+export async function getServerSession(_authOptions?: any) {
+  return await clinicianAuth.auth();
+}
+
+// Export v5 auth instance for direct use
+export const { auth: clinicianAuthFunction } = clinicianAuth;
 
 /**
  * Get user session token for Socket.io authentication

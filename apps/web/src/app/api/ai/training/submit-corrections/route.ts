@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { transcriptionCorrectionService } from '@/lib/services/transcription-correction.service';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,14 +89,14 @@ export const POST = createProtectedRoute(
       }
 
       // Log for monitoring
-      console.log('✅ Training batch generated:', {
+      logger.info({
+        event: 'ai_training_batch_generated',
+        userId: context.user.id,
         startDate,
         endDate,
         language,
         specialty,
         totalCorrections: filteredCorrections.length,
-        userId: context.user.id,
-        timestamp: new Date().toISOString(),
       });
 
       return NextResponse.json({
@@ -117,7 +118,12 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error generating training batch:', error);
+      logger.error({
+        event: 'ai_training_batch_generation_failed',
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to generate training batch',

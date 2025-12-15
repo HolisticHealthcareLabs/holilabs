@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { logger } from '@/lib/logger';
 
 interface VideoRoomProps {
   roomId: string;
@@ -68,7 +69,12 @@ export default function VideoRoom({
           setRemoteUserName(userType === 'clinician' ? 'María González' : 'Dr. García');
         }, 2000);
       } catch (error) {
-        console.error('Error accessing media devices:', error);
+        logger.error({
+          event: 'media_device_access_failed',
+          roomId,
+          userType,
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     };
 
@@ -149,7 +155,12 @@ export default function VideoRoom({
           setIsScreenSharing(false);
         };
       } catch (error) {
-        console.error('Error sharing screen:', error);
+        logger.error({
+          event: 'screen_share_failed',
+          roomId,
+          userType,
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     }
   };

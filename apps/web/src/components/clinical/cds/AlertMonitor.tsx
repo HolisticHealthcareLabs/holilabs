@@ -287,6 +287,7 @@ export function AlertMonitor({
 
         {/* Last Update */}
         {lastUpdate && (
+          {/* Decorative - low contrast intentional for timestamp metadata */}
           <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             Last updated: {lastUpdate.toLocaleTimeString()}
           </div>

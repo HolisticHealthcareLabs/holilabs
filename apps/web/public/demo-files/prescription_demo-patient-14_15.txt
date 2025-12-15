@@ -1,0 +1,38 @@
+
+RECETA MÉDICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Fernando Ortiz
+Fecha de Nacimiento: 12/12/1972
+Dirección: São Paulo
+
+MEDICAMENTO PRESCRITO
+Nombre: Metformin
+Dosis: 500mg
+Frecuencia: 2x daily
+Vía de Administración: Oral
+Duración del Tratamiento: 30 días
+
+INDICACIONES
+Tomar con alimentos. Monitorear niveles de glucosa.
+
+
+
+
+
+
+
+RECOMENDACIONES
+• No suspender el tratamiento sin consultar al médico
+• Reportar efectos adversos inmediatamente
+• Mantener en lugar fresco y seco
+
+MÉDICO PRESCRIPTOR
+Nombre: Dr. Elena Sánchez
+Cédula Profesional: 8017276
+Teléfono: +52 55 2554 5108
+
+Fecha de Emisión: 28 de octubre de 2025
+Vigencia: 30 días
+
+Esta receta es válida por única vez. No se aceptan alteraciones.

@@ -12,6 +12,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { logger } from '@/lib/logger';
 
 interface SOAPSections {
   subjective: string;
@@ -127,7 +128,11 @@ export default function SOAPNoteReviewPage() {
         setEditedSections(mockNote.sections);
         setLoading(false);
       } catch (err) {
-        console.error('Error loading note:', err);
+        logger.error({
+          event: 'clinician_note_load_error',
+          noteId,
+          error: err instanceof Error ? err.message : 'Unknown error'
+        });
         setError('Failed to load note');
         setLoading(false);
       }
@@ -156,11 +161,19 @@ export default function SOAPNoteReviewPage() {
       //   body: JSON.stringify({ sections: editedSections }),
       // });
 
-      console.log('Saving edited sections:', editedSections);
+      logger.info({
+        event: 'clinician_note_saved',
+        noteId,
+        sectionsModified: Object.keys(editedSections)
+      });
       alert('Note saved successfully');
       setSaving(false);
     } catch (err) {
-      console.error('Error saving note:', err);
+      logger.error({
+        event: 'clinician_note_save_error',
+        noteId,
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
       alert('Failed to save note');
       setSaving(false);
     }
@@ -182,11 +195,19 @@ export default function SOAPNoteReviewPage() {
       //   body: JSON.stringify({ sections: editedSections }),
       // });
 
-      console.log('Approving note:', noteId);
+      logger.info({
+        event: 'clinician_note_approved',
+        noteId,
+        clinicianId: session?.user?.id
+      });
       alert('Note approved and signed');
       router.push('/clinician/notes');
     } catch (err) {
-      console.error('Error approving note:', err);
+      logger.error({
+        event: 'clinician_note_approve_error',
+        noteId,
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
       alert('Failed to approve note');
       setSaving(false);
     }
@@ -203,7 +224,11 @@ export default function SOAPNoteReviewPage() {
       alert('Note regeneration not yet implemented');
       setSaving(false);
     } catch (err) {
-      console.error('Error regenerating note:', err);
+      logger.error({
+        event: 'clinician_note_regenerate_error',
+        noteId,
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
       alert('Failed to regenerate note');
       setSaving(false);
     }

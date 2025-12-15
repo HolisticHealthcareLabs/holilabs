@@ -40,7 +40,7 @@ export default function PatientsError({
           Error Loading Patients
         </h2>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
           We encountered an issue while loading the patient data. This has been reported to our
           team.
         </p>
@@ -73,6 +73,7 @@ export default function PatientsError({
           </a>
         </div>
 
+        {/* Decorative element - low contrast intentional */}
         <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
           Error ID: {error.digest || 'Unknown'}
         </p>

@@ -100,7 +100,7 @@ export default function CorrectionMetricsWidget({
         );
       default:
         return (
-          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
           </svg>
         );
@@ -125,8 +125,8 @@ export default function CorrectionMetricsWidget({
   if (error || !metrics) {
     return (
       <div className={`bg-white rounded-xl shadow-lg border border-gray-200 p-6 ${className}`}>
-        <div className="text-center text-gray-500">
-          <svg className="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center text-gray-600 dark:text-gray-400">
+          <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-sm">No hay métricas de corrección disponibles</p>
@@ -147,7 +147,7 @@ export default function CorrectionMetricsWidget({
           </div>
           <div>
             <h3 className="text-lg font-bold text-gray-900">Métricas RLHF</h3>
-            <p className="text-xs text-gray-500">Entrenamiento de IA</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Entrenamiento de IA</p>
           </div>
         </div>
 
@@ -236,7 +236,7 @@ export default function CorrectionMetricsWidget({
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
           <span className="text-xs text-gray-600 font-medium">RLHF Loop activo</span>
-          <span className="text-xs text-gray-500">• Última 30 días</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">• Última 30 días</span>
         </div>
       </div>
     </div>

@@ -111,7 +111,7 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
           No scheduled reminders yet
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Schedule a reminder from the Templates tab to get started
         </p>
       </div>
@@ -157,21 +157,25 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500 mb-1">Recipients</p>
+                      {/* Decorative - low contrast intentional for label */}
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Recipients</p>
                       <p className="font-medium">{reminder.patientIds.length} patients</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Channel</p>
+                      {/* Decorative - low contrast intentional for label */}
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Channel</p>
                       <p className="font-medium">{reminder.channel}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Next Execution</p>
+                      {/* Decorative - low contrast intentional for label */}
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Next Execution</p>
                       <p className="font-medium">
                         {reminder.nextExecution ? formatDate(reminder.nextExecution) : formatDate(reminder.scheduledFor)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Recurrence</p>
+                      {/* Decorative - low contrast intentional for label */}
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Recurrence</p>
                       <p className="font-medium">
                         {reminder.recurrencePattern ? `${reminder.recurrencePattern} (${reminder.executionCount}x)` : 'One-time'}
                       </p>
@@ -235,7 +239,7 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
               <h3 className="text-xl font-bold text-gray-900 mb-4">
                 Confirm {showConfirm.action}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 Are you sure you want to {showConfirm.action} this reminder?
                 {showConfirm.action === 'cancel' && ' This action cannot be undone.'}
               </p>

@@ -16,6 +16,7 @@ import { UpdatePatientSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
 import { onPatientUpdated } from '@/lib/cache/patient-context-cache';
 import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -308,10 +309,18 @@ export const PUT = createProtectedRoute(
     // Invalidate patient context cache (demographics and full context)
     try {
       await onPatientUpdated(patient.id);
-      console.log('[Cache] Invalidated patient context cache for patient update:', patient.id);
+      logger.info({
+        event: 'patient_cache_invalidated',
+        patientId: patient.id,
+        operation: 'update'
+      });
     } catch (cacheError) {
       // Don't fail the request if cache invalidation fails
-      console.error('[Cache] Cache invalidation error:', cacheError);
+      logger.error({
+        event: 'patient_cache_invalidation_error',
+        patientId: patient.id,
+        error: cacheError instanceof Error ? cacheError.message : 'Unknown error'
+      });
     }
 
     return NextResponse.json({

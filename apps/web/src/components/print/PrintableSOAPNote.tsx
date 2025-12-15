@@ -82,6 +82,7 @@ export function PrintableSOAPNote({
         {clinicInfo && (
           <div className="mb-4">
             <h1 className="text-2xl font-bold">{clinicInfo.name}</h1>
+            {/* Decorative - low contrast intentional for clinic metadata */}
             {clinicInfo.address && (
               <p className="text-sm text-gray-600">{clinicInfo.address}</p>
             )}

@@ -89,14 +89,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   // Auto-connect when authenticated
   const connect = async () => {
-    if (!tokens?.access_token) {
+    if (!tokens?.accessToken) {
       console.warn('⚠️ [Provider] Cannot connect: No access token');
       return;
     }
 
     try {
       console.log('🔌 [Provider] Connecting WebSocket...');
-      await WebSocketService.connect(tokens.access_token);
+      await WebSocketService.connect(tokens.accessToken);
       const newStatus = WebSocketService.getStatus();
       setStatus(newStatus);
       setIsConnected(newStatus.connected);
@@ -116,7 +116,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   // Connect on auth
   useEffect(() => {
-    if (isAuthenticated && tokens?.access_token) {
+    if (isAuthenticated && tokens?.accessToken) {
       connect();
     } else {
       disconnect();
@@ -125,7 +125,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       // Don't disconnect on unmount, only on logout
     };
-  }, [isAuthenticated, tokens?.access_token]);
+  }, [isAuthenticated, tokens?.accessToken]);
 
   // Handle app state changes
   useEffect(() => {
@@ -135,7 +135,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       if (appState.match(/inactive|background/) && nextAppState === 'active') {
         // App came to foreground
         console.log('📱 [Provider] App foregrounded');
-        if (!WebSocketService.isConnected() && isAuthenticated && tokens?.access_token) {
+        if (!WebSocketService.isConnected() && isAuthenticated && tokens?.accessToken) {
           connect();
         }
       } else if (nextAppState.match(/inactive|background/)) {
@@ -150,7 +150,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.remove();
     };
-  }, [isAuthenticated, tokens?.access_token]);
+  }, [isAuthenticated, tokens?.accessToken]);
 
   const value: WebSocketContextValue = {
     isConnected,

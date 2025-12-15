@@ -295,10 +295,11 @@ export function setCsrfCookie(response: NextResponse): string {
   const token = generateCsrfToken();
 
   // Set httpOnly cookie (secure in production)
+  // Use strict SameSite policy for maximum CSRF protection
   response.cookies.set('csrf-token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // Strict in production
     maxAge: 60 * 60 * 24, // 24 hours
     path: '/',
   });
@@ -346,6 +347,101 @@ export function withCsrf(options: RequestInit = {}): RequestInit {
       ...options.headers,
       'X-CSRF-Token': token || '',
     },
+  };
+}
+
+// ============================================================================
+// API ROUTE HELPER
+// ============================================================================
+
+/**
+ * Wrapper for API routes that automatically validates CSRF tokens
+ *
+ * Usage:
+ * export const POST = withCsrfProtection(async (request: NextRequest) => {
+ *   // Your route handler code here
+ *   return NextResponse.json({ success: true });
+ * });
+ */
+export function withCsrfProtection(
+  handler: (request: NextRequest) => Promise<NextResponse>
+) {
+  return async (request: NextRequest, context?: any): Promise<NextResponse> => {
+    // Skip CSRF check for GET, HEAD, OPTIONS
+    if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+      return handler(request);
+    }
+
+    // Get CSRF token from header
+    const headerToken = request.headers.get('x-csrf-token');
+
+    // Get CSRF token from cookie
+    const cookieToken = request.cookies.get('csrf-token')?.value;
+
+    // Both must exist
+    if (!headerToken || !cookieToken) {
+      logger.warn({
+        event: 'csrf_token_missing',
+        method: request.method,
+        url: request.url,
+        hasHeaderToken: !!headerToken,
+        hasCookieToken: !!cookieToken,
+      });
+
+      return NextResponse.json(
+        {
+          error: 'CSRF token missing',
+          message: 'Missing CSRF token. Please refresh the page and try again.',
+          code: 'CSRF_TOKEN_MISSING',
+        },
+        { status: 403 }
+      );
+    }
+
+    // Tokens must match (timing-safe comparison)
+    if (!compareTokens(headerToken, cookieToken)) {
+      logger.warn({
+        event: 'csrf_token_mismatch',
+        method: request.method,
+        url: request.url,
+      });
+
+      return NextResponse.json(
+        {
+          error: 'CSRF token mismatch',
+          message: 'Invalid CSRF token. Please refresh the page and try again.',
+          code: 'CSRF_TOKEN_MISMATCH',
+        },
+        { status: 403 }
+      );
+    }
+
+    // Verify token signature and expiration
+    if (!verifyCsrfToken(headerToken)) {
+      logger.warn({
+        event: 'csrf_token_invalid',
+        method: request.method,
+        url: request.url,
+      });
+
+      return NextResponse.json(
+        {
+          error: 'CSRF token invalid',
+          message: 'Your session has expired. Please refresh the page and try again.',
+          code: 'CSRF_TOKEN_INVALID',
+        },
+        { status: 403 }
+      );
+    }
+
+    // Token valid - proceed
+    logger.debug({
+      event: 'csrf_token_valid',
+      method: request.method,
+      url: request.url,
+    });
+
+    return handler(request);
   };
 }
 

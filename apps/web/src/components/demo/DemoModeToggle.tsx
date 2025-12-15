@@ -28,50 +28,55 @@ export default function DemoModeToggle() {
 
   return (
     <div className="relative group">
-      {/* Toggle Button */}
+      {/* Minimalist Toggle Button */}
       <button
         onClick={handleToggle}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all font-medium text-sm ${
+        className={`relative flex items-center gap-3 px-5 py-2.5 rounded-full transition-all duration-300 font-medium text-sm shadow-sm hover:shadow-md ${
           isDemo
-            ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
-            : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100'
+            ? 'bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 border border-indigo-200'
+            : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
         }`}
       >
-        <div className={`w-2 h-2 rounded-full ${isDemo ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'}`} />
-        <span>{isDemo ? '🎭 Demo Mode' : '👨‍⚕️ Live Mode'}</span>
+        {/* Status Indicator */}
+        <div className="relative">
+          <div className={`w-2 h-2 rounded-full transition-all ${
+            isDemo ? 'bg-indigo-500' : 'bg-gray-400'
+          }`} />
+          {isDemo && (
+            <div className="absolute inset-0 w-2 h-2 rounded-full bg-indigo-500 animate-ping opacity-75" />
+          )}
+        </div>
+
+        {/* Label */}
+        <span className="tracking-wide">{isDemo ? 'Demo' : 'Live'}</span>
       </button>
 
-      {/* Tooltip */}
-      <div className="absolute top-full mt-2 left-0 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
-        <div className="font-semibold mb-1">
-          {isDemo ? 'Demo Mode Active' : 'Live Mode Active'}
+      {/* Minimalist Tooltip */}
+      <div className="absolute top-full mt-3 left-0 w-56 bg-gray-900/95 backdrop-blur-sm text-white text-xs rounded-xl p-3.5 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-50 shadow-xl">
+        <div className="font-semibold mb-1.5 text-sm">
+          {isDemo ? 'Demo Mode' : 'Live Mode'}
         </div>
-        <div className="text-gray-300">
+        <div className="text-gray-300 leading-relaxed">
           {isDemo
-            ? 'Viewing sample patients. Switch to Live Mode to see your real patients.'
-            : 'Viewing real patients. Switch to Demo Mode to explore with sample data.'}
+            ? 'Exploring with 30 sample patients'
+            : 'Viewing your real patient data'}
         </div>
-        <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45" />
+        <div className="absolute -top-1.5 left-6 w-3 h-3 bg-gray-900/95 backdrop-blur-sm transform rotate-45" />
       </div>
 
-      {/* Banner (when in demo mode) */}
+      {/* Minimalist Banner (when in demo mode) */}
       {isDemo && (
-        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white text-center py-2 text-sm font-medium z-40 shadow-lg">
-          <div className="flex items-center justify-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>You're viewing demo data (10 sample patients)</span>
+        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-center py-2.5 text-sm font-medium z-40 shadow-md backdrop-blur-lg bg-opacity-95">
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <span className="font-normal">Demo Mode — 30 Sample Patients</span>
+            </div>
             <button
               onClick={handleToggle}
-              className="ml-4 px-3 py-1 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition text-xs font-bold"
+              className="ml-3 px-4 py-1 bg-white/90 hover:bg-white text-indigo-600 rounded-full transition text-xs font-semibold tracking-wide"
             >
-              Exit Demo
+              Exit
             </button>
           </div>
         </div>

@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,7 +117,12 @@ export const GET = createProtectedRoute(
         count: enrichedGrants.length,
       });
     } catch (error: any) {
-      console.error('Error fetching access grants:', error);
+      logger.error({
+        event: 'access_grants_fetch_failed',
+        patientId: new URL(request.url).searchParams.get('patientId'),
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to fetch access grants', message: error.message },
         { status: 500 }
@@ -293,7 +299,12 @@ export const POST = createProtectedRoute(
         message: 'Access grant created successfully',
       });
     } catch (error: any) {
-      console.error('Error creating access grant:', error);
+      logger.error({
+        event: 'access_grant_create_failed',
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to create access grant', message: error.message },
         { status: 500 }

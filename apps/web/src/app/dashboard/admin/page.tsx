@@ -15,7 +15,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Sistema</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Sistema</p>
                 <p className="text-2xl font-bold text-primary">Activo</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -29,7 +29,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Almacenamiento</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Almacenamiento</p>
                 <p className="text-2xl font-bold text-primary">2.4 GB</p>
               </div>
               <svg className="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 20 20">
@@ -43,7 +43,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Usuarios Activos</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Usuarios Activos</p>
                 <p className="text-2xl font-bold text-primary">8</p>
               </div>
               <svg className="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 20 20">
@@ -66,7 +66,7 @@ export default function AdminPage() {
             </div>
             <div>
               <div className="font-semibold text-gray-900">BAA Management</div>
-              <div className="text-sm text-gray-600">HIPAA Agreements</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">HIPAA Agreements</div>
             </div>
           </a>
           <a
@@ -80,7 +80,7 @@ export default function AdminPage() {
             </div>
             <div>
               <div className="font-semibold text-gray-900">Audit Logs</div>
-              <div className="text-sm text-gray-600">View system logs</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">View system logs</div>
             </div>
           </a>
           <a
@@ -95,7 +95,7 @@ export default function AdminPage() {
             </div>
             <div>
               <div className="font-semibold text-gray-900">Privacy Policy</div>
-              <div className="text-sm text-gray-600">GDPR/LGPD/HIPAA</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">GDPR/LGPD/HIPAA</div>
             </div>
           </a>
           <a
@@ -111,7 +111,7 @@ export default function AdminPage() {
             </div>
             <div>
               <div className="font-semibold text-gray-900">DPA</div>
-              <div className="text-sm text-gray-600">Data Processing</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Data Processing</div>
             </div>
           </a>
         </div>
@@ -189,14 +189,16 @@ export default function AdminPage() {
                   <span className="text-sm font-medium">Claude 3.5 Sonnet</span>
                   <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
                 </div>
-                <div className="text-xs text-gray-600">Consultas médicas generales</div>
+                {/* Decorative - low contrast intentional for metadata */}
+                <div className="text-xs text-gray-500 dark:text-gray-400">Consultas médicas generales</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Differential Privacy Engine</span>
                   <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
                 </div>
-                <div className="text-xs text-gray-600">ε = 1.0, δ = 1e-5</div>
+                {/* Decorative - low contrast intentional for metadata */}
+                <div className="text-xs text-gray-500 dark:text-gray-400">ε = 1.0, δ = 1e-5</div>
               </div>
             </div>
           </div>
@@ -211,19 +213,22 @@ export default function AdminPage() {
             </h3>
             <div className="space-y-2">
               <div className="p-3 border-l-4 border-green-500 bg-gray-50 rounded">
-                <div className="text-xs text-gray-500">Hoy, 14:32</div>
+                {/* Decorative - low contrast intentional for timestamps */}
+                <div className="text-xs text-gray-500 dark:text-gray-400">Hoy, 14:32</div>
                 <div className="text-sm font-medium">Documento subido exitosamente</div>
-                <div className="text-xs text-gray-600">Dr. Rossi → Paciente VBQ-MG-4554-T2D</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Paciente VBQ-MG-4554-T2D</div>
               </div>
               <div className="p-3 border-l-4 border-blue-500 bg-gray-50 rounded">
-                <div className="text-xs text-gray-500">Hoy, 13:15</div>
+                {/* Decorative - low contrast intentional for timestamps */}
+                <div className="text-xs text-gray-500 dark:text-gray-400">Hoy, 13:15</div>
                 <div className="text-sm font-medium">Consulta de IA realizada</div>
-                <div className="text-xs text-gray-600">Dr. Rossi → Paciente VBQ-CS-6069-PIM</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Paciente VBQ-CS-6069-PIM</div>
               </div>
               <div className="p-3 border-l-4 border-purple-500 bg-gray-50 rounded">
-                <div className="text-xs text-gray-500">Hoy, 11:47</div>
+                {/* Decorative - low contrast intentional for timestamps */}
+                <div className="text-xs text-gray-500 dark:text-gray-400">Hoy, 11:47</div>
                 <div className="text-sm font-medium">Acceso a billetera digital</div>
-                <div className="text-xs text-gray-600">Dr. Rossi → Paciente VBQ-AR-3039-ASM</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Paciente VBQ-AR-3039-ASM</div>
               </div>
             </div>
           </div>

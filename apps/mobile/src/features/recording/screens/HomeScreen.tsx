@@ -34,7 +34,7 @@ export const HomeScreen = () => {
 
   useEffect(() => {
     // Update duration every second while recording
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval> | undefined;
 
     if (status === 'recording') {
       interval = setInterval(() => {
@@ -158,9 +158,9 @@ export const HomeScreen = () => {
   };
 
   const getRecordingColor = () => {
-    if (status === 'recording') return theme.colors.recording.active;
-    if (status === 'paused') return theme.colors.recording.paused;
-    return theme.colors.recording.inactive;
+    if (status === 'recording') return theme.colors.recording;
+    if (status === 'paused') return theme.colors.recordingPaused;
+    return theme.colors.textTertiary;
   };
 
   return (
@@ -192,7 +192,7 @@ export const HomeScreen = () => {
               style={[
                 styles.recordingIndicator,
                 { backgroundColor: getRecordingColor() },
-                status === 'recording' && styles.recordingIndicatorPulse,
+                status === 'recording' ? styles.recordingIndicatorPulse : undefined,
               ]}
             />
 

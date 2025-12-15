@@ -7,8 +7,9 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -116,7 +117,11 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
-    console.error('Error fetching audit logs:', error);
+    logger.error({
+      event: 'audit_logs_fetch_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       {
         error: 'Failed to fetch audit logs',
@@ -152,7 +157,11 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error('Error creating audit log:', error);
+    logger.error({
+      event: 'audit_log_create_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       {
         error: 'Failed to create audit log',

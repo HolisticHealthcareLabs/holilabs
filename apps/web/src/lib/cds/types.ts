@@ -275,7 +275,7 @@ export interface CDSRule {
   severity: CDSAlertSeverity;
   triggerHooks: CDSHookType[];
   condition: (context: CDSContext) => boolean;
-  evaluate: (context: CDSContext) => CDSAlert | null;
+  evaluate: (context: CDSContext) => CDSAlert | null | Promise<CDSAlert | null>;
   priority: number; // 1-10, higher = more important
   enabled: boolean;
   evidenceStrength?: EvidenceStrength;

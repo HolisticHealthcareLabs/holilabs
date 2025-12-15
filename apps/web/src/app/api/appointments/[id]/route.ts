@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { checkAppointmentConflicts } from '@/lib/appointments/conflict-detection';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -76,7 +77,13 @@ export const GET = createProtectedRoute(
         data: appointment,
       });
     } catch (error: any) {
-      console.error('Error fetching appointment:', error);
+      logger.error({
+        event: 'appointment_fetch_failed',
+        appointmentId: context.params.id,
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to fetch appointment', details: error.message },
         { status: 500 }
@@ -250,7 +257,13 @@ export const PATCH = createProtectedRoute(
         );
       }
 
-      console.error('Error updating appointment:', error);
+      logger.error({
+        event: 'appointment_update_failed',
+        appointmentId: context.params.id,
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to update appointment', details: error.message },
         { status: 500 }
@@ -316,7 +329,13 @@ export const DELETE = createProtectedRoute(
         data: cancelledAppointment,
       });
     } catch (error: any) {
-      console.error('Error cancelling appointment:', error);
+      logger.error({
+        event: 'appointment_cancel_failed',
+        appointmentId: context.params.id,
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         { error: 'Failed to cancel appointment', details: error.message },
         { status: 500 }

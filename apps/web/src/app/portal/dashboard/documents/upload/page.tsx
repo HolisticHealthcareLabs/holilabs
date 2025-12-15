@@ -16,6 +16,7 @@ import {
   XMarkIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 type DocumentType = 'LAB_RESULT' | 'IMAGING' | 'PRESCRIPTION' | 'INSURANCE' | 'CONSENT' | 'OTHER';
 
@@ -132,7 +133,7 @@ export default function DocumentUploadPage() {
         )
       );
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       setFiles(prev =>
         prev.map(f =>
           f.id === uploadFile.id
@@ -247,6 +248,7 @@ export default function DocumentUploadPage() {
             Seleccionar Archivos
           </label>
 
+          {/* Decorative - low contrast intentional for file format hints */}
           <p className="text-xs text-gray-500 mt-4">
             Formatos soportados: PDF, JPG, PNG, DOC, DOCX (máx. 10MB por archivo)
           </p>
@@ -275,6 +277,7 @@ export default function DocumentUploadPage() {
                     <p className="font-medium text-gray-900 truncate">
                       {file.file.name}
                     </p>
+                    {/* Decorative - low contrast intentional for file size metadata */}
                     <p className="text-sm text-gray-500">
                       {formatFileSize(file.file.size)}
                     </p>

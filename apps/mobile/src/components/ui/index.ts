@@ -5,6 +5,10 @@
  * Built with god-tier UX principles and healthcare optimization
  */
 
+// Base Components
+export { Card } from './Card';
+export { Button } from './Button';
+
 // Form Components
 export {
   FormField,

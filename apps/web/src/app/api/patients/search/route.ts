@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { searchPatients, initializeMeilisearch } from '@/lib/search/meilisearch';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,7 +70,11 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error searching patients:', error);
+      logger.error({
+        event: 'patient_search_error',
+        errorCode: error.code,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
 
       // If Meilisearch is not available, return helpful error
       if (error.code === 'ECONNREFUSED') {

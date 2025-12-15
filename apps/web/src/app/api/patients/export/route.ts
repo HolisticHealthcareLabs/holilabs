@@ -26,6 +26,7 @@ import {
   dpHistogram,
   // PrivacyBudgetTracker, // TEMPORARILY DISABLED - Build issue
 } from '@holi/deid';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -116,7 +117,12 @@ export const POST = createProtectedRoute(
             quasiIdentifiers: ['ageBand', 'region', 'gender'],
           });
           const suppressedCount = patients.length - kAnonymousPatients.length;
-          console.warn(`⚠️ k-Anonymity: Suppressed ${suppressedCount} records`);
+          logger.warn({
+            event: 'patients_export_k_anonymity_suppression',
+            suppressedCount,
+            originalCount: patients.length,
+            k,
+          });
         }
       }
 
@@ -226,7 +232,13 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Export error:', error);
+      logger.error({
+        event: 'patients_export_failed',
+        userId: context.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        isValidationError: error instanceof z.ZodError,
+      });
 
       if (error instanceof z.ZodError) {
         return NextResponse.json({

@@ -173,7 +173,7 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
             <div>
               <h2 id="send-form-modal-title" className="text-2xl font-bold text-gray-900">Enviar Formulario</h2>
               {template && (
-                <p className="text-sm text-gray-500 mt-1">{template.title}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{template.title}</p>
               )}
             </div>
             <button
@@ -202,14 +202,14 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                         step >= s.num
                           ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-500'
+                          : 'bg-gray-200 text-gray-600 dark:text-gray-400'
                       }`}
                     >
                       {s.num}
                     </div>
                     <span
                       className={`ml-2 text-sm font-medium ${
-                        step >= s.num ? 'text-blue-600' : 'text-gray-500'
+                        step >= s.num ? 'text-blue-600' : 'text-gray-600 dark:text-gray-400'
                       }`}
                     >
                       {s.label}
@@ -262,7 +262,7 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
 
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {filteredPatients.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                       No se encontraron pacientes
                     </div>
                   ) : (
@@ -284,7 +284,7 @@ export default function SendFormModal({ isOpen, onClose, template, onSuccess }: 
                             <div className="font-medium text-gray-900">
                               {patient.firstName} {patient.lastName}
                             </div>
-                            <div className="text-sm text-gray-500">{patient.email}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{patient.email}</div>
                           </div>
                         </div>
                         {selectedPatient?.id === patient.id && (

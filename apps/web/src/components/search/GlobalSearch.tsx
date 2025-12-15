@@ -149,7 +149,7 @@ export function GlobalSearch() {
       >
         <MagnifyingGlassIcon className="w-4 h-4" />
         <span className="hidden sm:inline">Search patients...</span>
-        <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold text-gray-500 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">
+        <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded">
           <span>Cmd</span>K
         </kbd>
       </button>
@@ -186,6 +186,7 @@ export function GlobalSearch() {
           <div className="max-h-96 overflow-y-auto">
             {query.length < 2 && recentSearches.length > 0 && (
               <div className="p-4">
+                {/* Decorative - low contrast intentional for section header */}
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
                   Recent Searches
                 </p>
@@ -239,7 +240,8 @@ export function GlobalSearch() {
                           </span>
                         )}
                       </p>
-                      <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+                      {/* Decorative - low contrast intentional for patient metadata */}
+                      <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                         {patient.mrn && <span>MRN: {patient.mrn}</span>}
                         {patient.age !== null && <span>{patient.age}y</span>}
                         {patient.gender && <span>{patient.gender}</span>}
@@ -259,6 +261,7 @@ export function GlobalSearch() {
 
           {/* Footer */}
           <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+            {/* Decorative - low contrast intentional for keyboard shortcuts */}
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1">

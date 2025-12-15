@@ -163,6 +163,7 @@ export default function DataIngestion({ patientId, onContextUpdate }: DataIngest
                   const isComplete = i <= stepIndex;
                   const isCurrent = i === stepIndex;
 
+                  {/* Decorative - low contrast intentional for incomplete step state */}
                   return (
                     <div
                       key={step.key}

@@ -5,17 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-// FIXME: Old rate limiting API - needs refactor
-// import { rateLimit } from '@/lib/rate-limit';
-
-// FIXME: Old rate limiting - commented out for now
-// const limiter = rateLimit({
-//   interval: 60 * 1000,
-//   uniqueTokenPerInterval: 500,
-// });
+import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/appointments/[id]/situations
@@ -26,8 +20,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 30, 'APPOINTMENT_SITUATIONS_POST');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -97,7 +94,12 @@ export async function POST(
       message: 'Situation added successfully',
     });
   } catch (error: any) {
-    console.error('Error adding situation to appointment:', error);
+    logger.error({
+      event: 'appointment_situation_add_failed',
+      appointmentId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to add situation' },
       { status: 500 }
@@ -114,8 +116,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 30, 'APPOINTMENT_SITUATIONS_DELETE');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -163,7 +168,12 @@ export async function DELETE(
       message: 'Situation removed successfully',
     });
   } catch (error: any) {
-    console.error('Error removing situation from appointment:', error);
+    logger.error({
+      event: 'appointment_situation_remove_failed',
+      appointmentId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to remove situation' },
       { status: 500 }

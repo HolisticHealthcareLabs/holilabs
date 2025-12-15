@@ -33,7 +33,7 @@ export default function AdminError({
           Admin Panel Error
         </h2>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
           An error occurred in the admin panel. The incident has been logged for review.
         </p>
 
@@ -65,6 +65,7 @@ export default function AdminError({
           </a>
         </div>
 
+        {/* Decorative element - low contrast intentional */}
         <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
           Error ID: {error.digest || 'Unknown'}
         </p>

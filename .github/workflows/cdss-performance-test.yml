@@ -1,0 +1,257 @@
+name: CDSS Performance Tests
+
+# Run performance tests on PRs and weekly
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/src/lib/cds/**'
+      - 'apps/web/tests/load/**'
+      - 'apps/web/prisma/schema.prisma'
+      - '.github/workflows/cdss-performance-test.yml'
+  schedule:
+    # Run weekly on Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:  # Allow manual triggers
+
+# Only allow one performance test per PR at a time
+concurrency:
+  group: performance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  load-test:
+    name: CDSS Load Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup database
+        working-directory: apps/web
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        run: |
+          pnpm prisma generate
+          pnpm prisma migrate deploy
+
+      - name: Seed test data
+        working-directory: apps/web
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: |
+          # Optional: Add seed script for test data
+          # pnpm prisma db seed
+          echo "Database ready for testing"
+
+      - name: Build application
+        working-directory: apps/web
+        env:
+          SKIP_ENV_VALIDATION: true
+        run: pnpm build
+
+      - name: Start application
+        working-directory: apps/web
+        env:
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          REDIS_DB: 0
+          NODE_ENV: test
+          PORT: 3000
+        run: |
+          pnpm start &
+          echo $! > app.pid
+
+          # Wait for app to be ready (max 60s)
+          timeout 60 bash -c 'until curl -f http://localhost:3000/api/health; do sleep 2; done'
+          echo "Application started successfully"
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | \
+            sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load test
+        working-directory: apps/web
+        env:
+          BASE_URL: http://localhost:3000
+        run: |
+          k6 run \
+            --out json=load-test-results.json \
+            --summary-export=load-test-summary.json \
+            tests/load/cdss-load-test.js
+
+      - name: Parse results
+        id: parse_results
+        working-directory: apps/web
+        run: |
+          # Extract key metrics from summary
+          P95=$(jq -r '.metrics.http_req_duration.values.p95' load-test-summary.json)
+          P99=$(jq -r '.metrics.http_req_duration.values.p99' load-test-summary.json)
+          ERROR_RATE=$(jq -r '.metrics.http_req_failed.values.rate' load-test-summary.json)
+          CACHE_HIT_RATE=$(jq -r '.metrics.cache_hits.values.rate // 0' load-test-summary.json)
+
+          echo "p95=$P95" >> $GITHUB_OUTPUT
+          echo "p99=$P99" >> $GITHUB_OUTPUT
+          echo "error_rate=$ERROR_RATE" >> $GITHUB_OUTPUT
+          echo "cache_hit_rate=$CACHE_HIT_RATE" >> $GITHUB_OUTPUT
+
+          # Check thresholds
+          PASS=true
+          if (( $(echo "$P95 > 2000" | bc -l) )); then
+            echo "❌ P95 latency ($P95ms) exceeds threshold (2000ms)"
+            PASS=false
+          else
+            echo "✅ P95 latency: ${P95}ms"
+          fi
+
+          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
+            echo "❌ Error rate ($ERROR_RATE) exceeds threshold (1%)"
+            PASS=false
+          else
+            echo "✅ Error rate: $(echo "$ERROR_RATE * 100" | bc)%"
+          fi
+
+          if [ "$PASS" = false ]; then
+            exit 1
+          fi
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = JSON.parse(fs.readFileSync('apps/web/load-test-summary.json', 'utf8'));
+
+            const p95 = summary.metrics.http_req_duration.values.p95;
+            const p99 = summary.metrics.http_req_duration.values.p99;
+            const errorRate = (summary.metrics.http_req_failed.values.rate * 100).toFixed(2);
+            const cacheHitRate = ((summary.metrics.cache_hits?.values.rate || 0) * 100).toFixed(1);
+            const totalRequests = summary.metrics.http_reqs.values.count;
+
+            const p95Status = p95 < 2000 ? '✅' : '❌';
+            const errorStatus = errorRate < 1 ? '✅' : '❌';
+            const cacheStatus = cacheHitRate > 70 ? '✅' : '⚠️';
+
+            const comment = `## 🚀 CDSS Performance Test Results
+
+            | Metric | Value | Status | Threshold |
+            |--------|-------|--------|-----------|
+            | **p95 Latency** | ${p95.toFixed(0)}ms | ${p95Status} | <2000ms |
+            | **p99 Latency** | ${p99.toFixed(0)}ms | ℹ️ | <3000ms |
+            | **Error Rate** | ${errorRate}% | ${errorStatus} | <1% |
+            | **Cache Hit Rate** | ${cacheHitRate}% | ${cacheStatus} | >70% |
+            | **Total Requests** | ${totalRequests} | - | - |
+
+            ${p95 < 2000 && errorRate < 1 ? '**✅ All performance thresholds passed!**' : '**❌ Performance regression detected**'}
+
+            <details>
+            <summary>📊 Detailed Metrics</summary>
+
+            ### Response Times
+            - **min**: ${summary.metrics.http_req_duration.values.min.toFixed(0)}ms
+            - **avg**: ${summary.metrics.http_req_duration.values.avg.toFixed(0)}ms
+            - **med**: ${summary.metrics.http_req_duration.values.med.toFixed(0)}ms
+            - **max**: ${summary.metrics.http_req_duration.values.max.toFixed(0)}ms
+
+            ### Request Stats
+            - **Total Requests**: ${totalRequests}
+            - **Request Rate**: ${summary.metrics.http_reqs.values.rate.toFixed(2)} req/s
+            - **Data Transferred**: ${(summary.metrics.data_received.values.count / 1024 / 1024).toFixed(2)} MB
+
+            </details>
+
+            <details>
+            <summary>💡 Recommendations</summary>
+
+            ${p95 > 2000 ? '- ⚠️ High p95 latency detected. Consider:\n  - Reviewing database query performance\n  - Checking Redis cache effectiveness\n  - Optimizing rule evaluation logic\n' : ''}
+            ${errorRate > 1 ? '- ⚠️ High error rate detected. Check application logs for errors.\n' : ''}
+            ${cacheHitRate < 70 ? '- ⚠️ Low cache hit rate. Consider:\n  - Increasing cache TTL for stable data\n  - Reviewing cache key generation\n  - Checking Redis memory limits\n' : ''}
+
+            </details>
+
+            ---
+            _Load test completed in ${(summary.state.testRunDurationMs / 1000).toFixed(0)}s_
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results
+          path: |
+            apps/web/load-test-results.json
+            apps/web/load-test-summary.json
+          retention-days: 30
+
+      - name: Stop application
+        if: always()
+        working-directory: apps/web
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) || true
+          fi
+
+      - name: Check for performance regression
+        if: failure()
+        run: |
+          echo "::error::Performance regression detected. Check the test results for details."
+          exit 1

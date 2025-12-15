@@ -1,0 +1,39 @@
+
+FORMULARIO DE HISTORIA CLÍNICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Sofia Cruz
+Fecha de Nacimiento: 12 de diciembre de 1995
+Género: Femenino
+Teléfono: +55 11 15275-5701
+Email: sofia.cruz@demo.com
+
+ANTECEDENTES MÉDICOS
+Condiciones Actuales:
+• Hyperlipidemia
+• Hypertension
+
+Medicamentos Actuales:
+• Lisinopril 10mg - 1x daily
+• Gabapentin 300mg - 3x daily
+
+ALERGIAS
+• Penicilina
+• Aspirina
+
+ANTECEDENTES FAMILIARES
+• Diabetes tipo 2 (padre)
+• Hipertensión (madre)
+
+HÁBITOS
+Tabaquismo: No
+Alcohol: No
+Ejercicio: 3 veces por semana
+
+VACUNACIÓN
+✓ Influenza (2025)
+✓ COVID-19 (Refuerzo 2024)
+✓ Neumococo
+
+Fecha de elaboración: 17/4/2025
+Elaborado por: Dr. Carlos Martínez

@@ -107,7 +107,8 @@ export function AccessReasonModal({
           <Dialog.Description className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             <strong>Paciente:</strong> {patientName}
             <br />
-            <span className="text-xs text-gray-500 dark:text-gray-500">
+            {/* Decorative - low contrast intentional for legal reference */}
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               Conformidade: LGPD Art. 11, II (Tutela da saúde) + Lei 25.326 Argentina
             </span>
           </Dialog.Description>
@@ -139,7 +140,8 @@ export function AccessReasonModal({
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900 dark:text-gray-100">{option.label}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
-                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-500">{option.lgpdArticle}</div>
+                  {/* Decorative - low contrast intentional for legal reference */}
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{option.lgpdArticle}</div>
                 </div>
               </label>
             ))}

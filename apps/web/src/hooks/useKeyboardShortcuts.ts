@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 export type ModifierKey = 'ctrl' | 'cmd' | 'alt' | 'shift' | 'meta';
 export type Key = string;
@@ -159,7 +160,11 @@ export function useKeyboardShortcuts(
 
       if (matchesShortcut(event, shortcut.keys)) {
         if (debug) {
-          console.log(`[Keyboard Shortcut] Triggered: ${shortcut.id} (${shortcut.keys})`);
+          logger.debug({
+            event: 'keyboard_shortcut_triggered',
+            shortcutId: shortcut.id,
+            keys: shortcut.keys
+          });
         }
 
         if (shortcut.preventDefault !== false) {
@@ -179,11 +184,14 @@ export function useKeyboardShortcuts(
     window.addEventListener('keydown', handleKeyDown);
 
     if (debug) {
-      console.log('[Keyboard Shortcuts] Registered:', shortcutsRef.current.map(s => ({
-        id: s.id,
-        keys: s.keys,
-        description: s.description,
-      })));
+      logger.debug({
+        event: 'keyboard_shortcuts_registered',
+        shortcuts: shortcutsRef.current.map(s => ({
+          id: s.id,
+          keys: s.keys,
+          description: s.description,
+        }))
+      });
     }
 
     return () => {

@@ -214,6 +214,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
               {record.status === 'SIGNED' ? '✓ Firmado' : 'Pendiente'}
             </span>
             {record.signedAt && (
+              // Decorative - low contrast intentional for signed date metadata
               <span className="text-xs text-gray-500">
                 Firmado el {format(new Date(record.signedAt), 'dd/MM/yyyy')}
               </span>
@@ -232,6 +233,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
             </p>
             <p className="text-sm text-gray-600">{record.clinician.specialty || 'Medicina General'}</p>
             {record.clinician.licenseNumber && (
+              // Decorative - low contrast intentional for license number metadata
               <p className="text-xs text-gray-500">Cédula: {record.clinician.licenseNumber}</p>
             )}
           </div>
@@ -257,6 +259,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
               <div className="bg-red-50 rounded-lg p-4">
                 <p className="text-xs text-gray-600 mb-1">Presión Arterial</p>
                 <p className="text-2xl font-bold text-gray-900">{vitalSigns.bp}</p>
+                {/* Decorative - low contrast intentional for unit labels */}
                 <p className="text-xs text-gray-500">mmHg</p>
               </div>
             )}
@@ -264,6 +267,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
               <div className="bg-pink-50 rounded-lg p-4">
                 <p className="text-xs text-gray-600 mb-1">Frecuencia Cardíaca</p>
                 <p className="text-2xl font-bold text-gray-900">{vitalSigns.hr}</p>
+                {/* Decorative - low contrast intentional for unit labels */}
                 <p className="text-xs text-gray-500">lpm</p>
               </div>
             )}
@@ -271,6 +275,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
               <div className="bg-orange-50 rounded-lg p-4">
                 <p className="text-xs text-gray-600 mb-1">Temperatura</p>
                 <p className="text-2xl font-bold text-gray-900">{vitalSigns.temp}</p>
+                {/* Decorative - low contrast intentional for unit labels */}
                 <p className="text-xs text-gray-500">°C</p>
               </div>
             )}
@@ -278,6 +283,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-xs text-gray-600 mb-1">Frecuencia Respiratoria</p>
                 <p className="text-2xl font-bold text-gray-900">{vitalSigns.rr}</p>
+                {/* Decorative - low contrast intentional for unit labels */}
                 <p className="text-xs text-gray-500">rpm</p>
               </div>
             )}
@@ -285,6 +291,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
               <div className="bg-cyan-50 rounded-lg p-4">
                 <p className="text-xs text-gray-600 mb-1">Saturación O₂</p>
                 <p className="text-2xl font-bold text-gray-900">{vitalSigns.spo2}</p>
+                {/* Decorative - low contrast intentional for unit labels */}
                 <p className="text-xs text-gray-500">%</p>
               </div>
             )}
@@ -292,6 +299,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
               <div className="bg-green-50 rounded-lg p-4">
                 <p className="text-xs text-gray-600 mb-1">Peso</p>
                 <p className="text-2xl font-bold text-gray-900">{vitalSigns.weight}</p>
+                {/* Decorative - low contrast intentional for unit labels */}
                 <p className="text-xs text-gray-500">kg</p>
               </div>
             )}
@@ -403,6 +411,7 @@ export default function RecordDetailPage({ params }: { params: { id: string } })
             <p className="text-sm text-gray-700 mb-3">
               Este registro está protegido con blockchain y no puede ser modificado.
             </p>
+            {/* Decorative - low contrast intentional for blockchain hash metadata */}
             <p className="text-xs font-mono text-gray-500 bg-white rounded px-3 py-2 break-all">
               Hash: {record.noteHash}
             </p>

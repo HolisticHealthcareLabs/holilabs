@@ -388,7 +388,7 @@ describe('ReviewQueueService', () => {
     });
 
     it('should update to CORRECTED with corrections', async () => {
-      const corrections = { subjective: 'Corrected subjective section' };
+      const corrections = 'Corrected subjective section';
 
       prisma.manualReviewQueueItem.update.mockResolvedValue({
         ...mockQueueItem,

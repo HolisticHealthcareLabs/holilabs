@@ -17,6 +17,7 @@ import {
   ClockIcon,
   PhoneIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 interface SOAPNote {
   id: string;
@@ -109,7 +110,7 @@ export default function RecordDetailPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching record:', err);
+      logger.error('Error fetching record:', err);
     } finally {
       setLoading(false);
     }
@@ -361,6 +362,7 @@ export default function RecordDetailPage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
+              {/* Decorative - low contrast intentional for metadata labels */}
               <span className="block text-gray-500">Creado:</span>
               <span className="font-medium">
                 {format(new Date(record.createdAt), "d/MM/yyyy HH:mm", {
@@ -369,6 +371,7 @@ export default function RecordDetailPage() {
               </span>
             </div>
             <div>
+              {/* Decorative - low contrast intentional for metadata labels */}
               <span className="block text-gray-500">Actualizado:</span>
               <span className="font-medium">
                 {format(new Date(record.updatedAt), "d/MM/yyyy HH:mm", {
@@ -378,6 +381,7 @@ export default function RecordDetailPage() {
             </div>
             {record.signedAt && (
               <div>
+                {/* Decorative - low contrast intentional for metadata labels */}
                 <span className="block text-gray-500">Firmado:</span>
                 <span className="font-medium">
                   {format(new Date(record.signedAt), "d/MM/yyyy HH:mm", {
@@ -389,6 +393,7 @@ export default function RecordDetailPage() {
           </div>
           {record.session?.audioDuration && (
             <div className="mt-4 pt-4 border-t border-gray-200">
+              {/* Decorative - low contrast intentional for metadata labels */}
               <span className="text-gray-500">Duración de la grabación:</span>{' '}
               <span className="font-medium">
                 {Math.floor(record.session.audioDuration / 60)} minutos{' '}

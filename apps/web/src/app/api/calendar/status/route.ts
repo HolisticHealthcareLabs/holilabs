@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -48,7 +49,12 @@ export const GET = createProtectedRoute(
         data: status,
       });
     } catch (error: any) {
-      console.error('Calendar status error:', error);
+      logger.error({
+        event: 'calendar_status_fetch_failed',
+        userId: context.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return NextResponse.json(
         { error: 'Failed to fetch calendar status', details: error.message },
         { status: 500 }

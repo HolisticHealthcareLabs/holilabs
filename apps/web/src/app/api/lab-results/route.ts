@@ -10,8 +10,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 import { monitorLabResult } from '@/lib/prevention/lab-result-monitors';
 import { onLabResultCreated } from '@/lib/cache/patient-context-cache';
+import {
+  getReferenceRange,
+  getReferenceRangeByTestName,
+  interpretResult,
+  getInterpretationText,
+  calculateAge,
+  formatReferenceRange,
+} from '@/lib/clinical/lab-reference-ranges';
+import {
+  generateCriticalAlerts,
+  generateTreatmentRecommendations,
+  requiresImmediateNotification,
+  getNotificationPriority,
+} from '@/lib/clinical/lab-decision-rules';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,9 +77,13 @@ export const GET = createProtectedRoute(
         data: labResults,
       });
     } catch (error: any) {
-      console.error('Error fetching lab results:', error);
+      logger.error({
+        event: 'lab_results_fetch_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch lab results', message: error.message },
+        { error: 'Failed to fetch lab results' },
         { status: 500 }
       );
     }
@@ -113,6 +132,148 @@ export const POST = createProtectedRoute(
         );
       }
 
+      // Fetch patient demographics for reference range lookup
+      const patient = await prisma.patient.findUnique({
+        where: { id: patientId },
+        select: {
+          dateOfBirth: true,
+          gender: true,
+        },
+      });
+
+      if (!patient) {
+        return NextResponse.json(
+          { error: 'Patient not found' },
+          { status: 404 }
+        );
+      }
+
+      // Calculate patient age
+      const patientAge = calculateAge(patient.dateOfBirth);
+      const patientGender = patient.gender || 'both';
+
+      // Auto-populate reference ranges and interpretations based on LOINC codes
+      let finalReferenceRange = referenceRange;
+      let finalInterpretation = interpretation;
+      let finalIsAbnormal = isAbnormal;
+      let finalIsCritical = isCritical;
+      let finalCategory = category;
+      let clinicalContext: any = null;
+
+      // Try to find reference range by LOINC code (most reliable)
+      let range = null;
+      if (testCode) {
+        range = getReferenceRange(testCode, patientAge, patientGender);
+      }
+
+      // Fallback to test name if LOINC code not found
+      if (!range && testName) {
+        range = getReferenceRangeByTestName(testName, patientAge, patientGender);
+      }
+
+      // If we found a reference range and have a numeric value, interpret it
+      if (range && value) {
+        const numericValue = parseFloat(value);
+
+        if (!isNaN(numericValue)) {
+          // Auto-populate reference range if not provided
+          if (!finalReferenceRange) {
+            finalReferenceRange = formatReferenceRange(range);
+          }
+
+          // Auto-populate category if not provided
+          if (!finalCategory) {
+            finalCategory = range.category;
+          }
+
+          // Interpret the result
+          const resultInterpretation = interpretResult(numericValue, range);
+          const interpretationText = getInterpretationText(numericValue, range);
+
+          // Auto-populate interpretation if not provided
+          if (!finalInterpretation) {
+            finalInterpretation = interpretationText;
+          }
+
+          // Set abnormal and critical flags based on interpretation
+          finalIsAbnormal = resultInterpretation !== 'normal';
+          finalIsCritical =
+            resultInterpretation === 'critical-low' ||
+            resultInterpretation === 'critical-high';
+
+          // Generate clinical alerts and treatment recommendations
+          const criticalAlerts = generateCriticalAlerts(
+            testName,
+            range.loincCode,
+            numericValue,
+            range,
+            resultInterpretation
+          );
+
+          const treatmentRecommendations = generateTreatmentRecommendations(
+            testName,
+            range.loincCode,
+            numericValue,
+            range,
+            resultInterpretation
+          );
+
+          const needsNotification = requiresImmediateNotification(
+            resultInterpretation,
+            criticalAlerts
+          );
+
+          const notificationPriority = getNotificationPriority(
+            resultInterpretation,
+            criticalAlerts
+          );
+
+          // Add clinical context for response
+          clinicalContext = {
+            loincCode: range.loincCode,
+            testName: range.testName,
+            category: range.category,
+            clinicalSignificance: range.clinicalSignificance,
+            interpretation: resultInterpretation,
+            interpretationText: interpretationText,
+            referenceRange: formatReferenceRange(range),
+            criticalAlerts: criticalAlerts,
+            treatmentRecommendations: treatmentRecommendations,
+            requiresNotification: needsNotification,
+            notificationPriority: notificationPriority,
+          };
+
+          logger.info({
+            event: 'lab_result_auto_interpretation',
+            testName,
+            testCode,
+            value: numericValue,
+            interpretation: resultInterpretation,
+            isAbnormal: finalIsAbnormal,
+            isCritical: finalIsCritical,
+            criticalAlertsCount: criticalAlerts.length,
+            treatmentRecommendationsCount: treatmentRecommendations.length,
+            requiresNotification: needsNotification,
+            priority: notificationPriority,
+          });
+
+          // If critical alert requires notification, log it prominently
+          if (needsNotification && criticalAlerts.length > 0) {
+            logger.error({
+              event: 'lab_result_critical_alert',
+              patientId,
+              testName,
+              value: numericValue,
+              alerts: criticalAlerts.map((a) => ({
+                severity: a.severity,
+                title: a.title,
+                urgency: a.urgency,
+              })),
+            });
+          }
+        }
+      }
+
       // Calculate hash for blockchain integrity
       const resultData = JSON.stringify({
         patientId,
@@ -130,16 +291,16 @@ export const POST = createProtectedRoute(
           patientId,
           testName,
           testCode,
-          category,
+          category: finalCategory,
           orderingDoctor,
           performingLab,
           value,
           unit,
-          referenceRange,
+          referenceRange: finalReferenceRange,
           status,
-          interpretation,
-          isAbnormal,
-          isCritical,
+          interpretation: finalInterpretation,
+          isAbnormal: finalIsAbnormal,
+          isCritical: finalIsCritical,
           orderedDate: orderedDate ? new Date(orderedDate) : null,
           collectedDate: collectedDate ? new Date(collectedDate) : null,
           resultDate: new Date(resultDate),
@@ -182,7 +343,8 @@ export const POST = createProtectedRoute(
           observedAt: labResult.resultDate,
         });
 
-        console.log('[Lab Result] Monitoring result:', {
+        logger.info({
+          event: 'lab_result_monitoring_complete',
           labResultId: labResult.id,
           testName: labResult.testName,
           monitored: monitoringResult.monitored,
@@ -190,16 +352,29 @@ export const POST = createProtectedRoute(
         });
       } catch (monitorError) {
         // Don't fail the request if monitoring fails
-        console.error('[Lab Result] Monitoring error:', monitorError);
+        logger.error({
+          event: 'lab_result_monitoring_error',
+          error: monitorError instanceof Error ? monitorError.message : 'Unknown error',
+          labResultId: labResult.id,
+        });
       }
 
       // Invalidate patient context cache (labs, prevention plans, full context)
       try {
         await onLabResultCreated(labResult.patientId);
-        console.log('[Cache] Invalidated patient context cache for lab result:', labResult.id);
+        logger.info({
+          event: 'patient_cache_invalidated',
+          patientId: labResult.patientId,
+          labResultId: labResult.id,
+        });
       } catch (cacheError) {
         // Don't fail the request if cache invalidation fails
-        console.error('[Cache] Cache invalidation error:', cacheError);
+        logger.error({
+          event: 'cache_invalidation_error',
+          error: cacheError instanceof Error ? cacheError.message : 'Unknown error',
+          patientId: labResult.patientId,
+          labResultId: labResult.id,
+        });
       }
 
       return NextResponse.json({
@@ -210,11 +385,18 @@ export const POST = createProtectedRoute(
           testType: monitoringResult.testType,
           preventionPlanCreated: monitoringResult.result?.preventionPlanCreated,
         } : null,
+        clinicalContext: clinicalContext, // Include clinical interpretation
       });
     } catch (error: any) {
-      console.error('Error creating lab result:', error);
+      logger.error({
+        event: 'lab_result_create_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        patientId: body?.patientId,
+        testName: body?.testName,
+      });
       return NextResponse.json(
-        { error: 'Failed to create lab result', message: error.message },
+        { error: 'Failed to create lab result' },
         { status: 500 }
       );
     }

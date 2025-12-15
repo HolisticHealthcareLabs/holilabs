@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { getOrCreateReferralCode, getReferralStats } from '@/lib/referral';
 import { createAuditLog } from '@/lib/audit';

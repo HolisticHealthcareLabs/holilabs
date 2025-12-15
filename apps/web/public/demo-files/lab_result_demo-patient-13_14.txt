@@ -1,0 +1,42 @@
+
+RESULTADOS DE LABORATORIO
+
+PACIENTE: Juan Rivera
+FECHA DE NACIMIENTO: 12/12/1957
+FECHA DE RECOLECCIÓN: 21 de octubre de 2025, 08:56 p.m.
+
+ESTUDIO: Perfil Lipídico
+
+RESULTADOS:
+
+Colesterol Total:
+  Valor: 59.6 mg/dL
+  Rango de Referencia: <200
+  Estado: NORMAL
+
+
+LDL:
+  Valor: 13.5 mg/dL
+  Rango de Referencia: <100
+  Estado: NORMAL
+
+
+HDL:
+  Valor: 28.0 mg/dL
+  Rango de Referencia: >40 (M) / >50 (F)
+  Estado: ANORMAL
+
+
+Triglicéridos:
+  Valor: 174.5 mg/dL
+  Rango de Referencia: <150
+  Estado: ANORMAL
+
+
+OBSERVACIONES:
+Se detectan valores fuera del rango normal. Se recomienda consulta con especialista.
+
+MÉDICO TRATANTE: Dr. José García
+LABORATORIO: LabMéxico - Certificación ISO 15189
+
+Este reporte es confidencial y está destinado únicamente para el paciente y su médico tratante.

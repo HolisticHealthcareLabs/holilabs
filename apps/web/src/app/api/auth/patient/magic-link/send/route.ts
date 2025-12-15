@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { generateMagicLink, sendMagicLinkEmail } from '@/lib/auth/magic-link';
 import logger from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Validation schema
 const SendMagicLinkSchema = z.object({
@@ -17,6 +18,12 @@ const SendMagicLinkSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting - 5 requests per 15 minutes for auth endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'auth');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     // Parse and validate request body
     const body = await request.json();
@@ -77,10 +84,13 @@ export async function POST(request: NextRequest) {
       );
 
       if (!emailSent) {
-        // In development, log the magic link to console for testing
+        // In development, log the magic link for testing
         if (process.env.NODE_ENV === 'development') {
-          console.log('\n🔗 MAGIC LINK (for testing):', result.magicLinkUrl);
-          console.log('⚠️  Email delivery failed - Use the link above to login\n');
+          logger.debug({
+            event: 'magic_link_dev_fallback',
+            magicLinkUrl: result.magicLinkUrl,
+            message: 'Email delivery failed - using development fallback',
+          });
         }
 
         logger.error({
@@ -111,11 +121,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // In development, also log successful email sends
+      // In development, log successful email sends for testing
       if (process.env.NODE_ENV === 'development') {
-        console.log('\n✉️  Magic link sent to:', email);
-        console.log('🔗 Link (for testing):', result.magicLinkUrl);
-        console.log('⏱️  Expires in: 15 minutes\n');
+        logger.debug({
+          event: 'magic_link_sent_dev',
+          email,
+          magicLinkUrl: result.magicLinkUrl,
+          expiresIn: '15 minutes',
+        });
       }
     }
 

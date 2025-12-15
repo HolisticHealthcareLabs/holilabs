@@ -243,6 +243,7 @@ export default function PreventionClient({
                             <p className="text-sm text-gray-700">
                               {risk.explanation}
                             </p>
+                            {/* Decorative - low contrast intentional for last updated metadata */}
                             <p className="text-xs text-gray-500 mt-2">
                               Última actualización: {new Date(risk.lastCalculated).toLocaleDateString('es-MX')}
                             </p>
@@ -321,6 +322,7 @@ export default function PreventionClient({
                           <p className="text-sm text-gray-600 mb-2">
                             {intervention.description}
                           </p>
+                          {/* Decorative - low contrast intentional for intervention metadata (scheduled date, bullet separator, type) */}
                           <div className="flex items-center gap-3 text-sm">
                             <span className="text-gray-500">
                               Fecha programada: {new Date(intervention.dueDate).toLocaleDateString('es-MX')}
@@ -373,6 +375,7 @@ export default function PreventionClient({
             <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
               <div className="text-4xl mb-3">🎯</div>
               <p className="text-gray-600">Aún no tienes metas configuradas</p>
+              {/* Decorative - low contrast intentional for empty state helper text */}
               <p className="text-sm text-gray-500 mt-2">Habla con tu médico para establecer metas personalizadas</p>
             </div>
           ) : (

@@ -6,17 +6,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-// FIXME: Old rate limiting API - needs refactor
-// import { rateLimit } from '@/lib/rate-limit';
-
-// FIXME: Old rate limiting - commented out for now
-// const limiter = rateLimit({
-//   interval: 60 * 1000,
-//   uniqueTokenPerInterval: 500,
-// });
+import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/appointments/templates/[id]
@@ -27,8 +21,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 60, 'TEMPLATE_GET');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -65,7 +62,12 @@ export async function GET(
       data: { template },
     });
   } catch (error: any) {
-    console.error('Error fetching template:', error);
+    logger.error({
+      event: 'appointment_template_fetch_failed',
+      templateId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to fetch template' },
       { status: 500 }
@@ -82,8 +84,11 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 20, 'TEMPLATE_PATCH');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -165,7 +170,12 @@ export async function PATCH(
       message: 'Template updated successfully',
     });
   } catch (error: any) {
-    console.error('Error updating template:', error);
+    logger.error({
+      event: 'appointment_template_update_failed',
+      templateId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to update template' },
       { status: 500 }
@@ -182,8 +192,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 20, 'TEMPLATE_DELETE');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -242,7 +255,12 @@ export async function DELETE(
       message: 'Template deleted successfully',
     });
   } catch (error: any) {
-    console.error('Error deleting template:', error);
+    logger.error({
+      event: 'appointment_template_delete_failed',
+      templateId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to delete template' },
       { status: 500 }

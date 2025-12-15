@@ -1,13 +1,13 @@
 /**
- * NextAuth API Route Handler
+ * NextAuth v5 API Route
  *
- * Handles all NextAuth.js authentication routes
- * Route: /api/auth/*
+ * Handles all NextAuth requests:
+ * - /api/auth/signin
+ * - /api/auth/signout
+ * - /api/auth/callback/:provider
+ * - /api/auth/session
+ * - /api/auth/csrf
+ * - etc.
  */
 
-import NextAuth from 'next-auth';
-import { authOptions } from '@/lib/auth';
-
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
+export { GET, POST } from '@/lib/auth/auth';

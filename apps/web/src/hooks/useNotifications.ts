@@ -16,6 +16,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Toast } from '@/components/notifications/NotificationToast';
 import { getSocket, connectSocket } from '@/lib/chat/socket-client';
+import { logger } from '@/lib/logger';
 
 export interface Notification {
   id: string;
@@ -93,7 +94,12 @@ export function useNotifications(userId?: string, userType?: 'CLINICIAN' | 'PATI
     // If socket not connected, connect it
     if (!socket?.connected) {
       connectSocket(userId, userType).catch((err) => {
-        console.error('Failed to connect socket for notifications:', err);
+        logger.error({
+          event: 'notification_socket_connect_failed',
+          userId,
+          userType,
+          error: err instanceof Error ? err.message : String(err)
+        });
       });
     }
 

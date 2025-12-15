@@ -1,0 +1,51 @@
+
+NOTA DE CONSULTA MÉDICA
+
+FECHA: 2 de noviembre de 2025, 08:56 p.m.
+MÉDICO: Dr. Elena Sánchez
+
+DATOS DEL PACIENTE
+Nombre: Miguel Cruz
+Edad: 63 años
+Género: Masculino
+
+MOTIVO DE CONSULTA
+Tos seca
+
+HISTORIA DE LA ENFERMEDAD ACTUAL
+Paciente refiere síntomas de 7 días de evolución.
+Síntomas se mantienen estables.
+
+
+SIGNOS VITALES
+Presión Arterial: 112/85 mmHg
+Frecuencia Cardíaca: 71 lpm
+Frecuencia Respiratoria: 17 rpm
+Temperatura: 36.953461700145326°C
+Saturación O2: 97%
+Peso: 88 kg
+IMC: 18.556402663850445
+
+EXAMEN FÍSICO
+General: Paciente consciente, orientado
+Cardiopulmonar: Ruidos cardíacos rítmicos, sin soplos. Campos pulmonares bien ventilados.
+Abdomen: Blando, depresible, no doloroso a la palpación.
+
+DIAGNÓSTICO
+Tos seca - En evaluación
+
+PLAN DE TRATAMIENTO
+
+
+• Albuterol 90mcg - As needed
+• Control en 15 días
+
+
+RECOMENDACIONES
+• Dieta balanceada
+• Ejercicio moderado 30 min/día
+• Evitar automedicación
+• Acudir a urgencias si los síntomas empeoran
+
+Dr. Elena Sánchez
+Cédula Profesional: 8023446

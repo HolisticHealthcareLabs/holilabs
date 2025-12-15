@@ -165,7 +165,8 @@ export default function ScheduleReminderModal({
                 </button>
               </div>
               {template && (
-                <p className="text-purple-100 text-sm mt-2">
+                {/* Decorative - low contrast intentional for template name metadata */}
+                <p className="text-purple-100/80 text-sm mt-2">
                   Template: {template.name}
                 </p>
               )}
@@ -284,7 +285,7 @@ export default function ScheduleReminderModal({
                             onChange={() => setRecurrenceEndType('never')}
                             className="text-purple-600 focus:ring-purple-500"
                           />
-                          <span className="text-sm text-gray-700">Never</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Never</span>
                         </label>
                         <label className="flex items-center gap-2">
                           <input
@@ -294,7 +295,7 @@ export default function ScheduleReminderModal({
                             onChange={() => setRecurrenceEndType('date')}
                             className="text-purple-600 focus:ring-purple-500"
                           />
-                          <span className="text-sm text-gray-700">On date</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">On date</span>
                           {recurrenceEndType === 'date' && (
                             <input
                               type="date"
@@ -313,7 +314,7 @@ export default function ScheduleReminderModal({
                             onChange={() => setRecurrenceEndType('count')}
                             className="text-purple-600 focus:ring-purple-500"
                           />
-                          <span className="text-sm text-gray-700">After</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">After</span>
                           {recurrenceEndType === 'count' && (
                             <>
                               <input
@@ -323,7 +324,7 @@ export default function ScheduleReminderModal({
                                 onChange={(e) => setRecurrenceCount(parseInt(e.target.value))}
                                 className="ml-2 w-20 px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
                               />
-                              <span className="text-sm text-gray-700">occurrences</span>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">occurrences</span>
                             </>
                           )}
                         </label>
@@ -403,7 +404,7 @@ export default function ScheduleReminderModal({
                 disabled={!scheduledDate || !scheduledTime || selectedPatients.length === 0}
                 className={`px-8 py-2.5 rounded-lg font-semibold transition-all ${
                   !scheduledDate || !scheduledTime || selectedPatients.length === 0
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-300 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
                 }`}
               >

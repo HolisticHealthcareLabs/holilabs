@@ -254,7 +254,8 @@ export function PriorityPatientsWidget({
           <div className="p-12 text-center">
             <FlagIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-700 mb-4" />
             <p className="text-gray-600 dark:text-gray-400 text-lg">No priority patients</p>
-            <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+            {/* Decorative - low contrast intentional for empty state helper text */}
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
               All patients are up to date! Great work.
             </p>
           </div>

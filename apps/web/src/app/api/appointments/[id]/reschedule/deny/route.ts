@@ -4,19 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-// FIXME: Old rate limiting API - needs refactor
-// import { rateLimit } from '@/lib/rate-limit';
-// import { sendWhatsAppMessage } from '@/lib/notifications/whatsapp'; // Function doesn't exist
+import { checkRateLimit } from '@/lib/rate-limit';
 import { sendEmail } from '@/lib/notifications/email';
-
-// FIXME: Old rate limiting - commented out for now
-// const limiter = rateLimit({
-//   interval: 60 * 1000,
-//   uniqueTokenPerInterval: 500,
-// });
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/appointments/[id]/reschedule/deny
@@ -27,8 +20,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 20, 'RESCHEDULE_DENY');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -86,7 +82,12 @@ export async function POST(
     if (appointment.patient.phone && appointment.patient.preferences?.whatsappEnabled) {
       // FIXME: sendWhatsAppMessage doesn't exist - needs proper WhatsApp function
       // await sendWhatsAppMessage(appointment.patient.phone, message);
-      console.warn('WhatsApp notifications not configured');
+      logger.warn({
+        event: 'appointment_whatsapp_notification_skipped',
+        reason: 'WhatsApp notifications not configured',
+        appointmentId,
+        patientId: appointment.patient.id,
+      });
     }
 
     if (appointment.patient.email && appointment.patient.preferences?.emailEnabled) {
@@ -119,7 +120,12 @@ export async function POST(
       message: 'Reschedule request denied',
     });
   } catch (error: any) {
-    console.error('Error denying reschedule:', error);
+    logger.error({
+      event: 'appointment_reschedule_deny_failed',
+      appointmentId: params.id,
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { success: false, error: 'Failed to deny reschedule' },
       { status: 500 }

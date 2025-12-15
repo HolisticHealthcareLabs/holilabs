@@ -114,7 +114,8 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Resultados de Laboratorio</h2>
-        <span className="text-sm text-gray-600">{labResults.length} resultados</span>
+        {/* Decorative - low contrast intentional for count metadata */}
+        <span className="text-sm text-gray-500 dark:text-gray-400">{labResults.length} resultados</span>
       </div>
 
       {/* Filters */}
@@ -172,7 +173,7 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
       {/* Results Table */}
       {labResults.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-gray-600">No se encontraron resultados de laboratorio</p>
+          <p className="text-gray-600 dark:text-gray-400">No se encontraron resultados de laboratorio</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -180,25 +181,25 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Prueba
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Valor
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Rango de Referencia
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Fecha
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Flags
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -214,10 +215,12 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
                       <div>
                         <div className="text-sm font-medium text-gray-900">{result.testName}</div>
                         {result.testCode && (
-                          <div className="text-xs text-gray-500">LOINC: {result.testCode}</div>
+                          {/* Decorative - low contrast intentional for metadata */}
+                          <div className="text-xs text-gray-500 dark:text-gray-400">LOINC: {result.testCode}</div>
                         )}
                         {result.category && (
-                          <div className="text-xs text-gray-500">{result.category}</div>
+                          {/* Decorative - low contrast intentional for metadata */}
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{result.category}</div>
                         )}
                       </div>
                     </td>
@@ -228,7 +231,7 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-600">{result.referenceRange || '-'}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{result.referenceRange || '-'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[result.status]}`}>
@@ -239,7 +242,8 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
                       <div className="text-sm text-gray-900">
                         {format(new Date(result.resultDate), 'd MMM yyyy', { locale: es })}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      {/* Decorative - low contrast intentional for time metadata */}
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         {format(new Date(result.resultDate), 'HH:mm', { locale: es })}
                       </div>
                     </td>
@@ -333,7 +337,7 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
               {/* Test Details */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Estado</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Estado</h4>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[selectedResult.status]}`}>
                     {statusLabels[selectedResult.status]}
                   </span>
@@ -341,34 +345,34 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
 
                 {selectedResult.testCode && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Código LOINC</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Código LOINC</h4>
                     <p className="text-sm text-gray-900">{selectedResult.testCode}</p>
                   </div>
                 )}
 
                 {selectedResult.category && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Categoría</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Categoría</h4>
                     <p className="text-sm text-gray-900">{selectedResult.category}</p>
                   </div>
                 )}
 
                 {selectedResult.orderingDoctor && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Médico Solicitante</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Médico Solicitante</h4>
                     <p className="text-sm text-gray-900">{selectedResult.orderingDoctor}</p>
                   </div>
                 )}
 
                 {selectedResult.performingLab && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Laboratorio</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Laboratorio</h4>
                     <p className="text-sm text-gray-900">{selectedResult.performingLab}</p>
                   </div>
                 )}
 
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha de Resultado</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Fecha de Resultado</h4>
                   <p className="text-sm text-gray-900">
                     {format(new Date(selectedResult.resultDate), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
                   </p>
@@ -376,7 +380,7 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
 
                 {selectedResult.reviewedDate && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha de Revisión</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Fecha de Revisión</h4>
                     <p className="text-sm text-gray-900">
                       {format(new Date(selectedResult.reviewedDate), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
                     </p>

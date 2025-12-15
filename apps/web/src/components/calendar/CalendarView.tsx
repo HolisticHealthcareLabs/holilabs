@@ -227,7 +227,8 @@ export function CalendarView({
                 {viewMode === 'weekly' && 'Vista Semanal - En construcción'}
                 {viewMode === 'monthly' && 'Vista Mensual - En construcción'}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+              {/* Helper text - low contrast intentional for construction notice */}
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 Los componentes de vista se integrarán aquí
               </p>
             </div>

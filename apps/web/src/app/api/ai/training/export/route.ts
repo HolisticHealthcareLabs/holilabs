@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { transcriptionCorrectionService } from '@/lib/services/transcription-correction.service';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,7 +100,8 @@ export const GET = createProtectedRoute(
       }
 
       // Log export for audit trail
-      console.log('📥 Corrections exported:', {
+      logger.info({
+        event: 'corrections_exported',
         startDate,
         endDate,
         format,
@@ -107,7 +109,6 @@ export const GET = createProtectedRoute(
         sizeBytes: content.length,
         userId: context.user.id,
         userName: `${context.user.firstName} ${context.user.lastName}`,
-        timestamp: new Date().toISOString(),
       });
 
       // Return file with appropriate headers
@@ -120,7 +121,12 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error exporting corrections:', error);
+      logger.error({
+        event: 'corrections_export_failed',
+        userId: context.user.id,
+        error: error.message,
+        stack: error.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to export corrections',

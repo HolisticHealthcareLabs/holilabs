@@ -42,3 +42,13 @@ export {
   type TranscriptionSegment,
   type RecordingFilters,
 } from './recordingStore';
+
+// Prevention Store
+export {
+  usePreventionStore,
+  useSelectedTemplate,
+  usePreventionFilters,
+  useFilteredTemplates,
+  useFavoriteTemplates,
+  useMultiSelectMode,
+} from './preventionStore';

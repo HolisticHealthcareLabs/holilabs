@@ -226,7 +226,8 @@ export default function VersionHistoryModal({
                 {/* Versions Timeline */}
                 <div className="space-y-4">
                   {versions.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">
+                    // Decorative - low contrast intentional for empty state text
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">
                       No hay versiones anteriores disponibles
                     </p>
                   )}
@@ -270,8 +271,9 @@ export default function VersionHistoryModal({
                         <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${isCurrent ? 'mt-8' : ''}`}>
                           {/* Version Number */}
                           <div>
+                            {/* Decorative - low contrast intentional for file icon */}
                             <div className="flex items-center gap-2 mb-1">
-                              <FileEdit className="w-4 h-4 text-gray-500" />
+                              <FileEdit className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                               <span className="text-sm font-semibold text-gray-700">Versión</span>
                             </div>
                             <p className="text-2xl font-bold text-gray-900">
@@ -281,8 +283,9 @@ export default function VersionHistoryModal({
 
                           {/* Editor Info */}
                           <div>
+                            {/* Decorative - low contrast intentional for user icon */}
                             <div className="flex items-center gap-2 mb-1">
-                              <User className="w-4 h-4 text-gray-500" />
+                              <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                               <span className="text-sm font-semibold text-gray-700">Editado por</span>
                             </div>
                             <p className="text-sm text-gray-900">
@@ -292,14 +295,16 @@ export default function VersionHistoryModal({
 
                           {/* Timestamp */}
                           <div>
+                            {/* Decorative - low contrast intentional for clock icon */}
                             <div className="flex items-center gap-2 mb-1">
-                              <Clock className="w-4 h-4 text-gray-500" />
+                              <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                               <span className="text-sm font-semibold text-gray-700">Fecha</span>
                             </div>
-                            <p className="text-sm text-gray-900">
+                            <p className="text-sm text-gray-900 dark:text-white">
                               {format(new Date(version.createdAt), "d 'de' MMMM, yyyy", { locale: es })}
                             </p>
-                            <p className="text-xs text-gray-600">
+                            {/* Decorative - low contrast intentional for timestamp */}
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
                               {format(new Date(version.createdAt), 'HH:mm', { locale: es })}
                             </p>
                           </div>

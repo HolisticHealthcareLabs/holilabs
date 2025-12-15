@@ -110,7 +110,7 @@ export function FeedbackWidget() {
               className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               aria-label="Cerrar"
             >
-              <XMarkIcon className="w-5 h-5 text-gray-500" />
+              <XMarkIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 

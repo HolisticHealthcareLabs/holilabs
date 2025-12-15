@@ -49,11 +49,23 @@ export interface DemoAppointment {
 }
 
 const FIRST_NAMES = {
-  MALE: ['Juan', 'Carlos', 'José', 'Pedro', 'Luis', 'Miguel', 'Antonio', 'Francisco'],
-  FEMALE: ['María', 'Ana', 'Carmen', 'Isabel', 'Rosa', 'Elena', 'Patricia', 'Sofia'],
+  MALE: [
+    'Juan', 'Carlos', 'José', 'Pedro', 'Luis', 'Miguel', 'Antonio', 'Francisco',
+    'Rafael', 'Manuel', 'Roberto', 'Fernando', 'Diego', 'Javier', 'Alejandro', 'Sergio',
+    'Ricardo', 'Eduardo', 'Andrés', 'Jorge', 'Alberto', 'Daniel', 'Gabriel', 'Pablo'
+  ],
+  FEMALE: [
+    'María', 'Ana', 'Carmen', 'Isabel', 'Rosa', 'Elena', 'Patricia', 'Sofia',
+    'Claudia', 'Laura', 'Andrea', 'Valentina', 'Gabriela', 'Daniela', 'Lucía', 'Fernanda',
+    'Carolina', 'Natalia', 'Victoria', 'Mariana', 'Alejandra', 'Paula', 'Cristina', 'Diana'
+  ],
 };
 
-const LAST_NAMES = ['García', 'Rodríguez', 'Martínez', 'López', 'González', 'Hernández', 'Pérez', 'Sánchez'];
+const LAST_NAMES = [
+  'García', 'Rodríguez', 'Martínez', 'López', 'González', 'Hernández', 'Pérez', 'Sánchez',
+  'Ramírez', 'Torres', 'Flores', 'Rivera', 'Gómez', 'Díaz', 'Cruz', 'Morales',
+  'Jiménez', 'Ruiz', 'Álvarez', 'Castillo', 'Romero', 'Silva', 'Vargas', 'Ortiz'
+];
 
 const CONDITIONS = [
   'Hypertension',
@@ -249,7 +261,7 @@ export function generateDemoPatient(index: number): DemoPatient {
 /**
  * Generate multiple demo patients
  */
-export function generateDemoPatients(count: number = 10): DemoPatient[] {
+export function generateDemoPatients(count: number = 30): DemoPatient[] {
   return Array.from({ length: count }, (_, i) => generateDemoPatient(i));
 }
 

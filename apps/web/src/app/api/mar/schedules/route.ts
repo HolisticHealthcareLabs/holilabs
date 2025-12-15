@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import {
   generateSchedule,
   createScheduledTimesForDate,
 } from '@/lib/mar/schedule-generator';
+import { logger } from '@/lib/logger';
 
 /**
  * MAR Schedule Management API
@@ -81,7 +82,11 @@ export async function POST(request: NextRequest) {
       schedules,
     });
   } catch (error) {
-    console.error('Schedule generation error:', error);
+    logger.error({
+      event: 'mar_schedule_generation_failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to generate schedules', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -143,7 +148,11 @@ export async function GET(request: NextRequest) {
       count: schedules.length,
     });
   } catch (error) {
-    console.error('Fetch schedules error:', error);
+    logger.error({
+      event: 'mar_schedules_fetch_failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json({ error: 'Failed to fetch schedules' }, { status: 500 });
   }
 }
@@ -174,7 +183,11 @@ export async function DELETE(request: NextRequest) {
       message: 'Schedule deactivated',
     });
   } catch (error) {
-    console.error('Delete schedule error:', error);
+    logger.error({
+      event: 'mar_schedule_delete_failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json({ error: 'Failed to delete schedule' }, { status: 500 });
   }
 }

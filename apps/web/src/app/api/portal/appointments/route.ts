@@ -15,9 +15,8 @@ import logger from '@/lib/logger';
 import { z } from 'zod';
 
 // Query parameters schema
-// TODO: RESCHEDULED status doesn't exist in AppointmentStatus enum
 const AppointmentsQuerySchema = z.object({
-  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS']).optional(),
+  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'RESCHEDULED']).optional(),
   upcoming: z.coerce.boolean().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
@@ -72,9 +71,8 @@ export async function GET(request: NextRequest) {
         where.startTime = {
           gte: new Date(),
         };
-        // TODO: RESCHEDULED status doesn't exist - using SCHEDULED and CONFIRMED
         where.status = {
-          in: ['SCHEDULED', 'CONFIRMED'],
+          in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULED'],
         };
       } else {
         where.OR = [

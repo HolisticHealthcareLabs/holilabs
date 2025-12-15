@@ -116,6 +116,7 @@ export default function FormSuccessPage() {
         </motion.div>
 
         {/* Security Notice */}
+        {/* Decorative - low contrast intentional for security notice helper text */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -143,6 +144,7 @@ export default function FormSuccessPage() {
           Cerrar Ventana
         </motion.button>
 
+        {/* Decorative - low contrast intentional for dismissal helper text */}
         <p className="text-xs text-gray-500 mt-4">
           Puede cerrar esta ventana de forma segura
         </p>

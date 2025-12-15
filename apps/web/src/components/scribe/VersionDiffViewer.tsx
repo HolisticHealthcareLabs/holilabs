@@ -175,6 +175,7 @@ export default function VersionDiffViewer({ oldVersion, newVersion }: VersionDif
                         ))}
                     </div>
                   ) : (
+                    // Decorative - low contrast intentional for empty state text
                     <p className="text-sm text-gray-400 italic">Sin contenido</p>
                   )}
                 </div>
@@ -195,6 +196,7 @@ export default function VersionDiffViewer({ oldVersion, newVersion }: VersionDif
                         ))}
                     </div>
                   ) : (
+                    // Decorative - low contrast intentional for empty state text
                     <p className="text-sm text-gray-400 italic">Sin contenido</p>
                   )}
                 </div>

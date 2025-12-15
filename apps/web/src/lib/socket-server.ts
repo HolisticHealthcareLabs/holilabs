@@ -255,6 +255,66 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
       });
     });
 
+    // Prevention Hub handlers
+    socket.on('authenticate', ({ userId: authUserId, token }: { userId: string; token?: string }) => {
+      // Verify the requested userId matches the authenticated user
+      if (authUserId !== socket.data.userId) {
+        logger.warn({
+          event: 'unauthorized_prevention_auth_attempt',
+          authenticatedUserId: socket.data.userId,
+          requestedUserId: authUserId,
+          socketId: socket.id,
+        });
+        socket.emit('error', { message: 'Unauthorized: User ID mismatch' });
+        return;
+      }
+
+      // Join user-specific prevention room
+      const userRoom = `user:${authUserId}`;
+      socket.join(userRoom);
+
+      logger.info({
+        event: 'prevention_user_authenticated',
+        userId: authUserId,
+        roomId: userRoom,
+        socketId: socket.id,
+      });
+
+      socket.emit('authenticated', { success: true, userId: authUserId });
+    });
+
+    socket.on('join_room', ({ roomType, resourceId }: { roomType: string; resourceId: string }) => {
+      const roomName = `${roomType}${resourceId}`;
+      socket.join(roomName);
+
+      logger.info({
+        event: 'prevention_room_joined',
+        roomType,
+        resourceId,
+        roomName,
+        userId,
+        socketId: socket.id,
+      });
+
+      socket.emit('room_joined', { roomName });
+    });
+
+    socket.on('leave_room', ({ roomType, resourceId }: { roomType: string; resourceId: string }) => {
+      const roomName = `${roomType}${resourceId}`;
+      socket.leave(roomName);
+
+      logger.info({
+        event: 'prevention_room_left',
+        roomType,
+        resourceId,
+        roomName,
+        userId,
+        socketId: socket.id,
+      });
+
+      socket.emit('room_left', { roomName });
+    });
+
     // Error handling
     socket.on('error', (error) => {
       logger.error({
@@ -371,5 +431,87 @@ export function emitLabResultNotification(
     type: 'lab',
     userId,
     userType,
+  });
+}
+
+/**
+ * Prevention Hub - Emit event to specific user
+ */
+export function emitPreventionEventToUser(
+  userId: string,
+  event: string,
+  notification: any
+) {
+  if (!io) return;
+
+  const userRoom = `user:${userId}`;
+  io.to(userRoom).emit(event, notification);
+
+  logger.info({
+    event: 'prevention_event_sent',
+    eventType: event,
+    userId,
+    notificationId: notification.id,
+  });
+}
+
+/**
+ * Prevention Hub - Emit event to specific room
+ */
+export function emitPreventionEventToRoom(
+  roomType: string,
+  resourceId: string,
+  event: string,
+  notification: any
+) {
+  if (!io) return;
+
+  const roomName = `${roomType}${resourceId}`;
+  io.to(roomName).emit(event, notification);
+
+  logger.info({
+    event: 'prevention_event_sent_to_room',
+    eventType: event,
+    roomType,
+    resourceId,
+    roomName,
+    notificationId: notification.id,
+  });
+}
+
+/**
+ * Prevention Hub - Emit event to all users
+ */
+export function emitPreventionEventToAll(event: string, notification: any) {
+  if (!io) return;
+
+  io.emit(event, notification);
+
+  logger.info({
+    event: 'prevention_event_broadcast',
+    eventType: event,
+    notificationId: notification.id,
+  });
+}
+
+/**
+ * Prevention Hub - Emit event to multiple users
+ */
+export function emitPreventionEventToUsers(
+  userIds: string[],
+  event: string,
+  notification: any
+) {
+  if (!io) return;
+
+  userIds.forEach((userId) => {
+    emitPreventionEventToUser(userId, event, notification);
+  });
+
+  logger.info({
+    event: 'prevention_event_sent_to_multiple_users',
+    eventType: event,
+    userCount: userIds.length,
+    notificationId: notification.id,
   });
 }

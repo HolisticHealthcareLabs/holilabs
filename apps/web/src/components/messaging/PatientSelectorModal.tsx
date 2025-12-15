@@ -229,7 +229,7 @@ export default function PatientSelectorModal({
               </div>
             ) : filteredPatients.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 mb-2">No patients found</p>
+                <p className="text-gray-500 dark:text-gray-400 mb-2">No patients found</p>
                 <p className="text-sm text-gray-400">Try adjusting your search</p>
               </div>
             ) : (
@@ -281,7 +281,7 @@ export default function PatientSelectorModal({
                         <p className="font-semibold text-gray-900">
                           {patient.firstName} {patient.lastName}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {channel === 'EMAIL'
                             ? patient.email || 'No email'
                             : patient.phone || 'No phone'}
@@ -314,7 +314,7 @@ export default function PatientSelectorModal({
               disabled={selectedIds.size === 0}
               className={`px-8 py-2.5 rounded-lg font-semibold transition-all ${
                 selectedIds.size === 0
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-gray-300 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
               }`}
             >

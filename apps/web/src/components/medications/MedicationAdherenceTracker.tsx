@@ -130,7 +130,8 @@ export default function MedicationAdherenceTracker() {
               style={{ width: `${adherencePercent}%` }}
             />
           </div>
-          <div className="text-xs text-gray-500">
+          {/* Dose count metadata - low contrast intentional */}
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             {takenDoses} of {totalDoses} doses taken
           </div>
         </div>
@@ -224,7 +225,7 @@ export default function MedicationAdherenceTracker() {
                         </div>
                       </div>
                       {!isTaken && (
-                        <div className="text-sm text-gray-500">Tap to mark</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Tap to mark</div>
                       )}
                     </button>
                   );
@@ -251,15 +252,16 @@ export default function MedicationAdherenceTracker() {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{adherencePercent}%</div>
-            <div className="text-xs text-gray-600">Today</div>
+            {/* Statistics labels - low contrast intentional */}
+            <div className="text-xs text-gray-600 dark:text-gray-400">Today</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">85%</div>
-            <div className="text-xs text-gray-600">This Week</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">This Week</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">{streak}</div>
-            <div className="text-xs text-gray-600">Day Streak</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">Day Streak</div>
           </div>
         </div>
       </div>

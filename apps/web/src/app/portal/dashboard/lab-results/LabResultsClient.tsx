@@ -126,7 +126,7 @@ export default function LabResultsClient({
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           No hay resultados de laboratorio
         </h3>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600 dark:text-gray-300">
           Tus resultados aparecerán aquí cuando tu médico los cargue al sistema.
         </p>
       </div>
@@ -196,6 +196,7 @@ export default function LabResultsClient({
                     <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
                       {result.testName}
                     </h3>
+                    {/* Meta info - low contrast intentional */}
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {result.testCode} • {format(new Date(result.date), "d 'de' MMMM, yyyy", { locale: es })}
                     </p>
@@ -216,6 +217,7 @@ export default function LabResultsClient({
                   <span className="text-4xl font-bold text-gray-900 dark:text-white">
                     {result.value}
                   </span>
+                  {/* Decorative - low contrast intentional for unit label */}
                   <span className="text-lg text-gray-600 dark:text-gray-400">
                     {result.unit}
                   </span>
@@ -223,6 +225,7 @@ export default function LabResultsClient({
 
                 {/* Reference Range Bar */}
                 <div className="relative pt-2">
+                  {/* Decorative - low contrast intentional for reference range text */}
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                     <span>Rango: {result.referenceMin} - {result.referenceMax} {result.unit}</span>
                   </div>
@@ -318,6 +321,7 @@ export default function LabResultsClient({
                       key={result.id}
                       className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
                     >
+                      {/* Decorative - low contrast intentional for date and unit labels in trend visualization */}
                       <div className="flex-shrink-0 w-32 text-sm text-gray-600 dark:text-gray-400">
                         {format(new Date(result.date), "dd MMM yyyy", { locale: es })}
                       </div>

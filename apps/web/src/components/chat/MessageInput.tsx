@@ -182,11 +182,12 @@ export default function MessageInput({
       <form onSubmit={handleSubmit} className="p-4">
         <div className="flex items-end gap-2">
           {/* Attachment button */}
+          {/* Decorative - low contrast intentional for icon button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled}
-            className="flex-shrink-0 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -238,7 +239,7 @@ export default function MessageInput({
         </div>
 
         {/* Keyboard hint */}
-        <div className="mt-2 text-xs text-gray-400 text-right">
+        <div className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-right">
           Presiona Enter para enviar, Shift+Enter para nueva línea
         </div>
       </form>

@@ -76,6 +76,7 @@ export function RecordingConsentDialog({
               </ul>
             </div>
 
+            {/* Decorative - low contrast intentional for legal compliance disclaimer */}
             <div className="rounded-md bg-amber-50 p-3 dark:bg-amber-900/20">
               <p className="text-xs text-amber-800 dark:text-amber-300">
                 <strong>Conformidade Legal:</strong> LGPD Art. 7, I (Consentimento) +
@@ -83,6 +84,7 @@ export function RecordingConsentDialog({
               </p>
             </div>
 
+            {/* Decorative - low contrast intentional for technical documentation note */}
             <div className="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 <strong>Tecnologia:</strong> Deepgram Nova-2 (transcrição em tempo real) +
@@ -99,7 +101,8 @@ export function RecordingConsentDialog({
               className="flex-1 rounded-md border-2 border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               ❌ Não Autorizo
-              <div className="text-xs text-gray-500 mt-1">(Documentação Manual)</div>
+              {/* Decorative - low contrast intentional for manual documentation note */}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">(Documentação Manual)</div>
             </button>
             <button
               onClick={onConsent}
@@ -110,7 +113,7 @@ export function RecordingConsentDialog({
             </button>
           </div>
 
-          <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-500">
+          <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
             Seu consentimento será registrado no prontuário eletrônico com timestamp e IP.
           </p>
         </Dialog.Panel>

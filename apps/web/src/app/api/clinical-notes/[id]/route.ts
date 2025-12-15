@@ -12,6 +12,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { createNoteVersion, calculateNoteHash } from '@/lib/clinical-notes/version-control';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -77,7 +78,11 @@ export const GET = createProtectedRoute(
         data: note,
       });
     } catch (error: any) {
-      console.error('Error fetching clinical note:', error);
+      logger.error({
+        event: 'clinical_note_fetch_error',
+        noteId: context.params?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return NextResponse.json(
         { error: 'Failed to fetch clinical note', details: error.message },
         { status: 500 }
@@ -269,7 +274,11 @@ export const PATCH = createProtectedRoute(
         );
       }
 
-      console.error('Error updating clinical note:', error);
+      logger.error({
+        event: 'clinical_note_update_error',
+        noteId: context.params?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return NextResponse.json(
         { error: 'Failed to update clinical note', details: error.message },
         { status: 500 }
@@ -344,7 +353,11 @@ export const DELETE = createProtectedRoute(
         message: 'Clinical note deleted successfully',
       });
     } catch (error: any) {
-      console.error('Error deleting clinical note:', error);
+      logger.error({
+        event: 'clinical_note_delete_error',
+        noteId: context.params?.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return NextResponse.json(
         { error: 'Failed to delete clinical note', details: error.message },
         { status: 500 }

@@ -145,7 +145,8 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Estudios de Imágenes</h2>
-        <span className="text-sm text-gray-600">{imagingStudies.length} estudios</span>
+        {/* Decorative - low contrast intentional for count badge */}
+        <span className="text-sm text-gray-500 dark:text-gray-400">{imagingStudies.length} estudios</span>
       </div>
 
       {/* Filters */}
@@ -250,7 +251,7 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {study.modality} • {study.bodyPart}
                   </p>
                 </div>
@@ -259,13 +260,14 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[study.status]}`}>
                     {statusLabels[study.status]}
                   </span>
-                  <span className="text-xs text-gray-600">
+                  {/* Decorative - low contrast intentional for timestamp */}
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {format(new Date(study.studyDate), 'd MMM yyyy', { locale: es })}
                   </span>
                 </div>
 
                 {study.radiologist && (
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     <span className="font-medium">Radiólogo:</span> {study.radiologist}
                   </p>
                 )}
@@ -282,7 +284,7 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">{selectedStudy.description}</h3>
-                <p className="text-sm text-gray-600">{selectedStudy.modality} • {selectedStudy.bodyPart}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{selectedStudy.modality} • {selectedStudy.bodyPart}</p>
               </div>
               <button
                 onClick={closeDetailView}
@@ -341,7 +343,8 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
               {/* Study Details */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Estado</h4>
+                  {/* Decorative - low contrast intentional for section header */}
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Estado</h4>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[selectedStudy.status]}`}>
                     {statusLabels[selectedStudy.status]}
                   </span>
@@ -349,55 +352,63 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
 
                 {selectedStudy.accessionNumber && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Número de Acceso</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Número de Acceso</h4>
                     <p className="text-sm text-gray-900">{selectedStudy.accessionNumber}</p>
                   </div>
                 )}
 
                 {selectedStudy.studyInstanceUID && (
                   <div className="col-span-2">
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Study Instance UID (DICOM)</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Study Instance UID (DICOM)</h4>
                     <p className="text-xs text-gray-700 font-mono bg-gray-50 p-2 rounded">{selectedStudy.studyInstanceUID}</p>
                   </div>
                 )}
 
                 {selectedStudy.indication && (
                   <div className="col-span-2">
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Indicación</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Indicación</h4>
                     <p className="text-sm text-gray-900">{selectedStudy.indication}</p>
                   </div>
                 )}
 
                 {selectedStudy.orderingDoctor && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Médico Solicitante</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Médico Solicitante</h4>
                     <p className="text-sm text-gray-900">{selectedStudy.orderingDoctor}</p>
                   </div>
                 )}
 
                 {selectedStudy.radiologist && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Radiólogo</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Radiólogo</h4>
                     <p className="text-sm text-gray-900">{selectedStudy.radiologist}</p>
                   </div>
                 )}
 
                 {selectedStudy.technician && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Técnico</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Técnico</h4>
                     <p className="text-sm text-gray-900">{selectedStudy.technician}</p>
                   </div>
                 )}
 
                 {selectedStudy.performingFacility && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Instalación</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Instalación</h4>
                     <p className="text-sm text-gray-900">{selectedStudy.performingFacility}</p>
                   </div>
                 )}
 
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha del Estudio</h4>
+                  {/* Decorative - low contrast intentional for section header */}
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Fecha del Estudio</h4>
                   <p className="text-sm text-gray-900">
                     {format(new Date(selectedStudy.studyDate), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
                   </p>
@@ -405,7 +416,8 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
 
                 {selectedStudy.reportDate && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha del Reporte</h4>
+                    {/* Decorative - low contrast intentional for section header */}
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Fecha del Reporte</h4>
                     <p className="text-sm text-gray-900">
                       {format(new Date(selectedStudy.reportDate), "d 'de' MMMM, yyyy HH:mm", { locale: es })}
                     </p>

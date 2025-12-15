@@ -360,6 +360,7 @@ export default function AuditLogsPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
+                      {/* Decorative - low contrast intentional for table headers with uppercase tracking-wider */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Timestamp
                       </th>
@@ -411,10 +412,12 @@ export default function AuditLogsPage() {
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                               <div className="font-medium">{log.resource}</div>
+                              {/* Decorative - low contrast intentional for ID metadata */}
                               <div className="text-gray-500 dark:text-gray-400 text-xs">
                                 ID: {log.resourceId}
                               </div>
                             </td>
+                            {/* Decorative - low contrast intentional for IP address metadata */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                               {log.ipAddress || 'N/A'}
                             </td>
@@ -464,6 +467,7 @@ export default function AuditLogsPage() {
                                     </h4>
                                     <dl className="grid grid-cols-2 gap-4">
                                       <div>
+                                        {/* Decorative - low contrast intentional for metadata labels */}
                                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
                                           User ID
                                         </dt>
@@ -472,6 +476,7 @@ export default function AuditLogsPage() {
                                         </dd>
                                       </div>
                                       <div>
+                                        {/* Decorative - low contrast intentional for metadata labels */}
                                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
                                           User Agent
                                         </dt>
@@ -481,6 +486,7 @@ export default function AuditLogsPage() {
                                       </div>
                                       {log.errorMessage && (
                                         <div className="col-span-2">
+                                          {/* Decorative - low contrast intentional for metadata labels */}
                                           <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
                                             Error Message
                                           </dt>
@@ -491,6 +497,7 @@ export default function AuditLogsPage() {
                                       )}
                                       {log.dataHash && (
                                         <div className="col-span-2">
+                                          {/* Decorative - low contrast intentional for metadata labels */}
                                           <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
                                             Data Hash
                                           </dt>

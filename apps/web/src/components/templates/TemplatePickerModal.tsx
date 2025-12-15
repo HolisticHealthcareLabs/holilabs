@@ -364,7 +364,8 @@ export function TemplatePickerModal({
                         <div className="text-center py-12">
                           <DocumentDuplicateIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-700 mb-4" />
                           <p className="text-gray-600 dark:text-gray-400 text-lg">No templates found</p>
-                          <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+                          {/* Decorative - low contrast intentional for empty state helper text */}
+                          <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                             Try adjusting your search or filters
                           </p>
                         </div>
@@ -395,7 +396,8 @@ export function TemplatePickerModal({
                                     {template.description}
                                   </p>
                                 )}
-                                <div className="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+                                {/* Decorative - low contrast intentional for metadata */}
+                                <div className="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                                   <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
                                     {getCategoryLabel(template.category)}
                                   </span>

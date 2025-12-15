@@ -364,7 +364,7 @@ export default function InvoiceForm({
                 </div>
 
                 <div className="text-right lg:col-span-2">
-                  <div className="text-xs text-gray-500 mb-1">Total</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</div>
                   <div className="text-lg font-bold text-gray-900">
                     {formatMXN(
                       Math.round(item.quantity * item.unitPrice * 100)

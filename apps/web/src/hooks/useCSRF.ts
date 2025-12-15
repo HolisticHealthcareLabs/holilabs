@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 const CSRF_COOKIE_NAME = 'csrf_token';
 const CSRF_HEADER_NAME = 'x-csrf-token';
@@ -81,7 +82,10 @@ export function withCSRFToken(options: RequestInit = {}): RequestInit {
   const token = csrfCookie?.split('=')[1];
 
   if (!token) {
-    console.warn('CSRF token not found in cookies');
+    logger.warn({
+      event: 'csrf_token_missing',
+      context: 'withCSRFToken_helper'
+    });
     return options;
   }
 

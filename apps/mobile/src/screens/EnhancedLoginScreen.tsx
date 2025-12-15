@@ -13,6 +13,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -229,15 +230,15 @@ export const EnhancedLoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess
               <Text style={styles.label}>Email</Text>
               <View style={styles.inputContainer}>
                 <Text style={styles.inputIcon}>✉️</Text>
-                <input
-                  type="email"
+                <TextInput
                   placeholder="doctor@holilabs.com"
                   value={email}
-                  onChange={(e: any) => setEmail(e.target.value)}
-                  style={styles.input as any}
+                  onChangeText={setEmail}
+                  style={styles.input}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
+                  placeholderTextColor={`${theme.colors.textTertiary}80`}
                 />
               </View>
             </View>
@@ -246,12 +247,13 @@ export const EnhancedLoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputContainer}>
                 <Text style={styles.inputIcon}>🔒</Text>
-                <input
-                  type="password"
+                <TextInput
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e: any) => setPassword(e.target.value)}
-                  style={styles.input as any}
+                  onChangeText={setPassword}
+                  style={styles.input}
+                  secureTextEntry
+                  placeholderTextColor={`${theme.colors.textTertiary}80`}
                 />
               </View>
             </View>
@@ -415,9 +417,7 @@ const createStyles = (theme: any) =>
       fontSize: theme.typography.fontSize.base,
       color: theme.colors.text,
       padding: 0,
-      outline: 'none',
-      border: 'none',
-      backgroundColor: 'transparent',
+      margin: 0,
     },
     forgotPassword: {
       alignSelf: 'flex-end',

@@ -5,9 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,8 +45,12 @@ export async function GET(request: NextRequest) {
       // No session found
       return NextResponse.json({ user: null }, { status: 401 });
     }
-  } catch (error) {
-    console.error('Session error:', error);
+  } catch (error: any) {
+    logger.error({
+      event: 'session_fetch_failed',
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { error: 'Failed to get session' },
       { status: 500 }

@@ -7,7 +7,7 @@
 import { prisma } from './prisma';
 import logger from './logger';
 import { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from './auth';
 import { getPatientSession } from './auth/patient-session';
 import crypto from 'crypto';

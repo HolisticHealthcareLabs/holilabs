@@ -267,6 +267,7 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
                         >
                           <div className="bg-gray-900 dark:bg-gray-800 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-2xl">
                             <div className="font-semibold mb-0.5">{tool.name}</div>
+                            {/* Decorative - low contrast intentional for tooltip secondary text */}
                             <div className="text-gray-400 text-[10px]">{tool.description}</div>
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-1px]">
                               <div className="w-2 h-2 bg-gray-900 dark:bg-gray-800 rotate-45" />

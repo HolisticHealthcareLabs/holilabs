@@ -6,8 +6,8 @@ import { Language, translations } from '@/lib/translations';
 const LANGUAGE_KEY = 'holilabs_language';
 
 export function useLanguage() {
-  // Always start with 'es' to match server-side rendering
-  const [language, setLanguageState] = useState<Language>('es');
+  // Default to English (landing page default). We still hydrate from localStorage after mount.
+  const [language, setLanguageState] = useState<Language>('en');
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {

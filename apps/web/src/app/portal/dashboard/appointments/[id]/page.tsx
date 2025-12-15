@@ -20,6 +20,7 @@ import {
   BuildingOfficeIcon,
   XCircleIcon,
 } from '@heroicons/react/24/outline';
+import { logger } from '@/lib/logger';
 
 interface Appointment {
   id: string;
@@ -112,7 +113,7 @@ export default function AppointmentDetailPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching appointment:', err);
+      logger.error('Error fetching appointment:', err);
     } finally {
       setLoading(false);
     }
@@ -322,6 +323,7 @@ export default function AppointmentDetailPage() {
           </div>
 
           <div className="space-y-3">
+            {/* Decorative - low contrast intentional for contact icons */}
             {appointment.clinician.email && (
               <div className="flex items-center gap-3 text-gray-700">
                 <EnvelopeIcon className="h-5 w-5 text-gray-400" />

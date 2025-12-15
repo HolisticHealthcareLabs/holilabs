@@ -125,6 +125,7 @@ export function VariablePicker({ onVariableSelect, className = '' }: VariablePic
               {searchTerm ? (
                 // Filtered search results
                 <div className="p-2">
+                  {/* Decorative - low contrast intentional for empty state and descriptions */}
                   {filteredVariables.length === 0 ? (
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                       No se encontraron variables
@@ -156,6 +157,7 @@ export function VariablePicker({ onVariableSelect, className = '' }: VariablePic
                 // Grouped by category
                 Object.entries(groupedVariables).map(([category, variables]) => (
                   <div key={category} className="p-2">
+                    {/* Decorative - low contrast intentional for category header */}
                     <div className="px-3 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                       {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS]}
                     </div>
@@ -181,6 +183,7 @@ export function VariablePicker({ onVariableSelect, className = '' }: VariablePic
 
             {/* Footer */}
             <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+              {/* Decorative - low contrast intentional for footer helper text */}
               <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
                 Las variables se reemplazan automáticamente al enviar
               </p>

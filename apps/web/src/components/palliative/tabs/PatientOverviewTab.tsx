@@ -135,7 +135,7 @@ export default function PatientOverviewTab({
               </div>
             </>
           ) : (
-            <div className="text-gray-500 text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               <div className="text-3xl mb-2">—</div>
               <div>Sin evaluación reciente</div>
             </div>
@@ -159,7 +159,7 @@ export default function PatientOverviewTab({
               </div>
             </>
           ) : (
-            <div className="text-gray-500 text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               <div className="text-3xl mb-2">—</div>
               <div>Sin evaluación reciente</div>
             </div>
@@ -200,49 +200,50 @@ export default function PatientOverviewTab({
         </h3>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+          {/* Decorative - low contrast intentional for field labels */}
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Nombre Completo</div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Nombre Completo</div>
             <div className="text-base font-semibold text-gray-900">
               {patient.firstName} {patient.lastName}
             </div>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Edad</div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Edad</div>
             <div className="text-base font-semibold text-gray-900">{age} años</div>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Sexo</div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Sexo</div>
             <div className="text-base font-semibold text-gray-900">{patient.gender || 'No especificado'}</div>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase mb-1">MRN</div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">MRN</div>
             <div className="text-base font-mono font-semibold text-blue-900">{patient.mrn}</div>
           </div>
 
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Token ID</div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Token ID</div>
             <div className="text-base font-mono font-semibold text-purple-900">{patient.tokenId}</div>
           </div>
 
           {patient.cns && (
             <div>
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-1">CNS (Cartão Nacional de Saúde)</div>
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">CNS (Cartão Nacional de Saúde)</div>
               <div className="text-base font-mono font-semibold text-gray-900">{patient.cns}</div>
             </div>
           )}
 
           {patient.cpf && (
             <div>
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-1">CPF</div>
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">CPF</div>
               <div className="text-base font-mono font-semibold text-gray-900">{patient.cpf}</div>
             </div>
           )}
 
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Fecha de Nacimiento</div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Fecha de Nacimiento</div>
             <div className="text-base font-semibold text-gray-900">
               {format(dob, "dd 'de' MMMM, yyyy", { locale: es })}
             </div>
@@ -250,14 +251,14 @@ export default function PatientOverviewTab({
 
           {patient.phone && (
             <div>
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Teléfono</div>
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Teléfono</div>
               <div className="text-base font-semibold text-gray-900">{patient.phone}</div>
             </div>
           )}
 
           {patient.email && (
             <div>
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-1">Email</div>
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Email</div>
               <div className="text-base font-semibold text-gray-900">{patient.email}</div>
             </div>
           )}

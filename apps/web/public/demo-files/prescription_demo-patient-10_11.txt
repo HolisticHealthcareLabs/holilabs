@@ -1,0 +1,38 @@
+
+RECETA MÉDICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Sofia Álvarez
+Fecha de Nacimiento: 12/12/1949
+Dirección: São Paulo
+
+MEDICAMENTO PRESCRITO
+Nombre: Acetaminofén
+Dosis: 500mg
+Frecuencia: 3 veces al día
+Vía de Administración: Oral
+Duración del Tratamiento: 30 días
+
+INDICACIONES
+
+
+
+
+
+
+
+
+RECOMENDACIONES
+• No suspender el tratamiento sin consultar al médico
+• Reportar efectos adversos inmediatamente
+• Mantener en lugar fresco y seco
+
+MÉDICO PRESCRIPTOR
+Nombre: Dr. María Rodríguez
+Cédula Profesional: 8012340
+Teléfono: +52 55 2110 4220
+
+Fecha de Emisión: 12 de diciembre de 2025
+Vigencia: 30 días
+
+Esta receta es válida por única vez. No se aceptan alteraciones.

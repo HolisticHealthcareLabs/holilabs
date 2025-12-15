@@ -1,0 +1,24 @@
+# Browserslist Configuration
+# Defines target browsers for autoprefixer and other tools
+
+# Modern browsers (last 2 versions)
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+
+# Firefox ESR for enterprise
+Firefox ESR
+
+# Mobile browsers
+last 2 iOS versions
+last 2 ChromeAndroid versions
+
+# Market share > 0.5%
+> 0.5%
+
+# Exclude dead browsers
+not dead
+
+# Explicitly exclude IE 11
+not IE 11

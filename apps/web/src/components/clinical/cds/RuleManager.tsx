@@ -257,7 +257,8 @@ export function RuleManager({
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                     {rule.description}
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                  {/* Decorative - low contrast intentional for metadata (priority, severity, source) */}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                     <span>Priority: {rule.priority}</span>
                     <span>•</span>
                     <span className="capitalize">{rule.severity}</span>

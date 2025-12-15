@@ -1,0 +1,42 @@
+
+RESULTADOS DE LABORATORIO
+
+PACIENTE: Manuel Pérez
+FECHA DE NACIMIENTO: 12/12/1992
+FECHA DE RECOLECCIÓN: 6 de noviembre de 2025, 08:56 p.m.
+
+ESTUDIO: Perfil Lipídico
+
+RESULTADOS:
+
+Colesterol Total:
+  Valor: 225.5 mg/dL
+  Rango de Referencia: <200
+  Estado: ANORMAL
+
+
+LDL:
+  Valor: 81.7 mg/dL
+  Rango de Referencia: <100
+  Estado: NORMAL
+
+
+HDL:
+  Valor: 28.0 mg/dL
+  Rango de Referencia: >40 (M) / >50 (F)
+  Estado: ANORMAL
+
+
+Triglicéridos:
+  Valor: 168.4 mg/dL
+  Rango de Referencia: <150
+  Estado: ANORMAL
+
+
+OBSERVACIONES:
+Se detectan valores fuera del rango normal. Se recomienda consulta con especialista.
+
+MÉDICO TRATANTE: Dr. Carlos Martínez
+LABORATORIO: LabMéxico - Certificación ISO 15189
+
+Este reporte es confidencial y está destinado únicamente para el paciente y su médico tratante.

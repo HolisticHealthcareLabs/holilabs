@@ -180,7 +180,7 @@ export function GranularAccessManager({ patientId }: { patientId: string }) {
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-500">Loading granular access grants...</div>;
+    return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading granular access grants...</div>;
   }
 
   return (
@@ -223,7 +223,7 @@ export function GranularAccessManager({ patientId }: { patientId: string }) {
                     <span className="text-2xl mr-3">{resource.icon}</span>
                     <div>
                       <div className="font-semibold text-gray-800">{resource.name}</div>
-                      <div className="text-xs text-gray-600">{resource.description}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">{resource.description}</div>
                     </div>
                   </div>
                 </div>
@@ -307,7 +307,7 @@ export function GranularAccessManager({ patientId }: { patientId: string }) {
 
       {/* Existing Grants */}
       {grants.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No granular access grants found. Grant access to specific data types above.
         </div>
       ) : (
@@ -319,7 +319,7 @@ export function GranularAccessManager({ patientId }: { patientId: string }) {
                   <div className="font-bold text-gray-800">
                     {group.grantee.name || group.grantee.email || 'Unknown'}
                   </div>
-                  <div className="text-sm text-gray-600">{group.grantee.email}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{group.grantee.email}</div>
                 </div>
                 <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
                   {group.grants.length} resource{group.grants.length !== 1 ? 's' : ''}
@@ -336,7 +336,7 @@ export function GranularAccessManager({ patientId }: { patientId: string }) {
                           <div className="font-semibold text-gray-800 text-sm">
                             {grant.resourceInfo.name}
                           </div>
-                          <div className="text-xs text-gray-600 flex gap-2 mt-1">
+                          <div className="text-xs text-gray-600 dark:text-gray-400 flex gap-2 mt-1">
                             <span>👁️ View</span>
                             {grant.permissions.canDownload && <span>📥 Download</span>}
                             {grant.permissions.canShare && <span>↗️ Share</span>}

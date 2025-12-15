@@ -1,0 +1,52 @@
+
+NOTA DE CONSULTA MÉDICA
+
+FECHA: 9 de noviembre de 2025, 08:56 p.m.
+MÉDICO: Dr. Carlos Martínez
+
+DATOS DEL PACIENTE
+Nombre: Diana Jiménez
+Edad: 60 años
+Género: Femenino
+
+MOTIVO DE CONSULTA
+Dolor abdominal
+
+HISTORIA DE LA ENFERMEDAD ACTUAL
+Paciente refiere síntomas de 13 días de evolución.
+Síntomas han empeorado gradualmente.
+
+
+SIGNOS VITALES
+Presión Arterial: 128/84 mmHg
+Frecuencia Cardíaca: 80 lpm
+Frecuencia Respiratoria: 18 rpm
+Temperatura: 37.29141710583229°C
+Saturación O2: 98%
+Peso: 66 kg
+IMC: 23.244615552683065
+
+EXAMEN FÍSICO
+General: Paciente consciente, orientado
+Cardiopulmonar: Ruidos cardíacos rítmicos, sin soplos. Campos pulmonares bien ventilados.
+Abdomen: Blando, depresible, no doloroso a la palpación.
+
+DIAGNÓSTICO
+Dolor abdominal - En evaluación
+
+PLAN DE TRATAMIENTO
+
+• Control glucémico
+
+• Omeprazole 20mg - 1x daily
+• Control en 15 días
+• Solicitar estudios de laboratorio
+
+RECOMENDACIONES
+• Dieta balanceada
+• Ejercicio moderado 30 min/día
+• Evitar automedicación
+• Acudir a urgencias si los síntomas empeoran
+
+Dr. Carlos Martínez
+Cédula Profesional: 8013574

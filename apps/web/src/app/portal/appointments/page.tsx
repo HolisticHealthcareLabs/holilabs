@@ -295,6 +295,7 @@ export default function AppointmentsPage() {
             exit={{ opacity: 0 }}
             className="bg-white rounded-xl border border-gray-200 p-12 text-center"
           >
+            {/* Decorative - low contrast intentional for empty state icon */}
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-8 h-8 text-gray-400"

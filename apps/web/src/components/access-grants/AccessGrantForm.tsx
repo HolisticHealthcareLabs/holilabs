@@ -331,7 +331,8 @@ export default function AccessGrantForm({ patientId, onSuccess, onCancel }: Acce
                 <option value="user-1">Dr. Juan Pérez (juan@ejemplo.com)</option>
                 <option value="user-2">Dra. María García (maria@ejemplo.com)</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              {/* Decorative - low contrast intentional for helper text */}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Usuarios del sistema de salud que ya tienen cuenta
               </p>
             </div>
@@ -368,7 +369,8 @@ export default function AccessGrantForm({ patientId, onSuccess, onCancel }: Acce
                 Seleccionar Resultado de Laboratorio
               </label>
               {loadingResources ? (
-                <p className="text-sm text-gray-500">Cargando resultados...</p>
+                {/* Decorative - low contrast intentional for loading state */}
+                <p className="text-sm text-gray-500 dark:text-gray-400">Cargando resultados...</p>
               ) : (
                 <select
                   name="resourceId"
@@ -393,7 +395,8 @@ export default function AccessGrantForm({ patientId, onSuccess, onCancel }: Acce
                 Seleccionar Estudio de Imágenes
               </label>
               {loadingResources ? (
-                <p className="text-sm text-gray-500">Cargando estudios...</p>
+                {/* Decorative - low contrast intentional for loading state */}
+                <p className="text-sm text-gray-500 dark:text-gray-400">Cargando estudios...</p>
               ) : (
                 <select
                   name="resourceId"

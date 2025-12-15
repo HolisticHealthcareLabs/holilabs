@@ -22,6 +22,7 @@ import {
   PlusIcon,
 } from '@heroicons/react/24/outline';
 import { AppointmentsListSkeleton } from '@/components/skeletons/PortalSkeletons';
+import { logger } from '@/lib/logger';
 
 interface Appointment {
   id: string;
@@ -124,7 +125,7 @@ export default function AppointmentsPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error fetching appointments:', err);
+      logger.error('Error fetching appointments:', err);
     } finally {
       setLoading(false);
     }
@@ -221,6 +222,7 @@ export default function AppointmentsPage() {
 
           {upcomingAppointments.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              {/* Decorative - low contrast intentional for empty state icon */}
               <CalendarIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 No tienes citas pr�ximas

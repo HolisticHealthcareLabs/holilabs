@@ -9,11 +9,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { soapGenerator } from '@/lib/clinical-notes/soap-generator';
 import { confidenceScoringService } from '@/lib/ai/confidence-scoring';
 import type { ClinicalSessionContext } from '@/lib/scribe/ai-scribe-service';
+import { logger } from '@/lib/logger';
 
 /**
  * Request body schema
@@ -170,7 +171,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateN
     };
 
     // 5. Generate SOAP note
-    console.log(`📝 [API] Generating SOAP note for patient ${body.patientId}...`);
+    logger.info({
+      event: 'soap_note_generation_started',
+      patientId: body.patientId,
+      appointmentId: body.appointmentId,
+      userId: session.user.id,
+    });
     const result = await soapGenerator.generateFromTranscription(
       body.transcription,
       clinicalContext,
@@ -204,11 +210,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateN
     };
 
     const processingTime = Date.now() - startTime;
-    console.log(`✅ [API] SOAP note generated successfully in ${processingTime}ms (confidence: ${confidenceScore.overall})`);
+    logger.info({
+      event: 'soap_note_generation_completed',
+      patientId: body.patientId,
+      noteId: result.noteId,
+      processingTime,
+      confidence: confidenceScore.overall,
+      requiresReview: confidenceScore.requiresReview,
+      userId: session.user.id,
+    });
 
     return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
-    console.error('❌ [API] Error generating SOAP note:', error);
+    logger.error({
+      event: 'soap_note_generation_failed',
+      error: error.message,
+      stack: error.stack,
+    });
 
     // Handle specific errors
     if (error.name === 'ComprehendMedicalError') {

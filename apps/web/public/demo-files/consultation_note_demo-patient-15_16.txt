@@ -1,0 +1,51 @@
+
+NOTA DE CONSULTA MÉDICA
+
+FECHA: 22 de octubre de 2025, 08:56 p.m.
+MÉDICO: Dr. María Rodríguez
+
+DATOS DEL PACIENTE
+Nombre: Diana Rivera
+Edad: 44 años
+Género: Femenino
+
+MOTIVO DE CONSULTA
+Fatiga generalizada
+
+HISTORIA DE LA ENFERMEDAD ACTUAL
+Paciente refiere síntomas de 3 días de evolución.
+Síntomas se mantienen estables.
+
+
+SIGNOS VITALES
+Presión Arterial: 123/88 mmHg
+Frecuencia Cardíaca: 80 lpm
+Frecuencia Respiratoria: 18 rpm
+Temperatura: 36.02948216664101°C
+Saturación O2: 95%
+Peso: 66 kg
+IMC: 26.55952964441266
+
+EXAMEN FÍSICO
+General: Paciente en buen estado general
+Cardiopulmonar: Ruidos cardíacos rítmicos, sin soplos. Campos pulmonares bien ventilados.
+Abdomen: Blando, depresible, no doloroso a la palpación.
+
+DIAGNÓSTICO
+Fatiga generalizada - En evaluación
+
+PLAN DE TRATAMIENTO
+
+
+• Acetaminofén 500mg - 3 veces al día
+• Control en 15 días
+
+
+RECOMENDACIONES
+• Dieta balanceada
+• Ejercicio moderado 30 min/día
+• Evitar automedicación
+• Acudir a urgencias si los síntomas empeoran
+
+Dr. María Rodríguez
+Cédula Profesional: 8018510

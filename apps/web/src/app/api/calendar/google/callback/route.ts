@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { encryptToken } from '@/lib/calendar/token-encryption';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,10 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      console.error('Google token exchange failed:', tokenData);
+      logger.error({
+        event: 'calendar_google_token_exchange_failed',
+        error: tokenData.error_description || tokenData.error || 'Token exchange failed',
+      });
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/appointments?error=token_exchange_failed`
       );
@@ -131,7 +135,11 @@ export async function GET(request: NextRequest) {
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/appointments?success=google_connected`
     );
   } catch (error: any) {
-    console.error('Google OAuth callback error:', error);
+    logger.error({
+      event: 'calendar_google_callback_failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/appointments?error=callback_failed`
     );

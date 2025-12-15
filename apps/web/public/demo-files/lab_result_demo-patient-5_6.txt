@@ -1,0 +1,42 @@
+
+RESULTADOS DE LABORATORIO
+
+PACIENTE: Antonio Díaz
+FECHA DE NACIMIENTO: 12/12/1989
+FECHA DE RECOLECCIÓN: 23 de septiembre de 2025, 08:56 p.m.
+
+ESTUDIO: Perfil Lipídico
+
+RESULTADOS:
+
+Colesterol Total:
+  Valor: 57.4 mg/dL
+  Rango de Referencia: <200
+  Estado: NORMAL
+
+
+LDL:
+  Valor: 107.0 mg/dL
+  Rango de Referencia: <100
+  Estado: ANORMAL
+
+
+HDL:
+  Valor: 43.0 mg/dL
+  Rango de Referencia: >40 (M) / >50 (F)
+  Estado: NORMAL
+
+
+Triglicéridos:
+  Valor: 8.5 mg/dL
+  Rango de Referencia: <150
+  Estado: NORMAL
+
+
+OBSERVACIONES:
+Se detectan valores fuera del rango normal. Se recomienda consulta con especialista.
+
+MÉDICO TRATANTE: Dr. María Rodríguez
+LABORATORIO: LabMéxico - Certificación ISO 15189
+
+Este reporte es confidencial y está destinado únicamente para el paciente y su médico tratante.

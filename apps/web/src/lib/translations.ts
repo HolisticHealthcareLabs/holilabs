@@ -32,18 +32,18 @@ export const translations = {
     
     // Hero Section
     hero: {
-      badge: 'Health 3.0 Platform',
-      headline: 'The Future of\nBio-Adaptive Health',
-      subheadline: 'Holi Labs transforms reactive medicine into preventive medicine, AI-powered and patient-centered.',
+      badge: 'Clinical Co-Pilot',
+      headline: 'From Reactive Treatment\nto Proactive Health',
+      subheadline: 'HoliLabs is a Generative Intelligence clinical co-pilot that shifts the focus from reactive treatment to proactive health management. Rapidly identify underlying health patterns leveraging EHR, labs, and imaging data to deliver personalized, integrative care.',
       ctaPrimary: 'Get Started',
-      ctaSecondary: '',
+      ctaSecondary: 'Learn More',
     },
     
     // Paradigm Shift Section
     paradigm: {
       badge: 'The Paradigm Shift',
-      headline: 'From Reactive Medicine to\nHealth 3.0',
-      headlineHighlight: '',
+      headline: 'From Reactive Medicine to',
+      headlineHighlight: 'Health 3.0',
       subheadline: 'Goodbye to reactive medicine. Hello to anticipation. A system that processes data and detects risks in the background, so you focus on what you do best: heal.',
       legacyTitle: 'Legacy Systems',
       legacyItems: [
@@ -68,9 +68,9 @@ export const translations = {
     
     // One Platform Section
     onePlatform: {
-      badge: 'ONE PLATFORM',
-      headline: 'Prevent. Diagnose. Cure.',
-      subheadline: 'Holi Labs is designed for doctors and hospitals who need a single platform for population prevention, AI-assisted diagnosis, and value-based outcomes tracking.',
+      badge: 'CLINICAL DECISION SUPPORT',
+      headline: 'Intelligent Protocol Recommendations',
+      subheadline: 'Real-time Clinical Decision Support enables personalized, integrative care through intelligent protocol recommendations. Designed to facilitate clinical discovery and lay the groundwork for decentralized trials that validate evidence-based integrative medicine practices.',
     },
     
     // Footer
@@ -128,18 +128,18 @@ export const translations = {
     
     // Hero Section
     hero: {
-      badge: 'Plataforma Health 3.0',
-      headline: 'El Futuro de la Salud\nBio-Adaptativa',
-      subheadline: 'Holi Labs transforma la medicina reactiva en medicina preventiva, basada en IA y centrada en el paciente.',
-      ctaPrimary: 'Regístrate',
-      ctaSecondary: '',
+      badge: 'Clinical Co-Pilot',
+      headline: 'De Tratamiento Reactivo\na Salud Proactiva',
+      subheadline: 'HoliLabs es un co-piloto clínico de Inteligencia Generativa que cambia el enfoque del tratamiento reactivo a la gestión proactiva de la salud. Identifica rápidamente patrones de salud subyacentes aprovechando datos de EHR, laboratorios e imágenes para ofrecer atención personalizada e integrativa.',
+      ctaPrimary: 'Comenzar',
+      ctaSecondary: 'Más información',
     },
     
     // Paradigm Shift Section
     paradigm: {
       badge: 'El Cambio de Paradigma',
-      headline: 'De Medicina Reactiva a\nHealth 3.0',
-      headlineHighlight: '',
+      headline: 'De Medicina Reactiva a',
+      headlineHighlight: 'Health 3.0',
       subheadline: 'Adiós a la medicina reactiva. Hola a la anticipación. Un sistema que procesa datos y detecta riesgos en segundo plano, para que tú te enfoques en lo que mejor sabes hacer: curar.',
       legacyTitle: 'Legacy Systems',
       legacyItems: [
@@ -164,9 +164,9 @@ export const translations = {
     
     // One Platform Section
     onePlatform: {
-      badge: 'INTELIGENCIA CLÍNICA INTEGRAL',
-      headline: 'Anticipa. Detecta. Optimiza.',
-      subheadline: 'Diseñada para médicos y hospitales que exigen más: una suite única para escalar la prevención, refinar diagnósticos con IA y demostrar resultados tangibles.',
+      badge: 'SOPORTE PARA DECISIONES CLÍNICAS',
+      headline: 'Recomendaciones de Protocolos Inteligentes',
+      subheadline: 'El Soporte para Decisiones Clínicas en tiempo real permite atención integrativa y personalizada a través de recomendaciones de protocolos inteligentes. Diseñado para facilitar el descubrimiento clínico y sentar las bases para ensayos descentralizados que validen prácticas de medicina integrativa basadas en evidencia.',
     },
     
     // Footer
@@ -224,18 +224,18 @@ export const translations = {
     
     // Hero Section
     hero: {
-      badge: 'Plataforma Health 3.0',
-      headline: 'O Futuro da Saúde\nBio-Adaptativa',
-      subheadline: 'Holi Labs transforma medicina reativa em medicina preventiva, baseada em IA e centrada no paciente.',
-      ctaPrimary: 'Cadastre-se',
-      ctaSecondary: '',
+      badge: 'Clinical Co-Pilot',
+      headline: 'De Tratamento Reativo\na Saúde Proativa',
+      subheadline: 'HoliLabs é um co-piloto clínico de Inteligência Generativa que muda o foco do tratamento reativo para a gestão proativa da saúde. Identifica rapidamente padrões de saúde subjacentes aproveitando dados de EHR, laboratórios e imagens para fornecer cuidados personalizados e integrativos.',
+      ctaPrimary: 'Começar',
+      ctaSecondary: 'Saiba mais',
     },
     
     // Paradigm Shift Section
     paradigm: {
       badge: 'A Mudança de Paradigma',
-      headline: 'Da Medicina Reativa para\nHealth 3.0',
-      headlineHighlight: '',
+      headline: 'Da Medicina Reativa para',
+      headlineHighlight: 'Health 3.0',
       subheadline: 'Adeus à medicina reativa. Olá à antecipação. Um sistema que processa dados e detecta riscos em segundo plano, para que você se concentre no que faz de melhor: curar.',
       legacyTitle: 'Sistemas Legados',
       legacyItems: [
@@ -260,9 +260,9 @@ export const translations = {
     
     // One Platform Section
     onePlatform: {
-      badge: 'UMA PLATAFORMA',
-      headline: 'Previne. Diagnostica. Cura.',
-      subheadline: 'Holi Labs é projetado para médicos e hospitais que precisam de uma única plataforma para prevenção populacional, diagnóstico assistido por IA e rastreamento de resultados baseados em valor.',
+      badge: 'SUPORTE PARA DECISÕES CLÍNICAS',
+      headline: 'Recomendações de Protocolos Inteligentes',
+      subheadline: 'O Suporte para Decisões Clínicas em tempo real permite cuidados integrativos e personalizados através de recomendações de protocolos inteligentes. Projetado para facilitar a descoberta clínica e estabelecer as bases para ensaios descentralizados que validem práticas de medicina integrativa baseadas em evidências.',
     },
     
     // Footer

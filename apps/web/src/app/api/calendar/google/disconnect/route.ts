@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,11 @@ export const DELETE = createProtectedRoute(
           }
         );
       } catch (revokeError) {
-        console.error('Failed to revoke Google token:', revokeError);
+        logger.error({
+          event: 'calendar_google_token_revoke_failed',
+          userId: context.user.id,
+          error: revokeError instanceof Error ? revokeError.message : String(revokeError),
+        });
         // Continue with deletion even if revocation fails
       }
 
@@ -79,7 +84,12 @@ export const DELETE = createProtectedRoute(
         message: 'Google Calendar disconnected successfully',
       });
     } catch (error: any) {
-      console.error('Google disconnect error:', error);
+      logger.error({
+        event: 'calendar_google_disconnect_failed',
+        userId: context.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return NextResponse.json(
         { error: 'Failed to disconnect Google Calendar', details: error.message },
         { status: 500 }

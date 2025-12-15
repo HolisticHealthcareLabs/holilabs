@@ -11,6 +11,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Suspense } from 'react';
+import { ThemeToggleIcon } from '@/providers/ThemeProvider';
 
 function LoginContent() {
   const router = useRouter();
@@ -47,7 +48,12 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Theme Toggle - Top Right */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggleIcon />
+      </div>
+
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.05),transparent_50%),radial-gradient(circle_at_70%_60%,rgba(59,130,246,0.05),transparent_50%)] pointer-events-none" />
 
@@ -66,10 +72,10 @@ function LoginContent() {
               className="h-16 w-auto"
             />
           </div>
-          <h1 className="text-2xl font-semibold" style={{ color: '#014751' }}>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
             Holi Labs
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">Clinician Portal</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Clinician Portal</p>
         </motion.div>
 
         {/* Login Card */}
@@ -77,12 +83,12 @@ function LoginContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8"
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Welcome back
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             Sign in to access your clinician dashboard
           </p>
 
@@ -119,7 +125,7 @@ function LoginContent() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="login-form space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email address
               </label>
               <input
@@ -131,7 +137,7 @@ function LoginContent() {
                 required
                 autoFocus
                 disabled={isLoading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               />
             </div>
 
@@ -219,7 +225,7 @@ function LoginContent() {
 
           {/* Create Profile Link */}
           <div className="create-account-link mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               Don't have an account?{' '}
               <a href="/auth/register" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
                 Create new profile
@@ -235,13 +241,13 @@ function LoginContent() {
           transition={{ delay: 0.3 }}
           className="text-center mt-8"
         >
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Need help?{' '}
-            <a href="/contact" className="text-blue-600 hover:text-blue-700 font-medium">
+            <a href="/contact" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
               Contact Support
             </a>
           </p>
-          <p className="text-xs text-gray-500 mt-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
             Protected by industry-standard authentication
           </p>
         </motion.div>

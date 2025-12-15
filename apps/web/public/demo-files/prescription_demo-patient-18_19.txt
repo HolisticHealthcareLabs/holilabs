@@ -1,0 +1,38 @@
+
+RECETA MÉDICA
+
+INFORMACIÓN DEL PACIENTE
+Nombre: Alejandra Álvarez
+Fecha de Nacimiento: 12/12/1952
+Dirección: São Paulo
+
+MEDICAMENTO PRESCRITO
+Nombre: Metformin
+Dosis: 500mg
+Frecuencia: 2x daily
+Vía de Administración: Oral
+Duración del Tratamiento: 30 días
+
+INDICACIONES
+Tomar con alimentos. Monitorear niveles de glucosa.
+
+
+
+
+
+
+
+RECOMENDACIONES
+• No suspender el tratamiento sin consultar al médico
+• Reportar efectos adversos inmediatamente
+• Mantener en lugar fresco y seco
+
+MÉDICO PRESCRIPTOR
+Nombre: Dr. José García
+Cédula Profesional: 8022212
+Teléfono: +52 55 2998 5996
+
+Fecha de Emisión: 5 de noviembre de 2025
+Vigencia: 30 días
+
+Esta receta es válida por única vez. No se aceptan alteraciones.

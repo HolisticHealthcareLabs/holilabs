@@ -280,7 +280,7 @@ export default function ImprovedWelcomeModal() {
           <div className="mt-6 text-center">
             <button
               onClick={handleClose}
-              className="text-gray-500 hover:text-gray-700 text-sm font-medium transition"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-sm font-medium transition"
             >
               Skip and explore on my own
             </button>

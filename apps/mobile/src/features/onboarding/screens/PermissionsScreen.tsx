@@ -269,10 +269,10 @@ export const PermissionsScreen = () => {
               style={[
                 styles.permissionCard,
                 { backgroundColor: theme.colors.surface },
-                permission.granted && {
+                permission.granted ? {
                   borderColor: theme.colors.success,
                   borderWidth: 2,
-                },
+                } : undefined,
               ]}
               onPress={
                 permission.granted

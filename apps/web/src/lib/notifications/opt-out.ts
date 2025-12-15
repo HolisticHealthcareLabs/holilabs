@@ -5,7 +5,11 @@
 
 import crypto from 'crypto';
 
-const SECRET_KEY = process.env.OPT_OUT_SECRET_KEY || 'default-secret-key-change-me';
+const SECRET_KEY = process.env.OPT_OUT_SECRET_KEY;
+
+if (!SECRET_KEY) {
+  throw new Error('OPT_OUT_SECRET_KEY environment variable is required for secure token encryption');
+}
 
 /**
  * Encrypt patient ID to create opt-out token

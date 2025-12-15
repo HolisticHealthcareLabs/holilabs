@@ -118,19 +118,19 @@ export default function SentRemindersTable() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                     <div>
-                      <p className="text-gray-500 mb-1">Recipient</p>
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Recipient</p>
                       <p className="font-medium">{reminder.recipient?.name || 'Unknown'}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Contact</p>
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Contact</p>
                       <p className="font-medium">{reminder.recipient?.contact || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Channel</p>
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Channel</p>
                       <p className="font-medium">{reminder.channel}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Sent At</p>
+                      <p className="text-gray-500 dark:text-gray-400 mb-1">Sent At</p>
                       <p className="font-medium">{formatDate(reminder.sentAt)}</p>
                     </div>
                   </div>

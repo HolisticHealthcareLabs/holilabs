@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { generateMRN, generateTokenId } from '@/lib/fhir/patient-mapper';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,7 +100,12 @@ export const POST = createProtectedRoute(
         { status: 201 }
       );
     } catch (error) {
-      console.error('Bulk patient import error:', error);
+      logger.error({
+        event: 'patients_bulk_import_failed',
+        userId: context.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return NextResponse.json(
         { error: 'Failed to import patients' },
         { status: 500 }

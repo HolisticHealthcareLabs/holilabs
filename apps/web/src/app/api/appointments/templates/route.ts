@@ -5,17 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-// FIXME: Old rate limiting API - needs refactor
-// import { rateLimit } from '@/lib/rate-limit';
-
-// FIXME: Old rate limiting - commented out for now
-// const limiter = rateLimit({
-//   interval: 60 * 1000,
-//   uniqueTokenPerInterval: 500,
-// });
+import { checkRateLimit } from '@/lib/rate-limit';
 
 /**
  * GET /api/appointments/templates
@@ -23,8 +16,11 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(request: NextRequest) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 60, 'TEMPLATES_GET');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -103,8 +99,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 20, 'TEMPLATES_POST');
+    // Apply rate limiting - 60 requests per minute for appointments
+    const rateLimitResponse = await checkRateLimit(request, 'appointments');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {

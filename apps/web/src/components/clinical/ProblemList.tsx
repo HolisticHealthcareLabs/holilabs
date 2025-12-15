@@ -172,6 +172,7 @@ export function ProblemList({
           <span className="text-2xl">📋</span>
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Lista de Problemas</h2>
+            {/* Decorative - low contrast intentional for count summary */}
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {activeProblems.length} activos • {resolvedProblems.length} resueltos
             </p>
@@ -524,6 +525,7 @@ export function ProblemList({
                     <div className="font-medium text-gray-900 dark:text-white mb-1">
                       {problem.description}
                     </div>
+                    {/* Decorative - low contrast intentional for problem onset date metadata */}
                     <div className="text-xs text-gray-500 dark:text-gray-400 space-x-3">
                       <span>
                         Inicio: {new Date(problem.onsetDate).toLocaleDateString('es-ES')}
@@ -611,6 +613,7 @@ export function ProblemList({
                       )}
 
                       {problem.lastReviewed && (
+                        {/* Decorative - low contrast intentional for review timestamp metadata */}
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                           Última revisión:{' '}
                           {new Date(problem.lastReviewed).toLocaleDateString('es-ES')}

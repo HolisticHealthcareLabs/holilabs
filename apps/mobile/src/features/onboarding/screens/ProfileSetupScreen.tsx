@@ -23,7 +23,6 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Button, Input } from '@/shared/components';
 import { HapticFeedback } from '@/services/haptics';
 import { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
-import { FormField } from '@/components/ui/FormField';
 
 type ProfileSetupScreenNavigationProp = NativeStackNavigationProp<OnboardingStackParamList, 'ProfileSetup'>;
 type ProfileSetupScreenRouteProp = RouteProp<OnboardingStackParamList, 'ProfileSetup'>;
@@ -191,7 +190,7 @@ export const ProfileSetupScreen = () => {
           {/* Form */}
           <View style={styles.form}>
             {/* Full Name */}
-            <FormField
+            <Input
               label="Full Name"
               placeholder="Dr. Jane Smith"
               value={formData.fullName}
@@ -205,20 +204,20 @@ export const ProfileSetupScreen = () => {
 
             {/* Specialty (Doctor/Nurse only) */}
             {(role === 'doctor' || role === 'nurse') && (
-              <FormField
+              <Input
                 label="Specialty"
                 placeholder={`Select your specialty`}
                 value={formData.specialty}
                 onChangeText={(value) => updateField('specialty', value)}
                 error={errors.specialty}
                 required
-                helpText="This helps us provide relevant clinical insights"
+                helperText="This helps us provide relevant clinical insights"
               />
             )}
 
             {/* License Number (Doctor/Nurse only) */}
             {(role === 'doctor' || role === 'nurse') && (
-              <FormField
+              <Input
                 label={role === 'doctor' ? 'Medical License Number' : 'RN License Number'}
                 placeholder="e.g., 123456"
                 value={formData.licenseNumber}
@@ -226,13 +225,13 @@ export const ProfileSetupScreen = () => {
                 error={errors.licenseNumber}
                 autoCapitalize="characters"
                 required
-                secureEntry={false}
-                helpText="Required for compliance and verification"
+                secureTextEntry={false}
+                helperText="Required for compliance and verification"
               />
             )}
 
             {/* Institution */}
-            <FormField
+            <Input
               label="Institution / Organization"
               placeholder="Hospital or Clinic Name"
               value={formData.institution}
