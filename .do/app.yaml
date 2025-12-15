@@ -9,7 +9,7 @@ domains:
 services:
   - name: web
     github:
-      repo: nicolacapriroloteran/holilabs-health-ai
+      repo: HolisticHealthcareLabs/holilabs
       branch: main
       deploy_on_push: true
 

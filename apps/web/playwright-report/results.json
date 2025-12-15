@@ -1,0 +1,318 @@
+{
+  "config": {
+    "configFile": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/playwright.config.ts",
+    "rootDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "edge",
+        "name": "edge",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-safari-iphone",
+        "name": "mobile-safari-iphone",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-safari-ipad",
+        "name": "mobile-safari-ipad",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome-android",
+        "name": "mobile-chrome-android",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome-tablet",
+        "name": "mobile-chrome-tablet",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-safari",
+        "name": "tablet-safari",
+        "testDir": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 8,
+    "webServer": {
+      "command": "pnpm dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "accessibility-fixes.spec.ts",
+      "file": "accessibility-fixes.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Accessibility Tests - Light Mode",
+          "file": "accessibility-fixes.spec.ts",
+          "line": 33,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Landing Page - Public Access",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4486,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n    at /Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e/accessibility-fixes.spec.ts:157:31",
+                        "location": {
+                          "file": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e/accessibility-fixes.spec.ts",
+                          "column": 31,
+                          "line": 157
+                        },
+                        "snippet": "  155 |\n  156 |     // Landing page should have no critical violations\n> 157 |     expect(violations.length).toBe(0);\n      |                               ^\n  158 |   });\n  159 | });\n  160 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e/accessibility-fixes.spec.ts",
+                            "column": 31,
+                            "line": 157
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\n\n  155 |\n  156 |     // Landing page should have no critical violations\n> 157 |     expect(violations.length).toBe(0);\n      |                               ^\n  158 |   });\n  159 | });\n  160 |\n    at /Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e/accessibility-fixes.spec.ts:157:31"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "❌ Critical/Serious Accessibility Violations:\n"
+                        },
+                        {
+                          "text": "  - color-contrast: Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds\n"
+                        },
+                        {
+                          "text": "    Impact: serious\n"
+                        },
+                        {
+                          "text": "    Nodes: 12\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-15T09:23:42.536Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results/accessibility-fixes-Access-8db76-anding-Page---Public-Access-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results/accessibility-fixes-Access-8db76-anding-Page---Public-Access-chromium/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results/accessibility-fixes-Access-8db76-anding-Page---Public-Access-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/results/accessibility-fixes-Access-8db76-anding-Page---Public-Access-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/nicolacapriroloteran/prototypes/holilabsv2/apps/web/tests/e2e/accessibility-fixes.spec.ts",
+                        "column": 31,
+                        "line": 157
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "bdba22c87ce418217750-14f2aded27230f5f1868",
+              "file": "accessibility-fixes.spec.ts",
+              "line": 146,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-15T09:23:35.666Z",
+    "duration": 12365.308,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

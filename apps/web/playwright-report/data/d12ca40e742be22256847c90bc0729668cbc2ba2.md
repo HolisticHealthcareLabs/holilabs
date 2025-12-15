@@ -1,0 +1,934 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido principal" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "We use cookies" [level=3] [ref=e7]
+      - paragraph [ref=e8]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e9] [cursor=pointer]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e10]:
+      - button "Accept All" [ref=e11] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e12] [cursor=pointer]
+      - button "Customize" [ref=e13] [cursor=pointer]
+  - main [ref=e14]:
+    - button "Open AI Command Center" [ref=e15] [cursor=pointer]:
+      - img [ref=e16]
+      - generic: AI Command Center
+    - generic [ref=e20]:
+      - button "Send Feedback" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - generic: Envíanos tu feedback
+    - generic [ref=e25]:
+      - navigation [ref=e27]:
+        - link "Holi Labs Holi Labs" [ref=e28] [cursor=pointer]:
+          - /url: /
+          - img "Holi Labs" [ref=e30]
+          - generic [ref=e31]: Holi Labs
+        - generic [ref=e32]:
+          - link "Plataforma" [ref=e33] [cursor=pointer]:
+            - /url: "#plataforma"
+          - link "Casos de Uso" [ref=e34] [cursor=pointer]:
+            - /url: "#casos"
+          - link "Precios" [ref=e35] [cursor=pointer]:
+            - /url: "#precios"
+        - generic [ref=e36]:
+          - button "Language" [ref=e38] [cursor=pointer]:
+            - img [ref=e39]
+          - link "Entrar" [ref=e42] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Demo Gratuita" [ref=e43] [cursor=pointer]:
+            - /url: "#demo"
+      - generic [ref=e44]:
+        - img "Health 3.0 Platform" [ref=e46]
+        - generic [ref=e49]:
+          - generic [ref=e51]: Co-Piloto Clínico de Inteligencia Generativa
+          - heading "De Tratamiento Reactivo a Salud Proactiva" [level=1] [ref=e52]
+          - paragraph [ref=e53]: HoliLabs es un co-piloto clínico de Inteligencia Generativa que cambia el enfoque del tratamiento reactivo a la gestión proactiva de la salud. Identifica rápidamente patrones de salud subyacentes aprovechando datos de EHR, laboratorios e imágenes para ofrecer atención personalizada e integrativa.
+          - link "Comenzar" [ref=e55] [cursor=pointer]:
+            - /url: /auth/register
+        - img [ref=e57]
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e62]: El Cambio de Paradigma
+          - heading "De Medicina Reactiva a Health 3.0" [level=2] [ref=e63]
+          - paragraph [ref=e64]: "Adiós a la medicina reactiva. Hola a la anticipación. Un sistema que procesa datos y detecta riesgos en segundo plano, para que tú te enfoques en lo que mejor sabes hacer: curar."
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]: 📝
+              - heading "Legacy Systems" [level=3] [ref=e69]
+            - list [ref=e70]:
+              - listitem [ref=e71]:
+                - generic [ref=e72]: ❌
+                - generic [ref=e73]: 60% de tu tiempo en documentación, no en pacientes
+              - listitem [ref=e74]:
+                - generic [ref=e75]: ❌
+                - generic [ref=e76]: Screenings preventivos olvidados o retrasados
+              - listitem [ref=e77]:
+                - generic [ref=e78]: ❌
+                - generic [ref=e79]: Burnout por carga administrativa insostenible
+              - listitem [ref=e80]:
+                - generic [ref=e81]: ❌
+                - generic [ref=e82]: Datos dispersos en múltiples sistemas
+              - listitem [ref=e83]:
+                - generic [ref=e84]: ❌
+                - generic [ref=e85]: Falta de herramientas para manejo poblacional
+              - listitem [ref=e86]:
+                - generic [ref=e87]: ❌
+                - generic [ref=e88]: Pacientes perdiendo recetas impresas
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - img "Holi Labs" [ref=e93]
+              - heading "Health 3.0 con Holi Labs" [level=3] [ref=e94]
+            - list [ref=e95]:
+              - listitem [ref=e96]:
+                - generic [ref=e97]: ✅
+                - generic [ref=e98]: IA Médica te ahorra 3-4 horas diarias (transcripción → notas SOAP)
+              - listitem [ref=e99]:
+                - generic [ref=e100]: ✅
+                - generic [ref=e101]: Sistema de prevención longitudinal que identifica gaps automáticamente
+              - listitem [ref=e102]:
+                - generic [ref=e103]: ✅
+                - generic [ref=e104]: "CDS que trabaja para ti: 12+ reglas activas detectan problemas antes"
+              - listitem [ref=e105]:
+                - generic [ref=e106]: ✅
+                - generic [ref=e107]: Portal de pacientes que reduce llamadas en 40%
+              - listitem [ref=e108]:
+                - generic [ref=e109]: ✅
+                - generic [ref=e110]: Decisiones clínicas respaldadas por WHO/PAHO/USPSTF en tiempo real
+              - listitem [ref=e111]:
+                - generic [ref=e112]: ✅
+                - generic [ref=e113]: E-prescribing con firma digital a 8+ farmacias
+        - paragraph [ref=e115]: "Resultado: Más tiempo para medicina, menos tiempo en administración."
+      - generic [ref=e117]:
+        - generic [ref=e118]:
+          - generic [ref=e119]: SOPORTE PARA DECISIONES CLÍNICAS
+          - heading "Recomendaciones de Protocolos Inteligentes" [level=2] [ref=e120]
+          - paragraph [ref=e121]: El Soporte para Decisiones Clínicas en tiempo real permite atención integrativa y personalizada a través de recomendaciones de protocolos inteligentes. Diseñado para facilitar el descubrimiento clínico y sentar las bases para ensayos descentralizados que validen prácticas de medicina integrativa basadas en evidencia.
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - generic [ref=e127]: 👤
+                - generic [ref=e128]: Generar nota SOAP para paciente diabético...
+              - generic [ref=e129]:
+                - generic [ref=e130]: ✨
+                - generic [ref=e131]: Nota generada con HbA1c, plan de tx...
+            - heading "AI Automation" [level=3] [ref=e132]
+            - paragraph [ref=e133]: Conecta cualquier LLM a nuestra plataforma líder en datos médicos y usa tus datos como contexto para automatizar transcripciones, generar notas SOAP, y acelerar flujos clínicos.
+          - generic [ref=e134]:
+            - generic [ref=e141]: "HbA1c Control: 85%"
+            - heading "Value-Based Care" [level=3] [ref=e142]
+            - paragraph [ref=e143]: Rastrea los resultados clínicos en tiempo real. Visualiza métricas de calidad, adherencia al tratamiento y desempeño poblacional para demostrar un valor tangible.
+          - generic [ref=e144]:
+            - generic [ref=e146]:
+              - generic [ref=e147]:
+                - generic [ref=e148]: ✓
+                - text: WHO NCD Protocol
+              - generic [ref=e149]:
+                - generic [ref=e150]: ✓
+                - text: USPSTF Screenings
+              - generic [ref=e151]:
+                - generic [ref=e152]: ✓
+                - text: PAHO Guidelines
+            - heading "Prevention Hub" [level=3] [ref=e153]
+            - paragraph [ref=e154]: Accede a protocolos de prevención de WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera alertas automáticas para screenings vencidos.
+      - generic [ref=e156]:
+        - generic [ref=e157]:
+          - generic [ref=e158]: DESCUBRE TU CO-PILOT
+          - heading "Un suite clínico inteligente que eleva tu práctica" [level=2] [ref=e159]
+          - paragraph [ref=e160]: Crea, ajusta y gestiona tu co-piloto para automatizar tus procesos clínicos rápidamente.
+        - generic [ref=e161]:
+          - generic [ref=e162]:
+            - generic [ref=e163]:
+              - generic [ref=e164]: 🏛️
+              - generic [ref=e165]:
+                - heading "Gobernanza Corporativa Flexible" [level=3] [ref=e166]
+                - paragraph [ref=e167]: Implemente gobernanza bajo sus términos. Garantice conformidad regulatoria, protección de datos y control total a escala hospitalaria.
+            - generic [ref=e168]:
+              - generic [ref=e169]: HIPAA/LGPD
+              - generic [ref=e170]: Audit Logs
+              - generic [ref=e171]: Role-Based Access
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - generic [ref=e174]: 📊
+              - generic [ref=e175]:
+                - heading "Rastreo de Outcomes Basados en Valor" [level=3] [ref=e176]
+                - paragraph [ref=e177]: "Dashboard extensivo que muestra outcomes tangibles: control de HbA1c, reducción de hospitalizaciones, adherencia a tratamientos, y métricas de calidad para contratos de valor."
+            - generic [ref=e178]:
+              - generic [ref=e179]: HEDIS Measures
+              - generic [ref=e180]: Quality Metrics
+              - generic [ref=e181]: Population Health
+          - generic [ref=e182]:
+            - generic [ref=e183]:
+              - generic [ref=e184]: 🎯
+              - generic [ref=e185]:
+                - heading "Hub de Prevención con Protocolos Globales" [level=3] [ref=e186]
+                - paragraph [ref=e187]: Accede a protocolos de prevención establecidos por WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera recordatorios automáticos para screenings.
+            - generic [ref=e188]:
+              - generic [ref=e189]: WHO NCD
+              - generic [ref=e190]: PAHO LATAM
+              - generic [ref=e191]: USPSTF A/B
+          - generic [ref=e192]:
+            - generic [ref=e193]:
+              - generic [ref=e194]: 🤖
+              - generic [ref=e195]:
+                - heading "Navegación Inteligente Predictiva" [level=3] [ref=e196]
+                - paragraph [ref=e197]: Co-Pilot que predice qué herramientas necesitas según hora del día, tipo de paciente, y tus patrones de uso. Acceso instantáneo a cualquier función con comandos de voz.
+            - generic [ref=e198]:
+              - generic [ref=e199]: Voice Commands
+              - generic [ref=e200]: Smart Navigation
+              - generic [ref=e201]: Predictive UI
+      - generic [ref=e203]:
+        - generic [ref=e204]:
+          - generic [ref=e205]: COLABORACIÓN
+          - heading "Elimina Silos, Maximiza Colaboración." [level=2] [ref=e206]:
+            - text: Elimina Silos,
+            - text: Maximiza Colaboración.
+          - paragraph [ref=e207]: Consolida tu información clínica y alinea a tu equipo médico alrededor de procesos que generan impacto real en la salud de tus pacientes.
+        - generic [ref=e208]:
+          - generic [ref=e209]:
+            - heading "EHR Multi-Usuario con Permisos" [level=3] [ref=e210]
+            - paragraph [ref=e211]: Médicos, enfermeras, y staff acceden al mismo expediente con roles diferenciados. Control granular de quién ve qué información.
+          - generic [ref=e212]:
+            - heading "Mensajería HIPAA en Tiempo Real" [level=3] [ref=e213]
+            - paragraph [ref=e214]: Integra WhatsApp, Teams y comunicación interna directamente en los flujos clínicos. Centraliza comunicaciones con rastreabilidad y gobernanza de TI.
+          - generic [ref=e215]:
+            - heading "Planes de Cuidado Compartidos" [level=3] [ref=e216]
+            - paragraph [ref=e217]: Construye experiencias de atención coordinada. Todo el equipo ve las mismas metas, intervenciones, y progreso del paciente en tiempo real.
+          - generic [ref=e218]:
+            - heading "Analytics de Equipo" [level=3] [ref=e219]
+            - paragraph [ref=e220]: Monitorea productividad, carga de trabajo, y outcomes por proveedor. Identifica oportunidades de mejora y distribuye casos equitativamente.
+      - generic [ref=e222]:
+        - generic [ref=e223]:
+          - generic [ref=e224]: DATA
+          - heading "Gestión de Datos Líder en el Mercado" [level=2] [ref=e225]:
+            - text: Gestión de Datos
+            - text: Líder en el Mercado
+          - paragraph [ref=e226]: Conecta tus datos, personaliza cómo los ves, y luego automatiza acciones. La forma correcta de aprovechar IA a nivel hospitalario.
+        - generic [ref=e227]:
+          - generic [ref=e228]:
+            - generic [ref=e230]:
+              - generic [ref=e231]: 💊
+              - generic [ref=e232]: 🏥
+              - generic [ref=e233]: 🧪
+              - generic [ref=e234]: 📅
+              - generic [ref=e235]: 💬
+              - generic [ref=e236]: 📊
+            - heading "Integraciones Nativas" [level=3] [ref=e237]
+            - paragraph [ref=e238]: Conecta instantáneamente con labs, farmacias, y sistemas existentes. Sincroniza datos en minutos con 50+ integraciones nativas sin código.
+          - generic [ref=e239]:
+            - generic [ref=e241]:
+              - text: API Webhooks
+              - text: FHIR R4
+              - text: HL7 | DICOM
+            - heading "Conexiones Personalizadas" [level=3] [ref=e242]
+            - paragraph [ref=e243]: Construye conexiones personalizadas a miles de herramientas usando nuestra API potente e intuitiva. Webhooks, FHIR, HL7, todo lo que necesites.
+          - generic [ref=e244]:
+            - generic [ref=e245]:
+              - generic [ref=e246]: Lab Result → Auto-Flag → Care Plan
+              - generic [ref=e247]: HbA1c ≥5.7% → Diabetes Prevention
+              - generic [ref=e248]: Missed Screening → Alert + Schedule
+            - heading "Combina y Transforma" [level=3] [ref=e249]
+            - paragraph [ref=e250]: "Toma control transformando tus datos clínicos en lo que tu equipo necesita: workflows automatizados, fórmulas predictivas, y alertas inteligentes."
+        - generic [ref=e251]:
+          - heading "Integraciones Disponibles" [level=3] [ref=e252]
+          - generic [ref=e253]:
+            - generic [ref=e254]:
+              - paragraph [ref=e255]: Sistemas Médicos
+              - generic [ref=e256]:
+                - generic [ref=e257]: FHIR R4
+                - generic [ref=e258]: HL7
+                - generic [ref=e259]: DICOM
+                - generic [ref=e260]: RNDS Brasil
+            - generic [ref=e261]:
+              - paragraph [ref=e262]: Farmacias
+              - generic [ref=e263]:
+                - generic [ref=e264]: Guadalajara
+                - generic [ref=e265]: Benavides
+                - generic [ref=e266]: Del Ahorro
+                - generic [ref=e267]: +5 más
+            - generic [ref=e268]:
+              - paragraph [ref=e269]: Comunicación
+              - generic [ref=e270]:
+                - generic [ref=e271]: WhatsApp
+                - generic [ref=e272]: Twilio SMS
+                - generic [ref=e273]: SendGrid
+                - generic [ref=e274]: Push Notifications
+            - generic [ref=e275]:
+              - paragraph [ref=e276]: Modelos IA
+              - generic [ref=e277]:
+                - generic [ref=e278]:
+                  - generic [ref=e279]: 🔮
+                  - text: GPT-4
+                - generic [ref=e280]:
+                  - generic [ref=e281]: ☀️
+                  - text: Claude
+                - generic [ref=e282]:
+                  - generic [ref=e283]: ✨
+                  - text: Gemini
+                - generic [ref=e284]:
+                  - generic [ref=e285]: 🦙
+                  - text: LLaMA
+          - paragraph [ref=e287]: + Databases, ERP, Cloud Apps, Workflows y más
+      - generic [ref=e290]:
+        - generic [ref=e291]:
+          - generic [ref=e293]: AI Agents prontos para usar
+          - heading "En segundos, transforma consultas en notas clínicas perfectas" [level=3] [ref=e294]
+          - paragraph [ref=e295]: Con AI que entiende español y portugués, HoliLabs automatiza documentación, genera notas SOAP y libera 3-4 horas diarias para que te enfoques en tus pacientes.
+          - generic [ref=e296]:
+            - generic [ref=e297]: AI Medical Scribe
+            - generic [ref=e298]: Transcripción en tiempo real
+            - generic [ref=e299]: Notas SOAP automáticas
+        - generic [ref=e300]:
+          - generic [ref=e302]: Integración inteligente
+          - heading "Gestiona todo en un solo lugar" [level=3] [ref=e303]
+          - paragraph [ref=e304]: "Plataforma completa: EHR, prevención, telemedicina, e-prescribing, portal de pacientes, analytics y más. Todo lo que necesitas para crear una práctica moderna en minutos."
+          - generic [ref=e305]:
+            - generic [ref=e306]: FHIR R4 compliant
+            - generic [ref=e307]: HIPAA/LGPD
+            - generic [ref=e308]: 8+ farmacias integradas
+      - generic [ref=e310]:
+        - generic [ref=e311]:
+          - heading "Una plataforma completa y personalizable" [level=2] [ref=e312]
+          - paragraph [ref=e313]: Todos los módulos que necesitas para operar tu clínica con eficiencia y escalar sin límites.
+        - generic [ref=e314]:
+          - generic [ref=e315]:
+            - generic [ref=e317]: Prevención & Manejo Poblacional
+            - heading "Medicina preventiva a escala" [level=3] [ref=e318]
+            - paragraph [ref=e319]: Automatiza screenings, identifica gaps de prevención y maneja poblaciones completas con protocolos WHO/PAHO/USPSTF.
+          - generic [ref=e320]:
+            - generic [ref=e321]:
+              - generic [ref=e322]: 📊
+              - heading "Hub de Prevención Longitudinal" [level=4] [ref=e323]
+              - paragraph [ref=e324]: Timeline visual de 30 años con todos los screenings. 7 dominios de salud organizados.
+              - generic [ref=e325]: 100+ intervenciones
+            - generic [ref=e326]:
+              - generic [ref=e327]: ⏰
+              - heading "Screening Triggers" [level=4] [ref=e328]
+              - paragraph [ref=e329]: 15+ protocolos automatizados. Monitoreo diario de TODOS tus pacientes.
+              - generic [ref=e330]: 0 horas rastreando
+            - generic [ref=e331]:
+              - generic [ref=e332]: 🧪
+              - heading "Monitoreo de Labs" [level=4] [ref=e333]
+              - paragraph [ref=e334]: Auto-flagging de resultados críticos con planes automáticos y cálculo de riesgo.
+              - generic [ref=e335]: Prevención 2ª
+        - generic [ref=e336]:
+          - generic [ref=e337]:
+            - generic [ref=e339]: Inteligencia Artificial Clínica
+            - heading "IA que trabaja para ti 24/7" [level=3] [ref=e340]
+            - paragraph [ref=e341]: Scribe médico, decisiones clínicas y co-pilot inteligente. Libera tu tiempo para lo que realmente importa.
+          - generic [ref=e342]:
+            - generic [ref=e343]:
+              - generic [ref=e344]: 🎙️
+              - heading "AI Medical Scribe" [level=4] [ref=e345]
+              - paragraph [ref=e346]: Transcripción → Notas SOAP automáticas. Códigos ICD-10 sugeridos.
+              - generic [ref=e347]: Ahorra 3-4h/día
+            - generic [ref=e348]:
+              - generic [ref=e349]: ⚕️
+              - heading "Clinical Decision Support" [level=4] [ref=e350]
+              - paragraph [ref=e351]: 12+ reglas activas. Interacciones medicamentosas, protocolos WHO, alertas de riesgo.
+              - generic [ref=e352]: Solo alertas útiles
+            - generic [ref=e353]:
+              - generic [ref=e354]: 💬
+              - heading "AI Co-Pilot" [level=4] [ref=e355]
+              - paragraph [ref=e356]: Chatbot clínico contextual. Diagnósticos diferenciales, redacción de notas.
+              - generic [ref=e357]: Inteligencia aumentada
+        - generic [ref=e358]:
+          - generic [ref=e359]:
+            - generic [ref=e361]: EHR Completo
+            - heading "Registro médico electrónico de clase mundial" [level=3] [ref=e362]
+            - paragraph [ref=e363]: Todo lo que necesitas para documentar, gestionar y compartir información clínica con total seguridad.
+          - generic [ref=e364]:
+            - generic [ref=e365]:
+              - generic [ref=e366]: 👤
+              - generic [ref=e367]: Demografía LGPD
+            - generic [ref=e368]:
+              - generic [ref=e369]: 📝
+              - generic [ref=e370]: Notas SOAP
+            - generic [ref=e371]:
+              - generic [ref=e372]: 💊
+              - generic [ref=e373]: Medicamentos + MAR
+            - generic [ref=e374]:
+              - generic [ref=e375]: ⚠️
+              - generic [ref=e376]: Alergias
+            - generic [ref=e377]:
+              - generic [ref=e378]: 🩺
+              - generic [ref=e379]: Signos Vitales
+            - generic [ref=e380]:
+              - generic [ref=e381]: 🧪
+              - generic [ref=e382]: Labs LOINC
+            - generic [ref=e383]:
+              - generic [ref=e384]: 🏥
+              - generic [ref=e385]: Imagenología DICOM
+            - generic [ref=e386]:
+              - generic [ref=e387]: 🔬
+              - generic [ref=e388]: Screening Protocols
+          - paragraph [ref=e390]: "Por qué es diferente: Humanización completa, historial familiar multinivel, FHIR R4 compliant, RNDS Brasil, IPS export internacional."
+        - generic [ref=e391]:
+          - generic [ref=e392]:
+            - generic [ref=e393]: 💊
+            - heading "E-Prescribing" [level=4] [ref=e394]
+            - paragraph [ref=e395]: 8+ farmacias integradas. Firma digital ICP-Brasil.
+          - generic [ref=e396]:
+            - generic [ref=e397]: 📅
+            - heading "Telemedicina" [level=4] [ref=e398]
+            - paragraph [ref=e399]: Video HD, Google/Outlook sync, -40% no-shows.
+          - generic [ref=e400]:
+            - generic [ref=e401]: 📱
+            - heading "Portal Pacientes" [level=4] [ref=e402]
+            - paragraph [ref=e403]: Acceso completo, citas online, mensajería HIPAA.
+          - generic [ref=e404]:
+            - generic [ref=e405]: 💬
+            - heading "Omnicanal" [level=4] [ref=e406]
+            - paragraph [ref=e407]: WhatsApp, SMS, Email, Push. E2E encryption.
+          - generic [ref=e408]:
+            - generic [ref=e409]: 📝
+            - heading "Formularios IA" [level=4] [ref=e410]
+            - paragraph [ref=e411]: Drag-and-drop, generación AI, e-firma.
+          - generic [ref=e412]:
+            - generic [ref=e413]: 🏥
+            - heading "Especializado" [level=4] [ref=e414]
+            - paragraph [ref=e415]: Paliativos, MAR, planes de cuidado.
+          - generic [ref=e416]:
+            - generic [ref=e417]: 💰
+            - heading "Facturación" [level=4] [ref=e418]
+            - paragraph [ref=e419]: Auto-facturas, TISS Brasil, analytics.
+          - generic [ref=e420]:
+            - generic [ref=e421]: 🔗
+            - heading "Interoperabilidad" [level=4] [ref=e422]
+            - paragraph [ref=e423]: FHIR R4, RNDS, LOINC, SNOMED, DICOM.
+        - generic [ref=e425]:
+          - generic [ref=e426]:
+            - generic [ref=e427]: 🔒
+            - generic [ref=e428]:
+              - heading "Seguridad & Compliance de Clase Mundial" [level=4] [ref=e429]
+              - paragraph [ref=e430]: HIPAA Safe Harbor • LGPD/GDPR • AES-256 • E2E encryption • MFA/TOTP • Audit logs
+          - generic [ref=e431]:
+            - generic [ref=e432]: ✓ HIPAA
+            - generic [ref=e433]: ✓ LGPD
+            - generic [ref=e434]: ✓ ISO 27269
+      - generic [ref=e436]:
+        - generic [ref=e437]:
+          - 'heading "La elección de los líderes: IA y automatización para resultados inmediatos" [level=2] [ref=e438]'
+          - paragraph [ref=e439]: Con workflows automatizados y AI Agents, médicos y clínicas aceleraron operaciones, redujeron burnout y mejoraron outcomes clínicos.
+        - generic [ref=e440]:
+          - generic [ref=e441]:
+            - generic [ref=e442]:
+              - generic [ref=e443]: 👨‍⚕️
+              - generic [ref=e444]:
+                - heading "Dr. García" [level=3] [ref=e445]
+                - paragraph [ref=e446]: Medicina Familiar
+            - generic [ref=e447]:
+              - generic [ref=e448]:
+                - paragraph [ref=e449]: "Antes de Holi Labs:"
+                - list [ref=e450]:
+                  - listitem [ref=e451]:
+                    - generic [ref=e452]: ×
+                    - generic [ref=e453]: 4 horas/día documentando
+                  - listitem [ref=e454]:
+                    - generic [ref=e455]: ×
+                    - generic [ref=e456]: 15-20 llamadas diarias
+                  - listitem [ref=e457]:
+                    - generic [ref=e458]: ×
+                    - generic [ref=e459]: Screenings olvidados
+              - generic [ref=e460]:
+                - paragraph [ref=e461]: "Con Holi Labs:"
+                - list [ref=e462]:
+                  - listitem [ref=e463]:
+                    - generic [ref=e464]: ✓
+                    - generic [ref=e465]: 30 min/día con AI Scribe
+                  - listitem [ref=e466]:
+                    - generic [ref=e467]: ✓
+                    - generic [ref=e468]: 5 llamadas (portal automatizado)
+                  - listitem [ref=e469]:
+                    - generic [ref=e470]: ✓
+                    - generic [ref=e471]: 0 screenings olvidados
+            - generic [ref=e472]:
+              - paragraph [ref=e473]: +20%
+              - paragraph [ref=e474]: Aumento en ingresos año 1
+          - generic [ref=e475]:
+            - generic [ref=e476]:
+              - generic [ref=e477]: 🏥
+              - generic [ref=e478]:
+                - heading "Clínica Comunitaria" [level=3] [ref=e479]
+                - paragraph [ref=e480]: 3 médicos, 200 pac/semana
+            - generic [ref=e481]:
+              - generic [ref=e482]:
+                - paragraph [ref=e483]: "Desafío:"
+                - list [ref=e484]:
+                  - listitem [ref=e485]: • Población vulnerable con múltiples comorbilidades
+                  - listitem [ref=e486]: • Recursos limitados, pérdida de seguimiento
+              - generic [ref=e487]:
+                - paragraph [ref=e488]: "Resultados (6 meses):"
+                - list [ref=e489]:
+                  - listitem [ref=e490]:
+                    - generic [ref=e491]: ✓
+                    - generic [ref=e492]: "-45% screenings vencidos"
+                  - listitem [ref=e493]:
+                    - generic [ref=e494]: ✓
+                    - generic [ref=e495]: +30% adherencia meds
+                  - listitem [ref=e496]:
+                    - generic [ref=e497]: ✓
+                    - generic [ref=e498]: "-25% hospitalizaciones"
+            - paragraph [ref=e500]: Hub de Prevención + WhatsApp reminders = resultados mejorados
+          - generic [ref=e501]:
+            - generic [ref=e502]:
+              - generic [ref=e503]: 💻
+              - generic [ref=e504]:
+                - heading "Dr. Silva" [level=3] [ref=e505]
+                - paragraph [ref=e506]: Médico General + Tele
+            - generic [ref=e507]:
+              - generic [ref=e508]:
+                - paragraph [ref=e509]: "Objetivo:"
+                - paragraph [ref=e510]: Expandir práctica a zonas rurales sin viajar
+              - generic [ref=e511]:
+                - paragraph [ref=e512]: "Resultado (1 año):"
+                - list [ref=e513]:
+                  - listitem [ref=e514]:
+                    - generic [ref=e515]: ✓
+                    - generic [ref=e516]: 40% consultas ahora tele
+                  - listitem [ref=e517]:
+                    - generic [ref=e518]: ✓
+                    - generic [ref=e519]: +35% ingresos sin más horas
+            - generic [ref=e520]:
+              - paragraph [ref=e521]: Impacto social
+              - paragraph [ref=e522]: Comunidades remotas con acceso a salud
+        - generic [ref=e523]:
+          - heading "Holi Labs vs. Competencia" [level=3] [ref=e524]
+          - paragraph [ref=e525]: Comparación transparente de funcionalidades y precios
+          - table [ref=e527]:
+            - rowgroup [ref=e528]:
+              - row "Funcionalidad Holi Labs Doctoralia OpenEMR Epic/Cerner" [ref=e529]:
+                - cell "Funcionalidad" [ref=e530]
+                - cell "Holi Labs" [ref=e531]
+                - cell "Doctoralia" [ref=e532]
+                - cell "OpenEMR" [ref=e533]
+                - cell "Epic/Cerner" [ref=e534]
+            - rowgroup [ref=e535]:
+              - row "AI Medical Scribe ✅ Incluido ❌ ❌ ⚠️ Costo extra" [ref=e536]:
+                - cell "AI Medical Scribe" [ref=e537]
+                - cell "✅ Incluido" [ref=e538]
+                - cell "❌" [ref=e539]
+                - cell "❌" [ref=e540]
+                - cell "⚠️ Costo extra" [ref=e541]
+              - row "Prevención Longitudinal (30 años) ✅ Incluido ❌ ❌ ⚠️ Limitado" [ref=e542]:
+                - cell "Prevención Longitudinal (30 años)" [ref=e543]
+                - cell "✅ Incluido" [ref=e544]
+                - cell "❌" [ref=e545]
+                - cell "❌" [ref=e546]
+                - cell "⚠️ Limitado" [ref=e547]
+              - row "Auto-screening triggers ✅ 15+ protocolos ❌ ❌ ⚠️ Limitado" [ref=e548]:
+                - cell "Auto-screening triggers" [ref=e549]
+                - cell "✅ 15+ protocolos" [ref=e550]
+                - cell "❌" [ref=e551]
+                - cell "❌" [ref=e552]
+                - cell "⚠️ Limitado" [ref=e553]
+              - row "CDS Inteligente ✅ 12+ reglas ❌ ⚠️ Básico ✅ Sí (fatigue)" [ref=e554]:
+                - cell "CDS Inteligente" [ref=e555]
+                - cell "✅ 12+ reglas" [ref=e556]
+                - cell "❌" [ref=e557]
+                - cell "⚠️ Básico" [ref=e558]
+                - cell "✅ Sí (fatigue)" [ref=e559]
+              - row "Protocolos PAHO/WHO ✅ Latinoamérica ❌ ❌ ⚠️ Solo EEUU" [ref=e560]:
+                - cell "Protocolos PAHO/WHO" [ref=e561]
+                - cell "✅ Latinoamérica" [ref=e562]
+                - cell "❌" [ref=e563]
+                - cell "❌" [ref=e564]
+                - cell "⚠️ Solo EEUU" [ref=e565]
+              - row "Portal de pacientes ✅ Completo ✅ Básico ⚠️ Limitado ✅ Completo" [ref=e566]:
+                - cell "Portal de pacientes" [ref=e567]
+                - cell "✅ Completo" [ref=e568]
+                - cell "✅ Básico" [ref=e569]
+                - cell "⚠️ Limitado" [ref=e570]
+                - cell "✅ Completo" [ref=e571]
+              - row "Integración farmacias MX ✅ 8+ farmacias ❌ ❌ ❌" [ref=e572]:
+                - cell "Integración farmacias MX" [ref=e573]
+                - cell "✅ 8+ farmacias" [ref=e574]
+                - cell "❌" [ref=e575]
+                - cell "❌" [ref=e576]
+                - cell "❌" [ref=e577]
+              - row "FHIR R4 + RNDS Brasil ✅ Completo ❌ ⚠️ Parcial ✅ Sí" [ref=e578]:
+                - cell "FHIR R4 + RNDS Brasil" [ref=e579]
+                - cell "✅ Completo" [ref=e580]
+                - cell "❌" [ref=e581]
+                - cell "⚠️ Parcial" [ref=e582]
+                - cell "✅ Sí" [ref=e583]
+              - row "Audit trail completo ✅ Incluido ⚠️ Básico ⚠️ Limitado ✅ Completo" [ref=e584]:
+                - cell "Audit trail completo" [ref=e585]
+                - cell "✅ Incluido" [ref=e586]
+                - cell "⚠️ Básico" [ref=e587]
+                - cell "⚠️ Limitado" [ref=e588]
+                - cell "✅ Completo" [ref=e589]
+              - row "Precio/mes $25 USD $50-150 Gratis* $500-1000+" [ref=e590]:
+                - cell "Precio/mes" [ref=e591]
+                - cell "$25 USD" [ref=e592]
+                - cell "$50-150" [ref=e593]
+                - cell "Gratis*" [ref=e594]
+                - cell "$500-1000+" [ref=e595]
+              - row "Setup time 1 día 3-5 días Semanas Meses" [ref=e596]:
+                - cell "Setup time" [ref=e597]
+                - cell "1 día" [ref=e598]
+                - cell "3-5 días" [ref=e599]
+                - cell "Semanas" [ref=e600]
+                - cell "Meses" [ref=e601]
+              - row "Support en español ✅ Nativo ⚠️ Limitado ❌ ⚠️ Limitado" [ref=e602]:
+                - cell "Support en español" [ref=e603]
+                - cell "✅ Nativo" [ref=e604]
+                - cell "⚠️ Limitado" [ref=e605]
+                - cell "❌" [ref=e606]
+                - cell "⚠️ Limitado" [ref=e607]
+          - paragraph [ref=e608]: "* OpenEMR es gratis pero requiere semanas de setup técnico complejo y no tiene soporte en español"
+      - generic [ref=e610]:
+        - generic [ref=e611]:
+          - heading "Automatización de procesos para todos los presupuestos" [level=2] [ref=e612]:
+            - text: Automatización de procesos para
+            - text: todos los presupuestos
+          - paragraph [ref=e613]: Desde médicos individuales hasta redes hospitalarias. Encuentra el plan perfecto para ti.
+        - generic [ref=e614]:
+          - generic [ref=e615]:
+            - generic [ref=e616]:
+              - heading "Starter" [level=3] [ref=e617]
+              - paragraph [ref=e618]: Para equipos pequeños, startups, freelancers y estudiantes que precisan organizar sus tareas
+            - generic [ref=e619]:
+              - generic [ref=e620]: Gratis
+              - paragraph [ref=e621]: Não precisa de cartão de crédito
+            - link "Comenzar agora" [ref=e622] [cursor=pointer]:
+              - /url: "#demo"
+            - generic [ref=e623]:
+              - paragraph [ref=e624]: "O plano Starter inclui:"
+              - list [ref=e625]:
+                - listitem [ref=e626]:
+                  - img [ref=e627]
+                  - generic [ref=e629]: HoliLabs AI Scribe
+                - listitem [ref=e630]:
+                  - img [ref=e631]
+                  - generic [ref=e633]: Até 5 pacientes ativos
+                - listitem [ref=e634]:
+                  - img [ref=e635]
+                  - generic [ref=e637]: Até 10 usuários
+                - listitem [ref=e638]:
+                  - img [ref=e639]
+                  - generic [ref=e641]: Automação básica de notas
+                - listitem [ref=e642]:
+                  - img [ref=e643]
+                  - generic [ref=e645]: Templates clínicos prontos
+                - listitem [ref=e646]:
+                  - img [ref=e647]
+                  - generic [ref=e649]: Portal do paciente
+                - listitem [ref=e650]:
+                  - img [ref=e651]
+                  - generic [ref=e653]: Customização visual
+          - generic [ref=e654]:
+            - generic [ref=e655]: Mais escolhido
+            - generic [ref=e656]:
+              - heading "Professional" [level=3] [ref=e657]
+              - paragraph [ref=e658]: Para pequeñas y medianas empresas que precisan centralizar y dimensionar procesos de negócios
+            - generic [ref=e659]:
+              - generic [ref=e660]:
+                - generic [ref=e661]: $75
+                - generic [ref=e662]: USD/mes
+              - paragraph [ref=e663]: por médico
+            - link "Falar com vendas" [ref=e664] [cursor=pointer]:
+              - /url: "#demo"
+            - generic [ref=e665]:
+              - paragraph [ref=e666]: "Recursos do Starter, mais:"
+              - list [ref=e667]:
+                - listitem [ref=e668]:
+                  - img [ref=e669]
+                  - generic [ref=e671]: Pacientes ilimitados
+                - listitem [ref=e672]:
+                  - img [ref=e673]
+                  - generic [ref=e675]: Usuários ilimitados
+                - listitem [ref=e676]:
+                  - img [ref=e677]
+                  - generic [ref=e679]: Cobrança por usuário
+                - listitem [ref=e680]:
+                  - img [ref=e681]
+                  - generic [ref=e683]: Acesso completo à API
+                - listitem [ref=e684]:
+                  - img [ref=e685]
+                  - generic [ref=e687]: Níveis de acesso e permissão
+                - listitem [ref=e688]:
+                  - img [ref=e689]
+                  - generic [ref=e691]: Dados clínicos privados
+                - listitem [ref=e692]:
+                  - img [ref=e693]
+                  - generic [ref=e695]: Protocolos personalizados
+                - listitem [ref=e696]:
+                  - img [ref=e697]
+                  - generic [ref=e699]: Backup e recuperação
+                - listitem [ref=e700]:
+                  - img [ref=e701]
+                  - generic [ref=e703]: Assinatura Eletrônica
+          - generic [ref=e704]:
+            - generic [ref=e705]:
+              - heading "Enterprise" [level=3] [ref=e706]
+              - paragraph [ref=e707]: Para empresas que precisan de segurança, controle e suporte para gerenciar processos complexos
+            - generic [ref=e708]:
+              - generic [ref=e710]: Custom
+              - paragraph [ref=e711]: desde $500/médico/mes
+            - link "Falar com vendas" [ref=e712] [cursor=pointer]:
+              - /url: mailto:admin@holilabs.xyz
+            - generic [ref=e713]:
+              - paragraph [ref=e714]: "Recursos do Business, mais:"
+              - list [ref=e715]:
+                - listitem [ref=e716]:
+                  - img [ref=e717]
+                  - generic [ref=e719]: HoliLabs AI Premium
+                - listitem [ref=e720]:
+                  - img [ref=e721]
+                  - generic [ref=e723]: Automações complexas
+                - listitem [ref=e724]:
+                  - img [ref=e725]
+                  - generic [ref=e727]: Integrações FHIR
+                - listitem [ref=e728]:
+                  - img [ref=e729]
+                  - generic [ref=e731]: Autenticação multifatorial
+                - listitem [ref=e732]:
+                  - img [ref=e733]
+                  - generic [ref=e735]: Single Sign-On (SSO)
+                - listitem [ref=e736]:
+                  - img [ref=e737]
+                  - generic [ref=e739]: Domínio de email personalizado
+                - listitem [ref=e740]:
+                  - img [ref=e741]
+                  - generic [ref=e743]: White label
+                - listitem [ref=e744]:
+                  - img [ref=e745]
+                  - generic [ref=e747]: Assinatura Eletrônica
+                - listitem [ref=e748]:
+                  - img [ref=e749]
+                  - generic [ref=e751]: Armazenamento ilimitado
+        - link "Veja todos os recursos e compare os planos →" [ref=e753] [cursor=pointer]:
+          - /url: "#comparacion"
+          - text: Veja todos os recursos e compare os planos
+          - generic [ref=e754]: →
+      - generic [ref=e756]:
+        - generic [ref=e757]:
+          - heading "Comparación Detallada de Planes" [level=2] [ref=e758]
+          - paragraph [ref=e759]: Todas las funciones que necesitas, sin importar el tamaño de tu práctica
+        - table [ref=e761]:
+          - rowgroup [ref=e762]:
+            - row "Funcionalidad Starter Professional Enterprise" [ref=e763]:
+              - cell "Funcionalidad" [ref=e764]
+              - cell "Starter" [ref=e765]
+              - cell "Professional" [ref=e766]
+              - cell "Enterprise" [ref=e767]
+          - rowgroup [ref=e768]:
+            - row "IA & Automatización" [ref=e769]:
+              - cell "IA & Automatización" [ref=e770]
+            - row "AI Medical Scribe ✓ ✓ ✓" [ref=e771]:
+              - cell "AI Medical Scribe" [ref=e772]
+              - cell "✓" [ref=e773]
+              - cell "✓" [ref=e774]
+              - cell "✓" [ref=e775]
+            - row "AI Co-Pilot clínico — ✓ ✓" [ref=e776]:
+              - cell "AI Co-Pilot clínico" [ref=e777]
+              - cell "—" [ref=e778]
+              - cell "✓" [ref=e779]
+              - cell "✓" [ref=e780]
+            - row "Notas SOAP automáticas ✓ ✓ ✓" [ref=e781]:
+              - cell "Notas SOAP automáticas" [ref=e782]
+              - cell "✓" [ref=e783]
+              - cell "✓" [ref=e784]
+              - cell "✓" [ref=e785]
+            - row "Clinical Decision Support — 12+ reglas Ilimitadas" [ref=e786]:
+              - cell "Clinical Decision Support" [ref=e787]
+              - cell "—" [ref=e788]
+              - cell "12+ reglas" [ref=e789]
+              - cell "Ilimitadas" [ref=e790]
+            - row "Gestión de Pacientes" [ref=e791]:
+              - cell "Gestión de Pacientes" [ref=e792]
+            - row "Pacientes activos 50 Ilimitados Ilimitados" [ref=e793]:
+              - cell "Pacientes activos" [ref=e794]
+              - cell "50" [ref=e795]
+              - cell "Ilimitados" [ref=e796]
+              - cell "Ilimitados" [ref=e797]
+            - row "Citas por día 10 Ilimitadas Ilimitadas" [ref=e798]:
+              - cell "Citas por día" [ref=e799]
+              - cell "10" [ref=e800]
+              - cell "Ilimitadas" [ref=e801]
+              - cell "Ilimitadas" [ref=e802]
+            - row "Portal de pacientes Básico Completo White-label" [ref=e803]:
+              - cell "Portal de pacientes" [ref=e804]
+              - cell "Básico" [ref=e805]
+              - cell "Completo" [ref=e806]
+              - cell "White-label" [ref=e807]
+            - row "Recordatorios WhatsApp/SMS ✓ ✓ ✓" [ref=e808]:
+              - cell "Recordatorios WhatsApp/SMS" [ref=e809]
+              - cell "✓" [ref=e810]
+              - cell "✓" [ref=e811]
+              - cell "✓" [ref=e812]
+            - row "Prevención & CDS" [ref=e813]:
+              - cell "Prevención & CDS" [ref=e814]
+            - row "Hub de Prevención Longitudinal — ✓ ✓" [ref=e815]:
+              - cell "Hub de Prevención Longitudinal" [ref=e816]
+              - cell "—" [ref=e817]
+              - cell "✓" [ref=e818]
+              - cell "✓" [ref=e819]
+            - row "Screening Triggers automatizados — 15+ protocolos Personalizados" [ref=e820]:
+              - cell "Screening Triggers automatizados" [ref=e821]
+              - cell "—" [ref=e822]
+              - cell "15+ protocolos" [ref=e823]
+              - cell "Personalizados" [ref=e824]
+            - row "Monitoreo inteligente de labs — ✓ ✓" [ref=e825]:
+              - cell "Monitoreo inteligente de labs" [ref=e826]
+              - cell "—" [ref=e827]
+              - cell "✓" [ref=e828]
+              - cell "✓" [ref=e829]
+            - row "Cálculo de riesgo (ASCVD, FRAX) — ✓ ✓" [ref=e830]:
+              - cell "Cálculo de riesgo (ASCVD, FRAX)" [ref=e831]
+              - cell "—" [ref=e832]
+              - cell "✓" [ref=e833]
+              - cell "✓" [ref=e834]
+            - row "Colaboración & Equipo" [ref=e835]:
+              - cell "Colaboración & Equipo" [ref=e836]
+            - row "Usuarios 1 Hasta 10 Ilimitados" [ref=e837]:
+              - cell "Usuarios" [ref=e838]
+              - cell "1" [ref=e839]
+              - cell "Hasta 10" [ref=e840]
+              - cell "Ilimitados" [ref=e841]
+            - row "Multi-sitio — — ✓" [ref=e842]:
+              - cell "Multi-sitio" [ref=e843]
+              - cell "—" [ref=e844]
+              - cell "—" [ref=e845]
+              - cell "✓" [ref=e846]
+            - row "Roles y permisos — ✓ Avanzados" [ref=e847]:
+              - cell "Roles y permisos" [ref=e848]
+              - cell "—" [ref=e849]
+              - cell "✓" [ref=e850]
+              - cell "Avanzados" [ref=e851]
+            - row "Soporte & Seguridad" [ref=e852]:
+              - cell "Soporte & Seguridad" [ref=e853]
+            - row "Soporte Email 48h Prioritario 12h 24/7 <2h" [ref=e854]:
+              - cell "Soporte" [ref=e855]
+              - cell "Email 48h" [ref=e856]
+              - cell "Prioritario 12h" [ref=e857]
+              - cell "24/7 <2h" [ref=e858]
+            - row "HIPAA/LGPD compliance ✓ ✓ ✓" [ref=e859]:
+              - cell "HIPAA/LGPD compliance" [ref=e860]
+              - cell "✓" [ref=e861]
+              - cell "✓" [ref=e862]
+              - cell "✓" [ref=e863]
+            - row "SSO (Single Sign-On) — — ✓" [ref=e864]:
+              - cell "SSO (Single Sign-On)" [ref=e865]
+              - cell "—" [ref=e866]
+              - cell "—" [ref=e867]
+              - cell "✓" [ref=e868]
+            - row "SLA uptime garantizado — — 99.9%" [ref=e869]:
+              - cell "SLA uptime garantizado" [ref=e870]
+              - cell "—" [ref=e871]
+              - cell "—" [ref=e872]
+              - cell "99.9%" [ref=e873]
+        - generic [ref=e875]:
+          - generic [ref=e876]: 🛡️
+          - generic [ref=e877]:
+            - heading "Garantía de Satisfacción 100%" [level=3] [ref=e878]
+            - paragraph [ref=e879]: Si no ahorras al menos 2 horas/día en el primer mes, te devolvemos tu dinero. Sin preguntas.
+            - generic [ref=e880]:
+              - generic [ref=e881]:
+                - generic [ref=e882]: ✓
+                - text: 30 días de prueba gratis
+              - generic [ref=e883]:
+                - generic [ref=e884]: ✓
+                - text: Sin compromiso
+              - generic [ref=e885]:
+                - generic [ref=e886]: ✓
+                - text: Cancela cuando quieras
+              - generic [ref=e887]:
+                - generic [ref=e888]: ✓
+                - text: Tu data es tuya
+      - generic [ref=e890]:
+        - heading "Inteligencia artificial convirtiéndose en realidad en tus tareas diarias" [level=2] [ref=e891]
+        - paragraph [ref=e892]: Solo Holi Labs une instalación simple, certificaciones de seguridad y una experiencia de uso increíble. Todo sin sobrecargar tu equipo técnico.
+        - generic [ref=e893]:
+          - generic [ref=e894]:
+            - textbox "tu.email@clinica.com" [ref=e895]
+            - button "Agende uma demo" [ref=e896] [cursor=pointer]
+          - button "¿Tienes un código de invitación? Click aquí" [ref=e897] [cursor=pointer]
+        - generic [ref=e898]:
+          - generic [ref=e899]:
+            - img [ref=e900]
+            - text: Setup en 1 día
+          - generic [ref=e902]:
+            - img [ref=e903]
+            - text: Migración incluida
+          - generic [ref=e905]:
+            - img [ref=e906]
+            - text: Soporte 24/7
+          - generic [ref=e908]:
+            - img [ref=e909]
+            - text: Sin compromiso
+      - generic [ref=e912]:
+        - generic [ref=e913]:
+          - generic [ref=e914]:
+            - heading "Producto" [level=4] [ref=e915]
+            - list [ref=e916]:
+              - listitem [ref=e917]:
+                - link "Plataforma" [ref=e918] [cursor=pointer]:
+                  - /url: "#plataforma"
+              - listitem [ref=e919]:
+                - link "Precios" [ref=e920] [cursor=pointer]:
+                  - /url: "#precios"
+              - listitem [ref=e921]:
+                - link "Casos de Uso" [ref=e922] [cursor=pointer]:
+                  - /url: "#casos"
+              - listitem [ref=e923]:
+                - link "Demo" [ref=e924] [cursor=pointer]:
+                  - /url: "#demo"
+          - generic [ref=e925]:
+            - heading "Empresa" [level=4] [ref=e926]
+            - list [ref=e927]:
+              - listitem [ref=e928]:
+                - link "Sobre Nosotros" [ref=e929] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e930]:
+                - link "Blog" [ref=e931] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=e932]:
+                - link "Carreras" [ref=e933] [cursor=pointer]:
+                  - /url: /careers
+              - listitem [ref=e934]:
+                - link "Contacto" [ref=e935] [cursor=pointer]:
+                  - /url: /contact
+          - generic [ref=e936]:
+            - heading "Legal" [level=4] [ref=e937]
+            - list [ref=e938]:
+              - listitem [ref=e939]:
+                - link "Terms of Service" [ref=e940] [cursor=pointer]:
+                  - /url: /legal/terms-of-service
+              - listitem [ref=e941]:
+                - link "Privacy Policy" [ref=e942] [cursor=pointer]:
+                  - /url: /legal/privacy-policy
+              - listitem [ref=e943]:
+                - link "HIPAA Notice" [ref=e944] [cursor=pointer]:
+                  - /url: /legal/hipaa-notice
+              - listitem [ref=e945]:
+                - link "Business Associate Agreement" [ref=e946] [cursor=pointer]:
+                  - /url: /legal/baa
+              - listitem [ref=e947]:
+                - link "Consent Forms" [ref=e948] [cursor=pointer]:
+                  - /url: /legal/consent
+          - generic [ref=e949]:
+            - heading "Contacto" [level=4] [ref=e950]
+            - list [ref=e951]:
+              - listitem [ref=e952]:
+                - link "admin@holilabs.xyz" [ref=e953] [cursor=pointer]:
+                  - /url: mailto:admin@holilabs.xyz
+              - listitem [ref=e954]:
+                - link "WhatsApp" [ref=e955] [cursor=pointer]:
+                  - /url: https://wa.me/525555555555
+        - generic [ref=e956]:
+          - generic [ref=e957]: © 2025 Holi Labs. Todos los derechos reservados.
+          - generic [ref=e958]:
+            - generic [ref=e959]: HIPAA
+            - generic [ref=e960]: LGPD
+            - generic [ref=e961]: ISO 27269
+  - alert [ref=e962]
+```
