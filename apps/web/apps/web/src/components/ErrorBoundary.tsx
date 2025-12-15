@@ -170,7 +170,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             {/* Help Text */}
-            <p className="mt-6 text-sm text-gray-500 dark:text-gray-400 text-center">
+            <p className="mt-6 text-sm text-gray-600 dark:text-gray-400 text-center">
               Se o problema persistir, entre em contato com o suporte técnico.
             </p>
           </div>
