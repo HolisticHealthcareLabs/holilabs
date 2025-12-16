@@ -107,12 +107,12 @@ jobs:
       - name: Run unit tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/holi_labs_test
-        run: cd apps/web && pnpm test || echo "Tests configured"
+        run: cd apps/web && pnpm test
 
       - name: Run E2E tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/holi_labs_test
-        run: cd apps/web && pnpm test:e2e || echo "E2E tests configured"
+        run: cd apps/web && pnpm test:e2e
 
   # Database migration (dry run)
   migration-check:
@@ -170,8 +170,20 @@ jobs:
       - name: Create backup of production database
         run: |
           echo "📦 Creating database backup before deployment..."
-          # TODO: Add actual backup command
-          # doctl databases backup create ${{ secrets.PRODUCTION_DB_ID }}
+          BACKUP_ID=$(doctl databases backup create ${{ secrets.PRODUCTION_DB_ID }} --format ID --no-header)
+          echo "BACKUP_ID=$BACKUP_ID" >> $GITHUB_ENV
+          echo "✅ Database backup created: $BACKUP_ID"
+
+          # Wait for backup to complete
+          for i in {1..30}; do
+            STATUS=$(doctl databases backup get ${{ secrets.PRODUCTION_DB_ID }} $BACKUP_ID --format Status --no-header)
+            if [ "$STATUS" = "available" ]; then
+              echo "✅ Backup completed successfully"
+              break
+            fi
+            echo "⏳ Backup in progress... ($i/30)"
+            sleep 10
+          done
 
       - name: Log in to DigitalOcean Container Registry
         run: doctl registry login --expiry-seconds 1200
@@ -188,6 +200,61 @@ jobs:
         run: |
           docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:${{ github.sha }}
           docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:latest
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.2'
+
+      - name: Sign container images
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          echo "🔐 Signing container images..."
+
+          # Save private key
+          echo "$COSIGN_PRIVATE_KEY" > cosign.key
+
+          # Sign SHA-tagged image
+          cosign sign --key cosign.key \
+            --annotations "git-sha=${{ github.sha }}" \
+            --annotations "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --annotations "repo=${{ github.repository }}" \
+            --annotations "workflow=${{ github.workflow }}" \
+            --annotations "environment=production" \
+            registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:${{ github.sha }}
+
+          # Sign latest tag
+          cosign sign --key cosign.key \
+            --annotations "git-sha=${{ github.sha }}" \
+            --annotations "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --annotations "repo=${{ github.repository }}" \
+            --annotations "workflow=${{ github.workflow }}" \
+            --annotations "environment=production" \
+            registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:latest
+
+          rm cosign.key
+          echo "✅ Images signed successfully"
+
+      - name: Verify image signatures before deployment
+        env:
+          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+        run: |
+          echo "🔍 Verifying image signatures..."
+
+          echo "$COSIGN_PUBLIC_KEY" > cosign.pub
+
+          # Verify SHA-tagged image
+          cosign verify --key cosign.pub \
+            registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:${{ github.sha }}
+
+          # Verify latest tag
+          cosign verify --key cosign.pub \
+            registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:latest
+
+          rm cosign.pub
+          echo "✅ Image signatures verified"
 
       - name: Run database migrations
         env:
@@ -273,6 +340,25 @@ jobs:
         if: failure()
         run: |
           echo "🔄 Automatic rollback initiated..."
-          # TODO: Implement rollback logic
-          # doctl apps update ${{ secrets.PRODUCTION_APP_ID }} --image registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs:previous
-          echo "❌ Rollback required - manual intervention needed"
+
+          # Get previous deployment
+          PREVIOUS_DEPLOYMENT=$(doctl apps list-deployments ${{ secrets.PRODUCTION_APP_ID }} --format ID,Phase --no-header | grep ACTIVE | head -2 | tail -1 | awk '{print $1}')
+
+          if [ -n "$PREVIOUS_DEPLOYMENT" ]; then
+            echo "Rolling back to deployment: $PREVIOUS_DEPLOYMENT"
+
+            # Trigger rollback by redeploying previous version
+            PREVIOUS_IMAGE=$(doctl apps get-deployment ${{ secrets.PRODUCTION_APP_ID }} $PREVIOUS_DEPLOYMENT --format Spec.Services[0].Image --no-header)
+
+            if [ -n "$PREVIOUS_IMAGE" ]; then
+              echo "Rolling back to image: $PREVIOUS_IMAGE"
+              doctl apps update ${{ secrets.PRODUCTION_APP_ID }} --image $PREVIOUS_IMAGE
+              echo "✅ Rollback initiated to previous stable version"
+            else
+              echo "❌ Could not determine previous image, manual intervention required"
+              exit 1
+            fi
+          else
+            echo "❌ No previous deployment found, manual intervention required"
+            exit 1
+          fi

@@ -472,20 +472,44 @@ curl -i -X POST $APP_URL/api/auth/patient/magic-link/send \
 
 ### Using OWASP ZAP
 
+HoliLabs now has comprehensive DAST (Dynamic Application Security Testing) with OWASP ZAP!
+
+**Quick Start:**
 ```bash
-# Install OWASP ZAP
-brew install --cask owasp-zap  # macOS
+# Run baseline scan locally (5-10 minutes)
+./scripts/run-dast-scan.sh baseline http://localhost:3000
 
-# Run baseline scan
-docker run -t owasp/zap2docker-stable zap-baseline.py \
-  -t $APP_URL \
-  -r zap-report.html
-
-# Run full scan (more thorough)
-docker run -t owasp/zap2docker-stable zap-full-scan.py \
-  -t $APP_URL \
-  -r zap-full-report.html
+# View results
+open dast-reports/baseline_report_*.html
 ```
+
+**For full documentation:**
+- Complete guide: `DAST_SECURITY_GUIDE.md` (root directory)
+- Quick reference: `DAST_QUICK_REFERENCE.md` (root directory)
+- Workflow: `.github/workflows/dast-scan.yml`
+
+**Scan types available:**
+```bash
+# Baseline scan (passive, safe for production)
+./scripts/run-dast-scan.sh baseline http://localhost:3000
+
+# Full scan (active, staging only)
+./scripts/run-dast-scan.sh full https://staging.holilabs.xyz
+
+# API scan (tests API endpoints)
+./scripts/run-dast-scan.sh api http://localhost:3000/api
+
+# Authenticated scan (tests protected pages)
+export TEST_USER_EMAIL="test@holilabs.xyz"
+export TEST_USER_PASSWORD="your-password"
+./scripts/run-dast-scan.sh authenticated https://staging.holilabs.xyz
+```
+
+**Automated scanning:**
+- Weekly scans run automatically every Saturday at 2 AM UTC
+- Results posted to GitHub Issues
+- Healthcare-specific security checks included
+- See `.github/workflows/dast-scan.yml` for configuration
 
 ### Using Lighthouse Security Audit
 

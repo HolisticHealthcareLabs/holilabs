@@ -1,0 +1,307 @@
+# HoliLabs Monitoring Alert Configuration
+# This file documents all alert rules and thresholds
+
+alerts:
+  # Error Tracking (Sentry)
+  sentry:
+    - name: high_error_rate
+      description: Alert when error rate exceeds threshold
+      condition: errors.count() > 10 in 5 minutes
+      severity: critical
+      channels: [slack, email]
+      filter: event.type:error
+      actions:
+        - notify: "#holilabs-alerts"
+        - page: on-call
+
+    - name: slow_api_response
+      description: Alert when API response time is slow
+      condition: percentile(transaction.duration, 0.95) > 3000ms
+      severity: warning
+      channels: [slack]
+      filter: event.type:transaction
+      actions:
+        - notify: "#holilabs-alerts"
+
+    - name: database_latency
+      description: Alert when database queries are slow
+      condition: percentile(spans.duration, 0.95) > 1000ms
+      severity: warning
+      channels: [slack]
+      filter: span.op:db.sql.query
+      actions:
+        - notify: "#holilabs-alerts"
+
+    - name: failed_transactions
+      description: Alert when transactions fail frequently
+      condition: failure_count() > 10 in 5 minutes
+      severity: critical
+      channels: [slack, email]
+      filter: event.type:transaction AND transaction.status:error
+      actions:
+        - notify: "#holilabs-alerts"
+        - page: on-call
+
+    - name: authentication_failures
+      description: Alert on unusual auth failure patterns
+      condition: errors.count() > 20 in 10 minutes
+      severity: warning
+      channels: [slack]
+      filter: error.type:AuthenticationError
+      actions:
+        - notify: "#holilabs-security"
+
+  # Infrastructure (DigitalOcean)
+  digitalocean:
+    - name: high_cpu_usage
+      description: Alert when CPU usage is high
+      metric: cpu_percentage
+      threshold: 80
+      duration: 10m
+      severity: warning
+      channels: [email]
+      actions:
+        - notify: ops@holilabs.xyz
+
+    - name: critical_cpu_usage
+      description: Alert when CPU usage is critically high
+      metric: cpu_percentage
+      threshold: 90
+      duration: 5m
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+    - name: high_memory_usage
+      description: Alert when memory usage is high
+      metric: memory_percentage
+      threshold: 85
+      duration: 10m
+      severity: warning
+      channels: [email]
+      actions:
+        - notify: ops@holilabs.xyz
+
+    - name: critical_memory_usage
+      description: Alert when memory usage is critically high
+      metric: memory_percentage
+      threshold: 90
+      duration: 5m
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+    - name: high_5xx_errors
+      description: Alert when server error rate is high
+      metric: error_rate_5xx
+      threshold: 1
+      duration: 5m
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+        - page: on-call
+
+    - name: slow_response_time
+      description: Alert when response time is slow
+      metric: response_time_p95
+      threshold: 3000
+      duration: 10m
+      severity: warning
+      channels: [slack]
+      actions:
+        - notify: "#holilabs-alerts"
+
+  # Database (DigitalOcean Managed Database)
+  database:
+    - name: high_db_cpu
+      description: Alert when database CPU is high
+      metric: cpu_percentage
+      threshold: 80
+      duration: 10m
+      severity: warning
+      channels: [email]
+      actions:
+        - notify: ops@holilabs.xyz
+
+    - name: critical_db_cpu
+      description: Alert when database CPU is critically high
+      metric: cpu_percentage
+      threshold: 90
+      duration: 5m
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+    - name: high_db_memory
+      description: Alert when database memory is high
+      metric: memory_percentage
+      threshold: 85
+      duration: 10m
+      severity: warning
+      channels: [email]
+      actions:
+        - notify: ops@holilabs.xyz
+
+    - name: high_db_connections
+      description: Alert when connection pool is near limit
+      metric: connection_pool_usage
+      threshold: 90
+      duration: 5m
+      severity: warning
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+    - name: low_disk_space
+      description: Alert when database disk space is low
+      metric: disk_percentage
+      threshold: 80
+      duration: 1h
+      severity: warning
+      channels: [email]
+      actions:
+        - notify: ops@holilabs.xyz
+
+    - name: critical_disk_space
+      description: Alert when database disk space is critically low
+      metric: disk_percentage
+      threshold: 90
+      duration: 30m
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+  # Uptime (UptimeRobot)
+  uptime:
+    - name: site_down
+      description: Alert when main site is down
+      url: https://holilabs.xyz
+      interval: 5m
+      timeout: 30s
+      severity: critical
+      channels: [email, sms, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+        - sms: +1234567890
+
+    - name: api_health_down
+      description: Alert when API health check fails
+      url: https://holilabs.xyz/api/health
+      interval: 5m
+      keyword: healthy
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+    - name: database_health_down
+      description: Alert when database health check fails
+      url: https://holilabs.xyz/api/health/metrics
+      interval: 5m
+      keyword: connected
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+    - name: patient_portal_down
+      description: Alert when patient portal is inaccessible
+      url: https://holilabs.xyz/portal/dashboard
+      interval: 5m
+      severity: critical
+      channels: [email, slack]
+      actions:
+        - notify: ops@holilabs.xyz
+        - notify: "#holilabs-alerts"
+
+# Thresholds Reference
+thresholds:
+  performance:
+    response_time_p95:
+      warning: 2000ms
+      critical: 5000ms
+    response_time_p99:
+      warning: 5000ms
+      critical: 10000ms
+    database_latency:
+      warning: 500ms
+      critical: 1000ms
+
+  resources:
+    cpu_usage:
+      warning: 80%
+      critical: 90%
+    memory_usage:
+      warning: 85%
+      critical: 90%
+    disk_usage:
+      warning: 80%
+      critical: 90%
+    connection_pool:
+      warning: 85%
+      critical: 95%
+
+  availability:
+    error_rate:
+      warning: 0.1%
+      critical: 1%
+    uptime:
+      target: 99.9%
+
+# Alert Channels
+channels:
+  email:
+    primary: ops@holilabs.xyz
+    secondary: alerts@holilabs.xyz
+
+  slack:
+    alerts_channel: "#holilabs-alerts"
+    security_channel: "#holilabs-security"
+    webhook: SLACK_WEBHOOK_URL
+
+  sms:
+    on_call: +1234567890
+
+  pagerduty:
+    service_key: PAGERDUTY_SERVICE_KEY
+    escalation_policy: production_escalation
+
+# On-Call Schedule
+on_call:
+  primary: ops@holilabs.xyz
+  secondary: backup@holilabs.xyz
+  rotation: weekly
+  handoff: monday_9am
+
+# Maintenance Windows
+maintenance:
+  - description: Weekly maintenance
+    schedule: sunday_2am_to_4am
+    suppress_alerts: true
+  - description: Deployment window
+    schedule: on_demand
+    suppress_alerts: false
+    notify_before: 30m
+
+# Alert Suppressions
+suppressions:
+  - name: planned_maintenance
+    duration: 2h
+    alerts: [site_down, api_health_down]
+  - name: load_testing
+    duration: 1h
+    alerts: [high_cpu_usage, high_memory_usage, slow_response_time]

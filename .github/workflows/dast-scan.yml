@@ -1,0 +1,379 @@
+name: DAST Security Scan
+
+on:
+  schedule:
+    # Run weekly on Saturday at 2 AM UTC
+    - cron: '0 2 * * 6'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target URL to scan'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: 'staging'
+      scan_type:
+        description: 'Scan type'
+        required: true
+        type: choice
+        options:
+          - baseline
+          - full
+          - api
+        default: 'baseline'
+
+permissions:
+  security-events: write
+  contents: read
+  issues: write
+
+jobs:
+  dast-scan:
+    name: OWASP ZAP DAST Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set target URL
+        id: set-url
+        run: |
+          if [ "${{ github.event.inputs.target_url }}" == "production" ]; then
+            echo "TARGET_URL=https://holilabs.xyz" >> $GITHUB_ENV
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          else
+            echo "TARGET_URL=https://staging.holilabs.xyz" >> $GITHUB_ENV
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+          fi
+
+          SCAN_TYPE="${{ github.event.inputs.scan_type }}"
+          if [ -z "$SCAN_TYPE" ]; then
+            SCAN_TYPE="baseline"
+          fi
+          echo "SCAN_TYPE=$SCAN_TYPE" >> $GITHUB_ENV
+
+      - name: Wait for application to be ready
+        run: |
+          echo "Waiting for ${{ env.TARGET_URL }} to be ready..."
+          max_attempts=30
+          attempt=0
+
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f -s "${{ env.TARGET_URL }}/api/health" > /dev/null; then
+              echo "✅ Application is ready"
+              exit 0
+            fi
+            echo "Waiting... (attempt $((attempt + 1))/$max_attempts)"
+            sleep 10
+            attempt=$((attempt + 1))
+          done
+
+          echo "❌ Application not ready after $max_attempts attempts"
+          exit 1
+
+      - name: Run ZAP Baseline Scan
+        if: env.SCAN_TYPE == 'baseline'
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: ${{ env.TARGET_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -m 10 -T 60'
+          allow_issue_writing: true
+          issue_title: 'DAST Security Findings (${{ env.ENVIRONMENT }})'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run ZAP Full Scan
+        if: env.SCAN_TYPE == 'full'
+        uses: zaproxy/action-full-scan@v0.8.0
+        with:
+          target: ${{ env.TARGET_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -T 120'
+          allow_issue_writing: true
+          issue_title: 'DAST Full Scan Findings (${{ env.ENVIRONMENT }})'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run ZAP API Scan
+        if: env.SCAN_TYPE == 'api'
+        uses: zaproxy/action-api-scan@v0.6.0
+        with:
+          target: ${{ env.TARGET_URL }}/api
+          format: openapi
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -T 60'
+          allow_issue_writing: true
+          issue_title: 'DAST API Findings (${{ env.ENVIRONMENT }})'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload ZAP Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report-${{ env.ENVIRONMENT }}-${{ env.SCAN_TYPE }}
+          path: |
+            report_html.html
+            report_json.json
+            report_md.md
+          retention-days: 30
+
+      - name: Parse ZAP Results
+        if: always()
+        run: |
+          echo "## 🔍 DAST Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ env.ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target URL:** ${{ env.TARGET_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Type:** ${{ env.SCAN_TYPE }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "report_json.json" ]; then
+            # Count alerts by risk level
+            high=$(jq '[.site[].alerts[] | select(.riskcode=="3")] | length' report_json.json 2>/dev/null || echo "0")
+            medium=$(jq '[.site[].alerts[] | select(.riskcode=="2")] | length' report_json.json 2>/dev/null || echo "0")
+            low=$(jq '[.site[].alerts[] | select(.riskcode=="1")] | length' report_json.json 2>/dev/null || echo "0")
+            info=$(jq '[.site[].alerts[] | select(.riskcode=="0")] | length' report_json.json 2>/dev/null || echo "0")
+
+            echo "### Alert Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Risk Level | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|------------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 High | $high |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 Medium | $medium |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟡 Low | $low |" >> $GITHUB_STEP_SUMMARY
+            echo "| ℹ️ Informational | $info |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Fail if high-risk vulnerabilities found
+            if [ "$high" -gt "0" ]; then
+              echo "❌ **CRITICAL:** $high high-risk vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Please review the detailed report and address these issues immediately." >> $GITHUB_STEP_SUMMARY
+              exit 1
+            elif [ "$medium" -gt "5" ]; then
+              echo "⚠️ **WARNING:** $medium medium-risk vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Consider addressing these issues before the next release." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **PASSED:** No critical vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ No JSON report generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Authenticated DAST Scan (requires authentication)
+  authenticated-scan:
+    name: Authenticated DAST Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    if: github.event.inputs.target_url == 'staging'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up authentication context
+        run: |
+          echo "TARGET_URL=https://staging.holilabs.xyz" >> $GITHUB_ENV
+
+          # Create ZAP authentication context file
+          mkdir -p .zap
+          cat > .zap/context.yaml <<EOF
+          env:
+            contexts:
+              - name: "HoliLabs"
+                urls:
+                  - "https://staging.holilabs.xyz"
+                includePaths:
+                  - "https://staging.holilabs.xyz/.*"
+                excludePaths:
+                  - "https://staging.holilabs.xyz/logout"
+                  - "https://staging.holilabs.xyz/api/auth/.*"
+                authentication:
+                  method: "form"
+                  parameters:
+                    loginUrl: "https://staging.holilabs.xyz/signin"
+                    loginRequestData: "email={%username%}&password={%password%}"
+                  verification:
+                    method: "response"
+                    loggedInRegex: "\\Qdashboard\\E"
+                    loggedOutRegex: "\\Qsignin\\E"
+                users:
+                  - name: "test-user"
+                    credentials:
+                      username: "\${TEST_USER_EMAIL}"
+                      password: "\${TEST_USER_PASSWORD}"
+          EOF
+
+      - name: Run authenticated ZAP scan
+        env:
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+        run: |
+          docker run --rm \
+            -v $(pwd)/.zap:/zap/wrk/:rw \
+            -e TEST_USER_EMAIL="${TEST_USER_EMAIL}" \
+            -e TEST_USER_PASSWORD="${TEST_USER_PASSWORD}" \
+            owasp/zap2docker-stable \
+            zap-full-scan.py \
+            -t https://staging.holilabs.xyz \
+            -n .zap/context.yaml \
+            -r authenticated-report.html \
+            -J authenticated-report.json \
+            -w authenticated-report.md \
+            -a
+
+      - name: Upload authenticated scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-authenticated-report
+          path: .zap/authenticated-report.*
+          retention-days: 30
+
+  # Healthcare-specific security checks
+  healthcare-security:
+    name: Healthcare Security Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set target URL
+        run: |
+          if [ "${{ github.event.inputs.target_url }}" == "production" ]; then
+            echo "TARGET_URL=https://holilabs.xyz" >> $GITHUB_ENV
+          else
+            echo "TARGET_URL=https://staging.holilabs.xyz" >> $GITHUB_ENV
+          fi
+
+      - name: Check HIPAA security headers
+        run: |
+          echo "## 🏥 Healthcare Security Checks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          response=$(curl -s -I "${{ env.TARGET_URL }}")
+
+          # Check for required security headers
+          checks=0
+          passed=0
+
+          # Content Security Policy
+          checks=$((checks + 1))
+          if echo "$response" | grep -qi "content-security-policy"; then
+            echo "✅ Content-Security-Policy header present" >> $GITHUB_STEP_SUMMARY
+            passed=$((passed + 1))
+          else
+            echo "❌ Content-Security-Policy header missing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # X-Frame-Options
+          checks=$((checks + 1))
+          if echo "$response" | grep -qi "x-frame-options: DENY"; then
+            echo "✅ X-Frame-Options: DENY header present" >> $GITHUB_STEP_SUMMARY
+            passed=$((passed + 1))
+          else
+            echo "❌ X-Frame-Options: DENY header missing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # HSTS
+          checks=$((checks + 1))
+          if echo "$response" | grep -qi "strict-transport-security"; then
+            echo "✅ Strict-Transport-Security header present" >> $GITHUB_STEP_SUMMARY
+            passed=$((passed + 1))
+          else
+            echo "❌ Strict-Transport-Security header missing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # X-Content-Type-Options
+          checks=$((checks + 1))
+          if echo "$response" | grep -qi "x-content-type-options: nosniff"; then
+            echo "✅ X-Content-Type-Options: nosniff header present" >> $GITHUB_STEP_SUMMARY
+            passed=$((passed + 1))
+          else
+            echo "❌ X-Content-Type-Options: nosniff header missing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Result:** $passed/$checks security headers configured" >> $GITHUB_STEP_SUMMARY
+
+          if [ $passed -ne $checks ]; then
+            exit 1
+          fi
+
+      - name: Test authentication security
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Authentication Security" >> $GITHUB_STEP_SUMMARY
+
+          # Test rate limiting on auth endpoints
+          auth_endpoint="${{ env.TARGET_URL }}/api/auth/signin"
+
+          echo "Testing rate limiting on $auth_endpoint..." >> $GITHUB_STEP_SUMMARY
+
+          # Make 6 rapid requests (should be rate limited)
+          for i in {1..6}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$auth_endpoint" \
+              -H "Content-Type: application/json" \
+              -d '{"email":"test@test.com","password":"test"}')
+
+            if [ $i -eq 6 ] && [ "$status" == "429" ]; then
+              echo "✅ Rate limiting working (request 6 returned 429)" >> $GITHUB_STEP_SUMMARY
+              break
+            fi
+
+            sleep 1
+          done
+
+      - name: Check for information disclosure
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Information Disclosure Checks" >> $GITHUB_STEP_SUMMARY
+
+          # Check if error pages leak sensitive info
+          response=$(curl -s "${{ env.TARGET_URL }}/nonexistent-page-12345")
+
+          if echo "$response" | grep -qi "stack trace\|exception\|error at line"; then
+            echo "❌ Error page may leak sensitive information" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ Error pages do not expose sensitive information" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check if version info is exposed
+          if echo "$response" | grep -qiE "next\.js|react|node\.js|version"; then
+            echo "⚠️ Framework/version information may be exposed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No framework version information exposed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  scan-summary:
+    name: DAST Scan Summary
+    runs-on: ubuntu-latest
+    needs: [dast-scan, healthcare-security]
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 📊 DAST Security Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**DAST Scan:** ${{ needs.dast-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Healthcare Checks:** ${{ needs.healthcare-security.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.dast-scan.result }}" == "success" ] && [ "${{ needs.healthcare-security.result }}" == "success" ]; then
+            echo "✅ **All DAST security checks passed**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Some DAST security checks failed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the individual job results above." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

@@ -1,0 +1,201 @@
+name: Health Check Monitoring
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to check'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+        default: 'production'
+
+jobs:
+  health-check:
+    name: Check Application Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Set environment URL
+        id: set-url
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+            echo "BASE_URL=https://staging.holilabs.xyz" >> $GITHUB_ENV
+          else
+            echo "BASE_URL=https://holilabs.xyz" >> $GITHUB_ENV
+          fi
+
+      - name: Check basic health
+        id: health
+        run: |
+          response=$(curl -s -w "\n%{http_code}" "${{ env.BASE_URL }}/api/health" || echo "000")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "http_code=$http_code" >> $GITHUB_OUTPUT
+          echo "response=$body" >> $GITHUB_OUTPUT
+
+          if [ "$http_code" != "200" ]; then
+            echo "❌ Health check failed with status $http_code"
+            exit 1
+          fi
+
+          echo "✅ Health check passed"
+
+      - name: Check detailed metrics
+        id: metrics
+        run: |
+          response=$(curl -s -w "\n%{http_code}" "${{ env.BASE_URL }}/api/health/metrics" || echo "000")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "http_code=$http_code" >> $GITHUB_OUTPUT
+
+          if [ "$http_code" != "200" ] && [ "$http_code" != "503" ]; then
+            echo "❌ Metrics endpoint failed with status $http_code"
+            exit 1
+          fi
+
+          # Parse JSON response
+          if command -v jq &> /dev/null; then
+            memory_pct=$(echo "$body" | jq -r '.memory.percentage // 0')
+            db_latency=$(echo "$body" | jq -r '.database.latency // 0')
+            alert_count=$(echo "$body" | jq -r '.alerts | length')
+
+            echo "memory_percentage=$memory_pct" >> $GITHUB_OUTPUT
+            echo "db_latency=$db_latency" >> $GITHUB_OUTPUT
+            echo "alert_count=$alert_count" >> $GITHUB_OUTPUT
+
+            echo "📊 Memory: ${memory_pct}%"
+            echo "📊 DB Latency: ${db_latency}ms"
+            echo "📊 Active Alerts: ${alert_count}"
+
+            # Check if there are critical alerts
+            if [ "$http_code" == "503" ]; then
+              echo "⚠️  System has critical alerts"
+              echo "$body" | jq '.alerts'
+            fi
+          fi
+
+      - name: Check database connectivity
+        id: database
+        run: |
+          response=$(curl -s "${{ env.BASE_URL }}/api/health" | jq -r '.services.database')
+
+          if [ "$response" != "true" ]; then
+            echo "❌ Database health check failed"
+            exit 1
+          fi
+
+          echo "✅ Database is healthy"
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## 🏥 Health Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ env.BASE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.health.outputs.http_code }}" == "200" ]; then
+            echo "✅ **Basic Health:** Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Basic Health:** Failed (Status: ${{ steps.health.outputs.http_code }})" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ steps.metrics.outputs.http_code }}" == "200" ]; then
+            echo "✅ **Metrics Endpoint:** Healthy" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Metrics" >> $GITHUB_STEP_SUMMARY
+            echo "- Memory Usage: ${{ steps.metrics.outputs.memory_percentage }}%" >> $GITHUB_STEP_SUMMARY
+            echo "- DB Latency: ${{ steps.metrics.outputs.db_latency }}ms" >> $GITHUB_STEP_SUMMARY
+            echo "- Active Alerts: ${{ steps.metrics.outputs.alert_count }}" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.metrics.outputs.http_code }}" == "503" ]; then
+            echo "⚠️  **Metrics Endpoint:** Has Critical Alerts" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Critical Issues Detected" >> $GITHUB_STEP_SUMMARY
+            echo "- Memory Usage: ${{ steps.metrics.outputs.memory_percentage }}%" >> $GITHUB_STEP_SUMMARY
+            echo "- DB Latency: ${{ steps.metrics.outputs.db_latency }}ms" >> $GITHUB_STEP_SUMMARY
+            echo "- Active Alerts: ${{ steps.metrics.outputs.alert_count }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Metrics Endpoint:** Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 Health check failed for ${{ env.BASE_URL }}"
+          echo "Review the logs above for details"
+          echo "Consider checking:"
+          echo "  - DigitalOcean app status"
+          echo "  - Recent deployments"
+          echo "  - Database connectivity"
+          echo "  - Error logs in Sentry"
+
+  uptime-check:
+    name: Check Critical Endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    strategy:
+      matrix:
+        endpoint:
+          - name: Main Site
+            url: https://holilabs.xyz
+            expected: 200
+          - name: Patient Portal
+            url: https://holilabs.xyz/portal/dashboard
+            expected: [200, 401]  # 401 is ok (not authenticated)
+          - name: API Health
+            url: https://holilabs.xyz/api/health
+            expected: 200
+            keyword: "healthy"
+
+    steps:
+      - name: Check ${{ matrix.endpoint.name }}
+        run: |
+          echo "Checking ${{ matrix.endpoint.name }}..."
+
+          response=$(curl -s -w "\n%{http_code}" "${{ matrix.endpoint.url }}" || echo "failed\n000")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "Status code: $http_code"
+
+          # Check if status code matches expected
+          expected="${{ matrix.endpoint.expected }}"
+          if [[ "$expected" == *"$http_code"* ]] || [ "$expected" == "$http_code" ]; then
+            echo "✅ Status code check passed"
+          else
+            echo "❌ Expected status $expected, got $http_code"
+            exit 1
+          fi
+
+          # Check for keyword if specified
+          keyword="${{ matrix.endpoint.keyword }}"
+          if [ -n "$keyword" ] && [ "$keyword" != "null" ]; then
+            if echo "$body" | grep -q "$keyword"; then
+              echo "✅ Keyword '$keyword' found"
+            else
+              echo "❌ Keyword '$keyword' not found in response"
+              exit 1
+            fi
+          fi
+
+          echo "✅ ${{ matrix.endpoint.name }} is accessible"
+
+      - name: Generate endpoint summary
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ **${{ matrix.endpoint.name }}** is accessible" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **${{ matrix.endpoint.name }}** check failed" >> $GITHUB_STEP_SUMMARY
+          fi
