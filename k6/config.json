@@ -1,0 +1,69 @@
+{
+  "scenarios": {
+    "login-surge": {
+      "name": "Login Surge Test",
+      "description": "100 concurrent users logging in",
+      "file": "scenarios/01-login-surge.js",
+      "duration": "10m",
+      "vus": 100,
+      "priority": "high"
+    },
+    "appointment-booking": {
+      "name": "Appointment Booking Peak",
+      "description": "50 concurrent appointment bookings",
+      "file": "scenarios/02-appointment-booking-peak.js",
+      "duration": "9m",
+      "vus": 50,
+      "priority": "high"
+    },
+    "soap-generation": {
+      "name": "SOAP Note Generation",
+      "description": "20 concurrent AI transcriptions",
+      "file": "scenarios/03-soap-note-generation.js",
+      "duration": "12m",
+      "vus": 20,
+      "priority": "medium"
+    },
+    "portal-traffic": {
+      "name": "Patient Portal Traffic",
+      "description": "200 concurrent portal users",
+      "file": "scenarios/04-patient-portal-traffic.js",
+      "duration": "17m",
+      "vus": 200,
+      "priority": "high"
+    },
+    "api-stress": {
+      "name": "API Endpoint Stress Test",
+      "description": "500 req/sec to critical endpoints",
+      "file": "scenarios/05-api-stress-test.js",
+      "duration": "5m",
+      "vus": 50,
+      "priority": "high"
+    }
+  },
+  "environments": {
+    "staging": {
+      "BASE_URL": "https://staging.holilabs.xyz",
+      "description": "Staging environment for pre-production testing"
+    },
+    "production": {
+      "BASE_URL": "https://holilabs.xyz",
+      "description": "Production environment (use with caution)"
+    },
+    "local": {
+      "BASE_URL": "http://localhost:3000",
+      "description": "Local development environment"
+    }
+  },
+  "thresholds": {
+    "p95_response_time": 2000,
+    "p99_response_time": 5000,
+    "error_rate_max": 0.001,
+    "success_rate_min": 0.99
+  },
+  "monitoring": {
+    "grafana_enabled": false,
+    "influxdb_enabled": false,
+    "prometheus_enabled": false
+  }
+}

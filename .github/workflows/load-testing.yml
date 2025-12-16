@@ -1,0 +1,167 @@
+name: Load Testing (k6)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+          - local
+        default: 'staging'
+      scenario:
+        description: 'Test scenario to run'
+        required: true
+        type: choice
+        options:
+          - all
+          - login-surge
+          - appointment-booking
+          - soap-generation
+          - portal-traffic
+          - api-stress
+        default: 'all'
+      duration:
+        description: 'Test duration override (e.g., 5m, 10m)'
+        required: false
+        type: string
+  schedule:
+    # Run weekly load tests on staging (Sundays at 3 AM UTC)
+    - cron: '0 3 * * 0'
+
+env:
+  K6_VERSION: '0.48.0'
+
+jobs:
+  load-test:
+    name: Run k6 Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Verify k6 installation
+        run: k6 version
+
+      - name: Set environment variables
+        run: |
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            echo "BASE_URL=https://holilabs.xyz" >> $GITHUB_ENV
+          elif [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+            echo "BASE_URL=https://staging.holilabs.xyz" >> $GITHUB_ENV
+          else
+            echo "BASE_URL=http://localhost:3000" >> $GITHUB_ENV
+          fi
+
+          # Set API key from secrets
+          echo "API_KEY=${{ secrets.K6_API_KEY }}" >> $GITHUB_ENV
+
+      - name: Run Login Surge Test
+        if: github.event.inputs.scenario == 'all' || github.event.inputs.scenario == 'login-surge'
+        run: |
+          echo "🚀 Running Login Surge Test..."
+          k6 run k6/scenarios/01-login-surge.js \
+            --out json=k6/results/login-surge.json \
+            || echo "Login surge test completed with issues"
+
+      - name: Run Appointment Booking Test
+        if: github.event.inputs.scenario == 'all' || github.event.inputs.scenario == 'appointment-booking'
+        run: |
+          echo "🚀 Running Appointment Booking Test..."
+          k6 run k6/scenarios/02-appointment-booking-peak.js \
+            --out json=k6/results/appointment-booking.json \
+            || echo "Appointment booking test completed with issues"
+
+      - name: Run SOAP Generation Test
+        if: github.event.inputs.scenario == 'all' || github.event.inputs.scenario == 'soap-generation'
+        run: |
+          echo "🚀 Running SOAP Note Generation Test..."
+          k6 run k6/scenarios/03-soap-note-generation.js \
+            --out json=k6/results/soap-generation.json \
+            || echo "SOAP generation test completed with issues"
+
+      - name: Run Portal Traffic Test
+        if: github.event.inputs.scenario == 'all' || github.event.inputs.scenario == 'portal-traffic'
+        run: |
+          echo "🚀 Running Patient Portal Traffic Test..."
+          k6 run k6/scenarios/04-patient-portal-traffic.js \
+            --out json=k6/results/portal-traffic.json \
+            || echo "Portal traffic test completed with issues"
+
+      - name: Run API Stress Test
+        if: github.event.inputs.scenario == 'all' || github.event.inputs.scenario == 'api-stress'
+        run: |
+          echo "🚀 Running API Stress Test..."
+          k6 run k6/scenarios/05-api-stress-test.js \
+            --out json=k6/results/api-stress.json \
+            || echo "API stress test completed with issues"
+
+      - name: Create results directory
+        if: always()
+        run: mkdir -p k6/results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-test-results-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          path: k6/results/*.json
+          retention-days: 30
+
+      - name: Generate summary report
+        if: always()
+        run: |
+          echo "## 📊 Load Testing Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Scenario:** ${{ github.event.inputs.scenario }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check if any result files exist
+          if ls k6/results/*.json 1> /dev/null 2>&1; then
+            echo "### Test Results Available" >> $GITHUB_STEP_SUMMARY
+            echo "Results have been uploaded as artifacts." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ No Results Generated" >> $GITHUB_STEP_SUMMARY
+            echo "Tests may have failed to run or produce output." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 📊 Load Testing Results\n\n';
+            comment += `**Environment:** ${{ github.event.inputs.environment }}\n`;
+            comment += `**Scenario:** ${{ github.event.inputs.scenario }}\n`;
+            comment += `**Status:** ${context.job.status}\n\n`;
+            comment += 'Detailed results are available in the workflow artifacts.\n';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Notify on failure
+        if: failure() && github.event.inputs.environment == 'production'
+        run: |
+          echo "⚠️ Production load testing failed!"
+          echo "Please review the test results and investigate performance issues."
+          # Add Slack/Discord notification here if configured

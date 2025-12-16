@@ -6,6 +6,9 @@ node_modules/
 # Testing
 coverage/
 .nyc_output/
+dast-reports/
+playwright-report/
+test-results/
 
 # Next.js
 .next/
@@ -30,6 +33,11 @@ yarn-error.log*
 .env
 .env*.local
 PRODUCTION_SECRETS.txt
+
+# Cosign keys (NEVER commit private keys)
+cosign.key
+*.key
+cosign-*.key
 
 # Vercel
 .vercel

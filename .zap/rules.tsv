@@ -1,0 +1,141 @@
+# ZAP Scanning Rules Configuration
+# Format: RULE_ID	THRESHOLD	[COMMENTS]
+#
+# RULE_ID: The ZAP rule ID (e.g., 10021 for X-Content-Type-Options)
+# THRESHOLD: OFF (ignore), LOW, MEDIUM, HIGH
+# COMMENTS: Optional description
+#
+# See: https://www.zaproxy.org/docs/alerts/
+
+# =============================================================================
+# IGNORE: False Positives and Expected Behavior
+# =============================================================================
+
+# Ignore Next.js development warnings
+10049	IGNORE	# Storable and Cacheable Content - Expected for static assets
+10096	IGNORE	# Timestamp Disclosure - Unix Timestamp in responses is expected
+90022	IGNORE	# Application Error Disclosure - Next.js error pages are custom
+
+# Ignore known safe patterns
+10015	IGNORE	# Re-examine Cache-control Directives - API responses may not be cached
+10063	IGNORE	# Feature Policy Header Not Set - Using Permissions-Policy instead
+
+# =============================================================================
+# HIGH PRIORITY: Critical Security Issues
+# =============================================================================
+
+10021	HIGH	# X-Content-Type-Options Header Missing
+10020	HIGH	# X-Frame-Options Header Not Set
+10016	HIGH	# Web Browser XSS Protection Not Enabled
+10035	HIGH	# Strict-Transport-Security Header Not Set
+10038	HIGH	# Content Security Policy (CSP) Header Not Set
+10098	HIGH	# Cross-Domain Misconfiguration
+
+# Authentication & Session Management
+10040	HIGH	# Secure Flag Not Set on Cookie
+10054	HIGH	# Cookie Without SameSite Attribute
+10027	HIGH	# Information Disclosure - Suspicious Comments
+90018	HIGH	# SQL Injection
+
+# Injection Attacks
+40012	HIGH	# Cross Site Scripting (Reflected)
+40014	HIGH	# Cross Site Scripting (Persistent)
+40016	HIGH	# Cross Site Scripting (DOM Based)
+90019	HIGH	# Server Side Code Injection
+90020	HIGH	# Remote OS Command Injection
+
+# Healthcare-Specific
+10109	HIGH	# Modern Web Application - Check for PHI exposure
+10055	HIGH	# CSP Scanner - Ensure PHI cannot be exfiltrated
+
+# =============================================================================
+# MEDIUM PRIORITY: Important Security Issues
+# =============================================================================
+
+10017	MEDIUM	# Cross-Domain JavaScript Source File Inclusion
+10019	MEDIUM	# Content-Type Header Missing
+10036	MEDIUM	# HTTP Server Response Header
+10037	MEDIUM	# Server Leaks Version Information via "Server" HTTP Response Header
+10094	MEDIUM	# Base64 Disclosure
+10095	MEDIUM	# Backup File Disclosure
+10105	MEDIUM	# Weak Authentication Method
+
+# Privacy & Data Protection
+10017	MEDIUM	# Cross-Domain JavaScript Source File Inclusion
+10027	MEDIUM	# Information Disclosure - Suspicious Comments
+10028	MEDIUM	# Open Redirect
+10032	MEDIUM	# Viewstate Scanner
+10048	MEDIUM	# Remote Code Execution - Shell Shock
+
+# =============================================================================
+# LOW PRIORITY: Best Practices
+# =============================================================================
+
+10010	LOW	# Cookie No HttpOnly Flag
+10015	LOW	# Re-examine Cache-control Directives
+10017	LOW	# Cross-Domain JavaScript Source File Inclusion
+10020	LOW	# X-Frame-Options Header Not Set
+10021	LOW	# X-Content-Type-Options Header Missing
+10023	LOW	# Information Disclosure - Debug Error Messages
+10024	LOW	# Information Disclosure - Sensitive Information in URL
+10025	LOW	# Information Disclosure - Sensitive Information in HTTP Referrer Header
+10026	LOW	# HTTP Parameter Override
+10050	LOW	# Retrieved from Cache
+10052	LOW	# X-ChromeLogger-Data (XCOLD) Header Information Leak
+10056	LOW	# X-Debug-Token Information Leak
+10061	LOW	# X-AspNet-Version Response Header Scanner
+10062	LOW	# PII Disclosure
+10097	LOW	# Hash Disclosure
+
+# =============================================================================
+# INFORMATIONAL: Documentation Only
+# =============================================================================
+
+10104	INFO	# User Controllable HTML Element Attribute (Potential XSS)
+10110	INFO	# Dangerous JS Functions
+10202	INFO	# Absence of Anti-CSRF Tokens
+
+# =============================================================================
+# HEALTHCARE-SPECIFIC RULES
+# =============================================================================
+
+# Check for PHI exposure in responses
+10062	HIGH	# PII Scanner - Critical for HIPAA compliance
+10027	HIGH	# Information Disclosure - May leak PHI in comments
+10094	MEDIUM	# Base64 Disclosure - May contain encoded PHI
+10024	MEDIUM	# Information Disclosure in URL - Check for PHI in URLs
+10025	MEDIUM	# HTTP Referrer - Check for PHI in referrer headers
+
+# HIPAA Audit Controls
+10019	MEDIUM	# Missing Content-Type - May affect audit logging
+10023	MEDIUM	# Debug Error Messages - May leak audit trail info
+10056	MEDIUM	# Debug Token - May expose session/audit information
+
+# =============================================================================
+# CUSTOM SCAN CONFIGURATIONS
+# =============================================================================
+
+# Exclude certain paths from scanning
+# (Configure via workflow cmd_options: -I "url-regex-to-ignore")
+# - Logout endpoints (prevent session termination during scan)
+# - Password reset confirmation (prevent account lockout)
+# - MFA/2FA endpoints (prevent account lockout)
+# - Admin endpoints (require special authentication)
+# - Test/development endpoints (not in production)
+
+# =============================================================================
+# NOTES
+# =============================================================================
+#
+# This configuration is optimized for:
+# - Healthcare applications with PHI
+# - HIPAA compliance requirements
+# - Next.js/React applications
+# - Modern authentication patterns
+#
+# Update this file when:
+# - New security requirements are identified
+# - False positives need to be suppressed
+# - New critical vulnerabilities are discovered
+#
+# Review scan results regularly and adjust thresholds as needed.
