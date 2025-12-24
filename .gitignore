@@ -32,6 +32,12 @@ yarn-error.log*
 # Local env files
 .env
 .env*.local
+.env.production
+.env.development
+.env.staging
+apps/**/.env.production
+apps/**/.env.development
+apps/**/.env.staging
 PRODUCTION_SECRETS.txt
 
 # Cosign keys (NEVER commit private keys)
