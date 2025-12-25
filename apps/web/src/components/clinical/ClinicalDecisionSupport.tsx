@@ -379,8 +379,8 @@ export function ClinicalDecisionSupport({
                               <div>{alert.recommendation}</div>
                             </div>
                           )}
+                          {/* Decorative - low contrast intentional for metadata */}
                           {alert.source && (
-                            {/* Decorative - low contrast intentional for metadata */}
                             <p className="text-xs text-gray-600 dark:text-gray-400">
                               Fuente: {alert.source}
                             </p>

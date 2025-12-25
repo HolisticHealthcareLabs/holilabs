@@ -6,8 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getServerSession, authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 const REQUIRED_CONSENTS = [
@@ -25,11 +24,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's patient record
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    // Get user's patient record via PatientUser
+    const patientUser = await prisma.patientUser.findUnique({
+      where: { email: session.user.email! },
       include: {
-        patients: {
+        patient: {
           include: {
             consents: {
               where: {
@@ -41,7 +40,7 @@ export async function GET() {
       },
     });
 
-    if (!user || user.patients.length === 0) {
+    if (!patientUser || !patientUser.patient) {
       return NextResponse.json({
         allAccepted: false,
         missingConsents: REQUIRED_CONSENTS,
@@ -49,13 +48,13 @@ export async function GET() {
       });
     }
 
-    const patient = user.patients[0];
-    const activeConsents = patient.consents;
+    const patient = patientUser.patient;
+    const activeConsents = patient.consents || [];
 
     // Check which required consents are missing
     const acceptedTypes = new Set(activeConsents.map((c) => c.type));
     const missingConsents = REQUIRED_CONSENTS.filter(
-      (type) => !acceptedTypes.has(type)
+      (type) => !acceptedTypes.has(type as any)
     );
 
     return NextResponse.json({

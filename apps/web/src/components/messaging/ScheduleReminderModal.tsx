@@ -164,8 +164,8 @@ export default function ScheduleReminderModal({
                   </svg>
                 </button>
               </div>
+              {/* Decorative - low contrast intentional for template name metadata */}
               {template && (
-                {/* Decorative - low contrast intentional for template name metadata */}
                 <p className="text-purple-100/80 text-sm mt-2">
                   Template: {template.name}
                 </p>

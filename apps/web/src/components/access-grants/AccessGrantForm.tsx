@@ -368,8 +368,8 @@ export default function AccessGrantForm({ patientId, onSuccess, onCancel }: Acce
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Seleccionar Resultado de Laboratorio
               </label>
+              {/* Decorative - low contrast intentional for loading state */}
               {loadingResources ? (
-                {/* Decorative - low contrast intentional for loading state */}
                 <p className="text-sm text-gray-500 dark:text-gray-400">Cargando resultados...</p>
               ) : (
                 <select
@@ -394,8 +394,8 @@ export default function AccessGrantForm({ patientId, onSuccess, onCancel }: Acce
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Seleccionar Estudio de Imágenes
               </label>
+              {/* Decorative - low contrast intentional for loading state */}
               {loadingResources ? (
-                {/* Decorative - low contrast intentional for loading state */}
                 <p className="text-sm text-gray-500 dark:text-gray-400">Cargando estudios...</p>
               ) : (
                 <select

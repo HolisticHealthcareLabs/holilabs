@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CronMonitor } from '@/lib/cron/monitoring';
 import logger from '@/lib/logger';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 

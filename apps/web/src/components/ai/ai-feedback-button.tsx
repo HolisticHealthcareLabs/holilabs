@@ -283,8 +283,8 @@ export function AIFeedbackButton({
           </span>
         </div>
 
+        {/* Decorative - low contrast intentional for AI confidence metadata */}
         {aiConfidence !== undefined && (
-          {/* Decorative - low contrast intentional for AI confidence metadata */}
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <span>AI Confidence:</span>
             <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
