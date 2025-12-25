@@ -1,10 +1,12 @@
 /**
  * Server-side authentication utilities
  * Use in Server Components, Server Actions, and API Route Handlers
+ *
+ * NOTE: Supabase has been removed. Using JWT-based patient-session instead.
  */
 
-import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { getPatientSession, getCurrentPatient } from './patient-session';
 
 export interface CurrentUser {
   id: string;
@@ -18,25 +20,23 @@ export interface CurrentUser {
  * Returns null if no user is logged in
  */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const supabase = createClient() as any;
+  try {
+    const session = await getPatientSession();
 
-  const {
-    data: { user },
-  } = await supabase?.auth?.getUser() ?? { data: { user: null } };
+    if (!session) {
+      return null;
+    }
 
-  if (!user) {
+    return {
+      id: session.userId,
+      email: session.email,
+      role: session.type, // 'patient'
+      patientId: session.patientId,
+    };
+  } catch (error) {
+    console.error('Error getting current user:', error);
     return null;
   }
-
-  const role =
-    user.user_metadata?.role ?? user.app_metadata?.role ?? 'PATIENT';
-
-  return {
-    id: user.id,
-    email: user.email!,
-    role,
-    patientId: role === 'PATIENT' ? user.id : null,
-  };
 }
 
 /**
@@ -47,7 +47,7 @@ export async function requireAuth(): Promise<CurrentUser> {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/auth/login');
+    redirect('/portal/login');
   }
 
   return user;
