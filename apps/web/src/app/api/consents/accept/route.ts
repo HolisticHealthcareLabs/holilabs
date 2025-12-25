@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getServerSession, authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
@@ -37,33 +36,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get or create patient record for user
-    let patient = await prisma.patient.findFirst({
+    // Get patient record via PatientUser
+    const patientUser = await prisma.patientUser.findUnique({
       where: {
-        userId: session.user.id,
+        email: session.user.email!,
+      },
+      include: {
+        patient: true,
       },
     });
 
-    if (!patient) {
-      // Create patient record if it doesn't exist
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-      });
-
-      if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
-
-      patient = await prisma.patient.create({
-        data: {
-          userId: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          dateOfBirth: new Date('1990-01-01'), // Placeholder - should be collected during onboarding
-        },
-      });
+    if (!patientUser || !patientUser.patient) {
+      return NextResponse.json(
+        { error: 'Patient record not found' },
+        { status: 404 }
+      );
     }
+
+    const patient = patientUser.patient;
 
     // Create consent records
     const consentRecords = await Promise.all(
@@ -112,10 +102,10 @@ export async function POST(request: NextRequest) {
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
-        action: 'CONSENT_ACCEPTED',
-        resourceType: 'CONSENT',
+        action: 'SIGN',
+        resource: 'CONSENT',
         resourceId: consentRecords[0]?.id || 'multiple',
-        metadata: {
+        details: {
           consentTypes: consents.map((c) => c.type),
           count: consents.length,
           timestamp: new Date().toISOString(),

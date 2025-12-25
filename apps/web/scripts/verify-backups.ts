@@ -480,6 +480,7 @@ async function sendAlert(result: VerificationResult): Promise<void> {
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     try {
       // Dynamic import to avoid loading Sentry in environments where it's not needed
+      // @ts-ignore - Sentry/node not available in production builds
       const Sentry = await import('@sentry/node');
 
       if (result.status === 'error') {

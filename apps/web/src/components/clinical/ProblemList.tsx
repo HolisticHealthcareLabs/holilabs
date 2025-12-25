@@ -612,8 +612,8 @@ export function ProblemList({
                         </div>
                       )}
 
+                      {/* Decorative - low contrast intentional for review timestamp metadata */}
                       {problem.lastReviewed && (
-                        {/* Decorative - low contrast intentional for review timestamp metadata */}
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                           Última revisión:{' '}
                           {new Date(problem.lastReviewed).toLocaleDateString('es-ES')}

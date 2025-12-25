@@ -214,12 +214,12 @@ export default function LabResultsList({ patientId }: LabResultsListProps) {
                     <td className="px-6 py-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900">{result.testName}</div>
+                        {/* Decorative - low contrast intentional for metadata */}
                         {result.testCode && (
-                          {/* Decorative - low contrast intentional for metadata */}
                           <div className="text-xs text-gray-500 dark:text-gray-400">LOINC: {result.testCode}</div>
                         )}
+                        {/* Decorative - low contrast intentional for metadata */}
                         {result.category && (
-                          {/* Decorative - low contrast intentional for metadata */}
                           <div className="text-xs text-gray-500 dark:text-gray-400">{result.category}</div>
                         )}
                       </div>
