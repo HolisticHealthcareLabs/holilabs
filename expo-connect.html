@@ -190,9 +190,29 @@
     </div>
     
     <script>
-        const url = 'exp://192.168.0.9:8081';
-        const localIP = '192.168.0.9';
-        const port = '8081';
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        function isIPv4(host) {
+            return /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+        }
+
+        const storedIp = localStorage.getItem('expoLanIp');
+        const queryIp = getQueryParam('ip');
+        const hostIp = isIPv4(window.location.hostname) ? window.location.hostname : null;
+        const localIP = queryIp || storedIp || hostIp || prompt('Enter your computer LAN IP for Expo Go (e.g. 192.168.1.25):', storedIp || '') || '';
+        if (localIP) localStorage.setItem('expoLanIp', localIP);
+
+        const port = getQueryParam('port') || '8081';
+        const url = `exp://${localIP}:${port}`;
+
+        // Update UI with computed URL
+        const urlEl = document.getElementById('url');
+        if (urlEl) urlEl.textContent = url;
+        const linkEl = document.querySelector('a.big-button');
+        if (linkEl) linkEl.setAttribute('href', url);
         
         function copyToClipboard() {
             // Create temporary textarea
@@ -235,11 +255,11 @@
             }
         }
         
-        // Check immediately
-        setTimeout(checkServer, 1000);
+        // Check immediately (only if we have an IP)
+        if (localIP) setTimeout(checkServer, 1000);
         
         // Check every 5 seconds
-        setInterval(checkServer, 5000);
+        if (localIP) setInterval(checkServer, 5000);
     </script>
 </body>
 </html>

@@ -1,12 +1,18 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
+
+/**
+ * Stub AuthProvider - Supabase removed, using JWT-based patient-session
+ *
+ * This provider exists to maintain compatibility with existing code
+ * that imports useAuth(). All actual authentication is handled server-side
+ * via patient-session.ts (JWT tokens in cookies).
+ */
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: any | null;
+  session: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -30,22 +36,38 @@ const WARNING_TIME = 5 * 60 * 1000; // Show warning 5 minutes before timeout
 const ACTIVITY_CHECK_INTERVAL = 10 * 1000; // Check every 10 seconds
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [session, setSession] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   const [timeUntilWarning, setTimeUntilWarning] = useState<number | null>(null);
 
-  const supabase = createClient() as any;
   const activityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch session from server
+  const fetchSession = useCallback(async () => {
+    try {
+      const response = await fetch('/api/portal/auth/session');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.session) {
+          setUser(data.session);
+          setSession(data.session);
+          return data.session;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch session:', error);
+    }
+    return null;
+  }, []);
+
   // Handle timeout logout
   const handleTimeoutLogout = useCallback(async () => {
     console.log('Session timed out due to inactivity');
-    await supabase?.auth?.signOut();
     setUser(null);
     setSession(null);
     setShowTimeoutWarning(false);
@@ -54,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       window.location.href = '/portal/login?timeout=true';
     }
-  }, [supabase]);
+  }, []);
 
   // Update last activity time
   const updateActivity = useCallback(() => {
@@ -86,12 +108,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, INACTIVITY_TIMEOUT);
   }, [handleTimeoutLogout]);
 
-  // Refresh session from Supabase
+  // Refresh session from server
   const refreshSession = useCallback(async () => {
-    const { data: { session } } = await supabase?.auth?.refreshSession() ?? { data: { session: null } };
-    setSession(session);
-    setUser(session?.user ?? null);
-  }, [supabase]);
+    const session = await fetchSession();
+    if (session) {
+      updateActivity();
+    }
+  }, [fetchSession, updateActivity]);
 
   // Extend session (called from warning modal)
   const extendSession = useCallback(() => {
@@ -101,32 +124,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }: any) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-
-      // Initialize activity tracking if user is logged in
-      if (session?.user) {
+    fetchSession().then((session) => {
+      if (session) {
         updateActivity();
       }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
-
-      if (session?.user) {
-        updateActivity();
-      }
     });
-
-    return () => subscription.unsubscribe();
-  }, [supabase, updateActivity]);
+  }, [fetchSession, updateActivity]);
 
   // Track user activity
   useEffect(() => {
@@ -178,10 +182,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearInterval(checkIntervalRef.current);
       }
     };
-  }, [user, updateActivity]);
+  }, [user, updateActivity, handleTimeoutLogout]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await fetch('/api/portal/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+
     setUser(null);
     setSession(null);
     setShowTimeoutWarning(false);
@@ -189,17 +198,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clear activity tracking
     if (typeof window !== 'undefined') {
       localStorage.removeItem('lastActivity');
+      window.location.href = '/portal/login';
     }
   };
 
   // Derived values
-  const userId = user?.id ?? null;
+  const userId = user?.patientUserId ?? user?.userId ?? user?.id ?? null;
   const userEmail = user?.email ?? null;
-  const userRole = user?.user_metadata?.role ?? user?.app_metadata?.role ?? null;
+  const userRole = user?.type ?? 'patient';
 
-  // For patients, the patient ID is the same as user ID
-  // For clinicians, they don't have a patient ID
-  const patientId = userRole === 'PATIENT' ? userId : null;
+  // For patients, the patient ID is from the session
+  const patientId = user?.patientId ?? (userRole === 'patient' ? userId : null);
 
   const value: AuthContextType = {
     user,
