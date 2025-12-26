@@ -238,10 +238,10 @@ const clientSchema = z.object({
   // Supabase
   NEXT_PUBLIC_SUPABASE_URL: z.string().url({
     message: 'NEXT_PUBLIC_SUPABASE_URL must be a valid URL (e.g., https://xxx.supabase.co)',
-  }),
+  }).optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, {
     message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required for authentication',
-  }),
+  }).optional(),
 
   // Web Push Notifications
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
