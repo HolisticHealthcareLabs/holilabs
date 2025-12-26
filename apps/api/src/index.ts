@@ -5,6 +5,13 @@ import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import { PrismaClient } from '@prisma/client';
 
+// Environment validation (must be first)
+import { env } from './lib/env-validation';
+
+// FHIR infrastructure
+import { initFhirQueue, shutdownFhirQueue, getQueueStats } from './services/fhir-queue';
+import { registerFhirSyncMiddleware } from './lib/prisma-fhir-middleware';
+
 // Routes
 import authRoutes from './routes/auth';
 import uploadRoutes from './routes/upload';
@@ -12,12 +19,21 @@ import patientRoutes from './routes/patients';
 import aiRoutes from './routes/ai';
 import exportRoutes from './routes/exports';
 import adminRoutes from './routes/admin';
+import fhirIngressRoutes from './routes/fhir-ingress';
+import fhirAdminRoutes from './routes/fhir-admin';
+import fhirExportRoutes from './routes/fhir-export';
+import monitoringRoutes from './routes/monitoring';
 
-const prisma = new PrismaClient();
+// Monitoring
+import metricsMiddleware from './plugins/metrics-middleware';
+
+const prisma = new PrismaClient({
+  log: env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
 
 const server = Fastify({
   logger: {
-    level: process.env.LOG_LEVEL || 'info',
+    level: env.LOG_LEVEL,
     redact: {
       paths: [
         'req.headers.authorization',
@@ -36,9 +52,26 @@ const server = Fastify({
 
 async function start() {
   try {
+    console.log('🚀 Starting Holi API Server...');
+    console.log(`📦 Environment: ${env.NODE_ENV}`);
+    console.log(`🔧 FHIR Sync: ${env.ENABLE_MEDPLUM === 'true' ? 'ENABLED' : 'DISABLED'}`);
+
+    // Initialize Prisma middleware for FHIR auto-sync
+    if (env.ENABLE_MEDPLUM === 'true') {
+      registerFhirSyncMiddleware(prisma);
+
+      // Initialize BullMQ queue for async FHIR operations
+      const queue = await initFhirQueue(prisma);
+
+      // Store queue on server instance for monitoring access
+      server.decorate('fhirQueue', queue);
+    }
+
     // Register plugins
+    await server.register(metricsMiddleware); // Metrics middleware (must be early)
+
     await server.register(cors, {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: env.CORS_ORIGIN,
       credentials: true,
     });
 
@@ -62,15 +95,35 @@ async function start() {
     await server.register(rateLimit, {
       max: 100,
       timeWindow: '15 minutes',
-      redis: process.env.REDIS_URL,
+      redis: env.REDIS_URL,
     });
 
     // Health check
     server.get('/health', async () => {
-      return { status: 'ok', timestamp: new Date().toISOString() };
+      const health: any = {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        environment: env.NODE_ENV,
+        fhir: {
+          enabled: env.ENABLE_MEDPLUM === 'true',
+        },
+      };
+
+      // Add queue stats if FHIR enabled
+      if (env.ENABLE_MEDPLUM === 'true') {
+        try {
+          const queueStats = await getQueueStats();
+          health.fhir.queue = queueStats;
+        } catch (error) {
+          health.fhir.queue = { error: 'Queue not available' };
+        }
+      }
+
+      return health;
     });
 
     // Register routes
+    await server.register(monitoringRoutes); // Monitoring routes (no prefix, /metrics, /health, etc.)
     await server.register(authRoutes, { prefix: '/auth' });
     await server.register(uploadRoutes, { prefix: '/ingest' });
     await server.register(patientRoutes, { prefix: '/patients' });
@@ -78,12 +131,16 @@ async function start() {
     await server.register(exportRoutes, { prefix: '/exports' });
     await server.register(adminRoutes, { prefix: '/admin' });
 
-    // Start server
-    const port = parseInt(process.env.API_PORT || '3001', 10);
-    const host = process.env.API_HOST || '0.0.0.0';
+    // FHIR routes (conditionally register if FHIR enabled)
+    if (env.ENABLE_MEDPLUM === 'true') {
+      await server.register(fhirIngressRoutes, { prefix: '/fhir/inbound' });
+      await server.register(fhirAdminRoutes, { prefix: '/fhir/admin' });
+      await server.register(fhirExportRoutes, { prefix: '/fhir/export' });
+    }
 
-    await server.listen({ port, host });
-    console.log(`🚀 API server listening on http://${host}:${port}`);
+    // Start server
+    await server.listen({ port: env.API_PORT, host: env.API_HOST });
+    console.log(`✅ API server listening on http://${env.API_HOST}:${env.API_PORT}`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
@@ -91,11 +148,33 @@ async function start() {
 }
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
-  await prisma.$disconnect();
-  await server.close();
-  process.exit(0);
-});
+async function shutdown(signal: string) {
+  console.log(`\n${signal} received, shutting down gracefully...`);
+
+  try {
+    // Shutdown FHIR queue first (stop accepting new jobs)
+    if (env.ENABLE_MEDPLUM === 'true') {
+      await shutdownFhirQueue();
+    }
+
+    // Close Fastify server (stop accepting new requests)
+    await server.close();
+    console.log('✅ Server closed');
+
+    // Disconnect Prisma
+    await prisma.$disconnect();
+    console.log('✅ Database disconnected');
+
+    console.log('✅ Shutdown complete');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 start();
 

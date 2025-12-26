@@ -1,0 +1,444 @@
+# PagerDuty Alert Configuration
+# Production-grade alerting for Holi Labs FHIR Integration
+#
+# Alert Severity Levels:
+# - P1 (Critical): Immediate response required - system down, data breach, HIPAA incident
+# - P2 (High): Response within 30 minutes - degraded performance, excessive errors
+# - P3 (Medium): Response within 2 hours - warnings, non-critical issues
+# - P4 (Low): Response within 24 hours - informational alerts
+#
+# Integration: Prometheus Alertmanager → PagerDuty
+
+# ============================================================================
+# ESCALATION POLICIES
+# ============================================================================
+
+escalation_policies:
+  - name: "HIPAA Critical Incidents"
+    description: "Immediate escalation for HIPAA-related incidents"
+    num_loops: 3
+    escalation_rules:
+      - escalation_delay_in_minutes: 0
+        targets:
+          - type: "user"
+            id: "on_call_security_lead"
+      - escalation_delay_in_minutes: 5
+        targets:
+          - type: "user"
+            id: "ciso"
+      - escalation_delay_in_minutes: 10
+        targets:
+          - type: "user"
+            id: "cto"
+
+  - name: "Infrastructure Critical"
+    description: "Critical infrastructure failures"
+    num_loops: 2
+    escalation_rules:
+      - escalation_delay_in_minutes: 0
+        targets:
+          - type: "schedule"
+            id: "on_call_platform_team"
+      - escalation_delay_in_minutes: 15
+        targets:
+          - type: "user"
+            id: "platform_lead"
+
+  - name: "FHIR Integration Alerts"
+    description: "FHIR sync and integration issues"
+    num_loops: 1
+    escalation_rules:
+      - escalation_delay_in_minutes: 0
+        targets:
+          - type: "schedule"
+            id: "on_call_backend_team"
+      - escalation_delay_in_minutes: 30
+        targets:
+          - type: "user"
+            id: "backend_lead"
+
+# ============================================================================
+# SERVICES
+# ============================================================================
+
+services:
+  - name: "Holi API"
+    description: "Holi Labs API Server"
+    escalation_policy: "Infrastructure Critical"
+    alert_creation: "create_alerts_and_incidents"
+    acknowledgement_timeout: 1800 # 30 minutes
+    auto_resolve_timeout: 14400 # 4 hours
+
+  - name: "FHIR Integration"
+    description: "FHIR sync and Medplum integration"
+    escalation_policy: "FHIR Integration Alerts"
+    alert_creation: "create_alerts_and_incidents"
+    acknowledgement_timeout: 3600 # 1 hour
+    auto_resolve_timeout: 7200 # 2 hours
+
+  - name: "HIPAA Compliance"
+    description: "HIPAA-related security and audit events"
+    escalation_policy: "HIPAA Critical Incidents"
+    alert_creation: "create_alerts_and_incidents"
+    acknowledgement_timeout: 600 # 10 minutes
+    auto_resolve_timeout: null # Manual resolution required
+
+# ============================================================================
+# ALERT RULES
+# ============================================================================
+
+alert_rules:
+  # ============================================================================
+  # P1 - CRITICAL ALERTS (Immediate Response)
+  # ============================================================================
+
+  - name: "API Server Down"
+    severity: "critical"
+    service: "Holi API"
+    description: "Holi API server is not responding"
+    query: "up{job=\"holi-api\"} == 0"
+    for: "2m"
+    annotations:
+      summary: "Holi API server is down"
+      description: "API server has been unreachable for 2+ minutes"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/api-server-down"
+    labels:
+      severity: "P1"
+      component: "api"
+
+  - name: "Database Connection Failure"
+    severity: "critical"
+    service: "Holi API"
+    description: "Cannot connect to PostgreSQL database"
+    query: "holi_database_connections_active == 0"
+    for: "1m"
+    annotations:
+      summary: "Database connection lost"
+      description: "No active database connections for 1+ minute"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/database-down"
+    labels:
+      severity: "P1"
+      component: "database"
+
+  - name: "Redis Queue Down"
+    severity: "critical"
+    service: "FHIR Integration"
+    description: "BullMQ Redis connection lost"
+    query: "holi_queue_jobs_active{queue_name=\"fhir-sync\"} == -1"
+    for: "2m"
+    annotations:
+      summary: "Redis queue unavailable"
+      description: "Cannot connect to Redis for job queue"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/redis-down"
+    labels:
+      severity: "P1"
+      component: "queue"
+
+  - name: "HIPAA Audit Log Failure"
+    severity: "critical"
+    service: "HIPAA Compliance"
+    description: "Audit event logging is failing"
+    query: "rate(holi_database_errors_total{model=\"auditEvent\"}[5m]) > 0.1"
+    for: "2m"
+    annotations:
+      summary: "HIPAA audit logging failure"
+      description: "Cannot write audit events - HIPAA compliance violation risk"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/audit-failure"
+    labels:
+      severity: "P1"
+      component: "audit"
+      compliance: "hipaa"
+
+  - name: "Unauthorized PHI Access Attempt"
+    severity: "critical"
+    service: "HIPAA Compliance"
+    description: "Multiple failed PHI access attempts detected"
+    query: "rate(holi_hipaa_consent_validations_total{status=\"denied\"}[5m]) > 5"
+    for: "1m"
+    annotations:
+      summary: "Suspicious PHI access attempts"
+      description: "More than 5 denied PHI access attempts per minute - possible breach attempt"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/security-incident"
+    labels:
+      severity: "P1"
+      component: "security"
+      compliance: "hipaa"
+
+  # ============================================================================
+  # P2 - HIGH PRIORITY ALERTS (30 minute response)
+  # ============================================================================
+
+  - name: "Excessive Queue Failures"
+    severity: "high"
+    service: "FHIR Integration"
+    description: "FHIR sync queue has too many failed jobs"
+    query: "holi_queue_jobs_failed{queue_name=\"fhir-sync\"} > 10"
+    for: "5m"
+    annotations:
+      summary: "High queue failure rate"
+      description: "More than 10 failed jobs in FHIR sync queue"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/queue-failures"
+    labels:
+      severity: "P2"
+      component: "fhir-sync"
+
+  - name: "High Queue Backlog"
+    severity: "high"
+    service: "FHIR Integration"
+    description: "FHIR sync queue has excessive backlog"
+    query: "holi_queue_jobs_waiting{queue_name=\"fhir-sync\"} > 100"
+    for: "5m"
+    annotations:
+      summary: "Queue backlog accumulating"
+      description: "More than 100 jobs waiting in queue for 5+ minutes"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/queue-backlog"
+    labels:
+      severity: "P2"
+      component: "fhir-sync"
+
+  - name: "FHIR Sync Errors Spike"
+    severity: "high"
+    service: "FHIR Integration"
+    description: "Unusually high FHIR sync error rate"
+    query: "rate(holi_fhir_sync_errors_total[5m]) * 60 > 5"
+    for: "5m"
+    annotations:
+      summary: "FHIR sync error spike"
+      description: "More than 5 FHIR sync errors per minute"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/fhir-sync-errors"
+    labels:
+      severity: "P2"
+      component: "fhir-sync"
+
+  - name: "High API Error Rate"
+    severity: "high"
+    service: "Holi API"
+    description: "API returning excessive 5xx errors"
+    query: "rate(holi_http_requests_total{status_code=~\"5..\"}[5m]) / rate(holi_http_requests_total[5m]) > 0.05"
+    for: "3m"
+    annotations:
+      summary: "High API error rate"
+      description: "More than 5% of API requests failing with 5xx errors"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/api-errors"
+    labels:
+      severity: "P2"
+      component: "api"
+
+  - name: "Slow API Response Times"
+    severity: "high"
+    service: "Holi API"
+    description: "API p95 latency exceeds SLA"
+    query: "histogram_quantile(0.95, sum(rate(holi_http_request_duration_seconds_bucket[5m])) by (le)) > 0.3"
+    for: "5m"
+    annotations:
+      summary: "API latency degradation"
+      description: "p95 API response time exceeds 300ms SLA"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/slow-api"
+    labels:
+      severity: "P2"
+      component: "api"
+
+  # ============================================================================
+  # P3 - MEDIUM PRIORITY ALERTS (2 hour response)
+  # ============================================================================
+
+  - name: "Unsynced FHIR Resources"
+    severity: "warning"
+    service: "FHIR Integration"
+    description: "Resources not synced to Medplum"
+    query: "(holi_fhir_sync_not_synced{resource_type=\"Encounter\"} + holi_fhir_sync_not_synced{resource_type=\"Observation\"}) > 100"
+    for: "10m"
+    annotations:
+      summary: "FHIR sync drift detected"
+      description: "More than 100 resources have never been synced to FHIR"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/sync-drift"
+    labels:
+      severity: "P3"
+      component: "fhir-sync"
+
+  - name: "Stale FHIR Resources"
+    severity: "warning"
+    service: "FHIR Integration"
+    description: "Resources with stale FHIR sync (>1 hour)"
+    query: "(holi_fhir_sync_stale{resource_type=\"Encounter\"} + holi_fhir_sync_stale{resource_type=\"Observation\"}) > 50"
+    for: "15m"
+    annotations:
+      summary: "Stale FHIR resources"
+      description: "More than 50 resources have stale sync (>1 hour old)"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/stale-sync"
+    labels:
+      severity: "P3"
+      component: "fhir-sync"
+
+  - name: "Reconciliation Failures"
+    severity: "warning"
+    service: "FHIR Integration"
+    description: "FHIR reconciliation job failing"
+    query: "rate(holi_fhir_reconciliation_runs_total{status=\"failure\"}[1h]) > 0"
+    for: "1h"
+    annotations:
+      summary: "Reconciliation job failures"
+      description: "Nightly reconciliation job is failing"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/reconciliation-failure"
+    labels:
+      severity: "P3"
+      component: "reconciliation"
+
+  - name: "Audit Mirror Failures"
+    severity: "warning"
+    service: "HIPAA Compliance"
+    description: "Audit mirror job failing"
+    query: "rate(holi_fhir_audit_mirror_runs_total{status=\"failure\"}[1h]) > 0"
+    for: "1h"
+    annotations:
+      summary: "Audit mirror failures"
+      description: "Audit mirror sync from Medplum is failing"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/audit-mirror-failure"
+    labels:
+      severity: "P3"
+      component: "audit"
+      compliance: "hipaa"
+
+  - name: "High Memory Usage"
+    severity: "warning"
+    service: "Holi API"
+    description: "Server memory usage exceeds 85%"
+    query: "holi_process_resident_memory_bytes / holi_process_heap_bytes > 0.85"
+    for: "10m"
+    annotations:
+      summary: "High memory usage"
+      description: "Server using more than 85% of available memory"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/high-memory"
+    labels:
+      severity: "P3"
+      component: "infrastructure"
+
+  - name: "Database Connection Pool Saturation"
+    severity: "warning"
+    service: "Holi API"
+    description: "Database connection pool near capacity"
+    query: "holi_database_connections_active > 15"
+    for: "5m"
+    annotations:
+      summary: "Database pool saturation"
+      description: "More than 15 active database connections (pool size: 20)"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/db-pool-saturation"
+    labels:
+      severity: "P3"
+      component: "database"
+
+  # ============================================================================
+  # P4 - LOW PRIORITY ALERTS (24 hour response)
+  # ============================================================================
+
+  - name: "Queue Processing Slow"
+    severity: "info"
+    service: "FHIR Integration"
+    description: "Queue job processing slower than expected"
+    query: "histogram_quantile(0.95, sum(rate(holi_queue_job_duration_seconds_bucket{queue_name=\"fhir-sync\"}[5m])) by (le)) > 10"
+    for: "30m"
+    annotations:
+      summary: "Slow queue processing"
+      description: "p95 job processing time exceeds 10 seconds"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/slow-queue"
+    labels:
+      severity: "P4"
+      component: "fhir-sync"
+
+  - name: "FHIR Sync Duration Increase"
+    severity: "info"
+    service: "FHIR Integration"
+    description: "FHIR sync operations taking longer than usual"
+    query: "histogram_quantile(0.95, sum(rate(holi_fhir_sync_duration_seconds_bucket[5m])) by (le)) > 5"
+    for: "30m"
+    annotations:
+      summary: "FHIR sync latency increase"
+      description: "p95 FHIR sync duration exceeds 5 seconds"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/slow-fhir-sync"
+    labels:
+      severity: "P4"
+      component: "fhir-sync"
+
+# ============================================================================
+# NOTIFICATION CHANNELS
+# ============================================================================
+
+notification_channels:
+  - name: "PagerDuty - Critical"
+    type: "pagerduty"
+    integration_key: "${PAGERDUTY_INTEGRATION_KEY_CRITICAL}"
+    severity_filter: ["P1"]
+
+  - name: "PagerDuty - High Priority"
+    type: "pagerduty"
+    integration_key: "${PAGERDUTY_INTEGRATION_KEY_HIGH}"
+    severity_filter: ["P2"]
+
+  - name: "PagerDuty - Medium Priority"
+    type: "pagerduty"
+    integration_key: "${PAGERDUTY_INTEGRATION_KEY_MEDIUM}"
+    severity_filter: ["P3"]
+
+  - name: "Slack - Engineering"
+    type: "slack"
+    webhook_url: "${SLACK_WEBHOOK_ENGINEERING}"
+    severity_filter: ["P1", "P2", "P3"]
+
+  - name: "Slack - Compliance"
+    type: "slack"
+    webhook_url: "${SLACK_WEBHOOK_COMPLIANCE}"
+    severity_filter: ["P1"]
+    label_filter:
+      compliance: "hipaa"
+
+  - name: "Email - Platform Team"
+    type: "email"
+    recipients: ["platform@holilabs.xyz"]
+    severity_filter: ["P1", "P2", "P3", "P4"]
+
+# ============================================================================
+# MAINTENANCE WINDOWS
+# ============================================================================
+
+maintenance_windows:
+  - name: "Weekly Maintenance"
+    description: "Scheduled maintenance window"
+    schedule:
+      day_of_week: "Sunday"
+      start_time: "02:00"
+      end_time: "04:00"
+      timezone: "America/Mexico_City"
+    services:
+      - "Holi API"
+      - "FHIR Integration"
+    silence_alerts: true
+
+# ============================================================================
+# ALERT GROUPING
+# ============================================================================
+
+alert_grouping:
+  # Group related alerts to avoid alert fatigue
+  - name: "FHIR Sync Issues"
+    group_by: ["component"]
+    group_wait: "30s"
+    group_interval: "5m"
+    repeat_interval: "1h"
+    match:
+      component: "fhir-sync"
+
+  - name: "API Degradation"
+    group_by: ["component"]
+    group_wait: "30s"
+    group_interval: "5m"
+    repeat_interval: "30m"
+    match:
+      component: "api"
+
+  - name: "HIPAA Incidents"
+    group_by: ["compliance"]
+    group_wait: "10s"
+    group_interval: "1m"
+    repeat_interval: "5m"
+    match:
+      compliance: "hipaa"

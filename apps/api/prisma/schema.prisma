@@ -42,20 +42,42 @@ enum ExportStatus {
   @@schema("public")
 }
 
+enum EncounterStatus {
+  PLANNED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+  ENTERED_IN_ERROR
+
+  @@schema("public")
+}
+
+enum EncounterType {
+  OFFICE_VISIT
+  TELEHEALTH
+  EMERGENCY
+  HOME_HEALTH
+  PHONE_CONSULT
+
+  @@schema("public")
+}
+
 model Org {
-  id                String         @id @default(uuid())
-  name              String
-  countryCode       String         @map("country_code") @db.VarChar(2)
-  dpEpsilonBudget   Decimal        @map("dp_epsilon_budget") @db.Decimal(10, 6) @default(10.0)
-  createdAt         DateTime       @default(now()) @map("created_at")
-  users             User[]
-  patientTokens     PatientToken[]
-  datasets          Dataset[]
-  auditEvents       AuditEvent[]
-  consents          Consent[]
-  exportRequests    ExportRequest[]
-  modelRuns         ModelRun[]
-  subjectIndices    SubjectIndex[]
+  id              String          @id @default(uuid())
+  name            String
+  countryCode     String          @map("country_code") @db.VarChar(2)
+  dpEpsilonBudget Decimal         @default(10.0) @map("dp_epsilon_budget") @db.Decimal(10, 6)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  users           User[]
+  patientTokens   PatientToken[]
+  datasets        Dataset[]
+  auditEvents     AuditEvent[]
+  consents        Consent[]
+  exportRequests  ExportRequest[]
+  modelRuns       ModelRun[]
+  subjectIndices  SubjectIndex[]
+  encounters      Encounter[]
+  observations    Observation[]
 
   @@map("orgs")
   @@schema("public")
@@ -78,19 +100,21 @@ model User {
 }
 
 model PatientToken {
-  id             String         @id @default(uuid())
-  orgId          String         @map("org_id")
-  pointerHash    String         @unique @map("pointer_hash")
-  storageUri     String?        @map("storage_uri")
-  policyVersion  String         @map("policy_version")
-  consentState   ConsentState   @default(ACTIVE) @map("consent_state")
-  recordVersion  Int            @default(1) @map("record_version")
-  createdAt      DateTime       @default(now()) @map("created_at")
-  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id             String          @id @default(uuid())
+  orgId          String          @map("org_id")
+  pointerHash    String          @unique @map("pointer_hash")
+  storageUri     String?         @map("storage_uri")
+  policyVersion  String          @map("policy_version")
+  consentState   ConsentState    @default(ACTIVE) @map("consent_state")
+  recordVersion  Int             @default(1) @map("record_version")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
   datasets       Dataset[]
   consents       Consent[]
   exportRequests ExportRequest[]
   subjectIndices SubjectIndex[]
+  encounters     Encounter[]
+  observations   Observation[]
 
   @@index([orgId])
   @@index([pointerHash])
@@ -99,12 +123,12 @@ model PatientToken {
 }
 
 model SubjectIndex {
-  id             String       @id @default(uuid())
-  patientTokenId String       @map("patient_token_id")
-  orgId          String       @map("org_id")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  patientToken   PatientToken @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
-  org            Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id             String          @id @default(uuid())
+  patientTokenId String          @map("patient_token_id")
+  orgId          String          @map("org_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  patientToken   PatientToken    @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
   exportRequests ExportRequest[]
 
   @@index([orgId])
@@ -114,18 +138,18 @@ model SubjectIndex {
 }
 
 model Dataset {
-  id             String         @id @default(uuid())
-  orgId          String         @map("org_id")
-  patientTokenId String         @map("patient_token_id")
-  s3Key          String         @map("s3_key")
+  id             String          @id @default(uuid())
+  orgId          String          @map("org_id")
+  patientTokenId String          @map("patient_token_id")
+  s3Key          String          @map("s3_key")
   sha256         String
-  policyVersion  String         @map("policy_version")
-  dpEnabled      Boolean        @default(false) @map("dp_enabled")
-  dpEpsilon      Decimal?       @map("dp_epsilon") @db.Decimal(10, 6)
-  dpDelta        Decimal?       @map("dp_delta") @db.Decimal(20, 10)
-  createdAt      DateTime       @default(now()) @map("created_at")
-  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  patientToken   PatientToken   @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+  policyVersion  String          @map("policy_version")
+  dpEnabled      Boolean         @default(false) @map("dp_enabled")
+  dpEpsilon      Decimal?        @map("dp_epsilon") @db.Decimal(10, 6)
+  dpDelta        Decimal?        @map("dp_delta") @db.Decimal(20, 10)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  patientToken   PatientToken    @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
   exportRequests ExportRequest[]
   modelRuns      ModelRun[]
 
@@ -156,17 +180,17 @@ model AuditEvent {
 }
 
 model Consent {
-  id             String          @id @default(uuid())
-  orgId          String          @map("org_id")
-  patientTokenId String          @map("patient_token_id")
+  id             String         @id @default(uuid())
+  orgId          String         @map("org_id")
+  patientTokenId String         @map("patient_token_id")
   purpose        ConsentPurpose
-  dataClasses    String[]        @map("data_classes")
-  retentionDays  Int             @map("retention_days")
+  dataClasses    String[]       @map("data_classes")
+  retentionDays  Int            @map("retention_days")
   state          ConsentState
-  policyRef      String          @map("policy_ref")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  patientToken   PatientToken    @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+  policyRef      String         @map("policy_ref")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  patientToken   PatientToken   @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
 
   @@index([orgId])
   @@index([patientTokenId])
@@ -202,19 +226,82 @@ model ExportRequest {
 }
 
 model ModelRun {
-  id            String   @id @default(uuid())
-  orgId         String   @map("org_id")
-  datasetId     String   @map("dataset_id")
-  modelId       String   @map("model_id")
-  modelHash     String   @map("model_hash")
-  guardrailLog  Json     @map("guardrail_log")
-  createdAt     DateTime @default(now()) @map("created_at")
-  org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  dataset       Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  orgId        String   @map("org_id")
+  datasetId    String   @map("dataset_id")
+  modelId      String   @map("model_id")
+  modelHash    String   @map("model_hash")
+  guardrailLog Json     @map("guardrail_log")
+  createdAt    DateTime @default(now()) @map("created_at")
+  org          Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  dataset      Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
 
   @@index([orgId])
   @@index([datasetId])
   @@index([modelId])
   @@map("model_runs")
+  @@schema("public")
+}
+
+model Encounter {
+  id              String          @id @default(uuid())
+  orgId           String          @map("org_id")
+  patientTokenId  String          @map("patient_token_id")
+  status          EncounterStatus @default(PLANNED)
+  type            EncounterType   @default(OFFICE_VISIT)
+  reasonCode      String?         @map("reason_code")
+  reasonDisplay   String?         @map("reason_display")
+  start           DateTime?
+  end             DateTime?
+  locationDisplay String?         @map("location_display")
+  fhirResourceId  String?         @unique @map("fhir_resource_id")
+  fhirSyncEnabled Boolean         @default(true) @map("fhir_sync_enabled")
+  lastSyncedAt    DateTime?       @map("last_synced_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  org          Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  patientToken PatientToken  @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+  observations Observation[]
+
+  @@index([orgId])
+  @@index([patientTokenId])
+  @@index([fhirResourceId])
+  @@index([status])
+  @@index([start])
+  @@map("encounters")
+  @@schema("public")
+}
+
+model Observation {
+  id                String    @id @default(uuid())
+  orgId             String    @map("org_id")
+  patientTokenId    String    @map("patient_token_id")
+  encounterId       String?   @map("encounter_id")
+  code              String // LOINC code (e.g., "8867-4")
+  codeSystem        String    @default("http://loinc.org") @map("code_system")
+  display           String // Human-readable (e.g., "Heart rate")
+  valueQuantity     Decimal?  @map("value_quantity") @db.Decimal(10, 2)
+  valueUnit         String?   @map("value_unit")
+  valueString       String?   @map("value_string") @db.Text
+  valueBoolean      Boolean?  @map("value_boolean")
+  effectiveDateTime DateTime  @map("effective_date_time")
+  fhirResourceId    String?   @unique @map("fhir_resource_id")
+  fhirSyncEnabled   Boolean   @default(true) @map("fhir_sync_enabled")
+  lastSyncedAt      DateTime? @map("last_synced_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  org          Org          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  patientToken PatientToken @relation(fields: [patientTokenId], references: [id], onDelete: Cascade)
+  encounter    Encounter?   @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+
+  @@index([orgId])
+  @@index([patientTokenId])
+  @@index([encounterId])
+  @@index([fhirResourceId])
+  @@index([code])
+  @@index([effectiveDateTime])
+  @@map("observations")
   @@schema("public")
 }
