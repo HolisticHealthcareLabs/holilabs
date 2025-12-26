@@ -53,18 +53,18 @@ const serverSchema = z.object({
   // Encryption Keys - REQUIRED for data security
   ENCRYPTION_KEY: z.string().length(64, {
     message: 'ENCRYPTION_KEY must be exactly 64 characters (hex). Generate with: openssl rand -hex 32',
-  }).optional(),
+  }).optional().or(z.literal('')),
 
   ENCRYPTION_MASTER_KEY: z.string().min(32, {
     message: 'ENCRYPTION_MASTER_KEY must be at least 32 characters. Generate with: openssl rand -base64 32',
-  }).optional(),
+  }).optional().or(z.literal('')),
 
   // ========================================
-  // SUPABASE - REQUIRED
+  // SUPABASE - OPTIONAL
   // ========================================
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, {
     message: 'SUPABASE_SERVICE_ROLE_KEY is required for server-side operations',
-  }).optional(),
+  }).optional().or(z.literal('')),
 
   // ========================================
   // AI SERVICES - REQUIRED FOR CDSS
@@ -211,7 +211,7 @@ const serverSchema = z.object({
   ALLOWED_ORIGINS: z.string().optional(), // Comma-separated list
   CRON_SECRET: z.string().min(32, {
     message: 'CRON_SECRET must be at least 32 characters. Generate with: openssl rand -hex 32',
-  }).optional(),
+  }).optional().or(z.literal('')),
 
   // Logging
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
@@ -235,13 +235,13 @@ const clientSchema = z.object({
     message: 'NEXT_PUBLIC_APP_URL must be a valid URL (e.g., https://holilabs.xyz)',
   }),
 
-  // Supabase
+  // Supabase (completely optional now)
   NEXT_PUBLIC_SUPABASE_URL: z.string().url({
     message: 'NEXT_PUBLIC_SUPABASE_URL must be a valid URL (e.g., https://xxx.supabase.co)',
-  }).optional(),
+  }).optional().or(z.literal('')),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, {
     message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required for authentication',
-  }).optional(),
+  }).optional().or(z.literal('')),
 
   // Web Push Notifications
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
