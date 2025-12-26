@@ -1,0 +1,350 @@
+# Alertmanager Configuration
+# Routes alerts from Prometheus to PagerDuty, Slack, and Email
+
+global:
+  # Default notification timeout
+  resolve_timeout: 5m
+
+  # Slack global config
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+  # PagerDuty global config
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# Template configuration
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Alert routing tree
+route:
+  # Default receiver for all alerts
+  receiver: 'default'
+
+  # Group alerts by these labels to reduce notification noise
+  group_by: ['alertname', 'cluster', 'service', 'component']
+
+  # Wait time before sending first notification for a group
+  group_wait: 30s
+
+  # Wait time before sending notification about new alerts in an existing group
+  group_interval: 5m
+
+  # Minimum time between repeat notifications for the same group
+  repeat_interval: 4h
+
+  # Child routes (more specific routing rules)
+  routes:
+    # ============================================================================
+    # P1 - CRITICAL ALERTS → PagerDuty + Slack + Email
+    # ============================================================================
+    - match:
+        severity: 'P1'
+      receiver: 'pagerduty-critical'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 5m
+      continue: true # Also send to other receivers
+
+    - match:
+        severity: 'P1'
+      receiver: 'slack-critical'
+      group_wait: 10s
+      continue: true
+
+    - match:
+        severity: 'P1'
+      receiver: 'email-critical'
+      group_wait: 10s
+
+    # ============================================================================
+    # HIPAA COMPLIANCE ALERTS → Compliance Team + Security Team
+    # ============================================================================
+    - match:
+        compliance: 'hipaa'
+      receiver: 'pagerduty-hipaa'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 10m
+      continue: true
+
+    - match:
+        compliance: 'hipaa'
+      receiver: 'slack-compliance'
+      group_wait: 10s
+      continue: true
+
+    - match:
+        compliance: 'hipaa'
+      receiver: 'email-compliance'
+      group_wait: 10s
+
+    # ============================================================================
+    # P2 - HIGH PRIORITY ALERTS → PagerDuty + Slack
+    # ============================================================================
+    - match:
+        severity: 'P2'
+      receiver: 'pagerduty-high'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+      continue: true
+
+    - match:
+        severity: 'P2'
+      receiver: 'slack-engineering'
+      group_wait: 30s
+
+    # ============================================================================
+    # P3 - MEDIUM PRIORITY ALERTS → Slack + Email
+    # ============================================================================
+    - match:
+        severity: 'P3'
+      receiver: 'slack-engineering'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 4h
+      continue: true
+
+    - match:
+        severity: 'P3'
+      receiver: 'email-platform'
+      group_wait: 1m
+
+    # ============================================================================
+    # P4 - LOW PRIORITY ALERTS → Email only
+    # ============================================================================
+    - match:
+        severity: 'P4'
+      receiver: 'email-platform'
+      group_wait: 5m
+      group_interval: 30m
+      repeat_interval: 24h
+
+    # ============================================================================
+    # COMPONENT-SPECIFIC ROUTING
+    # ============================================================================
+    - match:
+        component: 'fhir-sync'
+      receiver: 'slack-fhir'
+      continue: false # Don't cascade to other routes
+
+    - match:
+        component: 'database'
+      receiver: 'slack-database'
+      continue: false
+
+# ============================================================================
+# ALERT INHIBITION RULES
+# ============================================================================
+# Suppress less severe alerts when a more severe alert is firing
+inhibit_rules:
+  # If API is down, suppress all other API-related alerts
+  - source_match:
+      alertname: 'API Server Down'
+      severity: 'P1'
+    target_match:
+      component: 'api'
+    equal: ['cluster']
+
+  # If database is down, suppress database-related warnings
+  - source_match:
+      alertname: 'Database Connection Failure'
+      severity: 'P1'
+    target_match:
+      component: 'database'
+    equal: ['cluster']
+
+  # If queue is down, suppress queue backlog/failure alerts
+  - source_match:
+      alertname: 'Redis Queue Down'
+      severity: 'P1'
+    target_match:
+      component: 'queue'
+    equal: ['cluster']
+
+# ============================================================================
+# RECEIVERS (notification destinations)
+# ============================================================================
+receivers:
+  # Default catch-all receiver
+  - name: 'default'
+    email_configs:
+      - to: 'platform@holilabs.xyz'
+        from: 'alerts@holilabs.xyz'
+        smarthost: 'smtp.sendgrid.net:587'
+        auth_username: 'apikey'
+        auth_password: '${SENDGRID_API_KEY}'
+        headers:
+          Subject: '[Holi Alert] {{ .GroupLabels.alertname }}'
+
+  # ============================================================================
+  # PAGERDUTY RECEIVERS
+  # ============================================================================
+
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY_CRITICAL}'
+        severity: 'critical'
+        description: '{{ .GroupLabels.alertname }}'
+        details:
+          firing: '{{ .Alerts.Firing | len }}'
+          resolved: '{{ .Alerts.Resolved | len }}'
+          cluster: '{{ .GroupLabels.cluster }}'
+          component: '{{ .GroupLabels.component }}'
+        links:
+          - href: '{{ .GeneratorURL }}'
+            text: 'View in Prometheus'
+          - href: 'https://grafana.holilabs.xyz/d/holi-fhir-monitoring'
+            text: 'View in Grafana'
+
+  - name: 'pagerduty-hipaa'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY_HIPAA}'
+        severity: 'critical'
+        description: '[HIPAA] {{ .GroupLabels.alertname }}'
+        details:
+          compliance: 'HIPAA'
+          firing: '{{ .Alerts.Firing | len }}'
+          cluster: '{{ .GroupLabels.cluster }}'
+        links:
+          - href: '{{ .GeneratorURL }}'
+            text: 'View in Prometheus'
+          - href: 'https://docs.holilabs.xyz/runbooks/hipaa-incident'
+            text: 'HIPAA Incident Runbook'
+
+  - name: 'pagerduty-high'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY_HIGH}'
+        severity: 'error'
+        description: '{{ .GroupLabels.alertname }}'
+
+  # ============================================================================
+  # SLACK RECEIVERS
+  # ============================================================================
+
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#alerts-critical'
+        username: 'Holi Alertbot'
+        color: 'danger'
+        title: ':rotating_light: P1 CRITICAL ALERT'
+        text: |-
+          *{{ .GroupLabels.alertname }}*
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+        actions:
+          - type: 'button'
+            text: 'View in Grafana'
+            url: 'https://grafana.holilabs.xyz/d/holi-fhir-monitoring'
+          - type: 'button'
+            text: 'View in Prometheus'
+            url: '{{ .GeneratorURL }}'
+
+  - name: 'slack-compliance'
+    slack_configs:
+      - channel: '#compliance-alerts'
+        username: 'Compliance Alertbot'
+        color: 'danger'
+        title: ':shield: HIPAA COMPLIANCE ALERT'
+        text: |-
+          *{{ .GroupLabels.alertname }}*
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+
+  - name: 'slack-engineering'
+    slack_configs:
+      - channel: '#engineering-alerts'
+        username: 'Holi Alertbot'
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: '{{ .GroupLabels.severity }} Alert: {{ .GroupLabels.alertname }}'
+        text: |-
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Runbook:* {{ .Annotations.runbook_url }}
+          {{ end }}
+
+  - name: 'slack-fhir'
+    slack_configs:
+      - channel: '#fhir-integration'
+        username: 'FHIR Alertbot'
+        color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+        title: 'FHIR Integration Alert: {{ .GroupLabels.alertname }}'
+        text: |-
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          {{ end }}
+
+  - name: 'slack-database'
+    slack_configs:
+      - channel: '#database-alerts'
+        username: 'Database Alertbot'
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        title: 'Database Alert: {{ .GroupLabels.alertname }}'
+        text: |-
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          {{ end }}
+
+  # ============================================================================
+  # EMAIL RECEIVERS
+  # ============================================================================
+
+  - name: 'email-critical'
+    email_configs:
+      - to: 'oncall@holilabs.xyz, cto@holilabs.xyz'
+        from: 'alerts@holilabs.xyz'
+        smarthost: 'smtp.sendgrid.net:587'
+        auth_username: 'apikey'
+        auth_password: '${SENDGRID_API_KEY}'
+        headers:
+          Subject: '[P1 CRITICAL] {{ .GroupLabels.alertname }}'
+          Priority: 'urgent'
+        html: |-
+          <h2>🚨 P1 CRITICAL ALERT</h2>
+          <p><strong>{{ .GroupLabels.alertname }}</strong></p>
+          {{ range .Alerts }}
+          <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <p><strong>Runbook:</strong> <a href="{{ .Annotations.runbook_url }}">{{ .Annotations.runbook_url }}</a></p>
+          {{ end }}
+
+  - name: 'email-compliance'
+    email_configs:
+      - to: 'compliance@holilabs.xyz, security@holilabs.xyz, ciso@holilabs.xyz'
+        from: 'alerts@holilabs.xyz'
+        smarthost: 'smtp.sendgrid.net:587'
+        auth_username: 'apikey'
+        auth_password: '${SENDGRID_API_KEY}'
+        headers:
+          Subject: '[HIPAA ALERT] {{ .GroupLabels.alertname }}'
+          Priority: 'urgent'
+        html: |-
+          <h2>🛡️ HIPAA COMPLIANCE ALERT</h2>
+          <p><strong>{{ .GroupLabels.alertname }}</strong></p>
+          {{ range .Alerts }}
+          <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <p><strong>Runbook:</strong> <a href="{{ .Annotations.runbook_url }}">{{ .Annotations.runbook_url }}</a></p>
+          {{ end }}
+
+  - name: 'email-platform'
+    email_configs:
+      - to: 'platform@holilabs.xyz'
+        from: 'alerts@holilabs.xyz'
+        smarthost: 'smtp.sendgrid.net:587'
+        auth_username: 'apikey'
+        auth_password: '${SENDGRID_API_KEY}'
+        headers:
+          Subject: '[{{ .GroupLabels.severity }}] {{ .GroupLabels.alertname }}'
+        html: |-
+          <h2>Alert: {{ .GroupLabels.alertname }}</h2>
+          {{ range .Alerts }}
+          <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+          <p><strong>Runbook:</strong> <a href="{{ .Annotations.runbook_url }}">{{ .Annotations.runbook_url }}</a></p>
+          {{ end }}

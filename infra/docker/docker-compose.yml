@@ -49,7 +49,30 @@ services:
       timeout: 5s
       retries: 5
 
+  medplum:
+    image: medplum/medplum:latest
+    container_name: holi-medplum
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_URL: postgresql://holi:holi_dev_password@postgres:5432/medplum
+      MEDPLUM_BASE_URL: http://localhost:8100
+      MEDPLUM_CLIENT_ID: holi-service-client
+      MEDPLUM_CLIENT_SECRET: super-secure-dev-secret
+      MEDPLUM_ADMIN_EMAIL: admin@holilabs.test
+      MEDPLUM_ADMIN_PASSWORD: ChangeMe123!
+    ports:
+      - "8100:8100"
+    volumes:
+      - medplum_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8100/healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres_data:
   redis_data:
   minio_data:
+  medplum_data:

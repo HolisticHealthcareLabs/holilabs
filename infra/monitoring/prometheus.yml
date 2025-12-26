@@ -1,0 +1,90 @@
+# Prometheus Configuration
+# Scrapes metrics from Holi API and exports to Grafana/Alertmanager
+
+global:
+  scrape_interval: 15s # Scrape targets every 15 seconds
+  evaluation_interval: 15s # Evaluate alerting rules every 15 seconds
+  external_labels:
+    cluster: 'holi-production'
+    env: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load alerting rules
+rule_files:
+  - '/etc/prometheus/alerts/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # ============================================================================
+  # HOLI API METRICS
+  # ============================================================================
+  - job_name: 'holi-api'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets:
+          - 'holi-api:3000' # Docker Compose service name
+          # For production, replace with actual API endpoint:
+          # - 'api.holilabs.xyz:443'
+    metric_relabel_configs:
+      # Drop high-cardinality labels to reduce storage
+      - source_labels: [__name__]
+        regex: 'holi_http_request_duration_seconds_bucket'
+        action: keep
+      - source_labels: [route]
+        regex: '/metrics.*'
+        action: drop
+
+  # ============================================================================
+  # PROMETHEUS SELF-MONITORING
+  # ============================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets:
+          - 'localhost:9090'
+
+  # ============================================================================
+  # NODE EXPORTER (system metrics)
+  # ============================================================================
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets:
+          - 'node-exporter:9100'
+
+  # ============================================================================
+  # POSTGRES EXPORTER (database metrics)
+  # ============================================================================
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets:
+          - 'postgres-exporter:9187'
+
+  # ============================================================================
+  # REDIS EXPORTER (queue metrics)
+  # ============================================================================
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets:
+          - 'redis-exporter:9121'
+
+# ============================================================================
+# REMOTE WRITE (long-term storage)
+# ============================================================================
+# Uncomment to enable remote write to a time-series database like Thanos, Cortex, or Grafana Cloud
+# remote_write:
+#   - url: 'https://prometheus-prod-01-us-central-0.grafana.net/api/prom/push'
+#     basic_auth:
+#       username: '${GRAFANA_CLOUD_PROMETHEUS_USER}'
+#       password: '${GRAFANA_CLOUD_PROMETHEUS_PASSWORD}'
+#     write_relabel_configs:
+#       # Only send critical metrics to long-term storage to reduce costs
+#       - source_labels: [__name__]
+#         regex: 'holi_(queue_jobs_failed|fhir_sync_not_synced|hipaa_audit_events_total)'
+#         action: keep

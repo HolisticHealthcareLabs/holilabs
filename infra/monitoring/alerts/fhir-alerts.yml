@@ -1,0 +1,243 @@
+# Prometheus Alert Rules for FHIR Integration
+# These rules are evaluated by Prometheus and sent to Alertmanager
+
+groups:
+  # ============================================================================
+  # P1 - CRITICAL ALERTS
+  # ============================================================================
+  - name: critical_alerts
+    interval: 30s
+    rules:
+      - alert: APIServerDown
+        expr: up{job="holi-api"} == 0
+        for: 2m
+        labels:
+          severity: P1
+          component: api
+        annotations:
+          summary: "Holi API server is down"
+          description: "API server has been unreachable for 2+ minutes"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/api-server-down"
+
+      - alert: DatabaseConnectionFailure
+        expr: holi_database_connections_active == 0
+        for: 1m
+        labels:
+          severity: P1
+          component: database
+        annotations:
+          summary: "Database connection lost"
+          description: "No active database connections for 1+ minute"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/database-down"
+
+      - alert: RedisQueueDown
+        expr: absent(holi_queue_jobs_active{queue_name="fhir-sync"})
+        for: 2m
+        labels:
+          severity: P1
+          component: queue
+        annotations:
+          summary: "Redis queue unavailable"
+          description: "Cannot connect to Redis for job queue"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/redis-down"
+
+      - alert: HIPAAAuditLogFailure
+        expr: rate(holi_database_errors_total{model="auditEvent"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: P1
+          component: audit
+          compliance: hipaa
+        annotations:
+          summary: "HIPAA audit logging failure"
+          description: "Cannot write audit events - HIPAA compliance violation risk"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/audit-failure"
+
+      - alert: UnauthorizedPHIAccessAttempt
+        expr: rate(holi_hipaa_consent_validations_total{status="denied"}[5m]) * 60 > 5
+        for: 1m
+        labels:
+          severity: P1
+          component: security
+          compliance: hipaa
+        annotations:
+          summary: "Suspicious PHI access attempts"
+          description: "More than 5 denied PHI access attempts per minute - possible breach attempt"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/security-incident"
+
+  # ============================================================================
+  # P2 - HIGH PRIORITY ALERTS
+  # ============================================================================
+  - name: high_priority_alerts
+    interval: 1m
+    rules:
+      - alert: ExcessiveQueueFailures
+        expr: holi_queue_jobs_failed{queue_name="fhir-sync"} > 10
+        for: 5m
+        labels:
+          severity: P2
+          component: fhir-sync
+        annotations:
+          summary: "High queue failure rate"
+          description: "More than 10 failed jobs in FHIR sync queue"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/queue-failures"
+
+      - alert: HighQueueBacklog
+        expr: holi_queue_jobs_waiting{queue_name="fhir-sync"} > 100
+        for: 5m
+        labels:
+          severity: P2
+          component: fhir-sync
+        annotations:
+          summary: "Queue backlog accumulating"
+          description: "More than 100 jobs waiting in queue for 5+ minutes"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/queue-backlog"
+
+      - alert: FHIRSyncErrorsSpike
+        expr: rate(holi_fhir_sync_errors_total[5m]) * 60 > 5
+        for: 5m
+        labels:
+          severity: P2
+          component: fhir-sync
+        annotations:
+          summary: "FHIR sync error spike"
+          description: "More than 5 FHIR sync errors per minute"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/fhir-sync-errors"
+
+      - alert: HighAPIErrorRate
+        expr: |
+          (
+            sum(rate(holi_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(holi_http_requests_total[5m]))
+          ) > 0.05
+        for: 3m
+        labels:
+          severity: P2
+          component: api
+        annotations:
+          summary: "High API error rate"
+          description: "More than 5% of API requests failing with 5xx errors"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/api-errors"
+
+      - alert: SlowAPIResponseTimes
+        expr: histogram_quantile(0.95, sum(rate(holi_http_request_duration_seconds_bucket[5m])) by (le)) > 0.3
+        for: 5m
+        labels:
+          severity: P2
+          component: api
+        annotations:
+          summary: "API latency degradation"
+          description: "p95 API response time exceeds 300ms SLA"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/slow-api"
+
+  # ============================================================================
+  # P3 - MEDIUM PRIORITY ALERTS
+  # ============================================================================
+  - name: medium_priority_alerts
+    interval: 2m
+    rules:
+      - alert: UnsyncedFHIRResources
+        expr: |
+          (
+            holi_fhir_sync_not_synced{resource_type="Encounter"}
+            +
+            holi_fhir_sync_not_synced{resource_type="Observation"}
+          ) > 100
+        for: 10m
+        labels:
+          severity: P3
+          component: fhir-sync
+        annotations:
+          summary: "FHIR sync drift detected"
+          description: "More than 100 resources have never been synced to FHIR"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/sync-drift"
+
+      - alert: StaleFHIRResources
+        expr: |
+          (
+            holi_fhir_sync_stale{resource_type="Encounter"}
+            +
+            holi_fhir_sync_stale{resource_type="Observation"}
+          ) > 50
+        for: 15m
+        labels:
+          severity: P3
+          component: fhir-sync
+        annotations:
+          summary: "Stale FHIR resources"
+          description: "More than 50 resources have stale sync (>1 hour old)"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/stale-sync"
+
+      - alert: ReconciliationFailures
+        expr: rate(holi_fhir_reconciliation_runs_total{status="failure"}[1h]) > 0
+        for: 1h
+        labels:
+          severity: P3
+          component: reconciliation
+        annotations:
+          summary: "Reconciliation job failures"
+          description: "Nightly reconciliation job is failing"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/reconciliation-failure"
+
+      - alert: AuditMirrorFailures
+        expr: rate(holi_fhir_audit_mirror_runs_total{status="failure"}[1h]) > 0
+        for: 1h
+        labels:
+          severity: P3
+          component: audit
+          compliance: hipaa
+        annotations:
+          summary: "Audit mirror failures"
+          description: "Audit mirror sync from Medplum is failing"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/audit-mirror-failure"
+
+      - alert: HighMemoryUsage
+        expr: (holi_process_resident_memory_bytes / holi_process_heap_bytes) > 0.85
+        for: 10m
+        labels:
+          severity: P3
+          component: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Server using more than 85% of available memory"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/high-memory"
+
+      - alert: DatabaseConnectionPoolSaturation
+        expr: holi_database_connections_active > 15
+        for: 5m
+        labels:
+          severity: P3
+          component: database
+        annotations:
+          summary: "Database pool saturation"
+          description: "More than 15 active database connections (pool size: 20)"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/db-pool-saturation"
+
+  # ============================================================================
+  # P4 - LOW PRIORITY ALERTS
+  # ============================================================================
+  - name: low_priority_alerts
+    interval: 5m
+    rules:
+      - alert: QueueProcessingSlow
+        expr: histogram_quantile(0.95, sum(rate(holi_queue_job_duration_seconds_bucket{queue_name="fhir-sync"}[5m])) by (le)) > 10
+        for: 30m
+        labels:
+          severity: P4
+          component: fhir-sync
+        annotations:
+          summary: "Slow queue processing"
+          description: "p95 job processing time exceeds 10 seconds"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/slow-queue"
+
+      - alert: FHIRSyncDurationIncrease
+        expr: histogram_quantile(0.95, sum(rate(holi_fhir_sync_duration_seconds_bucket[5m])) by (le)) > 5
+        for: 30m
+        labels:
+          severity: P4
+          component: fhir-sync
+        annotations:
+          summary: "FHIR sync latency increase"
+          description: "p95 FHIR sync duration exceeds 5 seconds"
+          runbook_url: "https://docs.holilabs.xyz/runbooks/slow-fhir-sync"
