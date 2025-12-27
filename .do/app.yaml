@@ -82,7 +82,7 @@ services:
 
       - key: CRON_SECRET
         value: ${CRON_SECRET}
-        scope: RUN_TIME
+        scope: RUN_AND_BUILD_TIME
         type: SECRET
 
       - key: JWT_SECRET
@@ -108,17 +108,17 @@ services:
       # AI Services
       - key: ANTHROPIC_API_KEY
         value: ${ANTHROPIC_API_KEY}
-        scope: RUN_TIME
+        scope: RUN_AND_BUILD_TIME
         type: SECRET
 
       - key: GOOGLE_AI_API_KEY
         value: ${GOOGLE_AI_API_KEY}
-        scope: RUN_TIME
+        scope: RUN_AND_BUILD_TIME
         type: SECRET
 
       - key: OPENAI_API_KEY
         value: ${OPENAI_API_KEY}
-        scope: RUN_TIME
+        scope: RUN_AND_BUILD_TIME
         type: SECRET
 
       - key: ASSEMBLYAI_API_KEY
