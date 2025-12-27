@@ -1,13 +1,12 @@
 /**
  * NextAuth Configuration
  *
- * Handles clinician authentication via Supabase
+ * Handles clinician authentication via Prisma + Google OAuth
  */
 
 // Re-export NextAuth types for backward compatibility
 export type { Session } from 'next-auth';
 export type NextAuthOptions = any; // v5 doesn't use NextAuthOptions anymore
-import { SupabaseAdapter } from '@auth/supabase-adapter';
 import { prisma } from '@/lib/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
@@ -71,28 +70,6 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // Supabase authentication for clinicians (if configured)
-    ...(process.env.SUPABASE_CLIENT_ID && process.env.SUPABASE_CLIENT_SECRET
-      ? [{
-          id: 'supabase',
-          name: 'Supabase',
-          type: 'oauth' as const,
-          wellKnown: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/.well-known/openid-configuration`,
-          authorization: { params: { scope: 'openid email' } },
-          checks: ['pkce' as const, 'state' as const],
-          clientId: process.env.SUPABASE_CLIENT_ID,
-          clientSecret: process.env.SUPABASE_CLIENT_SECRET,
-          idToken: true,
-          profile(profile: any) {
-            return {
-              id: profile.sub,
-              email: profile.email,
-              name: profile.name || profile.email,
-              role: UserRole.CLINICIAN,
-            };
-          },
-        }]
-      : []),
   ],
 
   session: {
