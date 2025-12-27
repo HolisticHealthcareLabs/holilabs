@@ -266,9 +266,6 @@ importers:
       '@auth/prisma-adapter':
         specifier: ^2.11.1
         version: 2.11.1(@prisma/client@6.7.0)(nodemailer@7.0.11)
-      '@auth/supabase-adapter':
-        specifier: ^1.11.1
-        version: 1.11.1(@supabase/supabase-js@2.58.0)(nodemailer@7.0.11)
       '@aws-sdk/client-comprehendmedical':
         specifier: ^3.940.0
         version: 3.940.0
@@ -347,9 +344,6 @@ importers:
       '@sentry/nextjs':
         specifier: ^10.26.0
         version: 10.26.0(@opentelemetry/context-async-hooks@2.2.0)(@opentelemetry/core@2.2.0)(@opentelemetry/sdk-trace-base@2.2.0)(next@14.1.0)(react@18.3.1)(webpack@5.103.0)
-      '@supabase/supabase-js':
-        specifier: ^2.47.15
-        version: 2.58.0
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@18.3.1)(react@18.3.1)
@@ -847,19 +841,6 @@ packages:
     dependencies:
       '@auth/core': 0.41.1(nodemailer@7.0.11)
       '@prisma/client': 6.7.0(prisma@6.7.0)(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@simplewebauthn/browser'
-      - '@simplewebauthn/server'
-      - nodemailer
-    dev: false
-
-  /@auth/supabase-adapter@1.11.1(@supabase/supabase-js@2.58.0)(nodemailer@7.0.11):
-    resolution: {integrity: sha512-Flsvg8TI4nNoqEWDqLqdO+xixY4jlzLPL3qqkjCxOMu/9AYGbDh409XFP9JdMy5Syu40iW1BcIWQ7DDJQiDgvQ==}
-    peerDependencies:
-      '@supabase/supabase-js': ^2.43.1
-    dependencies:
-      '@auth/core': 0.41.1(nodemailer@7.0.11)
-      '@supabase/supabase-js': 2.58.0
     transitivePeerDependencies:
       - '@simplewebauthn/browser'
       - '@simplewebauthn/server'
@@ -12171,6 +12152,7 @@ packages:
   /detect-libc@2.1.1:
     resolution: {integrity: sha512-ecqj/sy1jcK1uWrwpR67UhYrIFQ+5WlGxth34WquCbamhFA6hkkwiu37o6J5xCHdo1oixJRfVRw+ywV+Hq/0Aw==}
     engines: {node: '>=8'}
+    requiresBuild: true
     dev: false
 
   /detect-libc@2.1.2:
@@ -18571,6 +18553,7 @@ packages:
 
   /regenerator-runtime@0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
+    requiresBuild: true
 
   /regexp.prototype.flags@1.5.4:
     resolution: {integrity: sha512-dYqgNSZbDwkaJ2ceRd9ojCGjBq+mOm9LmtXnAnEGyHhN/5R7iDW2TRw3h+o/jCFxus3P2LfWIIiwowAjANm7IA==}

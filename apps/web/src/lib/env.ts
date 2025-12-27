@@ -60,13 +60,6 @@ const serverSchema = z.object({
   }).optional().or(z.literal('')),
 
   // ========================================
-  // SUPABASE - OPTIONAL
-  // ========================================
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, {
-    message: 'SUPABASE_SERVICE_ROLE_KEY is required for server-side operations',
-  }).optional().or(z.literal('')),
-
-  // ========================================
   // AI SERVICES - REQUIRED FOR CDSS
   // ========================================
   // Primary AI Providers (at least one required)
@@ -234,14 +227,6 @@ const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url({
     message: 'NEXT_PUBLIC_APP_URL must be a valid URL (e.g., https://holilabs.xyz)',
   }),
-
-  // Supabase (completely optional now)
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url({
-    message: 'NEXT_PUBLIC_SUPABASE_URL must be a valid URL (e.g., https://xxx.supabase.co)',
-  }).optional().or(z.literal('')),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, {
-    message: 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required for authentication',
-  }).optional().or(z.literal('')),
 
   // Web Push Notifications
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
