@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma';
 import { fromFHIRPatient, validateFHIRPatient, generateMRN, generateTokenId, toFHIRPatient, type FHIRPatient } from '@/lib/fhir/patient-mapper';
 import { auditCreate, auditView } from '@/lib/audit';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -223,16 +224,20 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('FHIR Patient search error:', {
-      error: error.message,
-      stack: error.stack,
+    logger.error({
+      event: 'fhir_patient_search_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error?.stack,
     });
 
     // Return FHIR OperationOutcome for server errors
+    const errorMessage = process.env.NODE_ENV === 'development'
+      ? error.message || 'Unknown error occurred'
+      : 'Internal server error occurred';
     const outcome = createOperationOutcome(
       'fatal',
       'exception',
-      `Internal server error: ${error.message || 'Unknown error occurred'}`
+      errorMessage
     );
 
     return NextResponse.json(outcome, {
@@ -390,16 +395,20 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('FHIR Patient POST error:', {
-      error: error.message,
-      stack: error.stack,
+    logger.error({
+      event: 'fhir_patient_create_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error?.stack,
     });
 
     // Return FHIR OperationOutcome for server errors
+    const errorMessage = process.env.NODE_ENV === 'development'
+      ? error.message || 'Unknown error occurred'
+      : 'Internal server error occurred';
     const outcome = createOperationOutcome(
       'fatal',
       'exception',
-      `Internal server error: ${error.message || 'Unknown error occurred'}`
+      errorMessage
     );
 
     return NextResponse.json(outcome, {

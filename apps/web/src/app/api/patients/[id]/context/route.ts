@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCachedPatientFullContext } from '@/lib/cache/patient-context-cache';
 import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,8 +86,12 @@ export const GET = createProtectedRoute(
 
     const duration = Date.now() - startTime;
 
-    // Log performance metrics
-    console.log(`[Patient Context] Loaded in ${duration}ms for patient ${patientId}`);
+    // Log performance metrics (no patient ID for privacy)
+    logger.info({
+      event: 'patient_context_loaded',
+      durationMs: duration,
+      cached: duration < 100,
+    });
 
     return NextResponse.json({
       success: true,

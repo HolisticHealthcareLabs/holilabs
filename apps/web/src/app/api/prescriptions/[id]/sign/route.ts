@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -184,9 +185,19 @@ export const POST = createProtectedRoute(
         message: 'Prescription signed successfully',
       });
     } catch (error: any) {
-      console.error('Error signing prescription:', error);
+      logger.error({
+        event: 'prescription_sign_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
+      });
       return NextResponse.json(
-        { error: 'Failed to sign prescription', details: error.message },
+        {
+          error: 'Failed to sign prescription',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }

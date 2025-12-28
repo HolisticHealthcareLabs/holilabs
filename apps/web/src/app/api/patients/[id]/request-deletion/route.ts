@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { sendDeletionConfirmationEmail } from '@/lib/email/deletion-emails';
 import { createAuditLog } from '@/lib/audit';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,7 +119,10 @@ export const POST = createProtectedRoute(
             confirmationDeadline: deletionRequest.confirmationDeadline,
           });
         } catch (emailError) {
-          console.error('[Deletion Request] Failed to send confirmation email:', emailError);
+          logger.error({
+            event: 'deletion_confirmation_email_failed',
+            error: emailError instanceof Error ? emailError.message : 'Unknown error',
+          });
           // Continue even if email fails - don't block the request
         }
       }
@@ -151,9 +155,20 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error: any) {
-      console.error('[Deletion Request] Error creating deletion request:', error);
+      logger.error({
+        event: 'deletion_request_create_error',
+        patientId: context.params.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
+      });
       return NextResponse.json(
-        { error: 'Failed to create deletion request', details: error.message },
+        {
+          error: 'Failed to create deletion request',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }
@@ -207,9 +222,20 @@ export const GET = createProtectedRoute(
         requests: deletionRequests,
       });
     } catch (error: any) {
-      console.error('[Deletion Request] Error fetching deletion requests:', error);
+      logger.error({
+        event: 'deletion_requests_fetch_error',
+        patientId: context.params.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch deletion requests' },
+        {
+          error: 'Failed to fetch deletion requests',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }

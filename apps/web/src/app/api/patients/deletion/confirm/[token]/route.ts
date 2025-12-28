@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendDeletionCompletedEmail } from '@/lib/email/deletion-emails';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,9 +91,19 @@ export const GET = async (
       },
     });
   } catch (error: any) {
-    console.error('[Deletion Confirmation] Error fetching deletion request:', error);
+    logger.error({
+      event: 'deletion_request_fetch_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error?.stack,
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch deletion request' },
+      {
+        error: 'Failed to fetch deletion request',
+        // Only include details in development
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error.message
+        })
+      },
       { status: 500 }
     );
   }
@@ -290,7 +301,11 @@ export const POST = async (
       });
     });
 
-    console.log(`[Deletion] Successfully completed deletion for patient ${deletionRequest.patientId}`);
+    logger.info({
+      event: 'patient_deletion_completed',
+      deletionRequestId: deletionRequest.id,
+      // No patient ID for privacy
+    });
 
     // Send deletion completion email
     const patientEmail = deletionRequest.patient.email;
@@ -299,10 +314,16 @@ export const POST = async (
     if (patientEmail) {
       try {
         await sendDeletionCompletedEmail(patientEmail, patientName);
-        console.log(`[Deletion] Sent completion email to ${patientEmail}`);
+        logger.info({
+          event: 'deletion_completion_email_sent',
+          // No email address for privacy
+        });
       } catch (emailError) {
         // Log error but don't fail the deletion
-        console.error('[Deletion] Failed to send completion email:', emailError);
+        logger.error({
+          event: 'deletion_completion_email_failed',
+          error: emailError instanceof Error ? emailError.message : 'Unknown error',
+        });
       }
     }
 
@@ -312,9 +333,19 @@ export const POST = async (
       completedAt: new Date(),
     });
   } catch (error: any) {
-    console.error('[Deletion Confirmation] Error executing deletion:', error);
+    logger.error({
+      event: 'patient_deletion_execution_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error?.stack,
+    });
     return NextResponse.json(
-      { error: 'Failed to execute deletion', details: error.message },
+      {
+        error: 'Failed to execute deletion',
+        // Only include details in development
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error.message
+        })
+      },
       { status: 500 }
     );
   }

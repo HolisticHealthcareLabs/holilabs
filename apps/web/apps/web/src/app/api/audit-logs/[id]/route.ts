@@ -10,6 +10,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
+import { prisma } from '@/lib/prisma';
 
 /**
  * DELETE /api/audit-logs/[id]
@@ -90,21 +92,64 @@ export async function PATCH(
  * GET /api/audit-logs/[id]
  *
  * Read-only access to individual audit log
- * Requires ADMIN or AUDIT_VIEWER role
+ * Requires ADMIN role
+ *
+ * @compliance HIPAA 164.308(a)(4) - Access Controls
+ * @compliance HIPAA 164.312(b) - Audit Controls
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
-  // Note: Implement read access with RBAC middleware in future
-  // For now, return method information
-  return NextResponse.json({
-    message: 'Audit log read endpoint',
-    id: params.id,
-    note: 'Read-only access. Audit logs cannot be modified or deleted.',
-    compliance: {
-      hipaa: 'HIPAA 164.312(b) compliant - Immutable audit trail',
-      lgpd: 'LGPD Art. 37 compliant - 5-year retention',
-    },
-  });
-}
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const { params } = context;
+
+    try {
+      // Fetch audit log from database
+      const auditLog = await prisma.auditLog.findUnique({
+        where: { id: params.id },
+        select: {
+          id: true,
+          action: true,
+          resource: true,
+          resourceId: true,
+          userId: true,
+          details: true,
+          ipAddress: true,
+          userAgent: true,
+          success: true,
+          errorMessage: true,
+          createdAt: true,
+        },
+      });
+
+      if (!auditLog) {
+        return NextResponse.json(
+          { error: 'Audit log not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        auditLog,
+        note: 'Read-only access. Audit logs cannot be modified or deleted.',
+        compliance: {
+          hipaa: 'HIPAA 164.312(b) compliant - Immutable audit trail',
+          lgpd: 'LGPD Art. 37 compliant - 5-year retention',
+        },
+      });
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error: 'Failed to retrieve audit log',
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error instanceof Error ? error.message : 'Unknown error',
+          }),
+        },
+        { status: 500 }
+      );
+    }
+  },
+  {
+    roles: ['ADMIN'], // Only admins can read audit logs
+    audit: { action: 'READ', resource: 'AuditLog' },
+    skipCsrf: true, // GET requests don't need CSRF protection
+  }
+);

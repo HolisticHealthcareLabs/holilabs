@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -154,6 +154,30 @@ export default function PatientNavigation() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [patientName, setPatientName] = useState<string>('Loading...');
+  const [patientInitials, setPatientInitials] = useState<string>('');
+
+  // Fetch current patient session
+  useEffect(() => {
+    async function fetchPatient() {
+      try {
+        const response = await fetch('/api/portal/auth/session');
+        if (response.ok) {
+          const data = await response.json();
+          const { firstName, lastName } = data.patient;
+          setPatientName(`${firstName} ${lastName}`);
+          // Generate initials from first and last name
+          const initials = `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+          setPatientInitials(initials);
+        }
+      } catch (error) {
+        console.error('Failed to fetch patient session:', error);
+        setPatientName('Patient');
+        setPatientInitials('P');
+      }
+    }
+    fetchPatient();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -258,10 +282,10 @@ export default function PatientNavigation() {
               className="-mx-2 flex items-center gap-x-4 px-2 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50 rounded-lg transition-colors w-full"
             >
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold">
-                MG
+                {patientInitials}
               </div>
               <span className="flex-1 text-left">
-                <span className="block">María González</span>
+                <span className="block">{patientName}</span>
                 {/* Decorative - low contrast intentional for profile subtitle */}
                 <span className="text-xs text-gray-500">Ver perfil</span>
               </span>

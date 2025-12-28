@@ -228,8 +228,8 @@ export function SmartTemplatesPanel({ onInsertTemplate, currentText = '' }: Smar
                     {CATEGORY_LABELS[template.category]}
                   </span>
                   {template.variables.length > 0 && (
-                    {/* Decorative - low contrast intentional for variable count metadata */}
                     <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {/* Decorative - low contrast intentional for variable count metadata */}
                       {template.variables.length} variable{template.variables.length !== 1 ? 's' : ''}
                     </span>
                   )}

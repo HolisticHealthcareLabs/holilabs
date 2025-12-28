@@ -172,9 +172,19 @@ export const POST = createProtectedRoute(
         { status: 201 }
       );
     } catch (error: any) {
-      console.error('Error creating prescription:', error);
+      logger.error({
+        event: 'prescription_create_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
+      });
       return NextResponse.json(
-        { error: 'Failed to create prescription', details: error.message },
+        {
+          error: 'Failed to create prescription',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }
@@ -293,9 +303,19 @@ export const GET = createProtectedRoute(
         data: prescriptions,
       });
     } catch (error: any) {
-      console.error('Error fetching prescriptions:', error);
+      logger.error({
+        event: 'prescription_fetch_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch prescriptions', details: error.message },
+        {
+          error: 'Failed to fetch prescriptions',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }

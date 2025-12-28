@@ -145,10 +145,17 @@ export const POST = createProtectedRoute(
     } catch (error: any) {
       logger.error({
         event: 'clinical_note_create_error',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to create clinical note', details: error.message },
+        {
+          error: 'Failed to create clinical note',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }
@@ -219,10 +226,17 @@ export const GET = createProtectedRoute(
     } catch (error: any) {
       logger.error({
         event: 'clinical_notes_fetch_error',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to fetch clinical notes', details: error.message },
+        {
+          error: 'Failed to fetch clinical notes',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }

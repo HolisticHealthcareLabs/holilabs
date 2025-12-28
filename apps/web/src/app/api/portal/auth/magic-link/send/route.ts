@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { sendMagicLinkEmail } from '@/lib/email';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,7 +94,11 @@ export async function POST(request: NextRequest) {
         expiresAt
       );
     } catch (emailError) {
-      console.error('Error sending magic link email:', emailError);
+      logger.error({
+        event: 'magic_link_email_send_error',
+        error: emailError instanceof Error ? emailError.message : 'Unknown error',
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+      });
       return NextResponse.json(
         { error: 'Failed to send magic link email' },
         { status: 500 }
@@ -108,11 +113,18 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error sending magic link:', error);
+    logger.error({
+      event: 'magic_link_send_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       {
         error: 'Failed to send magic link',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        // Only include details in development
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : 'Unknown error'
+        })
       },
       { status: 500 }
     );

@@ -85,7 +85,13 @@ export const GET = createProtectedRoute(
         stack: error.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to fetch appointment', details: error.message },
+        {
+          error: 'Failed to fetch appointment',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }
@@ -265,7 +271,13 @@ export const PATCH = createProtectedRoute(
         stack: error.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to update appointment', details: error.message },
+        {
+          error: 'Failed to update appointment',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }
@@ -337,7 +349,13 @@ export const DELETE = createProtectedRoute(
         stack: error.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to cancel appointment', details: error.message },
+        {
+          error: 'Failed to cancel appointment',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }

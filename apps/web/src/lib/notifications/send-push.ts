@@ -5,6 +5,7 @@
 
 import webpush from 'web-push';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 // Configure VAPID keys
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -28,7 +29,10 @@ function ensureVapidConfigured(): boolean {
     vapidConfigured = true;
     return true;
   } catch (error) {
-    console.warn('[WebPush] Failed to configure VAPID:', error);
+    logger.warn({
+      event: 'webpush_vapid_config_failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return false;
   }
 }
@@ -71,7 +75,7 @@ export async function sendPushNotification({
   errors: string[];
 }> {
   if (!ensureVapidConfigured()) {
-    console.warn('VAPID keys not configured - push notifications disabled');
+    logger.warn({ event: 'webpush_vapid_not_configured' });
     return { success: false, sentCount: 0, failedCount: 0, errors: ['VAPID keys not configured'] };
   }
 
@@ -82,7 +86,10 @@ export async function sendPushNotification({
     });
 
     if (subscriptions.length === 0) {
-      console.log(`No push subscriptions found for user ${userId}`);
+      logger.info({
+        event: 'webpush_no_subscriptions',
+        // No user ID for privacy
+      });
       return { success: true, sentCount: 0, failedCount: 0, errors: [] };
     }
 
@@ -113,7 +120,10 @@ export async function sendPushNotification({
             await prisma.pushSubscription.delete({
               where: { id: subscription.id },
             });
-            console.log(`Deleted invalid push subscription ${subscription.id}`);
+            logger.info({
+              event: 'webpush_subscription_deleted',
+              reason: 'invalid_or_expired',
+            });
           }
           throw error;
         }
@@ -134,7 +144,11 @@ export async function sendPushNotification({
       errors,
     };
   } catch (error) {
-    console.error('Error sending push notifications:', error);
+    logger.error({
+      event: 'webpush_send_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return {
       success: false,
       sentCount: 0,

@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 interface ErrorLogRequest {
   errorMessage: string;
@@ -59,7 +60,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       message: 'Error logged successfully',
     });
   } catch (error) {
-    console.error('[Error Audit API] Failed to log error:', error);
+    logger.error({
+      event: 'error_audit_api_failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     // Fallback logging (prevent infinite loop)
     return NextResponse.json(
