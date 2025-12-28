@@ -351,7 +351,12 @@ export function requireRole(...allowedRoles: UserRole[]) {
  */
 export async function verifyPatientAccess(
   userId: string,
-  patientId: string
+  patientId: string,
+  options?: {
+    accessReason?: string;
+    breakGlass?: boolean;
+    ipAddress?: string;
+  }
 ): Promise<boolean> {
   try {
     // Check if user is the patient themselves (for patient portal)
@@ -364,36 +369,105 @@ export async function verifyPatientAccess(
       return true;
     }
 
-    // Check if patient exists and was created by this clinician
-    // OR if clinician has any records (SOAP notes, prescriptions, appointments) for this patient
-    const [patient, soapNotes, appointments] = await Promise.all([
-      prisma.patient.findFirst({
-        where: {
-          id: patientId,
-          // Patient record exists (basic check)
-        },
+    // PHASE 1: Check explicit access grants (DataAccessGrant table)
+    const activeGrant = await prisma.dataAccessGrant.findFirst({
+      where: {
+        patientId,
+        grantedToId: userId,
+        OR: [
+          { expiresAt: null }, // Permanent grant
+          { expiresAt: { gte: new Date() } }, // Not expired
+        ],
+        revokedAt: null,
+      },
+      select: {
+        id: true,
+        accessLevel: true,
+        purpose: true,
+      },
+    });
+
+    if (activeGrant) {
+      logger.info({
+        event: 'patient_access_granted',
+        userId,
+        patientId,
+        grantId: activeGrant.id,
+        accessLevel: activeGrant.accessLevel,
+        purpose: activeGrant.purpose,
+      });
+      return true;
+    }
+
+    // PHASE 2: Check if patient is assigned to this clinician
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+      select: { assignedClinicianId: true },
+    });
+
+    if (patient?.assignedClinicianId === userId) {
+      return true;
+    }
+
+    // PHASE 3: Check clinical relationship (SOAP notes, prescriptions, appointments)
+    const [soapNotes, prescriptions, appointments] = await Promise.all([
+      prisma.sOAPNote.findFirst({
+        where: { patientId, clinicianId: userId },
         select: { id: true },
       }),
-      prisma.sOAPNote.findFirst({
-        where: {
-          patientId,
-          clinicianId: userId,
-        },
+      prisma.prescription.findFirst({
+        where: { patientId, clinicianId: userId },
         select: { id: true },
       }),
       prisma.appointment.findFirst({
-        where: {
-          patientId,
-          clinicianId: userId,
-        },
+        where: { patientId, clinicianId: userId },
         select: { id: true },
       }),
     ]);
 
-    // If patient exists and user has any clinical records with them, grant access
-    if (patient && (soapNotes || appointments)) {
+    if (soapNotes || prescriptions || appointments) {
       return true;
     }
+
+    // PHASE 4: Break-glass emergency access (requires access reason)
+    if (options?.breakGlass && options?.accessReason) {
+      logger.warn({
+        event: 'break_glass_access',
+        userId,
+        patientId,
+        accessReason: options.accessReason,
+        ipAddress: options.ipAddress,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Create audit log for break-glass access
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          userEmail: '', // Will be filled by middleware
+          ipAddress: options.ipAddress || 'unknown',
+          action: 'BREAK_GLASS_ACCESS',
+          resource: 'Patient',
+          resourceId: patientId,
+          details: {
+            accessReason: options.accessReason,
+            breakGlass: true,
+            warning: 'Emergency access without explicit grant',
+          },
+          success: true,
+        },
+      });
+
+      return true; // Allow emergency access
+    }
+
+    // No access
+    logger.warn({
+      event: 'patient_access_denied',
+      userId,
+      patientId,
+      reason: 'no_access_grant_or_clinical_relationship',
+    });
 
     return false;
   } catch (error) {

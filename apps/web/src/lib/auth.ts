@@ -10,7 +10,6 @@ export type NextAuthOptions = any; // v5 doesn't use NextAuthOptions anymore
 import { prisma } from '@/lib/prisma';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
-import CredentialsProvider from 'next-auth/providers/credentials';
 import crypto from 'crypto';
 import logger from '@/lib/logger';
 import { UserRole } from '@prisma/client';
@@ -41,34 +40,10 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // Development Credentials Provider (for testing)
-    CredentialsProvider({
-      id: 'dev-credentials',
-      name: 'Development Email',
-      credentials: {
-        email: { label: "Email", type: "email", placeholder: "doctor@holilabs.com" }
-      },
-      async authorize(credentials) {
-        // Only allow in development
-        if (process.env.NODE_ENV !== 'development') {
-          return null;
-        }
-
-        if (!credentials?.email || typeof credentials.email !== 'string') {
-          return null;
-        }
-
-        const email = credentials.email as string;
-
-        // In development, automatically create/login user with any email
-        return {
-          id: email,
-          email: email,
-          name: email.split('@')[0],
-          role: UserRole.CLINICIAN,
-        };
-      },
-    }),
+    // ⚠️ REMOVED: Development Credentials Provider
+    // Security Risk: Allowed authentication bypass in development mode
+    // Use Google OAuth for all environments or implement proper test authentication
+    // See: PRODUCT_ROADMAP_2025.md - Phase 2 Security Audit
 
   ],
 
@@ -284,83 +259,59 @@ export async function getUserSessionToken(userId: string): Promise<string | null
 
 /**
  * Verify Socket.io authentication token
- * @compliance Phase 2.4: Security Hardening - Remove fallback secrets
+ * @compliance Phase 2.4: Security Hardening - Only use signed JWT tokens
+ *
+ * ⚠️ SECURITY CHANGE: Removed insecure base64 decode fallback
+ * All tokens must be properly signed JWTs - no tampering possible
  */
 export async function verifySocketToken(token: string): Promise<{ userId: string; userType: 'CLINICIAN' | 'PATIENT' } | null> {
   try {
-    // Try to parse as patient JWT first (from patient-session cookie)
-    if (token.includes('.')) {
-      // This looks like a JWT token - likely from patient session
-      try {
-        const { jwtVerify } = await import('jose');
+    // Verify JWT token signature
+    const { jwtVerify } = await import('jose');
 
-        // Get JWT secret from environment - REQUIRED
-        const jwtSecretString = process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET;
-        if (!jwtSecretString) {
-          throw new Error('CRITICAL: JWT secret not configured. Set NEXTAUTH_SECRET or SESSION_SECRET');
-        }
-
-        const JWT_SECRET = new TextEncoder().encode(jwtSecretString);
-
-        const { payload } = await jwtVerify(token, JWT_SECRET);
-
-        if (payload.type === 'patient' && payload.patientId) {
-          // Verify patient exists
-          const patient = await prisma.patientUser.findUnique({
-            where: { id: payload.patientId as string },
-            select: { id: true },
-          });
-
-          if (!patient) return null;
-
-          return {
-            userId: payload.patientId as string,
-            userType: 'PATIENT',
-          };
-        }
-      } catch (jwtError) {
-        // Not a valid JWT, try base64 decode
-        logger.debug({
-          event: 'jwt_verify_failed',
-          error: jwtError instanceof Error ? jwtError.message : 'Unknown error',
-        });
-      }
+    // Get JWT secret from environment - REQUIRED
+    const jwtSecretString = process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET;
+    if (!jwtSecretString) {
+      throw new Error('CRITICAL: JWT secret not configured. Set NEXTAUTH_SECRET or SESSION_SECRET');
     }
 
-    // Try base64 decode for simple tokens (clinician)
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
+    const JWT_SECRET = new TextEncoder().encode(jwtSecretString);
 
-    if (!decoded.userId || !decoded.type) {
-      return null;
-    }
+    const { payload } = await jwtVerify(token, JWT_SECRET);
 
-    // Verify user exists in database
-    if (decoded.type === 'CLINICIAN') {
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-        select: { id: true },
-      });
-
-      if (!user) return null;
-
-      return {
-        userId: decoded.userId,
-        userType: 'CLINICIAN',
-      };
-    } else if (decoded.type === 'PATIENT') {
+    // Patient JWT token (from patient-session)
+    if (payload.type === 'patient' && payload.patientId) {
+      // Verify patient exists
       const patient = await prisma.patientUser.findUnique({
-        where: { id: decoded.userId },
+        where: { id: payload.patientId as string },
         select: { id: true },
       });
 
       if (!patient) return null;
 
       return {
-        userId: decoded.userId,
+        userId: payload.patientId as string,
         userType: 'PATIENT',
       };
     }
 
+    // Clinician JWT token (from getUserSessionToken)
+    if (payload.type === 'CLINICIAN' && payload.userId) {
+      // Verify clinician exists
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId as string },
+        select: { id: true },
+      });
+
+      if (!user) return null;
+
+      return {
+        userId: payload.userId as string,
+        userType: 'CLINICIAN',
+      };
+    }
+
+    // Invalid token type
     return null;
   } catch (error) {
     logger.error({

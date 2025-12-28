@@ -64,6 +64,13 @@ const PHI_FIELDS_CONFIG: Record<string, string[]> = {
     'secondaryContactPhone',
     'secondaryContactEmail',
     'emergencyContactPhone',
+    // Brazilian national IDs (CRITICAL for LGPD compliance)
+    'cpf',
+    'rg',
+    'cns',
+    // Medical Record Numbers
+    'mrn',
+    'externalMrn',
   ],
   Prescription: [
     'patientInstructions', // May contain sensitive info

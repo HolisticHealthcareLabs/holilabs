@@ -173,10 +173,17 @@ export async function notifyPatientSOAPReady({
       body: messages[language],
     });
 
-    console.log('✅ WhatsApp sent to patient:', message.sid);
+    logger.info({
+      event: 'whatsapp_sent',
+      messageSid: message.sid,
+      // No patient identifier for privacy
+    });
     return { success: true, messageSid: message.sid };
   } catch (error: any) {
-    console.error('❌ WhatsApp send failed:', error);
+    logger.error({
+      event: 'whatsapp_send_failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     throw new Error(`Failed to send WhatsApp message: ${error.message}`);
   }
 }

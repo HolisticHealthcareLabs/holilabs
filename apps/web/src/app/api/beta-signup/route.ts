@@ -183,10 +183,10 @@ export async function POST(request: Request) {
   } catch (error: any) {
     logger.error({
       event: 'beta_signup_error',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
-    console.error('Beta signup error:', error);
     return NextResponse.json(
       { error: 'Error al procesar tu registro. Por favor intenta de nuevo.' },
       { status: 500 }

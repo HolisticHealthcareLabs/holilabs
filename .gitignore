@@ -29,16 +29,25 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Local env files
+# Local env files (NEVER commit actual secrets)
 .env
 .env*.local
 .env.production
 .env.development
 .env.staging
+.env.test
+.env.*.backup
+.env.*.bak
+apps/**/.env
 apps/**/.env.production
 apps/**/.env.development
 apps/**/.env.staging
+apps/**/.env.test
+apps/**/.env.*.backup
+apps/**/.env.*.bak
 PRODUCTION_SECRETS.txt
+.env.sentry-build-plugin
+**/.env.sentry-build-plugin
 
 # Cosign keys (NEVER commit private keys)
 cosign.key

@@ -81,10 +81,17 @@ export const GET = createProtectedRoute(
       logger.error({
         event: 'clinical_note_fetch_error',
         noteId: context.params?.id,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to fetch clinical note', details: error.message },
+        {
+          error: 'Failed to fetch clinical note',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }
@@ -277,10 +284,17 @@ export const PATCH = createProtectedRoute(
       logger.error({
         event: 'clinical_note_update_error',
         noteId: context.params?.id,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to update clinical note', details: error.message },
+        {
+          error: 'Failed to update clinical note',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }
@@ -356,10 +370,17 @@ export const DELETE = createProtectedRoute(
       logger.error({
         event: 'clinical_note_delete_error',
         noteId: context.params?.id,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
       });
       return NextResponse.json(
-        { error: 'Failed to delete clinical note', details: error.message },
+        {
+          error: 'Failed to delete clinical note',
+          // Only include details in development
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message
+          })
+        },
         { status: 500 }
       );
     }

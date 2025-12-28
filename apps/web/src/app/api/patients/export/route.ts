@@ -37,6 +37,7 @@ export const dynamic = 'force-dynamic';
 
 const ExportSchema = z.object({
   format: z.enum(['JSON', 'CSV', 'AGGREGATE']),
+  accessReason: z.string().min(10, 'Access reason must be at least 10 characters').max(500),
   filters: z.object({
     ageBand: z.string().optional(),
     region: z.string().optional(),
@@ -48,6 +49,7 @@ const ExportSchema = z.object({
     k: z.number().min(2).max(20).default(5),
     applyDifferentialPrivacy: z.boolean().default(true),
     epsilon: z.number().min(0.01).max(10).default(0.1),
+    supervisorApproval: z.string().optional(), // Required for >100 records
   }).optional(),
 });
 
@@ -99,6 +101,22 @@ export const POST = createProtectedRoute(
           error: 'NO_DATA',
           message: 'No patients match the specified filters',
         }, { status: 404 });
+      }
+
+      // HIPAA §164.530(j): Require supervisor approval for bulk exports (>100 records)
+      if (patients.length > 100 && !validated.options?.supervisorApproval) {
+        logger.warn({
+          event: 'bulk_export_blocked_no_supervisor_approval',
+          userId: context.user.id,
+          recordCount: patients.length,
+          accessReason: validated.accessReason,
+        });
+        return NextResponse.json({
+          success: false,
+          error: 'SUPERVISOR_APPROVAL_REQUIRED',
+          message: `Exports of ${patients.length} records require supervisor approval. Please obtain approval and include supervisorApproval in the request.`,
+          recordCount: patients.length,
+        }, { status: 403 });
       }
 
       // PHASE 2: k-Anonymity Check
@@ -190,6 +208,8 @@ export const POST = createProtectedRoute(
           await logDeIDOperation('EXPORT', context.user.id, kAnonymousPatients.map(p => p.id), {
             exportFormat: 'CSV',
             recordCount: kAnonymousPatients.length,
+            accessReason: validated.accessReason,
+            supervisorApproval: validated.options?.supervisorApproval,
           });
 
           return new NextResponse(csv, {
@@ -206,6 +226,8 @@ export const POST = createProtectedRoute(
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         exportFormat: validated.format,
         recordCount: kAnonymousPatients.length,
+        accessReason: validated.accessReason,
+        supervisorApproval: validated.options?.supervisorApproval,
         kAnonymityEnforced: (validated.options?.enforceKAnonymity ?? true),
         k: k,
         differentialPrivacyApplied: (validated.options?.applyDifferentialPrivacy ?? true),

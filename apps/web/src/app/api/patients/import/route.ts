@@ -24,6 +24,7 @@ import {
   isValidPhone,
   isValidDate,
 } from '@/lib/security/validation';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -387,9 +388,17 @@ export const POST = createProtectedRoute(
             }
           });
 
-          console.log(`[Import] Successfully imported ${imported.length} patients in batch mode`);
+          logger.info({
+            event: 'patients_bulk_import_success',
+            importedCount: imported.length,
+            // No patient data for privacy
+          });
         } catch (error: any) {
-          console.error('[Import] Batch insert failed:', error);
+          logger.error({
+            event: 'patients_bulk_import_failed',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: error?.stack,
+          });
 
           // If batch insert fails, mark all as failed
           for (let index = 0; index < rows.length; index++) {
@@ -433,7 +442,11 @@ export const POST = createProtectedRoute(
         failed,
       });
     } catch (error: any) {
-      console.error('Error importing patients:', error);
+      logger.error({
+        event: 'patients_import_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error?.stack,
+      });
       return NextResponse.json(
         {
           error: 'Failed to import patients',

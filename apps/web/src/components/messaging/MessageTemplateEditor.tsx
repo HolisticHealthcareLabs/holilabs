@@ -314,6 +314,11 @@ export default function MessageTemplateEditor() {
   };
 
   const renderPreview = (template: MessageTemplate) => {
+    // ⚠️ SECURITY NOTE: XSS Risk
+    // TODO: Add DOMPurify sanitization before rendering HTML
+    // If template.message contains user-generated content, malicious HTML/JS will be executed
+    // Recommendation: import DOMPurify from 'isomorphic-dompurify' and sanitize before return
+    // Example: return DOMPurify.sanitize(preview);
     let preview = template.message;
     AVAILABLE_VARIABLES.forEach(variable => {
       preview = preview.replace(

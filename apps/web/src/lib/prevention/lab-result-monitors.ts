@@ -425,8 +425,13 @@ export async function monitorHbA1c(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  // Log monitoring event
-  console.log(`[Lab Monitor] HbA1c ${value}% for patient ${labResult.patientId}: ${category}`);
+  // Log monitoring event (no PHI)
+  logger.info({
+    event: 'lab_monitor_hba1c',
+    category,
+    flagged,
+    // patientId omitted for privacy
+  });
 
   return {
     flagged,
@@ -527,7 +532,13 @@ export async function monitorLDL(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] LDL ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  // Log monitoring event (no PHI)
+  logger.info({
+    event: 'lab_monitor_ldl',
+    category,
+    flagged,
+    // patientId omitted for privacy
+  });
 
   return {
     flagged,

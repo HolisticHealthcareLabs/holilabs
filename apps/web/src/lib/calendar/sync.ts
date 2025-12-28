@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma';
 import { decryptToken, encryptToken } from './token-encryption';
 import { createDAVClient, DAVClient } from 'tsdav';
+import { logger } from '@/lib/logger';
 
 interface CalendarEvent {
   id: string;
@@ -109,7 +110,11 @@ export async function syncGoogleCalendar(userId: string) {
 
     return { success: true, synced: appointments.length };
   } catch (error: any) {
-    console.error('Google Calendar sync error:', error);
+    logger.error({
+      event: 'google_calendar_sync_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error?.stack,
+    });
 
     // Increment error count
     await prisma.calendarIntegration.update({
@@ -248,7 +253,11 @@ export async function syncMicrosoftCalendar(userId: string) {
 
     return { success: true, synced: appointments.length };
   } catch (error: any) {
-    console.error('Microsoft Calendar sync error:', error);
+    logger.error({
+      event: 'microsoft_calendar_sync_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error?.stack,
+    });
 
     // Increment error count
     await prisma.calendarIntegration.update({
@@ -390,7 +399,11 @@ END:VCALENDAR`;
 
         syncedCount++;
       } catch (eventError) {
-        console.error(`Failed to sync appointment ${appointment.id}:`, eventError);
+        logger.error({
+          event: 'apple_calendar_event_sync_error',
+          error: eventError instanceof Error ? eventError.message : 'Unknown error',
+          // No appointment ID for privacy
+        });
       }
     }
 
@@ -408,7 +421,11 @@ END:VCALENDAR`;
       message: `Successfully synced ${syncedCount} appointments to Apple Calendar`,
     };
   } catch (error) {
-    console.error('Apple Calendar sync error:', error);
+    logger.error({
+      event: 'apple_calendar_sync_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error during Apple Calendar sync',

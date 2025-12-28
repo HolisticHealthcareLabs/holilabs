@@ -488,7 +488,13 @@ Registration Date: ${new Date().toISOString()}
     }
 
     return NextResponse.json(
-      { error: 'Failed to create patient', details: error.message },
+      {
+        error: 'Failed to create patient',
+        // Only include details in development
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error.message
+        })
+      },
       { status: 500 }
     );
   }
