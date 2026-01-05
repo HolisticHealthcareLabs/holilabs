@@ -15,6 +15,7 @@ import { requirePatientSession } from '@/lib/auth/patient-session';
 import { markNotificationAsRead, deleteNotification } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export async function PUT(
   request: NextRequest,
@@ -77,6 +78,24 @@ export async function PUT(
 
     // Mark as read
     const updated = await markNotificationAsRead(notificationId);
+
+    // HIPAA Audit Log: Notification marked as read
+    await createAuditLog({
+      userId,
+      userEmail: clinicianSession?.user?.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'UPDATE',
+      resource: 'Notification',
+      resourceId: notificationId,
+      details: {
+        userType,
+        notificationId,
+        action: 'mark_as_read',
+        accessType: 'NOTIFICATION_UPDATE',
+      },
+      success: true,
+    });
 
     return NextResponse.json(
       {
@@ -164,6 +183,24 @@ export async function DELETE(
 
     // Delete notification
     await deleteNotification(notificationId);
+
+    // HIPAA Audit Log: Notification deleted
+    await createAuditLog({
+      userId,
+      userEmail: clinicianSession?.user?.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'DELETE',
+      resource: 'Notification',
+      resourceId: notificationId,
+      details: {
+        userType,
+        notificationId,
+        action: 'delete',
+        accessType: 'NOTIFICATION_DELETE',
+      },
+      success: true,
+    });
 
     return NextResponse.json(
       {

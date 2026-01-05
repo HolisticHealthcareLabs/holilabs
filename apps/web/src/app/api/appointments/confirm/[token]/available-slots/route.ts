@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAppointmentByToken, getAvailableSlots } from '@/lib/appointments/confirmation';
 import { addDays } from 'date-fns';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export async function GET(
   request: NextRequest,
@@ -46,6 +47,26 @@ export async function GET(
       startDate,
       endDate
     );
+
+    // HIPAA Audit Log: Patient accessed appointment rescheduling slots
+    await createAuditLog({
+      userId: appointment.patientId,
+      userEmail: 'patient-portal',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'Appointment',
+      resourceId: appointment.id,
+      details: {
+        appointmentId: appointment.id,
+        clinicianId: appointment.clinicianId,
+        patientId: appointment.patientId,
+        slotsCount: slots.length,
+        accessType: 'RESCHEDULE_SLOTS_VIEW',
+        tokenUsed: true,
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json(
       {

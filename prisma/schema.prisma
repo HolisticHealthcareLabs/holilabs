@@ -7,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================================================
@@ -5015,4 +5016,192 @@ model RevokedToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("revoked_tokens")
+}
+
+// ============================================================================
+// DATA SUPREMACY - BEHAVIOR TRACKING & ANALYTICS
+// ============================================================================
+
+// User Behavior Event Tracking
+// Captures high-fidelity behavioral data for CDS training
+// PHI-compliant: No patient identifiers stored
+model UserBehaviorEvent {
+  id        String   @id @default(cuid())
+  userId    String   // Clinician who performed the action
+  eventType String   // PATIENT_SEARCH, PATIENT_CREATED, CONTEXT_LOADED, etc.
+  metadata  Json     // Event-specific data (search queries, filters, timing)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("user_behavior_events")
+}
+
+// Data Quality Event Tracking
+// Captures validation errors and data completeness issues
+model DataQualityEvent {
+  id           String   @id @default(cuid())
+  source       String   // CSV_IMPORT, MANUAL_ENTRY, FHIR_SYNC, etc.
+  errorType    String   // VALIDATION_ERROR, MISSING_FIELD, FORMAT_ERROR
+  errorMessage String   @db.Text
+  userId       String?  // Clinician who triggered the error (if applicable)
+  metadata     Json?    // Additional context (field names, row numbers)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([source])
+  @@index([errorType])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("data_quality_events")
+}
+
+// Access Reason Aggregate Statistics
+// HIPAA-compliant aggregated access patterns (no PHI)
+model AccessReasonAggregate {
+  id            String   @id @default(cuid())
+  accessReason  String   // DIRECT_PATIENT_CARE, EMERGENCY_ACCESS, etc.
+  hourOfDay     Int      // 0-23
+  dayOfWeek     Int      // 0-6 (Sunday = 0)
+  accessCount   Int      @default(1)
+  avgDuration   Float?   // Average time spent (seconds)
+
+  // Date tracking (for time-series analysis)
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accessReason, hourOfDay, dayOfWeek, date])
+  @@index([accessReason])
+  @@index([date])
+  @@map("access_reason_aggregates")
+}
+
+// Clinician Demographics Aggregate
+// De-identified population health statistics
+model ClinicianDemographics {
+  id              String   @id @default(cuid())
+
+  // De-identified aggregates
+  totalPatients   Int      @default(0)
+  activePatients  Int      @default(0)
+  avgPatientAge   Float?
+  genderDistribution Json? // {"M": 45, "F": 55, "O": 0}
+
+  // Specialty-specific metrics
+  specialty       String?
+  regionCode      String?  // State/province code (not full address)
+
+  // Time window
+  weekStart   DateTime @db.Date
+  weekEnd     DateTime @db.Date
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([specialty, regionCode, weekStart])
+  @@index([weekStart])
+  @@index([specialty])
+  @@map("clinician_demographics")
+}
+}
+
+// ============================================================================
+// VECTOR SEARCH - SEMANTIC SEARCH FOR CLINICAL DATA
+// ============================================================================
+// Requires: PostgreSQL with pgvector extension
+// Installation: CREATE EXTENSION IF NOT EXISTS vector;
+
+// Clinical Note Embeddings for semantic search
+// Stores vector embeddings of clinical notes, diagnoses, and observations
+model ClinicalEmbedding {
+  id        String   @id @default(cuid())
+  
+  // Source reference
+  sourceType String   // NOTE, DIAGNOSIS, LAB_RESULT, MEDICATION, etc.
+  sourceId   String   // ID of the source record
+  patientId  String   // For patient-scoped searches
+  
+  // Embedding data
+  // Note: pgvector uses the vector type, but Prisma doesn't support it natively
+  // We use Unsupported type and handle it in raw queries
+  embedding  Unsupported("vector(1536)")? // OpenAI ada-002 uses 1536 dimensions
+  
+  // Content metadata (for result display, no PHI)
+  contentPreview String?  @db.Text // First 200 chars (for search results)
+  contentHash    String?  // SHA-256 of content (for deduplication)
+  
+  // Search metadata
+  language       String   @default("en")
+  embeddingModel String   @default("text-embedding-ada-002")
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([patientId])
+  @@index([sourceType])
+  @@index([contentHash])
+  @@map("clinical_embeddings")
+}
+
+// Patient Summary Embeddings
+// High-level patient summaries for similarity matching
+model PatientSummaryEmbedding {
+  id        String   @id @default(cuid())
+  patientId String   @unique
+  
+  // Embedding (1536 dimensions for OpenAI ada-002)
+  embedding Unsupported("vector(1536)")?
+  
+  // Summary metadata (no PHI)
+  ageBand            String?
+  gender             String?
+  primaryDiagnoses   String[] // ICD codes only, no names
+  medicationCount    Int      @default(0)
+  labResultCount     Int      @default(0)
+  isPalliativeCare   Boolean  @default(false)
+  
+  // Model info
+  summaryVersion     String   @default("v1")
+  embeddingModel     String   @default("text-embedding-ada-002")
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([isPalliativeCare])
+  @@map("patient_summary_embeddings")
+}
+
+// Diagnosis Embeddings for similar condition matching
+model DiagnosisEmbedding {
+  id           String   @id @default(cuid())
+  diagnosisId  String   @unique
+  patientId    String
+  
+  // Embedding
+  embedding    Unsupported("vector(1536)")?
+  
+  // Diagnosis metadata (no PHI)
+  icdCode      String?
+  snomedCode   String?
+  severity     String?
+  isActive     Boolean  @default(true)
+  
+  // Model info
+  embeddingModel String @default("text-embedding-ada-002")
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([patientId])
+  @@index([icdCode])
+  @@map("diagnosis_embeddings")
 }

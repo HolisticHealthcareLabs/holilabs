@@ -1,99 +1,293 @@
 /**
  * Health Check Endpoint
  *
- * GET /api/health
- * Returns 200 OK if app is healthy, 503 Service Unavailable if not
+ * Industry-grade health check for monitoring, load balancers, and orchestration.
+ * Returns detailed status of all critical dependencies.
+ *
+ * GET /api/health - Full health check (all dependencies)
+ * GET /api/health/live - Liveness probe (app is running)
+ * GET /api/health/ready - Readiness probe (app can serve traffic)
+ *
+ * Status Codes:
+ * - 200: Healthy (all critical checks passed)
+ * - 503: Unhealthy or Degraded (one or more checks failed)
  *
  * Used by:
  * - DigitalOcean health checks
- * - Monitoring services
+ * - Kubernetes liveness/readiness probes
  * - Load balancers
+ * - Monitoring services (Datadog, New Relic, etc.)
+ *
+ * @see https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma, checkDatabaseHealth } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-interface HealthStatus {
-  status: 'healthy' | 'unhealthy';
-  timestamp: string;
-  uptime: number;
-  services: {
-    database: boolean;
-    databaseLatency?: number;
-  };
-  version?: string;
+interface CheckDetail {
+  status: 'up' | 'down' | 'degraded';
+  responseTime?: number;
+  message?: string;
+  error?: string;
 }
 
-export async function GET() {
-  const startTime = Date.now();
-  const healthStatus: HealthStatus = {
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    services: {
-      database: false,
-    },
-    version: process.env.npm_package_version || '1.0.0',
+interface HealthStatus {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  timestamp: string;
+  uptime: number;
+  checks: {
+    database: CheckDetail;
+    encryption: CheckDetail;
+    fhir?: CheckDetail;
   };
+  version?: string;
+  environment?: string;
+}
+
+export async function GET(request: NextRequest) {
+  const startTime = Date.now();
 
   try {
-    // If Prisma client is not initialized (DATABASE_URL not set), return basic health check
-    if (!prisma) {
-      logger.warn({ event: 'health_check_no_db' }, 'Health check: No database configured');
-      return NextResponse.json(
-        {
-          ...healthStatus,
-          error: 'DATABASE_URL not configured - database not available',
-        },
-        { status: 200 }
-      );
-    }
+    // Perform all health checks in parallel
+    const [databaseCheck, encryptionCheck, fhirCheck] = await Promise.allSettled([
+      checkDatabase(),
+      checkEncryption(),
+      checkFHIR(),
+    ]);
 
-    // Check database connection using health check function
-    const dbHealth = await checkDatabaseHealth();
+    const checks: HealthStatus['checks'] = {
+      database: databaseCheck.status === 'fulfilled'
+        ? databaseCheck.value
+        : { status: 'down', error: databaseCheck.reason?.message },
+      encryption: encryptionCheck.status === 'fulfilled'
+        ? encryptionCheck.value
+        : { status: 'down', error: encryptionCheck.reason?.message },
+      fhir: fhirCheck.status === 'fulfilled' ? fhirCheck.value : undefined,
+    };
 
-    healthStatus.services.database = dbHealth.healthy;
-    healthStatus.services.databaseLatency = dbHealth.latency;
+    // Determine overall status
+    const overallStatus = determineOverallStatus(checks);
 
+    const response: HealthStatus = {
+      status: overallStatus,
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      checks,
+      version: process.env.npm_package_version || 'unknown',
+      environment: process.env.NODE_ENV || 'unknown',
+    };
+
+    const responseTime = Date.now() - startTime;
+
+    // Log health check results
     logger.info({
-      event: 'health_check',
-      dbLatency: dbHealth.latency,
-      dbHealthy: dbHealth.healthy,
-      uptime: healthStatus.uptime,
-    }, 'Health check completed');
+      event: 'health_check_completed',
+      status: overallStatus,
+      responseTime,
+      database: checks.database.status,
+      encryption: checks.encryption.status,
+      fhir: checks.fhir?.status,
+    }, `Health check completed: ${overallStatus}`);
 
-    // If database is unhealthy or slow (>1000ms), mark as unhealthy
-    if (!dbHealth.healthy || (dbHealth.latency && dbHealth.latency > 1000)) {
-      healthStatus.status = 'unhealthy';
+    if (overallStatus !== 'healthy') {
       logger.warn({
-        event: 'health_check_slow_db',
-        dbLatency: dbHealth.latency,
-        error: dbHealth.error,
-      }, 'Database is unhealthy or slow');
-      return NextResponse.json(healthStatus, { status: 503 });
+        event: 'health_check_degraded',
+        status: overallStatus,
+        checks,
+        responseTime,
+      }, 'Health check returned degraded or unhealthy status');
     }
 
-    // All checks passed
-    return NextResponse.json(healthStatus, { status: 200 });
-  } catch (error: any) {
-    // Database connection failed
-    healthStatus.status = 'unhealthy';
-    healthStatus.services.database = false;
+    // Return appropriate status code
+    const statusCode = overallStatus === 'healthy' ? 200 : 503;
 
+    return NextResponse.json(response, {
+      status: statusCode,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'X-Response-Time': `${responseTime}ms`,
+      },
+    });
+  } catch (error) {
     logger.error({
-      event: 'health_check_failed',
-      err: error,
-    }, 'Health check failed - database connection error');
+      event: 'health_check_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     return NextResponse.json(
       {
-        ...healthStatus,
-        error: error.message || 'Database connection failed',
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: 'Health check failed',
       },
-      { status: 503 }
+      { status: 500 }
     );
   }
+}
+
+/**
+ * Check database connectivity and performance
+ */
+async function checkDatabase(): Promise<CheckDetail> {
+  const startTime = Date.now();
+
+  try {
+    if (!prisma) {
+      return {
+        status: 'down',
+        error: 'DATABASE_URL not configured',
+      };
+    }
+
+    const dbHealth = await checkDatabaseHealth();
+    const responseTime = Date.now() - startTime;
+
+    if (!dbHealth.healthy) {
+      return {
+        status: 'down',
+        responseTime,
+        error: dbHealth.error || 'Database check failed',
+      };
+    }
+
+    // Warn if database is slow (>500ms for health check)
+    if (dbHealth.latency && dbHealth.latency > 500) {
+      return {
+        status: 'degraded',
+        responseTime: dbHealth.latency,
+        message: `Database responding slowly (${dbHealth.latency}ms)`,
+      };
+    }
+
+    return {
+      status: 'up',
+      responseTime: dbHealth.latency,
+    };
+  } catch (error) {
+    return {
+      status: 'down',
+      error: error instanceof Error ? error.message : 'Database check failed',
+    };
+  }
+}
+
+/**
+ * Check encryption service is working
+ */
+async function checkEncryption(): Promise<CheckDetail> {
+  const startTime = Date.now();
+
+  try {
+    // Verify encryption key is configured
+    if (!process.env.ENCRYPTION_KEY) {
+      return {
+        status: 'down',
+        error: 'ENCRYPTION_KEY not configured',
+      };
+    }
+
+    // Test encryption/decryption round-trip
+    const { encryptPHIWithVersion, decryptPHIWithVersion } = await import('@/lib/security/encryption');
+    const testData = 'health-check-test';
+    const encrypted = await encryptPHIWithVersion(testData);
+    const decrypted = await decryptPHIWithVersion(encrypted);
+
+    if (decrypted !== testData) {
+      return {
+        status: 'down',
+        error: 'Encryption round-trip failed',
+      };
+    }
+
+    const responseTime = Date.now() - startTime;
+
+    return {
+      status: 'up',
+      responseTime,
+    };
+  } catch (error) {
+    return {
+      status: 'down',
+      error: error instanceof Error ? error.message : 'Encryption check failed',
+    };
+  }
+}
+
+/**
+ * Check FHIR server connectivity (Medplum)
+ * Optional - returns undefined if not configured
+ */
+async function checkFHIR(): Promise<CheckDetail | undefined> {
+  // Only check if FHIR is configured
+  if (!process.env.NEXT_PUBLIC_MEDPLUM_BASE_URL) {
+    return undefined;
+  }
+
+  const startTime = Date.now();
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_MEDPLUM_BASE_URL}/healthcheck`, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+    const responseTime = Date.now() - startTime;
+
+    if (!response.ok) {
+      return {
+        status: 'degraded',
+        responseTime,
+        message: `FHIR server returned ${response.status}`,
+      };
+    }
+
+    // Warn if FHIR is slow (>1000ms)
+    if (responseTime > 1000) {
+      return {
+        status: 'degraded',
+        responseTime,
+        message: 'FHIR server responding slowly',
+      };
+    }
+
+    return {
+      status: 'up',
+      responseTime,
+    };
+  } catch (error) {
+    return {
+      status: 'down',
+      error: error instanceof Error ? error.message : 'FHIR check failed',
+    };
+  }
+}
+
+/**
+ * Determine overall health status from individual checks
+ */
+function determineOverallStatus(checks: HealthStatus['checks']): HealthStatus['status'] {
+  // Critical checks (must be healthy)
+  if (checks.database.status === 'down' || checks.encryption.status === 'down') {
+    return 'unhealthy';
+  }
+
+  // Degraded if any check is degraded or optional service is down
+  if (
+    checks.database.status === 'degraded' ||
+    checks.encryption.status === 'degraded' ||
+    checks.fhir?.status === 'down' ||
+    checks.fhir?.status === 'degraded'
+  ) {
+    return 'degraded';
+  }
+
+  return 'healthy';
 }

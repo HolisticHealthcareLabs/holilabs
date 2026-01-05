@@ -10,6 +10,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { calculateDiabetesRisk } from '@/lib/risk-scores/diabetes';
 import { calculateASCVDRisk } from '@/lib/risk-scores/ascvd';
 
@@ -647,7 +648,15 @@ export async function monitorHDL(
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] HDL ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_hdl',
+    testName: 'HDL',
+    value,
+    unit: 'mg/dL',
+    category,
+    // Patient ID omitted for PHI protection - use lab result ID for tracking
+    labResultId: labResult.id,
+  });
 
   return {
     flagged,
@@ -766,7 +775,14 @@ export async function monitorTriglycerides(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Triglycerides ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_triglycerides',
+    testName: 'Triglycerides',
+    value,
+    unit: 'mg/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return {
     flagged,
@@ -877,7 +893,14 @@ export async function monitorTotalCholesterol(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Total Cholesterol ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_total_cholesterol',
+    testName: 'Total Cholesterol',
+    value,
+    unit: 'mg/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return {
     flagged,
@@ -977,7 +1000,14 @@ export async function monitorFastingGlucose(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Fasting Glucose ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_fasting_glucose',
+    testName: 'Fasting Glucose',
+    value,
+    unit: 'mg/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1077,7 +1107,14 @@ export async function monitorEGFR(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] eGFR ${value} mL/min/1.73m² for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_egfr',
+    testName: 'eGFR',
+    value,
+    unit: 'mL/min/1.73m²',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1173,7 +1210,14 @@ export async function monitorTSH(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] TSH ${value} mIU/L for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_tsh',
+    testName: 'TSH',
+    value,
+    unit: 'mIU/L',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1255,7 +1299,14 @@ export async function monitorVitaminD(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Vitamin D ${value} ng/mL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_vitamin_d',
+    testName: 'Vitamin D',
+    value,
+    unit: 'ng/mL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1354,7 +1405,14 @@ export async function monitorHemoglobin(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Hemoglobin ${value} g/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_hemoglobin',
+    testName: 'Hemoglobin',
+    value,
+    unit: 'g/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1442,7 +1500,14 @@ export async function monitorFerritin(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Ferritin ${value} ng/mL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_ferritin',
+    testName: 'Ferritin',
+    value,
+    unit: 'ng/mL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1525,7 +1590,14 @@ export async function monitorVitaminB12(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Vitamin B12 ${value} pg/mL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_vitamin_b12',
+    testName: 'Vitamin B12',
+    value,
+    unit: 'pg/mL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1619,7 +1691,14 @@ export async function monitorALT(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] ALT ${value} U/L for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_alt',
+    testName: 'ALT',
+    value,
+    unit: 'U/L',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1714,7 +1793,14 @@ export async function monitorCalcium(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Calcium ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_calcium',
+    testName: 'Calcium',
+    value,
+    unit: 'mg/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1810,7 +1896,14 @@ export async function monitorUricAcid(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Uric Acid ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_uric_acid',
+    testName: 'Uric Acid',
+    value,
+    unit: 'mg/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -1910,7 +2003,14 @@ export async function monitorCreatinine(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Creatinine ${value} mg/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_creatinine',
+    testName: 'Creatinine',
+    value,
+    unit: 'mg/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -2005,7 +2105,14 @@ export async function monitorAlbumin(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Albumin ${value} g/dL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_albumin',
+    testName: 'Albumin',
+    value,
+    unit: 'g/dL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }
@@ -2108,7 +2215,14 @@ export async function monitorPlateletCount(labResult: LabResult): Promise<{
     preventionPlanCreated = true;
   }
 
-  console.log(`[Lab Monitor] Platelet Count ${value} thousand/μL for patient ${labResult.patientId}: ${category}`);
+  logger.info({
+    event: 'lab_monitor_platelet_count',
+    testName: 'Platelet Count',
+    value,
+    unit: 'thousand/μL',
+    category,
+    labResultId: labResult.id,
+  });
 
   return { flagged, category, preventionPlanCreated };
 }

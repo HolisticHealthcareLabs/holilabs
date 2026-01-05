@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
+import { createAuditLog } from '@/lib/audit';
 
 /**
  * Vital Signs Critical Alert System
@@ -289,6 +290,27 @@ export async function POST(request: NextRequest) {
 
     const criticalAlerts = alerts.filter((a) => a.type === 'critical');
     const warningAlerts = alerts.filter((a) => a.type === 'warning');
+
+    // HIPAA Audit Log: Vital signs checked for patient
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'VitalAlert',
+      resourceId: 'vital-check',
+      details: {
+        patientAge,
+        ageGroup,
+        vitalsChecked: Object.keys(vitals).length,
+        alertsGenerated: alerts.length,
+        criticalAlerts: criticalAlerts.length,
+        warningAlerts: warningAlerts.length,
+        accessType: 'VITAL_SIGNS_MONITORING',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json({
       alerts,

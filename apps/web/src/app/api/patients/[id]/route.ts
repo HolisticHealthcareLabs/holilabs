@@ -77,9 +77,32 @@ export const GET = createProtectedRoute(
       );
     }
 
+    // ✅ HIPAA §164.502(b) - Minimum Necessary: Explicit field selection
+    // Only retrieve fields needed for this specific request
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
-      include: {
+      select: {
+        // Basic identifiers
+        id: true,
+        firstName: true,
+        lastName: true,
+        dateOfBirth: true,
+        gender: true,
+        email: true,
+        phone: true,
+        address: true,
+
+        // Medical identifiers (encrypted)
+        mrn: true,
+        externalMrn: true,
+
+        // Assignment and status
+        assignedClinicianId: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+
+        // Related data with explicit field selection
         assignedClinician: {
           select: {
             id: true,
@@ -92,12 +115,26 @@ export const GET = createProtectedRoute(
         },
         medications: {
           where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            dose: true,
+            frequency: true,
+            startDate: true,
+            endDate: true,
+            notes: true,
+            createdAt: true,
+          },
           orderBy: { createdAt: 'desc' },
         },
         appointments: {
-          orderBy: { startTime: 'desc' },
-          take: 10,
-          include: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            type: true,
+            status: true,
+            notes: true,
             clinician: {
               select: {
                 id: true,
@@ -106,23 +143,52 @@ export const GET = createProtectedRoute(
               },
             },
           },
+          orderBy: { startTime: 'desc' },
+          take: 10,
         },
         consents: {
           where: { isActive: true },
+          select: {
+            id: true,
+            type: true,
+            isActive: true,
+            signedAt: true,
+            expiresAt: true,
+          },
           orderBy: { signedAt: 'desc' },
         },
         documents: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            size: true,
+            mimeType: true,
+            createdAt: true,
+          },
           orderBy: { createdAt: 'desc' },
           take: 20,
         },
         clinicalNotes: {
+          select: {
+            id: true,
+            type: true,
+            chiefComplaint: true,
+            createdAt: true,
+            // Note: Detailed SOAP notes excluded for minimum necessary
+          },
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
         prescriptions: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-          include: {
+          select: {
+            id: true,
+            medication: true,
+            dosage: true,
+            frequency: true,
+            duration: true,
+            status: true,
+            createdAt: true,
             clinician: {
               select: {
                 id: true,
@@ -131,6 +197,8 @@ export const GET = createProtectedRoute(
               },
             },
           },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
         },
       },
     });

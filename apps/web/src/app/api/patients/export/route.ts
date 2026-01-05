@@ -1,20 +1,24 @@
 /**
- * Patient Data Export API with Phase 2 Security
+ * Patient Data Export API with Phase 3 Security
  * 🔒 SECURE EXPORT - NO PHI EXPOSURE
  *
  * POST /api/patients/export - Export de-identified patient data
  *
  * FEATURES:
+ * - Multi-window rate limiting (3/hour, 5/day, 20/month)
  * - k-anonymity validation before export
  * - NLP-based PHI redaction
  * - Differential privacy for aggregates
  * - Privacy budget tracking
  * - Comprehensive audit logging
  * - NO PHI fields (names, DOB, addresses removed)
+ *
+ * @security Phase 3: Enhanced rate limiting to prevent data exfiltration
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, compose } from '@/lib/api/middleware';
+import { exportRateLimit } from '@/lib/api/export-rate-limit';
 import { prisma } from '@/lib/prisma';
 import { logDeIDOperation } from '@/lib/audit/deid-audit';
 import { format } from 'date-fns';
@@ -279,7 +283,9 @@ export const POST = createProtectedRoute(
   },
   {
     roles: ['ADMIN', 'CLINICIAN'],
-    rateLimit: { windowMs: 3600000, maxRequests: 10 }, // 10 exports per hour
+    // ✅ SECURITY: Multi-window rate limiting to prevent data exfiltration
+    // Enforces cascading limits: 3/hour, 5/day, 20/month
+    customMiddlewares: [exportRateLimit()],
     audit: { action: 'EXPORT', resource: 'Patient' },
   }
 );

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { ClinicalSessionProvider, useClinicalSession } from '@/contexts/ClinicalSessionContext';
+import { DndContext, useDroppable, DragEndEvent, DragOverlay } from '@dnd-kit/core';
 import { Switch } from '@/components/ui/Switch';
 import AudioWaveform from '@/components/scribe/AudioWaveform';
 import TranscriptViewer from '@/components/scribe/TranscriptViewer';
@@ -16,6 +17,44 @@ import { PatientConsentModal } from '@/components/co-pilot/PatientConsentModal';
 import { CoPilotOnboarding } from '@/components/co-pilot/CoPilotOnboarding';
 
 export const dynamic = 'force-dynamic';
+
+// Droppable Tool Workspace Component
+interface DroppableToolWorkspaceProps {
+  chiefComplaint?: string;
+  extractedSymptoms?: string[];
+  patientId?: string;
+}
+
+function DroppableToolWorkspace({ chiefComplaint, extractedSymptoms, patientId }: DroppableToolWorkspaceProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'tool-workspace',
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-xl p-6 relative transition-all duration-300
+        before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-blue-500/5 before:to-purple-500/5 before:pointer-events-none
+        ${isOver ? 'ring-4 ring-blue-500/50 border-blue-500/50 shadow-2xl scale-[1.02]' : ''}`}
+    >
+      {/* Drop indicator when dragging */}
+      {isOver && (
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center pointer-events-none z-10">
+          <div className="bg-blue-500/90 text-white px-6 py-3 rounded-lg font-semibold shadow-lg">
+            Drop tool here to activate
+          </div>
+        </div>
+      )}
+
+      {/* Diagnosis Assistant - Auto-filled from context */}
+      <DiagnosisAssistantWrapper
+        chiefComplaint={chiefComplaint}
+        extractedSymptoms={extractedSymptoms || []}
+        patientId={patientId}
+      />
+    </div>
+  );
+}
 
 // Wrapper component to auto-fill DiagnosisAssistant from context
 function DiagnosisAssistantWrapper({
@@ -332,7 +371,34 @@ function CoPilotContent() {
     setIsProcessing(false);
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const toolData = active.data.current;
+    const dropZoneId = over.id;
+
+    console.log('Tool dropped:', toolData?.tool?.name, 'on zone:', dropZoneId);
+
+    // Handle tool activation based on drop zone
+    if (toolData?.type === 'tool') {
+      const tool = toolData.tool;
+
+      // Trigger appropriate action based on tool type
+      if (tool.id === 'ai-scribe') {
+        // Scroll to transcript section
+        document.querySelector('.flex-1.lg\\:w-1\\/2.border-r')?.scrollIntoView({ behavior: 'smooth' });
+      } else if (tool.id === 'preventive-plan' && selectedPatient) {
+        window.open(`/dashboard/prevention?patientId=${selectedPatient.id}`, '_blank');
+      } else if (tool.id === 'risk-stratification' && selectedPatient) {
+        window.open(`/dashboard/patients/${selectedPatient.id}?tab=risk`, '_blank');
+      }
+    }
+  };
+
   return (
+    <DndContext onDragEnd={handleDragEnd}>
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Onboarding Tour */}
       <CoPilotOnboarding />
@@ -639,7 +705,14 @@ function CoPilotContent() {
               {/* Modular Tools Grid */}
               <div className="grid grid-cols-3 gap-3 mt-6">
                 {/* AI Scribe Tool */}
-                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-600/10 hover:from-purple-500/20 hover:to-pink-600/20 border border-purple-200/50 dark:border-purple-700/30 transition-all hover:shadow-lg">
+                <button
+                  onClick={() => {
+                    // AI Scribe is already active in this view (left panel)
+                    // Scroll to transcript section
+                    document.querySelector('.flex-1.lg\\:w-1\\/2.border-r')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-600/10 hover:from-purple-500/20 hover:to-pink-600/20 border border-purple-200/50 dark:border-purple-700/30 transition-all hover:shadow-lg"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -652,7 +725,17 @@ function CoPilotContent() {
                 </button>
 
                 {/* Clinical Decision Support Tool */}
-                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 hover:from-cyan-500/20 hover:to-blue-600/20 border border-cyan-200/50 dark:border-cyan-700/30 transition-all hover:shadow-lg">
+                <button
+                  onClick={() => {
+                    // Diagnosis Assistant is already shown below
+                    // Scroll to it or show a notification
+                    const diagnosisSection = document.querySelector('.backdrop-blur-xl.bg-white\\/80');
+                    if (diagnosisSection) {
+                      diagnosisSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 hover:from-cyan-500/20 hover:to-blue-600/20 border border-cyan-200/50 dark:border-cyan-700/30 transition-all hover:shadow-lg"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-md">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -665,7 +748,16 @@ function CoPilotContent() {
                 </button>
 
                 {/* Risk Stratification Tool */}
-                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 hover:from-amber-500/20 hover:to-orange-600/20 border border-amber-200/50 dark:border-amber-700/30 transition-all hover:shadow-lg">
+                <button
+                  onClick={() => {
+                    if (selectedPatient) {
+                      window.open(`/dashboard/patients/${selectedPatient.id}?tab=risk`, '_blank');
+                    } else {
+                      alert('Please select a patient first');
+                    }
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 hover:from-amber-500/20 hover:to-orange-600/20 border border-amber-200/50 dark:border-amber-700/30 transition-all hover:shadow-lg"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-md">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -678,7 +770,16 @@ function CoPilotContent() {
                 </button>
 
                 {/* Prevention Hub Tool */}
-                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 hover:from-emerald-500/20 hover:to-teal-600/20 border border-emerald-200/50 dark:border-emerald-700/30 transition-all hover:shadow-lg">
+                <button
+                  onClick={() => {
+                    if (selectedPatient) {
+                      window.open(`/dashboard/prevention?patientId=${selectedPatient.id}`, '_blank');
+                    } else {
+                      alert('Please select a patient first');
+                    }
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 hover:from-emerald-500/20 hover:to-teal-600/20 border border-emerald-200/50 dark:border-emerald-700/30 transition-all hover:shadow-lg"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -691,7 +792,16 @@ function CoPilotContent() {
                 </button>
 
                 {/* Lab Insights Tool */}
-                <button className="group relative p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 hover:from-indigo-500/20 hover:to-purple-600/20 border border-indigo-200/50 dark:border-indigo-700/30 transition-all hover:shadow-lg">
+                <button
+                  onClick={() => {
+                    if (selectedPatient) {
+                      window.open(`/dashboard/patients/${selectedPatient.id}?tab=labs`, '_blank');
+                    } else {
+                      alert('Please select a patient first');
+                    }
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 hover:from-indigo-500/20 hover:to-purple-600/20 border border-indigo-200/50 dark:border-indigo-700/30 transition-all hover:shadow-lg"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
                       <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -704,7 +814,12 @@ function CoPilotContent() {
                 </button>
 
                 {/* Add More Tools Button */}
-                <button className="group relative p-4 rounded-xl border-2 border-dashed border-amber-300/50 dark:border-amber-600/30 hover:border-amber-400 dark:hover:border-amber-500 bg-amber-50/30 dark:bg-amber-900/10 hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-all hover:shadow-lg">
+                <button
+                  onClick={() => {
+                    alert('Tool marketplace coming soon! You\'ll be able to add custom AI assistants, specialty-specific tools, and third-party integrations.');
+                  }}
+                  className="group relative p-4 rounded-xl border-2 border-dashed border-amber-300/50 dark:border-amber-600/30 hover:border-amber-400 dark:hover:border-amber-500 bg-amber-50/30 dark:bg-amber-900/10 hover:bg-amber-50/50 dark:hover:bg-amber-900/20 transition-all hover:shadow-lg"
+                >
                   <div className="flex flex-col items-center gap-2">
                     <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
                       {/* Golden ring effect */}
@@ -721,16 +836,11 @@ function CoPilotContent() {
             </div>
 
             {/* Active Tool Content */}
-            <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-xl p-6 relative
-              before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-blue-500/5 before:to-purple-500/5 before:pointer-events-none">
-              
-              {/* Diagnosis Assistant - Auto-filled from context */}
-              <DiagnosisAssistantWrapper
-                chiefComplaint={state.liveSoapNote?.chiefComplaint}
-                extractedSymptoms={state.extractedSymptoms.map(s => s.symptom)}
-                patientId={selectedPatient?.id}
-              />
-            </div>
+            <DroppableToolWorkspace
+              chiefComplaint={state.liveSoapNote?.chiefComplaint}
+              extractedSymptoms={state.extractedSymptoms.map(s => s.symptom)}
+              patientId={selectedPatient?.id}
+            />
           </div>
         </div>
       </div>
@@ -802,6 +912,7 @@ function CoPilotContent() {
         </div>
       )}
     </div>
+    </DndContext>
   );
 }
 

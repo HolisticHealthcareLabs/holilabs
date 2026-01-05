@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { searchPatients, initializeMeilisearch } from '@/lib/search/meilisearch';
 import { logger } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,46 @@ export const GET = createProtectedRoute(
         offset,
         sort: sort ? [sort] : undefined,
       });
+
+      // ============================================================================
+      // DATA SUPREMACY: Track search behavior for CDS training
+      // ============================================================================
+      // Background: Capture search patterns to improve UX and ML training
+      // - What terms do clinicians search most frequently?
+      // - Which filters are most commonly used together?
+      // - How many results are typically returned?
+      // - What's the average search performance?
+      //
+      // HIPAA Compliance: No PHI stored (clinician ID only, no patient data)
+      // ============================================================================
+      try {
+        await prisma.userBehaviorEvent.create({
+          data: {
+            userId: context.user.id,
+            eventType: 'PATIENT_SEARCH',
+            metadata: {
+              query,
+              resultsCount: results.estimatedTotalHits,
+              processingTimeMs: results.processingTimeMs,
+              filters: {
+                isActive: isActive !== null ? isActive === 'true' : null,
+                isPalliativeCare: isPalliativeCare !== null ? isPalliativeCare === 'true' : null,
+                gender: gender || null,
+              },
+              pagination: { limit, offset },
+              hasResults: results.estimatedTotalHits > 0,
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      } catch (trackingError) {
+        // Don't fail the request if tracking fails (fire-and-forget)
+        logger.error({
+          event: 'behavior_tracking_failed',
+          eventType: 'PATIENT_SEARCH',
+          error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+        });
+      }
 
       return NextResponse.json({
         success: true,

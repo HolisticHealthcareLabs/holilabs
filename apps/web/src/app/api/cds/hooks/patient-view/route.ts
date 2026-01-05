@@ -14,6 +14,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext } from '@/lib/cds/types';
+import { createAuditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +44,26 @@ export async function POST(request: NextRequest) {
 
     const result = await cdsEngine.evaluate(cdsContext);
     const response = cdsEngine.formatAsCDSHooksResponse(result);
+
+    // HIPAA Audit Log: CDS Hooks accessed patient data for clinical decision support
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'CDSHooks',
+      resourceId: cdsContext.patientId,
+      details: {
+        hookType: 'patient-view',
+        hookInstance: body.hookInstance,
+        patientId: cdsContext.patientId,
+        encounterId: cdsContext.encounterId,
+        cardsReturned: response.cards?.length || 0,
+        accessType: 'CLINICAL_DECISION_SUPPORT',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json(response);
 

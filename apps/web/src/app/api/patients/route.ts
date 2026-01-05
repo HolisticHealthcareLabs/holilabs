@@ -124,6 +124,35 @@ export const GET = createProtectedRoute(
       prisma.patient.count({ where }),
     ]);
 
+      // ============================================================================
+      // DATA SUPREMACY: Track pagination behavior for UX optimization
+      // ============================================================================
+      try {
+        await prisma.userBehaviorEvent.create({
+          data: {
+            userId: context.user.id,
+            eventType: 'PATIENT_LIST_VIEW',
+            metadata: {
+              page,
+              limit,
+              totalPatients: total,
+              totalPages: Math.ceil(total / limit),
+              hasSearch: search.length > 0,
+              searchQuery: search.length > 0 ? search.substring(0, 50) : null, // Truncate for privacy
+              hasFilters: isActive !== null,
+              isActiveFilter: isActive,
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      } catch (trackingError) {
+        logger.error({
+          event: 'behavior_tracking_failed',
+          eventType: 'PATIENT_LIST_VIEW',
+          error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+        });
+      }
+
       return NextResponse.json({
         success: true,
         data: patients,
@@ -149,6 +178,7 @@ export const GET = createProtectedRoute(
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 60 },
+    audit: { action: 'READ', resource: 'Patient' },
     skipCsrf: true, // GET requests don't need CSRF protection
   }
 );
@@ -466,6 +496,44 @@ Registration Date: ${new Date().toISOString()}
         success: true
       }
     );
+
+    // ============================================================================
+    // DATA SUPREMACY: Track patient creation patterns for workflow optimization
+    // ============================================================================
+    try {
+      const now = new Date();
+      await prisma.userBehaviorEvent.create({
+        data: {
+          userId: validatedData.assignedClinicianId || context.user.id,
+          eventType: 'PATIENT_CREATED',
+          metadata: {
+            isPalliativeCare: patient.isPalliativeCare,
+            hasSpecialNeeds: patient.hasSpecialNeeds,
+            dnrStatus: patient.dnrStatus,
+            dniStatus: patient.dniStatus,
+            hasAdvanceDirectives: patient.advanceDirectivesStatus === 'ACTIVE',
+            hasPhotoConsent: !!patient.photoConsentDate,
+            hasEmergencyContact: !!patient.emergencyContactName,
+            hourOfDay: now.getHours(),
+            dayOfWeek: now.getDay(),
+            dataCompletenessScore: [
+              !!patient.email,
+              !!patient.phone,
+              !!patient.address,
+              !!patient.emergencyContactName,
+              !!patient.primaryContactName,
+            ].filter(Boolean).length * 20, // 0-100 score
+            timestamp: now.toISOString(),
+          },
+        },
+      });
+    } catch (trackingError) {
+      logger.error({
+        event: 'behavior_tracking_failed',
+        eventType: 'PATIENT_CREATED',
+        error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+      });
+    }
 
     return NextResponse.json({
       success: true,

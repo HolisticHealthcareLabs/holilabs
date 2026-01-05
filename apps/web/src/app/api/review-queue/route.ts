@@ -74,6 +74,11 @@ export const GET = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
+    audit: { action: 'READ', resource: 'ReviewQueue' },
+    skipCsrf: true, // GET requests don't need CSRF protection
   }
 );
 
@@ -149,5 +154,9 @@ export const POST = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
+    audit: { action: 'CREATE', resource: 'ReviewQueue' },
   }
 );

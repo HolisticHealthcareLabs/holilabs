@@ -76,6 +76,16 @@ export const GET = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    audit: {
+      action: 'READ',
+      resource: 'SOAPNote',
+      details: (req, context) => ({
+        noteId: context.params.id,
+        accessType: 'VIEW_NOTE',
+      }),
+    },
   }
 );
 
@@ -115,6 +125,23 @@ export const PATCH = createProtectedRoute(
         where: {
           id: noteId,
           clinicianId: context.user.id,
+        },
+        select: {
+          id: true,
+          clinicianId: true,
+          patientId: true,
+          status: true,
+          editCount: true,
+          editHistory: true,
+          subjective: true,
+          objective: true,
+          assessment: true,
+          plan: true,
+          chiefComplaint: true,
+          diagnoses: true,
+          procedures: true,
+          medications: true,
+          vitalSigns: true,
         },
       });
 
@@ -212,5 +239,15 @@ export const PATCH = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    audit: {
+      action: 'UPDATE',
+      resource: 'SOAPNote',
+      details: (req, context) => ({
+        noteId: context.params.id,
+        accessType: 'INLINE_EDIT',
+      }),
+    },
   }
 );

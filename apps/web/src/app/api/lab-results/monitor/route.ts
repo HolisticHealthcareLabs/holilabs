@@ -9,6 +9,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { monitorLabResult } from '@/lib/prevention/lab-result-monitors';
 import { z } from 'zod';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,29 @@ export async function POST(request: NextRequest) {
 
     // Monitor lab result
     const result = await monitorLabResult(labResult);
+
+    // HIPAA Audit Log: Lab result monitored for patient
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'LabResultMonitor',
+      resourceId: labResult.id,
+      details: {
+        labResultId: labResult.id,
+        patientId: labResult.patientId,
+        testName: labResult.testName,
+        loincCode: labResult.loincCode,
+        flag: labResult.flag,
+        monitored: result.monitored,
+        testType: result.testType,
+        preventionPlanCreated: result.result?.preventionPlanCreated || false,
+        accessType: 'LAB_RESULT_MONITORING',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json({
       success: true,

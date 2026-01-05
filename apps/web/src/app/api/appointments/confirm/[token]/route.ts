@@ -13,6 +13,7 @@ import {
   formatAppointmentDetails,
 } from '@/lib/appointments/confirmation';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export async function GET(
   request: NextRequest,
@@ -45,6 +46,24 @@ export async function GET(
 
     // Format appointment details
     const details = formatAppointmentDetails(appointment);
+
+    // HIPAA Audit Log: Patient accessed appointment via confirmation token
+    await createAuditLog({
+      userId: 'PATIENT_TOKEN_ACCESS',
+      userEmail: appointment.patient?.email || 'patient@token.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'Appointment',
+      resourceId: appointment.id,
+      details: {
+        appointmentId: appointment.id,
+        patientId: appointment.patientId,
+        accessMethod: 'confirmation_token',
+        accessType: 'APPOINTMENT_CONFIRMATION_VIEW',
+      },
+      success: true,
+    });
 
     return NextResponse.json(
       {
@@ -150,6 +169,27 @@ export async function POST(
       action,
       appointmentId: result.id,
       patientId: result.patientId,
+    });
+
+    // HIPAA Audit Log: Patient performed action on appointment via confirmation token
+    await createAuditLog({
+      userId: 'PATIENT_TOKEN_ACCESS',
+      userEmail: result.patient?.email || 'patient@token.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'UPDATE',
+      resource: 'Appointment',
+      resourceId: result.id,
+      details: {
+        appointmentId: result.id,
+        patientId: result.patientId,
+        confirmationAction: action,
+        accessMethod: 'confirmation_token',
+        accessType: 'APPOINTMENT_CONFIRMATION_ACTION',
+        ...(action === 'reschedule' && { requestedNewTime: newTime }),
+        ...(reason && { reason }),
+      },
+      success: true,
     });
 
     return NextResponse.json(

@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCachedPatientFullContext } from '@/lib/cache/patient-context-cache';
 import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,67 @@ export const GET = createProtectedRoute(
       durationMs: duration,
       cached: duration < 100,
     });
+
+    // ============================================================================
+    // DATA SUPREMACY: Track context load patterns
+    // ============================================================================
+    // Background: Understand which data sections clinicians access most frequently
+    // - Cache hit rate optimization (target: >85%)
+    // - Prefetching strategy improvement
+    // - Access reason pattern analysis (HIPAA compliance monitoring)
+    //
+    // HIPAA Compliance: No patient identifiers stored
+    // ============================================================================
+    const now = new Date();
+    try {
+      // Track behavior event (fire-and-forget)
+      await prisma.userBehaviorEvent.create({
+        data: {
+          userId: context.user!.id,
+          eventType: 'CONTEXT_LOADED',
+          metadata: {
+            accessReason,
+            loadTimeMs: duration,
+            cacheHit: duration < 100,
+            hourOfDay: now.getHours(),
+            dayOfWeek: now.getDay(),
+            sectionsIncluded: Object.keys(patientContext || {}).filter(key => key !== 'patient'),
+            timestamp: now.toISOString(),
+          },
+        },
+      });
+
+      // Update access reason aggregate (for compliance monitoring)
+      await prisma.accessReasonAggregate.upsert({
+        where: {
+          accessReason_hourOfDay_dayOfWeek_date: {
+            accessReason,
+            hourOfDay: now.getHours(),
+            dayOfWeek: now.getDay(),
+            date: new Date(now.toISOString().split('T')[0]),
+          },
+        },
+        update: {
+          accessCount: { increment: 1 },
+          avgDuration: duration, // Will be averaged in analytics
+        },
+        create: {
+          accessReason,
+          hourOfDay: now.getHours(),
+          dayOfWeek: now.getDay(),
+          date: new Date(now.toISOString().split('T')[0]),
+          accessCount: 1,
+          avgDuration: duration,
+        },
+      });
+    } catch (trackingError) {
+      // Don't fail the request if tracking fails
+      logger.error({
+        event: 'behavior_tracking_failed',
+        eventType: 'CONTEXT_LOADED',
+        error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+      });
+    }
 
     return NextResponse.json({
       success: true,

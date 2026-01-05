@@ -135,14 +135,36 @@ export async function GET(request: Request) {
 /**
  * POST /api/audit
  * Create audit log entry for compliance
+ *
+ * ⚠️ SECURITY: Authentication required to prevent audit log manipulation
+ * Note: This endpoint should only be used for manual audit entries.
+ * System-generated audit logs should use the auditView() function from @/lib/audit
  */
 export async function POST(request: Request) {
   try {
+    // Check authentication - only authenticated users can create audit logs
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Verify admin role for manual audit log creation
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden - Admin access required for manual audit logs' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
 
+    // Use authenticated user's email (prevent spoofing)
     const auditLog = await prisma.auditLog.create({
       data: {
-        userEmail: body.userEmail || 'system',
+        userEmail: session.user.email, // ✅ Use authenticated email, not from body
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: body.action,
         resource: body.resource,
@@ -150,6 +172,15 @@ export async function POST(request: Request) {
         details: body.details,
         success: body.success !== false,
       },
+    });
+
+    // Log the manual audit creation
+    logger.info({
+      event: 'manual_audit_log_created',
+      userId: session.user.id,
+      auditLogId: auditLog.id,
+      action: body.action,
+      resource: body.resource,
     });
 
     return NextResponse.json(

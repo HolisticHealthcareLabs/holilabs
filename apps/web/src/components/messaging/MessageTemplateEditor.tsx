@@ -17,6 +17,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DOMPurify from 'isomorphic-dompurify';
 import PatientSelectorModal from './PatientSelectorModal';
 import ScheduleReminderModal, { ScheduleData } from './ScheduleReminderModal';
 
@@ -314,11 +315,8 @@ export default function MessageTemplateEditor() {
   };
 
   const renderPreview = (template: MessageTemplate) => {
-    // ⚠️ SECURITY NOTE: XSS Risk
-    // TODO: Add DOMPurify sanitization before rendering HTML
-    // If template.message contains user-generated content, malicious HTML/JS will be executed
-    // Recommendation: import DOMPurify from 'isomorphic-dompurify' and sanitize before return
-    // Example: return DOMPurify.sanitize(preview);
+    // ✅ SECURITY: XSS Protection with DOMPurify
+    // Sanitizes all HTML before rendering to prevent XSS attacks
     let preview = template.message;
     AVAILABLE_VARIABLES.forEach(variable => {
       preview = preview.replace(
@@ -326,7 +324,12 @@ export default function MessageTemplateEditor() {
         `<span class="bg-blue-100 text-blue-700 px-1 rounded font-semibold">${variable.example}</span>`
       );
     });
-    return preview;
+
+    // Sanitize HTML to prevent XSS attacks
+    return DOMPurify.sanitize(preview, {
+      ALLOWED_TAGS: ['span', 'br', 'strong', 'em', 'p'],
+      ALLOWED_ATTR: ['class'],
+    });
   };
 
   return (

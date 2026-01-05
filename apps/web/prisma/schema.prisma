@@ -576,9 +576,11 @@ model Patient {
   postalCode        String?
   country           String  @default("MX")
 
-  // Medical Record Number
-  mrn         String  @unique // Internal MRN
-  externalMrn String? // External system MRN
+  // Medical Record Number (ENCRYPTED for HIPAA compliance)
+  mrn               String @unique @db.Text // Internal MRN
+  mrnKeyVersion     Int    @default(1)
+  externalMrn       String? @db.Text // External system MRN
+  externalMrnKeyVersion Int? @default(1)
 
   // De-identification
   tokenId String  @unique // Public-facing token (e.g., PT-892a-4f3e-b1c2)
@@ -586,13 +588,16 @@ model Patient {
   region  String? // e.g., "SP" (São Paulo)
 
   // ========================================================================
-  // BRAZILIAN NATIONAL IDENTIFIERS
+  // BRAZILIAN NATIONAL IDENTIFIERS (ENCRYPTED for LGPD compliance)
   // ========================================================================
 
   // Primary identifiers
-  cns String? @unique // Cartão Nacional de Saúde (15 digits)
-  cpf String? @unique // CPF (11 digits)
-  rg  String? // RG (identity document)
+  cns             String? @unique @db.Text // Cartão Nacional de Saúde (15 digits)
+  cnsKeyVersion   Int?    @default(1)
+  cpf             String? @unique @db.Text // CPF (11 digits)
+  cpfKeyVersion   Int?    @default(1)
+  rg              String? @db.Text // RG (identity document)
+  rgKeyVersion    Int?    @default(1)
 
   // Healthcare system identifiers
   municipalityCode String? // IBGE municipality code (7 digits)
@@ -5582,4 +5587,41 @@ enum PermissionScope {
   VIEW_MEDICATIONS
   EDIT_SOAP_NOTES
   FULL_ACCESS
+}
+
+// ============================================================================
+// SECURITY MONITORING & REPORTING
+// ============================================================================
+
+/**
+ * SecurityReport model
+ *
+ * Stores security violation reports from browsers:
+ * - Content Security Policy (CSP) violations
+ * - Cross-Origin-Embedder-Policy (COEP) violations
+ * - Cross-Origin-Opener-Policy (COOP) violations
+ * - Network Error Logging (NEL) reports
+ * - Crash reports
+ *
+ * Used for security monitoring, attack detection, and policy tuning.
+ */
+model SecurityReport {
+  id                 String   @id @default(cuid())
+  type               String // 'csp-violation', 'coep', 'coop', 'nel', 'crash'
+  url                String? @db.VarChar(500) // Page where violation occurred
+  userAgent          String? @db.VarChar(500)
+  violatedDirective  String? @db.VarChar(200) // CSP directive that was violated
+  blockedUrl         String? @db.VarChar(500) // URL that was blocked
+  effectiveDirective String? @db.VarChar(200) // Effective CSP directive
+  disposition        String? // 'enforce' or 'report'
+  lineNumber         Int? // Line number in source file
+  columnNumber       Int? // Column number in source file
+  age                Int? // Time since violation occurred (ms)
+  rawReport          Json? // Full report JSON for debugging
+  createdAt          DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@map("security_reports")
 }

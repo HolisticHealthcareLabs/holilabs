@@ -45,6 +45,7 @@ const customJestConfig = {
   testMatch: [
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
+    '!**/*.manual.[jt]s', // Exclude manual test scripts
   ],
 
   // Ignore patterns
@@ -53,6 +54,14 @@ const customJestConfig = {
     '/.next/',
     '/out/',
     '/build/',
+    '<rootDir>/tests/', // All tests/ directory tests (E2E/load/smoke) run with Playwright/k6, not Jest
+    '\\.skip\\.',      // Skip .skip.ts files (temporarily disabled tests)
+    '\\.manual\\.',    // Skip .manual.ts files (manual verification scripts)
+  ],
+
+  // Transform ESM modules in node_modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(@auth|next-auth|@prisma)/)',
   ],
 
   // Transform files with ts-jest

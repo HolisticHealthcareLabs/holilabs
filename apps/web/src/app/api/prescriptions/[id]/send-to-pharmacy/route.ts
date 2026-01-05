@@ -166,9 +166,18 @@ export const POST = createProtectedRoute(
         message: 'Prescription sent to pharmacy successfully',
       });
     } catch (error: any) {
-      console.error('Error sending prescription to pharmacy:', error);
+      logger.error({
+        event: 'prescription_send_pharmacy_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return NextResponse.json(
-        { error: 'Failed to send prescription to pharmacy', details: error.message },
+        {
+          error: 'Failed to send prescription to pharmacy',
+          ...(process.env.NODE_ENV === 'development' && {
+            details: error.message,
+          }),
+        },
         { status: 500 }
       );
     }

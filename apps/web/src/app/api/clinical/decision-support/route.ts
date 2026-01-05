@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 
 /**
  * Unified Clinical Decision Support API
@@ -322,6 +323,27 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    // HIPAA Audit Log: Clinical decision support accessed for patient
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'ClinicalDecisionSupport',
+      resourceId: patientId,
+      details: {
+        patientId,
+        alertsGenerated: allAlerts.length,
+        criticalAlerts: summary.critical,
+        warningAlerts: summary.warnings,
+        infoAlerts: summary.info,
+        categories: summary.byCategory,
+        accessType: 'CLINICAL_DECISION_SUPPORT',
+      },
+      success: true,
+      request,
+    });
+
     return NextResponse.json({
       alerts: allAlerts,
       summary,
@@ -374,6 +396,24 @@ export async function GET(request: NextRequest) {
         },
       }),
     ]);
+
+    // HIPAA Audit Log: Clinical decision support summary accessed
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'ClinicalDecisionSupport',
+      resourceId: patientId,
+      details: {
+        patientId,
+        medicationAllergies: allergies,
+        preventiveCareReminders: activeReminders,
+        accessType: 'CLINICAL_DECISION_SUPPORT_SUMMARY',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json({
       hasAlerts: allergies > 0 || activeReminders > 0,

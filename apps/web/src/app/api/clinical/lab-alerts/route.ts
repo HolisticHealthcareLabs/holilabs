@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 
 /**
  * Lab Result Abnormality Alert System
@@ -200,6 +201,26 @@ export async function POST(request: NextRequest) {
 
     const criticalAlerts = alerts.filter((a) => a.type === 'critical');
     const warningAlerts = alerts.filter((a) => a.type === 'warning');
+
+    // HIPAA Audit Log: Lab result alerts generated for patient
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'LabAlert',
+      resourceId: patientId,
+      details: {
+        patientId,
+        resultsChecked,
+        alertsGenerated: alerts.length,
+        criticalAlerts: criticalAlerts.length,
+        warningAlerts: warningAlerts.length,
+        accessType: 'LAB_RESULT_ALERT_CHECK',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json({
       alerts,

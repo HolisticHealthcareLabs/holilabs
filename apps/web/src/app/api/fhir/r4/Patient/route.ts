@@ -283,6 +283,31 @@ export async function POST(request: NextRequest) {
     // Validate FHIR Patient resource
     const validationErrors = validateFHIRPatient(fhirPatient);
     if (validationErrors.length > 0) {
+      // ============================================================================
+      // DATA SUPREMACY: Track FHIR validation errors for data quality improvement
+      // ============================================================================
+      try {
+        await prisma.dataQualityEvent.createMany({
+          data: validationErrors.map(error => ({
+            source: 'FHIR_R4_IMPORT',
+            errorType: 'FHIR_VALIDATION_ERROR',
+            errorMessage: error,
+            metadata: {
+              fhirResourceType: fhirPatient.resourceType,
+              fhirId: fhirPatient.id,
+              totalErrors: validationErrors.length,
+              timestamp: new Date().toISOString(),
+            },
+          })),
+          skipDuplicates: true,
+        });
+      } catch (trackingError) {
+        logger.error({
+          event: 'data_quality_tracking_failed',
+          error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+        });
+      }
+
       const outcome = createOperationOutcome(
         'error',
         'invalid',
@@ -330,6 +355,33 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields for internal model
     if (!patientData.firstName || !patientData.lastName) {
+      // ============================================================================
+      // DATA SUPREMACY: Track FHIR mapping errors for data quality
+      // ============================================================================
+      try {
+        await prisma.dataQualityEvent.create({
+          data: {
+            source: 'FHIR_R4_IMPORT',
+            errorType: 'FHIR_MAPPING_ERROR',
+            errorMessage: 'Missing firstName or lastName after FHIR conversion',
+            metadata: {
+              fhirResourceType: fhirPatient.resourceType,
+              fhirId: fhirPatient.id,
+              missingFields: [
+                !patientData.firstName && 'firstName',
+                !patientData.lastName && 'lastName',
+              ].filter(Boolean),
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      } catch (trackingError) {
+        logger.error({
+          event: 'data_quality_tracking_failed',
+          error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+        });
+      }
+
       const outcome = createOperationOutcome(
         'error',
         'required',
@@ -342,6 +394,30 @@ export async function POST(request: NextRequest) {
     }
 
     if (!patientData.dateOfBirth) {
+      // ============================================================================
+      // DATA SUPREMACY: Track FHIR mapping errors for data quality
+      // ============================================================================
+      try {
+        await prisma.dataQualityEvent.create({
+          data: {
+            source: 'FHIR_R4_IMPORT',
+            errorType: 'FHIR_MAPPING_ERROR',
+            errorMessage: 'Missing dateOfBirth after FHIR conversion',
+            metadata: {
+              fhirResourceType: fhirPatient.resourceType,
+              fhirId: fhirPatient.id,
+              missingFields: ['dateOfBirth'],
+              timestamp: new Date().toISOString(),
+            },
+          },
+        });
+      } catch (trackingError) {
+        logger.error({
+          event: 'data_quality_tracking_failed',
+          error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+        });
+      }
+
       const outcome = createOperationOutcome(
         'error',
         'required',

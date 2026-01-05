@@ -1,0 +1,205 @@
+name: Disaster Recovery Test
+
+# COMPLIANCE: HIPAA §164.308(a)(7)(ii)(A) requires periodic testing of backup/restore procedures
+# This workflow runs weekly to verify disaster recovery procedures
+
+on:
+  schedule:
+    # Every Monday at 3 AM UTC (weekly disaster recovery drill)
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      run_actual_restore:
+        description: 'Run actual restore to staging (not just simulation)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  disaster-recovery-test:
+    name: Weekly Disaster Recovery Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Install PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Make test-restore.sh executable
+        run: chmod +x ./scripts/test-restore.sh
+
+      - name: Run Disaster Recovery Test
+        id: dr_test
+        env:
+          PRODUCTION_DB_ID: ${{ secrets.PRODUCTION_DB_ID }}
+          STAGING_DB_ID: ${{ secrets.STAGING_DB_ID }}
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          echo "🔥 Starting Weekly Disaster Recovery Test"
+          echo "=========================================="
+          echo ""
+
+          ./scripts/test-restore.sh
+
+          TEST_EXIT_CODE=$?
+
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "✅ Disaster recovery test PASSED"
+            echo "test_status=PASS" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Disaster recovery test FAILED"
+            echo "test_status=FAIL" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Optional - Actual Restore to Staging
+        if: github.event.inputs.run_actual_restore == 'true'
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          STAGING_DB_ID: ${{ secrets.STAGING_DB_ID }}
+          PRODUCTION_DB_ID: ${{ secrets.PRODUCTION_DB_ID }}
+        run: |
+          echo "⚠️ PERFORMING ACTUAL RESTORE TO STAGING"
+          echo "This will overwrite staging database with production backup"
+          echo ""
+
+          # Get latest production backup
+          LATEST_BACKUP_ID=$(doctl databases backup list $PRODUCTION_DB_ID --format ID --no-header | head -1)
+          echo "Latest backup ID: $LATEST_BACKUP_ID"
+
+          # Restore to staging
+          echo "Restoring backup $LATEST_BACKUP_ID to staging..."
+          doctl databases backup restore $STAGING_DB_ID $LATEST_BACKUP_ID
+
+          echo "✅ Restore initiated - monitoring progress..."
+
+          # Wait for restore to complete (max 20 minutes)
+          for i in {1..40}; do
+            sleep 30
+            DB_STATUS=$(doctl databases get $STAGING_DB_ID --format Status --no-header)
+            echo "  Database status: $DB_STATUS (check $i/40)"
+
+            if [ "$DB_STATUS" = "online" ]; then
+              echo "✅ Restore completed successfully"
+              break
+            fi
+          done
+
+      - name: Verify Staging Database Integrity
+        if: github.event.inputs.run_actual_restore == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          echo "Verifying data integrity after restore..."
+
+          # Count critical tables
+          PATIENT_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM \"Patient\";" | xargs)
+          USER_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM \"User\";" | xargs)
+          AUDIT_LOG_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM audit_logs;" | xargs)
+          APPOINTMENT_COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM \"Appointment\";" | xargs)
+
+          echo "📊 Data Integrity Check:"
+          echo "  Patients: $PATIENT_COUNT"
+          echo "  Users: $USER_COUNT"
+          echo "  Audit logs: $AUDIT_LOG_COUNT"
+          echo "  Appointments: $APPOINTMENT_COUNT"
+
+          # Verify counts are reasonable
+          if [ "$PATIENT_COUNT" -eq 0 ] && [ "$USER_COUNT" -eq 0 ]; then
+            echo "❌ ERROR: Database appears empty after restore"
+            exit 1
+          fi
+
+          echo "✅ Data integrity verified"
+
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: disaster-recovery-test-report
+          path: /tmp/dr-test-*-report.txt
+          retention-days: 90
+
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "✅ Weekly disaster recovery test completed successfully"
+          echo "RTO verification: PASS (restore procedures validated)"
+          echo "RPO verification: PASS (backup within 24 hours)"
+          echo "Next test: Next Monday at 3 AM UTC"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ DISASTER RECOVERY TEST FAILED"
+          echo "ACTION REQUIRED: Review test report and fix issues"
+          echo "This is a CRITICAL compliance requirement - must be resolved immediately"
+          exit 1
+
+      # Optional: Send Slack notification
+      # - name: Send Slack Notification
+      #   if: always()
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #   run: |
+      #     STATUS="${{ steps.dr_test.outputs.test_status }}"
+      #     if [ "$STATUS" = "PASS" ]; then
+      #       EMOJI="✅"
+      #       COLOR="good"
+      #     else
+      #       EMOJI="❌"
+      #       COLOR="danger"
+      #     fi
+      #
+      #     curl -X POST "$SLACK_WEBHOOK_URL" \
+      #       -H 'Content-Type: application/json' \
+      #       -d "{
+      #         \"attachments\": [{
+      #           \"color\": \"$COLOR\",
+      #           \"title\": \"$EMOJI Weekly Disaster Recovery Test\",
+      #           \"text\": \"Status: $STATUS\",
+      #           \"fields\": [{
+      #             \"title\": \"Run Date\",
+      #             \"value\": \"$(date)\",
+      #             \"short\": true
+      #           }]
+      #         }]
+      #       }"
+
+      # Optional: Create GitHub issue on failure
+      # - name: Create Issue on Failure
+      #   if: failure()
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       github.rest.issues.create({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         title: '🔥 Disaster Recovery Test Failed',
+      #         body: `## Disaster Recovery Test Failure
+      #
+      #         The weekly disaster recovery test failed on ${new Date().toISOString()}.
+      #
+      #         **Action Required**: This is a CRITICAL compliance requirement (HIPAA §164.308(a)(7)(ii)(A)).
+      #
+      #         **Next Steps**:
+      #         1. Review the test report artifact
+      #         2. Check backup status in DigitalOcean
+      #         3. Verify restore script functionality
+      #         4. Re-run test after fixes
+      #
+      #         **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+      #         labels: ['critical', 'compliance', 'disaster-recovery']
+      #       })

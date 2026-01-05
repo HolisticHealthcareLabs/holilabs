@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -91,12 +92,24 @@ export async function POST(
     // Generate HTML for PDF
     const html = generateRecordHTML(record);
 
-    // Log export for HIPAA compliance
-    logger.info({
-      event: 'patient_record_exported',
-      patientId: session.patientId,
-      recordId: record.id,
-      format: 'PDF',
+    // HIPAA Audit Log: Patient exported medical record as HTML
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'EXPORT',
+      resource: 'SOAPNote',
+      resourceId: record.id,
+      details: {
+        patientId: session.patientId,
+        recordId: record.id,
+        clinicianId: record.clinicianId,
+        exportFormat: 'HTML',
+        fileName: `registro-medico-${record.patient.mrn}-${format(new Date(record.createdAt), 'yyyy-MM-dd')}.html`,
+        accessType: 'PATIENT_RECORD_HTML_EXPORT',
+      },
+      success: true,
     });
 
     // For now, return HTML that can be converted to PDF on client side

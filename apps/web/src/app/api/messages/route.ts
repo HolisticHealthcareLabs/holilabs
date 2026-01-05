@@ -14,6 +14,7 @@ import { emitNewMessage } from '@/lib/socket-server';
 import { notifyNewMessage } from '@/lib/notifications';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,23 @@ export async function GET(request: NextRequest) {
 
       const conversations = Array.from(conversationsMap.values());
 
+      // HIPAA Audit Log: Clinician accessed patient message conversations
+      await createAuditLog({
+        userId: clinicianSession.user.id,
+        userEmail: clinicianSession.user.email || 'unknown',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+        action: 'READ',
+        resource: 'Message',
+        resourceId: 'conversations',
+        details: {
+          conversationsCount: conversations.length,
+          messagesCount: messages.length,
+          accessType: 'MESSAGE_CONVERSATIONS_LIST',
+        },
+        success: true,
+      });
+
       return NextResponse.json({
         success: true,
         data: { conversations },
@@ -115,6 +133,24 @@ export async function GET(request: NextRequest) {
         unreadCount: messages.filter(m => m.toUserId === patientSession.patientId && !m.readAt).length,
         messages,
       }] : [];
+
+      // HIPAA Audit Log: Patient accessed message conversations
+      await createAuditLog({
+        userId: patientSession.patientId,
+        userEmail: patientSession.email || 'patient@portal.access',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+        action: 'READ',
+        resource: 'Message',
+        resourceId: patientSession.patientId,
+        details: {
+          patientId: patientSession.patientId,
+          conversationsCount: conversations.length,
+          messagesCount: messages.length,
+          accessType: 'PATIENT_MESSAGE_CONVERSATIONS_LIST',
+        },
+        success: true,
+      });
 
       return NextResponse.json({
         success: true,
@@ -228,6 +264,28 @@ export async function POST(request: NextRequest) {
       toUserId,
       toUserType,
       patientId,
+    });
+
+    // HIPAA Audit Log: Message sent
+    await createAuditLog({
+      userId: fromUserId,
+      userEmail: clinicianSession?.user?.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'CREATE',
+      resource: 'Message',
+      resourceId: message.id,
+      details: {
+        messageId: message.id,
+        fromUserId,
+        fromUserType,
+        toUserId,
+        toUserType,
+        patientId,
+        hasAttachments: attachments && attachments.length > 0,
+        accessType: 'MESSAGE_SEND',
+      },
+      success: true,
     });
 
     return NextResponse.json({

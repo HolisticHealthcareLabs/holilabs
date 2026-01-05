@@ -18,8 +18,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backups:/backups
-    ports:
-      - "5432:5432"
+    # NOTE: Not exposed directly - only accessible via pgBouncer
+    expose:
+      - "5432"
     deploy:
       resources:
         limits:
@@ -33,6 +34,79 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    networks:
+      - holi-network
+
+  # PgBouncer - Connection Pooling Proxy
+  pgbouncer:
+    image: edoburu/pgbouncer:1.21.0
+    container_name: holi-pgbouncer-prod
+    environment:
+      # Database connection
+      DATABASE_URL: postgresql://${POSTGRES_USER:-holi}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-holi_protocol}
+
+      # Pool configuration
+      # POOL_MODE: transaction (best for web apps - connections returned after each transaction)
+      POOL_MODE: transaction
+
+      # MAX_CLIENT_CONN: Maximum client connections (total connections pgBouncer accepts)
+      # Set to 2x expected concurrent users (Next.js app + admin tools)
+      MAX_CLIENT_CONN: 200
+
+      # DEFAULT_POOL_SIZE: Connections per user+database pair (actual PostgreSQL connections)
+      # Keep this low to prevent PostgreSQL overload
+      DEFAULT_POOL_SIZE: 20
+
+      # MIN_POOL_SIZE: Minimum pool size (keep warm connections)
+      MIN_POOL_SIZE: 5
+
+      # RESERVE_POOL_SIZE: Emergency pool when default pool is exhausted
+      RESERVE_POOL_SIZE: 5
+
+      # MAX_DB_CONNECTIONS: Total PostgreSQL connections (hard limit)
+      MAX_DB_CONNECTIONS: 25
+
+      # Timeouts (seconds)
+      SERVER_IDLE_TIMEOUT: 600    # Close idle server connections after 10 min
+      SERVER_LIFETIME: 3600       # Close server connections after 1 hour
+      SERVER_CONNECT_TIMEOUT: 15  # Timeout connecting to PostgreSQL
+      QUERY_TIMEOUT: 30           # Max query execution time
+      QUERY_WAIT_TIMEOUT: 120     # Max time to wait for connection from pool
+      CLIENT_IDLE_TIMEOUT: 0      # Keep client connections open indefinitely
+
+      # Logging
+      LOG_CONNECTIONS: 0
+      LOG_DISCONNECTIONS: 0
+      LOG_POOLER_ERRORS: 1
+
+      # Admin access (for monitoring)
+      ADMIN_USERS: ${POSTGRES_USER:-holi}
+      STATS_USERS: ${POSTGRES_USER:-holi}
+
+    ports:
+      - "6432:5432"  # Expose pgBouncer on port 6432 (PostgreSQL still on 5432 internally)
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 64M
+          cpus: '0.125'
+
+    healthcheck:
+      test: ["CMD-SHELL", "PGPASSWORD=${POSTGRES_PASSWORD} psql -h localhost -U ${POSTGRES_USER:-holi} -d pgbouncer -c 'SHOW POOLS;' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
     restart: unless-stopped
     networks:
       - holi-network
@@ -107,8 +181,8 @@ services:
       PORT: 3000
       NODE_OPTIONS: "--max-old-space-size=512"
 
-      # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-holi}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-holi_protocol}?schema=public
+      # Database (via pgBouncer for connection pooling)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-holi}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB:-holi_protocol}?schema=public&pgbouncer=true
 
       # Redis
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
@@ -150,7 +224,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      postgres:
+      pgbouncer:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -322,6 +396,7 @@ networks:
 # ============================================================================
 # RESOURCE SUMMARY (4GB Droplet):
 # - PostgreSQL: 512MB
+# - PgBouncer: 128MB (connection pooling proxy)
 # - Redis: 256MB
 # - Meilisearch: 512MB
 # - Next.js: 768MB (OOM protected, oom_score=-500)
@@ -329,5 +404,10 @@ networks:
 # - Presidio Anonymizer: 512MB
 # - Presidio Redis: 256MB
 # - Nginx: 128MB
-# TOTAL: ~3.5GB + 512MB system overhead = Fits in 4GB with headroom
+# TOTAL: ~3.6GB + 400MB system overhead = Fits in 4GB with headroom
+#
+# NOTE: Application connects to pgBouncer (port 6432) instead of PostgreSQL
+#       directly (port 5432). This allows 200 client connections while only
+#       using 20-25 actual PostgreSQL connections, preventing connection
+#       exhaustion under load.
 # ============================================================================

@@ -62,5 +62,14 @@ export const GET = createProtectedRoute(
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 60 },
     skipCsrf: true,
+    audit: {
+      action: 'READ',
+      resource: 'ClinicalNoteVersion',
+      details: (req, context) => ({
+        noteId: context.params.id,
+        versionId: context.params.versionId,
+        accessType: 'SPECIFIC_VERSION_VIEW',
+      }),
+    },
   }
 );

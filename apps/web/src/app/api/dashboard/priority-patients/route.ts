@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -322,6 +323,27 @@ export async function GET(request: NextRequest) {
       totalPendingOrders: filteredPatients.reduce((sum, p) => sum + p.pendingOrders, 0),
       appointmentsToday: filteredPatients.filter((p) => p.todayAppointment).length,
     };
+
+    // HIPAA Audit Log: Clinician accessed priority patients dashboard
+    await createAuditLog({
+      userId: userId,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'Dashboard',
+      resourceId: 'priority-patients',
+      details: {
+        patientCount: filteredPatients.length,
+        patientIds: filteredPatients.map(p => p.id),
+        criticalUrgencyCount: summary.criticalUrgency,
+        highUrgencyCount: summary.highUrgency,
+        minScoreFilter: minScore,
+        limit,
+        accessType: 'PRIORITY_PATIENTS_DASHBOARD',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json({
       success: true,

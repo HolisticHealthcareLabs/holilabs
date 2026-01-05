@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 // Query parameters schema
@@ -134,13 +135,23 @@ export async function GET(request: NextRequest) {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    // Log access for HIPAA compliance
-    logger.info({
-      event: 'patient_records_accessed',
-      patientId: session.patientId,
-      patientUserId: session.userId,
-      recordCount: records.length,
-      filters: { search, startDate, endDate, status },
+    // HIPAA Audit Log: Patient accessed their medical records list
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'SOAPNote',
+      resourceId: session.patientId,
+      details: {
+        patientId: session.patientId,
+        recordCount: records.length,
+        filters: { search, startDate, endDate, status },
+        pagination: { page, limit },
+        accessType: 'PATIENT_RECORDS_LIST',
+      },
+      success: true,
     });
 
     return NextResponse.json(

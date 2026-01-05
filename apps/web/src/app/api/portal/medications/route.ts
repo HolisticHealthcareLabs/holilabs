@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -74,14 +75,25 @@ export async function GET(request: NextRequest) {
     // });
     const needsRefill: any[] = [];
 
-    logger.info({
-      event: 'patient_medications_fetched',
-      patientId: session.patientId,
-      patientUserId: session.userId,
-      total: medications.length,
-      active: activeMedications.length,
-      inactive: inactiveMedications.length,
-      needsRefill: needsRefill.length,
+    // HIPAA Audit Log: Patient accessed their medications list
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'Medication',
+      resourceId: session.patientId,
+      details: {
+        patientId: session.patientId,
+        total: medications.length,
+        active: activeMedications.length,
+        inactive: inactiveMedications.length,
+        needsRefill: needsRefill.length,
+        activeOnly,
+        accessType: 'PATIENT_MEDICATIONS_LIST',
+      },
+      success: true,
     });
 
     return NextResponse.json(

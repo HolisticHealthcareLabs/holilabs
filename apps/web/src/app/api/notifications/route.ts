@@ -11,6 +11,7 @@ import { authOptions } from '@/lib/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { getNotifications } from '@/lib/notifications';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,6 +42,26 @@ export async function GET(request: NextRequest) {
         count: notifications.length,
       });
 
+      // HIPAA Audit Log: Clinician accessed notifications
+      await createAuditLog({
+        userId: clinicianSession.user.id,
+        userEmail: clinicianSession.user.email || 'unknown',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+        action: 'READ',
+        resource: 'Notification',
+        resourceId: clinicianSession.user.id,
+        details: {
+          userType: 'CLINICIAN',
+          notificationsCount: notifications.length,
+          unreadOnly,
+          limit,
+          offset,
+          accessType: 'NOTIFICATION_LIST',
+        },
+        success: true,
+      });
+
       return NextResponse.json(
         {
           success: true,
@@ -69,6 +90,27 @@ export async function GET(request: NextRequest) {
         patientId: patientSession.patientId,
         userType: 'PATIENT',
         count: notifications.length,
+      });
+
+      // HIPAA Audit Log: Patient accessed notifications
+      await createAuditLog({
+        userId: patientSession.patientId,
+        userEmail: patientSession.email || 'patient@portal.access',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+        action: 'READ',
+        resource: 'Notification',
+        resourceId: patientSession.patientId,
+        details: {
+          userType: 'PATIENT',
+          patientId: patientSession.patientId,
+          notificationsCount: notifications.length,
+          unreadOnly,
+          limit,
+          offset,
+          accessType: 'PATIENT_NOTIFICATION_LIST',
+        },
+        success: true,
       });
 
       return NextResponse.json(

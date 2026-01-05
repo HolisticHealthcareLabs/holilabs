@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 
 /**
  * Allergy Contraindication Checker
@@ -210,6 +211,27 @@ export async function POST(request: NextRequest) {
     const criticalAlerts = alerts.filter((a) => a.type === 'critical');
     const warningAlerts = alerts.filter((a) => a.type === 'warning');
 
+    // HIPAA Audit Log: Allergy contraindication check performed
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'AllergyCheck',
+      resourceId: patientId,
+      details: {
+        patientId,
+        allergiesChecked: allergies.length,
+        medicationsChecked: medications.length,
+        alertsGenerated: alerts.length,
+        criticalAlerts: criticalAlerts.length,
+        warningAlerts: warningAlerts.length,
+        accessType: 'ALLERGY_CONTRAINDICATION_CHECK',
+      },
+      success: true,
+      request,
+    });
+
     return NextResponse.json({
       alerts,
       hasContraindications: alerts.length > 0,
@@ -252,6 +274,24 @@ export async function GET(request: NextRequest) {
         isActive: true,
       },
       orderBy: [{ severity: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    // HIPAA Audit Log: Patient allergies accessed
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'Allergy',
+      resourceId: patientId,
+      details: {
+        patientId,
+        allergiesCount: allergies.length,
+        medicationAllergies: allergies.filter((a) => a.allergyType === 'MEDICATION').length,
+        accessType: 'ALLERGY_LIST',
+      },
+      success: true,
+      request,
     });
 
     return NextResponse.json({

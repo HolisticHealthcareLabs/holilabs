@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 // Query parameters schema
@@ -123,13 +124,24 @@ export async function GET(request: NextRequest) {
         ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(apt.status)
     );
 
-    logger.info({
-      event: 'patient_appointments_fetched',
-      patientId: session.patientId,
-      patientUserId: session.userId,
-      count: appointments.length,
-      upcoming: upcomingAppointments.length,
-      past: pastAppointments.length,
+    // HIPAA Audit Log: Patient accessed their appointments list
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'Appointment',
+      resourceId: session.patientId,
+      details: {
+        patientId: session.patientId,
+        count: appointments.length,
+        upcoming: upcomingAppointments.length,
+        past: pastAppointments.length,
+        filters: { status, upcoming },
+        accessType: 'PATIENT_APPOINTMENTS_LIST',
+      },
+      success: true,
     });
 
     return NextResponse.json(

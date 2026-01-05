@@ -14,6 +14,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext } from '@/lib/cds/types';
+import { createAuditLog } from '@/lib/audit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,6 +54,28 @@ export async function POST(request: NextRequest) {
         `🚨 [CDS Hooks] ${criticalAlerts.length} CRITICAL alerts generated for medication-prescribe`
       );
     }
+
+    // HIPAA Audit Log: CDS Hooks accessed patient data for medication safety check
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'CDSHooks',
+      resourceId: cdsContext.patientId,
+      details: {
+        hookType: 'medication-prescribe',
+        hookInstance: body.hookInstance,
+        patientId: cdsContext.patientId,
+        encounterId: cdsContext.encounterId,
+        medicationsCount: body.context.medications?.length || 0,
+        cardsReturned: response.cards?.length || 0,
+        criticalAlertsCount: criticalAlerts.length,
+        accessType: 'MEDICATION_SAFETY_CHECK',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json(response);
 

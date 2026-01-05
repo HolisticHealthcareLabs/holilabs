@@ -18,6 +18,7 @@ import { sendSMS } from '@/lib/sms';
 import { z } from 'zod';
 import { SignJWT } from 'jose';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -284,6 +285,26 @@ export const POST = createProtectedRoute(
         timestamp: new Date().toISOString(),
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
         userAgent: request.headers.get('user-agent'),
+      });
+
+      // HIPAA Audit Log: Patient invited to portal
+      await createAuditLog({
+        userId: context.user.id,
+        userEmail: context.user.email || 'unknown',
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        action: 'INVITE',
+        resource: 'Patient',
+        resourceId: patient.id,
+        details: {
+          channels: successfulChannels,
+          requestedChannels: channels,
+          includePortalAccess,
+          hasCustomMessage: !!customMessage,
+          patientEmail: !!patient.email,
+          patientPhone: !!patient.phone,
+        },
+        success: successfulChannels.length > 0,
+        request,
       });
 
       // Update patient last contacted timestamp

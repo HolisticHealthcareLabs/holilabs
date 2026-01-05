@@ -2,14 +2,17 @@
  * Send Magic Link API
  *
  * POST /api/portal/auth/magic-link/send - Send magic link to patient email
+ *
+ * @security Rate limited to 3 attempts per hour per IP to prevent email spam
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { sendMagicLinkEmail } from '@/lib/email';
-import { checkRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { createPublicRoute, ApiContext } from '@/lib/api/middleware';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,13 +24,8 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-export async function POST(request: NextRequest) {
-  // Apply rate limiting - 5 requests per minute for auth endpoints
-  const rateLimitResponse = await checkRateLimit(request, 'auth');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
-
+export const POST = createPublicRoute(
+  async (request: NextRequest, context: ApiContext) => {
   try {
     const body = await request.json();
     const { email } = body;
@@ -93,12 +91,46 @@ export async function POST(request: NextRequest) {
         magicLinkUrl,
         expiresAt
       );
+
+      // HIPAA Audit Log: Magic link authentication attempt
+      await createAuditLog({
+        userId: patientUser.id,
+        userEmail: patientUser.email,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        action: 'LOGIN_ATTEMPT',
+        resource: 'PatientAuth',
+        resourceId: patientUser.id,
+        details: {
+          method: 'magic_link',
+          patientId: patientUser.patient.id,
+          expiresAt: expiresAt.toISOString(),
+        },
+        success: true,
+        request,
+      });
     } catch (emailError) {
       logger.error({
         event: 'magic_link_email_send_error',
         error: emailError instanceof Error ? emailError.message : 'Unknown error',
         stack: emailError instanceof Error ? emailError.stack : undefined,
       });
+
+      // Audit log for failed attempt
+      await createAuditLog({
+        userId: patientUser.id,
+        userEmail: patientUser.email,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        action: 'LOGIN_ATTEMPT',
+        resource: 'PatientAuth',
+        resourceId: patientUser.id,
+        details: {
+          method: 'magic_link',
+          error: 'Email send failed',
+        },
+        success: false,
+        request,
+      });
+
       return NextResponse.json(
         { error: 'Failed to send magic link email' },
         { status: 500 }
@@ -129,4 +161,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  {
+    // ✅ SECURITY: Stricter rate limiting to prevent email spam
+    // Limits: 3 attempts per hour per IP address
+    rateLimit: {
+      windowMs: 60 * 60 * 1000, // 1 hour
+      maxRequests: 3, // 3 attempts per hour
+    },
+  }
+);

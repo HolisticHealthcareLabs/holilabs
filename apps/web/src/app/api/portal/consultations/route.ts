@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,11 +41,21 @@ export async function GET(request: NextRequest) {
 
     const recordings: any[] = []; // Temporary empty array until model is added
 
-    logger.info({
-      event: 'patient_consultations_fetched',
-      patientId: session.patientId,
-      patientUserId: session.userId,
-      count: recordings.length,
+    // HIPAA Audit Log: Patient accessed their consultations list
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'RecordingSession',
+      resourceId: session.patientId,
+      details: {
+        patientId: session.patientId,
+        count: recordings.length,
+        accessType: 'PATIENT_CONSULTATIONS_LIST',
+      },
+      success: true,
     });
 
     return NextResponse.json(

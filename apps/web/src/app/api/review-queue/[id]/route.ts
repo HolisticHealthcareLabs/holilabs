@@ -79,5 +79,9 @@ export const PATCH = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
+    audit: { action: 'UPDATE', resource: 'ReviewQueue' },
   }
 );
