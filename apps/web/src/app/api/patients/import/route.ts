@@ -227,6 +227,31 @@ export const POST = createProtectedRoute(
       });
 
       if (validationErrors.length > 0) {
+        // ============================================================================
+        // DATA SUPREMACY: Track validation errors for data quality improvement
+        // ============================================================================
+        try {
+          await prisma.dataQualityEvent.createMany({
+            data: validationErrors.map(error => ({
+              source: 'CSV_IMPORT',
+              errorType: error.split(':')[1]?.trim() || 'VALIDATION_ERROR',
+              errorMessage: error,
+              userId: context.user.id,
+              metadata: {
+                rowCount: rows.length,
+                errorCount: validationErrors.length,
+                timestamp: new Date().toISOString()
+              },
+            })),
+            skipDuplicates: true,
+          });
+        } catch (trackingError) {
+          logger.error({
+            event: 'data_quality_tracking_failed',
+            error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+          });
+        }
+
         return NextResponse.json(
           {
             error: 'Validation failed',
@@ -393,6 +418,32 @@ export const POST = createProtectedRoute(
             importedCount: imported.length,
             // No patient data for privacy
           });
+
+          // ============================================================================
+          // DATA SUPREMACY: Track import success metrics
+          // ============================================================================
+          try {
+            await prisma.userBehaviorEvent.create({
+              data: {
+                userId: context.user.id,
+                eventType: 'BULK_IMPORT_SUCCESS',
+                metadata: {
+                  totalRows: rows.length,
+                  importedCount: imported.length,
+                  failedCount: failed.length,
+                  successRate: ((imported.length / rows.length) * 100).toFixed(2),
+                  hasValidationErrors: failed.length > 0,
+                  timestamp: new Date().toISOString(),
+                },
+              },
+            });
+          } catch (trackingError) {
+            logger.error({
+              event: 'behavior_tracking_failed',
+              eventType: 'BULK_IMPORT_SUCCESS',
+              error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+            });
+          }
         } catch (error: any) {
           logger.error({
             event: 'patients_bulk_import_failed',
@@ -409,6 +460,44 @@ export const POST = createProtectedRoute(
                 reason: `Batch insert failed: ${error.message}`,
               });
             }
+          }
+
+          // ============================================================================
+          // DATA SUPREMACY: Track import failure for reliability monitoring
+          // ============================================================================
+          try {
+            await prisma.userBehaviorEvent.create({
+              data: {
+                userId: context.user.id,
+                eventType: 'BULK_IMPORT_FAILURE',
+                metadata: {
+                  totalRows: rows.length,
+                  errorMessage: error.message,
+                  errorType: error.code || 'UNKNOWN_ERROR',
+                  timestamp: new Date().toISOString(),
+                },
+              },
+            });
+
+            // Track as data quality event
+            await prisma.dataQualityEvent.create({
+              data: {
+                source: 'CSV_IMPORT',
+                errorType: 'BATCH_INSERT_FAILED',
+                errorMessage: error.message,
+                userId: context.user.id,
+                metadata: {
+                  totalRows: rows.length,
+                  errorCode: error.code,
+                },
+              },
+            });
+          } catch (trackingError) {
+            logger.error({
+              event: 'behavior_tracking_failed',
+              eventType: 'BULK_IMPORT_FAILURE',
+              error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
+            });
           }
         }
       }

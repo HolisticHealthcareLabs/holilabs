@@ -2,6 +2,8 @@
  * Verify Magic Link API
  *
  * POST /api/portal/auth/magic-link/verify - Verify magic link token and create session
+ *
+ * @security Rate limited to 5 attempts per 15 minutes per IP to prevent brute force attacks
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,6 +11,8 @@ import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { createPatientSession } from '@/lib/auth/patient-session';
 import { logger } from '@/lib/logger';
+import { createPublicRoute, ApiContext } from '@/lib/api/middleware';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +20,8 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest, context: ApiContext) => {
   try {
     const body = await request.json();
     const { token } = body;
@@ -98,6 +103,23 @@ export async function POST(request: NextRequest) {
       false // rememberMe = false for magic links
     );
 
+    // HIPAA Audit Log: Successful patient login
+    await createAuditLog({
+      userId: magicLink.patientUser.id,
+      userEmail: magicLink.patientUser.email,
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'LOGIN',
+      resource: 'PatientAuth',
+      resourceId: magicLink.patientUser.id,
+      details: {
+        method: 'magic_link',
+        patientId: magicLink.patientUser.patient.id,
+        sessionCreated: true,
+      },
+      success: true,
+      request,
+    });
+
     return NextResponse.json(
       {
         success: true,
@@ -123,4 +145,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  {
+    // ✅ SECURITY: Rate limiting to prevent brute force magic link attacks
+    // Limits: 5 attempts per 15 minutes per IP address
+    rateLimit: {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      maxRequests: 5, // 5 attempts per 15 minutes
+    },
+  }
+);

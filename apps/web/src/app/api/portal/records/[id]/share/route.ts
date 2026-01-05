@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 import crypto from 'crypto';
 
@@ -146,15 +147,30 @@ export async function POST(
     // Build share URL
     const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/shared/${shareToken}`;
 
-    // Log share creation for HIPAA compliance
-    logger.info({
-      event: 'medical_record_shared',
-      patientId: session.patientId,
-      patientUserId: session.userId,
-      recordId,
-      shareId: share.id,
-      recipientEmail,
-      expiresAt,
+    // HIPAA Audit Log: Patient created share link for medical record
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'SHARE',
+      resource: 'SOAPNote',
+      resourceId: recordId,
+      details: {
+        patientId: session.patientId,
+        recordId,
+        shareId: share.id,
+        recipientEmail: share.recipientEmail,
+        recipientName: share.recipientName,
+        purpose: share.purpose,
+        expiresAt: share.expiresAt.toISOString(),
+        expiresInHours,
+        maxAccesses: share.maxAccesses,
+        allowDownload: share.allowDownload,
+        requirePassword: share.requirePassword,
+        accessType: 'PATIENT_RECORD_SHARE_CREATE',
+      },
+      success: true,
     });
 
     return NextResponse.json(
@@ -262,6 +278,24 @@ export async function GET(
         createdAt: true,
         shareToken: true,
       },
+    });
+
+    // HIPAA Audit Log: Patient listed active shares for medical record
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'DocumentShare',
+      resourceId: recordId,
+      details: {
+        patientId: session.patientId,
+        recordId,
+        sharesCount: shares.length,
+        accessType: 'PATIENT_RECORD_SHARE_LIST',
+      },
+      success: true,
     });
 
     return NextResponse.json(

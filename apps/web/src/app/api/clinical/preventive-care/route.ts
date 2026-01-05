@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 
 /**
  * Preventive Care Reminder System
@@ -315,6 +316,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // HIPAA Audit Log: Preventive care recommendations generated
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'PreventiveCare',
+      resourceId: patientId,
+      details: {
+        patientId,
+        patientAge: age,
+        patientGender: gender,
+        remindersGenerated: remindersNeeded.length,
+        existingReminders: existingReminders.length,
+        accessType: 'PREVENTIVE_CARE_RECOMMENDATIONS',
+      },
+      success: true,
+      request,
+    });
+
     return NextResponse.json({
       reminders: remindersNeeded,
       count: remindersNeeded.length,
@@ -374,6 +395,25 @@ export async function GET(request: NextRequest) {
     const dueCount = reminders.filter((r) => r.status === 'DUE').length;
     const overdueCount = reminders.filter((r) => r.status === 'OVERDUE').length;
 
+    // HIPAA Audit Log: Preventive care reminders accessed
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'PreventiveCare',
+      resourceId: patientId,
+      details: {
+        patientId,
+        remindersCount: reminders.length,
+        dueCount,
+        overdueCount,
+        accessType: 'PREVENTIVE_CARE_REMINDERS',
+      },
+      success: true,
+      request,
+    });
+
     return NextResponse.json({
       reminders,
       count: reminders.length,
@@ -414,6 +454,23 @@ export async function PUT(request: NextRequest) {
         patientId,
       })),
       skipDuplicates: true,
+    });
+
+    // HIPAA Audit Log: Preventive care reminders created
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'PreventiveCare',
+      resourceId: patientId,
+      details: {
+        patientId,
+        remindersCreated: created.count,
+        accessType: 'PREVENTIVE_CARE_CREATE_REMINDERS',
+      },
+      success: true,
+      request,
     });
 
     return NextResponse.json({

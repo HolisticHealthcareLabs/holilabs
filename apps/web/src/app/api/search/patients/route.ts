@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,13 +107,35 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // HIPAA Audit Log: Track patient searches (sensitive PHI access)
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'SEARCH',
+      resource: 'Patient',
+      resourceId: 'SEARCH_QUERY',
+      details: {
+        searchQuery: query,
+        resultCount: patientsWithAge.length,
+        searchType: 'GLOBAL_PATIENT_SEARCH',
+        patientIds: patientsWithAge.map(p => p.id),
+      },
+      success: true,
+      request,
+    });
+
     return NextResponse.json({
       patients: patientsWithAge,
       query,
       count: patientsWithAge.length,
     });
   } catch (error) {
-    console.error('Patient search error:', error);
+    logger.error({
+      event: 'patient_search_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to search patients' },
       { status: 500 }

@@ -69,3 +69,7 @@ prisma/migrations/
 *.swp
 *.swo
 *~
+
+# Synthea test data (large JAR file and generated data)
+synthea/
+synthea-output/

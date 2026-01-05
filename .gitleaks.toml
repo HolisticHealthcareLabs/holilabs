@@ -1,0 +1,152 @@
+# Gitleaks Configuration for HoliLabs
+# Healthcare application with HIPAA compliance requirements
+#
+# This configuration detects common secrets and healthcare-specific sensitive data
+# Documentation: https://github.com/gitleaks/gitleaks#configuration
+
+title = "HoliLabs Gitleaks Configuration"
+
+# Extend default gitleaks rules
+[extend]
+useDefault = true
+
+# Additional healthcare-specific rules
+
+[[rules]]
+id = "hipaa-patient-ssn"
+description = "Potential Social Security Number (SSN) - HIPAA PHI"
+regex = '''(?i)(ssn|social.?security).{0,20}\b\d{3}-?\d{2}-?\d{4}\b'''
+tags = ["hipaa", "phi", "ssn"]
+
+[[rules]]
+id = "hipaa-medical-record-number"
+description = "Potential Medical Record Number (MRN)"
+regex = '''(?i)(mrn|medical.?record).{0,20}\b[A-Z0-9]{6,12}\b'''
+tags = ["hipaa", "phi", "mrn"]
+
+[[rules]]
+id = "brazil-cpf"
+description = "Brazilian CPF (Cadastro de Pessoas Físicas)"
+regex = '''\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b'''
+tags = ["lgpd", "cpf", "brazil"]
+
+[[rules]]
+id = "brazil-cns"
+description = "Brazilian CNS (Cartão Nacional de Saúde)"
+regex = '''\b\d{15}\b'''
+tags = ["lgpd", "cns", "brazil", "healthcare"]
+
+[[rules]]
+id = "sentry-auth-token"
+description = "Sentry Authentication Token"
+regex = '''sntrys_[a-zA-Z0-9]{40,}'''
+tags = ["sentry", "api-key"]
+
+[[rules]]
+id = "medplum-token"
+description = "Medplum FHIR API Token"
+regex = '''medplum_[a-zA-Z0-9]{40,}'''
+tags = ["medplum", "fhir", "api-key"]
+
+[[rules]]
+id = "upstash-redis-url"
+description = "Upstash Redis Connection URL"
+regex = '''redis://.+@.+\.upstash\.io:\d+'''
+tags = ["upstash", "redis", "connection-string"]
+
+[[rules]]
+id = "twilio-api-key"
+description = "Twilio API Key"
+regex = '''SK[a-z0-9]{32}'''
+tags = ["twilio", "api-key"]
+
+[[rules]]
+id = "stripe-api-key"
+description = "Stripe API Key"
+regex = '''(?i)(sk|pk)_(test|live)_[a-zA-Z0-9]{24,}'''
+tags = ["stripe", "api-key", "payment"]
+
+[[rules]]
+id = "google-oauth-secret"
+description = "Google OAuth Client Secret"
+regex = '''GOCSPX-[a-zA-Z0-9_-]{28}'''
+tags = ["google", "oauth", "secret"]
+
+[[rules]]
+id = "postgresql-connection-string"
+description = "PostgreSQL Connection String"
+regex = '''postgres(ql)?://[a-zA-Z0-9_-]+:[^@\s]+@[a-zA-Z0-9.-]+:\d+/[a-zA-Z0-9_-]+'''
+tags = ["database", "postgresql", "connection-string"]
+
+[[rules]]
+id = "nextauth-secret"
+description = "NextAuth Secret"
+regex = '''(?i)NEXTAUTH_SECRET\s*=\s*['""]?[a-zA-Z0-9+/=]{32,}['""]?'''
+tags = ["nextauth", "secret", "authentication"]
+
+# Allowlist - paths and patterns to ignore
+
+[allowlist]
+description = "Allowlist for common false positives"
+
+# Paths to ignore
+paths = [
+    '''\.git/''',
+    '''node_modules/''',
+    '''\.next/''',
+    '''dist/''',
+    '''build/''',
+    '''coverage/''',
+    '''\*\.lock''',
+    '''\*\.log''',
+    '''pnpm-lock\.yaml''',
+    '''package-lock\.json''',
+    '''yarn\.lock''',
+    '''gitleaks-report\.json''', # Ignore gitleaks report itself
+]
+
+# Specific files to ignore
+files = [
+    '''\.gitleaks\.toml$''',
+    '''\.env\.example$''',
+    '''\.env\.template$''',
+    '''.*\.md$''', # Ignore all markdown documentation files
+    '''.*_SECRETS.*\.md$''', # Ignore secret documentation
+    '''.*DEPLOYMENT.*\.md$''', # Ignore deployment guides
+    '''.*QUICKSTART.*\.md$''', # Ignore quickstart guides
+]
+
+# Regexes to allowlist (common false positives)
+regexes = [
+    # Test data and examples
+    '''(?i)example''',
+    '''(?i)test.*key''',
+    '''(?i)fake.*password''',
+    '''(?i)dummy.*secret''',
+
+    # Common variable placeholders
+    '''YOUR_.*_HERE''',
+    '''<.*>''',
+    '''\{.*\}''',
+    '''\$\{.*\}''',
+
+    # Documentation
+    '''(?i)readme''',
+    '''(?i)sample''',
+
+    # UUID format (not secrets)
+    '''\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b''',
+]
+
+# Stop words - content that definitely isn't a secret
+stopwords = [
+    "example",
+    "test",
+    "demo",
+    "sample",
+    "placeholder",
+    "YOUR_",
+    "REPLACE_",
+    "TODO:",
+    "FIXME:",
+]

@@ -44,6 +44,7 @@ const ONBOARDING_OPTIONS: OnboardingOption[] = [
     description: 'Begin with a clean slate by registering your first patient profile into the unified health knowledge graph.',
     action: 'Initialize System',
     status: 'active',
+    isPrimary: true,
   },
   {
     id: 'demo-mode',
@@ -51,8 +52,7 @@ const ONBOARDING_OPTIONS: OnboardingOption[] = [
     subtitle: 'Experience P4 Medicine Platform',
     description: 'Interact with 10 pre-populated patient profiles demonstrating predictive analytics, preventive protocols, and personalized care plans.',
     action: 'Launch Demo Environment',
-    status: 'recommended',
-    isPrimary: true,
+    status: 'active',
   },
   {
     id: 'import-data',
@@ -401,17 +401,17 @@ export function ProfessionalOnboarding() {
                       ${option.isPrimary ? 'bg-gradient-to-br from-blue-500 to-purple-600' : 'bg-gray-200 dark:bg-gray-700'}
                     `}>
                       {option.id === 'add-patient' && (
-                        <svg className="w-7 h-7 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-7 h-7 ${option.isPrimary ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       )}
                       {option.id === 'demo-mode' && (
-                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-7 h-7 ${option.isPrimary ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                       )}
                       {option.id === 'import-data' && (
-                        <svg className="w-7 h-7 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-7 h-7 ${option.isPrimary ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
                       )}
@@ -455,14 +455,20 @@ export function ProfessionalOnboarding() {
                 ))}
               </div>
 
-              {/* Explore Alone Link */}
-              <div className="text-center">
+              {/* Skip Onboarding Option */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  or
+                </div>
                 <button
                   onClick={handleExploreAlone}
-                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium text-sm underline decoration-dotted underline-offset-4 transition-colors"
+                  className="px-8 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all shadow-sm hover:shadow-md"
                 >
-                  I'll explore on my own
+                  Skip Setup - Explore Dashboard
                 </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center max-w-md">
+                  You can add patients or enable demo mode anytime from your dashboard
+                </p>
               </div>
 
               {/* Info Footer */}
@@ -470,9 +476,9 @@ export function ProfessionalOnboarding() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="mt-12 text-center text-xs text-gray-500 dark:text-gray-400"
+                className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400"
               >
-                <p>You can switch modes anytime from Settings</p>
+                <p>All options are available anytime from Settings</p>
               </motion.div>
             </motion.div>
           )}

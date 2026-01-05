@@ -84,6 +84,20 @@ const PHI_FIELDS_CONFIG: Record<string, string[]> = {
     'assessmentAndPlan',
     'notes',
   ],
+  SOAPNote: [
+    'subjective', // Patient's symptoms and complaints (PHI)
+    'objective', // Clinical findings and observations (PHI)
+    'assessment', // Diagnosis and clinical impression (PHI)
+    'plan', // Treatment plan (PHI)
+    'chiefComplaint', // Primary patient complaint (PHI)
+  ],
+  ClinicalNote: [
+    'subjective', // SOAP: Subjective findings (PHI)
+    'objective', // SOAP: Objective findings (PHI)
+    'assessment', // SOAP: Assessment/diagnosis (PHI)
+    'plan', // SOAP: Treatment plan (PHI)
+    'chiefComplaint', // Primary complaint (PHI)
+  ],
   LabResult: [
     'interpretation',
     'notes',

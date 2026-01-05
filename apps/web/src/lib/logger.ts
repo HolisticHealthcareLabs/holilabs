@@ -17,6 +17,7 @@
  */
 
 import pino from 'pino';
+import { createS3Transport, isS3LoggingEnabled } from './logging/s3-transport';
 
 // Determine environment
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -25,10 +26,6 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Detect if we're in a React Server Component context (App Router)
 // In RSC, pino-pretty transport causes worker thread issues
 const isRSC = typeof window === 'undefined' && process.env.NEXT_RUNTIME === 'nodejs';
-
-// TODO: Re-enable Logtail after fixing webpack bundling issues
-// Temporarily disabled to allow build to complete
-let logtail: any = null;
 
 // Create base logger configuration
 const pinoConfig: pino.LoggerOptions = {
@@ -66,53 +63,37 @@ const pinoConfig: pino.LoggerOptions = {
   }),
 };
 
-// Create logger instance
-const baseLogger = pino(pinoConfig);
-
-// Wrap logger to send to BetterStack in production
+// Create logger instance with S3 transport in production
 let logger: pino.Logger;
 
-if (logtail) {
-  // Production with BetterStack - wrap the logger
-  logger = new Proxy(baseLogger, {
-    get(target, prop) {
-      const originalMethod = target[prop as keyof pino.Logger];
+if (isProduction && isS3LoggingEnabled() && !isRSC) {
+  // Production with S3 logging - use multistream to write to both console and S3
+  const streams: pino.StreamEntry[] = [
+    { stream: process.stdout }, // Console output
+    { stream: createS3Transport() }, // S3 storage
+  ];
 
-      // Intercept logging methods
-      if (typeof originalMethod === 'function' && ['trace', 'debug', 'info', 'warn', 'error', 'fatal'].includes(prop as string)) {
-        return function(...args: any[]) {
-          // Call original Pino logger
-          const result = (originalMethod as any).apply(target, args);
+  logger = pino(pinoConfig, pino.multistream(streams));
 
-          // Also send to Logtail
-          const [objOrMsg, msg] = args;
-          const logData = typeof objOrMsg === 'object' ? objOrMsg : {};
-          const logMessage = typeof objOrMsg === 'string' ? objOrMsg : msg;
-
-          logtail!.log(logMessage, prop as string, logData);
-
-          return result;
-        };
-      }
-
-      return originalMethod;
-    }
-  }) as pino.Logger;
-
-  baseLogger.info({
-    event: 'betterstack_init',
+  logger.info({
+    event: 's3_logging_init',
     enabled: true,
-  }, 'BetterStack logging enabled');
-} else {
-  logger = baseLogger;
+    bucket: process.env.LOG_BUCKET_NAME,
+    retention: '6 years (HIPAA compliant)',
+  }, 'S3 log shipping enabled');
+} else if (isProduction && !isS3LoggingEnabled()) {
+  // Production without S3 - console only with warning
+  logger = pino(pinoConfig);
 
-  if (isProduction) {
-    baseLogger.warn({
-      event: 'betterstack_init',
-      enabled: false,
-      reason: 'Missing LOGTAIL_SOURCE_TOKEN',
-    }, 'BetterStack not configured - logs only in console');
-  }
+  logger.warn({
+    event: 's3_logging_init',
+    enabled: false,
+    reason: 'Missing LOG_BUCKET_NAME or AWS credentials',
+    recommendation: 'Configure S3 logging for HIPAA compliance (6-year retention required)',
+  }, 'S3 logging not configured - logs only in console');
+} else {
+  // Development - console only
+  logger = pino(pinoConfig);
 }
 
 export { logger };

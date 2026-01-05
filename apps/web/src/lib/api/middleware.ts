@@ -701,7 +701,7 @@ export function withCORS(response: NextResponse, allowedOrigins: string[] = ['*'
 // MIDDLEWARE COMPOSITION
 // ============================================================================
 
-type Middleware = (
+export type Middleware = (
   request: NextRequest,
   context: ApiContext,
   next: () => Promise<NextResponse>
@@ -785,6 +785,7 @@ export function createProtectedRoute(
   options?: {
     roles?: UserRole[];
     rateLimit?: RateLimitConfig;
+    customMiddlewares?: Middleware[]; // Custom middleware (e.g., exportRateLimit)
     audit?: { action: string; resource: string };
     skipCsrf?: boolean; // Option to disable CSRF for specific routes (e.g., GET-only)
   }
@@ -806,6 +807,11 @@ export function createProtectedRoute(
     // Add CSRF protection by default for all protected routes (skip only if explicitly disabled)
     if (!options?.skipCsrf) {
       middlewares.push(csrfProtection());
+    }
+
+    // Add custom middlewares (e.g., exportRateLimit for advanced rate limiting)
+    if (options?.customMiddlewares) {
+      middlewares.push(...options.customMiddlewares);
     }
 
     if (options?.rateLimit) {

@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
+import { createAuditLog } from '@/lib/audit';
 
 /**
  * Deepgram Token Endpoint
@@ -10,7 +11,7 @@ import { getServerSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Verify authentication
     const session = await getServerSession();
@@ -31,6 +32,22 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    // HIPAA Audit Log: Transcription service token accessed
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'ACCESS',
+      resource: 'TranscriptionService',
+      resourceId: 'deepgram_token',
+      details: {
+        service: 'deepgram',
+        accessType: 'TOKEN_REQUEST',
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json({
       token: apiKey,

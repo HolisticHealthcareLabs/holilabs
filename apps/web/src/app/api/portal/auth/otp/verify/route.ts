@@ -2,6 +2,8 @@
  * Verify OTP API
  *
  * POST /api/portal/auth/otp/verify - Verify OTP code
+ *
+ * @security Rate limited to 5 attempts per 15 minutes per IP to prevent brute force attacks
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,6 +11,8 @@ import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import logger from '@/lib/logger';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import { createPublicRoute, ApiContext } from '@/lib/api/middleware';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +20,8 @@ function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest, context: ApiContext) => {
   try {
     const body = await request.json();
     const { code, phone, email } = body;
@@ -137,6 +142,24 @@ export async function POST(request: NextRequest) {
       attempts: otpRecord.attempts + 1,
     });
 
+    // HIPAA Audit Log: OTP verification success
+    await createAuditLog({
+      userId: otpRecord.patientUserId,
+      userEmail: otpRecord.patientUser.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'VERIFY',
+      resource: 'PatientAuth',
+      resourceId: otpRecord.patientUserId,
+      details: {
+        method: 'otp',
+        sentVia: otpRecord.sentVia,
+        attempts: otpRecord.attempts + 1,
+        patientId: otpRecord.patientUser.patient.id,
+      },
+      success: true,
+      request,
+    });
+
     // Track analytics event (NO PHI!)
     await trackEvent(
       ServerAnalyticsEvents.OTP_VERIFIED,
@@ -173,4 +196,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  {
+    // ✅ SECURITY: Rate limiting to prevent brute force OTP attacks
+    // Limits: 5 attempts per 15 minutes per IP address
+    rateLimit: {
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      maxRequests: 5, // 5 attempts per 15 minutes
+    },
+  }
+);

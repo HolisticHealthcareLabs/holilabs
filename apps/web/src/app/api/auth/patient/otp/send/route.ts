@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { generateOTP } from '@/lib/auth/otp';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createAuditLog } from '@/lib/audit';
 
 // Validation schema
 const SendOTPSchema = z.object({
@@ -53,6 +54,23 @@ export async function POST(request: NextRequest) {
         { status: 429 } // Too Many Requests if rate limited
       );
     }
+
+    // HIPAA Audit Log: Patient authentication attempt via OTP
+    await createAuditLog({
+      userId: 'unknown', // Pre-authentication
+      userEmail: 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'LOGIN_ATTEMPT',
+      resource: 'PatientAuth',
+      resourceId: phone, // Use phone as identifier
+      details: {
+        method: 'otp',
+        channel,
+        expiresAt: result.expiresAt,
+      },
+      success: true,
+      request,
+    });
 
     // Return success (with code only in development)
     return NextResponse.json(

@@ -24,6 +24,7 @@ import {
   validateArray,
   sanitizeMedicationName,
 } from '@/lib/security/validation';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -387,6 +388,30 @@ IMPORTANT:
         },
       });
     }
+
+    // HIPAA Audit Log: AI diagnosis assistant used for patient
+    await createAuditLog({
+      userId: (session.user as any).id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'DiagnosisAssistant',
+      resourceId: body.patientId || 'clinical-assessment',
+      details: {
+        patientId: body.patientId,
+        patientAge: body.age,
+        chiefComplaint: body.chiefComplaint,
+        symptomsCount: body.symptoms.length,
+        differentialDiagnosisCount: diagnosis?.differentialDiagnosis?.length || 0,
+        redFlagsCount: diagnosis?.redFlags?.length || 0,
+        aiProvider: aiResponse.provider || 'claude',
+        tokensUsed: aiResponse.usage?.totalTokens || 0,
+        responseTimeMs: responseTime,
+        accessType: 'AI_DIAGNOSIS_ASSISTANT',
+      },
+      success: true,
+      request: req,
+    });
 
     // 11. Return diagnosis
     return NextResponse.json({

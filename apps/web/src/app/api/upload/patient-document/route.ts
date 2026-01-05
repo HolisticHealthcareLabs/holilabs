@@ -18,6 +18,8 @@ import {
   isAllowedFileSize,
 } from '@/lib/encryption';
 import { uploadToR2, generateStorageKey } from '@/lib/storage/r2-client';
+import { getServerSession } from '@/lib/auth';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +28,15 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
 
     const file = formData.get('file') as File;
@@ -129,26 +140,30 @@ export async function POST(request: NextRequest) {
         documentHash: fileHash,
         storageUrl: storageKey,
         documentType: documentType as any,
-        uploadedBy: 'clinician', // TODO: Get from session
+        uploadedBy: session.user.role || 'clinician',
       },
     });
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        userId: 'system', // TODO: Get from session
-        action: 'CREATE',
-        resource: 'Document',
-        resourceId: document.id,
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        userAgent: request.headers.get('user-agent') || 'unknown',
-        details: {
-          patientId,
-          fileName: file.name,
-          fileSize: file.size,
-          category,
-        },
+    // HIPAA Audit Log: Document uploaded for patient
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'CREATE',
+      resource: 'Document',
+      resourceId: document.id,
+      details: {
+        patientId,
+        fileName: file.name,
+        fileSize: file.size,
+        fileSizeFormatted: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        category,
+        documentType,
+        encrypted: true,
+        storageLocation: 'R2',
       },
+      success: true,
+      request,
     });
 
     return NextResponse.json(

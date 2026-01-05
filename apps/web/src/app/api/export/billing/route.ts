@@ -29,98 +29,104 @@ interface ExportRequest {
  * POST /api/export/billing
  * Export SOAP notes for billing period
  */
-export const POST = createProtectedRoute(async (request: NextRequest, context: any) => {
-  try {
-    const body: ExportRequest = await request.json();
-    const { format, startDate, endDate, includeUnsigned = false } = body;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const body: ExportRequest = await request.json();
+      const { format, startDate, endDate, includeUnsigned = false } = body;
 
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+      // Validate dates
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
-    }
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
+      }
 
-    // Fetch SOAP notes for billing period
-    const notes = await prisma.sOAPNote.findMany({
-      where: {
-        clinicianId: context.user.id,
-        createdAt: {
-          gte: start,
-          lte: end,
+      // Fetch SOAP notes for billing period
+      const notes = await prisma.sOAPNote.findMany({
+        where: {
+          clinicianId: context.user.id,
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+          ...(includeUnsigned ? {} : { signedAt: { not: null } }),
         },
-        ...(includeUnsigned ? {} : { signedAt: { not: null } }),
-      },
-      include: {
-        patient: {
-          select: {
-            firstName: true,
-            lastName: true,
-            mrn: true,
-            dateOfBirth: true,
+        include: {
+          patient: {
+            select: {
+              firstName: true,
+              lastName: true,
+              mrn: true,
+              dateOfBirth: true,
+            },
+          },
+          clinician: {
+            select: {
+              firstName: true,
+              lastName: true,
+              npi: true,
+              specialty: true,
+            },
           },
         },
-        clinician: {
-          select: {
-            firstName: true,
-            lastName: true,
-            npi: true,
-            specialty: true,
-          },
+        orderBy: {
+          createdAt: 'asc',
         },
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+      });
 
-    if (notes.length === 0) {
+      if (notes.length === 0) {
+        return NextResponse.json(
+          { error: 'No notes found for the specified date range' },
+          { status: 404 }
+        );
+      }
+
+      // Generate export based on format
+      if (format === 'csv') {
+        const csv = generateCSV(notes);
+        return new NextResponse(csv, {
+          headers: {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': `attachment; filename="billing-export-${startDate}-to-${endDate}.csv"`,
+          },
+        });
+      } else if (format === 'pdf') {
+        // For PDF, return a structured JSON that can be rendered client-side
+        // (PDF generation libraries are heavy - better to do client-side)
+        return NextResponse.json({
+          success: true,
+          data: {
+            notes: notes.map((note) => ({
+              id: note.id,
+              date: note.createdAt,
+              patientName: `${note.patient.firstName} ${note.patient.lastName}`,
+              mrn: note.patient.mrn,
+              diagnoses: note.diagnoses,
+              procedures: note.procedures,
+              chiefComplaint: note.chiefComplaint,
+              signed: !!note.signedAt,
+            })),
+            summary: generateBillingSummary(notes),
+          },
+        });
+      }
+
+      return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
+    } catch (error: any) {
+      console.error('Error exporting billing data:', error);
       return NextResponse.json(
-        { error: 'No notes found for the specified date range' },
-        { status: 404 }
+        { error: 'Failed to export billing data', message: error.message },
+        { status: 500 }
       );
     }
-
-    // Generate export based on format
-    if (format === 'csv') {
-      const csv = generateCSV(notes);
-      return new NextResponse(csv, {
-        headers: {
-          'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="billing-export-${startDate}-to-${endDate}.csv"`,
-        },
-      });
-    } else if (format === 'pdf') {
-      // For PDF, return a structured JSON that can be rendered client-side
-      // (PDF generation libraries are heavy - better to do client-side)
-      return NextResponse.json({
-        success: true,
-        data: {
-          notes: notes.map((note) => ({
-            id: note.id,
-            date: note.createdAt,
-            patientName: `${note.patient.firstName} ${note.patient.lastName}`,
-            mrn: note.patient.mrn,
-            diagnoses: note.diagnoses,
-            procedures: note.procedures,
-            chiefComplaint: note.chiefComplaint,
-            signed: !!note.signedAt,
-          })),
-          summary: generateBillingSummary(notes),
-        },
-      });
-    }
-
-    return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
-  } catch (error: any) {
-    console.error('Error exporting billing data:', error);
-    return NextResponse.json(
-      { error: 'Failed to export billing data', message: error.message },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN'],
+    audit: { action: 'EXPORT', resource: 'SOAPNote' },
   }
-});
+);
 
 /**
  * Generate CSV for billing export

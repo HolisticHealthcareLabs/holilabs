@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,10 +124,22 @@ export async function GET(request: NextRequest) {
     const session = await requirePatientSession();
     const patientId = session.patientId;
 
-    logger.info({
-      event: 'gdpr_data_export_requested',
-      patientId,
-      ipAddress: request.ip || request.headers.get('x-forwarded-for'),
+    // HIPAA/GDPR Audit Log: Patient requested full data export
+    await createAuditLog({
+      userId: patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'EXPORT',
+      resource: 'Patient',
+      resourceId: patientId,
+      details: {
+        patientId,
+        exportType: 'GDPR_FULL_DATA_EXPORT',
+        exportFormat: 'JSON',
+        accessType: 'PATIENT_DATA_EXPORT_REQUEST',
+      },
+      success: true,
     });
 
     // Fetch patient data
@@ -332,10 +345,31 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    logger.info({
-      event: 'gdpr_data_export_completed',
-      patientId,
-      totalRecords: exportData.metadata.totalRecords,
+    // HIPAA/GDPR Audit Log: Data export completed successfully
+    await createAuditLog({
+      userId: patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'EXPORT',
+      resource: 'Patient',
+      resourceId: patientId,
+      details: {
+        patientId,
+        exportType: 'GDPR_FULL_DATA_EXPORT',
+        exportFormat: 'JSON',
+        totalRecords: exportData.metadata.totalRecords,
+        recordBreakdown: {
+          appointments: exportData.appointments.length,
+          medications: exportData.medications.length,
+          labResults: exportData.labResults.length,
+          documents: exportData.documents.length,
+          consultations: exportData.consultations.length,
+          auditLogs: exportData.auditLog.length,
+        },
+        accessType: 'PATIENT_DATA_EXPORT_COMPLETED',
+      },
+      success: true,
     });
 
     // Return as JSON download

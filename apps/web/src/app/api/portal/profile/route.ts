@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 // Update profile schema
@@ -84,10 +85,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    logger.info({
-      event: 'patient_profile_fetched',
-      patientId: session.patientId,
-      patientUserId: session.userId,
+    // HIPAA Audit Log: Patient accessed their profile
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'Patient',
+      resourceId: session.patientId,
+      details: {
+        patientId: session.patientId,
+        includedStats: {
+          activeMedications: patient.medications.length,
+          upcomingAppointments: patient.appointments.length,
+          totalDocuments: patient.documents.length,
+        },
+        accessType: 'PATIENT_PROFILE_VIEW',
+      },
+      success: true,
     });
 
     return NextResponse.json(

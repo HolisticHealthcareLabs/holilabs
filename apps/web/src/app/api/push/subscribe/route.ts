@@ -104,6 +104,15 @@ export const POST = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    audit: {
+      action: 'CREATE',
+      resource: 'PushSubscription',
+      details: (req, context) => ({
+        accessType: 'NOTIFICATION_SUBSCRIPTION',
+      }),
+    },
   }
 );
 
@@ -155,6 +164,15 @@ export const DELETE = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    audit: {
+      action: 'DELETE',
+      resource: 'PushSubscription',
+      details: (req, context) => ({
+        accessType: 'NOTIFICATION_UNSUBSCRIBE',
+      }),
+    },
   }
 );
 

@@ -30,6 +30,7 @@ export default function ClinicianRegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'failed' | null>(null);
+  const [enableDemoMode, setEnableDemoMode] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +41,10 @@ export default function ClinicianRegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          enableDemoMode,
+        }),
       });
 
       const data = await response.json();
@@ -461,6 +465,43 @@ export default function ClinicianRegisterPage() {
                 disabled={isLoading}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
               />
+            </div>
+
+            {/* Demo Mode Option */}
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-xl p-5 space-y-3">
+              <label className="flex items-start gap-4 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={enableDemoMode}
+                  onChange={(e) => setEnableDemoMode(e.target.checked)}
+                  disabled={isLoading}
+                  className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      Start with Demo Mode
+                    </span>
+                    <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
+                      QUICK START
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    Get started immediately with 10 pre-loaded sample patients. Perfect for exploring the platform's features. You can disable this later or add real patients at any time.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="px-2 py-1 bg-white/50 dark:bg-gray-800/50 text-xs text-gray-600 dark:text-gray-400 rounded border border-blue-200 dark:border-blue-800">
+                      ✨ Instant setup
+                    </span>
+                    <span className="px-2 py-1 bg-white/50 dark:bg-gray-800/50 text-xs text-gray-600 dark:text-gray-400 rounded border border-blue-200 dark:border-blue-800">
+                      🎯 Full features
+                    </span>
+                    <span className="px-2 py-1 bg-white/50 dark:bg-gray-800/50 text-xs text-gray-600 dark:text-gray-400 rounded border border-blue-200 dark:border-blue-800">
+                      🔄 Reversible
+                    </span>
+                  </div>
+                </div>
+              </label>
             </div>
 
             <button

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 
 export async function GET(
   request: NextRequest,
@@ -93,13 +94,24 @@ export async function GET(
       );
     }
 
-    // Log access for HIPAA compliance
-    logger.info({
-      event: 'patient_record_viewed',
-      patientId: session.patientId,
-      patientUserId: session.userId,
-      recordId,
-      clinicianId: record.clinicianId,
+    // HIPAA Audit Log: Patient viewed their medical record detail
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'READ',
+      resource: 'SOAPNote',
+      resourceId: recordId,
+      details: {
+        patientId: session.patientId,
+        recordId,
+        clinicianId: record.clinicianId,
+        chiefComplaint: record.chiefComplaint,
+        status: record.status,
+        accessType: 'PATIENT_RECORD_DETAIL',
+      },
+      success: true,
     });
 
     return NextResponse.json(

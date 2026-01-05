@@ -190,5 +190,20 @@ export const POST = createProtectedRoute(
         { status: 500 }
       );
     }
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
+    rateLimit: { windowMs: 60000, maxRequests: 100 },
+    audit: {
+      action: 'CREATE',
+      resource: 'DrugInteractionCheck',
+      details: (req, context) => {
+        const body = JSON.parse(req.body);
+        return {
+          medicationsCount: body.medications?.length || 0,
+          accessType: 'DRUG_INTERACTION_CHECK',
+        };
+      },
+    },
   }
 );

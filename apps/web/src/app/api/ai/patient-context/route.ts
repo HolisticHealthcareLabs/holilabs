@@ -15,11 +15,22 @@ import {
   formatPatientSummary,
 } from '@/lib/ai/patient-context-formatter';
 import { logger } from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
+import { getServerSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const patientId = searchParams.get('patientId');
     const format = searchParams.get('format') || 'full';
@@ -77,6 +88,25 @@ export async function GET(request: NextRequest) {
         context = formatPatientContext(patient);
         break;
     }
+
+    // HIPAA Audit Log: AI accessed patient context for AI processing
+    await createAuditLog({
+      userId: session.user.id,
+      userEmail: session.user.email || 'unknown',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'PatientContext',
+      resourceId: patientId,
+      details: {
+        format,
+        accessType: 'AI_CONTEXT_GENERATION',
+        chiefComplaint: chiefComplaint || undefined,
+        appointmentReason: appointmentReason || undefined,
+        contextSizeChars: JSON.stringify(context).length,
+      },
+      success: true,
+      request,
+    });
 
     return NextResponse.json({
       success: true,

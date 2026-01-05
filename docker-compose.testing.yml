@@ -1,0 +1,84 @@
+# Testing Infrastructure
+# Run with: docker-compose -f docker-compose.yml -f docker-compose.testing.yml up
+
+services:
+  # Inferno FHIR Conformance Testing
+  # Tests FHIR R4 compliance with 2,000+ automated tests
+  inferno:
+    image: infernocommunity/inferno-core:latest
+    container_name: holi-inferno
+    platform: linux/amd64  # Force AMD64 for Apple Silicon compatibility
+    ports:
+      - "4567:4567"
+    environment:
+      - FHIR_REFERENCE_SERVER=http://host.docker.internal:3000/api/fhir/r4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4567"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - testing
+
+  # OWASP ZAP - Security Vulnerability Scanner
+  # Automated DAST for REST APIs
+  zap:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    container_name: holi-zap
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    command: zap-webswing.sh
+    environment:
+      - ZAP_PORT=8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - testing
+    volumes:
+      - zap_data:/zap/wrk
+
+  # k6 Load Testing (Alternative to running locally)
+  # Uncomment to run load tests in Docker
+  # k6:
+  #   image: grafana/k6:latest
+  #   container_name: holi-k6
+  #   environment:
+  #     - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
+  #   volumes:
+  #     - ./tests/load:/scripts
+  #   command: run /scripts/api-baseline.js
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   networks:
+  #     - testing
+  #   depends_on:
+  #     - prometheus
+
+  # Prometheus - Metrics for k6 load testing results
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: holi-prometheus-testing
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-remote-write-receiver'
+    networks:
+      - testing
+
+networks:
+  testing:
+    driver: bridge
+
+volumes:
+  zap_data:
+    driver: local
+  prometheus_data:
+    driver: local

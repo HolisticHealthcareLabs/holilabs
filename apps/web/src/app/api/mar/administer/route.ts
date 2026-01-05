@@ -234,6 +234,29 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, any>);
 
+    // Audit log for MAR access
+    await logAuditEvent(
+      {
+        action: 'READ',
+        resource: 'MedicationAdministration',
+        resourceId: patientId,
+        details: {
+          patientId,
+          medicationId,
+          recordsAccessed: administrations.length,
+          dateRange: {
+            start: startDate,
+            end: endDate,
+          },
+          shift,
+          accessType: 'MAR_RECORD_ACCESS',
+        },
+      },
+      request,
+      session.user.id,
+      session.user.email || undefined
+    );
+
     return NextResponse.json({
       administrations,
       groupedByMedication,

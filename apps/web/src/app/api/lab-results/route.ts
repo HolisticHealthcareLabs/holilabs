@@ -91,6 +91,22 @@ export const GET = createProtectedRoute(
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    audit: {
+      action: 'READ',
+      resource: 'LabResult',
+      details: (req, context) => {
+        const { searchParams } = new URL(req.url);
+        return {
+          patientId: searchParams.get('patientId'),
+          filters: {
+            status: searchParams.get('status'),
+            isAbnormal: searchParams.get('isAbnormal'),
+            isCritical: searchParams.get('isCritical'),
+          },
+          accessType: 'LAB_RESULTS_LIST',
+        };
+      },
+    },
   }
 );
 

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createAuditLog } from '@/lib/audit';
 import { renderToStream } from '@react-pdf/renderer';
 import { SOAPNotePDF } from '@/components/pdf/SOAPNotePDF';
 import React from 'react';
@@ -96,13 +97,24 @@ export async function GET(
       );
     }
 
-    // Log PDF export for HIPAA compliance
-    logger.info({
-      event: 'patient_record_pdf_exported',
-      patientId: session.patientId,
-      patientUserId: session.userId,
-      recordId,
-      clinicianId: record.clinicianId,
+    // HIPAA Audit Log: Patient exported medical record as PDF
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient@portal.access',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      userAgent: request.headers.get('user-agent') || 'unknown',
+      action: 'EXPORT',
+      resource: 'SOAPNote',
+      resourceId: recordId,
+      details: {
+        patientId: session.patientId,
+        recordId,
+        clinicianId: record.clinicianId,
+        exportFormat: 'PDF',
+        fileName: `registro-medico-${record.patient.mrn}-${new Date(record.createdAt).toISOString().split('T')[0]}.pdf`,
+        accessType: 'PATIENT_RECORD_PDF_EXPORT',
+      },
+      success: true,
     });
 
     // Generate PDF

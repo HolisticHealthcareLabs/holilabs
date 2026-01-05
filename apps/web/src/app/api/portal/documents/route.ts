@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 
@@ -98,6 +99,25 @@ export async function GET(request: NextRequest) {
 
     // Calculate total size
     const totalSize = documents.reduce((sum, doc) => sum + doc.fileSize, 0);
+
+    // HIPAA Audit Log: Patient accessed their own documents
+    await createAuditLog({
+      userId: session.patientId,
+      userEmail: session.email || 'patient-portal',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'Document',
+      resourceId: session.patientId,
+      details: {
+        documentCount: documents.length,
+        accessType: 'PATIENT_PORTAL_SELF_ACCESS',
+        totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+        documentTypes: Object.keys(documentsByType),
+        filterType: type || 'ALL',
+      },
+      success: true,
+      request,
+    });
 
     logger.info({
       event: 'patient_documents_fetched',

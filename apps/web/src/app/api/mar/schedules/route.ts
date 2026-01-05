@@ -7,6 +7,7 @@ import {
   createScheduledTimesForDate,
 } from '@/lib/mar/schedule-generator';
 import { logger } from '@/lib/logger';
+import { logAuditEvent } from '@/lib/audit';
 
 /**
  * MAR Schedule Management API
@@ -74,6 +75,28 @@ export async function POST(request: NextRequest) {
       });
       schedules.push(schedule);
     }
+
+    // Audit log for schedule creation
+    await logAuditEvent(
+      {
+        action: 'CREATE',
+        resource: 'MedicationSchedule',
+        resourceId: medicationId,
+        details: {
+          medicationId,
+          medicationName: medication.name,
+          patientId: medication.patientId,
+          frequency: medication.frequency,
+          schedulesCreated: schedules.length,
+          startDate: start.toISOString(),
+          endDate: end?.toISOString(),
+          accessType: 'MAR_SCHEDULE_CREATE',
+        },
+      },
+      request,
+      session.user.id,
+      session.user.email || undefined
+    );
 
     return NextResponse.json({
       message: `Created ${schedules.length} schedules`,
@@ -143,6 +166,25 @@ export async function GET(request: NextRequest) {
       orderBy: { scheduledTime: 'asc' },
     });
 
+    // Audit log for schedule access
+    await logAuditEvent(
+      {
+        action: 'READ',
+        resource: 'MedicationSchedule',
+        resourceId: patientId || medicationId || 'schedules',
+        details: {
+          patientId,
+          medicationId,
+          date,
+          schedulesAccessed: schedules.length,
+          accessType: 'MAR_SCHEDULE_ACCESS',
+        },
+      },
+      request,
+      session.user.id,
+      session.user.email || undefined
+    );
+
     return NextResponse.json({
       schedules,
       count: schedules.length,
@@ -173,10 +215,32 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Soft delete - mark as inactive
-    await prisma.medicationSchedule.update({
+    const schedule = await prisma.medicationSchedule.update({
       where: { id: scheduleId },
       data: { isActive: false },
+      include: {
+        patient: { select: { id: true } },
+        medication: { select: { name: true } },
+      },
     });
+
+    // Audit log for schedule deletion
+    await logAuditEvent(
+      {
+        action: 'DELETE',
+        resource: 'MedicationSchedule',
+        resourceId: scheduleId,
+        details: {
+          scheduleId,
+          patientId: schedule.patientId,
+          medicationName: schedule.medication.name,
+          accessType: 'MAR_SCHEDULE_DELETE',
+        },
+      },
+      request,
+      session.user.id,
+      session.user.email || undefined
+    );
 
     return NextResponse.json({
       success: true,

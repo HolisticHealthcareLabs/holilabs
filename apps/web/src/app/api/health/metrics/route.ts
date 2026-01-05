@@ -1,240 +1,304 @@
 /**
- * Detailed System Metrics Endpoint
+ * Metrics Endpoint
  *
  * GET /api/health/metrics
- * Provides comprehensive system metrics for monitoring and alerting
+ * Returns application metrics for monitoring and alerting.
  *
- * Metrics include:
- * - Application uptime and memory usage
- * - Database health and connection pool stats
- * - API response times
- * - Cache performance
- * - Error rates
+ * Includes:
+ * - System metrics (uptime, memory, CPU)
+ * - Business metrics (patients, appointments, auth failures)
+ * - Security metrics (audit logs, rate limiting)
+ * - Infrastructure metrics (circuit breakers, database connections)
  *
- * Used by: Monitoring dashboards, alerting systems
+ * Used by Prometheus, Grafana, and CloudWatch.
  */
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/lib/logger';
+import { getAllCircuitBreakerStats } from '@/lib/resilience/circuit-breaker';
+import { prisma } from '@/lib/db';
+import { createLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
-interface SystemMetrics {
-  timestamp: string;
-  application: {
-    uptime: number;
-    environment: string;
-    nodeVersion: string;
-    platform: string;
-  };
-  memory: {
-    used: number;
-    total: number;
-    percentage: number;
-    heapUsed: number;
-    heapTotal: number;
-    external: number;
-    rss: number;
-  };
-  database: {
-    healthy: boolean;
-    latency: number | null;
-    activeConnections?: number;
-    status: 'connected' | 'disconnected' | 'error';
-  };
-  performance: {
-    cpuUsage: {
-      user: number;
-      system: number;
+const logger = createLogger({ route: '/api/health/metrics' });
+
+/**
+ * Get business metrics (active patients, appointments, etc.)
+ */
+async function getBusinessMetrics() {
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    // Run queries in parallel for performance
+    const [
+      activePatientsCount,
+      totalPatientsCount,
+      dailyAppointmentsCount,
+      pendingAppointmentsCount,
+    ] = await Promise.all([
+      // Active patients (isActive = true)
+      prisma.patient.count({
+        where: {
+          isActive: true,
+        },
+      }),
+
+      // Total patients (including inactive)
+      prisma.patient.count(),
+
+      // Daily appointments (today)
+      prisma.appointment.count({
+        where: {
+          start: {
+            gte: todayStart,
+            lt: todayEnd,
+          },
+        },
+      }),
+
+      // Pending appointments (status = SCHEDULED or CONFIRMED)
+      prisma.appointment.count({
+        where: {
+          status: {
+            in: ['SCHEDULED', 'CONFIRMED'],
+          },
+        },
+      }),
+    ]);
+
+    return {
+      patients: {
+        active: activePatientsCount,
+        total: totalPatientsCount,
+        inactive: totalPatientsCount - activePatientsCount,
+      },
+      appointments: {
+        today: dailyAppointmentsCount,
+        pending: pendingAppointmentsCount,
+      },
     };
-  };
-  thresholds: {
-    memory: {
-      warning: number; // 80%
-      critical: number; // 90%
+  } catch (error) {
+    logger.error({
+      event: 'metrics_business_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Failed to fetch business metrics');
+
+    return {
+      patients: { active: 0, total: 0, inactive: 0 },
+      appointments: { today: 0, pending: 0 },
+      error: 'Failed to fetch business metrics',
     };
-    database: {
-      latencyWarning: number; // 500ms
-      latencyCritical: number; // 1000ms
-    };
-  };
-  alerts: Array<{
-    severity: 'info' | 'warning' | 'critical';
-    message: string;
-    metric: string;
-    value: number;
-    threshold: number;
-  }>;
+  }
 }
 
 /**
- * Check database health with timeout
+ * Get security metrics (failed auth, audit logs)
  */
-async function checkDatabaseHealth(): Promise<{ healthy: boolean; latency: number | null; error?: string }> {
-  const startTime = Date.now();
-
+async function getSecurityMetrics() {
   try {
-    // Simple query with 5-second timeout
-    await prisma.$queryRaw`SELECT 1`;
-    const latency = Date.now() - startTime;
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Run queries in parallel
+    const [
+      failedAuthLastHour,
+      failedAuthLast24Hours,
+      totalAuditLogs,
+      recentAuditLogs,
+    ] = await Promise.all([
+      // Failed authentication attempts in last hour
+      prisma.auditLog.count({
+        where: {
+          action: 'LOGIN_FAILED',
+          timestamp: {
+            gte: oneHourAgo,
+          },
+        },
+      }),
+
+      // Failed authentication attempts in last 24 hours
+      prisma.auditLog.count({
+        where: {
+          action: 'LOGIN_FAILED',
+          timestamp: {
+            gte: oneDayAgo,
+          },
+        },
+      }),
+
+      // Total audit logs
+      prisma.auditLog.count(),
+
+      // Recent audit logs (last hour)
+      prisma.auditLog.count({
+        where: {
+          timestamp: {
+            gte: oneHourAgo,
+          },
+        },
+      }),
+    ]);
+
+    // Check for audit log write failures
+    // If recent audit logs is 0 but we've had API activity, that's suspicious
+    const auditLogHealthy = recentAuditLogs > 0;
 
     return {
-      healthy: true,
-      latency,
+      failedAuth: {
+        lastHour: failedAuthLastHour,
+        last24Hours: failedAuthLast24Hours,
+      },
+      auditLogs: {
+        total: totalAuditLogs,
+        lastHour: recentAuditLogs,
+        healthy: auditLogHealthy,
+      },
     };
-  } catch (error: any) {
+  } catch (error) {
+    logger.error({
+      event: 'metrics_security_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Failed to fetch security metrics');
+
     return {
-      healthy: false,
-      latency: null,
-      error: error.message || 'Database connection failed',
+      failedAuth: { lastHour: 0, last24Hours: 0 },
+      auditLogs: { total: 0, lastHour: 0, healthy: false },
+      error: 'Failed to fetch security metrics',
+    };
+  }
+}
+
+/**
+ * Get database metrics (connection pool, query performance)
+ */
+async function getDatabaseMetrics() {
+  try {
+    // Get database metrics from Prisma
+    const startTime = Date.now();
+
+    // Simple query to test database connection and measure latency
+    await prisma.$queryRaw`SELECT 1`;
+
+    const queryLatency = Date.now() - startTime;
+
+    return {
+      connected: true,
+      latency: queryLatency,
+      // Note: Prisma doesn't expose connection pool metrics directly
+      // For production, consider using pgBouncer metrics via admin console
+    };
+  } catch (error) {
+    logger.error({
+      event: 'metrics_database_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Failed to fetch database metrics');
+
+    return {
+      connected: false,
+      latency: 0,
+      error: 'Database connection failed',
     };
   }
 }
 
 export async function GET() {
-  const startTime = Date.now();
-
   try {
-    // Application metrics
-    const uptime = process.uptime();
-    const memoryUsage = process.memoryUsage();
-    const cpuUsage = process.cpuUsage();
+    // Fetch all metrics in parallel
+    const [businessMetrics, securityMetrics, databaseMetrics] = await Promise.all([
+      getBusinessMetrics(),
+      getSecurityMetrics(),
+      getDatabaseMetrics(),
+    ]);
 
-    const memUsedMB = memoryUsage.rss / 1024 / 1024;
-    const memTotalMB = require('os').totalmem() / 1024 / 1024;
-    const memPercentage = (memUsedMB / memTotalMB) * 100;
-
-    // Database health check
-    const dbHealth = await checkDatabaseHealth();
-
-    // Define thresholds
-    const thresholds = {
-      memory: {
-        warning: 80,
-        critical: 90,
-      },
-      database: {
-        latencyWarning: 500,
-        latencyCritical: 1000,
-      },
-    };
-
-    // Generate alerts based on thresholds
-    const alerts: SystemMetrics['alerts'] = [];
-
-    // Memory alerts
-    if (memPercentage >= thresholds.memory.critical) {
-      alerts.push({
-        severity: 'critical',
-        message: 'Memory usage is critically high',
-        metric: 'memory_percentage',
-        value: memPercentage,
-        threshold: thresholds.memory.critical,
-      });
-    } else if (memPercentage >= thresholds.memory.warning) {
-      alerts.push({
-        severity: 'warning',
-        message: 'Memory usage is elevated',
-        metric: 'memory_percentage',
-        value: memPercentage,
-        threshold: thresholds.memory.warning,
-      });
-    }
-
-    // Database alerts
-    if (!dbHealth.healthy) {
-      alerts.push({
-        severity: 'critical',
-        message: 'Database connection failed',
-        metric: 'database_health',
-        value: 0,
-        threshold: 1,
-      });
-    } else if (dbHealth.latency && dbHealth.latency >= thresholds.database.latencyCritical) {
-      alerts.push({
-        severity: 'critical',
-        message: 'Database latency is critically high',
-        metric: 'database_latency',
-        value: dbHealth.latency,
-        threshold: thresholds.database.latencyCritical,
-      });
-    } else if (dbHealth.latency && dbHealth.latency >= thresholds.database.latencyWarning) {
-      alerts.push({
-        severity: 'warning',
-        message: 'Database latency is elevated',
-        metric: 'database_latency',
-        value: dbHealth.latency,
-        threshold: thresholds.database.latencyWarning,
-      });
-    }
-
-    const metrics: SystemMetrics = {
+    const metrics = {
       timestamp: new Date().toISOString(),
-      application: {
-        uptime: Math.floor(uptime),
-        environment: process.env.NODE_ENV || 'development',
-        nodeVersion: process.version,
-        platform: process.platform,
-      },
-      memory: {
-        used: Math.round(memUsedMB),
-        total: Math.round(memTotalMB),
-        percentage: Math.round(memPercentage * 100) / 100,
-        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
-        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
-        external: Math.round(memoryUsage.external / 1024 / 1024),
-        rss: Math.round(memoryUsage.rss / 1024 / 1024),
-      },
-      database: {
-        healthy: dbHealth.healthy,
-        latency: dbHealth.latency,
-        status: dbHealth.healthy ? 'connected' : 'error',
-      },
-      performance: {
-        cpuUsage: {
-          user: Math.round((cpuUsage.user / 1000000) * 100) / 100, // Convert to ms
-          system: Math.round((cpuUsage.system / 1000000) * 100) / 100,
+
+      // System metrics
+      system: {
+        uptime: process.uptime(),
+        memory: {
+          rss: process.memoryUsage().rss,
+          heapTotal: process.memoryUsage().heapTotal,
+          heapUsed: process.memoryUsage().heapUsed,
+          external: process.memoryUsage().external,
         },
       },
-      thresholds,
-      alerts,
+
+      // Business metrics
+      business: businessMetrics,
+
+      // Security metrics
+      security: securityMetrics,
+
+      // Database metrics
+      database: databaseMetrics,
+
+      // Infrastructure metrics
+      infrastructure: {
+        circuitBreakers: getAllCircuitBreakerStats(),
+      },
     };
 
-    // Log metrics with alerts
-    logger.info({
-      event: 'metrics_collected',
-      memoryPercentage: metrics.memory.percentage,
-      dbLatency: metrics.database.latency,
-      alertCount: alerts.length,
-      criticalAlerts: alerts.filter(a => a.severity === 'critical').length,
-      warningAlerts: alerts.filter(a => a.severity === 'warning').length,
-      requestDuration: Date.now() - startTime,
-    }, 'System metrics collected');
+    // Log metrics for debugging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug({
+        event: 'metrics_fetched',
+        metrics,
+      });
+    }
 
-    // Return 503 if there are critical alerts
-    const hasCriticalAlerts = alerts.some(a => a.severity === 'critical');
+    // Alert if critical metrics are unhealthy
+    if (!databaseMetrics.connected) {
+      logger.error({
+        event: 'metrics_alert',
+        alert: 'DATABASE_DISCONNECTED',
+      }, 'Database connection failed');
+    }
+
+    if (!securityMetrics.auditLogs.healthy) {
+      logger.warn({
+        event: 'metrics_alert',
+        alert: 'AUDIT_LOGS_NOT_WRITING',
+        lastHourCount: securityMetrics.auditLogs.lastHour,
+      }, 'Audit logs may not be writing correctly');
+    }
+
+    if (securityMetrics.failedAuth.lastHour > 10) {
+      logger.warn({
+        event: 'metrics_alert',
+        alert: 'HIGH_FAILED_AUTH_RATE',
+        count: securityMetrics.failedAuth.lastHour,
+      }, 'High rate of failed authentication attempts');
+    }
 
     return NextResponse.json(metrics, {
-      status: hasCriticalAlerts ? 503 : 200,
       headers: {
-        'Cache-Control': 'no-store, max-age=0',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Type': 'application/json',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
-      event: 'metrics_collection_failed',
-      err: error,
-    }, 'Failed to collect system metrics');
+      event: 'metrics_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Failed to fetch metrics');
 
     return NextResponse.json(
       {
-        error: 'Failed to collect metrics',
-        message: error.message || 'Unknown error',
         timestamp: new Date().toISOString(),
+        error: 'Failed to fetch metrics',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      }
     );
   }
 }

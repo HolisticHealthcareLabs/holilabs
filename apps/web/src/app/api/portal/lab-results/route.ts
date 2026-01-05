@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -66,6 +67,23 @@ export async function GET(request: NextRequest) {
         category: result.category || 'General',
         doctor: undefined,
       };
+    });
+
+    // HIPAA Audit Log: Patient accessed their own lab results
+    await createAuditLog({
+      userId: patientId,
+      userEmail: session.email || 'patient-portal',
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      action: 'READ',
+      resource: 'LabResult',
+      resourceId: patientId,
+      details: {
+        resultCount: transformedResults.length,
+        accessType: 'PATIENT_PORTAL_SELF_ACCESS',
+        categories: [...new Set(labResults.map(r => r.category).filter(Boolean))],
+      },
+      success: true,
+      request,
     });
 
     return NextResponse.json({
