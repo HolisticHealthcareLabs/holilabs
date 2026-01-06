@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     //       { senderId: patient.assignedClinician.user.id, receiverId: session.userId },
     //     ],
     //   },
-    //   orderBy: { createdAt: 'desc' },
+    //   orderBy: { timestamp: 'desc' },
     //   take: limit,
     // });
 
@@ -81,7 +81,6 @@ export async function GET(request: NextRequest) {
     logger.info({
       event: 'patient_messages_fetched',
       patientId: session.patientId,
-      patientUserId: session.userId,
       clinicianId: patient.assignedClinicianId,
       count: messages.length,
     });
@@ -217,7 +216,6 @@ export async function POST(request: NextRequest) {
     logger.info({
       event: 'message_sent',
       patientId: session.patientId,
-      patientUserId: session.userId,
       clinicianId: patient.assignedClinicianId,
       messageId: message.id,
       type,

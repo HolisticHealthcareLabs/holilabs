@@ -119,7 +119,7 @@ export const GET = createProtectedRoute(
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       }),
       prisma.patient.count({ where }),
     ]);

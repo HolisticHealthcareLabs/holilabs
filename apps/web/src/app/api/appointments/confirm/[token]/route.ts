@@ -49,8 +49,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient accessed appointment via confirmation token
     await createAuditLog({
-      userId: 'PATIENT_TOKEN_ACCESS',
-      userEmail: appointment.patient?.email || 'patient@token.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',
@@ -173,8 +171,6 @@ export async function POST(
 
     // HIPAA Audit Log: Patient performed action on appointment via confirmation token
     await createAuditLog({
-      userId: 'PATIENT_TOKEN_ACCESS',
-      userEmail: result.patient?.email || 'patient@token.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'UPDATE',

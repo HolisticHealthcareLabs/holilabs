@@ -120,7 +120,6 @@ export async function GET(request: NextRequest) {
     logger.info({
       event: 'patient_metrics_fetched',
       patientId: session.patientId,
-      patientUserId: session.userId,
       metricsCount: metrics.length,
       days,
     });

@@ -126,8 +126,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA/GDPR Audit Log: Patient requested full data export
     await createAuditLog({
-      userId: patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',
@@ -184,7 +182,7 @@ export async function GET(request: NextRequest) {
     // Fetch medications
     const medications = await prisma.medication.findMany({
       where: { patientId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { timestamp: 'desc' },
     });
 
     // Fetch lab results
@@ -205,13 +203,13 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         // Exclude actual file data for privacy/size
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { timestamp: 'desc' },
     });
 
     // Fetch consultations (clinical notes)
     const consultations = await prisma.clinicalNote.findMany({
       where: { patientId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { timestamp: 'desc' },
       select: {
         id: true,
         createdAt: true,
@@ -347,8 +345,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA/GDPR Audit Log: Data export completed successfully
     await createAuditLog({
-      userId: patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',

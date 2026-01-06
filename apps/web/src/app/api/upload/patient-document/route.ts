@@ -146,8 +146,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: Document uploaded for patient
     await createAuditLog({
-      userId: session.user.id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'Document',

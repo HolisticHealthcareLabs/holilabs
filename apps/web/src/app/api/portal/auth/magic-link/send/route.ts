@@ -71,7 +71,7 @@ export const POST = createPublicRoute(
     // Create magic link record
     await prisma.magicLink.create({
       data: {
-        patientUserId: patientUser.id,
+        patientId: patientUser.id,
         token,
         tokenHash,
         expiresAt,
@@ -94,10 +94,8 @@ export const POST = createPublicRoute(
 
       // HIPAA Audit Log: Magic link authentication attempt
       await createAuditLog({
-        userId: patientUser.id,
-        userEmail: patientUser.email,
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-        action: 'LOGIN_ATTEMPT',
+        action: 'LOGIN',
         resource: 'PatientAuth',
         resourceId: patientUser.id,
         details: {
@@ -117,10 +115,8 @@ export const POST = createPublicRoute(
 
       // Audit log for failed attempt
       await createAuditLog({
-        userId: patientUser.id,
-        userEmail: patientUser.email,
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-        action: 'LOGIN_ATTEMPT',
+        action: 'LOGIN',
         resource: 'PatientAuth',
         resourceId: patientUser.id,
         details: {

@@ -94,8 +94,6 @@ export async function POST(
 
     // HIPAA Audit Log: Patient exported medical record as HTML
     await createAuditLog({
-      userId: session.patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',

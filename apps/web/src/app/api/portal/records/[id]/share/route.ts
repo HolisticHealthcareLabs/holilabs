@@ -59,7 +59,7 @@ export async function POST(
     if (record.patientId !== session.patientId) {
       logger.warn({
         event: 'unauthorized_share_attempt',
-        patientUserId: session.userId,
+        patientId: session.userId,
         requestedPatientId: record.patientId,
         recordId,
       });
@@ -149,8 +149,6 @@ export async function POST(
 
     // HIPAA Audit Log: Patient created share link for medical record
     await createAuditLog({
-      userId: session.patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'SHARE',
@@ -282,8 +280,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient listed active shares for medical record
     await createAuditLog({
-      userId: session.patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',

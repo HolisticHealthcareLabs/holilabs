@@ -86,7 +86,7 @@ export const POST = createPublicRoute(
 
     // Update patient user last login
     await prisma.patientUser.update({
-      where: { id: magicLink.patientUserId },
+      where: { id: magicLink.patientId },
       data: {
         lastLoginAt: new Date(),
         lastLoginIp: request.headers.get('x-forwarded-for') || 'unknown',
@@ -105,8 +105,6 @@ export const POST = createPublicRoute(
 
     // HIPAA Audit Log: Successful patient login
     await createAuditLog({
-      userId: magicLink.patientUser.id,
-      userEmail: magicLink.patientUser.email,
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'LOGIN',
       resource: 'PatientAuth',

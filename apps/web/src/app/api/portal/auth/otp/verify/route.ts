@@ -122,7 +122,7 @@ export const POST = createPublicRoute(
     // Update phone verified status if SMS
     if (phone && otpRecord.sentVia === 'SMS') {
       await prisma.patientUser.update({
-        where: { id: otpRecord.patientUserId },
+        where: { id: otpRecord.patientId },
         data: { phoneVerifiedAt: new Date() },
       });
     }
@@ -130,26 +130,24 @@ export const POST = createPublicRoute(
     // Update email verified status if EMAIL
     if (email && otpRecord.sentVia === 'EMAIL') {
       await prisma.patientUser.update({
-        where: { id: otpRecord.patientUserId },
+        where: { id: otpRecord.patientId },
         data: { emailVerifiedAt: new Date() },
       });
     }
 
     logger.info({
       event: 'otp_verified_success',
-      patientUserId: otpRecord.patientUserId,
+      patientId: otpRecord.patientId,
       sentVia: otpRecord.sentVia,
       attempts: otpRecord.attempts + 1,
     });
 
     // HIPAA Audit Log: OTP verification success
     await createAuditLog({
-      userId: otpRecord.patientUserId,
-      userEmail: otpRecord.patientUser.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-      action: 'VERIFY',
+      action: 'READ',
       resource: 'PatientAuth',
-      resourceId: otpRecord.patientUserId,
+      resourceId: otpRecord.patientId,
       details: {
         method: 'otp',
         sentVia: otpRecord.sentVia,
@@ -163,7 +161,7 @@ export const POST = createPublicRoute(
     // Track analytics event (NO PHI!)
     await trackEvent(
       ServerAnalyticsEvents.OTP_VERIFIED,
-      otpRecord.patientUserId,
+      otpRecord.patientId,
       {
         method: otpRecord.sentVia, // SMS or EMAIL
         attempts: otpRecord.attempts + 1,

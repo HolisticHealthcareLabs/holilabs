@@ -91,8 +91,7 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'patient_login_success',
-      patientUserId: result.patientUser.id,
-      patientId: result.patientUser.patientId,
+            patientId: result.patientUser.patientId,
       method: 'otp',
     });
 

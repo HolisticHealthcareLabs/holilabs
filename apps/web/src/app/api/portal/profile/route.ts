@@ -87,8 +87,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Patient accessed their profile
     await createAuditLog({
-      userId: session.patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',
@@ -209,7 +207,6 @@ export async function PATCH(request: NextRequest) {
     logger.info({
       event: 'patient_profile_updated',
       patientId: session.patientId,
-      patientUserId: session.userId,
       updatedFields: Object.keys(updateData),
     });
 

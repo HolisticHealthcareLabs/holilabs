@@ -35,8 +35,7 @@ export async function GET(request: NextRequest) {
       {
         success: true,
         session: {
-          patientUserId: patientUser.id,
-          patientId: patientUser.patient.id,
+          patientId: patientUser.id,
           email: patientUser.email,
           expiresAt: new Date(session.expiresAt).toISOString(),
         },

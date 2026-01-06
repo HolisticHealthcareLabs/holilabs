@@ -28,12 +28,10 @@ export async function POST(request: NextRequest) {
     // HIPAA Audit Log: Patient logged out
     if (session) {
       await createAuditLog({
-        userId: session.patientUserId,
-        userEmail: session.email || 'unknown',
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         action: 'LOGOUT',
         resource: 'PatientAuth',
-        resourceId: session.patientUserId,
+        resourceId: session.patientId,
         details: {
           patientId: session.patientId,
           method: 'session_cookie',

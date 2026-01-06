@@ -89,8 +89,7 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'patient_login_success',
-      patientUserId: result.patientUser.id,
-      patientId: result.patientUser.patientId,
+            patientId: result.patientUser.patientId,
       method: 'magic_link',
     });
 
@@ -168,8 +167,7 @@ export async function GET(request: NextRequest) {
 
     logger.info({
       event: 'patient_login_success',
-      patientUserId: result.patientUser.id,
-      patientId: result.patientUser.patientId,
+            patientId: result.patientUser.patientId,
       method: 'magic_link_get',
     });
 
