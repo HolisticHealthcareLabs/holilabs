@@ -12,15 +12,17 @@ import logger from '@/lib/logger';
 const prisma = new PrismaClient();
 
 // Simple admin auth - you can enhance this with proper auth later
-const ADMIN_KEY = process.env.ADMIN_API_KEY;
-
-if (!ADMIN_KEY) {
-  throw new Error('ADMIN_API_KEY environment variable is required for admin authentication');
+function getAdminKey(): string {
+  const key = process.env.ADMIN_API_KEY;
+  if (!key) {
+    throw new Error('ADMIN_API_KEY environment variable is required for admin authentication');
+  }
+  return key;
 }
 
 function isAdmin(request: Request): boolean {
   const authHeader = request.headers.get('authorization');
-  return authHeader === `Bearer ${ADMIN_KEY}`;
+  return authHeader === `Bearer ${getAdminKey()}`;
 }
 
 // GET - List all invitation codes
