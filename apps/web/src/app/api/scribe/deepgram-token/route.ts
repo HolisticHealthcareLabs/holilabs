@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Transcription service token accessed
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'ACCESS',
       resource: 'TranscriptionService',
       resourceId: 'deepgram_token',

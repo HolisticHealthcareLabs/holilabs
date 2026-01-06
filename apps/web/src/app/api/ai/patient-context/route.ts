@@ -91,7 +91,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: AI accessed patient context for AI processing
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'PatientContext',
       resourceId: patientId,

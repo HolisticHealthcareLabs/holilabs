@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: CDS Hooks accessed patient data at encounter start
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'CDSHooks',
       resourceId: cdsContext.patientId,

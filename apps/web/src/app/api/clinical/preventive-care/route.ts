@@ -318,7 +318,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: Preventive care recommendations generated
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'PreventiveCare',
       resourceId: patientId,
@@ -395,7 +394,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Preventive care reminders accessed
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'PreventiveCare',
       resourceId: patientId,
@@ -454,7 +452,6 @@ export async function PUT(request: NextRequest) {
 
     // HIPAA Audit Log: Preventive care reminders created
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'PreventiveCare',
       resourceId: patientId,

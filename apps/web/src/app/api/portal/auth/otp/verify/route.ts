@@ -144,7 +144,6 @@ export const POST = createPublicRoute(
 
     // HIPAA Audit Log: OTP verification success
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'PatientAuth',
       resourceId: otpRecord.patientId,

@@ -126,7 +126,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA/GDPR Audit Log: Patient requested full data export
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',
       resource: 'Patient',
@@ -345,7 +344,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA/GDPR Audit Log: Data export completed successfully
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',
       resource: 'Patient',

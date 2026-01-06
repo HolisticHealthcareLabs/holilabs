@@ -293,7 +293,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: Vital signs checked for patient
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'VitalAlert',
       resourceId: 'vital-check',
