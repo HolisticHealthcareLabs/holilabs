@@ -261,7 +261,7 @@ export const GET = createProtectedRoute(
               },
             },
           },
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
         });
 
         return NextResponse.json({
@@ -295,7 +295,7 @@ export const GET = createProtectedRoute(
             },
           },
         },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { createdAt: 'desc' },
         take: 100, // Limit to 100 most recent prescriptions
       });
 

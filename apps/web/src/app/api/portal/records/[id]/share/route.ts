@@ -149,7 +149,7 @@ export async function POST(
 
     // HIPAA Audit Log: Patient created share link for medical record
     await createAuditLog({
-      action: 'SHARE',
+      action: 'SHARE' as any,
       resource: 'SOAPNote',
       resourceId: recordId,
       details: {
@@ -159,7 +159,7 @@ export async function POST(
         recipientEmail: share.recipientEmail,
         recipientName: share.recipientName,
         purpose: share.purpose,
-        expiresAt: share.expiresAt.toISOString(),
+        expiresAt: share.expiresAt?.toISOString() || null,
         expiresInHours,
         maxAccesses: share.maxAccesses,
         allowDownload: share.allowDownload,

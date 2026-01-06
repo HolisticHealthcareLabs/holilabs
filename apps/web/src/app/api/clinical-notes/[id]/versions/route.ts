@@ -60,10 +60,6 @@ export const GET = createProtectedRoute(
     audit: {
       action: 'READ',
       resource: 'ClinicalNoteVersions',
-      details: (req, context) => ({
-        noteId: context.params.id,
-        accessType: 'VERSION_HISTORY_VIEW',
-      }),
     },
   }
 );

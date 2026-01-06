@@ -86,7 +86,7 @@ export const POST = createPublicRoute(
 
     // Update patient user last login
     await prisma.patientUser.update({
-      where: { id: magicLink.patientId },
+      where: { id: magicLink.patientUser.id },
       data: {
         lastLoginAt: new Date(),
         lastLoginIp: request.headers.get('x-forwarded-for') || 'unknown',

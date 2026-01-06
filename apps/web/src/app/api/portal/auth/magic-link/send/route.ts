@@ -71,7 +71,7 @@ export const POST = createPublicRoute(
     // Create magic link record
     await prisma.magicLink.create({
       data: {
-        patientId: patientUser.id,
+        patientUserId: patientUser.id,
         token,
         tokenHash,
         expiresAt,

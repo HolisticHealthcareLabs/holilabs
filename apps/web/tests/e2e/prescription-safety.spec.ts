@@ -147,7 +147,7 @@ test.describe('Prescription Safety - Drug-Drug Interactions', () => {
 
     // Should show multiple interactions
     const interactions = page.locator('[data-testid="interaction-item"]');
-    await expect(interactions).toHaveCount({ min: 2 });
+    expect(await interactions.count()).toBeGreaterThanOrEqual(2);
 
     // Verify each interaction is documented
     await expect(page.getByText(/diltiazem.*warfarin/i)).toBeVisible();
@@ -461,7 +461,7 @@ test.describe('Prescription Safety - Clinical Decision Support', () => {
 
     // Should show evidence-based options
     const suggestions = page.locator('[data-testid="medication-suggestion"]');
-    await expect(suggestions).toHaveCount({ min: 3 });
+    expect(await suggestions.count()).toBeGreaterThanOrEqual(3);
 
     // Verify suggestions include first-line agents
     await expect(page.getByText(/lisinopril.*first.*line/i)).toBeVisible();

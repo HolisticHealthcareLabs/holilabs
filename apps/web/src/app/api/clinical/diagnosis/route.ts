@@ -407,8 +407,7 @@ IMPORTANT:
         accessType: 'AI_DIAGNOSIS_ASSISTANT',
       },
       success: true,
-      request: req,
-    });
+    }, req);
 
     // 11. Return diagnosis
     return NextResponse.json({

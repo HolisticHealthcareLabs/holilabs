@@ -84,7 +84,7 @@ export async function GET(
         medicationId: medication.id,
         medicationName: medication.name,
         isActive: medication.isActive,
-        prescriberId: medication.prescriberId,
+        prescriberId: medication.prescriber?.id,
         accessType: 'PATIENT_MEDICATION_DETAIL',
       },
       success: true,

@@ -160,10 +160,10 @@ export const GET = createProtectedRoute(
         documents: {
           select: {
             id: true,
-            name: true,
-            type: true,
-            size: true,
-            mimeType: true,
+            fileName: true,
+            fileType: true,
+            fileSize: true,
+            documentType: true,
             createdAt: true,
           },
           orderBy: { createdAt: 'desc' },
@@ -183,10 +183,9 @@ export const GET = createProtectedRoute(
         prescriptions: {
           select: {
             id: true,
-            medication: true,
-            dosage: true,
-            frequency: true,
-            duration: true,
+            medications: true,
+            instructions: true,
+            diagnosis: true,
             status: true,
             createdAt: true,
             clinician: {
@@ -218,9 +217,9 @@ export const GET = createProtectedRoute(
       {
         patientName: `${patient.firstName} ${patient.lastName}`,
         mrn: patient.mrn,
-        includesAppointments: patient.appointments.length,
-        includesMedications: patient.medications.length,
-        includesClinicalNotes: patient.clinicalNotes.length,
+        includesAppointments: patient.appointments?.length || 0,
+        includesMedications: patient.medications?.length || 0,
+        includesClinicalNotes: patient.clinicalNotes?.length || 0,
       },
       accessReason,
       accessPurpose || undefined

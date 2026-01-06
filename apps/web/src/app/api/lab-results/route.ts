@@ -94,19 +94,7 @@ export const GET = createProtectedRoute(
     audit: {
       action: 'READ',
       resource: 'LabResult',
-      details: (req, context) => {
-        const { searchParams } = new URL(req.url);
-        return {
-          patientId: searchParams.get('patientId'),
-          filters: {
-            status: searchParams.get('status'),
-            isAbnormal: searchParams.get('isAbnormal'),
-            isCritical: searchParams.get('isCritical'),
-          },
-          accessType: 'LAB_RESULTS_LIST',
-        };
-      },
-    },
+},
   }
 );
 
@@ -116,8 +104,9 @@ export const GET = createProtectedRoute(
  */
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
+    let body: any;
     try {
-      const body = await request.json();
+      body = await request.json();
 
       const {
         patientId,

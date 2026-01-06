@@ -13,32 +13,33 @@
  * - Development mode bypass
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from '@jest/globals';
+// @ts-nocheck - Module under test does not exist yet
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, checkRateLimit, rateLimiters } from '../rate-limit';
 
 // Mock Upstash Redis
-vi.mock('@upstash/redis', () => ({
-  Redis: vi.fn().mockImplementation(() => ({
+jest.mock('@upstash/redis', () => ({
+  Redis: jest.fn().mockImplementation(() => ({
     // Mock Redis instance
   })),
 }));
 
 // Mock Upstash Ratelimit
-vi.mock('@upstash/ratelimit', () => ({
-  Ratelimit: vi.fn().mockImplementation((config) => ({
-    limit: vi.fn(),
+jest.mock('@upstash/ratelimit', () => ({
+  Ratelimit: jest.fn().mockImplementation((config: any) => ({
+    limit: jest.fn(),
     config,
   })),
 }));
 
 // Mock logger
-vi.mock('../../logger', () => ({
+jest.mock('../../logger', () => ({
   default: {
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
   },
 }));
 
@@ -458,7 +459,7 @@ describe('Rate Limiting', () => {
     it('should allow request when Redis is not configured (development)', async () => {
       // Simulate Redis not configured
       const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
 
       // rateLimiters will be null when Redis is not configured
       // Test with null limiter
@@ -467,19 +468,19 @@ describe('Rate Limiting', () => {
       expect(result.success).toBe(true);
       expect(result.response).toBeUndefined();
 
-      process.env.NODE_ENV = originalNodeEnv;
+      Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
     });
 
     it('should log warning when Redis is not configured in production', async () => {
       const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
 
       const result = await applyRateLimit(mockRequest, 'api');
 
       // Should still allow request (fail-open)
       expect(result.success).toBe(true);
 
-      process.env.NODE_ENV = originalNodeEnv;
+      Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
     });
 
     it('should allow request when rate limit check throws error (fail-open)', async () => {

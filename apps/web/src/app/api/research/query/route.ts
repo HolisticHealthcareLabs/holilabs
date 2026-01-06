@@ -208,16 +208,16 @@ async function executePrevalenceQuery(query: ResearchQuery): Promise<AggregateRe
 
   // Get diagnosis counts
   const results = await prisma.diagnosis.groupBy({
-    by: ['diagnosisName', 'type'],
+    by: ['description', 'status'],
     where,
     _count: { id: true },
   });
 
   // Transform results
   const transformedResults = results.map(row => ({
-    diagnosisName: row.diagnosisName,
-    type: row.type,
-    count: row._count.id,
+    diagnosisName: row.description,
+    type: row.status,
+    count: row._count?.id || 0,
   }));
 
   // Apply cell suppression
@@ -460,7 +460,7 @@ export const POST = createProtectedRoute(
     }
   },
   {
-    roles: ['ADMIN', 'RESEARCHER'],
+    roles: ['ADMIN', 'RESEARCHER' as any],
     rateLimit: { windowMs: 60000, maxRequests: 10 }, // Strict rate limiting for research queries
     audit: { action: 'READ', resource: 'ResearchData' },
   }

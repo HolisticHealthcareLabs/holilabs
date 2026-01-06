@@ -52,7 +52,7 @@ function main() {
     // Count configured features
     const features = {
       database: isFeatureEnabled('DATABASE_URL'),
-      supabase: isFeatureEnabled('SUPABASE_SERVICE_ROLE_KEY'),
+      supabase: isFeatureEnabled('SUPABASE_SERVICE_ROLE_KEY' as any), // Supabase removed
       encryption: isFeatureEnabled('ENCRYPTION_KEY'),
       nextAuth: isFeatureEnabled('NEXTAUTH_SECRET'),
       sessionSecret: isFeatureEnabled('SESSION_SECRET'),

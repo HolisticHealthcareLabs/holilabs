@@ -21,7 +21,7 @@ export default async function FhirRecordsPage() {
 
   // Get patient token ID from session
   // This should be the de-identified patient token, not the actual patient ID
-  const patientTokenId = patientUser.patientTokenId || patientUser.id;
+  const patientTokenId = patientUser.patient?.tokenId || patientUser.id;
 
   return (
     <div className="min-h-screen bg-gray-50">

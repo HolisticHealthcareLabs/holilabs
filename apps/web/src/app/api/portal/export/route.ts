@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
     // Fetch medications
     const medications = await prisma.medication.findMany({
       where: { patientId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     // Fetch lab results
@@ -201,13 +201,13 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         // Exclude actual file data for privacy/size
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     // Fetch consultations (clinical notes)
     const consultations = await prisma.clinicalNote.findMany({
       where: { patientId },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         createdAt: true,

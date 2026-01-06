@@ -24,7 +24,7 @@ function decryptToken(token: string): string | null {
   try {
     const decipher = crypto.createDecipheriv(
       'aes-256-cbc',
-      crypto.createHash('sha256').update(SECRET_KEY).digest(),
+      crypto.createHash('sha256').update(SECRET_KEY!).digest(),
       Buffer.alloc(16, 0) // IV should be stored with token in production
     );
     let decrypted = decipher.update(token, 'hex', 'utf8');

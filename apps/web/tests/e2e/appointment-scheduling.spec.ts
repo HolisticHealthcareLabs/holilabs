@@ -26,7 +26,8 @@ test.describe('Appointment Scheduling - Patient View', () => {
     await tomorrowButton.click();
 
     // Verify time slots appear
-    await expect(page.locator('[data-testid="time-slot"]')).toHaveCount({ min: 1 });
+    const timeSlots = page.locator('[data-testid="time-slot"]');
+    expect(await timeSlots.count()).toBeGreaterThanOrEqual(1);
   });
 
   test('should book an appointment successfully', async ({ page }) => {
@@ -133,7 +134,7 @@ test.describe('Appointment Scheduling - Provider Calendar View', () => {
 
     // Check appointment blocks
     const appointmentBlocks = page.locator('[data-testid="appointment-block"]');
-    await expect(appointmentBlocks).toHaveCount({ min: 0 });
+    expect(await appointmentBlocks.count()).toBeGreaterThanOrEqual(0);
   });
 
   test('should switch between calendar views', async ({ page }) => {

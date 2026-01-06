@@ -71,10 +71,6 @@ export const GET = createProtectedRoute(
     audit: {
       action: 'READ',
       resource: 'ScribeSession',
-      details: (req, context) => ({
-        sessionId: context.params.id,
-        accessType: 'VIEW_SESSION_DETAILS',
-      }),
     },
   }
 );

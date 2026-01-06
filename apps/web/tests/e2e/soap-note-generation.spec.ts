@@ -427,7 +427,7 @@ test.describe('SOAP Note Generation - Manual Editing', () => {
 
     // Verify multiple versions
     const versions = historyPanel.locator('[data-testid="version-item"]');
-    await expect(versions).toHaveCount({ min: 2 });
+    expect(await versions.count()).toBeGreaterThanOrEqual(2);
 
     // Verify version details
     await expect(versions.first()).toContainText(/dr\./i); // Provider name

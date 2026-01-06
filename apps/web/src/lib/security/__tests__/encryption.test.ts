@@ -25,7 +25,7 @@ describe('Encryption - AES-256-GCM', () => {
   beforeEach(() => {
     // Set test key in environment
     process.env.ENCRYPTION_KEY = TEST_ENCRYPTION_KEY;
-    process.env.NODE_ENV = 'test';
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true });
 
     // Clear key cache before each test
     clearKeyCache();
@@ -197,7 +197,7 @@ describe('Encryption - AES-256-GCM', () => {
       const encrypted = await encryptPHIWithVersion(plaintext);
 
       // Format: v{version}:iv:authTag:encrypted
-      const parts = encrypted.split(':');
+      const parts = encrypted!.split(':');
 
       expect(parts).toHaveLength(4);
       expect(parts[0]).toMatch(/^v\d+$/); // Version prefix
@@ -219,7 +219,7 @@ describe('Encryption - AES-256-GCM', () => {
     });
 
     it('should preserve undefined values', async () => {
-      const encrypted = await encryptPHIWithVersion(undefined);
+      const encrypted = await encryptPHIWithVersion(undefined as any);
       expect(encrypted).toBeUndefined();
     });
 
@@ -275,7 +275,7 @@ describe('Encryption - AES-256-GCM', () => {
     });
 
     it('should preserve undefined values', async () => {
-      const decrypted = await decryptPHIWithVersion(undefined);
+      const decrypted = await decryptPHIWithVersion(undefined as any);
       expect(decrypted).toBeUndefined();
     });
 
@@ -284,7 +284,7 @@ describe('Encryption - AES-256-GCM', () => {
       const encrypted = await encryptPHIWithVersion(plaintext);
 
       // Tamper with encrypted portion
-      const parts = encrypted.split(':');
+      const parts = encrypted!.split(':');
       const tamperedData = Buffer.from(parts[3], 'hex');
       tamperedData[0] ^= 0xFF;
       parts[3] = tamperedData.toString('hex');
@@ -496,7 +496,7 @@ describe('Encryption - AES-256-GCM', () => {
       const encrypted = await encryptPHIWithVersion(plaintext);
 
       // Encrypted data should not contain plaintext
-      expect(encrypted.toLowerCase()).not.toContain(plaintext.toLowerCase());
+      expect(encrypted!.toLowerCase()).not.toContain(plaintext.toLowerCase());
     });
 
     it('should support audit trail of encryption operations', async () => {
@@ -526,7 +526,7 @@ describe('Encryption - AES-256-GCM', () => {
 
     it('should handle corrupted version prefix', async () => {
       const encrypted = await encryptPHIWithVersion('test');
-      const corrupted = encrypted.replace(/^v\d+:/, 'vX:');
+      const corrupted = encrypted!.replace(/^v\d+:/, 'vX:');
 
       await expect(decryptPHIWithVersion(corrupted)).rejects.toThrow();
     });

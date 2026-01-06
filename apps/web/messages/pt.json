@@ -85,7 +85,7 @@
     "FULL_CODE": "Código Completo",
     "DNR": "DNR (Não Reanimar)",
     "DNI": "DNI (Não Intubar)",
-    "DNR_DNI": "DNR/DNI",
+    "DNR_DNI": "DNR/DNI (Não Reanimar/Não Intubar)",
     "COMFORT_CARE_ONLY": "Apenas Cuidados de Conforto",
     "AND": "AND (Permitir Morte Natural)"
   },
@@ -149,7 +149,7 @@
     "priority": "Prioridade",
     "goals": "Objetivos",
     "targetDate": "Data Alvo",
-    "status": "Status",
+    "status": "Estado",
     "assignedTeam": "Equipe Designada",
     "progressNotes": "Notas de Progresso",
     "lastReviewed": "Última Revisão",

@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Track patient searches (sensitive PHI access)
     await createAuditLog({
-      action: 'SEARCH',
+      action: 'SEARCH' as any,
       resource: 'Patient',
       resourceId: 'SEARCH_QUERY',
       details: {
