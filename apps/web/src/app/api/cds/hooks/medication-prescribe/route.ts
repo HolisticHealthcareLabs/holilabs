@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
         accessType: 'MEDICATION_SAFETY_CHECK',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json(response);

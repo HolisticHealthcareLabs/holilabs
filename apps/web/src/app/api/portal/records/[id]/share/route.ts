@@ -149,7 +149,6 @@ export async function POST(
 
     // HIPAA Audit Log: Patient created share link for medical record
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'SHARE',
       resource: 'SOAPNote',
       resourceId: recordId,
@@ -279,7 +278,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient listed active shares for medical record
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',
       resource: 'DocumentShare',
       resourceId: recordId,

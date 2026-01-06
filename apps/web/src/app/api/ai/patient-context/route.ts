@@ -102,7 +102,6 @@ export async function GET(request: NextRequest) {
         contextSizeChars: JSON.stringify(context).length,
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

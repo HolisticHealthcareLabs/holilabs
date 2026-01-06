@@ -46,7 +46,6 @@ export async function GET(
 
       // HIPAA Audit Log: Clinician accessed patient messages
       await createAuditLog({
-        userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',
         resource: 'Message',
         resourceId: conversationId,
@@ -80,7 +79,6 @@ export async function GET(
 
       // HIPAA Audit Log: Patient accessed their messages
       await createAuditLog({
-        userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',
         resource: 'Message',
         resourceId: patientSession.patientId,
@@ -152,7 +150,6 @@ export async function PATCH(
 
       // HIPAA Audit Log: Clinician marked conversation as read
       await createAuditLog({
-        userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'UPDATE',
         resource: 'Message',
         resourceId: conversationId,
@@ -195,7 +192,6 @@ export async function PATCH(
 
       // HIPAA Audit Log: Patient marked conversation as read
       await createAuditLog({
-        userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'UPDATE',
         resource: 'Message',
         resourceId: patientSession.patientId,

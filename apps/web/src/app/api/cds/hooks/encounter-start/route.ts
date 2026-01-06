@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
         accessType: 'CLINICAL_DECISION_SUPPORT',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json(response);

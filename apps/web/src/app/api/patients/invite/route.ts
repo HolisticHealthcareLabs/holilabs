@@ -301,7 +301,6 @@ export const POST = createProtectedRoute(
           patientPhone: !!patient.phone,
         },
         success: successfulChannels.length > 0,
-        request,
       });
 
       // Update patient last contacted timestamp

@@ -103,7 +103,6 @@ export const POST = createPublicRoute(
           expiresAt: expiresAt.toISOString(),
         },
         success: true,
-        request,
       });
     } catch (emailError) {
       logger.error({
@@ -122,7 +121,6 @@ export const POST = createPublicRoute(
           error: 'Email send failed',
         },
         success: false,
-        request,
       });
 
       return NextResponse.json(

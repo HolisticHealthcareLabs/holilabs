@@ -80,7 +80,6 @@ export async function POST(request: NextRequest) {
         accessType: 'LAB_RESULT_MONITORING',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

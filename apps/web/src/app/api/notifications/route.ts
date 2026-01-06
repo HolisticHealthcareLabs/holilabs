@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
 
       // HIPAA Audit Log: Clinician accessed notifications
       await createAuditLog({
-        userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',
         resource: 'Notification',
         resourceId: clinicianSession.user.id,
@@ -91,7 +90,6 @@ export async function GET(request: NextRequest) {
 
       // HIPAA Audit Log: Patient accessed notifications
       await createAuditLog({
-        userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',
         resource: 'Notification',
         resourceId: patientSession.patientId,

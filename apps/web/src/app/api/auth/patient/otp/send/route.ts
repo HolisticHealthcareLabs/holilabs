@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
         expiresAt: result.expiresAt,
       },
       success: true,
-      request,
     });
 
     // Return success (with code only in development)

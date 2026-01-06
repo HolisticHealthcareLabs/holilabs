@@ -216,7 +216,6 @@ export async function POST(request: NextRequest) {
         accessType: 'LAB_RESULT_ALERT_CHECK',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

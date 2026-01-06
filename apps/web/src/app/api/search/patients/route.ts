@@ -119,7 +119,6 @@ export async function GET(request: NextRequest) {
         patientIds: patientsWithAge.map(p => p.id),
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({
