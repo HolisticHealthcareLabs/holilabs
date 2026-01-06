@@ -94,7 +94,6 @@ export const POST = createPublicRoute(
 
       // HIPAA Audit Log: Magic link authentication attempt
       await createAuditLog({
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         action: 'LOGIN',
         resource: 'PatientAuth',
         resourceId: patientUser.id,
@@ -115,7 +114,6 @@ export const POST = createPublicRoute(
 
       // Audit log for failed attempt
       await createAuditLog({
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         action: 'LOGIN',
         resource: 'PatientAuth',
         resourceId: patientUser.id,

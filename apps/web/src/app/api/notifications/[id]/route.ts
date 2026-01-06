@@ -82,7 +82,6 @@ export async function PUT(
     // HIPAA Audit Log: Notification marked as read
     await createAuditLog({
       userId,
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'UPDATE',
       resource: 'Notification',
@@ -186,7 +185,6 @@ export async function DELETE(
     // HIPAA Audit Log: Notification deleted
     await createAuditLog({
       userId,
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'DELETE',
       resource: 'Notification',

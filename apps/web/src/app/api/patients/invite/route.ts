@@ -289,7 +289,6 @@ export const POST = createProtectedRoute(
 
       // HIPAA Audit Log: Patient invited to portal
       await createAuditLog({
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         action: 'CREATE',
         resource: 'Patient',
         resourceId: patient.id,

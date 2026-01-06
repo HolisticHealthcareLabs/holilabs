@@ -149,7 +149,6 @@ export async function POST(
 
     // HIPAA Audit Log: Patient created share link for medical record
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'SHARE',
       resource: 'SOAPNote',
@@ -280,7 +279,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient listed active shares for medical record
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',
       resource: 'DocumentShare',

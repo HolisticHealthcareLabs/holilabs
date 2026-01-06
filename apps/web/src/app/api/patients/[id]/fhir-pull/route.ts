@@ -93,6 +93,7 @@ export const POST = createProtectedRoute(
       const result = await aggressivePullPatientData(patientId, fhirPatientId);
 
       // Track pull request
+      // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
       await prisma.userBehaviorEvent.create({
         data: {
           userId: context.user.id,

@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: Lab result monitored for patient
     await createAuditLog({
-      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'LabResultMonitor',
       resourceId: labResult.id,

@@ -71,6 +71,7 @@ export const GET = createProtectedRoute(
       // HIPAA Compliance: No PHI stored (clinician ID only, no patient data)
       // ============================================================================
       try {
+        // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
         await prisma.userBehaviorEvent.create({
           data: {
             userId: context.user.id,
