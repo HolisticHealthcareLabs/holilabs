@@ -325,8 +325,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: Clinical decision support accessed for patient
     await createAuditLog({
-      userId: session.user.id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'ClinicalDecisionSupport',
@@ -399,8 +397,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Clinical decision support summary accessed
     await createAuditLog({
-      userId: session.user.id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'ClinicalDecisionSupport',

@@ -46,8 +46,6 @@ export async function GET(
 
       // HIPAA Audit Log: Clinician accessed patient messages
       await createAuditLog({
-        userId: clinicianSession.user.id,
-        userEmail: clinicianSession.user.email || 'unknown',
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',
@@ -83,8 +81,6 @@ export async function GET(
 
       // HIPAA Audit Log: Patient accessed their messages
       await createAuditLog({
-        userId: patientSession.patientId,
-        userEmail: patientSession.email || 'patient@portal.access',
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',
@@ -158,8 +154,6 @@ export async function PATCH(
 
       // HIPAA Audit Log: Clinician marked conversation as read
       await createAuditLog({
-        userId: clinicianSession.user.id,
-        userEmail: clinicianSession.user.email || 'unknown',
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'UPDATE',
@@ -204,8 +198,6 @@ export async function PATCH(
 
       // HIPAA Audit Log: Patient marked conversation as read
       await createAuditLog({
-        userId: patientSession.patientId,
-        userEmail: patientSession.email || 'patient@portal.access',
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'UPDATE',

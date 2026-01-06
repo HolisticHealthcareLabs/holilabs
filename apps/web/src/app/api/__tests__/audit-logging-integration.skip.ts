@@ -292,7 +292,7 @@ describe('Audit Logging Integration - LGPD Art. 37 Compliance', () => {
             in: ['Patient', 'Prescription', 'Appointment', 'ClinicalNote'],
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       });
 
       expect(logs.length).toBe(2);

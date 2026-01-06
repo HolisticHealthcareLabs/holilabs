@@ -326,8 +326,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Clinician accessed priority patients dashboard
     await createAuditLog({
-      userId: userId,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'Dashboard',

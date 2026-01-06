@@ -71,8 +71,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Patient accessed their own lab results
     await createAuditLog({
-      userId: patientId,
-      userEmail: session.email || 'patient-portal',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'LabResult',

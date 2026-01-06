@@ -102,8 +102,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Patient accessed their own documents
     await createAuditLog({
-      userId: session.patientId,
-      userEmail: session.email || 'patient-portal',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'Document',
@@ -122,7 +120,6 @@ export async function GET(request: NextRequest) {
     logger.info({
       event: 'patient_documents_fetched',
       patientId: session.patientId,
-      patientUserId: session.userId,
       count: documents.length,
       totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
     });
@@ -258,7 +255,6 @@ export async function POST(request: NextRequest) {
     logger.info({
       event: 'document_uploaded',
       patientId: session.patientId,
-      patientUserId: session.userId,
       documentId: document.id,
       type,
       fileSize,

@@ -44,8 +44,6 @@ export async function GET(request: NextRequest) {
 
       // HIPAA Audit Log: Clinician accessed notifications
       await createAuditLog({
-        userId: clinicianSession.user.id,
-        userEmail: clinicianSession.user.email || 'unknown',
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',
@@ -94,8 +92,6 @@ export async function GET(request: NextRequest) {
 
       // HIPAA Audit Log: Patient accessed notifications
       await createAuditLog({
-        userId: patientSession.patientId,
-        userEmail: patientSession.email || 'patient@portal.access',
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         action: 'READ',

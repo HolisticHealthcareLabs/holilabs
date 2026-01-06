@@ -76,8 +76,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient accessed medication detail
     await createAuditLog({
-      userId: session.patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',

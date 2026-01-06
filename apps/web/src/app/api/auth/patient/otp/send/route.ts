@@ -57,10 +57,8 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: Patient authentication attempt via OTP
     await createAuditLog({
-      userId: 'unknown', // Pre-authentication
-      userEmail: 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-      action: 'LOGIN_ATTEMPT',
+      action: 'LOGIN',
       resource: 'PatientAuth',
       resourceId: phone, // Use phone as identifier
       details: {

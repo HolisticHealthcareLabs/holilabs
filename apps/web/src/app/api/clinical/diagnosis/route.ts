@@ -391,8 +391,6 @@ IMPORTANT:
 
     // HIPAA Audit Log: AI diagnosis assistant used for patient
     await createAuditLog({
-      userId: (session.user as any).id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'DiagnosisAssistant',

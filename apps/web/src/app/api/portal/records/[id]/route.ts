@@ -80,7 +80,7 @@ export async function GET(
     if (record.patientId !== session.patientId) {
       logger.warn({
         event: 'unauthorized_record_access_attempt',
-        patientUserId: session.userId,
+        patientId: session.userId,
         requestedPatientId: record.patientId,
         recordId,
       });
@@ -96,8 +96,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient viewed their medical record detail
     await createAuditLog({
-      userId: session.patientId,
-      userEmail: session.email || 'patient@portal.access',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',

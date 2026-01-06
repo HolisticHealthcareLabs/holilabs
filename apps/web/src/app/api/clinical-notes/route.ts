@@ -215,7 +215,7 @@ export const GET = createProtectedRoute(
 
       const notes = await prisma.clinicalNote.findMany({
         where: { patientId },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
         take: limit,
       });
 

@@ -47,8 +47,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: CDS Hooks accessed patient data for clinical decision support
     await createAuditLog({
-      userId: session.user.id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'CDSHooks',

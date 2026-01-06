@@ -100,7 +100,7 @@ export const GET = createProtectedRoute(
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       });
 
       return NextResponse.json({

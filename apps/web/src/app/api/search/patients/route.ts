@@ -109,8 +109,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Track patient searches (sensitive PHI access)
     await createAuditLog({
-      userId: session.user.id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'SEARCH',
       resource: 'Patient',

@@ -213,8 +213,6 @@ export async function POST(request: NextRequest) {
 
     // HIPAA Audit Log: Allergy contraindication check performed
     await createAuditLog({
-      userId: session.user.id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'CREATE',
       resource: 'AllergyCheck',
@@ -278,8 +276,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Patient allergies accessed
     await createAuditLog({
-      userId: session.user.id,
-      userEmail: session.user.email || 'unknown',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'Allergy',

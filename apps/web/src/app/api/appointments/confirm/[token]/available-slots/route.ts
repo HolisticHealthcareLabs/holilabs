@@ -50,8 +50,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient accessed appointment rescheduling slots
     await createAuditLog({
-      userId: appointment.patientId,
-      userEmail: 'patient-portal',
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       action: 'READ',
       resource: 'Appointment',
