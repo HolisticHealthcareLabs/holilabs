@@ -43,7 +43,6 @@ export async function GET(request: NextRequest) {
         accessType: 'TOKEN_REQUEST',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

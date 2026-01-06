@@ -154,7 +154,6 @@ export const POST = createPublicRoute(
         patientId: otpRecord.patientUser.patient.id,
       },
       success: true,
-      request,
     });
 
     // Track analytics event (NO PHI!)

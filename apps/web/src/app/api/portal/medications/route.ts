@@ -77,7 +77,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA Audit Log: Patient accessed their medications list
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',
       resource: 'Medication',
       resourceId: session.patientId,

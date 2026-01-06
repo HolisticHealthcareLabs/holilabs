@@ -306,7 +306,6 @@ export async function POST(request: NextRequest) {
         accessType: 'VITAL_SIGNS_MONITORING',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

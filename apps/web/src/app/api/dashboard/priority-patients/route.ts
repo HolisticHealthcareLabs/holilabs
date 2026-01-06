@@ -339,7 +339,6 @@ export async function GET(request: NextRequest) {
         accessType: 'PRIORITY_PATIENTS_DASHBOARD',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

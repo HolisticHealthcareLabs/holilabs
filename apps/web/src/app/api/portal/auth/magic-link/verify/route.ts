@@ -114,7 +114,6 @@ export const POST = createPublicRoute(
         sessionCreated: true,
       },
       success: true,
-      request,
     });
 
     return NextResponse.json(

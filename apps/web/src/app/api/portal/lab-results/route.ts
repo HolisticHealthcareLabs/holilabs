@@ -80,7 +80,6 @@ export async function GET(request: NextRequest) {
         categories: [...new Set(labResults.map(r => r.category).filter(Boolean))],
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

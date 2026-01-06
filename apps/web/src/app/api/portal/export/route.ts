@@ -126,7 +126,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA/GDPR Audit Log: Patient requested full data export
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',
       resource: 'Patient',
       resourceId: patientId,
@@ -344,7 +343,6 @@ export async function GET(request: NextRequest) {
 
     // HIPAA/GDPR Audit Log: Data export completed successfully
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',
       resource: 'Patient',
       resourceId: patientId,

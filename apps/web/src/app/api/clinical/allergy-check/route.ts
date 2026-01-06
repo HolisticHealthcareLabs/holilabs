@@ -226,7 +226,6 @@ export async function POST(request: NextRequest) {
         accessType: 'ALLERGY_CONTRAINDICATION_CHECK',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({
@@ -285,7 +284,6 @@ export async function GET(request: NextRequest) {
         accessType: 'ALLERGY_LIST',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

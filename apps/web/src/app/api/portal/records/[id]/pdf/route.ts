@@ -99,7 +99,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient exported medical record as PDF
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'EXPORT',
       resource: 'SOAPNote',
       resourceId: recordId,

@@ -338,7 +338,6 @@ export async function POST(request: NextRequest) {
         accessType: 'CLINICAL_DECISION_SUPPORT',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({
@@ -406,7 +405,6 @@ export async function GET(request: NextRequest) {
         accessType: 'CLINICAL_DECISION_SUPPORT_SUMMARY',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json({

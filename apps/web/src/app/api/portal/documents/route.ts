@@ -113,7 +113,6 @@ export async function GET(request: NextRequest) {
         filterType: type || 'ALL',
       },
       success: true,
-      request,
     });
 
     logger.info({

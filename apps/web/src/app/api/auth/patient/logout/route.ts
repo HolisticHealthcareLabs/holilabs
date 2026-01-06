@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
           method: 'session_cookie',
         },
         success: true,
-        request,
       });
     }
 

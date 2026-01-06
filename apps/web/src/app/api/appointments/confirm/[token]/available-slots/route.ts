@@ -62,7 +62,6 @@ export async function GET(
         tokenUsed: true,
       },
       success: true,
-      request,
     });
 
     return NextResponse.json(

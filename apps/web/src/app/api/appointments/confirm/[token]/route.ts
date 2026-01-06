@@ -49,7 +49,6 @@ export async function GET(
 
     // HIPAA Audit Log: Patient accessed appointment via confirmation token
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'READ',
       resource: 'Appointment',
       resourceId: appointment.id,
@@ -170,7 +169,6 @@ export async function POST(
 
     // HIPAA Audit Log: Patient performed action on appointment via confirmation token
     await createAuditLog({
-      userAgent: request.headers.get('user-agent') || 'unknown',
       action: 'UPDATE',
       resource: 'Appointment',
       resourceId: result.id,

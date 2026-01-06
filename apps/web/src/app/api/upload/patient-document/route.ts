@@ -160,7 +160,6 @@ export async function POST(request: NextRequest) {
         storageLocation: 'R2',
       },
       success: true,
-      request,
     });
 
     return NextResponse.json(
