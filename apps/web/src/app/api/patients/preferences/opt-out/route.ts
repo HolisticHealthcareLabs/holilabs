@@ -14,17 +14,20 @@ export const dynamic = 'force-dynamic';
 
 // Simple token encryption/decryption
 // In production, use a more robust encryption method
-const SECRET_KEY = process.env.OPT_OUT_SECRET_KEY;
-
-if (!SECRET_KEY) {
-  throw new Error('OPT_OUT_SECRET_KEY environment variable is required for secure token encryption');
+function getSecretKey(): string {
+  const key = process.env.OPT_OUT_SECRET_KEY;
+  if (!key) {
+    throw new Error('OPT_OUT_SECRET_KEY environment variable is required for secure token encryption');
+  }
+  return key;
 }
 
 function decryptToken(token: string): string | null {
   try {
+    const SECRET_KEY = getSecretKey();
     const decipher = crypto.createDecipheriv(
       'aes-256-cbc',
-      crypto.createHash('sha256').update(SECRET_KEY!).digest(),
+      crypto.createHash('sha256').update(SECRET_KEY).digest(),
       Buffer.alloc(16, 0) // IV should be stored with token in production
     );
     let decrypted = decipher.update(token, 'hex', 'utf8');

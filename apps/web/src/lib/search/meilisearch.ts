@@ -11,8 +11,12 @@
 
 import { MeiliSearch, Index } from 'meilisearch';
 
-// Initialize Meilisearch client
+// Initialize Meilisearch client (lazy initialization)
+let _meiliClient: MeiliSearch | null = null;
+
 const getMeiliClient = () => {
+  if (_meiliClient) return _meiliClient;
+
   const host = process.env.MEILI_HOST || 'http://localhost:7700';
   const masterKey = process.env.MEILI_MASTER_KEY;
 
@@ -20,10 +24,12 @@ const getMeiliClient = () => {
     throw new Error('MEILI_MASTER_KEY environment variable is required for Meilisearch authentication');
   }
 
-  return new MeiliSearch({
+  _meiliClient = new MeiliSearch({
     host,
     apiKey: masterKey,
   });
+
+  return _meiliClient;
 };
 
 // Index names
@@ -379,6 +385,8 @@ export async function reindexAllPatients(prisma: any, batchSize: number = 100) {
 }
 
 /**
- * Export client for advanced usage
+ * Export client for advanced usage (lazy initialization)
  */
-export const meilisearchClient = getMeiliClient();
+export function getMeilisearchClient() {
+  return getMeiliClient();
+}

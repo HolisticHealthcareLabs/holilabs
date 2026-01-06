@@ -7,6 +7,13 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  // Skip failing routes during static generation (allow build to continue)
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
+  },
 
   // Security headers for HIPAA compliance and production hardening
   async headers() {
@@ -167,6 +174,11 @@ const nextConfig = {
     config.externals.push({
       'utf-8-validate': 'commonjs utf-8-validate',
       'bufferutil': 'commonjs bufferutil',
+      // Fix @react-pdf SSR issue - don't bundle for server
+      ...(isServer && {
+        '@react-pdf/renderer': 'commonjs @react-pdf/renderer',
+        'canvas': 'commonjs canvas',
+      }),
     })
 
     // Reduce memory footprint during build
