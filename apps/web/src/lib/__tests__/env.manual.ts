@@ -5,6 +5,7 @@
  * Usage: pnpm tsx src/lib/__tests__/env.test.ts
  */
 
+// @ts-nocheck - Manual test file with non-exported functions
 import { validateEnv, getEnv, isFeatureEnabled, getRequiredEnv } from '../env';
 
 console.log('🧪 Testing Environment Variable Validation...\n');

@@ -116,7 +116,7 @@ export const GET = createProtectedRoute(
           userAgent: true,
           success: true,
           errorMessage: true,
-          createdAt: true,
+          timestamp: true,
         },
       });
 

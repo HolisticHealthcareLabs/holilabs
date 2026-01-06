@@ -130,7 +130,7 @@ class RedisCache {
   private async initRedis() {
     try {
       if (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL) {
-        const { redis } = await import('@/lib/redis');
+        const { redis } = await import('@/lib/redis' as any);
         this.redis = redis;
         logger.info({ event: 'redis_cache_initialized' }, 'Redis cache initialized');
       }

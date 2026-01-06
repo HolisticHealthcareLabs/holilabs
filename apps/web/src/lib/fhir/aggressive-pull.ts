@@ -310,20 +310,20 @@ async function importConditions(
 
   const diagnoses = conditions.map(cond => fromFHIRCondition(cond, patientId));
 
-  // Deduplicate by diagnosis name + onset date
+  // Deduplicate by diagnosis description + onset date
   const existingDiagnoses = await prisma.diagnosis.findMany({
     where: { patientId },
-    select: { diagnosisName: true, onsetDate: true },
+    select: { description: true, onsetDate: true },
   });
 
   const existingSet = new Set(
     existingDiagnoses.map(d =>
-      `${d.diagnosisName}:${d.onsetDate?.toISOString() || 'null'}`
+      `${d.description}:${d.onsetDate?.toISOString() || 'null'}`
     )
   );
 
   const newDiagnoses = diagnoses.filter(diagnosis => {
-    const key = `${diagnosis.diagnosisName}:${diagnosis.onsetDate?.toISOString() || 'null'}`;
+    const key = `${diagnosis.description}:${diagnosis.onsetDate?.toISOString() || 'null'}`;
     return !existingSet.has(key);
   });
 
@@ -409,6 +409,7 @@ async function importMedications(
 
 /**
  * Import procedures with deduplication
+ * TODO: Add ProcedureRecord model to schema, then enable this function
  */
 async function importProcedures(
   patientId: string,
@@ -416,6 +417,17 @@ async function importProcedures(
 ): Promise<number> {
   if (procedures.length === 0) return 0;
 
+  // TODO: Uncomment when ProcedureRecord model is added to schema
+  logger.warn({
+    event: 'fhir_procedures_import_skipped',
+    reason: 'ProcedureRecord model not yet in schema',
+    patientId,
+    procedureCount: procedures.length,
+  });
+
+  return 0;
+
+  /* Original code - requires ProcedureRecord model:
   const procs = procedures.map(proc => fromFHIRProcedure(proc, patientId));
 
   // Deduplicate by procedure name + performed date
@@ -425,7 +437,7 @@ async function importProcedures(
   });
 
   const existingSet = new Set(
-    existingProcs.map(p =>
+    existingProcs.map((p: any) =>
       `${p.procedureName}:${p.performedAt?.toISOString() || 'null'}`
     )
   );
@@ -459,6 +471,7 @@ async function importProcedures(
   });
 
   return newProcs.length;
+  */
 }
 
 // ============================================================================
@@ -467,8 +480,18 @@ async function importProcedures(
 
 /**
  * Track FHIR pull event for analytics
+ * TODO: Add UserBehaviorEvent model to schema, then enable this function
  */
 async function trackPullEvent(patientId: string, result: PullResult): Promise<void> {
+  // TODO: Uncomment when UserBehaviorEvent model is added to schema
+  logger.info({
+    event: 'fhir_pull_analytics_skipped',
+    reason: 'UserBehaviorEvent model not yet in schema',
+    patientId,
+    summary: result.summary,
+  });
+
+  /* Original code - requires UserBehaviorEvent model:
   try {
     await prisma.userBehaviorEvent.create({
       data: {
@@ -496,4 +519,5 @@ async function trackPullEvent(patientId: string, result: PullResult): Promise<vo
       error: error.message,
     });
   }
+  */
 }

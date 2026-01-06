@@ -81,10 +81,6 @@ export const GET = createProtectedRoute(
     audit: {
       action: 'READ',
       resource: 'SOAPNote',
-      details: (req, context) => ({
-        noteId: context.params.id,
-        accessType: 'VIEW_NOTE',
-      }),
     },
   }
 );
@@ -244,10 +240,6 @@ export const PATCH = createProtectedRoute(
     audit: {
       action: 'UPDATE',
       resource: 'SOAPNote',
-      details: (req, context) => ({
-        noteId: context.params.id,
-        accessType: 'INLINE_EDIT',
-      }),
     },
   }
 );

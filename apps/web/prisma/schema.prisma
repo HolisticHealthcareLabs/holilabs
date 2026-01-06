@@ -129,6 +129,7 @@ enum UserRole {
   PHARMACIST // Pharmacist - prescription fulfillment
   CLINICIAN // Legacy role - maps to PHYSICIAN
   STAFF // Legacy role - maps to RECEPTIONIST
+  RESEARCHER // Research/analytics access - limited PHI access
 }
 
 // ============================================================================
@@ -896,10 +897,13 @@ model Diagnosis {
   // Diagnosis details
   icd10Code   String
   description String          @db.Text
+  snomedCode  String? // FHIR: SNOMED CT code
+  severity    String? // FHIR: mild, moderate, severe, critical
   isPrimary   Boolean         @default(false)
   status      DiagnosisStatus @default(ACTIVE)
 
   // Clinical context
+  onsetDate   DateTime? // FHIR: When condition started
   diagnosedBy String? // Clinician ID
   diagnosedAt DateTime  @default(now())
   resolvedAt  DateTime?
@@ -941,6 +945,7 @@ model Medication {
   frequency    String // e.g., "2x/día", "BID"
   route        String? // e.g., "oral", "IV"
   instructions String? @db.Text
+  notes        String? @db.Text // Clinical notes about medication
 
   // Dates
   startDate DateTime  @default(now())
@@ -1114,10 +1119,11 @@ model LabResult {
   isCritical Boolean @default(false)
 
   // Dates
-  orderedDate   DateTime?
-  collectedDate DateTime?
-  resultDate    DateTime
-  reviewedDate  DateTime?
+  orderedDate       DateTime?
+  collectedDate     DateTime?
+  sampleCollectedAt DateTime? // FHIR: When sample was collected (alias for collectedDate)
+  resultDate        DateTime
+  reviewedDate      DateTime?
 
   // Additional info
   notes         String? @db.Text
@@ -1547,6 +1553,7 @@ model Appointment {
   // Appointment details
   title       String
   description String? @db.Text
+  notes       String? @db.Text // Appointment notes
 
   // Date/Time
   startTime DateTime
@@ -1893,6 +1900,10 @@ enum AuditAction {
   SECURITY_ALERT // Suspicious or high-risk activity detected
   ACCESS // Portal access events
   VIEW // Read-only viewing actions
+  SHARE // Data sharing operations
+  SEARCH // Search/query operations
+  BREAK_GLASS_ACCESS // Emergency access override
+  SESSION_TERMINATED // Session termination events
   CREATE_GRANULAR_ACCESS_GRANT
   REVOKE_GRANULAR_ACCESS_GRANT
   EXPIRE_CONSENT

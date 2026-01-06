@@ -15,7 +15,7 @@
 
 import { NextResponse } from 'next/server';
 import { getAllCircuitBreakerStats } from '@/lib/resilience/circuit-breaker';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,7 @@ async function getBusinessMetrics() {
       // Daily appointments (today)
       prisma.appointment.count({
         where: {
-          start: {
+          startTime: {
             gte: todayStart,
             lt: todayEnd,
           },
@@ -113,7 +113,7 @@ async function getSecurityMetrics() {
       // Failed authentication attempts in last hour
       prisma.auditLog.count({
         where: {
-          action: 'LOGIN_FAILED',
+          action: 'LOGIN_FAILED' as any,
           timestamp: {
             gte: oneHourAgo,
           },
@@ -123,7 +123,7 @@ async function getSecurityMetrics() {
       // Failed authentication attempts in last 24 hours
       prisma.auditLog.count({
         where: {
-          action: 'LOGIN_FAILED',
+          action: 'LOGIN_FAILED' as any,
           timestamp: {
             gte: oneDayAgo,
           },

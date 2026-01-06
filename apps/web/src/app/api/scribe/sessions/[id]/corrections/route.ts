@@ -176,10 +176,6 @@ export const POST = createProtectedRoute(
     audit: {
       action: 'UPDATE',
       resource: 'Transcription',
-      details: (req, context) => ({
-        sessionId: context.params.id,
-        accessType: 'TRANSCRIPT_CORRECTION',
-      }),
     },
   }
 );

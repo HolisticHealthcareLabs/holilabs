@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import logger from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';

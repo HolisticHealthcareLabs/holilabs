@@ -10,7 +10,21 @@
  * Used for FHIR aggressive pull on patient onboarding
  */
 
-import type { Medication, LabResult, Diagnosis, ProcedureRecord } from '@prisma/client';
+import type { Medication, LabResult, Diagnosis } from '@prisma/client';
+
+// TODO: Add ProcedureRecord model to schema when needed
+// Temporary interface until ProcedureRecord model is added to Prisma schema
+interface ProcedureRecordData {
+  patientId: string;
+  procedureName: string;
+  snomedCode?: string;
+  status?: string;
+  performedAt?: Date;
+  performedBy?: string;
+  location?: string;
+  indication?: string;
+  notes?: string;
+}
 
 // ============================================================================
 // FHIR OBSERVATION RESOURCE
@@ -110,16 +124,15 @@ export function fromFHIRObservation(observation: FHIRObservation, patientId: str
     labResult.value = observation.valueInteger.toString();
   }
 
-  // Extract reference range
+  // Extract reference range (stored as text string, not separate low/high)
   if (observation.referenceRange && observation.referenceRange.length > 0) {
     const range = observation.referenceRange[0];
-    if (range.low) {
-      labResult.referenceRangeLow = range.low.value;
+    // Build reference range string from low/high values or use text
+    if (range.low && range.high) {
+      labResult.referenceRange = `${range.low.value}-${range.high.value} ${range.low.unit || ''}`.trim();
+    } else if (range.text) {
+      labResult.referenceRange = range.text;
     }
-    if (range.high) {
-      labResult.referenceRangeHigh = range.high.value;
-    }
-    labResult.referenceRange = range.text;
   }
 
   // Extract date
@@ -137,8 +150,11 @@ export function fromFHIRObservation(observation: FHIRObservation, patientId: str
   // Extract category (test type)
   if (observation.category && observation.category.length > 0) {
     const categoryCode = observation.category[0].coding?.[0]?.code;
-    if (categoryCode) {
-      labResult.testType = categoryCode.toUpperCase();
+    const categoryDisplay = observation.category[0].coding?.[0]?.display;
+    if (categoryDisplay) {
+      labResult.category = categoryDisplay;
+    } else if (categoryCode) {
+      labResult.category = categoryCode.toUpperCase();
     }
   }
 
@@ -151,17 +167,21 @@ export function fromFHIRObservation(observation: FHIRObservation, patientId: str
   return labResult;
 }
 
-function mapObservationStatus(fhirStatus: string): string {
-  const statusMap: Record<string, string> = {
-    'final': 'COMPLETED',
-    'amended': 'COMPLETED',
-    'corrected': 'COMPLETED',
-    'preliminary': 'PENDING',
-    'registered': 'PENDING',
+/**
+ * Map FHIR observation status to LabResultStatus enum
+ * Valid values: PRELIMINARY, FINAL, CORRECTED, CANCELLED
+ */
+function mapObservationStatus(fhirStatus: string): 'PRELIMINARY' | 'FINAL' | 'CORRECTED' | 'CANCELLED' {
+  const statusMap: Record<string, 'PRELIMINARY' | 'FINAL' | 'CORRECTED' | 'CANCELLED'> = {
+    'final': 'FINAL',
+    'amended': 'CORRECTED',
+    'corrected': 'CORRECTED',
+    'preliminary': 'PRELIMINARY',
+    'registered': 'PRELIMINARY',
     'cancelled': 'CANCELLED',
     'entered-in-error': 'CANCELLED',
   };
-  return statusMap[fhirStatus] || 'PENDING';
+  return statusMap[fhirStatus] || 'PRELIMINARY';
 }
 
 // ============================================================================
@@ -233,15 +253,15 @@ export interface FHIRCondition {
 export function fromFHIRCondition(condition: FHIRCondition, patientId: string): Partial<Diagnosis> {
   const diagnosis: Partial<Diagnosis> = {
     patientId,
-    diagnosisName: condition.code.text || condition.code.coding?.[0]?.display || 'Unknown Diagnosis',
+    description: condition.code.text || condition.code.coding?.[0]?.display || 'Unknown Diagnosis',
   };
 
-  // Extract ICD code
+  // Extract ICD-10 code
   const icdCoding = condition.code.coding?.find(c =>
     c.system?.includes('icd-10') || c.system?.includes('icd10')
   );
   if (icdCoding) {
-    diagnosis.icdCode = icdCoding.code;
+    diagnosis.icd10Code = icdCoding.code;
   }
 
   // Extract SNOMED code
@@ -280,11 +300,14 @@ export function fromFHIRCondition(condition: FHIRCondition, patientId: string): 
     diagnosis.notes = condition.note.map(n => n.text).join('\n');
   }
 
-  // Extract type from category
+  // TODO: Add 'type' field to Diagnosis schema if needed for category classification
+  // For now, category information is stored in notes if present
   if (condition.category && condition.category.length > 0) {
-    const categoryCode = condition.category[0].coding?.[0]?.code;
-    if (categoryCode) {
-      diagnosis.type = categoryCode.toUpperCase() as any;
+    const categoryDisplay = condition.category[0].coding?.[0]?.display;
+    if (categoryDisplay && diagnosis.notes) {
+      diagnosis.notes += `\nCategory: ${categoryDisplay}`;
+    } else if (categoryDisplay) {
+      diagnosis.notes = `Category: ${categoryDisplay}`;
     }
   }
 
@@ -483,8 +506,8 @@ export interface FHIRProcedure {
 /**
  * Convert FHIR Procedure to internal ProcedureRecord
  */
-export function fromFHIRProcedure(procedure: FHIRProcedure, patientId: string): Partial<ProcedureRecord> {
-  const procedureRecord: Partial<ProcedureRecord> = {
+export function fromFHIRProcedure(procedure: FHIRProcedure, patientId: string): Partial<ProcedureRecordData> {
+  const procedureRecord: Partial<ProcedureRecordData> = {
     patientId,
     procedureName: procedure.code.text || procedure.code.coding?.[0]?.display || 'Unknown Procedure',
   };

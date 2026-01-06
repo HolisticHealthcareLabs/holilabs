@@ -216,7 +216,7 @@ export const GET = createProtectedRoute(
           where,
           skip,
           take: limit,
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
           include: {
             patient: {
               select: {

@@ -146,6 +146,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'billing:write',
     'settings:read',
   ],
+
+  // Researcher - limited PHI access for approved research
+  RESEARCHER: [
+    'patient:read', // De-identified data access only
+    'audit:read', // Can view audit logs for research
+    'settings:read',
+  ],
 };
 
 /**

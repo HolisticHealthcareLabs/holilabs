@@ -122,7 +122,7 @@ export const POST = createPublicRoute(
     // Update phone verified status if SMS
     if (phone && otpRecord.sentVia === 'SMS') {
       await prisma.patientUser.update({
-        where: { id: otpRecord.patientId },
+        where: { id: otpRecord.patientUser.id },
         data: { phoneVerifiedAt: new Date() },
       });
     }
@@ -130,14 +130,14 @@ export const POST = createPublicRoute(
     // Update email verified status if EMAIL
     if (email && otpRecord.sentVia === 'EMAIL') {
       await prisma.patientUser.update({
-        where: { id: otpRecord.patientId },
+        where: { id: otpRecord.patientUser.id },
         data: { emailVerifiedAt: new Date() },
       });
     }
 
     logger.info({
       event: 'otp_verified_success',
-      patientId: otpRecord.patientId,
+      patientId: otpRecord.patientUser.id,
       sentVia: otpRecord.sentVia,
       attempts: otpRecord.attempts + 1,
     });
@@ -146,7 +146,7 @@ export const POST = createPublicRoute(
     await createAuditLog({
       action: 'READ',
       resource: 'PatientAuth',
-      resourceId: otpRecord.patientId,
+      resourceId: otpRecord.patientUser.id,
       details: {
         method: 'otp',
         sentVia: otpRecord.sentVia,
@@ -159,7 +159,7 @@ export const POST = createPublicRoute(
     // Track analytics event (NO PHI!)
     await trackEvent(
       ServerAnalyticsEvents.OTP_VERIFIED,
-      otpRecord.patientId,
+      otpRecord.patientUser.id,
       {
         method: otpRecord.sentVia, // SMS or EMAIL
         attempts: otpRecord.attempts + 1,

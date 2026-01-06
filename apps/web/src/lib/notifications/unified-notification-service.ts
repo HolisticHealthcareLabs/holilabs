@@ -395,11 +395,15 @@ export async function sendNotification(
 
             deliveryStatus.whatsapp = true;
 
+            // Note: WhatsApp delivery tracking stored in metadata
             await prisma.notification.update({
               where: { id: notification.id },
               data: {
-                deliveredWhatsApp: true,
-                whatsappSentAt: new Date(),
+                metadata: {
+                  ...(notification.metadata as object || {}),
+                  deliveredWhatsApp: true,
+                  whatsappSentAt: new Date().toISOString(),
+                },
               },
             });
 

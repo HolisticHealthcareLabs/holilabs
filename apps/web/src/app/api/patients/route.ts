@@ -119,7 +119,7 @@ export const GET = createProtectedRoute(
             },
           },
         },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { createdAt: 'desc' },
       }),
       prisma.patient.count({ where }),
     ]);
@@ -513,7 +513,7 @@ Registration Date: ${new Date().toISOString()}
             hasSpecialNeeds: patient.hasSpecialNeeds,
             dnrStatus: patient.dnrStatus,
             dniStatus: patient.dniStatus,
-            hasAdvanceDirectives: patient.advanceDirectivesStatus === 'ACTIVE',
+            hasAdvanceDirectives: patient.advanceDirectivesStatus === 'COMPLETED' || patient.advanceDirectivesStatus === 'REVIEWED_ANNUALLY',
             hasPhotoConsent: !!patient.photoConsentDate,
             hasEmergencyContact: !!patient.emergencyContactName,
             hourOfDay: now.getHours(),

@@ -17,7 +17,7 @@ if (!SECRET_KEY) {
 export function encryptPatientId(patientId: string): string {
   const cipher = crypto.createCipheriv(
     'aes-256-cbc',
-    crypto.createHash('sha256').update(SECRET_KEY).digest(),
+    crypto.createHash('sha256').update(SECRET_KEY!).digest(),
     Buffer.alloc(16, 0) // IV should be random and stored with token in production
   );
   let encrypted = cipher.update(patientId, 'utf8', 'hex');

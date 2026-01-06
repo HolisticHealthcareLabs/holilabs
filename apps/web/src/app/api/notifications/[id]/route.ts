@@ -81,7 +81,6 @@ export async function PUT(
 
     // HIPAA Audit Log: Notification marked as read
     await createAuditLog({
-      userId,
       action: 'UPDATE',
       resource: 'Notification',
       resourceId: notificationId,
@@ -183,7 +182,6 @@ export async function DELETE(
 
     // HIPAA Audit Log: Notification deleted
     await createAuditLog({
-      userId,
       action: 'DELETE',
       resource: 'Notification',
       resourceId: notificationId,

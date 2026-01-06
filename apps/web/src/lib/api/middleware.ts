@@ -382,8 +382,10 @@ export async function verifyPatientAccess(
       },
       select: {
         id: true,
-        accessLevel: true,
         purpose: true,
+        canView: true,
+        canDownload: true,
+        canShare: true,
       },
     });
 
@@ -393,8 +395,12 @@ export async function verifyPatientAccess(
         userId,
         patientId,
         grantId: activeGrant.id,
-        accessLevel: activeGrant.accessLevel,
         purpose: activeGrant.purpose,
+        permissions: {
+          canView: activeGrant.canView,
+          canDownload: activeGrant.canDownload,
+          canShare: activeGrant.canShare,
+        },
       });
       return true;
     }

@@ -100,7 +100,7 @@ export const GET = createProtectedRoute(
             },
           },
         },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
 
       return NextResponse.json({
@@ -132,8 +132,9 @@ export const GET = createProtectedRoute(
  */
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
+    let body: any;
     try {
-      const body = await request.json();
+      body = await request.json();
 
       const {
         patientId,

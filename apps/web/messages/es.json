@@ -85,7 +85,7 @@
     "FULL_CODE": "Código Completo",
     "DNR": "DNR (No Resucitar)",
     "DNI": "DNI (No Intubar)",
-    "DNR_DNI": "DNR/DNI",
+    "DNR_DNI": "DNR/DNI (No Resucitar/No Intubar)",
     "COMFORT_CARE_ONLY": "Solo Cuidados de Confort",
     "AND": "AND (Permitir Muerte Natural)"
   },

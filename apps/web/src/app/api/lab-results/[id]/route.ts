@@ -71,10 +71,6 @@ export const GET = createProtectedRoute(
     audit: {
       action: 'READ',
       resource: 'LabResult',
-      details: (req, context) => ({
-        labResultId: context.params.id,
-        accessType: 'LAB_RESULT_DETAIL',
-      }),
     },
   }
 );

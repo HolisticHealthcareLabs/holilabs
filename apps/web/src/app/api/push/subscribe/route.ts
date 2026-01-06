@@ -109,9 +109,6 @@ export const POST = createProtectedRoute(
     audit: {
       action: 'CREATE',
       resource: 'PushSubscription',
-      details: (req, context) => ({
-        accessType: 'NOTIFICATION_SUBSCRIPTION',
-      }),
     },
   }
 );
@@ -169,9 +166,6 @@ export const DELETE = createProtectedRoute(
     audit: {
       action: 'DELETE',
       resource: 'PushSubscription',
-      details: (req, context) => ({
-        accessType: 'NOTIFICATION_UNSUBSCRIBE',
-      }),
     },
   }
 );
