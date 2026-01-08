@@ -84,8 +84,10 @@ async function searchClinicalNotes(
   // Convert embedding to pgvector format
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-  // Build WHERE clause
-  const whereClause = patientId ? `WHERE "patientId" = '${patientId}'` : '';
+  // Build parameterized WHERE clause to prevent SQL injection
+  const whereClause = patientId ? 'WHERE "patientId" = $2' : '';
+  const params = patientId ? [embeddingStr, patientId, limit] : [embeddingStr, limit];
+  const limitParam = patientId ? '$3' : '$2';
 
   // Perform vector similarity search
   // Uses pgvector's <-> operator (L2 distance, lower = more similar)
@@ -108,8 +110,8 @@ async function searchClinicalNotes(
     FROM clinical_embeddings
     ${whereClause}
     ORDER BY embedding <-> $1::vector
-    LIMIT ${limit}
-  `, embeddingStr);
+    LIMIT ${limitParam}
+  `, ...params);
 
   // Convert distance to similarity score and filter by threshold
   return results
@@ -136,10 +138,12 @@ async function searchSimilarPatients(
 ): Promise<SearchResult[]> {
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-  // Build WHERE clause
+  // Build parameterized WHERE clause to prevent SQL injection
   const whereClause = excludePatientId
-    ? `WHERE "patientId" != '${excludePatientId}'`
+    ? 'WHERE "patientId" != $2'
     : '';
+  const params = excludePatientId ? [embeddingStr, excludePatientId, limit] : [embeddingStr, limit];
+  const limitParam = excludePatientId ? '$3' : '$2';
 
   const results = await prisma.$queryRawUnsafe<Array<{
     id: string;
@@ -161,8 +165,8 @@ async function searchSimilarPatients(
     FROM patient_summary_embeddings
     ${whereClause}
     ORDER BY embedding <-> $1::vector
-    LIMIT ${limit}
-  `, embeddingStr);
+    LIMIT ${limitParam}
+  `, ...params);
 
   return results
     .map(row => ({
@@ -193,7 +197,10 @@ async function searchSimilarDiagnoses(
 ): Promise<SearchResult[]> {
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-  const whereClause = patientId ? `WHERE "patientId" = '${patientId}'` : '';
+  // Build parameterized WHERE clause to prevent SQL injection
+  const whereClause = patientId ? 'WHERE "patientId" = $2' : '';
+  const params = patientId ? [embeddingStr, patientId, limit] : [embeddingStr, limit];
+  const limitParam = patientId ? '$3' : '$2';
 
   const results = await prisma.$queryRawUnsafe<Array<{
     id: string;
@@ -215,8 +222,8 @@ async function searchSimilarDiagnoses(
     FROM diagnosis_embeddings
     ${whereClause}
     ORDER BY embedding <-> $1::vector
-    LIMIT ${limit}
-  `, embeddingStr);
+    LIMIT ${limitParam}
+  `, ...params);
 
   return results
     .map(row => ({

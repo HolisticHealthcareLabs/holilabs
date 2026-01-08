@@ -7,22 +7,26 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Content Security Policy (CSP)
+ * Content Security Policy (CSP) with nonce support
+ *
+ * @param nonce - Cryptographically secure nonce for inline scripts
  */
-function getCSP() {
+function getCSP(nonce?: string) {
   const isDev = process.env.NODE_ENV === 'development';
 
   const cspDirectives = [
     // Default source - only same origin
     "default-src 'self'",
 
-    // Scripts - allow same origin, specific CDNs, and unsafe-inline/eval for Next.js in dev
-    // In production, remove unsafe-eval and be more restrictive
+    // Scripts - use nonce for inline scripts instead of unsafe-inline
+    // Development: Allow unsafe-eval for HMR and hot-reloading
+    // Production: Strict nonce-based policy
     isDev
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com"
-      : "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://vercel.live",
+      ? `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""} 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com`
+      : `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""} https://cdn.jsdelivr.net https://unpkg.com https://vercel.live`,
 
-    // Styles - allow same origin and unsafe-inline for Tailwind/styled-components
+    // Styles - keep unsafe-inline for Tailwind/CSS-in-JS (required for dynamic styling)
+    // TODO: Consider moving to nonce-based styles if performance impact is acceptable
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 
     // Images - allow same origin, data URIs, and common image CDNs
@@ -63,10 +67,24 @@ function getCSP() {
 
 /**
  * Apply security headers to a response
+ *
+ * @param response - NextResponse to add headers to
+ * @param nonce - Optional nonce for CSP script-src
+ * @returns Response with security headers applied
+ *
+ * @example
+ * ```typescript
+ * // In middleware
+ * import { randomBytes } from 'crypto';
+ * const nonce = randomBytes(16).toString('base64');
+ * const response = NextResponse.next();
+ * applySecurityHeaders(response, nonce);
+ * response.headers.set('x-nonce', nonce); // Make nonce available to pages
+ * ```
  */
-export function applySecurityHeaders(response: NextResponse): NextResponse {
-  // Content Security Policy
-  response.headers.set('Content-Security-Policy', getCSP());
+export function applySecurityHeaders(response: NextResponse, nonce?: string): NextResponse {
+  // Content Security Policy with nonce support
+  response.headers.set('Content-Security-Policy', getCSP(nonce));
 
   // Strict Transport Security (HSTS) - only in production
   if (process.env.NODE_ENV === 'production') {
@@ -117,6 +135,17 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
   );
   response.headers.set('Pragma', 'no-cache'); // HTTP/1.0 compatibility
   response.headers.set('Expires', '0'); // Proxy compatibility
+
+  // Cross-Origin Security Headers (modern browser security)
+  // These headers help prevent cross-origin attacks and improve security reputation
+  // Cross-Origin-Embedder-Policy: Prevents document from loading cross-origin resources that don't explicitly grant permission
+  response.headers.set('Cross-Origin-Embedder-Policy', 'credentialless');
+
+  // Cross-Origin-Opener-Policy: Prevents other origins from gaining reference to your window
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+
+  // Cross-Origin-Resource-Policy: Prevents other origins from embedding resources
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-site');
 
   // CORS headers
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000')

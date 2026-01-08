@@ -1,0 +1,84 @@
+# Holi Labs EMR Platform - Security Policy
+# Compliant with RFC 9116
+
+# Primary security contact
+Contact: mailto:security@holilabs.xyz
+Contact: https://holilabs.xyz/security
+
+# Expires: One year from creation (ISO 8601 format)
+Expires: 2027-01-08T00:00:00.000Z
+
+# Preferred language for security reports
+Preferred-Languages: en, pt, es
+
+# Security page with full disclosure policy
+# IMPORTANT: Update this URL to match your actual security page
+# Canonical: https://holilabs.xyz/.well-known/security.txt
+
+# Encryption key for secure communications
+# IMPORTANT: Add your PGP key URL when available
+# Encryption: https://holilabs.xyz/pgp-key.txt
+
+# Acknowledgments page (security researchers hall of fame)
+# Acknowledgments: https://holilabs.xyz/security/acknowledgments
+
+# Security policy and responsible disclosure
+Policy: https://holilabs.xyz/security-policy
+
+# Hiring (optional - security team recruitment)
+# Hiring: https://holilabs.xyz/careers/security
+
+# Areas in scope for security testing
+# Include ONLY authorized areas
+# - Web application: https://holilabs.xyz
+# - API endpoints: https://api.holilabs.xyz
+# EXCLUDE:
+# - Third-party services
+# - DoS/DDoS attacks
+# - Physical security testing
+# - Social engineering
+
+# Severity classification
+# CRITICAL: Remote code execution, SQL injection, authentication bypass
+# HIGH: XSS, CSRF, privilege escalation, PHI exposure
+# MEDIUM: Information disclosure, business logic flaws
+# LOW: Missing security headers, informational findings
+
+# Response SLA
+# CRITICAL: 4 hours acknowledgment, 24 hours remediation
+# HIGH: 24 hours acknowledgment, 7 days remediation
+# MEDIUM: 72 hours acknowledgment, 30 days remediation
+# LOW: 7 days acknowledgment, 90 days remediation
+
+# Safe Harbor
+# We will NOT pursue legal action against security researchers who:
+# 1. Report vulnerabilities in good faith
+# 2. Do not access or modify patient data (PHI)
+# 3. Do not perform DoS attacks
+# 4. Give us reasonable time to remediate (90 days)
+# 5. Do not publicly disclose before remediation
+
+# HIPAA Notice
+# This is a healthcare application subject to HIPAA regulations.
+# Unauthorized access to Protected Health Information (PHI) is a federal crime.
+# Only test with synthetic/test data in authorized environments.
+
+# Bug Bounty Program
+# Status: Not currently active
+# Check https://holilabs.xyz/security for updates
+
+# Hall of Fame
+# We publicly acknowledge responsible security researchers at:
+# https://holilabs.xyz/security/hall-of-fame
+
+---BEGIN PGP SIGNATURE---
+# IMPORTANT: Sign this file with your PGP key for authenticity
+# Replace this placeholder with actual signature after creating PGP key
+#
+# Steps to sign:
+# 1. Generate PGP key: gpg --gen-key
+# 2. Sign file: gpg --clearsign security.txt
+# 3. Replace this file with the signed version
+#
+# For now, this file is unsigned but functional
+---END PGP SIGNATURE---
