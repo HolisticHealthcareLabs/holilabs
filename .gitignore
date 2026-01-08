@@ -46,8 +46,14 @@ apps/**/.env.test
 apps/**/.env.*.backup
 apps/**/.env.*.bak
 PRODUCTION_SECRETS.txt
+PRODUCTION_SECRETS*.md
+PRODUCTION_SECRETS_*.md
+**/PRODUCTION_SECRETS*.md
 .env.sentry-build-plugin
 **/.env.sentry-build-plugin
+**/secrets*.md
+**/*SECRET*.md
+**/*_SECRETS*.md
 
 # Cosign keys (NEVER commit private keys)
 cosign.key
