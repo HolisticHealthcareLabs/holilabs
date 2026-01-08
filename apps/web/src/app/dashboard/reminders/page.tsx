@@ -5,14 +5,19 @@
  *
  * Tabs: Templates | Scheduled | Sent | Failed
  * Features: Statistics cards, table views, actions (cancel/pause/resume/retry)
+ *
+ * Note: Configured as dynamic route to prevent SSR issues with react-pdf in child components
  */
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import MessageTemplateEditor from '@/components/messaging/MessageTemplateEditor';
-import ScheduledRemindersTable from '@/components/messaging/ScheduledRemindersTable';
-import SentRemindersTable from '@/components/messaging/SentRemindersTable';
-import FailedRemindersTable from '@/components/messaging/FailedRemindersTable';
+import dynamic from 'next/dynamic';
+
+// Dynamically import components that may use react-pdf (SSR-incompatible)
+const MessageTemplateEditor = dynamic(() => import('@/components/messaging/MessageTemplateEditor'), { ssr: false });
+const ScheduledRemindersTable = dynamic(() => import('@/components/messaging/ScheduledRemindersTable'), { ssr: false });
+const SentRemindersTable = dynamic(() => import('@/components/messaging/SentRemindersTable'), { ssr: false });
+const FailedRemindersTable = dynamic(() => import('@/components/messaging/FailedRemindersTable'), { ssr: false });
 
 type Tab = 'templates' | 'scheduled' | 'sent' | 'failed';
 
