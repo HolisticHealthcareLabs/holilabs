@@ -79,3 +79,24 @@ prisma/migrations/
 # Synthea test data (large JAR file and generated data)
 synthea/
 synthea-output/
+
+      # Production secrets (NEVER COMMIT)
+      PRODUCTION_SECRETS*.md
+      PRODUCTION_SECRETS_*.md
+      **/PRODUCTION_SECRETS*.md
+      .env.sentry-build-plugin
+      **/.env.sentry-build-plugin
+      **/secrets*.md
+      **/*SECRET*.md
+      **/*_SECRETS*.md
+      GITIGNORE_EOF
+
+      git add .gitignore
+      git commit -m "security: prevent production secret files from being committed"
+
+# Production secrets (NEVER COMMIT)
+PRODUCTION_SECRETS*.md
+PRODUCTION_SECRETS_*.md
+.env.sentry-build-plugin
+**/secrets*.md
+**/*SECRET*.md
