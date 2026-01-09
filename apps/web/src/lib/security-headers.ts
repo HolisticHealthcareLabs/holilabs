@@ -20,10 +20,10 @@ function getCSP(nonce?: string) {
 
     // Scripts - use nonce for inline scripts instead of unsafe-inline
     // Development: Allow unsafe-eval for HMR and hot-reloading
-    // Production: Strict nonce-based policy
+    // Production: Strict nonce-based policy (no external CDNs for security)
     isDev
       ? `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""} 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com`
-      : `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""} https://cdn.jsdelivr.net https://unpkg.com https://vercel.live`,
+      : `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""}`,
 
     // Styles - keep unsafe-inline for Tailwind/CSS-in-JS (required for dynamic styling)
     // TODO: Consider moving to nonce-based styles if performance impact is acceptable
@@ -35,10 +35,10 @@ function getCSP(nonce?: string) {
     // Fonts - allow same origin and Google Fonts
     "font-src 'self' data: https://fonts.gstatic.com",
 
-    // Connect - allow same origin, API endpoints, and Supabase
+    // Connect - allow same origin, API endpoints, Supabase, and monitoring (Sentry)
     `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || ''} https://*.supabase.co ${
       process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    } wss://localhost:* ws://localhost:*`,
+    } https://*.sentry.io wss://localhost:* ws://localhost:*`,
 
     // Media - allow same origin
     "media-src 'self' blob:",
@@ -60,6 +60,9 @@ function getCSP(nonce?: string) {
 
     // Upgrade insecure requests in production
     ...(!isDev ? ["upgrade-insecure-requests"] : []),
+
+    // CSP violation reporting (production only)
+    ...(!isDev ? [`report-uri ${process.env.NEXT_PUBLIC_APP_URL || ''}/api/security/csp-report`] : []),
   ];
 
   return cspDirectives.join('; ');
