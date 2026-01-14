@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
     -- Foreign keys
     CONSTRAINT "password_reset_tokens_user_id_fkey"
         FOREIGN KEY ("user_id")
-        REFERENCES "User"("id")
+        REFERENCES "users"("id")
         ON DELETE CASCADE
         ON UPDATE CASCADE,
 
@@ -45,9 +45,9 @@ CREATE INDEX IF NOT EXISTS "password_reset_tokens_patient_user_id_idx" ON "passw
 CREATE INDEX IF NOT EXISTS "password_reset_tokens_expires_at_idx" ON "password_reset_tokens"("expires_at");
 
 -- Add additional security columns to User table
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "password_changed_at" TIMESTAMP(3);
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "failed_login_attempts" INTEGER DEFAULT 0;
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "locked_until" TIMESTAMP(3);
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "password_changed_at" TIMESTAMP(3);
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "failed_login_attempts" INTEGER DEFAULT 0;
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "locked_until" TIMESTAMP(3);
 
 -- Add additional security columns to patient_users table (already has some)
 ALTER TABLE "patient_users" ADD COLUMN IF NOT EXISTS "password_changed_at" TIMESTAMP(3);

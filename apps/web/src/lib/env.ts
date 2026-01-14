@@ -72,7 +72,6 @@ const serverSchema = z.object({
   }).optional(),
 
   // AI Transcription Services
-  ASSEMBLYAI_API_KEY: z.string().optional(),
   DEEPGRAM_API_KEY: z.string().optional(),
 
   // AI Configuration
@@ -224,9 +223,17 @@ const serverSchema = z.object({
 
 const clientSchema = z.object({
   // App Configuration
-  NEXT_PUBLIC_APP_URL: z.string().url({
-    message: 'NEXT_PUBLIC_APP_URL must be a valid URL (e.g., https://holilabs.xyz)',
-  }),
+  NEXT_PUBLIC_APP_URL: z.preprocess(
+    (value) => {
+      if (typeof value === 'string' && value.trim().length === 0) {
+        return undefined;
+      }
+      return value;
+    },
+    z.string().url({
+      message: 'NEXT_PUBLIC_APP_URL must be a valid URL (e.g., https://holilabs.xyz)',
+    }).default('http://localhost:3000')
+  ),
 
   // Web Push Notifications
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
@@ -311,6 +318,12 @@ function validateEnv(): Env {
     }
 
     const env = parsed.data;
+
+    if (!process.env.NEXT_PUBLIC_APP_URL && isServer && !isProduction) {
+      console.warn(
+        'NEXT_PUBLIC_APP_URL is not set. Defaulting to http://localhost:3000 for local development.'
+      );
+    }
 
     // Runtime checks and warnings (production only, server-side only)
     if (isProduction && isServer) {

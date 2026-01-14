@@ -36,7 +36,7 @@ const TEST_ADMIN = {
   email: 'admin@test.com',
   firstName: 'Admin',
   lastName: 'User',
-  password: 'hashed_password',
+  passwordHash: 'hashed_password',
   role: 'ADMIN' as const,
 };
 
@@ -45,7 +45,7 @@ const TEST_PHYSICIAN = {
   email: 'physician@test.com',
   firstName: 'Doctor',
   lastName: 'Smith',
-  password: 'hashed_password',
+  passwordHash: 'hashed_password',
   role: 'PHYSICIAN' as const,
   licenseNumber: 'MD-12345',
 };
@@ -55,7 +55,7 @@ const TEST_NURSE = {
   email: 'nurse@test.com',
   firstName: 'Nurse',
   lastName: 'Johnson',
-  password: 'hashed_password',
+  passwordHash: 'hashed_password',
   role: 'NURSE' as const,
 };
 
@@ -255,7 +255,7 @@ describe('Authentication System', () => {
           email: 'backup@test.com',
           firstName: 'Backup',
           lastName: 'User',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaBackupCodes: [
@@ -283,7 +283,7 @@ describe('Authentication System', () => {
           email: 'encrypted@test.com',
           firstName: 'Encrypted',
           lastName: 'User',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaPhoneNumber: encryptedPhone,
@@ -319,7 +319,7 @@ describe('Authentication System', () => {
           email: 'mfalogin@test.com',
           firstName: 'MFA',
           lastName: 'Login',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaPhoneNumber: encryptPHI(TEST_PHONE_NUMBER),
@@ -360,7 +360,7 @@ describe('Authentication System', () => {
           email: 'auditlogin@test.com',
           firstName: 'Audit',
           lastName: 'Login',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'PHYSICIAN',
           mfaEnabled: true,
           mfaPhoneNumber: encryptPHI(TEST_PHONE_NUMBER),
@@ -403,7 +403,7 @@ describe('Authentication System', () => {
           email: 'backupverify@test.com',
           firstName: 'Backup',
           lastName: 'Verify',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaBackupCodes: [encryptedCode as string],
@@ -432,7 +432,7 @@ describe('Authentication System', () => {
           email: 'invalidbackup@test.com',
           firstName: 'Invalid',
           lastName: 'Backup',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaBackupCodes: [encryptPHI('VALIDCODE') as string],
@@ -454,7 +454,7 @@ describe('Authentication System', () => {
           email: 'casebackup@test.com',
           firstName: 'Case',
           lastName: 'Backup',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaBackupCodes: [encryptPHI(backupCode) as string],
@@ -477,7 +477,7 @@ describe('Authentication System', () => {
           email: 'regenbackup@test.com',
           firstName: 'Regen',
           lastName: 'Backup',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaBackupCodes: [encryptPHI(oldCode) as string],
@@ -509,7 +509,7 @@ describe('Authentication System', () => {
           email: 'auditbackup@test.com',
           firstName: 'Audit',
           lastName: 'Backup',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaBackupCodes: [encryptPHI(backupCode) as string],
@@ -552,7 +552,7 @@ describe('Authentication System', () => {
           email: 'status@test.com',
           firstName: 'Status',
           lastName: 'User',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaPhoneNumber: encryptPHI(TEST_PHONE_NUMBER),
@@ -584,7 +584,7 @@ describe('Authentication System', () => {
           email: 'mask@test.com',
           firstName: 'Mask',
           lastName: 'User',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'PHYSICIAN',
           mfaEnabled: true,
           mfaPhoneNumber: encryptPHI(phoneNumber),
@@ -609,7 +609,7 @@ describe('Authentication System', () => {
           email: 'disablenurse@test.com',
           firstName: 'Disable',
           lastName: 'Nurse',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'NURSE',
           mfaEnabled: true,
           mfaPhoneNumber: encryptPHI(TEST_PHONE_NUMBER),
@@ -641,7 +641,7 @@ describe('Authentication System', () => {
           email: 'disableadmin@test.com',
           firstName: 'Disable',
           lastName: 'Admin',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'ADMIN',
           mfaEnabled: true,
           mfaPhoneNumber: encryptPHI(TEST_PHONE_NUMBER),
@@ -661,7 +661,7 @@ describe('Authentication System', () => {
           email: 'disableoverride@test.com',
           firstName: 'Override',
           lastName: 'User',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'PHYSICIAN',
           mfaEnabled: true,
           mfaPhoneNumber: encryptPHI(TEST_PHONE_NUMBER),
@@ -687,7 +687,7 @@ describe('Authentication System', () => {
           email: 'auditdisable@test.com',
           firstName: 'Audit',
           lastName: 'Disable',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'NURSE',
           mfaEnabled: true,
         },
@@ -759,12 +759,7 @@ describe('Authentication System', () => {
 
   describe('E.164 Phone Number Validation', () => {
     const validPhoneNumbers = [
-      '+1555555export interface MFAEnrollmentResult {
-  verificationSid: string;
-  phoneNumber: string;
-  channel: 'sms' | 'call';
-  expiresAt: Date;
-}1234', // US
+      '+15555551234', // US
       '+442071838750', // UK
       '+5511987654321', // Brazil
       '+8613800138000', // China

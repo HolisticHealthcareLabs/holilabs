@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
 import '@/styles/print.css';
 import '@/styles/mobile.css';
@@ -46,16 +47,20 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const nonce = headersList.get('x-nonce') ?? undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Theme initialization script - prevents FOUC */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
           suppressHydrationWarning
         />

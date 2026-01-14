@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { transcribeAudioWithDeepgram } from '@/lib/transcription/deepgram';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import Anthropic from '@anthropic-ai/sdk';
+import { anonymizePatientData } from '@/lib/presidio';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -189,13 +190,33 @@ export const POST = createProtectedRoute(
         );
       }
 
+      // STEP 2.5: De-identify transcript with Presidio BEFORE persisting or sending to any LLM
+      const anonymizeStartTime = Date.now();
+      const deidentifiedTranscript = await anonymizePatientData(transcriptText);
+      const anonymizeDurationMs = Date.now() - anonymizeStartTime;
+      console.log(`🛡️ Presidio anonymization completed in ${anonymizeDurationMs}ms`);
+
+      // Fail closed in production if Presidio is unavailable (avoid storing raw transcript)
+      if (process.env.NODE_ENV === 'production' && deidentifiedTranscript === transcriptText) {
+        throw new Error('Presidio unavailable: refusing to persist or process raw transcript');
+      }
+
+      // Remove text from diarized segments (keep timing + speaker metadata only)
+      const safeSegments = (segments || []).map((s: any) => ({
+        speaker: s.speaker,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        confidence: s.confidence,
+        text: '',
+      }));
+
       // Create transcription record
-      const wordCount = transcriptText.split(/\s+/).length;
+      const wordCount = deidentifiedTranscript.split(/\s+/).length;
       const transcriptionRecord = await prisma.transcription.create({
         data: {
           sessionId,
-          rawText: transcriptText,
-          segments: segments,
+          rawText: deidentifiedTranscript,
+          segments: safeSegments,
           speakerCount: transcriptionResult.speakerCount,
           confidence: transcriptionResult.confidence,
           wordCount,
@@ -224,7 +245,7 @@ export const POST = createProtectedRoute(
 
       // STEP 3: Generate SOAP note using Claude Sonnet
       const soapNote = await generateSOAPNote(
-        transcriptText,
+        deidentifiedTranscript,
         session.patient,
         session.clinician
       );
@@ -402,10 +423,18 @@ async function generateSOAPNote(
 ): Promise<any> {
   const startTime = Date.now();
 
-  // Calculate patient age
+  // Calculate patient age band (avoid using direct identifiers in prompts)
   const age = Math.floor(
     (Date.now() - new Date(patient.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
   );
+  const ageBand =
+    age < 18 ? '<18' :
+    age < 30 ? '18-29' :
+    age < 40 ? '30-39' :
+    age < 50 ? '40-49' :
+    age < 60 ? '50-59' :
+    age < 70 ? '60-69' :
+    age < 80 ? '70-79' : '80+';
 
   // Detect language based on patient country
   const language = patient.country === 'BR' ? 'português' : 'español';
@@ -415,13 +444,14 @@ async function generateSOAPNote(
 
   const prompt = `Você é um assistente médico especializado em documentação clínica. Analise a transcrição da consulta médica abaixo e gere uma nota SOAP (Subjetivo, Objetivo, Avaliação, Plano) completa e precisa ${languageInstruction}.
 
-**Informações do Paciente:**
-- Nome: ${patient.firstName} ${patient.lastName}
-- Idade: ${age} anos
-- MRN: ${patient.mrn}
+⚠️ PRIVACIDADE: A transcrição já foi desidentificada via Microsoft Presidio e pode conter tokens (ex.: [PATIENT_ALPHA], [DATE_T-minus-1]). Trate tokens como entidades estáveis e imutáveis. NÃO tente reidentificar.
 
-**Médico Responsável:**
-- Dr(a). ${clinician.firstName} ${clinician.lastName}
+**Informações do Paciente:**
+- Identificador: [PATIENT_ALPHA]
+- Faixa etária: ${ageBand}
+
+**Profissional Responsável:**
+- Identificador: [CLINICIAN_OMEGA]
 - Especialidade: ${clinician.specialty || 'Medicina Geral'}
 
 **Transcrição da Consulta:**

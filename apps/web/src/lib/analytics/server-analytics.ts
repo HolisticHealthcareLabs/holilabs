@@ -149,8 +149,10 @@ export const ServerAnalyticsEvents = {
   SCRIBE_SESSION_COMPLETED: 'scribe_session_completed',
   SCRIBE_RECORDING_STARTED: 'scribe_recording_started',
   SCRIBE_RECORDING_STOPPED: 'scribe_recording_stopped',
+  SCRIBE_AUDIO_UPLOADED: 'scribe_audio_uploaded',
   SCRIBE_TRANSCRIPTION_GENERATED: 'scribe_transcription_generated',
   SCRIBE_SOAP_GENERATED: 'scribe_soap_generated',
+  SCRIBE_SESSION_FINALIZED: 'scribe_session_finalized',
 
   // Prescriptions
   PRESCRIPTION_CREATED: 'prescription_created',

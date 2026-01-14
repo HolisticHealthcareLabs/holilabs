@@ -30,13 +30,13 @@ function getCSP(nonce?: string) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 
     // Images - allow same origin, data URIs, and common image CDNs
-    "img-src 'self' data: blob: https://*.supabase.co https://upload.wikimedia.org https://via.placeholder.com",
+    "img-src 'self' data: blob: https://upload.wikimedia.org https://via.placeholder.com",
 
     // Fonts - allow same origin and Google Fonts
     "font-src 'self' data: https://fonts.gstatic.com",
 
-    // Connect - allow same origin, API endpoints, Supabase, and monitoring (Sentry)
-    `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL || ''} https://*.supabase.co ${
+    // Connect - allow same origin, app origin, and monitoring (Sentry)
+    `connect-src 'self' ${
       process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     } https://*.sentry.io wss://localhost:* ws://localhost:*`,
 
@@ -47,7 +47,7 @@ function getCSP(nonce?: string) {
     "object-src 'none'",
 
     // Frames - allow same origin (for OAuth flows)
-    "frame-src 'self' https://*.supabase.co",
+    "frame-src 'self'",
 
     // Base URI - restrict to same origin
     "base-uri 'self'",

@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
     ports:
-      - "5001:5001"
+      - "5001:3000"
 
     environment:
       # Logging configuration
@@ -49,7 +49,11 @@ services:
       - presidio-models:/app/models
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()\" || python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()\"",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -84,7 +88,7 @@ services:
     restart: unless-stopped
 
     ports:
-      - "5002:5002"
+      - "5002:3000"
 
     environment:
       # Logging configuration
@@ -96,7 +100,11 @@ services:
       - CACHE_ENABLED=true
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()\" || python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()\"",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -135,6 +143,8 @@ services:
       - presidio-redis-data:/data
 
     healthcheck:
+
+
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 5s

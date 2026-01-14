@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@deepgram/sdk';
+import { createHash } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,13 +25,20 @@ export async function GET() {
     // Initialize Deepgram client
     const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
+    // Key fingerprint (dev only) to help reconcile env mismatches without revealing the key
+    const keyFingerprint =
+      process.env.NODE_ENV === 'development'
+        ? createHash('sha256').update(process.env.DEEPGRAM_API_KEY).digest('hex').slice(0, 8)
+        : undefined;
+
     // Test API connection by getting account balance/projects
     const startTime = Date.now();
 
     let projectInfo: any;
     try {
       const response = await deepgram.manage.getProjects();
-      projectInfo = response.projects || response;
+      const result = response.result || response;
+      projectInfo = (result as any).projects || result;
     } catch (apiError: any) {
       return NextResponse.json({
         status: 'error',
@@ -52,6 +60,7 @@ export async function GET() {
       configured: true,
       connected: true,
       responseTimeMs: responseTime,
+      ...(keyFingerprint ? { keyFingerprint } : {}),
       project: {
         id: project?.project_id || 'unknown',
         name: project?.name || 'unknown',
