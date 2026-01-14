@@ -235,8 +235,13 @@ export const POST = createProtectedRoute(
     const age = currentYear - birthYear;
     const ageBand = `${Math.floor(age / 10) * 10}-${Math.floor(age / 10) * 10 + 9}`;
 
-    // Create patient (using validated data - type-safe)
-    const patient = await prisma.patient.create({
+    // ============================================================================
+    // CRITICAL: Create patient with consent/access grants in TRANSACTION
+    // This ensures HIPAA compliance - patient CANNOT exist without proper consent
+    // ============================================================================
+    const { patient, defaultConsent, accessGrant } = await prisma.$transaction(async (tx) => {
+      // Create patient (using validated data - type-safe)
+      const patient = await tx.patient.create({
       data: {
         // Basic demographics
         firstName: validatedData.firstName,
@@ -348,21 +353,25 @@ export const POST = createProtectedRoute(
           },
         },
       },
-    });
-
-    // ============================================================================
-    // DEFAULT CONSENT & DATA ACCESS GRANT CREATION (HIPAA/GDPR COMPLIANCE)
-    // ============================================================================
-
-    if (validatedData.assignedClinicianId) {
-      logger.info({
-        event: 'patient_default_consent_creating',
-        patientId: patient.id,
-        clinicianId: validatedData.assignedClinicianId
       });
 
-      // 1. Create default treatment consent
-      const consentContent = `
+      // ============================================================================
+      // DEFAULT CONSENT & DATA ACCESS GRANT CREATION (HIPAA/GDPR COMPLIANCE)
+      // ALL WITHIN TRANSACTION - Ensures atomicity
+      // ============================================================================
+
+      let defaultConsent = null;
+      let accessGrant = null;
+
+      if (validatedData.assignedClinicianId) {
+        logger.info({
+          event: 'patient_default_consent_creating',
+          patientId: patient.id,
+          clinicianId: validatedData.assignedClinicianId
+        });
+
+        // 1. Create default treatment consent
+        const consentContent = `
 Default Consent for Medical Treatment
 
 This consent was automatically granted when you were registered as a patient on ${new Date().toLocaleDateString()}.
@@ -379,12 +388,12 @@ Assigned Clinician ID: ${validatedData.assignedClinicianId}
 Registration Date: ${new Date().toISOString()}
       `.trim();
 
-      const consentHash = crypto
-        .createHash('sha256')
-        .update(consentContent + patient.id + new Date().toISOString())
-        .digest('hex');
+        const consentHash = crypto
+          .createHash('sha256')
+          .update(consentContent + patient.id + new Date().toISOString())
+          .digest('hex');
 
-      const defaultConsent = await prisma.consent.create({
+        defaultConsent = await tx.consent.create({
         data: {
           patientId: patient.id,
           type: 'GENERAL_CONSULTATION',
@@ -395,18 +404,18 @@ Registration Date: ${new Date().toISOString()}
           signedAt: new Date(),
           isActive: true,
           consentHash,
-        },
-      });
+          },
+        });
 
-      logger.info({
-        event: 'patient_default_consent_created',
-        patientId: patient.id,
-        consentId: defaultConsent.id,
-        clinicianId: validatedData.assignedClinicianId
-      });
+        logger.info({
+          event: 'patient_default_consent_created',
+          patientId: patient.id,
+          consentId: defaultConsent.id,
+          clinicianId: validatedData.assignedClinicianId
+        });
 
-      // 2. Create data access grant for assigned clinician
-      const accessGrant = await prisma.dataAccessGrant.create({
+        // 2. Create data access grant for assigned clinician
+        accessGrant = await tx.dataAccessGrant.create({
         data: {
           patientId: patient.id,
           grantedToType: 'USER',
@@ -417,57 +426,61 @@ Registration Date: ${new Date().toISOString()}
           canShare: false,
           purpose: 'Primary care physician - granted during patient registration',
           grantedAt: new Date(),
-        },
-      });
+          },
+        });
 
-      logger.info({
-        event: 'patient_access_grant_created',
-        patientId: patient.id,
-        accessGrantId: accessGrant.id,
-        clinicianId: validatedData.assignedClinicianId
-      });
+        logger.info({
+          event: 'patient_access_grant_created',
+          patientId: patient.id,
+          accessGrantId: accessGrant.id,
+          clinicianId: validatedData.assignedClinicianId
+        });
 
-      // 3. Create audit log for consent creation
-      await prisma.auditLog.create({
+        // 3. Create audit log for consent creation (within transaction)
+        await tx.auditLog.create({
+          data: {
+            userId: validatedData.assignedClinicianId,
+            userEmail: 'system',
+            action: 'GRANT_DEFAULT_CONSENT',
+            resource: 'Patient',
+            resourceId: patient.id,
+            ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+            details: {
+              assignedClinicianId: validatedData.assignedClinicianId,
+              consentId: defaultConsent.id,
+              accessGrantId: accessGrant.id,
+              consentType: 'GENERAL_CONSULTATION',
+              accessGrantType: 'ALL',
+              timestamp: new Date().toISOString(),
+            },
+            success: true,
+          },
+        });
+
+        logger.info({
+          event: 'patient_default_setup_complete',
+          patientId: patient.id,
+          clinicianId: validatedData.assignedClinicianId
+        });
+      }
+
+      // Create main audit log for patient creation (within transaction)
+      await tx.auditLog.create({
         data: {
-          userId: validatedData.assignedClinicianId,
+          userId: validatedData.createdBy || validatedData.assignedClinicianId || 'system',
           userEmail: 'system',
-          action: 'GRANT_DEFAULT_CONSENT',
+          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+          action: 'CREATE',
           resource: 'Patient',
           resourceId: patient.id,
-          ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-          details: {
-            assignedClinicianId: validatedData.assignedClinicianId,
-            consentId: defaultConsent.id,
-            accessGrantId: accessGrant.id,
-            consentType: 'GENERAL_CONSULTATION',
-            accessGrantType: 'ALL',
-            timestamp: new Date().toISOString(),
-          },
+          details: { tokenId, mrn: validatedData.mrn },
           success: true,
         },
       });
 
-      logger.info({
-        event: 'patient_default_setup_complete',
-        patientId: patient.id,
-        clinicianId: validatedData.assignedClinicianId
-      });
-    }
-
-    // Create audit log (using validated data)
-    await prisma.auditLog.create({
-      data: {
-        userId: validatedData.createdBy || validatedData.assignedClinicianId || 'system',
-        userEmail: 'system',
-        ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-        action: 'CREATE',
-        resource: 'Patient',
-        resourceId: patient.id,
-        details: { tokenId, mrn: validatedData.mrn },
-        success: true,
-      },
-    });
+      // Return all created entities from transaction
+      return { patient, defaultConsent, accessGrant };
+    }); // End of transaction
 
     // SECURITY: Log de-identification operation for HIPAA compliance
     await logDeIDOperation(

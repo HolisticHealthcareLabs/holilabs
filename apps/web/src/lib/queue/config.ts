@@ -57,6 +57,7 @@ export const defaultWorkerOptions: WorkerOptions = {
 // Queue names enum
 export enum QueueName {
   CORRECTION_AGGREGATION = 'correction-aggregation',
+  AUDIT_ARCHIVAL = 'audit-archival',
   PATIENT_REMINDERS = 'patient-reminders',
   LAB_RESULTS = 'lab-results',
   PRESCRIPTION_REFILLS = 'prescription-refills',

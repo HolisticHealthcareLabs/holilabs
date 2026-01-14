@@ -236,13 +236,44 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
       });
     });
 
-    socket.on('co_pilot:audio_chunk', ({ sessionId, audioData }: { sessionId: string; audioData: ArrayBuffer }) => {
-      // Forward audio chunk to room for processing
-      socket.to(`co-pilot:${sessionId}`).emit('co_pilot:audio_received', {
-        sessionId,
-        audioData,
-        timestamp: Date.now(),
-      });
+    socket.on('co_pilot:audio_chunk', async ({ sessionId, audioData }: { sessionId: string; audioData: ArrayBuffer }) => {
+      try {
+        // Forward audio chunk to room for processing
+        socket.to(`co-pilot:${sessionId}`).emit('co_pilot:audio_received', {
+          sessionId,
+          audioData,
+          timestamp: Date.now(),
+        });
+
+        // TODO: Process audio chunk through speech-to-text service
+        // This would integrate with AssemblyAI or similar service
+        // For now, emit a mock transcript update to demonstrate the flow
+
+        // Example of what would happen after STT processing:
+        // const transcriptSegment = await processAudioChunk(audioData);
+        // io?.to(`co-pilot:${sessionId}`).emit('co_pilot:transcript_update', {
+        //   speaker: transcriptSegment.speaker,
+        //   text: transcriptSegment.text,
+        //   confidence: transcriptSegment.confidence,
+        //   isFinal: transcriptSegment.isFinal,
+        //   startTime: transcriptSegment.startTime,
+        //   endTime: transcriptSegment.endTime,
+        // });
+
+        logger.info({
+          event: 'co_pilot_audio_chunk_received',
+          sessionId,
+          audioDataSize: audioData.byteLength,
+          socketId: socket.id,
+        });
+      } catch (error) {
+        logger.error({
+          event: 'co_pilot_audio_processing_error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          sessionId,
+          socketId: socket.id,
+        });
+      }
     });
 
     socket.on('co_pilot:leave_session', ({ sessionId }: { sessionId: string }) => {
