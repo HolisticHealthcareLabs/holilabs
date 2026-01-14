@@ -14,11 +14,7 @@ DATABASE_URL=<YOUR_DIGITALOCEAN_DATABASE_CONNECTION_STRING>
 # Example format:
 # DATABASE_URL="postgresql://user:password@host:port/database?sslmode=require"
 
-# 3. SUPABASE (Authentication + Storage)
-# ------------------------------------------------------------------------------
-NEXT_PUBLIC_SUPABASE_URL=https://yyteqajwjjrubiktornb.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5dGVxYWp3ampydWJpa3Rvcm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2ODE4MTksImV4cCI6MjA3NTI1NzgxOX0.b4FmPeZniO4D5Xm3_F10svynPBZYwKtJwDcBP94qq-4
-SUPABASE_SERVICE_ROLE_KEY=<GET_FROM_SUPABASE_DASHBOARD>
+
 
 # 4. AI SERVICES (ROTATE THESE - EXPOSED IN CHAT)
 # ------------------------------------------------------------------------------
