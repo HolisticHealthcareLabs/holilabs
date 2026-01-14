@@ -6,6 +6,7 @@
 
 import { Worker } from 'bullmq';
 import { startCorrectionAggregationWorker } from './correction-aggregation.worker';
+import { startAuditArchivalWorker } from './audit-archival.worker';
 import logger from '@/lib/logger';
 
 // Store active workers for graceful shutdown
@@ -20,6 +21,10 @@ export function startAllWorkers(): void {
   // Start correction aggregation worker
   const correctionWorker = startCorrectionAggregationWorker();
   activeWorkers.push(correctionWorker);
+
+  // Start audit archival worker (HIPAA compliance)
+  const auditArchivalWorker = startAuditArchivalWorker();
+  activeWorkers.push(auditArchivalWorker);
 
   // TODO: Add more workers as needed
   // const patientRemindersWorker = startPatientRemindersWorker();

@@ -35,6 +35,7 @@ model User {
   npi               String? // National Provider Identifier (US only)
 
   // Security
+  passwordHash   String? // Optional for OAuth-only users
   mfaEnabled     Boolean   @default(false)
   mfaServiceSid  String? // Twilio Verify Service SID
   mfaPhoneNumber String? // Encrypted phone number for MFA

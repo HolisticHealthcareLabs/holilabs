@@ -318,5 +318,17 @@
       "microphonePermission": "Permiso de micrófono requerido",
       "unsupportedBrowser": "El navegador no soporta reconocimiento de voz"
     }
+  },
+  "aiCommandCenter": {
+    "navigation": {
+      "cdss": "Te llevo al Sistema de Soporte a Decisiones Clínicas (CDSS). Aquí encontrarás 12+ reglas activas que detectan problemas antes que ocurran, interacciones medicamentosas, y protocolos WHO/PAHO.",
+      "scribe": "¡Perfecto! Te llevo al AI Medical Scribe. Esta herramienta transcribe tus consultas en tiempo real y genera notas SOAP automáticamente, ahorrándote 3-4 horas diarias.",
+      "prevention": "Te dirijo al Hub de Prevención Longitudinal. Aquí puedes ver timelines de 30 años, 7 dominios de salud, y más de 100 intervenciones preventivas basadas en protocolos WHO/PAHO/USPSTF.",
+      "patients": "Te llevo al Portal de Gestión de Pacientes. Desde aquí puedes ver todos tus pacientes, su historial completo, y acceder al portal de pacientes que reduce tus llamadas en 40%.",
+      "pricing": "¡Claro! Te muestro nuestros planes de precios. Ofrecemos desde el plan Starter gratuito hasta Enterprise personalizado. Todos incluyen IA médica, prevención automatizada, y soporte en español.",
+      "login": "Te llevo a la página de inicio de sesión. Puedes entrar con Google o con tu cuenta de Holi Labs.",
+      "dashboard": "Te llevo al Dashboard principal donde puedes ver un resumen de tus pacientes activos, citas programadas, prescripciones pendientes, y más."
+    },
+    "defaultResponse": "Entiendo que buscas \"{query}\".\n\nPuedo ayudarte con:\n• **Prevención**: Sistema longitudinal de 30 años con alertas automáticas\n• **AI Scribe**: Transcripción y notas SOAP en tiempo real (ahorra 3-4h/día)\n• **CDSS**: 12+ reglas de soporte clínico con protocolos WHO/PAHO\n• **Pacientes**: Portal completo que reduce llamadas en 40%\n• **E-Prescribing**: Firma digital a 8+ farmacias integradas\n\n¿Sobre cuál te gustaría saber más?"
   }
 }

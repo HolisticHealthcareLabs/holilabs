@@ -185,12 +185,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
 
-              return (
-                <Link
+              return item.subItems ? (
+                // Parent with submenu - use div instead of Link to avoid nested links
+                <div
                   key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300"
+                  className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300 cursor-pointer"
                 >
                   {/* Circular Gradient Tile */}
                   <div
@@ -270,6 +269,54 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              ) : (
+                // Regular nav item - use Link
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300"
+                >
+                  {/* Circular Gradient Tile */}
+                  <div
+                    className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 backdrop-blur-sm
+                      ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
+                      ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
+                      ${item.name === 'Calendar' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}
+                      ${item.name === 'Messages' ? 'bg-gradient-to-br from-sky-400/70 to-cyan-500/70 hover:from-sky-500 hover:to-cyan-600 hover:shadow-2xl hover:shadow-sky-400/50' : ''}
+                      ${!['Dashboard', 'Patients', 'Calendar', 'Messages'].includes(item.name) ? 'bg-gradient-to-br from-gray-300/70 to-gray-400/70' : ''}
+                      ${isActive ? 'scale-110 ring-4 ring-white/60 shadow-2xl' : 'shadow-md'}
+                      hover:scale-110 hover:ring-4 hover:ring-white/40`}
+                  >
+                    <div className="relative w-7 h-7 transition-transform duration-300 group-hover:scale-125">
+                      <Image
+                        src={item.icon}
+                        alt={item.name}
+                        width={28}
+                        height={28}
+                        className="dark:invert brightness-0 invert"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Floating Text Label */}
+                  <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
+                    <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                        {item.name}
+                      </p>
+                      {item.badge && (
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {item.badge}
+                        </span>
+                      )}
+                      {/* Arrow pointer */}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+                        <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                      </div>
+                    </div>
                   </div>
                 </Link>
               );

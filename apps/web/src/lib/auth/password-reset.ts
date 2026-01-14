@@ -18,6 +18,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { PasswordResetRateLimiter } from './session-security';
 import { getTokenRevocationService, RevocationReason } from './token-revocation';
+import { sendPasswordResetEmail } from '@/lib/email';
 
 /**
  * Password reset token validity duration (1 hour)
@@ -140,8 +141,13 @@ export class PasswordResetService {
         ipAddress,
       });
 
-      // TODO: Send email with reset link
-      // await sendPasswordResetEmail(user.email, user.firstName, resetUrl);
+      // Send password reset email
+      await sendPasswordResetEmail(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        resetUrl,
+        false // isPatient = false for clinicians
+      );
 
       return {
         success: true,
@@ -264,8 +270,13 @@ export class PasswordResetService {
         ipAddress,
       });
 
-      // TODO: Send email with reset link
-      // await sendPasswordResetEmail(patientUser.email, patientUser.patient.firstName, resetUrl);
+      // Send password reset email
+      await sendPasswordResetEmail(
+        patientUser.email,
+        `${patientUser.patient.firstName} ${patientUser.patient.lastName}`,
+        resetUrl,
+        true // isPatient = true
+      );
 
       return {
         success: true,

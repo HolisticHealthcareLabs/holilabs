@@ -57,6 +57,7 @@ const PHI_FIELDS_CONFIG: Record<string, string[]> = {
     'lastName',
     'email',
     'phone',
+    'dateOfBirth', // HIPAA identifier - must be encrypted
     'address',
     'primaryContactPhone',
     'primaryContactEmail',
@@ -71,6 +72,10 @@ const PHI_FIELDS_CONFIG: Record<string, string[]> = {
     // Medical Record Numbers
     'mrn',
     'externalMrn',
+  ],
+  PatientUser: [
+    'email', // HIPAA identifier - patient portal login email
+    'phone', // HIPAA identifier - patient contact number
   ],
   Prescription: [
     'patientInstructions', // May contain sensitive info
