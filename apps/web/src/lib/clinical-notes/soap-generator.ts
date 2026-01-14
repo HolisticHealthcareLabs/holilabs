@@ -13,10 +13,10 @@
  */
 
 import { ComprehendMedicalClient, DetectEntitiesV2Command } from '@aws-sdk/client-comprehendmedical';
-import { anthropic } from '@ai-sdk/anthropic';
-import { generateText } from 'ai';
 import { createHash } from 'crypto';
 import { aiScribeService, type ClinicalSessionContext } from '../scribe/ai-scribe-service';
+import { AIProviderFactory } from '../ai/factory';
+import { PromptBuilder } from '../ai/prompt-builder';
 
 /**
  * Medical entity extracted from AWS Comprehend Medical
@@ -25,7 +25,7 @@ export interface MedicalEntity {
   id: number;
   text: string;
   category: 'MEDICATION' | 'MEDICAL_CONDITION' | 'PROTECTED_HEALTH_INFORMATION' |
-            'TEST_TREATMENT_PROCEDURE' | 'ANATOMY' | 'TIME_EXPRESSION';
+  'TEST_TREATMENT_PROCEDURE' | 'ANATOMY' | 'TIME_EXPRESSION';
   type: string;
   score: number;
   beginOffset: number;
@@ -124,13 +124,14 @@ export class SOAPGenerator {
         includeLabResults: true,
       });
 
-      // Step 3: Generate SOAP sections using Claude
+      // Step 3: Generate SOAP sections using AI Provider (BYOK aware)
       console.log('🤖 [SOAP Generator] Generating SOAP sections with AI...');
       const soapSections = await this.generateSOAPSections(
         transcription,
         context,
         medicalEntities,
-        autoFillResult.filledFields
+        autoFillResult.filledFields,
+        options.authorId
       );
 
       // Step 4: Extract chief complaint and diagnoses
@@ -170,7 +171,7 @@ export class SOAPGenerator {
           generatedAt: new Date().toISOString(),
           transcriptLength: transcription.length,
           processingTime,
-          modelUsed: 'claude-3-5-sonnet-20241022',
+          modelUsed: 'ai-provider-factory', // Dynamic based on provider
         },
       };
     } catch (error) {
@@ -233,20 +234,21 @@ export class SOAPGenerator {
   }
 
   /**
-   * Generate structured SOAP sections using Claude AI
-   * Based on standard SOAP format from StatPearls NCBI
+   * Generate structured SOAP sections using AI Provider
+   * Uses PromptBuilder for de-identification and AIProviderFactory for BYOK
    */
   private async generateSOAPSections(
     transcription: string,
     context: ClinicalSessionContext,
     medicalEntities: MedicalEntity[],
-    autoFilledFields: any
+    autoFilledFields: any,
+    userId: string
   ): Promise<SOAPSections> {
     // Build entity context for the AI
     const entitySummary = this.buildEntitySummary(medicalEntities);
 
-    const prompt = `You are an expert medical scribe generating a SOAP note from a clinical encounter transcript.
-
+    // Prepare context string for PromptBuilder
+    const additionalContext = `
 PATIENT CONTEXT:
 ${autoFilledFields.demographics}
 
@@ -260,10 +262,9 @@ ${autoFilledFields.medicalHistory ? `MEDICAL HISTORY:\n${autoFilledFields.medica
 
 EXTRACTED MEDICAL ENTITIES:
 ${entitySummary}
+`;
 
-ENCOUNTER TRANSCRIPT:
-${transcription}
-
+    const instruction = `
 Generate a complete, professional SOAP note with these four sections:
 
 **SUBJECTIVE:**
@@ -279,22 +280,29 @@ Provide clinical analysis, differential diagnoses, working diagnoses with ICD-10
 Outline treatment plan including medications (with dosage), procedures, referrals, follow-up instructions, patient education, and preventive care.
 
 IMPORTANT FORMATTING REQUIREMENTS:
-- Use clear section headers
+- Use clear section headers: **SUBJECTIVE:**, **OBJECTIVE:**, **ASSESSMENT:**, **PLAN:**
 - Be concise but comprehensive
 - Use medical terminology appropriately
 - Include specific details (dosages, measurements, timelines)
-- Follow standard medical documentation practices`;
+- Follow standard medical documentation practices
+`;
 
     try {
-      const { text } = await generateText({
-        model: anthropic('claude-3-5-sonnet-20241022'),
-        prompt,
-        temperature: 0.3, // Low temperature for consistent clinical documentation
-        maxOutputTokens: 3000,
-      });
+      // 1. Build de-identified prompt
+      const prompt = await PromptBuilder.buildClinicalPrompt(
+        instruction,
+        transcription,
+        additionalContext
+      );
 
-      // Parse the response into structured sections
-      const sections = this.parseSOAPSections(text);
+      // 2. Get AI Provider (BYOK supported)
+      const provider = await AIProviderFactory.getProvider(userId);
+
+      // 3. Generate response
+      const responseText = await provider.generateResponse(prompt);
+
+      // 4. Parse the response into structured sections
+      const sections = this.parseSOAPSections(responseText);
       return sections;
     } catch (error) {
       console.error('Error generating SOAP sections with AI:', error);
@@ -419,7 +427,7 @@ IMPORTANT FORMATTING REQUIREMENTS:
     // Content length (15% weight)
     maxScore += 1.5;
     const totalLength = sections.subjective.length + sections.objective.length +
-                       sections.assessment.length + sections.plan.length;
+      sections.assessment.length + sections.plan.length;
     score += Math.min(totalLength / 1000, 1) * 1.5;
 
     return Math.round((score / maxScore) * 100) / 100;

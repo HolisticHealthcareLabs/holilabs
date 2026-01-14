@@ -5,9 +5,8 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { updateSession } from '@/lib/supabase/middleware';
 import { applySecurityHeaders, handleCORSPreflight } from '@/lib/security-headers';
-import { randomBytes } from 'crypto';
+
 
 // LGPD-protected endpoints (require access reason)
 const PHI_ENDPOINTS = [
@@ -77,15 +76,15 @@ export async function middleware(request: NextRequest) {
   }
   // ===== END LGPD ENFORCEMENT =====
 
-  // Update session and apply security headers to all responses
-  const response = await updateSession(request);
+  // Supabase has been removed. NextAuth + patient-session handle auth.
+  const response = NextResponse.next();
 
   // Add pathname to response headers for layout routing logic
   response.headers.set('x-pathname', pathname);
 
   // Generate cryptographically secure nonce for CSP
   // Nonce is used to allow specific inline scripts while blocking others (XSS protection)
-  const nonce = randomBytes(16).toString('base64');
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
 
   // Make nonce available to pages via header (for inline script tags: <script nonce={nonce}>)
   response.headers.set('x-nonce', nonce);
@@ -105,5 +104,4 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\..*|public).*)',
   ],
-  runtime: 'nodejs', // Use Node.js runtime for Supabase compatibility
 };

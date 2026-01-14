@@ -158,13 +158,17 @@ async function encryptPHIFields(
         continue;
       }
 
-      // Encrypt field
+      // Only encrypt string PHI fields. Non-string fields (e.g. DateTime) must remain
+      // typed correctly in the DB schema and cannot be stored as ciphertext strings.
+      if (plaintext === null || plaintext === undefined) {
+        continue;
+      }
+      if (typeof plaintext !== 'string') {
+        continue;
+      }
+
       const ciphertext = await encryptPHIWithVersion(plaintext);
       encrypted[fieldName] = ciphertext;
-
-      // Set key version field
-      const keyVersionField = getKeyVersionField(fieldName);
-      encrypted[keyVersionField] = getCurrentKeyVersion();
 
       logger.debug({
         event: 'phi_field_encrypted',
@@ -198,15 +202,17 @@ async function decryptPHIFields(
     if (fieldName in result) {
       const ciphertext = result[fieldName];
 
+      // Only attempt to decrypt string ciphertexts that look encrypted.
+      if (typeof ciphertext !== 'string') {
+        continue;
+      }
+      if (!/^v\\d+:/.test(ciphertext)) {
+        continue;
+      }
+
       // Decrypt field
       const plaintext = await decryptPHIWithVersion(ciphertext);
       decrypted[fieldName] = plaintext;
-
-      // Remove key version field from result (internal metadata)
-      const keyVersionField = getKeyVersionField(fieldName);
-      if (keyVersionField in decrypted) {
-        delete decrypted[keyVersionField];
-      }
 
       logger.debug({
         event: 'phi_field_decrypted',

@@ -1,11 +1,15 @@
 /**
  * NextAuth v5 Configuration
  *
- * Patient portal authentication with email/password, magic links, and OAuth
+ * Clinician portal authentication (doctors, nurses, staff).
+ *
+ * Patient portal uses separate auth endpoints under `/api/portal/auth/*`
+ * and a separate cookie/JWT session (`patient-session`).
  */
 
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -23,6 +27,14 @@ export const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma) as any, // Type cast to resolve @auth/core version conflict
 
   providers: [
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
     Credentials({
       name: 'credentials',
       credentials: {
@@ -44,22 +56,20 @@ export const authConfig: NextAuthConfig = {
 
           const { email, password } = validation.data;
 
-          // Find patient user
-          const patientUser = await prisma.patientUser.findUnique({
+          // Find clinician user
+          const user = await prisma.user.findUnique({
             where: { email },
-            include: {
-              patient: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  dateOfBirth: true,
-                },
-              },
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              passwordHash: true,
             },
           });
 
-          if (!patientUser || !patientUser.passwordHash) {
+          if (!user || !user.passwordHash) {
             logger.warn({
               event: 'auth_user_not_found',
               email,
@@ -68,7 +78,7 @@ export const authConfig: NextAuthConfig = {
           }
 
           // Verify password
-          const isValid = await bcrypt.compare(password, patientUser.passwordHash);
+          const isValid = await bcrypt.compare(password, user.passwordHash);
 
           if (!isValid) {
             logger.warn({
@@ -78,34 +88,26 @@ export const authConfig: NextAuthConfig = {
             return null;
           }
 
-          // Check if account is verified
-          if (!patientUser.emailVerifiedAt) {
-            logger.warn({
-              event: 'auth_email_not_verified',
-              email,
-            });
-            return null;
-          }
-
           // Update last login
-          await prisma.patientUser.update({
-            where: { id: patientUser.id },
+          await prisma.user.update({
+            where: { id: user.id },
             data: { lastLoginAt: new Date() },
           });
 
           logger.info({
             event: 'auth_login_success',
-            userId: patientUser.id,
-            patientId: patientUser.patientId,
+            userId: user.id,
+            role: user.role,
           });
 
           // Return user object
           return {
-            id: patientUser.id,
-            email: patientUser.email,
-            name: `${patientUser.patient?.firstName} ${patientUser.patient?.lastName}`,
-            patientId: patientUser.patientId,
-            role: 'patient',
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            name: `${user.firstName} ${user.lastName}`,
+            role: user.role,
           };
         } catch (error) {
           logger.error({
@@ -116,25 +118,17 @@ export const authConfig: NextAuthConfig = {
         }
       },
     }),
-
-    // TODO: Add OAuth providers
-    // Google({
-    //   clientId: process.env.GOOGLE_CLIENT_ID!,
-    //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    // }),
   ],
 
   pages: {
-    signIn: '/portal/login',
-    error: '/portal/error',
-    verifyRequest: '/portal/verify-email',
+    signIn: '/auth/login',
+    error: '/auth/error',
   },
 
   callbacks: {
     async jwt({ token, user, account, trigger }) {
       // Add custom fields to JWT on sign in
       if (user) {
-        token.patientId = user.patientId || '';
         token.role = user.role;
         token.iat = Math.floor(Date.now() / 1000); // Issued at
         token.sessionId = crypto.randomBytes(16).toString('hex'); // Unique session ID
@@ -170,7 +164,6 @@ export const authConfig: NextAuthConfig = {
       // Add custom fields to session
       if (token && session.user) {
         session.user.id = token.sub!;
-        session.user.patientId = token.patientId as string;
         session.user.role = token.role as string;
       }
       return session;
@@ -182,10 +175,12 @@ export const authConfig: NextAuthConfig = {
       // Check if user is authenticated
       const isAuthenticated = !!auth?.user;
 
-      // Protected portal routes
-      const isPortalRoute = pathname.startsWith('/portal') && pathname !== '/portal/login';
+      // Protect clinician app routes
+      const isClinicianRoute =
+        pathname.startsWith('/dashboard') ||
+        pathname.startsWith('/clinician');
 
-      if (isPortalRoute) {
+      if (isClinicianRoute) {
         return isAuthenticated;
       }
 
@@ -203,20 +198,7 @@ export const authConfig: NextAuthConfig = {
     maxAge: 8 * 60 * 60, // 8 hours absolute timeout
   },
 
-  // SOC 2 Control CC6.7: Secure cookies
-  cookies: {
-    sessionToken: {
-      name: `__Secure-next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
-
-  // Security
+  // Security (let NextAuth handle dev vs prod cookie naming)
   useSecureCookies: process.env.NODE_ENV === 'production',
 
   events: {

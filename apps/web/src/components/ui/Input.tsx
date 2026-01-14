@@ -10,7 +10,7 @@
  * - Full WCAG AAA accessibility
  */
 
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef, useId, useMemo, useState } from 'react';
 
 export type InputVariant = 'default' | 'error' | 'success' | 'warning';
 export type InputSize = 'sm' | 'md' | 'lg';
@@ -81,8 +81,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     // Determine variant based on error state
     const variant = error ? 'error' : propVariant || 'default';
 
-    // Generate unique ID if not provided
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    // Generate stable ID if not provided (avoid SSR/CSR hydration mismatch)
+    const reactId = useId();
+    const inputId = useMemo(() => id || `input-${reactId}`, [id, reactId]);
     const helperTextId = `${inputId}-helper`;
     const errorId = `${inputId}-error`;
 

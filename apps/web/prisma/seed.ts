@@ -7,10 +7,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
+  const clinicianPasswordHash = await bcrypt.hash('Demo123!@#', 12);
+
   // Create test clinician
   const clinician = await prisma.user.upsert({
     where: { email: 'doctor@holilabs.com' },
-    update: {},
+    update: {
+      passwordHash: clinicianPasswordHash,
+    },
     create: {
       email: 'doctor@holilabs.com',
       firstName: 'Dr. Carlos',
@@ -19,10 +23,33 @@ async function main() {
       specialty: 'Cardiología',
       licenseNumber: '12345678',
       mfaEnabled: false,
+      passwordHash: clinicianPasswordHash,
     },
   });
 
   console.log('✅ Created clinician:', clinician.email);
+
+  // Create demo clinician (demo-clinician@holilabs.xyz / Demo123!@#)
+  const demoClinician = await prisma.user.upsert({
+    where: { email: 'demo-clinician@holilabs.xyz' },
+    update: {
+      passwordHash: clinicianPasswordHash,
+    },
+    create: {
+      email: 'demo-clinician@holilabs.xyz',
+      firstName: 'Demo',
+      lastName: 'Clinician',
+      role: 'CLINICIAN',
+      specialty: 'Family Medicine',
+      licenseNumber: 'DEMO-12345',
+      npi: '1234567890',
+      mfaEnabled: false,
+      passwordHash: clinicianPasswordHash,
+      permissions: ['READ_PATIENTS', 'WRITE_PATIENTS', 'READ_RECORDS', 'WRITE_RECORDS'],
+    },
+  });
+
+  console.log('✅ Created demo clinician:', demoClinician.email);
 
   // Create test patient with blockchain-ready fields
   const patient = await prisma.patient.upsert({

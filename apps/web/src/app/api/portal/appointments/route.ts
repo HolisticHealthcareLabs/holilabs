@@ -18,8 +18,17 @@ import { z } from 'zod';
 // Query parameters schema
 const AppointmentsQuerySchema = z.object({
   status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'RESCHEDULED']).optional(),
-  upcoming: z.coerce.boolean().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
+  upcoming: z.preprocess(
+    (v) => (v === null || v === undefined || v === '' ? undefined : v),
+    z.coerce.boolean().optional()
+  ),
+  // NOTE: request.nextUrl.searchParams.get('limit') returns null when absent.
+  // z.coerce.number() would turn null into 0, failing min(1) and causing a 400
+  // even when the client passes no query params.
+  limit: z.preprocess(
+    (v) => (v === null || v === undefined || v === '' ? undefined : v),
+    z.coerce.number().int().min(1).max(100).default(50)
+  ),
 });
 
 // Create appointment request schema

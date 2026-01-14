@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Input, PasswordInput } from '@/components/ui/Input';
@@ -25,6 +25,9 @@ export const dynamic = 'force-dynamic';
 export default function PatientLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  type Lang = 'en' | 'es' | 'pt';
+  const LANG_KEY = 'holilabs_language';
+  const [lang, setLang] = useState<Lang>('en');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -37,6 +40,15 @@ export default function PatientLoginPage() {
   const urlError = searchParams?.get('error');
   const urlMessage = searchParams?.get('message');
   const verified = searchParams?.get('verified');
+
+  useEffect(() => {
+    const saved = localStorage.getItem(LANG_KEY) as Lang | null;
+    if (saved && (saved === 'en' || saved === 'es' || saved === 'pt')) {
+      setLang(saved);
+    }
+  }, []);
+
+  const tr = (translations: Record<Lang, string>) => translations[lang];
 
   // Handle password login
   const handlePasswordLogin = async (e: React.FormEvent) => {
@@ -85,7 +97,13 @@ export default function PatientLoginPage() {
 
       if (!res.ok) throw new Error(data.error);
 
-      setSuccessMessage('Revisa tu correo para el enlace mágico');
+      setSuccessMessage(
+        tr({
+          en: 'Check your email for your magic link.',
+          es: 'Revisa tu correo para el enlace mágico.',
+          pt: 'Verifique seu e-mail para o link mágico.',
+        })
+      );
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -124,8 +142,16 @@ export default function PatientLoginPage() {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <h1 className="text-3xl font-bold text-gray-900">Portal de Paciente</h1>
-          <p className="text-gray-600 mt-2">Accede a tu historia clínica</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {tr({ en: 'Patient Portal', es: 'Portal de Paciente', pt: 'Portal do Paciente' })}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {tr({
+              en: 'Access your clinical history',
+              es: 'Accede a tu historia clínica',
+              pt: 'Acesse seu histórico clínico',
+            })}
+          </p>
         </div>
 
         {/* Separator */}
@@ -134,7 +160,13 @@ export default function PatientLoginPage() {
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-gradient-to-br from-green-50 via-white to-green-50 text-gray-500">Inicia sesión con tu cuenta</span>
+            <span className="px-4 bg-gradient-to-br from-green-50 via-white to-green-50 text-gray-500">
+              {tr({
+                en: 'Sign in with your account',
+                es: 'Inicia sesión con tu cuenta',
+                pt: 'Entre com sua conta',
+              })}
+            </span>
           </div>
         </div>
 
@@ -148,16 +180,22 @@ export default function PatientLoginPage() {
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-blue-900 mb-1">Prueba la Demostración</p>
+              <p className="text-sm font-bold text-blue-900 mb-1">
+                {tr({ en: 'Try the Demo', es: 'Prueba la Demostración', pt: 'Experimente a Demonstração' })}
+              </p>
               <p className="text-xs text-blue-800 mb-3">
-                Explora HoliLabs con una cuenta demo pre-cargada con historial médico completo.
+                {tr({
+                  en: 'Explore HoliLabs with a demo patient account pre-loaded with sample data.',
+                  es: 'Explora HoliLabs con una cuenta demo pre-cargada con historial médico completo.',
+                  pt: 'Explore a HoliLabs com uma conta demo pré-carregada com dados de exemplo.',
+                })}
               </p>
               <button
                 type="button"
                 onClick={fillDemoCredentials}
                 className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
               >
-                Cargar Credenciales Demo
+                {tr({ en: 'Load Demo Credentials', es: 'Cargar Credenciales Demo', pt: 'Carregar Credenciais Demo' })}
               </button>
             </div>
           </div>
@@ -168,12 +206,20 @@ export default function PatientLoginPage() {
           {/* Success Messages */}
           {verified && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-              Email verificado exitosamente. Bienvenido a Holi Labs!
+              {tr({
+                en: 'Email verified successfully. Welcome to Holi Labs!',
+                es: 'Email verificado exitosamente. Bienvenido a Holi Labs!',
+                pt: 'E-mail verificado com sucesso. Bem-vindo(a) à Holi Labs!',
+              })}
             </div>
           )}
           {urlMessage === 'already_verified' && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
-              Tu correo ya está verificado. Puedes iniciar sesión.
+              {tr({
+                en: 'Your email is already verified. You can sign in.',
+                es: 'Tu correo ya está verificado. Puedes iniciar sesión.',
+                pt: 'Seu e-mail já está verificado. Você pode entrar.',
+              })}
             </div>
           )}
           {successMessage && (
@@ -202,17 +248,17 @@ export default function PatientLoginPage() {
             <form onSubmit={handlePasswordLogin}>
               <div className="space-y-4">
                 <Input
-                  label="Correo Electrónico"
+                  label={tr({ en: 'Email address', es: 'Correo Electrónico', pt: 'E-mail' })}
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoFocus
-                  placeholder="tu@correo.com"
+                  placeholder={tr({ en: 'you@email.com', es: 'tu@correo.com', pt: 'voce@email.com' })}
                 />
 
                 <PasswordInput
-                  label="Contraseña"
+                  label={tr({ en: 'Password', es: 'Contraseña', pt: 'Senha' })}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -227,14 +273,20 @@ export default function PatientLoginPage() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
                     />
-                    <span className="text-gray-700">Recordarme</span>
+                    <span className="text-gray-700">
+                      {tr({ en: 'Remember me', es: 'Recordarme', pt: 'Lembrar-me' })}
+                    </span>
                   </label>
 
                   <a
                     href="/portal/forgot-password"
                     className="text-green-600 hover:text-green-700 font-medium"
                   >
-                    ¿Olvidaste tu contraseña?
+                    {tr({
+                      en: 'Forgot password?',
+                      es: '¿Olvidaste tu contraseña?',
+                      pt: 'Esqueceu sua senha?',
+                    })}
                   </a>
                 </div>
 
@@ -244,8 +296,9 @@ export default function PatientLoginPage() {
                   size="lg"
                   fullWidth
                   loading={loading}
+                  className="!from-green-600 !to-green-700 hover:!from-green-700 hover:!to-green-800"
                 >
-                  Iniciar Sesión
+                  {tr({ en: 'Sign in', es: 'Iniciar Sesión', pt: 'Entrar' })}
                 </Button>
 
                 <button
@@ -253,7 +306,11 @@ export default function PatientLoginPage() {
                   onClick={() => setShowMagicLink(true)}
                   className="w-full text-sm text-gray-600 hover:text-gray-900 py-2"
                 >
-                  ¿Prefieres enlace mágico? →
+                  {tr({
+                    en: 'Prefer a magic link? →',
+                    es: '¿Prefieres enlace mágico? →',
+                    pt: 'Prefere link mágico? →',
+                  })}
                 </button>
               </div>
             </form>
@@ -262,16 +319,20 @@ export default function PatientLoginPage() {
             <form onSubmit={handleMagicLinkRequest}>
               <div className="space-y-4">
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
-                  Te enviaremos un enlace seguro a tu correo para iniciar sesión sin contraseña.
+                  {tr({
+                    en: "We'll email you a secure link to sign in without a password.",
+                    es: 'Te enviaremos un enlace seguro a tu correo para iniciar sesión sin contraseña.',
+                    pt: 'Enviaremos um link seguro para seu e-mail para entrar sem senha.',
+                  })}
                 </div>
 
                 <Input
-                  label="Correo Electrónico"
+                  label={tr({ en: 'Email address', es: 'Correo Electrónico', pt: 'E-mail' })}
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="tu@correo.com"
+                  placeholder={tr({ en: 'you@email.com', es: 'tu@correo.com', pt: 'voce@email.com' })}
                 />
 
                 <Button
@@ -280,8 +341,9 @@ export default function PatientLoginPage() {
                   size="lg"
                   fullWidth
                   loading={loading}
+                  className="!from-green-600 !to-green-700 hover:!from-green-700 hover:!to-green-800"
                 >
-                  Enviar Enlace Mágico
+                  {tr({ en: 'Send magic link', es: 'Enviar Enlace Mágico', pt: 'Enviar link mágico' })}
                 </Button>
 
                 <button
@@ -289,7 +351,7 @@ export default function PatientLoginPage() {
                   onClick={() => setShowMagicLink(false)}
                   className="w-full text-sm text-gray-600 hover:text-gray-900 py-2"
                 >
-                  ← Volver a contraseña
+                  {tr({ en: '← Back to password', es: '← Volver a contraseña', pt: '← Voltar para senha' })}
                 </button>
               </div>
             </form>
@@ -298,12 +360,12 @@ export default function PatientLoginPage() {
           {/* Create Account Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              ¿No tienes cuenta?{' '}
+              {tr({ en: "Don't have an account?", es: '¿No tienes cuenta?', pt: 'Não tem conta?' })}{' '}
               <a
                 href="/portal/register"
                 className="font-semibold text-green-600 hover:text-green-700"
               >
-                Crear cuenta
+                {tr({ en: 'Create account', es: 'Crear cuenta', pt: 'Criar conta' })}
               </a>
             </p>
           </div>

@@ -317,7 +317,7 @@ export async function encryptPHIWithVersion(
     return `v${version}:${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
   } catch (error: any) {
     logger.error({ error }, 'PHI encryption error');
-    throw new Error('Failed to encrypt PHI');
+    throw new Error(`Failed to encrypt PHI: ${error?.message || 'unknown error'}`);
   }
 }
 

@@ -219,8 +219,5 @@ export const POST = createProtectedRoute(
   }
 );
 
-export const config = {
-  api: {
-    bodyParser: false, // Required for multipart form data
-  },
-};
+// Note: In App Router, bodyParser is automatically disabled for route handlers
+// using request.formData(), so no additional config is needed.
