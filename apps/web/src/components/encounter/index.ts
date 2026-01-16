@@ -7,3 +7,4 @@
 export { SmartAlerts } from './SmartAlerts';
 export { SummaryDraft, SummaryDraftComponent } from './SummaryDraft';
 export { DocumentUpload } from './DocumentUpload';
+export { ChatWithSuggestions } from './ChatWithSuggestions';

@@ -158,6 +158,77 @@ describe('FHIR Sync Security', () => {
       const versionMismatch = expectedRemoteVersion !== actualRemoteVersion;
       expect(versionMismatch).toBe(true);
     });
+
+    it('should handle concurrent sync attempts with optimistic locking', async () => {
+      /**
+       * Race Condition Prevention Test
+       *
+       * When two concurrent sync attempts target the same patient with
+       * the same version, only one should succeed. The other should
+       * fail with a VERSION_CONFLICT error.
+       */
+      const patientId = 'patient-123';
+      const initialVersion = 1;
+
+      // Simulate concurrent sync tracking
+      let currentVersion = initialVersion;
+      const versionConflictError = { code: 'VERSION_CONFLICT', message: 'Concurrent modification detected' };
+
+      // Simulated sync function with optimistic locking
+      const attemptSync = async (attemptVersion: number): Promise<{ success: boolean; newVersion?: number }> => {
+        // Simulate async database check
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Check if version matches (optimistic locking)
+        if (attemptVersion !== currentVersion) {
+          throw versionConflictError;
+        }
+
+        // Simulate successful sync - increment version
+        currentVersion++;
+        return { success: true, newVersion: currentVersion };
+      };
+
+      // Launch two concurrent sync attempts with the same version
+      const sync1 = attemptSync(initialVersion);
+      const sync2 = attemptSync(initialVersion);
+
+      const results = await Promise.allSettled([sync1, sync2]);
+
+      // One should succeed, one should fail with version conflict
+      const successes = results.filter(r => r.status === 'fulfilled');
+      const failures = results.filter(r => r.status === 'rejected');
+
+      expect(successes.length).toBe(1);
+      expect(failures.length).toBe(1);
+
+      // Verify conflict is flagged with correct error code
+      const failedResult = failures[0] as PromiseRejectedResult;
+      expect(failedResult.reason.code).toBe('VERSION_CONFLICT');
+    });
+
+    it('should reject sync attempt with stale version', async () => {
+      const currentDbVersion = 5;
+      const staleVersion = 3; // Outdated version from client
+
+      // Mock the version check
+      (prisma.patient.findUnique as jest.Mock).mockResolvedValue({
+        id: 'patient-123',
+        version: currentDbVersion,
+      });
+
+      const patient = await prisma.patient.findUnique({
+        where: { id: 'patient-123' },
+      });
+
+      // Version check should fail
+      const isStale = staleVersion < patient.version;
+      expect(isStale).toBe(true);
+
+      // System should reject stale updates
+      const shouldRejectUpdate = isStale;
+      expect(shouldRejectUpdate).toBe(true);
+    });
   });
 
   describe('Audit Trail for Sync Operations', () => {

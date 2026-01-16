@@ -12,7 +12,11 @@ export async function deidentifyTranscriptOrThrow(rawText: string): Promise<stri
   // IMPORTANT: Read from process.env at call-time (not from cached env)
   // so tests can toggle strictness and so this gate doesn't depend on env
   // validation side-effects at import time.
-  const strict = (process.env.REQUIRE_DEIDENTIFICATION || 'true') === 'true';
+  // Default to strict in production, but allow local dev to run without Presidio
+  // unless explicitly forced on via REQUIRE_DEIDENTIFICATION=true.
+  const strictEnv = process.env.REQUIRE_DEIDENTIFICATION;
+  const strict =
+    strictEnv !== undefined ? strictEnv === 'true' : (process.env.NODE_ENV || 'development') === 'production';
 
   if (!rawText) return rawText;
 

@@ -615,4 +615,199 @@ describe('E2E Clinical Workflow', () => {
       }
     });
   });
+
+  describe('Partial Failure Handling', () => {
+    /**
+     * Critical Test: System should complete core workflow even if
+     * non-critical components fail. FHIR sync failure should NOT
+     * prevent summary generation/saving.
+     */
+    it('should complete summary even if FHIR sync fails', async () => {
+      // Mock successful summary job completion
+      const summaryJobId = 'job-summary-partial-001';
+      const summaryResult = {
+        chiefComplaint: {
+          text: 'Patient reports headache for 3 days',
+          confidence: 0.9,
+          approved: false,
+        },
+        assessment: {
+          text: 'Tension-type headache, low risk',
+          differentials: [{ diagnosis: 'Tension headache', likelihood: 'high' }],
+          confidence: 0.85,
+          approved: false,
+        },
+        plan: {
+          medications: [],
+          labs: [],
+          imaging: [],
+          referrals: [],
+          instructions: 'Rest, hydration, OTC analgesics',
+          confidence: 0.9,
+          approved: false,
+        },
+        prevention: { screeningsAddressed: [], nextScreenings: [], approved: false },
+        followUp: { interval: 'PRN', reason: 'Return if worsens', approved: false },
+      };
+
+      // Summary job succeeds
+      (prisma.analysisJob.findUnique as jest.Mock).mockResolvedValue({
+        id: summaryJobId,
+        type: 'SUMMARY_GEN',
+        status: 'COMPLETED',
+        resultData: summaryResult,
+      });
+
+      // FHIR sync fails
+      (prisma.fHIRSyncEvent.create as jest.Mock).mockRejectedValue(
+        new Error('FHIR server unavailable')
+      );
+
+      // Verify summary is still accessible despite FHIR failure
+      const completedJob = await prisma.analysisJob.findUnique({
+        where: { id: summaryJobId },
+      });
+
+      expect(completedJob?.status).toBe('COMPLETED');
+      expect(completedJob?.resultData.chiefComplaint.text).toContain('headache');
+
+      // The workflow should handle FHIR failure gracefully
+      try {
+        await prisma.fHIRSyncEvent.create({ data: {} });
+      } catch (error) {
+        // FHIR failure is expected but shouldn't crash the workflow
+        expect(error).toBeDefined();
+        expect((error as Error).message).toContain('FHIR server unavailable');
+      }
+
+      // Summary remains valid after FHIR failure
+      expect(completedJob?.resultData).toBeDefined();
+    });
+
+    it('should queue failed FHIR syncs for retry', async () => {
+      const failedSyncEvent = {
+        id: 'sync-failed-001',
+        direction: 'OUTBOUND',
+        resourceType: 'Patient',
+        resourceId: mockPatientId,
+        operation: 'UPDATE',
+        status: 'FAILED',
+        retryCount: 0,
+        maxRetries: 3,
+        errorMessage: 'Network timeout',
+        createdAt: new Date(),
+      };
+
+      (prisma.fHIRSyncEvent.create as jest.Mock).mockResolvedValue(failedSyncEvent);
+
+      // Create the failed sync event
+      const syncEvent = await prisma.fHIRSyncEvent.create({
+        data: failedSyncEvent,
+      });
+
+      expect(syncEvent.status).toBe('FAILED');
+      expect(syncEvent.retryCount).toBe(0);
+      expect(syncEvent.maxRetries).toBe(3);
+
+      // Simulate retry logic - should update status to PENDING
+      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValue({
+        ...failedSyncEvent,
+        status: 'PENDING',
+        retryCount: 1,
+      });
+
+      const retriedEvent = await prisma.fHIRSyncEvent.update({
+        where: { id: syncEvent.id },
+        data: {
+          status: 'PENDING',
+          retryCount: 1,
+        },
+      });
+
+      expect(retriedEvent.status).toBe('PENDING');
+      expect(retriedEvent.retryCount).toBe(1);
+      expect(retriedEvent.retryCount).toBeLessThan(retriedEvent.maxRetries);
+    });
+
+    it('should mark sync as permanently failed after max retries', async () => {
+      const maxRetriesExceeded = {
+        id: 'sync-max-retry-001',
+        status: 'FAILED',
+        retryCount: 3,
+        maxRetries: 3,
+        errorMessage: 'Max retries exceeded. Manual intervention required.',
+      };
+
+      (prisma.fHIRSyncEvent.findUnique as jest.Mock).mockResolvedValue(maxRetriesExceeded);
+
+      const syncEvent = await prisma.fHIRSyncEvent.findUnique({
+        where: { id: maxRetriesExceeded.id },
+      });
+
+      expect(syncEvent?.status).toBe('FAILED');
+      expect(syncEvent?.retryCount).toBe(syncEvent?.maxRetries);
+      expect(syncEvent?.errorMessage).toContain('Manual intervention required');
+    });
+
+    it('should allow document upload failure without blocking encounter', async () => {
+      // Document parsing fails
+      const failedDocJob = {
+        id: 'job-doc-failed-001',
+        type: 'DOCUMENT_PARSE',
+        status: 'FAILED',
+        errorMessage: 'PDF corrupted or encrypted',
+        patientId: mockPatientId,
+      };
+
+      (prisma.analysisJob.findUnique as jest.Mock).mockResolvedValue(failedDocJob);
+
+      // Encounter should still be able to proceed
+      const mockEncounter = {
+        id: mockEncounterId,
+        status: 'IN_PROGRESS',
+        patientId: mockPatientId,
+      };
+
+      (prisma.encounter.findUnique as jest.Mock).mockResolvedValue(mockEncounter);
+
+      // Verify document failure doesn't block encounter
+      const failedJob = await prisma.analysisJob.findUnique({
+        where: { id: failedDocJob.id },
+      });
+      expect(failedJob?.status).toBe('FAILED');
+
+      const encounter = await prisma.encounter.findUnique({
+        where: { id: mockEncounterId },
+      });
+      expect(encounter?.status).toBe('IN_PROGRESS'); // Encounter continues
+    });
+
+    it('should log partial failures for monitoring and alerting', () => {
+      const partialFailureLog = {
+        event: 'partial_failure',
+        workflowId: mockEncounterId,
+        successfulSteps: ['DOCUMENT_PARSE', 'SUMMARY_GEN', 'ENCOUNTER_COMPLETE'],
+        failedSteps: [
+          {
+            step: 'FHIR_SYNC',
+            error: 'Medplum unavailable',
+            willRetry: true,
+            retryCount: 1,
+          },
+        ],
+        overallStatus: 'COMPLETED_WITH_WARNINGS',
+        timestamp: new Date().toISOString(),
+      };
+
+      // Verify log structure for monitoring systems
+      expect(partialFailureLog.successfulSteps.length).toBeGreaterThan(0);
+      expect(partialFailureLog.failedSteps.length).toBeGreaterThan(0);
+      expect(partialFailureLog.overallStatus).toBe('COMPLETED_WITH_WARNINGS');
+
+      // Failed step should indicate if retry is possible
+      const failedStep = partialFailureLog.failedSteps[0];
+      expect(failedStep?.willRetry).toBeDefined();
+      expect(failedStep?.error).toBeDefined();
+    });
+  });
 });

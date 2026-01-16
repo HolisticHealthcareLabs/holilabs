@@ -134,7 +134,9 @@ export default function ThemeToggle() {
         onMouseLeave={handleMouseLeave}
         className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
         aria-label={`Current theme: ${getThemeLabel()}. Click to cycle themes. Keyboard shortcut: ${
-          navigator.platform.indexOf('Mac') > -1 ? 'Cmd' : 'Ctrl'
+          typeof navigator !== 'undefined' && typeof navigator.platform === 'string' && navigator.platform.includes('Mac')
+            ? 'Cmd'
+            : 'Ctrl'
         } + Shift + L`}
         aria-live="polite"
         type="button"
