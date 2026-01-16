@@ -63,10 +63,28 @@ services:
       timeout: 5s
       retries: 5
 
+  # CDSS V3: Document Parser (Build Only)
+  # This container is NOT long-running. It's invoked per-job via `docker run`.
+  # This entry ensures the image is built during `docker-compose build`.
+  document-parser:
+    build:
+      context: ./packages/document-parser
+      dockerfile: Dockerfile
+    image: holilabs/document-parser:latest
+    container_name: holi-document-parser-build
+    profiles:
+      - build-only  # Don't start with `docker-compose up`
+    # Runtime security constraints are enforced by SandboxClient:
+    # --network none, --read-only, --memory 512m, --cpus 1, --user 1000:1000
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
   meilisearch_data:
+    driver: local
+  # CDSS V3: Shared volume for document parser jobs
+  # Used for communication between Node.js workers and sandboxed Python container
+  parser_jobs:
     driver: local

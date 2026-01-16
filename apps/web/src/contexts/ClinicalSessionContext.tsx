@@ -80,7 +80,36 @@ export function ClinicalSessionProvider({ children }: { children: ReactNode }) {
   const appendTranscript = useCallback((segment: TranscriptSegment) => {
     setState((prev) => ({
       ...prev,
-      transcript: [...prev.transcript, segment],
+      transcript: (() => {
+        const next = (prev.transcript || []).slice();
+        const last = next[next.length - 1];
+
+        // De-dupe identical repeated finals (can happen with socket reconnect/replay).
+        if (
+          last &&
+          (last.isFinal ?? true) &&
+          (segment.isFinal ?? true) &&
+          (last.speaker || '') === (segment.speaker || '') &&
+          (last.text || '').trim() === (segment.text || '').trim()
+        ) {
+          return next;
+        }
+
+        // If we ever receive an interim segment, replace the last interim with latest.
+        if (last && (last.isFinal === false) && segment.isFinal === false) {
+          next[next.length - 1] = segment;
+          return next;
+        }
+
+        // If final arrives after an interim, replace that interim.
+        if (last && (last.isFinal === false) && (segment.isFinal ?? true)) {
+          next[next.length - 1] = segment;
+          return next;
+        }
+
+        next.push(segment);
+        return next;
+      })(),
     }));
   }, []);
 

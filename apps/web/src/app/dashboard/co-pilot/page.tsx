@@ -22,6 +22,7 @@ import { ToastContainer } from '@/components/co-pilot/Toast';
 import { extractMedicalEntities } from '@/lib/medical/terminology';
 import { FindingsTimeline } from '@/components/co-pilot/FindingsTimeline';
 import { ClinicalDisclosureModal } from '@/components/scribe/ClinicalDisclosureModal';
+import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 
 export const dynamic = 'force-dynamic';
 
@@ -161,6 +162,8 @@ function CoPilotContent() {
   const [uploadPendingFile, setUploadPendingFile] = useState<File | null>(null);
   const [uploadPendingType, setUploadPendingType] = useState<DocumentType>('OTHER');
   const [uploadScope, setUploadScope] = useState<'profile' | 'session'>('profile');
+  const [uploadPendingPreviewUrl, setUploadPendingPreviewUrl] = useState<string | null>(null);
+  const [uploadPendingPreviewKind, setUploadPendingPreviewKind] = useState<'image' | 'pdf' | 'file'>('file');
   const [sessionAttachments, setSessionAttachments] = useState<{ name: string; type: string; dataUrl: string }[]>([]);
   const [showAudioSourceModal, setShowAudioSourceModal] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -201,14 +204,39 @@ function CoPilotContent() {
   const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const audioGainRef = useRef<GainNode | null>(null);
 
-  const floatTo16BitPCM = (input: Float32Array) => {
-    const output = new Int16Array(input.length);
-    for (let i = 0; i < input.length; i++) {
-      const s = Math.max(-1, Math.min(1, input[i] || 0));
-      output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-    }
-    return output;
-  };
+  // Speech language for transcription (Deepgram). Persist clinician preference.
+  const [speechLanguage, setSpeechLanguage] = useState<'en' | 'es' | 'pt'>('en');
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('holi.speechLanguage');
+      if (saved === 'en' || saved === 'es' || saved === 'pt') setSpeechLanguage(saved);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('holi.speechLanguage', speechLanguage);
+    } catch {}
+  }, [speechLanguage]);
+
+  // V3: Float32 -> PCM16 conversion and resampling happens off-main-thread in AudioWorklet.
+  const lastScribeToastAtRef = useRef<number>(0);
+  const lastScribeToastMsgRef = useRef<string>('');
+
+  const audioRecorder = useAudioRecorder({
+    chunkMs: 100,
+    targetSampleRate: 16000,
+    onChunk: (chunk) => {
+      const socket = wsRef.current as any;
+      if (!socket || !state.sessionId || !state.isRecording) return;
+      socket.emit('co_pilot:audio_chunk', {
+        sessionId: state.sessionId,
+        audioData: chunk.pcm16,
+        sampleRate: chunk.sampleRate,
+        language: speechLanguage,
+      });
+      setScribeDebug((prev) => ({ ...prev, chunksSent: prev.chunksSent + 1 }));
+    },
+  });
 
   const focusScribePanel = () => {
     const el = document.getElementById('scribe-panel') as HTMLElement | null;
@@ -252,6 +280,13 @@ function CoPilotContent() {
         setPatientContext(null);
       }
     })();
+  }, [selectedPatient?.id]);
+
+  // Silent background: ensure a de-identified longitudinal dossier exists for this patient.
+  // This enables fast CDS prompts without re-processing the entire chart on every interaction.
+  useEffect(() => {
+    if (!selectedPatient?.id) return;
+    fetch(`/api/patients/${selectedPatient.id}/dossier/ensure`, { method: 'POST' }).catch(() => {});
   }, [selectedPatient?.id]);
 
   useEffect(() => {
@@ -314,6 +349,28 @@ function CoPilotContent() {
       reader.readAsDataURL(file);
     });
   }, []);
+
+  // Local preview for the pending file (so clinicians can visually confirm the selected attachment).
+  useEffect(() => {
+    if (!uploadPendingFile) {
+      setUploadPendingPreviewUrl(null);
+      setUploadPendingPreviewKind('file');
+      return;
+    }
+
+    const t = String(uploadPendingFile.type || '').toLowerCase();
+    const isImg = t.startsWith('image/');
+    const isPdf = t === 'application/pdf';
+    const url = URL.createObjectURL(uploadPendingFile);
+    setUploadPendingPreviewUrl(url);
+    setUploadPendingPreviewKind(isImg ? 'image' : isPdf ? 'pdf' : 'file');
+
+    return () => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+    };
+  }, [uploadPendingFile]);
 
   const openUploadsPanel = () => {
     setRightPanelTab('uploads');
@@ -616,36 +673,9 @@ function CoPilotContent() {
             audioCtxRef.current?.close?.();
           } catch {}
 
-          const audioContext = new AudioContext();
-          const source = audioContext.createMediaStreamSource(audioStream);
-          const processor = audioContext.createScriptProcessor(4096, 1, 1);
-          const gain = audioContext.createGain();
-          gain.gain.value = 0; // don't play back into speakers
-
-          source.connect(processor);
-          processor.connect(gain);
-          gain.connect(audioContext.destination);
-
-          audioCtxRef.current = audioContext;
-          audioSourceRef.current = source;
-          audioProcessorRef.current = processor;
-          audioGainRef.current = gain;
-
-          // Default speech language for now.
-          const lang = 'en';
-
-          processor.onaudioprocess = (e) => {
-            if (!state.sessionId || !state.isRecording) return;
-            const input = e.inputBuffer.getChannelData(0);
-            const pcm = floatTo16BitPCM(input);
-            (socket as any).emit('co_pilot:audio_chunk', {
-              sessionId: state.sessionId,
-              audioData: pcm.buffer,
-              sampleRate: audioContext.sampleRate,
-              language: lang,
-            });
-            setScribeDebug((prev) => ({ ...prev, chunksSent: prev.chunksSent + 1 }));
-          };
+          // V3: AudioWorklet pipeline (off-main-thread)
+          void audioRecorder.stop();
+          void audioRecorder.start(audioStream);
         } catch (e) {
           console.error('Failed to start realtime audio streaming:', e);
         }
@@ -776,6 +806,11 @@ function CoPilotContent() {
       socket.on('co_pilot:transcription_error', (data: any) => {
         const msg = data?.message || 'Transcription error';
         setScribeDebug((prev) => ({ ...prev, lastError: msg }));
+        // De-dupe toast spam (same message within 6s)
+        const now = Date.now();
+        if (msg === lastScribeToastMsgRef.current && now - lastScribeToastAtRef.current < 6000) return;
+        lastScribeToastMsgRef.current = msg;
+        lastScribeToastAtRef.current = now;
         showToast({ type: 'error', title: 'AI Scribe error', message: msg });
       });
     } catch (error) {
@@ -924,10 +959,7 @@ function CoPilotContent() {
 
     // Stop realtime audio graph
     try {
-      audioProcessorRef.current?.disconnect();
-      audioSourceRef.current?.disconnect();
-      audioGainRef.current?.disconnect();
-      audioCtxRef.current?.close?.();
+      await audioRecorder.stop();
     } catch {}
     audioProcessorRef.current = null;
     audioSourceRef.current = null;
@@ -940,6 +972,12 @@ function CoPilotContent() {
     }
 
     if (wsRef.current) {
+      // Ask server to flush/finish Deepgram stream cleanly before we close the socket.
+      try {
+        if (state.sessionId) {
+          (wsRef.current as any).emit('co_pilot:stop_stream', { sessionId: state.sessionId });
+        }
+      } catch {}
       wsRef.current.close();
       wsRef.current = null;
     }
@@ -1115,9 +1153,9 @@ function CoPilotContent() {
 
       {/* Co-Pilot AI Tools Section - BELOW PATIENT SELECTOR */}
       {selectedPatient && (
-        <div className="bg-white dark:bg-gray-800 px-6 py-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-5">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-500/20 to-amber-600/20 flex items-center justify-center">
                   <span className="text-2xl">⚡</span>
@@ -1188,11 +1226,28 @@ function CoPilotContent() {
                   <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                     {useRealTimeMode ? (
                       <span>
-                        Live mode: <span className="font-semibold">Deepgram → Presidio → UI</span>
+                        Live mode: <span className="font-semibold">Real‑time transcription</span>
                       </span>
                     ) : (
                       <span>Traditional mode: upload then transcribe</span>
                     )}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200">
+                    <span className="font-semibold">Speech language:</span>
+                    <select
+                      value={speechLanguage}
+                      onChange={(e) => setSpeechLanguage(e.target.value as any)}
+                      disabled={state.isRecording}
+                      className="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs"
+                      title="Select speech language for transcription"
+                    >
+                      <option value="en">English</option>
+                      <option value="es">Español</option>
+                      <option value="pt">Português</option>
+                    </select>
+                    {state.isRecording ? (
+                      <span className="text-gray-500">• changes apply next recording</span>
+                    ) : null}
                   </div>
                   <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
                     Status:{' '}
@@ -1247,12 +1302,7 @@ function CoPilotContent() {
               </div>
             )}
 
-            {/* Live transcription note: in strict mode, transcripts are only produced server-side (Deepgram → Presidio) */}
-            {useRealTimeMode && selectedPatient ? (
-              <div className="mb-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-3 text-sm text-gray-700 dark:text-gray-200">
-                Live transcription is running in <span className="font-semibold">server mode</span> (Deepgram → Presidio → UI).
-              </div>
-            ) : null}
+            {/* (Intentionally no "server mode"/vendor implementation details in clinician UI) */}
 
             {/* Transcript Viewer */}
             {state.transcript.length > 0 && (
@@ -2023,7 +2073,7 @@ function CoPilotContent() {
                     {uploadPendingFile ? (
                       <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="min-w-0">
                             <div className="text-sm font-semibold text-gray-900 dark:text-white">
                               {uploadPendingFile.name}
                             </div>
@@ -2038,6 +2088,34 @@ function CoPilotContent() {
                             Cancel
                           </button>
                         </div>
+
+                        {/* Visual preview (image/PDF) */}
+                        {uploadPendingPreviewUrl ? (
+                          <div className="mt-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-3">
+                            {uploadPendingPreviewKind === 'image' ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={uploadPendingPreviewUrl}
+                                alt={uploadPendingFile.name}
+                                className="w-full max-h-64 object-contain rounded-lg bg-white dark:bg-gray-900"
+                              />
+                            ) : uploadPendingPreviewKind === 'pdf' ? (
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white">PDF preview</div>
+                                <a
+                                  href={uploadPendingPreviewUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs font-semibold text-blue-600 dark:text-blue-400"
+                                >
+                                  Open
+                                </a>
+                              </div>
+                            ) : (
+                              <div className="text-sm text-gray-700 dark:text-gray-200">Preview not available for this file type.</div>
+                            )}
+                          </div>
+                        ) : null}
 
                         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
@@ -2125,20 +2203,46 @@ function CoPilotContent() {
                       </div>
                       {documents && documents.length ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {documents.slice(0, 8).map((d) => (
-                            <a
-                              key={d.id}
-                              href={d.storageUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-xl border border-amber-200/60 dark:border-amber-800/30 p-3 hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition"
-                            >
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{d.fileName}</div>
-                              <div className="text-xs text-gray-600 dark:text-gray-300">
-                                {d.documentType} • {new Date(d.createdAt).toLocaleString()}
-                              </div>
-                            </a>
-                          ))}
+                          {documents.slice(0, 8).map((d) => {
+                            const url = String(d.storageUrl || '');
+                            const type = String(d.fileType || '').toLowerCase();
+                            const isImg =
+                              type.startsWith('image/') ||
+                              url.startsWith('data:image') ||
+                              url.endsWith('.png') ||
+                              url.endsWith('.jpg') ||
+                              url.endsWith('.jpeg') ||
+                              url.endsWith('.webp') ||
+                              url.endsWith('.gif') ||
+                              url.endsWith('.svg');
+
+                            return (
+                              <a
+                                key={d.id}
+                                href={d.storageUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-xl border border-amber-200/60 dark:border-amber-800/30 p-3 hover:bg-amber-50/40 dark:hover:bg-amber-900/10 transition flex gap-3"
+                              >
+                                <div className="w-24 h-16 flex-shrink-0 rounded-lg border border-amber-200/60 dark:border-amber-800/30 bg-white/70 dark:bg-gray-900/40 overflow-hidden">
+                                  {isImg ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={url} alt={d.fileName} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                      {String(d.documentType || 'FILE')}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{d.fileName}</div>
+                                  <div className="text-xs text-gray-600 dark:text-gray-300">
+                                    {d.documentType} • {new Date(d.createdAt).toLocaleString()}
+                                  </div>
+                                </div>
+                              </a>
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="text-sm text-gray-700 dark:text-gray-200">No uploads yet.</div>

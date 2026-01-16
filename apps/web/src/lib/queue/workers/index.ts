@@ -7,6 +7,10 @@
 import { Worker } from 'bullmq';
 import { startCorrectionAggregationWorker } from './correction-aggregation.worker';
 import { startAuditArchivalWorker } from './audit-archival.worker';
+import { startPatientDossierWorker } from './patient-dossier.worker';
+import { startDocumentParserWorker } from './document-parser.worker';
+import { startSummaryGenerationWorker } from './summary-generation.worker';
+import { startFhirSyncWorker } from './fhir-sync.worker';
 import logger from '@/lib/logger';
 
 // Store active workers for graceful shutdown
@@ -25,6 +29,22 @@ export function startAllWorkers(): void {
   // Start audit archival worker (HIPAA compliance)
   const auditArchivalWorker = startAuditArchivalWorker();
   activeWorkers.push(auditArchivalWorker);
+
+  // Start patient dossier worker (de-identified longitudinal cache)
+  const dossierWorker = startPatientDossierWorker();
+  activeWorkers.push(dossierWorker);
+
+  // CDSS V3: Start document parser worker (sandboxed parsing)
+  const documentParserWorker = startDocumentParserWorker();
+  activeWorkers.push(documentParserWorker);
+
+  // CDSS V3: Start summary generation worker (LLM + Zod validation)
+  const summaryGenWorker = startSummaryGenerationWorker();
+  activeWorkers.push(summaryGenWorker);
+
+  // CDSS V3: Start FHIR sync worker (bi-directional Medplum sync)
+  const fhirSyncWorker = startFhirSyncWorker();
+  activeWorkers.push(fhirSyncWorker);
 
   // TODO: Add more workers as needed
   // const patientRemindersWorker = startPatientRemindersWorker();

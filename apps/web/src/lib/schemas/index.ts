@@ -58,3 +58,44 @@ export {
   type UpdateGoalInput,
   type UpdateInterventionInput,
 } from './care-plan.schema';
+
+// CDSS V3: Parsed document schemas
+export {
+  ParsedDocumentSchema,
+  ParserOutputSchema,
+  CreateParsedDocumentSchema,
+  type ParsedDocument,
+  type ParserOutput,
+  type CreateParsedDocumentInput,
+  type Table,
+  type DocumentMetadata,
+  type Section,
+} from './parsed-document.schema';
+
+// CDSS V3: Summary draft schemas
+export {
+  SummaryDraftSchema,
+  PartialSummaryDraftSchema,
+  SummaryGenerationInputSchema,
+  type SummaryDraft,
+  type PartialSummaryDraft,
+  type SummaryGenerationInput,
+  type Differential,
+  type MedicationPlan,
+  type NextScreening,
+} from './summary-draft.schema';
+
+// CDSS V3: Prevention alert schemas
+export {
+  PreventionAlertSchema,
+  PreventionAlertsSchema,
+  PartialPreventionAlertSchema,
+  PreventionAlertType,
+  AlertSeverity,
+  AlertActionType,
+  AlertActionSchema,
+  type PreventionAlert,
+  type PreventionAlerts,
+  type PartialPreventionAlert,
+  type AlertAction,
+} from './prevention-alert.schema';

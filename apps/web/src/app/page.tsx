@@ -109,6 +109,7 @@ export default function Home() {
   const { language, setLanguage, t } = useLanguage();
   const isEn = language === 'en';
   const isPt = language === 'pt';
+  const tr = (en: string, es: string, pt: string = es) => (isEn ? en : isPt ? pt : es);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -543,9 +544,15 @@ export default function Home() {
                   🏛️
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Gobernanza Corporativa Flexible</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {tr('Flexible Corporate Governance', 'Gobernanza Corporativa Flexible', 'Governança Corporativa Flexível')}
+                  </h3>
                   <p className="text-gray-700 leading-relaxed text-lg">
-                    Implemente gobernanza bajo sus términos. Garantice conformidad regulatoria, protección de datos y control total a escala hospitalaria.
+                    {tr(
+                      'Implement governance on your terms. Ensure regulatory compliance, data protection, and full control at hospital scale.',
+                      'Implemente gobernanza bajo sus términos. Garantice conformidad regulatoria, protección de datos y control total a escala hospitalaria.',
+                      'Implemente governança nos seus termos. Garanta conformidade regulatória, proteção de dados e controle total em escala hospitalar.'
+                    )}
                   </p>
                 </div>
               </div>
@@ -563,9 +570,15 @@ export default function Home() {
                   📊
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Rastreo de Outcomes Basados en Valor</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {tr('Value-Based Outcomes Tracking', 'Rastreo de Outcomes Basados en Valor', 'Rastreamento de Outcomes Baseados em Valor')}
+                  </h3>
                   <p className="text-gray-700 leading-relaxed text-lg">
-                    Dashboard extensivo que muestra outcomes tangibles: control de HbA1c, reducción de hospitalizaciones, adherencia a tratamientos, y métricas de calidad para contratos de valor.
+                    {tr(
+                      'An extensive dashboard showing tangible outcomes: HbA1c control, fewer hospitalizations, treatment adherence, and quality metrics for value-based contracts.',
+                      'Dashboard extensivo que muestra outcomes tangibles: control de HbA1c, reducción de hospitalizaciones, adherencia a tratamientos, y métricas de calidad para contratos de valor.',
+                      'Um dashboard completo que mostra outcomes tangíveis: controle de HbA1c, redução de internações, adesão ao tratamento e métricas de qualidade para contratos de valor.'
+                    )}
                   </p>
                 </div>
               </div>
@@ -583,9 +596,15 @@ export default function Home() {
                   🎯
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Hub de Prevención con Protocolos Globales</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {tr('Global Prevention Protocol Hub', 'Hub de Prevención con Protocolos Globales', 'Hub de Prevenção com Protocolos Globais')}
+                  </h3>
                   <p className="text-gray-700 leading-relaxed text-lg">
-                    Accede a protocolos de prevención establecidos por WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera recordatorios automáticos para screenings.
+                    {tr(
+                      'Access established prevention protocols from WHO, PAHO, and USPSTF. Track preventive-care adherence and generate automatic reminders for screenings.',
+                      'Accede a protocolos de prevención establecidos por WHO, PAHO, y USPSTF. Rastrea adherencia a tratamientos preventivos y genera recordatorios automáticos para screenings.',
+                      'Acesse protocolos de prevenção estabelecidos por WHO, PAHO e USPSTF. Acompanhe adesão preventiva e gere lembretes automáticos de screenings.'
+                    )}
                   </p>
                 </div>
               </div>
@@ -603,9 +622,15 @@ export default function Home() {
                   📈
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Navegación Inteligente Predictiva</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {tr('Predictive Intelligent Navigation', 'Navegación Inteligente Predictiva', 'Navegação Inteligente Preditiva')}
+                  </h3>
                   <p className="text-gray-700 leading-relaxed text-lg">
-                    Co-Pilot que predice qué herramientas necesitas según hora del día, tipo de paciente, y tus patrones de uso. Acceso instantáneo a cualquier función con comandos de voz.
+                    {tr(
+                      'A co-pilot that predicts what you need based on time of day, patient type, and your usage patterns. Instant access to any function with voice commands.',
+                      'Co-Pilot que predice qué herramientas necesitas según hora del día, tipo de paciente, y tus patrones de uso. Acceso instantáneo a cualquier función con comandos de voz.',
+                      'Um co-pilot que prevê o que você precisa com base na hora do dia, tipo de paciente e seus padrões de uso. Acesso instantâneo a qualquer função com comandos de voz.'
+                    )}
                   </p>
                 </div>
               </div>
@@ -650,33 +675,57 @@ export default function Home() {
             
             {/* Feature: Multi-User EHR */}
             <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">EHR Multi-Usuario con Permisos</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {tr('Multi-user EHR with Permissions', 'EHR Multi-Usuario con Permisos', 'EHR Multiusuário com Permissões')}
+              </h3>
               <p className="text-gray-700 text-base">
-                Médicos, enfermeras, y staff acceden al mismo expediente con roles diferenciados. Control granular de quién ve qué información.
+                {tr(
+                  'Doctors, nurses, and staff access the same chart with role-based permissions. Granular control over who can see what.',
+                  'Médicos, enfermeras, y staff acceden al mismo expediente con roles diferenciados. Control granular de quién ve qué información.',
+                  'Médicos, enfermeiros e equipe acessam o mesmo prontuário com papéis diferenciados. Controle granular de quem vê o quê.'
+                )}
               </p>
             </div>
 
             {/* Feature: Real-Time Messaging */}
             <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Mensajería HIPAA en Tiempo Real</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {tr('Real-time HIPAA Messaging', 'Mensajería HIPAA en Tiempo Real', 'Mensageria HIPAA em Tempo Real')}
+              </h3>
               <p className="text-gray-700 text-base">
-                Integra WhatsApp, Teams y comunicación interna directamente en los flujos clínicos. Centraliza comunicaciones con rastreabilidad y gobernanza de TI.
+                {tr(
+                  'Integrate WhatsApp, Teams, and internal messaging directly into clinical workflows. Centralize communications with full traceability and IT governance.',
+                  'Integra WhatsApp, Teams y comunicación interna directamente en los flujos clínicos. Centraliza comunicaciones con rastreabilidad y gobernanza de TI.',
+                  'Integre WhatsApp, Teams e comunicação interna diretamente nos fluxos clínicos. Centralize comunicações com rastreabilidade e governança de TI.'
+                )}
               </p>
             </div>
 
             {/* Feature: Shared Care Plans */}
             <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Planes de Cuidado Compartidos</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {tr('Shared Care Plans', 'Planes de Cuidado Compartidos', 'Planos de Cuidado Compartilhados')}
+              </h3>
               <p className="text-gray-700 text-base">
-                Construye experiencias de atención coordinada. Todo el equipo ve las mismas metas, intervenciones, y progreso del paciente en tiempo real.
+                {tr(
+                  'Build coordinated-care experiences. The whole team sees the same goals, interventions, and patient progress in real time.',
+                  'Construye experiencias de atención coordinada. Todo el equipo ve las mismas metas, intervenciones, y progreso del paciente en tiempo real.',
+                  'Construa experiências de cuidado coordenado. Toda a equipe vê as mesmas metas, intervenções e progresso do paciente em tempo real.'
+                )}
               </p>
             </div>
 
             {/* Feature: Team Analytics */}
             <div className="rounded-[2rem] bg-white/80 backdrop-blur-sm border border-gray-200 p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Analytics de Equipo</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {tr('Team Analytics', 'Analytics de Equipo', 'Analytics de Equipe')}
+              </h3>
               <p className="text-gray-700 text-base">
-                Monitorea productividad, carga de trabajo, y outcomes por proveedor. Identifica oportunidades de mejora y distribuye casos equitativamente.
+                {tr(
+                  'Monitor productivity, workload, and outcomes by provider. Identify improvement opportunities and distribute cases fairly.',
+                  'Monitorea productividad, carga de trabajo, y outcomes por proveedor. Identifica oportunidades de mejora y distribuye casos equitativamente.',
+                  'Monitore produtividade, carga de trabalho e outcomes por provedor. Identifique oportunidades de melhoria e distribua casos de forma equilibrada.'
+                )}
               </p>
             </div>
 
@@ -739,9 +788,15 @@ export default function Home() {
                   API Webhooks<br/>FHIR R4<br/>HL7 | DICOM
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Conexiones Personalizadas</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {tr('Custom Connections', 'Conexiones Personalizadas', 'Conexões Personalizadas')}
+              </h3>
               <p className="text-gray-700 leading-relaxed">
-                Construye conexiones personalizadas a miles de herramientas usando nuestra API potente e intuitiva. Webhooks, FHIR, HL7, todo lo que necesites.
+                {tr(
+                  'Build custom connections to thousands of tools using our powerful, intuitive API. Webhooks, FHIR, HL7—whatever you need.',
+                  'Construye conexiones personalizadas a miles de herramientas usando nuestra API potente e intuitiva. Webhooks, FHIR, HL7, todo lo que necesites.',
+                  'Crie conexões personalizadas com milhares de ferramentas usando nossa API poderosa e intuitiva. Webhooks, FHIR, HL7—tudo o que você precisar.'
+                )}
               </p>
             </div>
 
@@ -752,9 +807,15 @@ export default function Home() {
                 <div className="bg-white/90 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800">HbA1c ≥5.7% → Diabetes Prevention</div>
                 <div className="bg-white/90 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800">Missed Screening → Alert + Schedule</div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Combina y Transforma</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                {tr('Combine & Transform', 'Combina y Transforma', 'Combine e Transforme')}
+              </h3>
               <p className="text-gray-700 leading-relaxed">
-                Toma control transformando tus datos clínicos en lo que tu equipo necesita: workflows automatizados, fórmulas predictivas, y alertas inteligentes.
+                {tr(
+                  'Take control by transforming clinical data into what your team needs: automated workflows, predictive rules, and intelligent alerts.',
+                  'Toma control transformando tus datos clínicos en lo que tu equipo necesita: workflows automatizados, fórmulas predictivas, y alertas inteligentes.',
+                  'Assuma o controle transformando seus dados clínicos no que sua equipe precisa: workflows automatizados, regras preditivas e alertas inteligentes.'
+                )}
               </p>
             </div>
 
@@ -762,12 +823,16 @@ export default function Home() {
 
           {/* Integrations Showcase */}
           <div className="mt-20 rounded-[2rem] bg-white border-2 border-gray-200 p-12">
-            <h3 className="text-3xl font-bold text-gray-900 text-center mb-12">Integraciones Disponibles</h3>
+            <h3 className="text-3xl font-bold text-gray-900 text-center mb-12">
+              {tr('Available Integrations', 'Integraciones Disponibles', 'Integrações Disponíveis')}
+            </h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
               {/* Medical Systems */}
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Sistemas Médicos</p>
+                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">
+                  {tr('Medical Systems', 'Sistemas Médicos', 'Sistemas Médicos')}
+                </p>
                 <div className="space-y-3">
                   <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">FHIR R4</div>
                   <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800">HL7</div>
@@ -778,7 +843,9 @@ export default function Home() {
 
               {/* Communication */}
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Comunicación</p>
+                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">
+                  {tr('Communication', 'Comunicación', 'Comunicação')}
+                </p>
                 <div className="space-y-3">
                   <div className="px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm font-semibold text-green-800">WhatsApp</div>
                   <div className="px-4 py-3 rounded-xl bg-green-50 border border-green-200 text-sm font-semibold text-green-800">Twilio SMS</div>
@@ -789,7 +856,9 @@ export default function Home() {
 
               {/* AI Models */}
               <div>
-                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">Modelos IA</p>
+                <p className="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wide">
+                  {tr('AI Models', 'Modelos IA', 'Modelos de IA')}
+                </p>
                 <div className="space-y-3">
                   <div className="px-4 py-3 rounded-xl bg-purple-50 border border-purple-200 text-sm font-semibold text-purple-800">
                     GPT-4
@@ -809,7 +878,11 @@ export default function Home() {
 
             <div className="mt-12 text-center">
               <p className="text-gray-600 text-base">
-                + Databases, ERP, Cloud Apps, Workflows y más
+                {tr(
+                  '+ Databases, ERP, Cloud Apps, Workflows, and more',
+                  '+ Databases, ERP, Cloud Apps, Workflows y más',
+                  '+ Databases, ERP, Cloud Apps, Workflows e mais'
+                )}
               </p>
             </div>
           </div>
@@ -825,23 +898,33 @@ export default function Home() {
             {/* Card 1: AI Agents */}
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 border border-purple-200">
-                <span className="text-sm font-semibold text-purple-700">AI Agents prontos para usar</span>
+                <span className="text-sm font-semibold text-purple-700">
+                  {tr('Ready-to-use AI Agents', 'AI Agents listos para usar', 'AI Agents prontos para usar')}
+                </span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
-                En segundos, transforma consultas en notas clínicas perfectas
+                {tr(
+                  'In seconds, turn visits into perfect clinical notes',
+                  'En segundos, transforma consultas en notas clínicas perfectas',
+                  'Em segundos, transforme consultas em notas clínicas perfeitas'
+                )}
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Con AI que entiende español y portugués, HoliLabs automatiza documentación, genera notas SOAP y libera 3-4 horas diarias para que te enfoques en tus pacientes.
+                {tr(
+                  'With AI that understands English, Spanish, and Portuguese, HoliLabs automates documentation, generates SOAP notes, and saves 3–4 hours per day so you can focus on patients.',
+                  'Con AI que entiende español y portugués, HoliLabs automatiza documentación, genera notas SOAP y libera 3-4 horas diarias para que te enfoques en tus pacientes.',
+                  'Com IA que entende português e espanhol, a HoliLabs automatiza documentação, gera notas SOAP e libera 3–4 horas por dia para você focar nos seus pacientes.'
+                )}
               </p>
               <div className="flex flex-wrap gap-3">
                 <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
                   AI Medical Scribe
                 </span>
                 <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
-                  Transcripción en tiempo real
+                  {tr('Real-time transcription', 'Transcripción en tiempo real', 'Transcrição em tempo real')}
                 </span>
                 <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
-                  Notas SOAP automáticas
+                  {tr('Automatic SOAP notes', 'Notas SOAP automáticas', 'Notas SOAP automáticas')}
                 </span>
               </div>
             </div>
@@ -849,13 +932,19 @@ export default function Home() {
             {/* Card 2: Integration */}
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 border border-blue-200">
-                <span className="text-sm font-semibold text-blue-700">Integración inteligente</span>
+                <span className="text-sm font-semibold text-blue-700">
+                  {tr('Smart integration', 'Integración inteligente', 'Integração inteligente')}
+                </span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
-                Gestiona todo en un solo lugar
+                {tr('Manage everything in one place', 'Gestiona todo en un solo lugar', 'Gerencie tudo em um só lugar')}
               </h3>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Plataforma completa: EHR, prevención, telemedicina, e-prescribing, portal de pacientes, analytics y más. Todo lo que necesitas para crear una práctica moderna en minutos.
+                {tr(
+                  'A complete platform: EHR, prevention, telemedicine, e-prescribing, patient portal, analytics, and more. Everything you need to launch a modern practice in minutes.',
+                  'Plataforma completa: EHR, prevención, telemedicina, e-prescribing, portal de pacientes, analytics y más. Todo lo que necesitas para crear una práctica moderna en minutos.',
+                  'Plataforma completa: EHR, prevenção, telemedicina, e-prescribing, portal do paciente, analytics e mais. Tudo o que você precisa para criar uma prática moderna em minutos.'
+                )}
               </p>
               <div className="flex flex-wrap gap-3">
                 <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
@@ -865,7 +954,7 @@ export default function Home() {
                   HIPAA/LGPD
                 </span>
                 <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm">
-                  8+ farmacias integradas
+                  {tr('8+ pharmacies integrated', '8+ farmacias integradas', '8+ farmácias integradas')}
                 </span>
               </div>
             </div>
@@ -881,10 +970,18 @@ export default function Home() {
           {/* Section Header */}
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
-              Una plataforma completa y personalizable
+              {tr(
+                'A complete, customizable platform',
+                'Una plataforma completa y personalizable',
+                'Uma plataforma completa e personalizável'
+              )}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Todos los módulos que necesitas para operar tu clínica con eficiencia y escalar sin límites.
+              {tr(
+                'All the modules you need to run your clinic efficiently and scale without limits.',
+                'Todos los módulos que necesitas para operar tu clínica con eficiencia y escalar sin límites.',
+                'Todos os módulos que você precisa para operar sua clínica com eficiência e escalar sem limites.'
+              )}
             </p>
           </div>
 
@@ -892,36 +989,54 @@ export default function Home() {
           <div className="mb-20">
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 border border-blue-200 mb-6">
-                <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Prevención & Manejo Poblacional</span>
+                <span className="text-sm font-semibold text-blue-700 uppercase tracking-wide">
+                  {tr('Prevention & Population Health', 'Prevención & Manejo Poblacional', 'Prevenção & Manejo Populacional')}
+                </span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Medicina preventiva a escala
+                {tr('Preventive care at scale', 'Medicina preventiva a escala', 'Medicina preventiva em escala')}
               </h3>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Automatiza screenings, identifica gaps de prevención y maneja poblaciones completas con protocolos WHO/PAHO/USPSTF.
+                {tr(
+                  'Automate screenings, identify prevention gaps, and manage entire populations with WHO/PAHO/USPSTF protocols.',
+                  'Automatiza screenings, identifica gaps de prevención y maneja poblaciones completas con protocolos WHO/PAHO/USPSTF.',
+                  'Automatize screenings, identifique gaps de prevenção e gerencie populações inteiras com protocolos WHO/PAHO/USPSTF.'
+                )}
               </p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-6">
               {[
                 {
-                  title: 'Hub de Prevención Longitudinal',
-                  desc: 'Timeline visual de 30 años con todos los screenings. 7 dominios de salud organizados.',
-                  badge: '100+ intervenciones',
+                  title: tr('Longitudinal Prevention Hub', 'Hub de Prevención Longitudinal', 'Hub de Prevenção Longitudinal'),
+                  desc: tr(
+                    'A 30-year visual timeline of all screenings, organized into 7 health domains.',
+                    'Timeline visual de 30 años con todos los screenings. 7 dominios de salud organizados.',
+                    'Timeline visual de 30 anos com todos os screenings. 7 domínios de saúde organizados.'
+                  ),
+                  badge: tr('100+ interventions', '100+ intervenciones', '100+ intervenções'),
                   icon: '📊',
                   color: 'blue'
                 },
                 {
-                  title: 'Screening Triggers',
-                  desc: '15+ protocolos automatizados. Monitoreo diario de TODOS tus pacientes.',
-                  badge: '0 horas rastreando',
+                  title: tr('Screening Triggers', 'Screening Triggers', 'Screening Triggers'),
+                  desc: tr(
+                    '15+ automated protocols. Daily monitoring of ALL your patients.',
+                    '15+ protocolos automatizados. Monitoreo diario de TODOS tus pacientes.',
+                    '15+ protocolos automatizados. Monitoramento diário de TODOS os seus pacientes.'
+                  ),
+                  badge: tr('0 hours chasing', '0 horas rastreando', '0 horas rastreando'),
                   icon: '⏰',
                   color: 'indigo'
                 },
                 {
-                  title: 'Monitoreo de Labs',
-                  desc: 'Auto-flagging de resultados críticos con planes automáticos y cálculo de riesgo.',
-                  badge: 'Prevención 2ª',
+                  title: tr('Lab Monitoring', 'Monitoreo de Labs', 'Monitoramento de Labs'),
+                  desc: tr(
+                    'Auto-flag critical results with automated care plans and risk scoring.',
+                    'Auto-flagging de resultados críticos con planes automáticos y cálculo de riesgo.',
+                    'Auto-flag de resultados críticos com planos automáticos e cálculo de risco.'
+                  ),
+                  badge: tr('Prevention 2.0', 'Prevención 2ª', 'Prevenção 2.0'),
                   icon: '🧪',
                   color: 'purple'
                 }
@@ -942,13 +1057,19 @@ export default function Home() {
           <div className="mb-20">
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 border border-emerald-200 mb-6">
-                <span className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Inteligencia Artificial Clínica</span>
+                <span className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
+                  {tr('Clinical AI', 'Inteligencia Artificial Clínica', 'Inteligência Artificial Clínica')}
+                </span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                IA que trabaja para ti 24/7
+                {tr('AI that works for you 24/7', 'IA que trabaja para ti 24/7', 'IA que trabalha para você 24/7')}
               </h3>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Scribe médico, decisiones clínicas y co-pilot inteligente. Libera tu tiempo para lo que realmente importa.
+                {tr(
+                  'Medical scribe, clinical decision support, and an intelligent co-pilot. Get your time back for what matters.',
+                  'Scribe médico, decisiones clínicas y co-pilot inteligente. Libera tu tiempo para lo que realmente importa.',
+                  'Scribe médico, suporte à decisão clínica e co-pilot inteligente. Recupere seu tempo para o que realmente importa.'
+                )}
               </p>
             </div>
             
@@ -956,20 +1077,32 @@ export default function Home() {
               {[
                 {
                   title: 'AI Medical Scribe',
-                  desc: 'Transcripción → Notas SOAP automáticas. Códigos ICD-10 sugeridos.',
-                  time: 'Ahorra 3-4h/día',
+                  desc: tr(
+                    'Transcription → Automatic SOAP notes. Suggested ICD-10 codes.',
+                    'Transcripción → Notas SOAP automáticas. Códigos ICD-10 sugeridos.',
+                    'Transcrição → Notas SOAP automáticas. Códigos ICD-10 sugeridos.'
+                  ),
+                  time: tr('Save 3–4h/day', 'Ahorra 3-4h/día', 'Economize 3–4h/dia'),
                   icon: '✍️'
                 },
                 {
                   title: 'Clinical Decision Support',
-                  desc: '12+ reglas activas. Interacciones medicamentosas, protocolos WHO, alertas de riesgo.',
-                  time: 'Solo alertas útiles',
+                  desc: tr(
+                    '12+ active rules. Drug interactions, WHO protocols, and risk alerts.',
+                    '12+ reglas activas. Interacciones medicamentosas, protocolos WHO, alertas de riesgo.',
+                    '12+ regras ativas. Interações medicamentosas, protocolos WHO e alertas de risco.'
+                  ),
+                  time: tr('Only useful alerts', 'Solo alertas útiles', 'Só alertas úteis'),
                   icon: '⚕️'
                 },
                 {
                   title: 'AI Co-Pilot',
-                  desc: 'Chatbot clínico contextual. Diagnósticos diferenciales, redacción de notas.',
-                  time: 'Inteligencia aumentada',
+                  desc: tr(
+                    'Context-aware clinical chatbot. Differential diagnoses, note drafting.',
+                    'Chatbot clínico contextual. Diagnósticos diferenciales, redacción de notas.',
+                    'Chatbot clínico contextual. Diagnósticos diferenciais, redação de notas.'
+                  ),
+                  time: tr('Augmented intelligence', 'Inteligencia aumentada', 'Inteligência aumentada'),
                   icon: '💬'
                 }
               ].map((feat, i) => (
@@ -987,26 +1120,36 @@ export default function Home() {
           <div className="mb-20">
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-100 border border-indigo-200 mb-6">
-                <span className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">EHR Completo</span>
+                <span className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">
+                  {tr('Complete EHR', 'EHR Completo', 'EHR Completo')}
+                </span>
               </div>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Registro médico electrónico de clase mundial
+                {tr(
+                  'World-class electronic health record',
+                  'Registro médico electrónico de clase mundial',
+                  'Prontuário eletrônico de classe mundial'
+                )}
               </h3>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                Todo lo que necesitas para documentar, gestionar y compartir información clínica con total seguridad.
+                {tr(
+                  'Everything you need to document, manage, and share clinical information with full security.',
+                  'Todo lo que necesitas para documentar, gestionar y compartir información clínica con total seguridad.',
+                  'Tudo o que você precisa para documentar, gerenciar e compartilhar informações clínicas com total segurança.'
+                )}
               </p>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: '👤', label: 'Demografía LGPD', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-                { icon: '📝', label: 'Notas SOAP', color: 'bg-purple-50 border-purple-200 text-purple-700' },
-                { icon: '💊', label: 'Medicamentos + MAR', color: 'bg-pink-50 border-pink-200 text-pink-700' },
-                { icon: '⚠️', label: 'Alergias', color: 'bg-red-50 border-red-200 text-red-700' },
-                { icon: '🩺', label: 'Signos Vitales', color: 'bg-green-50 border-green-200 text-green-700' },
-                { icon: '🧪', label: 'Labs LOINC', color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
-                { icon: '🏥', label: 'Imagenología DICOM', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
-                { icon: '🔬', label: 'Screening Protocols', color: 'bg-violet-50 border-violet-200 text-violet-700' }
+                { icon: '👤', label: tr('LGPD Demographics', 'Demografía LGPD', 'Demografia LGPD'), color: 'bg-blue-50 border-blue-200 text-blue-700' },
+                { icon: '📝', label: tr('SOAP Notes', 'Notas SOAP', 'Notas SOAP'), color: 'bg-purple-50 border-purple-200 text-purple-700' },
+                { icon: '💊', label: tr('Medications + MAR', 'Medicamentos + MAR', 'Medicamentos + MAR'), color: 'bg-pink-50 border-pink-200 text-pink-700' },
+                { icon: '⚠️', label: tr('Allergies', 'Alergias', 'Alergias'), color: 'bg-red-50 border-red-200 text-red-700' },
+                { icon: '🩺', label: tr('Vital Signs', 'Signos Vitales', 'Sinais Vitais'), color: 'bg-green-50 border-green-200 text-green-700' },
+                { icon: '🧪', label: tr('LOINC Labs', 'Labs LOINC', 'Labs LOINC'), color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
+                { icon: '🏥', label: tr('DICOM Imaging', 'Imagenología DICOM', 'Imagem DICOM'), color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
+                { icon: '🔬', label: tr('Screening Protocols', 'Screening Protocols', 'Protocolos de Screening'), color: 'bg-violet-50 border-violet-200 text-violet-700' }
               ].map((item, i) => (
                 <div key={i} className={`p-6 rounded-xl border-2 ${item.color} hover:shadow-md transition-all duration-200 text-center`}>
                   <div className="text-3xl mb-3">{item.icon}</div>
@@ -1017,7 +1160,14 @@ export default function Home() {
             
             <div className="mt-8 p-6 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200">
               <p className="text-center text-gray-700 leading-relaxed">
-                <span className="font-bold text-gray-900">Por qué es diferente:</span> Humanización completa, historial familiar multinivel, FHIR R4 compliant, RNDS Brasil, IPS export internacional.
+                <span className="font-bold text-gray-900">
+                  {tr("Why it's different:", 'Por qué es diferente:', 'Por que é diferente:')}
+                </span>{' '}
+                {tr(
+                  'Full humanization, multi-level family history, FHIR R4 compliant, RNDS Brazil, and international IPS export.',
+                  'Humanización completa, historial familiar multinivel, FHIR R4 compliant, RNDS Brasil, IPS export internacional.',
+                  'Humanização completa, histórico familiar multinível, FHIR R4 compliant, RNDS Brasil e exportação internacional IPS.'
+                )}
               </p>
             </div>
           </div>
@@ -1082,7 +1232,9 @@ export default function Home() {
                   🔒
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-1">Seguridad & Compliance de Clase Mundial</h4>
+                  <h4 className="text-xl font-bold text-gray-900 mb-1">
+                    {tr('World-class Security & Compliance', 'Seguridad & Compliance de Clase Mundial', 'Segurança & Compliance de Classe Mundial')}
+                  </h4>
                   <p className="text-gray-700 text-sm">HIPAA Safe Harbor • LGPD/GDPR • AES-256 • E2E encryption • MFA/TOTP • Audit logs</p>
                 </div>
               </div>

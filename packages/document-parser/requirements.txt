@@ -1,0 +1,9 @@
+# CDSS V3 - Document Parser Dependencies
+# Versions pinned for reproducibility and security
+
+# PyMuPDF for PDF parsing (fast, no external dependencies at runtime)
+PyMuPDF==1.24.10
+
+# Optional: pdfplumber for better table extraction (uses pdfminer.six)
+# Uncomment if needed:
+# pdfplumber==0.11.4

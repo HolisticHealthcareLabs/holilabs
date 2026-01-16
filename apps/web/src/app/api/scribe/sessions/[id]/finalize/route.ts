@@ -17,6 +17,7 @@ import { transcribeAudioWithDeepgram } from '@/lib/transcription/deepgram';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import Anthropic from '@anthropic-ai/sdk';
 import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
+import { enqueuePatientDossierJob } from '@/lib/patients/dossier-queue';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -94,9 +95,16 @@ export const POST = createProtectedRoute(
         );
       }
 
-      if (!session.audioFileUrl || !session.audioFileName) {
+      // If we already have a de-identified transcription (e.g., realtime streaming mode),
+      // we can finalize without requiring an uploaded audio file.
+      const existingTranscription = await prisma.transcription.findUnique({
+        where: { sessionId },
+      });
+
+      const hasExistingTranscript = Boolean(existingTranscription?.rawText?.trim());
+      if (!hasExistingTranscript && (!session.audioFileUrl || !session.audioFileName)) {
         return NextResponse.json(
-          { error: 'No audio file uploaded for this session' },
+          { error: 'No audio file uploaded for this session and no existing transcript is available' },
           { status: 400 }
         );
       }
@@ -108,131 +116,163 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // STEP 1: Download encrypted audio from S3/R2
-      const s3Client = getS3Client();
-      const config = getStorageConfig();
-
-      const response = await s3Client.send(
-        new GetObjectCommand({
-          Bucket: config.bucket,
-          Key: session.audioFileName,
-        })
-      );
-
-      if (!response.Body) {
-        return NextResponse.json(
-          { error: 'Failed to retrieve audio file from storage' },
-          { status: 500 }
-        );
-      }
-
-      // Convert stream to buffer
-      const chunks: Uint8Array[] = [];
-      for await (const chunk of response.Body as any) {
-        chunks.push(chunk);
-      }
-      const encryptedBuffer = Buffer.concat(chunks);
-
-      // Decrypt audio file
-      let audioBuffer: Buffer;
-      try {
-        audioBuffer = decryptBuffer(encryptedBuffer);
-      } catch (error: any) {
-        console.error('Failed to decrypt audio:', error);
-        return NextResponse.json(
-          { error: 'Failed to decrypt audio file' },
-          { status: 500 }
-        );
-      }
-
-      // STEP 2: Transcribe audio using Deepgram
-      if (!process.env.DEEPGRAM_API_KEY) {
-        return NextResponse.json(
-          { error: 'Deepgram API key not configured. Cannot transcribe audio.' },
-          { status: 500 }
-        );
-      }
-
-      let transcriptText: string;
-      let segments: any[] = [];
+      let deidentifiedTranscript: string;
+      let safeSegments: any[] = [];
       let transcriptionResult: any;
-      const transcribeStartTime = Date.now();
 
-      try {
-        // Detect language from patient locale (Portuguese or Spanish)
-        const languageCode = session.patient.country === 'BR' ? 'pt' :
-                             session.patient.country === 'ES' ? 'es' :
-                             session.patient.country === 'MX' ? 'es' : 'pt';
+      if (hasExistingTranscript && existingTranscription) {
+        // Realtime mode path: transcript already de-identified + persisted
+        deidentifiedTranscript = existingTranscription.rawText;
+        safeSegments = Array.isArray(existingTranscription.segments) ? (existingTranscription.segments as any[]) : [];
+        transcriptionResult = {
+          speakerCount: existingTranscription.speakerCount,
+          confidence: existingTranscription.confidence,
+          language: existingTranscription.language,
+          durationSeconds: existingTranscription.durationSeconds,
+          processingTimeMs: existingTranscription.processingTime || 0,
+        };
+      } else {
+        // Classic path: download audio → transcribe → de-identify → persist transcription
 
-        // Transcribe with Deepgram Nova-2 model
-        transcriptionResult = await transcribeAudioWithDeepgram(audioBuffer, languageCode);
+        // STEP 1: Download encrypted audio from S3/R2
+        const s3Client = getS3Client();
+        const config = getStorageConfig();
 
-        transcriptText = transcriptionResult.text;
-        segments = transcriptionResult.segments;
+        const response = await s3Client.send(
+          new GetObjectCommand({
+            Bucket: config.bucket,
+            Key: session.audioFileName!,
+          })
+        );
 
-        console.log(`✅ Deepgram transcription completed in ${transcriptionResult.processingTimeMs}ms`);
-        console.log(`   Confidence: ${(transcriptionResult.confidence * 100).toFixed(1)}%, Speakers: ${transcriptionResult.speakerCount}`);
-      } catch (error: any) {
-        console.error('❌ Deepgram transcription error:', error);
+        if (!response.Body) {
+          return NextResponse.json(
+            { error: 'Failed to retrieve audio file from storage' },
+            { status: 500 }
+          );
+        }
 
-        // Update session with error
-        await prisma.scribeSession.update({
-          where: { id: sessionId },
-          data: {
-            status: 'FAILED',
-            processingError: `Transcription failed: ${error.message}`,
+        // Convert stream to buffer
+        const chunks: Uint8Array[] = [];
+        for await (const chunk of response.Body as any) {
+          chunks.push(chunk);
+        }
+        const encryptedBuffer = Buffer.concat(chunks);
+
+        // Decrypt audio file
+        let audioBuffer: Buffer;
+        try {
+          audioBuffer = decryptBuffer(encryptedBuffer);
+        } catch (error: any) {
+          console.error('Failed to decrypt audio:', error);
+          return NextResponse.json(
+            { error: 'Failed to decrypt audio file' },
+            { status: 500 }
+          );
+        }
+
+        // STEP 2: Transcribe audio using Deepgram
+        if (!process.env.DEEPGRAM_API_KEY) {
+          return NextResponse.json(
+            { error: 'Deepgram API key not configured. Cannot transcribe audio.' },
+            { status: 500 }
+          );
+        }
+
+        let transcriptText: string;
+        let segments: any[] = [];
+        const transcribeStartTime = Date.now();
+
+        try {
+          // Detect language from patient locale
+          const languageCode =
+            session.patient.country === 'BR'
+              ? 'pt'
+              : session.patient.country === 'ES' || session.patient.country === 'MX'
+                ? 'es'
+                : 'en';
+
+          transcriptionResult = await transcribeAudioWithDeepgram(audioBuffer, languageCode);
+          transcriptText = transcriptionResult.text;
+          segments = transcriptionResult.segments;
+
+          console.log(`✅ Deepgram transcription completed in ${transcriptionResult.processingTimeMs}ms`);
+          console.log(`   Confidence: ${(transcriptionResult.confidence * 100).toFixed(1)}%, Speakers: ${transcriptionResult.speakerCount}`);
+        } catch (error: any) {
+          console.error('❌ Deepgram transcription error:', error);
+
+          await prisma.scribeSession.update({
+            where: { id: sessionId },
+            data: {
+              status: 'FAILED',
+              processingError: `Transcription failed: ${error.message}`,
+            },
+          });
+
+          return NextResponse.json(
+            { error: 'Failed to transcribe audio', message: error.message },
+            { status: 500 }
+          );
+        }
+
+        // STEP 2.5: De-identify transcript with Presidio BEFORE persisting or sending to any LLM (hard gate)
+        const anonymizeStartTime = Date.now();
+        deidentifiedTranscript = await deidentifyTranscriptOrThrow(transcriptText);
+        const anonymizeDurationMs = Date.now() - anonymizeStartTime;
+        console.log(`🛡️ Presidio anonymization completed in ${anonymizeDurationMs}ms`);
+
+        // Remove text from diarized segments (keep timing + speaker metadata only)
+        safeSegments = (segments || []).map((s: any) => ({
+          speaker: s.speaker,
+          role: s.role,
+          speakerIndex: s.speakerIndex,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          confidence: s.confidence,
+          text: '',
+        }));
+
+        // Upsert transcription record (idempotent)
+        const wordCount = deidentifiedTranscript.split(/\s+/).length;
+        await prisma.transcription.upsert({
+          where: { sessionId },
+          update: {
+            rawText: deidentifiedTranscript,
+            segments: safeSegments,
+            speakerCount: transcriptionResult.speakerCount,
+            confidence: transcriptionResult.confidence,
+            wordCount,
+            durationSeconds: transcriptionResult.durationSeconds,
+            model: `deepgram-${transcriptionResult.language === 'en' ? 'nova-3-medical' : 'nova-3'}`,
+            language: transcriptionResult.language,
+            processingTime: transcriptionResult.processingTimeMs,
+          },
+          create: {
+            sessionId,
+            rawText: deidentifiedTranscript,
+            segments: safeSegments,
+            speakerCount: transcriptionResult.speakerCount,
+            confidence: transcriptionResult.confidence,
+            wordCount,
+            durationSeconds: transcriptionResult.durationSeconds,
+            model: `deepgram-${transcriptionResult.language === 'en' ? 'nova-3-medical' : 'nova-3'}`,
+            language: transcriptionResult.language,
+            processingTime: transcriptionResult.processingTimeMs,
           },
         });
-
-        return NextResponse.json(
-          { error: 'Failed to transcribe audio', message: error.message },
-          { status: 500 }
-        );
       }
-
-      // STEP 2.5: De-identify transcript with Presidio BEFORE persisting or sending to any LLM (hard gate)
-      const anonymizeStartTime = Date.now();
-      const deidentifiedTranscript = await deidentifyTranscriptOrThrow(transcriptText);
-      const anonymizeDurationMs = Date.now() - anonymizeStartTime;
-      console.log(`🛡️ Presidio anonymization completed in ${anonymizeDurationMs}ms`);
-
-      // Remove text from diarized segments (keep timing + speaker metadata only)
-      const safeSegments = (segments || []).map((s: any) => ({
-        speaker: s.speaker,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        confidence: s.confidence,
-        text: '',
-      }));
-
-      // Create transcription record
-      const wordCount = deidentifiedTranscript.split(/\s+/).length;
-      const transcriptionRecord = await prisma.transcription.create({
-        data: {
-          sessionId,
-          rawText: deidentifiedTranscript,
-          segments: safeSegments,
-          speakerCount: transcriptionResult.speakerCount,
-          confidence: transcriptionResult.confidence,
-          wordCount,
-          durationSeconds: transcriptionResult.durationSeconds,
-          model: 'deepgram-nova-2',
-          language: transcriptionResult.language,
-          processingTime: transcriptionResult.processingTimeMs,
-        },
-      });
 
       // Track transcription event (NO PHI!)
       await trackEvent(
         ServerAnalyticsEvents.SCRIBE_TRANSCRIPTION_GENERATED,
         context.user.id,
         {
-          wordCount,
+          wordCount: (deidentifiedTranscript || '').split(/\s+/).filter(Boolean).length,
           durationSeconds: transcriptionResult.durationSeconds,
           confidence: transcriptionResult.confidence,
           speakerCount: transcriptionResult.speakerCount,
           language: transcriptionResult.language,
-          model: 'deepgram-nova-2',
+          model: transcriptionResult.language === 'en' ? 'deepgram-nova-3-medical' : 'deepgram-nova-3',
           processingTimeMs: transcriptionResult.processingTimeMs,
           success: true
         }
@@ -367,6 +407,14 @@ export const POST = createProtectedRoute(
         context.user.id,
         { success: true }
       );
+
+      // Phase B: incrementally refresh the patient dossier after a completed scribe session.
+      // This is silent background work; the dossier is de-identified and used to speed up CDS prompts.
+      enqueuePatientDossierJob({
+        patientId: session.patientId,
+        clinicianId: context.user.id,
+        reason: 'SCRIBE_FINALIZE',
+      }).catch(() => {});
 
       return NextResponse.json({
         success: true,

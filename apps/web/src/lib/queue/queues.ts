@@ -5,18 +5,24 @@
  */
 
 import { Queue } from 'bullmq';
-import { defaultQueueOptions, QueueName } from './config';
+import { defaultQueueOptions, cdssQueueOptions, QueueName } from './config';
 import logger from '@/lib/logger';
 
 // Singleton queue instances
 let correctionAggregationQueue: Queue | null = null;
 let auditArchivalQueue: Queue | null = null;
+let patientDossierQueue: Queue | null = null;
 let patientRemindersQueue: Queue | null = null;
 let labResultsQueue: Queue | null = null;
 let prescriptionRefillsQueue: Queue | null = null;
 let emailNotificationsQueue: Queue | null = null;
 let smsNotificationsQueue: Queue | null = null;
 let whatsappMessagesQueue: Queue | null = null;
+
+// CDSS V3 - Async Processing Queues
+let documentParseQueue: Queue | null = null;
+let summaryGenerationQueue: Queue | null = null;
+let fhirSyncQueue: Queue | null = null;
 
 /**
  * Get or create the correction aggregation queue
@@ -50,6 +56,21 @@ export function getAuditArchivalQueue(): Queue {
     });
   }
   return auditArchivalQueue;
+}
+
+/**
+ * Get or create the patient dossier queue
+ * (de-identified longitudinal cache used by CDS)
+ */
+export function getPatientDossierQueue(): Queue {
+  if (!patientDossierQueue) {
+    patientDossierQueue = new Queue(QueueName.PATIENT_DOSSIER, defaultQueueOptions);
+    logger.info({
+      event: 'queue_initialized',
+      queueName: QueueName.PATIENT_DOSSIER,
+    });
+  }
+  return patientDossierQueue;
 }
 
 /**
@@ -151,6 +172,58 @@ export function getWhatsappMessagesQueue(): Queue {
   return whatsappMessagesQueue;
 }
 
+// ============================================================================
+// CDSS V3 - Async Processing Queues
+// ============================================================================
+
+/**
+ * Get or create the document parsing queue
+ * Used for long-running PDF/document parsing jobs (30-120s)
+ */
+export function getDocumentParseQueue(): Queue {
+  if (!documentParseQueue) {
+    documentParseQueue = new Queue(QueueName.DOCUMENT_PARSE, cdssQueueOptions);
+    logger.info({
+      event: 'queue_initialized',
+      queueName: QueueName.DOCUMENT_PARSE,
+    });
+  }
+  return documentParseQueue;
+}
+
+/**
+ * Get or create the summary generation queue
+ * Used for LLM-based meeting summary draft generation (5-15s)
+ */
+export function getSummaryGenerationQueue(): Queue {
+  if (!summaryGenerationQueue) {
+    summaryGenerationQueue = new Queue(
+      QueueName.SUMMARY_GENERATION,
+      cdssQueueOptions
+    );
+    logger.info({
+      event: 'queue_initialized',
+      queueName: QueueName.SUMMARY_GENERATION,
+    });
+  }
+  return summaryGenerationQueue;
+}
+
+/**
+ * Get or create the FHIR sync queue
+ * Used for bi-directional FHIR/Medplum synchronization
+ */
+export function getFhirSyncQueue(): Queue {
+  if (!fhirSyncQueue) {
+    fhirSyncQueue = new Queue(QueueName.FHIR_SYNC, cdssQueueOptions);
+    logger.info({
+      event: 'queue_initialized',
+      queueName: QueueName.FHIR_SYNC,
+    });
+  }
+  return fhirSyncQueue;
+}
+
 /**
  * Close all queue connections (for graceful shutdown)
  */
@@ -158,12 +231,17 @@ export async function closeAllQueues(): Promise<void> {
   const queues = [
     correctionAggregationQueue,
     auditArchivalQueue,
+    patientDossierQueue,
     patientRemindersQueue,
     labResultsQueue,
     prescriptionRefillsQueue,
     emailNotificationsQueue,
     smsNotificationsQueue,
     whatsappMessagesQueue,
+    // CDSS V3 queues
+    documentParseQueue,
+    summaryGenerationQueue,
+    fhirSyncQueue,
   ];
 
   await Promise.all(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { enqueuePatientDossierJob } from '@/lib/patients/dossier-queue';
 
 export const dynamic = 'force-dynamic';
 
@@ -128,6 +129,13 @@ export const POST = createProtectedRoute(
         createdAt: true,
       },
     });
+
+    // Phase B: incrementally refresh the patient dossier when new documents land.
+    enqueuePatientDossierJob({
+      patientId,
+      clinicianId: context.user.id,
+      reason: 'DOCUMENT_UPLOAD',
+    }).catch(() => {});
 
     return NextResponse.json({ success: true, data: created }, { status: 201 });
   },

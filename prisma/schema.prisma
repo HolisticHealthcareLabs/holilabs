@@ -98,6 +98,9 @@ model User {
   reviewQueueItemsClinician ManualReviewQueueItem[] @relation("ReviewQueueClinician")
   reviewQueueItemsReviewer  ManualReviewQueueItem[] @relation("ReviewQueueReviewer")
 
+  // CDSS V3 - Clinical Encounters as Provider
+  clinicalEncounters ClinicalEncounter[] @relation("ProviderEncounters")
+
   @@index([email])
   @@index([walletAddress])
   @@index([cpf])
@@ -755,6 +758,9 @@ model Patient {
   medicationSchedules       MedicationSchedule[]
   medicationAdministrations MedicationAdministration[]
 
+  // Longitudinal AI dossier (de-identified, cached)
+  dossier PatientDossier?
+
   // Phase 5: Advanced Scheduling
   recurringAppointments RecurringAppointment[]
   noShowHistory         NoShowHistory[]
@@ -771,6 +777,11 @@ model Patient {
   // AI Quality Control
   reviewQueueItems ManualReviewQueueItem[]
 
+  // CDSS V3 - Async Processing Relations
+  analysisJobs     AnalysisJob[]       @relation("PatientAnalysisJobs")
+  parsedDocuments  ParsedDocument[]    @relation("PatientParsedDocuments")
+  clinicalEncounters ClinicalEncounter[] @relation("PatientEncounters")
+
   @@index([mrn])
   @@index([tokenId])
   @@index([blockchainId])
@@ -780,6 +791,46 @@ model Patient {
   @@index([isPalliativeCare])
   @@index([organizationId])
   @@map("patients")
+}
+
+// ============================================================================
+// PATIENT DOSSIER (De-identified longitudinal summary for CDS)
+// ============================================================================
+
+enum DossierStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+model PatientDossier {
+  id        String   @id @default(cuid())
+  patientId String   @unique
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  status DossierStatus @default(PENDING)
+  version Int          @default(1)
+
+  // Human-readable de-identified longitudinal summary (safe to send to AI)
+  deidentifiedSummary String @db.Text
+
+  // Structured snapshot (safe fields only; do not store direct identifiers here)
+  structured Json?
+
+  // Tamper-evident hash (sha256 of canonical JSON payload)
+  dataHash String @db.Char(64)
+
+  // Telemetry / debugging
+  lastComputedAt  DateTime?
+  lastSourceEventAt DateTime?
+  lastError       String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([status])
+  @@map("patient_dossiers")
 }
 
 // ============================================================================
@@ -1352,6 +1403,9 @@ model Appointment {
   scribeSessions ScribeSession[]
   situations     AppointmentSituation[]
   noShowHistory  NoShowHistory? // Phase 5: No-show tracking
+
+  // CDSS V3 - Link to clinical encounter
+  clinicalEncounter ClinicalEncounter?
 
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
@@ -5109,7 +5163,6 @@ model ClinicianDemographics {
   @@index([specialty])
   @@map("clinician_demographics")
 }
-}
 
 // ============================================================================
 // VECTOR SEARCH - SEMANTIC SEARCH FOR CLINICAL DATA
@@ -5204,4 +5257,207 @@ model DiagnosisEmbedding {
   @@index([patientId])
   @@index([icdCode])
   @@map("diagnosis_embeddings")
+}
+
+// ============================================================================
+// CDSS V3 - ASYNC JOB TRACKING
+// ============================================================================
+
+enum JobType {
+  DOCUMENT_PARSE
+  SUMMARY_GEN
+  FHIR_SYNC
+}
+
+enum JobStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model AnalysisJob {
+  id       String    @id @default(cuid())
+  type     JobType
+  status   JobStatus @default(PENDING)
+  progress Int       @default(0) // 0-100
+
+  // Relations
+  patientId   String
+  patient     Patient        @relation("PatientAnalysisJobs", fields: [patientId], references: [id], onDelete: Cascade)
+  encounterId String?
+  encounter   ClinicalEncounter? @relation(fields: [encounterId], references: [id])
+
+  // Job data (input) - Type-specific input validated by Zod on read
+  inputData Json
+
+  // Job result (output) - Type-specific output validated by Zod
+  resultData   Json?
+  errorMessage String? @db.Text
+
+  // Timing
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  // BullMQ reference
+  bullmqJobId String? @unique
+
+  // Relation to parsed document (if job type is DOCUMENT_PARSE)
+  parsedDocument ParsedDocument?
+
+  @@index([patientId, type, status])
+  @@index([encounterId])
+  @@index([status, createdAt])
+  @@index([bullmqJobId])
+  @@map("analysis_jobs")
+}
+
+// ============================================================================
+// CDSS V3 - PARSED DOCUMENTS
+// ============================================================================
+
+model ParsedDocument {
+  id String @id @default(cuid())
+
+  // Relations
+  patientId String
+  patient   Patient     @relation("PatientParsedDocuments", fields: [patientId], references: [id], onDelete: Cascade)
+  jobId     String      @unique
+  job       AnalysisJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  // File metadata
+  originalName  String
+  fileType      String // pdf, image, docx
+  fileSizeBytes Int
+  fileHash      String // SHA-256 for deduplication
+
+  // Parsed content (Zod-validated JSON)
+  extractedText  String? @db.Text
+  structuredData Json // Validated by ParsedDocumentSchema
+
+  // FHIR resources extracted
+  fhirResources Json[] // Array of FHIR resource references
+
+  // Security
+  encryptedAt DateTime? // When PHI was encrypted
+  deidVersion String? // De-identification algorithm version
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId, createdAt])
+  @@index([fileHash])
+  @@map("parsed_documents")
+}
+
+// ============================================================================
+// CDSS V3 - FHIR SYNC (with Optimistic Locking)
+// ============================================================================
+
+enum SyncDirection {
+  INBOUND // Medplum → Local
+  OUTBOUND // Local → Medplum
+}
+
+enum SyncOperation {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  SYNCED
+  CONFLICT // Requires human review
+  FAILED
+}
+
+enum ConflictResolution {
+  KEEP_LOCAL
+  KEEP_REMOTE
+  MANUAL_MERGE // Human edited the final version
+}
+
+model FHIRSyncEvent {
+  id           String        @id @default(cuid())
+  direction    SyncDirection
+  resourceType String // Patient, Observation, MedicationRequest
+  resourceId   String
+  operation    SyncOperation
+
+  // Status tracking
+  status     SyncStatus @default(PENDING)
+  retryCount Int        @default(0)
+  maxRetries Int        @default(3)
+
+  // Conflict handling (CRITICAL: No auto-merge)
+  conflictData Json? // { local: {...}, remote: {...} }
+  resolvedBy   String? // User ID who resolved conflict
+  resolvedAt   DateTime?
+  resolution   ConflictResolution?
+
+  // Optimistic locking
+  localVersion  Int // Prisma version from local record
+  remoteVersion String? // FHIR meta.versionId
+
+  // Audit
+  createdAt    DateTime  @default(now())
+  syncedAt     DateTime?
+  errorMessage String?   @db.Text
+
+  @@index([resourceType, resourceId])
+  @@index([status, createdAt])
+  @@index([direction, status])
+  @@map("fhir_sync_events")
+}
+
+// ============================================================================
+// CDSS V3 - CLINICAL ENCOUNTER (for Job Relations)
+// ============================================================================
+
+enum EncounterStatus {
+  SCHEDULED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model ClinicalEncounter {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation("PatientEncounters", fields: [patientId], references: [id], onDelete: Cascade)
+
+  providerId String
+  provider   User @relation("ProviderEncounters", fields: [providerId], references: [id])
+
+  // Link to appointment (if scheduled)
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  // Timing
+  scheduledAt DateTime
+  startedAt   DateTime?
+  endedAt     DateTime?
+  status      EncounterStatus @default(SCHEDULED)
+
+  // Clinical data
+  chiefComplaint String? @db.Text
+  summaryDraft   Json? // SummaryDraftSchema validated
+
+  // Relations
+  jobs AnalysisJob[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId, scheduledAt])
+  @@index([providerId, scheduledAt])
+  @@index([status])
+  @@index([appointmentId])
+  @@map("clinical_encounters")
 }

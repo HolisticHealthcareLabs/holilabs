@@ -118,6 +118,9 @@ model User {
   // BYOK API Keys
   apiKeys UserAPIKey[]
 
+  // CDSS V3
+  clinicalEncounters ClinicalEncounter[]
+
   @@index([email])
   @@index([walletAddress])
   @@index([invitationCodeId])
@@ -847,6 +850,9 @@ model Patient {
   medicationSchedules       MedicationSchedule[]
   medicationAdministrations MedicationAdministration[]
 
+  // Longitudinal AI dossier (de-identified, cached)
+  dossier PatientDossier?
+
   // Phase 5: Advanced Scheduling
   recurringAppointments RecurringAppointment[]
   noShowHistory         NoShowHistory[]
@@ -854,6 +860,11 @@ model Patient {
 
   // Preventive Care & Risk Stratification
   preventionPlans PreventionPlan[]
+
+  // CDSS V3
+  analysisJobs       AnalysisJob[]
+  parsedDocuments    ParsedDocument[]
+  clinicalEncounters ClinicalEncounter[]
   riskScores      RiskScore[]
   nutritionPlans  NutritionPlan[]
   exercisePlans   ExercisePlan[]
@@ -873,6 +884,46 @@ model Patient {
   @@index([cpf])
   @@index([isPalliativeCare])
   @@map("patients")
+}
+
+// ============================================================================
+// PATIENT DOSSIER (De-identified longitudinal summary for CDS)
+// ============================================================================
+
+enum DossierStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+model PatientDossier {
+  id        String   @id @default(cuid())
+  patientId String   @unique
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  status DossierStatus @default(PENDING)
+  version Int          @default(1)
+
+  // Human-readable de-identified longitudinal summary (safe to send to AI)
+  deidentifiedSummary String @db.Text
+
+  // Structured snapshot (safe fields only; do not store direct identifiers here)
+  structured Json?
+
+  // Tamper-evident hash (sha256 of canonical JSON payload)
+  dataHash String @db.Char(64)
+
+  // Telemetry / debugging
+  lastComputedAt  DateTime?
+  lastSourceEventAt DateTime?
+  lastError       String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([status])
+  @@map("patient_dossiers")
 }
 
 // ============================================================================
@@ -1624,6 +1675,7 @@ model Appointment {
 
   // Relations
   scribeSessions ScribeSession[]
+  clinicalEncounters ClinicalEncounter[]
   situations     AppointmentSituation[]
   noShowHistory  NoShowHistory? // Phase 5: No-show tracking
 
@@ -2098,6 +2150,143 @@ enum ScribeStatus {
   PROCESSING
   COMPLETED
   FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// CDSS V3 - Async Job Tracking (BullMQ + auditability)
+// ============================================================================
+
+model AnalysisJob {
+  id String @id @default(cuid())
+
+  type   JobType
+  status JobStatus @default(PENDING)
+  progress Int @default(0)
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  encounterId String?
+  encounter   ClinicalEncounter? @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+
+  parsedDocuments ParsedDocument[]
+
+  bullmqJobId String? @unique
+
+  inputData  Json
+  resultData Json?
+  errorMessage String? @db.Text
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([encounterId])
+  @@index([status])
+  @@index([type])
+  @@map("analysis_jobs")
+}
+
+enum JobType {
+  SUMMARY_GEN
+  PREVENTION_CHECK
+  DOCUMENT_PARSE
+}
+
+enum JobStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================================
+// CDSS V3 - Parsed Documents (de-identified extracts)
+// ============================================================================
+
+model ParsedDocument {
+  id String @id @default(cuid())
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  jobId String
+  job   AnalysisJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  status ParsedDocumentStatus @default(PENDING)
+
+  originalName  String
+  fileType      String
+  fileSizeBytes Int
+  fileHash      String
+
+  extractedText String? @db.Text
+  structuredData Json
+  fhirResources  Json? // JsonArray (stored as Json)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([jobId])
+  @@index([status])
+  @@index([fileHash])
+  @@map("parsed_documents")
+}
+
+enum ParsedDocumentStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+// ============================================================================
+// CDSS V3 - Clinical Encounters (for summary generation + longitudinal context)
+// ============================================================================
+
+model ClinicalEncounter {
+  id String @id @default(cuid())
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  providerId String
+  provider   User @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  // CDSS V3
+  analysisJobs AnalysisJob[]
+
+  scheduledAt DateTime
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  status EncounterStatus @default(SCHEDULED)
+
+  chiefComplaint String? @db.Text
+  summaryDraft   Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([providerId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("clinical_encounters")
+}
+
+enum EncounterStatus {
+  SCHEDULED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
   CANCELLED
 }
 

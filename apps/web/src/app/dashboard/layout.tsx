@@ -177,15 +177,20 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 height={32}
               />
               {!sidebarCollapsed && (
-              <span
-                className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
-                style={{
-                  fontWeight: 600,
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                Holi Labs
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
+                  style={{
+                    fontWeight: 600,
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  Holi Labs
+                </span>
+                <span className="inline-flex items-center rounded-full border border-emerald-600/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-700 dark:text-emerald-300">
+                  BETA
+                </span>
+              </div>
               )}
             </Link>
             <button
@@ -233,9 +238,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                           }}
                           className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                         >
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {ni.name}
-                          </span>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${ni.gradient || 'from-gray-400 to-gray-600'} flex items-center justify-center shadow-lg`}>
+                              <div className="relative w-4 h-4">
+                                <Image src={ni.icon} alt={ni.name} width={16} height={16} className="dark:invert" />
+                              </div>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                              {ni.name}
+                            </span>
+                          </div>
                           <span className="text-xs text-gray-600 dark:text-gray-300">
                             {ni.href.replace('/dashboard', '') || '/'}
                           </span>
@@ -252,9 +264,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                 }}
                                 className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                               >
-                                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                                  {si.name}
-                                </span>
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className={`w-7 h-7 rounded-xl bg-gradient-to-br ${si.gradient || 'from-gray-400 to-gray-600'} flex items-center justify-center`}>
+                                    <div className="relative w-4 h-4">
+                                      <Image src={si.icon} alt={si.name} width={16} height={16} className="dark:invert" />
+                                    </div>
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                                    {si.name}
+                                  </span>
+                                </div>
                                 <span className="text-xs text-gray-600 dark:text-gray-300">
                                   {si.href.replace('/dashboard', '')}
                                 </span>

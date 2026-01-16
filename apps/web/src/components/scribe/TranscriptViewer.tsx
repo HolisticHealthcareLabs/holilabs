@@ -47,9 +47,9 @@ export default function TranscriptViewer({
   };
 
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.9) return 'bg-green-100 text-green-700 border-green-300';
-    if (confidence >= 0.85) return 'bg-yellow-100 text-yellow-700 border-yellow-300';
-    return 'bg-red-100 text-red-700 border-red-300';
+    if (confidence >= 0.9) return 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-200 dark:border-green-700/50';
+    if (confidence >= 0.85) return 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-700/50';
+    return 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/50';
   };
 
   const getConfidenceBadge = (confidence: number) => {
@@ -151,21 +151,21 @@ export default function TranscriptViewer({
             onMouseLeave={() => setHoveredIndex(null)}
             className={`relative group p-4 rounded-lg border-2 transition-all ${
               isJustCorrected
-                ? 'bg-green-50 border-green-400 shadow-lg animate-pulse'
+                ? 'bg-green-50 border-green-400 shadow-lg animate-pulse dark:bg-green-900/20 dark:border-green-700/60'
                 : isEditing
-                ? 'bg-blue-50 border-blue-400 shadow-lg'
+                ? 'bg-blue-50 border-blue-400 shadow-lg dark:bg-blue-900/20 dark:border-blue-700/60'
                 : isCorrected
-                ? 'bg-emerald-50 border-emerald-300 hover:border-emerald-400'
+                ? 'bg-emerald-50 border-emerald-300 hover:border-emerald-400 dark:bg-emerald-900/15 dark:border-emerald-700/50 dark:hover:border-emerald-600/70'
                 : isLowConfidence
-                ? 'bg-yellow-50 border-yellow-300 hover:border-yellow-400'
+                ? 'bg-yellow-50 border-yellow-300 hover:border-yellow-400 dark:bg-yellow-900/15 dark:border-yellow-700/50 dark:hover:border-yellow-600/70'
                 : segment.speaker === 'Doctor'
-                ? 'bg-blue-50 border-blue-200 hover:border-blue-300'
-                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                ? 'bg-blue-50 border-blue-200 hover:border-blue-300 dark:bg-blue-900/10 dark:border-blue-800/40 dark:hover:border-blue-700/60'
+                : 'bg-gray-50 border-gray-200 hover:border-gray-300 dark:bg-gray-900/40 dark:border-gray-800/60 dark:hover:border-gray-700'
             }`}
           >
             {/* Corrected Badge */}
             {isCorrected && !isEditing && (
-              <div className="absolute -top-2 left-4 bg-green-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
+              <div className="absolute -top-2 left-4 bg-green-600 text-white text-xs px-3 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
                 <span>✓</span>
                 <span>Corregido por médico</span>
               </div>
@@ -173,7 +173,7 @@ export default function TranscriptViewer({
 
             {/* Low Confidence Warning Banner */}
             {isLowConfidence && !isEditing && !isCorrected && (
-              <div className="absolute -top-2 left-4 bg-yellow-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
+              <div className="absolute -top-2 left-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full font-bold shadow-md flex items-center gap-1">
                 <span>⚠️</span>
                 <span>Baja confianza - Revisar</span>
               </div>
@@ -192,7 +192,7 @@ export default function TranscriptViewer({
                   {segment.speaker}
                 </span>
                 {/* Decorative - low contrast intentional for timestamp badge */}
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-mono bg-white dark:bg-gray-700 px-2 py-1 rounded">
+                <span className="text-xs text-gray-500 dark:text-gray-300 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700">
                   {formatTime(segment.startTime)} → {formatTime(segment.endTime)}
                 </span>
               </div>
@@ -229,7 +229,7 @@ export default function TranscriptViewer({
                 <textarea
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  className="w-full p-3 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 leading-relaxed min-h-[100px] resize-y"
+                  className="w-full p-3 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-900 leading-relaxed min-h-[100px] resize-y"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') handleCancelEdit();
@@ -244,7 +244,7 @@ export default function TranscriptViewer({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleCancelEdit}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       {t('transcriptCancel')}
                     </button>
@@ -261,22 +261,22 @@ export default function TranscriptViewer({
                 </div>
 
                 {/* Original text for reference */}
-                <div className="p-3 bg-gray-100 border-l-4 border-gray-400 rounded">
+                <div className="p-3 bg-gray-100 dark:bg-gray-900 border-l-4 border-gray-400 dark:border-gray-600 rounded">
                   <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">{t('transcriptOriginalAi')}</p>
-                  <p className="text-sm text-gray-700 italic">{segment.text}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200 italic">{segment.text}</p>
                 </div>
               </div>
             ) : (
               <div>
-                <p className="text-gray-900 leading-relaxed text-[15px]">{segment.text}</p>
+                <p className="text-gray-900 dark:text-gray-100 leading-relaxed text-[15px]">{segment.text}</p>
 
                 {/* Confidence Details (for low confidence) */}
                 {isLowConfidence && (
-                  <div className="mt-3 p-2 bg-yellow-100 border-l-4 border-yellow-500 rounded text-xs">
-                    <p className="font-semibold text-yellow-800">
+                  <div className="mt-3 p-2 bg-yellow-100 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 rounded text-xs">
+                    <p className="font-semibold text-yellow-800 dark:text-yellow-200">
                       ⚠️ {t('transcriptLowConfidenceTitle')} ({Math.round(segment.confidence * 100)}%)
                     </p>
-                    <p className="text-yellow-700 mt-1">
+                    <p className="text-yellow-700 dark:text-yellow-200/80 mt-1">
                       {t('transcriptLowConfidenceBody')}
                     </p>
                   </div>
@@ -288,7 +288,7 @@ export default function TranscriptViewer({
       })}
 
       {/* Summary Stats with Training Metrics */}
-      <div className="sticky bottom-0 bg-gradient-to-r from-gray-50 to-gray-100 border-t-2 border-gray-300 p-4 rounded-lg mt-4">
+      <div className="sticky bottom-0 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-t-2 border-gray-300 dark:border-gray-700 p-4 rounded-lg mt-4">
         <div className="grid grid-cols-4 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{segments.length}</p>
@@ -321,7 +321,7 @@ export default function TranscriptViewer({
 
         {/* Training Loop Indicator */}
         {totalCorrections > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600">
+          <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
             {/* Decorative - low contrast intentional for training loop metadata */}
             <div className="flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>

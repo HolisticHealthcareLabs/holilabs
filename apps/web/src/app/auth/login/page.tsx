@@ -42,7 +42,13 @@ function LoginContent() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password. Please try again.');
+        // NextAuth can return other errors (CSRF/session/callback) that look like "bad password" in the UI.
+        // In development, surface the real code to make issues obvious.
+        const msg =
+          process.env.NODE_ENV === 'development'
+            ? `Sign-in failed: ${result.error}`
+            : 'Invalid email or password. Please try again.';
+        setError(msg);
         setIsLoading(false);
         return;
       }

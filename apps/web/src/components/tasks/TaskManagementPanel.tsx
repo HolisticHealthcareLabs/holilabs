@@ -33,7 +33,7 @@ interface TaskManagementPanelProps {
   compact?: boolean;
 }
 
-export default function TaskManagementPanel({ userId = 'system', compact = false }: TaskManagementPanelProps) {
+export default function TaskManagementPanel({ userId, compact = false }: TaskManagementPanelProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [counts, setCounts] = useState<TaskCounts>({ today: 0, overdue: 0, all: 0 });
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,12 @@ export default function TaskManagementPanel({ userId = 'system', compact = false
 
   const fetchTasks = async () => {
     try {
+      if (!userId) {
+        setTasks([]);
+        setCounts({ today: 0, overdue: 0, all: 0 });
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       const params = new URLSearchParams({
         userId,

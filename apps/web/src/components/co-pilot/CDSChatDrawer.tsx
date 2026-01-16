@@ -46,13 +46,25 @@ export function CDSChatDrawer({
 }) {
   const [provider, setProvider] = useState<Provider>('gemini');
   const [messages, setMessages] = useState<ChatMsg[]>([]);
-  const [draft, setDraft] = useState('');
+  // IMPORTANT: keep the textbox *uncontrolled* to avoid losing keystrokes/focus on re-renders
+  // (this was causing "can't type properly" reports when background state updates occurred).
+  const draftRef = useRef<HTMLTextAreaElement | null>(null);
+  const [draftNonEmpty, setDraftNonEmpty] = useState(false);
   const [loading, setLoading] = useState(false);
   const [contextSummary, setContextSummary] = useState<any>(null);
   const [contextError, setContextError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'chat' | 'soap'>('chat');
   const lastSyncedTranscriptRef = useRef<string>('');
-  const lastSyncedAttachmentsRef = useRef<string>('');
+  const [showPromptPreview, setShowPromptPreview] = useState(false);
+  const [importMenuOpen, setImportMenuOpen] = useState(false);
+  const importMenuRef = useRef<HTMLDivElement | null>(null);
+
+  // Gemini-style "plus" imports (explicit toggles)
+  const [includeLabs, setIncludeLabs] = useState(false);
+  const [includeImaging, setIncludeImaging] = useState(false);
+  const [includeHistory, setIncludeHistory] = useState(false);
+  const [dossierSummary, setDossierSummary] = useState<string>('');
+  const [dossierError, setDossierError] = useState<string>('');
 
   const transcriptSnippet = useMemo(() => {
     const t = (transcriptText || '').trim();
@@ -81,6 +93,36 @@ export function CDSChatDrawer({
       }
     })();
   }, [open, patientId]);
+
+  // Close import menu on outside click
+  useEffect(() => {
+    if (!importMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!importMenuRef.current) return;
+      if (!importMenuRef.current.contains(e.target as Node)) {
+        setImportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [importMenuOpen]);
+
+  const fetchDossierSummary = async () => {
+    if (!patientId) return;
+    setDossierError('');
+    try {
+      const res = await fetch(`/api/patients/${patientId}/dossier`, { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Failed to load patient dossier');
+      const sum = String(data?.data?.deidentifiedSummary || '');
+      setDossierSummary(sum);
+      if (!sum) {
+        setDossierError('Patient dossier not ready yet. It will populate automatically in the background.');
+      }
+    } catch (e: any) {
+      setDossierError(e?.message || 'Failed to load patient dossier');
+    }
+  };
 
   const formatContext = (ctx: any) => {
     if (!ctx) return '[loading…]';
@@ -138,38 +180,14 @@ export function CDSChatDrawer({
 
   useEffect(() => {
     if (!open) return;
-    const base = `CDS request for${patientName ? ` ${patientName}` : ' current patient'}.\n\n` +
-      `CONTEXT (structured):\n${formatContext(contextSummary)}\n\n` +
-      `ATTACHMENTS (selected):\n${formatAttachments(attachments)}\n\n` +
-      `SOAP SUMMARY (live):\n` +
-      `CC: ${soapSummary?.chiefComplaint || '—'}\n` +
-      `S: ${soapSummary?.subjective || '—'}\n` +
-      `O: ${soapSummary?.objective || '—'}\n` +
-      `A: ${soapSummary?.assessment || '—'}\n` +
-      `P: ${soapSummary?.plan || '—'}\n\n` +
-      `LATEST TRANSCRIPT (snippet):\n${transcriptSnippet || '—'}\n\n` +
-      `TASK: Provide (1) ranked differential (2) red flags (3) 3 clarifying questions (4) recommended workup (5) initial plan.\n\n` +
-      `Doctor question: `;
-    setDraft(base);
-    // only when opening; don't fight the user once they start typing
+    // Keep the clinician-visible input clean. We attach context/soap/transcript/attachments
+    // automatically at send-time so the UI doesn't look like a wall of template text.
+    if (draftRef.current) {
+      draftRef.current.value = '';
+    }
+    setDraftNonEmpty(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const sig = JSON.stringify(attachments || []);
-    if (sig === lastSyncedAttachmentsRef.current) return;
-    lastSyncedAttachmentsRef.current = sig;
-
-    const block = `ATTACHMENTS (selected):\n${formatAttachments(attachments)}\n\n`;
-    setDraft((prev) => {
-      if (prev.includes('ATTACHMENTS (selected):')) {
-        return prev.replace(/ATTACHMENTS \(selected\):[\s\S]*?\n\nSOAP SUMMARY \(live\):/, `${block}SOAP SUMMARY (live):`);
-      }
-      return `${prev}\n\n${block}`;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attachments, open]);
 
   const syncTranscriptIntoPrompt = () => {
     const full = (transcriptText || '').trim();
@@ -179,25 +197,61 @@ export function CDSChatDrawer({
       delta = full.slice(last.length).trim();
     }
     // If we can't compute a clean delta (e.g. transcript reflow), fall back to snippet.
-    const payload = delta ? `NEW TRANSCRIPT (since last sync):\n${delta}\n\n` : `LATEST TRANSCRIPT (snippet):\n${transcriptSnippet || '—'}\n\n`;
+    const payload = delta
+      ? `\n\n(Transcript — new since last sync)\n${delta}\n`
+      : `\n\n(Transcript — latest snippet)\n${transcriptSnippet || '—'}\n`;
     if (full) lastSyncedTranscriptRef.current = full;
+    const el = draftRef.current;
+    if (!el) return;
+    el.value = `${(el.value || '').trim()}${payload}`.trim();
+    setDraftNonEmpty(Boolean(el.value.trim()));
+    try {
+      el.focus();
+      el.selectionStart = el.selectionEnd = el.value.length;
+    } catch {}
+  };
 
-    const header = payload;
-    setDraft((prev) => {
-      // Replace existing "LATEST TRANSCRIPT" block if present, else append near end.
-      if (prev.includes('LATEST TRANSCRIPT (snippet):') || prev.includes('NEW TRANSCRIPT (since last sync):')) {
-        return prev.replace(/(LATEST TRANSCRIPT \(snippet\):|NEW TRANSCRIPT \(since last sync\):)[\s\S]*?\n\nTASK:/, `${header}TASK:`);
-      }
-      return `${prev}\n\n${header}`;
-    });
+  const buildHiddenContext = () => {
+    const imports: string[] = [];
+    if (includeHistory) {
+      imports.push(
+        `PATIENT HISTORY (de-identified dossier):\n${dossierSummary || (dossierError ? `[${dossierError}]` : '[loading…]')}`
+      );
+    }
+    if (includeLabs) {
+      imports.push(`LABS (imported):\n${formatContext(contextSummary)}`);
+    }
+    if (includeImaging) {
+      // For now, include whatever imaging-related artifacts exist in "attachments selected".
+      // This keeps the behavior explicit and avoids silently expanding scope.
+      imports.push(`IMAGING (imported):\n${formatAttachments(attachments)}`);
+    }
+
+    return (
+      `CDS request for${patientName ? ` ${patientName}` : ' current patient'}.\n\n` +
+      (imports.length ? `IMPORTS (explicit):\n${imports.join('\n\n')}\n\n` : '') +
+      `CONTEXT (structured):\n${formatContext(contextSummary)}\n\n` +
+      `ATTACHMENTS (selected):\n${formatAttachments(attachments)}\n\n` +
+      `SOAP SUMMARY (live):\n` +
+      `CC: ${soapSummary?.chiefComplaint || '—'}\n` +
+      `S: ${soapSummary?.subjective || '—'}\n` +
+      `O: ${soapSummary?.objective || '—'}\n` +
+      `A: ${soapSummary?.assessment || '—'}\n` +
+      `P: ${soapSummary?.plan || '—'}\n\n` +
+      `LATEST TRANSCRIPT (snippet):\n${transcriptSnippet || '—'}\n\n` +
+      `TASK: Provide (1) ranked differential (2) red flags (3) 3 clarifying questions (4) recommended workup (5) initial plan.\n\n`
+    );
   };
 
   async function send() {
-    if (!draft.trim()) return;
+    const clinicianText = (draftRef.current?.value || '').trim();
+    if (!clinicianText) return;
     setLoading(true);
-    const nextMessages: ChatMsg[] = [...messages, { role: 'user', content: draft }];
+    const payload = `${buildHiddenContext()}Doctor question:\n${clinicianText}`;
+    const nextMessages: ChatMsg[] = [...messages, { role: 'user', content: payload }];
     setMessages(nextMessages);
-    setDraft('');
+    if (draftRef.current) draftRef.current.value = '';
+    setDraftNonEmpty(false);
 
     try {
       const res = await fetch('/api/ai/chat', {
@@ -272,13 +326,71 @@ export function CDSChatDrawer({
             <option value="claude">Claude (Anthropic)</option>
             <option value="openai">OpenAI</option>
           </select>
-          <button
-            onClick={() => window.open('/dashboard/settings', '_blank')}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
-            title="Add / manage API keys"
-          >
-            +
-          </button>
+          {/* Gemini-style import [+] */}
+          <div ref={importMenuRef} className="relative">
+            <button
+              onClick={() => setImportMenuOpen((v) => !v)}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+              title="Import patient artifacts"
+              aria-label="Import patient artifacts"
+            >
+              +
+            </button>
+            {importMenuOpen ? (
+              <div className="absolute left-0 top-full mt-2 w-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl overflow-hidden z-[200]">
+                <button
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
+                  onClick={async () => {
+                    setIncludeLabs(true);
+                    setImportMenuOpen(false);
+                  }}
+                >
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">Import labs</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Recent lab results (from patient context)</div>
+                </button>
+                <button
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
+                  onClick={async () => {
+                    setIncludeImaging(true);
+                    setImportMenuOpen(false);
+                  }}
+                >
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">Import imaging</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Selected imaging attachments</div>
+                </button>
+                <button
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
+                  onClick={async () => {
+                    setIncludeHistory(true);
+                    setImportMenuOpen(false);
+                    await fetchDossierSummary();
+                  }}
+                >
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">Import patient history</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">De‑identified dossier summary</div>
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Small chips showing what’s included */}
+          <div className="flex items-center gap-2">
+            {includeLabs ? (
+              <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                Labs ✓
+              </span>
+            ) : null}
+            {includeImaging ? (
+              <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                Imaging ✓
+              </span>
+            ) : null}
+            {includeHistory ? (
+              <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200">
+                History ✓
+              </span>
+            ) : null}
+          </div>
           <button
             onClick={syncTranscriptIntoPrompt}
             className="ml-auto px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
@@ -414,21 +526,61 @@ export function CDSChatDrawer({
         </div>
 
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+          {/* Prompt engineering preview (optional). This shows what we will send *around* the clinician's question. */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowPromptPreview((v) => !v)}
+              className="text-xs font-semibold text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
+            >
+              {showPromptPreview ? 'Hide prompt preview' : 'Show prompt preview'}
+            </button>
+            {showPromptPreview ? (
+              <button
+                onClick={() => {
+                  try {
+                    navigator.clipboard.writeText(buildHiddenContext());
+                  } catch {}
+                }}
+                className="text-xs font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                Copy
+              </button>
+            ) : null}
+          </div>
+
+          {showPromptPreview ? (
+            <pre className="w-full max-h-48 overflow-auto p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-[11px] leading-4 text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+              {buildHiddenContext()}
+            </pre>
+          ) : null}
+
           <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            ref={draftRef}
+            onChange={(e) => setDraftNonEmpty(Boolean(e.target.value.trim()))}
+            onKeyDown={(e) => {
+              // Chat UX: Enter sends, Shift+Enter inserts newline
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!loading && draftNonEmpty) {
+                  void send();
+                }
+              }
+            }}
             className="w-full h-32 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             placeholder="Ask a clinical question…"
           />
           <div className="flex items-center justify-between">
             <button
-              onClick={() => setDraft('')}
+              onClick={() => {
+                if (draftRef.current) draftRef.current.value = '';
+                setDraftNonEmpty(false);
+              }}
               className="px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
             >
               Clear
             </button>
             <button
-              disabled={loading}
+              disabled={loading || !draftNonEmpty}
               onClick={send}
               className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white disabled:opacity-50"
             >

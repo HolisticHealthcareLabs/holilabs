@@ -10,6 +10,8 @@ import { createClient } from '@deepgram/sdk';
 
 export interface DeepgramTranscriptSegment {
   speaker: string;
+  speakerIndex?: number;
+  role?: 'DOCTOR' | 'PATIENT' | 'UNKNOWN';
   text: string;
   startTime: number;
   endTime: number;
@@ -45,28 +47,32 @@ function getDeepgramClient() {
  */
 export async function transcribeAudioWithDeepgram(
   audioBuffer: Buffer,
-  languageCode: 'pt' | 'es'
+  languageCode: 'en' | 'pt' | 'es'
 ): Promise<DeepgramTranscriptResult> {
   const startTime = Date.now();
 
   try {
     const deepgram = getDeepgramClient();
 
+    // Best-practice model selection:
+    // - English: medical model
+    // - Spanish/Portuguese: general Nova (medical model is not consistently supported cross-lingual)
+    const model = languageCode === 'en' ? 'nova-3-medical' : 'nova-3';
+
     // Call Deepgram API with medical-optimized settings
     const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
       audioBuffer,
       {
-        model: 'nova-2', // Latest model (most accurate)
+        model,
         language: languageCode, // Portuguese or Spanish
         smart_format: true, // Auto-format numbers, dates, times
         punctuate: true, // Add punctuation
         paragraphs: true, // Group into paragraphs
         diarize: true, // Speaker diarization
-        diarize_version: '2023-09-27', // Latest diarization model
+        diarize_version: '2023-09-27',
         utterances: true, // Group by speaker turns
         filler_words: false, // Remove "um", "ah" (cleaner medical notes)
         profanity_filter: false, // Don't filter medical terms
-        redact: ['pci', 'numbers', 'ssn'], // Basic PHI redaction (HIPAA)
         numerals: true, // Convert "twenty three" → "23"
         detect_language: false, // We know the language (faster)
       }
@@ -86,7 +92,9 @@ export async function transcribeAudioWithDeepgram(
     // Extract speaker-diarized segments from utterances
     const utterances = result.results.utterances || [];
     const segments: DeepgramTranscriptSegment[] = utterances.map((utterance, index) => ({
-      speaker: utterance.speaker === 0 ? 'Doctor' : 'Paciente', // Speaker 0 = Doctor, Speaker 1+ = Patient
+      speaker: utterance.speaker === 0 ? 'Doctor' : 'Patient',
+      speakerIndex: utterance.speaker,
+      role: utterance.speaker === 0 ? 'DOCTOR' : 'PATIENT',
       text: utterance.transcript,
       startTime: utterance.start,
       endTime: utterance.end,

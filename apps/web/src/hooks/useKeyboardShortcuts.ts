@@ -41,8 +41,11 @@ interface UseKeyboardShortcutsOptions {
 /**
  * Platform-specific modifier key
  */
-export const isMac = typeof window !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform);
-export const modKey = isMac ? 'cmd' : 'ctrl';
+export const isMac =
+  typeof navigator !== 'undefined' &&
+  typeof navigator.platform === 'string' &&
+  /Mac|iPhone|iPod|iPad/.test(navigator.platform);
+export const modKey: 'cmd' | 'ctrl' = isMac ? 'cmd' : 'ctrl';
 
 /**
  * Normalize key combination string

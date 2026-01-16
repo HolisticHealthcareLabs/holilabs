@@ -265,10 +265,20 @@ export function EnhancedStatCard({
         <div className="flex items-start justify-between gap-4">
           {/* Main content */}
           <div className="flex-1 min-w-0">
-            {/* Label */}
-            <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">
-              {label}
-            </p>
+            {/* Title row (icon + label like modern analytics tiles) */}
+            <div className="flex items-center gap-3 mb-2">
+              {icon ? (
+                <div
+                  className={`flex-shrink-0 p-2 rounded-xl ${iconBackground || colors.iconBg}`}
+                  aria-hidden="true"
+                >
+                  <div className={`${colors.iconColor} opacity-90 scale-75 origin-left`}>{icon}</div>
+                </div>
+              ) : null}
+              <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                {label}
+              </p>
+            </div>
 
             {/* Value */}
             {loading ? (
@@ -319,19 +329,7 @@ export function EnhancedStatCard({
             )}
           </div>
 
-          {/* Icon */}
-          {icon && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className={`flex-shrink-0 p-4 rounded-xl ${iconBackground || colors.iconBg} ${
-                onClick ? 'group-hover:scale-110' : ''
-              } transition-transform duration-300`}
-            >
-              <div className={`w-8 h-8 ${colors.iconColor}`}>{icon}</div>
-            </motion.div>
-          )}
+          {/* Icon is rendered inline with the label for better scanability */}
         </div>
 
         {/* Click indicator */}
