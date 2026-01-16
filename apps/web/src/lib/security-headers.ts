@@ -12,7 +12,12 @@ import { NextResponse } from 'next/server';
  * @param nonce - Cryptographically secure nonce for inline scripts
  */
 function getCSP(nonce?: string) {
-  const isDev = process.env.NODE_ENV === 'development';
+  // Next.js dev requires some inline scripts. Some developer shells export NODE_ENV=production
+  // globally, which would incorrectly force strict CSP on localhost and break the dev runtime.
+  // Treat localhost as "dev-like" regardless of NODE_ENV.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  const isLocalhost = appUrl.includes('localhost') || appUrl.includes('127.0.0.1');
+  const isDevLike = process.env.NODE_ENV !== 'production' || isLocalhost;
 
   const cspDirectives = [
     // Default source - only same origin
@@ -21,8 +26,9 @@ function getCSP(nonce?: string) {
     // Scripts - use nonce for inline scripts instead of unsafe-inline
     // Development: Allow unsafe-eval for HMR and hot-reloading
     // Production: Strict nonce-based policy (no external CDNs for security)
-    isDev
-      ? `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""} 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com`
+    isDevLike
+      // Next.js dev runtime uses some inline scripts; allow unsafe-inline in development only.
+      ? `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""} 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com`
       : `script-src 'self' ${nonce ? `'nonce-${nonce}'` : ""}`,
 
     // Styles - keep unsafe-inline for Tailwind/CSS-in-JS (required for dynamic styling)
@@ -35,10 +41,10 @@ function getCSP(nonce?: string) {
     // Fonts - allow same origin and Google Fonts
     "font-src 'self' data: https://fonts.gstatic.com",
 
-    // Connect - allow same origin, app origin, and monitoring (Sentry)
+    // Connect - allow same origin, app origin, monitoring (Sentry), and realtime transcription (Deepgram)
     `connect-src 'self' ${
       process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    } https://*.sentry.io wss://localhost:* ws://localhost:*`,
+    } https://*.sentry.io wss://localhost:* ws://localhost:* https://api.deepgram.com wss://api.deepgram.com`,
 
     // Media - allow same origin
     "media-src 'self' blob:",
@@ -59,10 +65,10 @@ function getCSP(nonce?: string) {
     "frame-ancestors 'none'",
 
     // Upgrade insecure requests in production
-    ...(!isDev ? ["upgrade-insecure-requests"] : []),
+    ...(!isDevLike ? ["upgrade-insecure-requests"] : []),
 
     // CSP violation reporting (production only)
-    ...(!isDev ? [`report-uri ${process.env.NEXT_PUBLIC_APP_URL || ''}/api/security/csp-report`] : []),
+    ...(!isDevLike ? [`report-uri ${process.env.NEXT_PUBLIC_APP_URL || ''}/api/security/csp-report`] : []),
   ];
 
   return cspDirectives.join('; ');
@@ -113,8 +119,9 @@ export function applySecurityHeaders(response: NextResponse, nonce?: string): Ne
   response.headers.set(
     'Permissions-Policy',
     [
-      'camera=()',           // No camera access
-      'microphone=()',       // No microphone access
+      // App needs mic for scribe/transcription. Camera can remain blocked unless/until needed.
+      'camera=()',
+      'microphone=(self)',
       'geolocation=(self)',  // Geolocation only from same origin
       'interest-cohort=()',  // Disable FLoC tracking
       'payment=(self)',      // Payment only from same origin

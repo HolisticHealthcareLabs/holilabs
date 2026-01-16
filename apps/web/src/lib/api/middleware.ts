@@ -248,9 +248,11 @@ export function requireAuth() {
       // Use proper NextAuth v5 session validation for HIPAA compliance
       // ===================================================================
 
-      // Import NextAuth auth function
-      const { getServerSession } = await import('@/lib/auth');
-      const session = await getServerSession();
+      // Use the canonical NextAuth v5 instance used by `/api/auth/*`
+      // IMPORTANT: Do NOT import `@/lib/auth` here (legacy v4/v5 compat module) or you'll validate
+      // against a different NextAuth instance and all protected routes will 401.
+      const { auth } = await import('@/lib/auth/auth');
+      const session = await auth();
 
       // Validate session exists and has user
       if (!session || !session.user || !session.user.id) {

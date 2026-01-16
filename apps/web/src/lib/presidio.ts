@@ -40,13 +40,19 @@ export interface AnonymizeResponse {
  */
 export async function anonymizePatientData(text: string): Promise<string> {
   try {
+    const strict = (process.env.REQUIRE_DEIDENTIFICATION || 'true') === 'true';
+    const timeoutMs = Number(process.env.PRESIDIO_TIMEOUT_MS || 8000);
+
     // 1. Analyze the text to find PII
+    const analyzeController = new AbortController();
+    const analyzeTimeout = setTimeout(() => analyzeController.abort(), timeoutMs);
     const analyzeResponse = await fetch(`${PRESIDIO_ANALYZER_URL}/analyze`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Connection': 'close',
       },
+      signal: analyzeController.signal,
       body: JSON.stringify({
         text: text,
         language: 'en',
@@ -65,10 +71,12 @@ export async function anonymizePatientData(text: string): Promise<string> {
         ],
       }),
     });
+    clearTimeout(analyzeTimeout);
 
     if (!analyzeResponse.ok) {
-      // If Presidio is not running, warn and return original text (fail open for prototype, or fail closed for prod)
-      console.warn('Presidio Analyzer service not reachable or returned error. Returning original text.');
+      const msg = `Presidio Analyzer returned ${analyzeResponse.status}`;
+      if (strict) throw new Error(msg);
+      console.warn(`${msg}. Returning original text (non-strict mode).`);
       return text;
     }
 
@@ -80,12 +88,15 @@ export async function anonymizePatientData(text: string): Promise<string> {
 
     // 2. Anonymize the text using the findings
     // We use the Anonymizer service to ensure consistent replacement
+    const anonController = new AbortController();
+    const anonTimeout = setTimeout(() => anonController.abort(), timeoutMs);
     const anonymizeResponse = await fetch(`${PRESIDIO_ANONYMIZER_URL}/anonymize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Connection': 'close',
       },
+      signal: anonController.signal,
       body: JSON.stringify({
         text: text,
         analyzer_results: findings,
@@ -99,9 +110,12 @@ export async function anonymizePatientData(text: string): Promise<string> {
         },
       }),
     });
+    clearTimeout(anonTimeout);
 
     if (!anonymizeResponse.ok) {
-      console.warn('Presidio Anonymizer service not reachable. Returning original text.');
+      const msg = `Presidio Anonymizer returned ${anonymizeResponse.status}`;
+      if (strict) throw new Error(msg);
+      console.warn(`${msg}. Returning original text (non-strict mode).`);
       return text;
     }
 
@@ -110,8 +124,9 @@ export async function anonymizePatientData(text: string): Promise<string> {
 
   } catch (error) {
     console.error('Error in anonymizePatientData:', error);
-    // Fallback: Return original text but log error. 
-    // In a strict production environment, you might want to throw an error to prevent data leak.
+    // Fail closed if strict.
+    const strict = (process.env.REQUIRE_DEIDENTIFICATION || 'true') === 'true';
+    if (strict) throw error instanceof Error ? error : new Error('De-identification failed');
     return text;
   }
 }

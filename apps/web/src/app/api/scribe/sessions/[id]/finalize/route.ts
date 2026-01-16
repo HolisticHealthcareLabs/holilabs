@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { transcribeAudioWithDeepgram } from '@/lib/transcription/deepgram';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import Anthropic from '@anthropic-ai/sdk';
-import { anonymizePatientData } from '@/lib/presidio';
+import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -190,16 +190,11 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // STEP 2.5: De-identify transcript with Presidio BEFORE persisting or sending to any LLM
+      // STEP 2.5: De-identify transcript with Presidio BEFORE persisting or sending to any LLM (hard gate)
       const anonymizeStartTime = Date.now();
-      const deidentifiedTranscript = await anonymizePatientData(transcriptText);
+      const deidentifiedTranscript = await deidentifyTranscriptOrThrow(transcriptText);
       const anonymizeDurationMs = Date.now() - anonymizeStartTime;
       console.log(`🛡️ Presidio anonymization completed in ${anonymizeDurationMs}ms`);
-
-      // Fail closed in production if Presidio is unavailable (avoid storing raw transcript)
-      if (process.env.NODE_ENV === 'production' && deidentifiedTranscript === transcriptText) {
-        throw new Error('Presidio unavailable: refusing to persist or process raw transcript');
-      }
 
       // Remove text from diarized segments (keep timing + speaker metadata only)
       const safeSegments = (segments || []).map((s: any) => ({
@@ -410,6 +405,11 @@ export const POST = createProtectedRoute(
         { status: 500 }
       );
     }
+  }
+  ,
+  {
+    roles: ['ADMIN', 'CLINICIAN'],
+    skipCsrf: true,
   }
 );
 

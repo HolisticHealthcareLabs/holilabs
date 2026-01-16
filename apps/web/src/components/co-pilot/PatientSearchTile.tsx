@@ -211,7 +211,8 @@ export default function PatientSearchTile({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
-                      transition={{ delay: index * 0.05 }}
+                      // Cap animation staggering; long lists should feel instant while typing.
+                      transition={{ delay: Math.min(index * 0.01, 0.08) }}
                       whileHover={{ scale: 1.02, x: 4 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelectPatient(patient)}
@@ -219,8 +220,9 @@ export default function PatientSearchTile({
                     >
                       <div className="flex items-center gap-3">
                         <motion.div
-                          whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
-                          transition={{ duration: 0.4 }}
+                          // Motion "spring" only supports 2 keyframes; avoid multi-keyframe rotate arrays (crashes the app)
+                          whileHover={{ scale: 1.15, rotate: -5 }}
+                          transition={{ duration: 0.15 }}
                           className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 group-hover:from-blue-400 group-hover:to-indigo-400 flex items-center justify-center text-gray-700 group-hover:text-white font-semibold transition"
                         >
                           {patient.firstName?.[0]}{patient.lastName?.[0]}

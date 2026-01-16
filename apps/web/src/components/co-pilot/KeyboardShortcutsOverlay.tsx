@@ -128,7 +128,8 @@ export default function KeyboardShortcutsOverlay({
                             initial={{ scale: 0, rotate: -180 }}
                             animate={{ scale: 1, rotate: 0 }}
                             transition={{ type: 'spring', damping: 15, delay: 0.2 }}
-                            whileHover={{ scale: 1.2, rotate: [0, -10, 10, -10, 0] }}
+                            // Avoid multi-keyframe rotate arrays on hover (can crash with spring-based animations)
+                            whileHover={{ scale: 1.2, rotate: -10 }}
                             className="text-2xl cursor-pointer"
                           >
                             {categoryIcons[category]}

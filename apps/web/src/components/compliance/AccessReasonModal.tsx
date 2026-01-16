@@ -63,9 +63,14 @@ export function AccessReasonModal({
   onCancel,
   autoSelectAfter = 30,
 }: AccessReasonModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [selectedReason, setSelectedReason] = useState<AccessReason>('DIRECT_PATIENT_CARE');
   const [purpose, setPurpose] = useState('');
   const [countdown, setCountdown] = useState(autoSelectAfter);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Auto-select countdown
   useEffect(() => {
@@ -91,6 +96,9 @@ export function AccessReasonModal({
   const handleSubmit = () => {
     onSelectReason(selectedReason, purpose || undefined);
   };
+
+  // Avoid hydration mismatch from HeadlessUI Dialog (portal behavior differs between SSR and client).
+  if (!mounted) return null;
 
   return (
     <Dialog open={isOpen} onClose={onCancel} className="relative z-50">

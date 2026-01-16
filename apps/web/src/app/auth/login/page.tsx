@@ -98,9 +98,10 @@ function LoginContent() {
         >
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+              {/* Removed "eye" icon per request */}
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11l.75 2.25L22 14l-2.25.75L19 17l-.75-2.25L16 14l2.25-.75L19 11z" />
               </svg>
             </div>
             <div className="flex-1">

@@ -14,6 +14,10 @@
 #   Output: FHIR R4 bundles ready for Medplum import
 #   Note: Uses US demographics (Synthea default)
 #
+# NOTE (Preferred):
+#   For a Docker-based flow that avoids installing Java on the host, use:
+#     ./scripts/generate-synthea-fhir-docker.sh
+#
 # COMPLIANCE:
 #   - LGPD Art. 48 compliant (no real patient data)
 #   - Safe for development, testing, and demo environments
@@ -54,6 +58,7 @@ echo ""
 if ! command -v java &> /dev/null; then
     log_error "Java is not installed. Synthea requires Java 11+"
     log_info "Install Java: brew install openjdk@11"
+    log_info "Or use Docker-based generator: ./scripts/generate-synthea-fhir-docker.sh"
     exit 1
 fi
 

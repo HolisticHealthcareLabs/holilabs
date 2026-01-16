@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#050b12"/>
+      <stop offset="1" stop-color="#0b1a2a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#2ad4ff" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#2ad4ff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.6"/>
+    </filter>
+  </defs>
+
+  <!-- Radiograph background -->
+  <rect width="1200" height="1600" fill="url(#bg)"/>
+  <rect width="1200" height="1600" fill="url(#glow)"/>
+
+  <!-- Film border -->
+  <rect x="60" y="60" width="1080" height="1480" rx="26" fill="none" stroke="#1b3b56" stroke-width="6"/>
+  <rect x="88" y="88" width="1024" height="1424" rx="18" fill="none" stroke="#173247" stroke-width="2" opacity="0.7"/>
+
+  <!-- Stylized hand bones (high-contrast, radiograph-like) -->
+  <g stroke="#bff3ff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.86">
+    <!-- Radius/Ulna -->
+    <path d="M420 1280 C430 1100, 460 980, 520 860 C560 780, 610 740, 660 700" />
+    <path d="M560 1320 C570 1120, 610 980, 700 840 C740 780, 790 740, 840 710" />
+
+    <!-- Carpals cluster -->
+    <g opacity="0.78">
+      <path d="M560 780 C590 750, 640 740, 690 760 C740 780, 760 820, 730 850 C700 880, 640 885, 590 860 C540 835, 530 805, 560 780Z" />
+      <path d="M500 820 C520 790, 560 780, 600 800 C640 820, 650 850, 630 880 C610 910, 560 915, 520 895 C480 875, 480 850, 500 820Z" />
+      <path d="M710 860 C735 835, 780 830, 815 855 C850 880, 850 915, 825 940 C800 965, 755 970, 720 945 C685 920, 685 885, 710 860Z" />
+    </g>
+
+    <!-- Metacarpals -->
+    <path d="M560 860 L520 1120" />
+    <path d="M620 860 L600 1160" />
+    <path d="M690 860 L700 1165" />
+    <path d="M760 875 L815 1140" />
+    <path d="M825 920 L930 1100" />
+
+    <!-- Phalanges (index to little) -->
+    <path d="M500 1120 L470 1250" />
+    <path d="M470 1250 L455 1340" />
+    <path d="M455 1340 L445 1410" />
+
+    <path d="M600 1160 L600 1290" />
+    <path d="M600 1290 L598 1380" />
+    <path d="M598 1380 L595 1450" />
+
+    <path d="M700 1165 L725 1290" />
+    <path d="M725 1290 L740 1380" />
+    <path d="M740 1380 L750 1445" />
+
+    <path d="M815 1140 L870 1260" />
+    <path d="M870 1260 L905 1350" />
+    <path d="M905 1350 L930 1415" />
+
+    <!-- Thumb -->
+    <path d="M930 1100 C995 1125, 1035 1180, 1045 1240" />
+    <path d="M1045 1240 C1055 1300, 1035 1350, 990 1375" />
+  </g>
+
+  <!-- Subtle glow overlay -->
+  <g filter="url(#soft)" opacity="0.28">
+    <path d="M560 860 L520 1120" stroke="#2ad4ff" stroke-width="18" stroke-linecap="round"/>
+    <path d="M690 860 L700 1165" stroke="#2ad4ff" stroke-width="18" stroke-linecap="round"/>
+  </g>
+
+  <!-- Minimal annotation -->
+  <g fill="#b7d9ff" opacity="0.55" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace">
+    <text x="110" y="140" font-size="26">DEMO RADIOGRAPH</text>
+    <text x="110" y="175" font-size="18">HAND • PA/OBLIQUE • NOT FOR CLINICAL USE</text>
+  </g>
+</svg>
+
+

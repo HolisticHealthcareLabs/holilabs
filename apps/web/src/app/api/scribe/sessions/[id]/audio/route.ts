@@ -217,6 +217,11 @@ export const POST = createProtectedRoute(
       );
     }
   }
+  ,
+  {
+    roles: ['ADMIN', 'CLINICIAN'],
+    skipCsrf: true,
+  }
 );
 
 // Note: In App Router, bodyParser is automatically disabled for route handlers

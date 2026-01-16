@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#0a0f1a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#g)"/>
+  <rect x="80" y="60" width="1040" height="680" rx="24" fill="#060a12" stroke="#2b3344" stroke-width="3"/>
+  <rect x="80" y="60" width="1040" height="680" rx="24" fill="url(#glow)"/>
+
+  <!-- "X-ray" frame -->
+  <g opacity="0.95" stroke="#c7d2fe" stroke-opacity="0.55" fill="none" stroke-linecap="round">
+    <path d="M600 190c-90 0-170 70-170 175 0 70 25 120 60 170 35 50 55 90 110 90s75-40 110-90c35-50 60-100 60-170 0-105-80-175-170-175z" stroke-width="4"/>
+    <path d="M510 325c30 20 60 28 90 28s60-8 90-28" stroke-width="3"/>
+    <path d="M470 395c45 30 85 44 130 44s85-14 130-44" stroke-width="3"/>
+    <path d="M460 470c55 36 98 52 140 52s85-16 140-52" stroke-width="3"/>
+    <path d="M505 250c-30 70-35 160-20 260" stroke-width="2.5" opacity="0.75"/>
+    <path d="M695 250c30 70 35 160 20 260" stroke-width="2.5" opacity="0.75"/>
+    <path d="M600 260v360" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- Label -->
+  <g fill="#e5e7eb" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" opacity="0.85">
+    <text x="120" y="120" font-size="28" font-weight="700">Demo Imaging: Chest X‑ray (synthetic)</text>
+    <text x="120" y="152" font-size="16" opacity="0.75">For UI prototyping only — not a real diagnostic image</text>
+  </g>
+</svg>
+
+

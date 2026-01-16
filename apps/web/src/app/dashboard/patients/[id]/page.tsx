@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AccessReasonModal } from '@/components/compliance/AccessReasonModal';
@@ -38,7 +38,10 @@ const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 export default function PatientProfile() {
   const params = useParams();
   const router = useRouter();
-  const patientId = params.id as string;
+  const patientId = (params?.id as string) || '';
+
+  // Avoid hydration mismatch from HeadlessUI Dialog / timers by mounting on client first.
+  const [mounted, setMounted] = useState(false);
 
   const [activeTab, setActiveTab] = useState<Tab>('clinical');
   const [isRxDrawerOpen, setIsRxDrawerOpen] = useState(false);
@@ -55,6 +58,8 @@ export default function PatientProfile() {
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<any[] | null>(null);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
 
   // Session timeout checker
   useEffect(() => {
@@ -71,6 +76,10 @@ export default function PatientProfile() {
 
     return () => clearInterval(checkTimeout);
   }, [accessSession, lastActivity]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Activity tracker
   useEffect(() => {
@@ -169,6 +178,54 @@ export default function PatientProfile() {
     }
   }
 
+  const refreshDocuments = useCallback(async () => {
+    if (!patientId) return;
+    setDocumentsLoading(true);
+    try {
+      const res = await fetch(`/api/patients/${patientId}/documents`, { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) setDocuments(Array.isArray(data?.data) ? data.data : []);
+      else setDocuments([]);
+    } catch {
+      setDocuments([]);
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }, [patientId]);
+
+  useEffect(() => {
+    if (!accessSession) return;
+    refreshDocuments();
+  }, [accessSession, refreshDocuments]);
+
+  const uploadDocument = async (file: File, documentType: string) => {
+    const toDataUrl = (f: File) =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.readAsDataURL(f);
+      });
+
+    const dataUrl = await toDataUrl(file);
+    const payload = {
+      fileName: file.name,
+      fileType: file.type || 'application/octet-stream',
+      fileSize: file.size,
+      dataUrl,
+      documentType,
+    };
+
+    const res = await fetch(`/api/patients/${patientId}/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.error || 'Upload failed');
+    await refreshDocuments();
+  };
+
   const handleContextUpdate = (metadata: any) => {
     // Update AI context with new data
     const timestamp = new Date().toLocaleString('es-ES');
@@ -178,6 +235,9 @@ export default function PatientProfile() {
 
   // LGPD Access Control: Show modal BEFORE any PHI access
   if (!accessSession || showAccessModal) {
+    if (!mounted) {
+      return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         {error && (
@@ -534,6 +594,90 @@ export default function PatientProfile() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">Documentos & Imagens</h2>
+                <button
+                  onClick={refreshDocuments}
+                  className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition font-medium"
+                >
+                  🔄 Refresh
+                </button>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <div className="font-semibold mb-2">Subir archivo (se guarda en el perfil del paciente)</div>
+                <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+                  <select
+                    id="docTypeSelect"
+                    className="px-3 py-2 rounded border border-gray-300 bg-white"
+                    defaultValue="OTHER"
+                  >
+                    <option value="IMAGING">Imaging / X‑ray</option>
+                    <option value="LAB_RESULTS">Lab report</option>
+                    <option value="CONSULTATION_NOTES">Consult note</option>
+                    <option value="DISCHARGE_SUMMARY">Discharge summary</option>
+                    <option value="PRESCRIPTION">Prescription</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const docType = (document.getElementById('docTypeSelect') as HTMLSelectElement | null)
+                        ?.value || 'OTHER';
+                      try {
+                        await uploadDocument(file, docType);
+                        alert('Uploaded');
+                      } catch (err: any) {
+                        alert(err?.message || 'Upload failed');
+                      } finally {
+                        e.target.value = '';
+                      }
+                    }}
+                    className="block"
+                  />
+                  <div className="text-xs text-gray-600">
+                    Tip: En producción esto irá a storage con URLs firmadas; aquí se guarda como “data URL” para prototipado.
+                  </div>
+                </div>
+              </div>
+
+              {documentsLoading ? (
+                <div className="text-gray-600">Cargando documentos…</div>
+              ) : documents && documents.length ? (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {documents.slice(0, 20).map((d) => (
+                    <a
+                      key={d.id}
+                      href={d.storageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block border border-gray-200 rounded-lg p-4 hover:shadow transition bg-white"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="font-semibold truncate">{d.fileName}</div>
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100">{d.documentType}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(d.createdAt).toLocaleString()} • {(d.fileSize / 1024).toFixed(0)} KB
+                      </div>
+                      {typeof d.storageUrl === 'string' && d.storageUrl.startsWith('data:image') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={d.storageUrl} alt={d.fileName} className="mt-3 w-full rounded border border-gray-200" />
+                      ) : null}
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-600">No hay documentos todavía.</div>
+              )}
             </div>
           )}
 

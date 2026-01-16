@@ -18,6 +18,9 @@ const customJestConfig = {
   // Test environment
   testEnvironment: 'jest-environment-node',
 
+  // Use a local sequencer to avoid resolution issues with pnpm workspaces.
+  testSequencer: '<rootDir>/jest.sequencer.cjs',
+
   // Module paths
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

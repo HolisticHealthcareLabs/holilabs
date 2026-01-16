@@ -6,11 +6,31 @@
 
 import { Resend } from 'resend';
 import logger from './logger';
+import fs from 'fs';
+import path from 'path';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Holi Labs <notificaciones@holilabs.com>';
 const REPLY_TO = process.env.RESEND_REPLY_TO || 'soporte@holilabs.com';
+
+function devInboxEnabled() {
+  return process.env.NODE_ENV === 'development' && (process.env.EMAIL_DEV_INBOX || 'true') === 'true';
+}
+
+function inboxDir() {
+  return path.join(process.cwd(), '.local-email-inbox');
+}
+
+function writeDevInboxMessage(payload: any) {
+  const dir = inboxDir();
+  fs.mkdirSync(dir, { recursive: true });
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  const rand = Math.random().toString(16).slice(2);
+  const file = path.join(dir, `${ts}-${rand}.json`);
+  fs.writeFileSync(file, JSON.stringify(payload, null, 2), 'utf8');
+  return file;
+}
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -35,6 +55,29 @@ export async function sendEmail(options: SendEmailOptions) {
 
     // Check if Resend is configured
     if (!process.env.RESEND_API_KEY) {
+      // DEV: Always write to local inbox so nothing is "silent" and developers can inspect.
+      if (devInboxEnabled()) {
+        const file = writeDevInboxMessage({
+          provider: 'dev-inbox',
+          from: FROM_EMAIL,
+          to,
+          subject,
+          replyTo,
+          html,
+          text,
+          tags,
+          reason: 'RESEND_API_KEY not configured',
+          createdAt: new Date().toISOString(),
+        });
+        logger.warn({
+          event: 'email_dev_inbox_written',
+          file,
+          to: Array.isArray(to) ? to.join(', ') : to,
+          subject,
+        });
+        return { success: true, data: { devInboxFile: file } };
+      }
+
       logger.warn({
         event: 'email_send_skipped',
         reason: 'RESEND_API_KEY not configured',
@@ -59,6 +102,35 @@ export async function sendEmail(options: SendEmailOptions) {
     // Send email
     const response = await resend.emails.send(emailOptions);
 
+    // Resend may return an error object rather than throwing.
+    const maybeError = (response as any)?.error;
+    if (maybeError) {
+      const msg = maybeError?.message || 'Resend error';
+      if (devInboxEnabled()) {
+        const file = writeDevInboxMessage({
+          provider: 'resend',
+          from: FROM_EMAIL,
+          to,
+          subject,
+          replyTo,
+          html,
+          text,
+          tags,
+          resendError: maybeError,
+          createdAt: new Date().toISOString(),
+        });
+        logger.error({
+          event: 'email_send_error_dev_inbox_written',
+          file,
+          to: Array.isArray(to) ? to.join(', ') : to,
+          subject,
+          error: msg,
+        });
+        return { success: false, error: msg, data: { devInboxFile: file } };
+      }
+      throw new Error(msg);
+    }
+
     logger.info({
       event: 'email_sent',
       to: Array.isArray(to) ? to.join(', ') : to,
@@ -73,6 +145,25 @@ export async function sendEmail(options: SendEmailOptions) {
       error: error instanceof Error ? error.message : 'Unknown error',
       to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
     });
+
+    // DEV: capture payload to inbox for inspection
+    if (devInboxEnabled()) {
+      try {
+        const file = writeDevInboxMessage({
+          provider: 'resend',
+          from: FROM_EMAIL,
+          to: options.to,
+          subject: options.subject,
+          replyTo: options.replyTo || REPLY_TO,
+          html: options.html,
+          text: options.text,
+          tags: options.tags,
+          exception: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
+          createdAt: new Date().toISOString(),
+        });
+        logger.warn({ event: 'email_exception_dev_inbox_written', file });
+      } catch {}
+    }
 
     return {
       success: false,

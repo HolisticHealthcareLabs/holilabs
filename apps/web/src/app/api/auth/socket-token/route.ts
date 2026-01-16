@@ -1,39 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
-import { logger } from '@/lib/logger';
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth/auth';
+import { getUserSessionToken } from '@/lib/socket-auth';
 
-export async function GET(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+export const dynamic = 'force-dynamic';
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+/**
+ * GET /api/auth/socket-token
+ * Returns a signed JWT for Socket.IO auth (CLINICIAN).
+ */
+export async function GET() {
+  const session = await auth();
 
-    // Create a simple token for Socket.io authentication
-    // This matches the format expected by verifySocketToken
-    const token = Buffer.from(
-      JSON.stringify({
-        userId: session.user.id,
-        type: 'CLINICIAN',
-      })
-    ).toString('base64');
-
-    return NextResponse.json({ token });
-  } catch (error: any) {
-    logger.error({
-      event: 'socket_token_generation_failed',
-      error: error.message,
-      stack: error.stack,
-    });
-    return NextResponse.json(
-      { error: 'Failed to generate token' },
-      { status: 500 }
-    );
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-}
 
+  const token = await getUserSessionToken(session.user.id);
+  if (!token) {
+    return NextResponse.json({ error: 'Failed to mint socket token' }, { status: 500 });
+  }
+
+  return NextResponse.json({ token }, { status: 200 });
+}
