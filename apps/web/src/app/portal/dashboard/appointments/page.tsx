@@ -68,11 +68,11 @@ const statusColors = {
 const statusLabels = {
   SCHEDULED: 'Programada',
   CONFIRMED: 'Confirmada',
-  CHECKED_IN: 'En recepci�n',
+  CHECKED_IN: 'En recepción',
   IN_PROGRESS: 'En progreso',
   COMPLETED: 'Completada',
   CANCELLED: 'Cancelada',
-  NO_SHOW: 'No asisti�',
+  NO_SHOW: 'No asistió',
 };
 
 const typeIcons = {
@@ -84,7 +84,7 @@ const typeIcons = {
 const typeLabels = {
   IN_PERSON: 'Presencial',
   TELEHEALTH: 'Virtual',
-  PHONE: 'Telef�nica',
+  PHONE: 'Telefónica',
 };
 
 const typeColors = {
@@ -149,7 +149,7 @@ export default function AppointmentsPage() {
     if (diffDays > 7) {
       return format(start, "d 'de' MMMM", { locale: es });
     } else if (diffDays > 0) {
-      return `En ${diffDays} d�a${diffDays !== 1 ? 's' : ''}`;
+      return `En ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
     } else if (diffHours > 0) {
       return `En ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
     } else if (diffMs > 0) {
@@ -183,12 +183,13 @@ export default function AppointmentsPage() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                =� Mis Citas
+              <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+                <CalendarIcon className="h-9 w-9 text-gray-900" />
+                Mis Citas
               </h1>
               <p className="text-gray-600">
-                {summary.upcoming} cita{summary.upcoming !== 1 ? 's' : ''} pr�xima
-                {summary.upcoming !== 1 ? 's' : ''} � {summary.past} pasada{summary.past !== 1 ? 's' : ''}
+                {summary.upcoming} cita{summary.upcoming !== 1 ? 's' : ''} próxima
+                {summary.upcoming !== 1 ? 's' : ''} • {summary.past} pasada{summary.past !== 1 ? 's' : ''}
               </p>
             </div>
 
@@ -217,7 +218,7 @@ export default function AppointmentsPage() {
         {/* Upcoming Appointments */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Pr�ximas Citas
+            Próximas Citas
           </h2>
 
           {upcomingAppointments.length === 0 ? (
@@ -225,10 +226,10 @@ export default function AppointmentsPage() {
               {/* Decorative - low contrast intentional for empty state icon */}
               <CalendarIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No tienes citas pr�ximas
+                No tienes citas próximas
               </h3>
               <p className="text-gray-600 mb-6">
-                Agenda tu pr�xima cita con tu m�dico
+                Agenda tu próxima cita con tu médico
               </p>
               <button
                 onClick={handleNewAppointment}

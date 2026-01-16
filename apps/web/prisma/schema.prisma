@@ -35,6 +35,7 @@ model User {
   npi               String? // National Provider Identifier (US only)
 
   // Security
+  passwordHash   String? // Optional for OAuth-only users
   mfaEnabled     Boolean   @default(false)
   mfaServiceSid  String? // Twilio Verify Service SID
   mfaPhoneNumber String? // Encrypted phone number for MFA
@@ -114,10 +115,31 @@ model User {
   // Device Pairing (QR Code System)
   devicePairings DevicePairing[]
 
+  // BYOK API Keys
+  apiKeys UserAPIKey[]
+
   @@index([email])
   @@index([walletAddress])
   @@index([invitationCodeId])
   @@map("users")
+}
+
+// ============================================================================
+// BYOK API KEYS (Encrypted)
+// ============================================================================
+
+model UserAPIKey {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String   // "gemini", "anthropic", "openai"
+  encryptedKey String @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, provider]) // One key per provider per user
+  @@index([userId])
+  @@map("user_api_keys")
 }
 
 enum UserRole {
@@ -1277,6 +1299,7 @@ model DataAccessGrant {
   @@index([expiresAt])
   @@map("data_access_grants")
 }
+
 
 // ============================================================================
 // PRESCRIPTIONS (E-Prescribing)

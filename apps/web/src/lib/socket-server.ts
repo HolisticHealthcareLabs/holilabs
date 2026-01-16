@@ -9,11 +9,23 @@ import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { prisma } from './prisma';
 import logger from './logger';
-import { verifySocketToken } from './auth';
+import { verifySocketToken } from './socket-auth';
+import { createClient, LiveTranscriptionEvents } from '@deepgram/sdk';
+import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
 
 export type SocketServer = SocketIOServer;
 
 let io: SocketIOServer | undefined;
+
+type LiveDgSession = {
+  conn: any;
+  clinicianId: string;
+  language: string;
+  sampleRate: number;
+  lastUsedAt: number;
+};
+
+const dgSessions = new Map<string, LiveDgSession>();
 
 export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
   if (io) {
@@ -21,9 +33,18 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
   }
 
   io = new SocketIOServer(httpServer, {
-    path: '/api/socket',
+    // IMPORTANT: Use the standard Socket.IO path to avoid conflicting with Next API routes.
+    path: '/api/socket.io',
     cors: {
-      origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      origin: (origin, cb) => {
+        // Allow same-origin and typical local dev ports.
+        if (!origin) return cb(null, true);
+        if (origin.startsWith('http://localhost:')) return cb(null, true);
+        if (origin.startsWith('http://127.0.0.1:')) return cb(null, true);
+        const allowed = process.env.NEXT_PUBLIC_APP_URL;
+        if (allowed && origin === allowed) return cb(null, true);
+        return cb(new Error('CORS blocked'), false);
+      },
       credentials: true,
     },
   });
@@ -236,13 +257,132 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
       });
     });
 
-    socket.on('co_pilot:audio_chunk', ({ sessionId, audioData }: { sessionId: string; audioData: ArrayBuffer }) => {
-      // Forward audio chunk to room for processing
-      socket.to(`co-pilot:${sessionId}`).emit('co_pilot:audio_received', {
-        sessionId,
-        audioData,
-        timestamp: Date.now(),
-      });
+    socket.on('co_pilot:audio_chunk', async ({
+      sessionId,
+      audioData,
+      language,
+      sampleRate,
+    }: {
+      sessionId: string;
+      audioData: ArrayBuffer;
+      language?: string;
+      sampleRate?: number;
+    }) => {
+      try {
+        if (socket.data.userType !== 'CLINICIAN') {
+          socket.emit('error', { message: 'Unauthorized: clinician required for scribe streaming' });
+          return;
+        }
+        if (!process.env.DEEPGRAM_API_KEY) {
+          socket.emit('error', { message: 'DEEPGRAM_API_KEY is not configured' });
+          return;
+        }
+
+        const clinicianId = socket.data.userId as string;
+
+        // Verify session ownership (prevents cross-session streaming / leaks)
+        const owns = await prisma.scribeSession.findFirst({
+          where: { id: sessionId, clinicianId },
+          select: { id: true },
+        });
+        if (!owns) {
+          socket.emit('error', { message: 'Unauthorized: session not found or access denied' });
+          return;
+        }
+
+        const lang = String(language || 'en');
+        const sr = Number(sampleRate || 48000);
+
+        // Create a Deepgram live connection per scribe session.
+        let dg = dgSessions.get(sessionId);
+        if (!dg || dg.clinicianId !== clinicianId || dg.language !== lang || dg.sampleRate !== sr) {
+          try {
+            dg?.conn?.finish?.();
+          } catch {}
+
+          const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+          const conn = deepgram.listen.live({
+            model: 'nova-2',
+            language: lang,
+            encoding: 'linear16',
+            sample_rate: sr,
+            channels: 1,
+            punctuate: true,
+            smart_format: true,
+            interim_results: false, // hard guarantee: we only emit sanitized finals
+            diarize: true,
+          });
+
+          conn.on(LiveTranscriptionEvents.Open, () => {
+            logger.info({ event: 'deepgram_live_open', sessionId, clinicianId, lang, sr }, 'Deepgram live opened');
+          });
+          conn.on(LiveTranscriptionEvents.Close, () => {
+            logger.info({ event: 'deepgram_live_close', sessionId, clinicianId }, 'Deepgram live closed');
+          });
+          conn.on(LiveTranscriptionEvents.Error, (err: any) => {
+            logger.error({ event: 'deepgram_live_error', sessionId, clinicianId, err }, 'Deepgram live error');
+            io?.to(`co-pilot:${sessionId}`).emit('co_pilot:transcription_error', {
+              message: err?.message || 'Deepgram live error',
+            });
+          });
+
+          conn.on(LiveTranscriptionEvents.Transcript, async (payload: any) => {
+            try {
+              const alt = payload?.channel?.alternatives?.[0];
+              const raw = String(alt?.transcript || '').trim();
+              const isFinal = Boolean(payload?.is_final);
+              if (!isFinal || !raw) return;
+
+              const presidioStart = Date.now();
+              const safe = await deidentifyTranscriptOrThrow(raw);
+              const presidioMs = Date.now() - presidioStart;
+
+              const speaker = alt?.words?.[0]?.speaker;
+              const speakerLabel = typeof speaker === 'number' ? `Speaker ${speaker + 1}` : 'Speaker 1';
+
+              io?.to(`co-pilot:${sessionId}`).emit('co_pilot:transcript_update', {
+                speaker: speakerLabel,
+                text: safe,
+                confidence: alt?.confidence || 0.9,
+                isFinal: true,
+                startTime: Date.now(),
+                endTime: Date.now(),
+                metrics: { presidioMs },
+              });
+            } catch (e: any) {
+              logger.error(
+                { event: 'co_pilot_transcript_sanitize_error', sessionId, clinicianId, error: e?.message || e },
+                'Failed to sanitize transcript'
+              );
+              io?.to(`co-pilot:${sessionId}`).emit('co_pilot:transcription_error', {
+                message: e?.message || 'De-identification failed',
+              });
+            }
+          });
+
+          dg = { conn, clinicianId, language: lang, sampleRate: sr, lastUsedAt: Date.now() };
+          dgSessions.set(sessionId, dg);
+        } else {
+          dg.lastUsedAt = Date.now();
+        }
+
+        // Send PCM16 bytes to Deepgram
+        dg.conn.send(audioData);
+
+        logger.info({
+          event: 'co_pilot_audio_chunk_received',
+          sessionId,
+          audioDataSize: audioData.byteLength,
+          socketId: socket.id,
+        });
+      } catch (error) {
+        logger.error({
+          event: 'co_pilot_audio_processing_error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          sessionId,
+          socketId: socket.id,
+        });
+      }
     });
 
     socket.on('co_pilot:leave_session', ({ sessionId }: { sessionId: string }) => {
@@ -330,6 +470,14 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
 
 export function getSocketServer(): SocketIOServer | undefined {
   return io;
+}
+
+/**
+ * Co-Pilot: Emit event to a session room (created by `co_pilot:join_session`)
+ */
+export function emitCoPilotEvent(sessionId: string, event: string, payload: any) {
+  if (!io) return;
+  io.to(`co-pilot:${sessionId}`).emit(event, payload);
 }
 
 /**

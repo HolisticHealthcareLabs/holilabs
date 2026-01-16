@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f3f4f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="#0b1220"/>
+  <rect x="170" y="80" width="860" height="640" rx="22" fill="url(#paper)" stroke="#d1d5db" stroke-width="2"/>
+
+  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">
+    <text x="220" y="150" font-size="28" font-weight="800">Demo Lab Report (synthetic)</text>
+    <text x="220" y="182" font-size="16" fill="#374151">For UI prototyping only — not real clinical data</text>
+  </g>
+
+  <!-- Table header -->
+  <rect x="220" y="230" width="760" height="44" rx="10" fill="#111827" opacity="0.9"/>
+  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#f9fafb" font-size="14" font-weight="700">
+    <text x="240" y="258">Test</text>
+    <text x="600" y="258">Result</text>
+    <text x="760" y="258">Ref Range</text>
+    <text x="900" y="258">Flag</text>
+  </g>
+
+  <!-- Rows -->
+  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" font-size="14" fill="#111827">
+    <g>
+      <rect x="220" y="290" width="760" height="44" rx="10" fill="#f3f4f6"/>
+      <text x="240" y="318">Hemoglobin</text>
+      <text x="600" y="318">13.8 g/dL</text>
+      <text x="760" y="318">12.0–16.0</text>
+      <text x="900" y="318" fill="#059669" font-weight="700">Normal</text>
+    </g>
+    <g>
+      <rect x="220" y="345" width="760" height="44" rx="10" fill="#f9fafb"/>
+      <text x="240" y="373">WBC</text>
+      <text x="600" y="373">7.2 K/uL</text>
+      <text x="760" y="373">4.0–11.0</text>
+      <text x="900" y="373" fill="#059669" font-weight="700">Normal</text>
+    </g>
+    <g>
+      <rect x="220" y="400" width="760" height="44" rx="10" fill="#f3f4f6"/>
+      <text x="240" y="428">Glucose (fasting)</text>
+      <text x="600" y="428">112 mg/dL</text>
+      <text x="760" y="428">70–99</text>
+      <text x="900" y="428" fill="#d97706" font-weight="800">High</text>
+    </g>
+    <g>
+      <rect x="220" y="455" width="760" height="44" rx="10" fill="#f9fafb"/>
+      <text x="240" y="483">Creatinine</text>
+      <text x="600" y="483">0.9 mg/dL</text>
+      <text x="760" y="483">0.6–1.2</text>
+      <text x="900" y="483" fill="#059669" font-weight="700">Normal</text>
+    </g>
+  </g>
+
+  <!-- Footer note -->
+  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151" font-size="12">
+    <text x="220" y="650">Note: demo attachment intended to exercise upload, preview, and CDS workflow.</text>
+  </g>
+</svg>
+
+

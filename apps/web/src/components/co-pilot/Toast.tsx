@@ -84,14 +84,14 @@ export default function Toast({
         opacity: 1,
         y: 0,
         scale: 1,
-        x: [0, -5, 5, -5, 0],
+        x: 0,
       },
     },
     warning: {
       initial: { opacity: 0, y: -20, scale: 0.95 },
       animate: {
         opacity: 1,
-        y: [0, -5, 0],
+        y: 0,
         scale: 1,
       },
     },
@@ -100,7 +100,7 @@ export default function Toast({
       animate: {
         opacity: 1,
         y: 0,
-        scale: [1, 1.05, 1],
+        scale: 1,
       },
     },
     info: {
@@ -115,32 +115,20 @@ export default function Toast({
 
   const iconAnimation = {
     error: {
-      animate: {
-        rotate: [0, -10, 10, -10, 0],
-        scale: [1, 1.1, 1],
-      },
-      transition: { delay: 0.1, duration: 0.5 } as any,
+      animate: { rotate: 0, scale: 1 },
+      transition: { delay: 0.08, type: 'spring', damping: 18, stiffness: 260 } as any,
     },
     warning: {
-      animate: {
-        y: [0, -3, 0],
-        scale: [1, 1.1, 1],
-      },
-      transition: { delay: 0.1, duration: 0.6, repeat: 2 } as any,
+      animate: { y: 0, scale: 1 },
+      transition: { delay: 0.08, type: 'spring', damping: 18, stiffness: 260 } as any,
     },
     success: {
-      animate: {
-        scale: [0, 1.2, 1],
-        rotate: [-180, 0],
-      },
-      transition: { delay: 0.1, type: 'spring', damping: 12 } as any,
+      animate: { scale: 1, rotate: 0 },
+      transition: { delay: 0.08, type: 'spring', damping: 14, stiffness: 260 } as any,
     },
     info: {
-      animate: {
-        scale: [0, 1],
-        rotate: [-180, 0],
-      },
-      transition: { delay: 0.1, type: 'spring', damping: 15 } as any,
+      animate: { scale: 1, rotate: 0 },
+      transition: { delay: 0.08, type: 'spring', damping: 16, stiffness: 260 } as any,
     },
   };
 
@@ -156,7 +144,8 @@ export default function Toast({
         {/* Icon */}
         <div className="flex-shrink-0">
           <motion.div
-            initial={{ scale: 0 }}
+            // Avoid multi-keyframe spring animations (Motion v12 limitation).
+            initial={type === 'success' || type === 'info' ? { scale: 0, rotate: -180 } : { scale: 0 }}
             animate={iconAnimation[type].animate}
             transition={iconAnimation[type].transition}
           >

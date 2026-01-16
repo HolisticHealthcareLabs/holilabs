@@ -14,8 +14,14 @@ import { z } from 'zod';
 
 // Query parameters schema
 const NotificationsQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-  unreadOnly: z.coerce.boolean().default(false),
+  limit: z.preprocess(
+    (v) => (v === null || v === undefined || v === '' ? undefined : v),
+    z.coerce.number().int().min(1).max(100).default(50)
+  ),
+  unreadOnly: z.preprocess(
+    (v) => (v === null || v === undefined || v === '' ? undefined : v),
+    z.coerce.boolean().default(false)
+  ),
   type: z.string().optional(),
 });
 

@@ -24,7 +24,6 @@ export default function SettingsPage() {
     anthropicKey: '',
     openaiKey: '',
     deepgramApiKey: '', // Transcription
-    assemblyaiApiKey: '', // Transcription fallback
   });
 
   // Communications Settings
@@ -306,33 +305,6 @@ export default function SettingsPage() {
                                 console.deepgram.com
                               </a>{' '}
                               (~$0.0043/min)
-                            </p>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              AssemblyAI API Key (Fallback)
-                            </label>
-                            <input
-                              type="password"
-                              value={aiConfig.assemblyaiApiKey}
-                              onChange={(e) =>
-                                setAiConfig({ ...aiConfig, assemblyaiApiKey: e.target.value })
-                              }
-                              placeholder="••••••••••••••••••"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Obtén tu clave en{' '}
-                              <a
-                                href="https://www.assemblyai.com/dashboard/signup"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                              >
-                                assemblyai.com
-                              </a>{' '}
-                              (~$0.00025/sec)
                             </p>
                           </div>
                         </div>

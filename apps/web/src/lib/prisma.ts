@@ -297,3 +297,66 @@ export default prisma;
 
 // Also export _prisma for internal use when null checking is needed
 export { _prisma };
+
+// Read Replica Support (Performance Optimization)
+// Import replica configuration
+import { createPrismaWithReplicas, createAnalyticsPrisma } from './prisma-replica';
+
+/**
+ * Replica-aware Prisma client for read-heavy operations
+ *
+ * Automatically routes:
+ * - Reads (findMany, findUnique, etc.) → Replica
+ * - Writes (create, update, delete) → Primary
+ *
+ * Usage:
+ * ```typescript
+ * // Automatically uses replica for read
+ * const patients = await prismaReplica.patient.findMany();
+ *
+ * // Force primary for critical reads
+ * const user = await prismaReplica.$primary().user.findUnique({ where: { email } });
+ * ```
+ *
+ * Requires environment variables:
+ * - DATABASE_REPLICA_URL or DATABASE_REPLICA_URLS
+ *
+ * If no replica configured, falls back to primary for all queries.
+ */
+export const prismaReplica = _prisma ? createPrismaWithReplicas(_prisma) : prisma;
+
+/**
+ * Primary-only Prisma client
+ *
+ * Use when you explicitly need to query the primary database:
+ * - Critical reads requiring absolute consistency
+ * - Reads immediately after writes (read-your-writes)
+ * - Authentication/session validation
+ *
+ * Usage:
+ * ```typescript
+ * const user = await prismaPrimary.user.findUnique({ where: { email } });
+ * ```
+ */
+export const prismaPrimary = _prisma ?? prisma;
+
+/**
+ * Analytics-dedicated Prisma client
+ *
+ * Use for heavy reporting queries that should not impact production traffic.
+ * Requires DATABASE_ANALYTICS_REPLICA_URL environment variable.
+ *
+ * Returns null if analytics replica not configured.
+ *
+ * Usage:
+ * ```typescript
+ * const analyticsPrisma = prismaAnalytics;
+ * if (analyticsPrisma) {
+ *   const report = await analyticsPrisma.auditLog.findMany({
+ *     where: { timestamp: { gte: thirtyDaysAgo } },
+ *     take: 100000, // Heavy query
+ *   });
+ * }
+ * ```
+ */
+export const prismaAnalytics = _prisma ? createAnalyticsPrisma(_prisma) : null;

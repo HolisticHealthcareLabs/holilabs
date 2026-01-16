@@ -6,11 +6,31 @@
 
 import { Resend } from 'resend';
 import logger from './logger';
+import fs from 'fs';
+import path from 'path';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Holi Labs <notificaciones@holilabs.com>';
 const REPLY_TO = process.env.RESEND_REPLY_TO || 'soporte@holilabs.com';
+
+function devInboxEnabled() {
+  return process.env.NODE_ENV === 'development' && (process.env.EMAIL_DEV_INBOX || 'true') === 'true';
+}
+
+function inboxDir() {
+  return path.join(process.cwd(), '.local-email-inbox');
+}
+
+function writeDevInboxMessage(payload: any) {
+  const dir = inboxDir();
+  fs.mkdirSync(dir, { recursive: true });
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  const rand = Math.random().toString(16).slice(2);
+  const file = path.join(dir, `${ts}-${rand}.json`);
+  fs.writeFileSync(file, JSON.stringify(payload, null, 2), 'utf8');
+  return file;
+}
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -35,6 +55,29 @@ export async function sendEmail(options: SendEmailOptions) {
 
     // Check if Resend is configured
     if (!process.env.RESEND_API_KEY) {
+      // DEV: Always write to local inbox so nothing is "silent" and developers can inspect.
+      if (devInboxEnabled()) {
+        const file = writeDevInboxMessage({
+          provider: 'dev-inbox',
+          from: FROM_EMAIL,
+          to,
+          subject,
+          replyTo,
+          html,
+          text,
+          tags,
+          reason: 'RESEND_API_KEY not configured',
+          createdAt: new Date().toISOString(),
+        });
+        logger.warn({
+          event: 'email_dev_inbox_written',
+          file,
+          to: Array.isArray(to) ? to.join(', ') : to,
+          subject,
+        });
+        return { success: true, data: { devInboxFile: file } };
+      }
+
       logger.warn({
         event: 'email_send_skipped',
         reason: 'RESEND_API_KEY not configured',
@@ -59,6 +102,35 @@ export async function sendEmail(options: SendEmailOptions) {
     // Send email
     const response = await resend.emails.send(emailOptions);
 
+    // Resend may return an error object rather than throwing.
+    const maybeError = (response as any)?.error;
+    if (maybeError) {
+      const msg = maybeError?.message || 'Resend error';
+      if (devInboxEnabled()) {
+        const file = writeDevInboxMessage({
+          provider: 'resend',
+          from: FROM_EMAIL,
+          to,
+          subject,
+          replyTo,
+          html,
+          text,
+          tags,
+          resendError: maybeError,
+          createdAt: new Date().toISOString(),
+        });
+        logger.error({
+          event: 'email_send_error_dev_inbox_written',
+          file,
+          to: Array.isArray(to) ? to.join(', ') : to,
+          subject,
+          error: msg,
+        });
+        return { success: false, error: msg, data: { devInboxFile: file } };
+      }
+      throw new Error(msg);
+    }
+
     logger.info({
       event: 'email_sent',
       to: Array.isArray(to) ? to.join(', ') : to,
@@ -73,6 +145,25 @@ export async function sendEmail(options: SendEmailOptions) {
       error: error instanceof Error ? error.message : 'Unknown error',
       to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
     });
+
+    // DEV: capture payload to inbox for inspection
+    if (devInboxEnabled()) {
+      try {
+        const file = writeDevInboxMessage({
+          provider: 'resend',
+          from: FROM_EMAIL,
+          to: options.to,
+          subject: options.subject,
+          replyTo: options.replyTo || REPLY_TO,
+          html: options.html,
+          text: options.text,
+          tags: options.tags,
+          exception: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
+          createdAt: new Date().toISOString(),
+        });
+        logger.warn({ event: 'email_exception_dev_inbox_written', file });
+      } catch {}
+    }
 
     return {
       success: false,
@@ -583,6 +674,169 @@ Si no solicitaste este acceso, puedes ignorar este correo.
 Holi Labs - Atención médica digital`,
     tags: [
       { name: 'type', value: 'magic_link' },
+      { name: 'category', value: 'authentication' },
+    ],
+  });
+}
+
+/**
+ * Send email verification email for new patient accounts
+ */
+export async function sendEmailVerificationEmail(
+  email: string,
+  userName: string,
+  verificationUrl: string
+) {
+  return sendEmail({
+    to: email,
+    subject: '✅ Verifica tu correo - Holi Labs',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .logo { height: 40px; }
+            .content { background: #ffffff; padding: 40px; border: 1px solid #e5e7eb; }
+            .button { display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="color: white; margin: 0;">Bienvenido a Holi Labs</h1>
+            </div>
+            <div class="content">
+              <h2>Hola ${userName},</h2>
+              <p>Gracias por registrarte en Holi Labs. Para activar tu cuenta, por favor verifica tu correo electrónico.</p>
+              <p style="text-align: center;">
+                <a href="${verificationUrl}" class="button">Verificar Correo</a>
+              </p>
+              <p>O copia este enlace en tu navegador:</p>
+              <p style="word-break: break-all; color: #0ea5e9;">${verificationUrl}</p>
+              <p style="color: #ef4444; font-size: 14px; margin-top: 30px;">
+                ⚠️ Este enlace expira en 24 horas.
+              </p>
+              <p style="font-size: 14px; color: #6b7280;">
+                Si no creaste esta cuenta, puedes ignorar este correo de manera segura.
+              </p>
+            </div>
+            <div class="footer">
+              <p>🔒 Tu seguridad es nuestra prioridad</p>
+              <p>© 2025 Holi Labs. Todos los derechos reservados.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+    text: `Hola ${userName},
+
+Gracias por registrarte en Holi Labs. Para activar tu cuenta, por favor verifica tu correo electrónico.
+
+Verificar correo: ${verificationUrl}
+
+⚠️ Este enlace expira en 24 horas.
+
+Si no creaste esta cuenta, puedes ignorar este correo de manera segura.
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'email_verification' },
+      { name: 'category', value: 'authentication' },
+    ],
+  });
+}
+
+/**
+ * Send password reset email (for both patients and providers)
+ */
+export async function sendPasswordResetEmail(
+  email: string,
+  userName: string,
+  resetUrl: string,
+  isPatient: boolean = true
+) {
+  const subject = isPatient
+    ? '🔑 Recupera tu contraseña - Holi Labs'
+    : '🔑 Reset Your Password - Holi Labs';
+
+  const title = isPatient ? 'Recupera tu contraseña' : 'Reset Your Password';
+  const greeting = isPatient ? `Hola ${userName}` : `Hello ${userName}`;
+  const message = isPatient
+    ? 'Recibimos una solicitud para restablecer tu contraseña. Haz clic en el botón de abajo para crear una nueva contraseña.'
+    : 'We received a request to reset your password. Click the button below to create a new password.';
+  const buttonText = isPatient ? 'Restablecer Contraseña' : 'Reset Password';
+  const expireNote = isPatient
+    ? '⚠️ Este enlace expira en 1 hora.'
+    : '⚠️ This link expires in 1 hour.';
+  const ignoreNote = isPatient
+    ? 'Si no solicitaste este cambio, puedes ignorar este correo de manera segura.'
+    : 'If you did not request this change, you can safely ignore this email.';
+
+  return sendEmail({
+    to: email,
+    subject,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #ffffff; padding: 40px; border: 1px solid #e5e7eb; }
+            .button { display: inline-block; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="color: white; margin: 0;">${title}</h1>
+            </div>
+            <div class="content">
+              <h2>${greeting},</h2>
+              <p>${message}</p>
+              <p style="text-align: center;">
+                <a href="${resetUrl}" class="button">${buttonText}</a>
+              </p>
+              <p>O copia este enlace en tu navegador:</p>
+              <p style="word-break: break-all; color: #0ea5e9;">${resetUrl}</p>
+              <p style="color: #ef4444; font-size: 14px; margin-top: 30px;">
+                ${expireNote}
+              </p>
+              <p style="font-size: 14px; color: #6b7280;">
+                ${ignoreNote}
+              </p>
+            </div>
+            <div class="footer">
+              <p>🔒 Tu seguridad es nuestra prioridad</p>
+              <p>© 2025 Holi Labs. Todos los derechos reservados.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+    text: `${greeting},
+
+${message}
+
+${isPatient ? 'Restablecer contraseña' : 'Reset password'}: ${resetUrl}
+
+${expireNote}
+
+${ignoreNote}
+
+--
+Holi Labs - Atención médica digital`,
+    tags: [
+      { name: 'type', value: 'password_reset' },
       { name: 'category', value: 'authentication' },
     ],
   });

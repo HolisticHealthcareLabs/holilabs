@@ -33,7 +33,7 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://*.supabase.co https://*.anthropic.com",
+    "connect-src 'self' https://*.anthropic.com",
     "frame-ancestors 'none'", // Prevent clickjacking
     "base-uri 'self'",
     "form-action 'self'",

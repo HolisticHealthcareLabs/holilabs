@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { useSession } from 'next-auth/react';
+// (kept explicit; we use both `useEffect` and a specialized effect block below)
 
 interface VitalSigns {
   bloodPressure?: string;
@@ -82,7 +83,17 @@ interface DiagnosisResult {
   };
 }
 
-export default function DiagnosisAssistant() {
+export default function DiagnosisAssistant({
+  embedded = false,
+  selectedPatientId,
+  prefillChiefComplaint,
+  prefillSymptoms,
+}: {
+  embedded?: boolean;
+  selectedPatientId?: string;
+  prefillChiefComplaint?: string;
+  prefillSymptoms?: string[];
+} = {}) {
   const { data: session } = useSession();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(true);
@@ -129,6 +140,42 @@ export default function DiagnosisAssistant() {
       loadPatients();
     }
   }, [session]);
+
+  // Prefill from Co-Pilot scribe (chief complaint + extracted symptoms + selected patient)
+  useEffect(() => {
+    // Select patient if provided
+    if (selectedPatientId && patients.length) {
+      const p = patients.find((x) => x.id === selectedPatientId);
+      if (p && formData.patientId !== selectedPatientId) {
+        handlePatientSelect(selectedPatientId);
+      }
+    }
+
+    // Prefill chief complaint if empty
+    if (prefillChiefComplaint && !formData.chiefComplaint) {
+      setFormData((prev) => ({ ...prev, chiefComplaint: prefillChiefComplaint }));
+    }
+
+    // Prefill symptoms (merge, avoid duplicates)
+    if (Array.isArray(prefillSymptoms) && prefillSymptoms.length) {
+      setFormData((prev) => {
+        const existing = new Set((prev.symptoms || []).map((s) => s.toLowerCase()));
+        const merged = [...(prev.symptoms || [])];
+        for (const s of prefillSymptoms) {
+          const key = String(s || '').trim().toLowerCase();
+          if (!key) continue;
+          if (!existing.has(key)) {
+            merged.push(String(s).trim());
+            existing.add(key);
+          }
+        }
+        // Only update if changed
+        if (merged.length === (prev.symptoms || []).length) return prev;
+        return { ...prev, symptoms: merged };
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillChiefComplaint, JSON.stringify(prefillSymptoms || []), selectedPatientId, patients.length]);
 
   const loadPatients = async () => {
     try {
@@ -344,8 +391,8 @@ export default function DiagnosisAssistant() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+    <div className={embedded ? '' : 'min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800'}>
+      <div className={embedded ? '' : 'max-w-7xl mx-auto p-4 md:p-6 lg:p-8'}>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -358,11 +405,11 @@ export default function DiagnosisAssistant() {
             </div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Co-Pilot
+                Clinical Reasoning
               </h1>
               {/* Decorative - low contrast intentional for subtitle */}
               <p className="text-gray-500 dark:text-gray-400 mt-1">
-                Clinical decision support powered by AI • Evidence-based recommendations
+                AI-assisted differential diagnosis • Workup planning • Evidence-based suggestions
               </p>
             </div>
           </div>

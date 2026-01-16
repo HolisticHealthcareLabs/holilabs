@@ -133,8 +133,9 @@ export default function QRPairingTile({
 
                   <div className="flex items-center gap-4 relative z-10">
                     <motion.div
-                      whileHover={{ rotate: [0, -5, 5, -5, 0], scale: 1.15 }}
-                      transition={{ duration: 0.5 }}
+                      // Avoid multi-keyframe rotate arrays on hover (can crash with spring-based animations)
+                      whileHover={{ rotate: -5, scale: 1.15 }}
+                      transition={{ duration: 0.15 }}
                       className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-md"
                     >
                       <ComputerDesktopIcon className="w-6 h-6 text-white" />
@@ -178,8 +179,9 @@ export default function QRPairingTile({
 
                   <div className="flex items-center gap-4 relative z-10">
                     <motion.div
-                      whileHover={{ rotate: [0, 10, -10, 10, 0], scale: 1.15 }}
-                      transition={{ duration: 0.5 }}
+                      // Avoid multi-keyframe rotate arrays on hover (can crash with spring-based animations)
+                      whileHover={{ rotate: 10, scale: 1.15 }}
+                      transition={{ duration: 0.15 }}
                       className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-md"
                     >
                       <DevicePhoneMobileIcon className="w-6 h-6 text-white" />

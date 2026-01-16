@@ -6,7 +6,7 @@
  * Reduces office calls by 50%+
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface TimeSlot {
   time: string;
@@ -20,11 +20,13 @@ interface Provider {
   photo?: string;
 }
 
-const PROVIDERS: Provider[] = [
-  { id: '1', name: 'Dr. Juan Pérez', specialty: 'Family Medicine' },
-  { id: '2', name: 'Dr. María López', specialty: 'Internal Medicine' },
-  { id: '3', name: 'Dr. Carlos Rodríguez', specialty: 'Cardiology' },
-];
+type ProviderApi = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  specialty: string | null;
+  profilePictureUrl: string | null;
+};
 
 const VISIT_REASONS = [
   'Annual physical exam',
@@ -54,10 +56,46 @@ const generateTimeSlots = (date: Date): TimeSlot[] => {
 export default function SelfServiceBooking() {
   const [step, setStep] = useState(1); // 1: Provider, 2: Reason, 3: Date/Time, 4: Confirm
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [providersLoading, setProvidersLoading] = useState(true);
+  const [providersError, setProvidersError] = useState<string | null>(null);
+  const [providerQuery, setProviderQuery] = useState('');
   const [selectedReason, setSelectedReason] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProviders() {
+      setProvidersLoading(true);
+      setProvidersError(null);
+      try {
+        const q = providerQuery.trim();
+        const url = q ? `/api/portal/providers?q=${encodeURIComponent(q)}` : '/api/portal/providers';
+        const res = await fetch(url, { cache: 'no-store' });
+        const data = await res.json();
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.error || 'Failed to load providers');
+        }
+        const mapped: Provider[] = (data.data?.clinicians || []).map((c: ProviderApi) => ({
+          id: c.id,
+          name: `Dr. ${c.firstName} ${c.lastName}`.trim(),
+          specialty: c.specialty || 'General Medicine',
+          photo: c.profilePictureUrl || undefined,
+        }));
+        if (!cancelled) setProviders(mapped);
+      } catch (e: any) {
+        if (!cancelled) setProvidersError(e?.message || 'Failed to load providers');
+      } finally {
+        if (!cancelled) setProvidersLoading(false);
+      }
+    }
+    loadProviders();
+    return () => {
+      cancelled = true;
+    };
+  }, [providerQuery]);
 
   // Generate calendar days
   const getDaysInMonth = (date: Date) => {
@@ -97,16 +135,29 @@ export default function SelfServiceBooking() {
   };
 
   const handleConfirmBooking = async () => {
-    // TODO: Call API to create appointment
-    const appointmentData = {
-      providerId: selectedProvider?.id,
-      providerName: selectedProvider?.name,
-      reason: selectedReason,
-      date: selectedDate,
-      time: selectedTime,
-    };
+    // Create appointment request via patient portal API
+    if (!selectedDate || !selectedTime) return;
+    const [hours] = selectedTime.split(':').map((n) => parseInt(n, 10));
+    const preferredTime =
+      hours < 12 ? 'MORNING' : hours < 17 ? 'AFTERNOON' : 'EVENING';
 
-    console.log('Booking appointment:', appointmentData);
+    const reasonText = `Appointment request: ${selectedReason || 'General consultation'}`;
+
+    const res = await fetch('/api/portal/appointments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reason: reasonText,
+        preferredDate: selectedDate.toISOString(),
+        preferredTime,
+        type: 'IN_PERSON',
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error || 'Failed to request appointment');
+    }
 
     // Mark appointment as booked for onboarding wizard
     localStorage.setItem('appointment_booked', 'true');
@@ -211,24 +262,55 @@ END:VCALENDAR`;
         {step === 1 && (
           <div>
             <h3 className="text-xl font-bold text-gray-900 mb-4">Select a Provider</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {PROVIDERS.map(provider => (
-                <button
-                  key={provider.id}
-                  onClick={() => {
-                    setSelectedProvider(provider);
-                    setStep(2);
-                  }}
-                  className="border-2 border-gray-200 hover:border-green-500 rounded-lg p-4 text-left transition-all hover:shadow-md group"
-                >
-                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-teal-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-3">
-                    {provider.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <h4 className="font-bold text-gray-900 group-hover:text-green-600">{provider.name}</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{provider.specialty}</p>
-                </button>
-              ))}
+            <div className="mb-4">
+              <input
+                value={providerQuery}
+                onChange={(e) => setProviderQuery(e.target.value)}
+                placeholder="Search doctors by name or specialty…"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-500 outline-none"
+              />
             </div>
+
+            {providersLoading ? (
+              <div className="text-gray-600">Loading providers…</div>
+            ) : providersError ? (
+              <div className="text-red-700 bg-red-50 border border-red-200 rounded-lg p-4">
+                {providersError}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {providers.map((provider) => (
+                  <button
+                    key={provider.id}
+                    onClick={async () => {
+                      // Persist selection as "assigned clinician" in Holi Labs
+                      await fetch('/api/portal/providers', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ clinicianId: provider.id }),
+                      });
+                      setSelectedProvider(provider);
+                      setStep(2);
+                    }}
+                    className="border-2 border-gray-200 hover:border-green-500 rounded-lg p-4 text-left transition-all hover:shadow-md group"
+                  >
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-teal-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-3">
+                      {provider.name
+                        .replace('Dr.', '')
+                        .trim()
+                        .split(' ')
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((n) => n[0])
+                        .join('')
+                        .toUpperCase()}
+                    </div>
+                    <h4 className="font-bold text-gray-900 group-hover:text-green-600">{provider.name}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{provider.specialty}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { markAllNotificationsAsRead } from '@/lib/notifications';
 import logger from '@/lib/logger';
@@ -15,7 +14,7 @@ import logger from '@/lib/logger';
 export async function PUT(request: NextRequest) {
   try {
     // Check if it's a clinician or patient request
-    const clinicianSession = await getServerSession(authOptions);
+    const clinicianSession = await auth();
 
     if (clinicianSession?.user?.id) {
       // Mark all clinician notifications as read

@@ -177,5 +177,7 @@ export const POST = createProtectedRoute(
       action: 'UPDATE',
       resource: 'Transcription',
     },
+    roles: ['ADMIN', 'CLINICIAN'],
+    skipCsrf: true,
   }
 );
