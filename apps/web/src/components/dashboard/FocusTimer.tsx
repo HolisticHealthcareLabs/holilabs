@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/react/24/outline';
-import useSound from 'use-sound';
 
 interface FocusTimerProps {
   onComplete?: () => void;
@@ -15,33 +14,28 @@ export function FocusTimer({ onComplete }: FocusTimerProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   
-  // Use use-sound hook for high-fidelity singing bowl sound
-  // Fallback to a generated tone if the file doesn't exist
-  const [playCompletionSound] = useSound('/sounds/singing-bowl.mp3', {
-    volume: 0.5,
-    onError: () => {
-      // Fallback: Use Web Audio API to generate a simple tone
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
+  // Completion sound: generate locally (no network fetch, no 404s).
+  const playCompletionSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-        oscillator.frequency.value = 440; // A4 note
-        oscillator.type = 'sine';
+      oscillator.frequency.value = 440; // A4
+      oscillator.type = 'sine';
 
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 2);
+      gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.75);
 
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 2);
-      } catch (err) {
-        console.warn('Could not play completion sound:', err);
-      }
-    },
-  });
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 1.75);
+    } catch (err) {
+      console.warn('Could not play completion sound:', err);
+    }
+  };
 
   useEffect(() => {
     if (isRunning && (minutes > 0 || seconds > 0)) {
@@ -64,7 +58,7 @@ export function FocusTimer({ onComplete }: FocusTimerProps) {
 
       return () => clearInterval(timer);
     }
-  }, [isRunning, minutes, seconds, onComplete, playCompletionSound]);
+  }, [isRunning, minutes, seconds, onComplete]);
 
   const formatTime = (mins: number, secs: number) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;

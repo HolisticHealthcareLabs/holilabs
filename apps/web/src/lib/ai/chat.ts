@@ -238,12 +238,15 @@ async function chatWithOpenAI(request: ChatRequest): Promise<ChatResponse> {
 
 async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
   try {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    // Support both env var names used across the repo/docs.
+    // - GOOGLE_AI_API_KEY: used by the REST call below
+    // - GEMINI_API_KEY: used elsewhere (SDK-based provider factory)
+    const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return {
         success: false,
-        error: 'Google AI API key not configured',
+        error: 'Gemini API key not configured (set GOOGLE_AI_API_KEY or GEMINI_API_KEY)',
       };
     }
 
@@ -283,26 +286,26 @@ async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
             topP: 0.95,
             topK: 40,
           },
+          // NOTE: Gemini REST API rejects unknown safety categories.
+          // Keep this minimal and valid; clinical content should not trip these.
           safetySettings: [
-            {
-              category: 'HARM_CATEGORY_MEDICAL',
-              threshold: 'BLOCK_NONE', // Allow medical content for clinical use
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_ONLY_HIGH',
-            },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
           ],
         }),
       }
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Gemini API error:', error);
+      const raw = await response.text().catch(() => '');
+      console.error('Gemini API error:', raw);
+      let detail = raw;
+      try {
+        const parsed = JSON.parse(raw);
+        detail = parsed?.error?.message || parsed?.message || raw;
+      } catch {}
       return {
         success: false,
-        error: 'Failed to get Gemini response',
+        error: `Gemini request failed (${response.status}): ${detail || response.statusText}`,
       };
     }
 

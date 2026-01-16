@@ -62,6 +62,7 @@ export default function DashboardCommandCenter() {
   const router = useRouter();
   const { t } = useLanguage();
   const { isOpen: isCommandPaletteOpen, close: closeCommandPalette } = useCommandPalette();
+  const [clinicianId, setClinicianId] = useState<string | null>(null);
 
   // State
   const [loading, setLoading] = useState(true);
@@ -126,6 +127,15 @@ export default function DashboardCommandCenter() {
 
     // Fetch dashboard data
     fetchDashboardData();
+
+    // Fetch clinician identity for widgets that require it (tasks).
+    fetch('/api/auth/whoami', { cache: 'no-store' })
+      .then((r) => r.json().catch(() => ({})))
+      .then((d) => {
+        const id = d?.user?.id || d?.data?.user?.id || d?.id;
+        if (typeof id === 'string') setClinicianId(id);
+      })
+      .catch(() => {});
   }, []);
 
   const fetchDashboardData = async () => {
@@ -211,10 +221,10 @@ export default function DashboardCommandCenter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="dark min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mb-4" />
+          <h3 className="text-xl font-bold text-neutral-100">
             Loading...
           </h3>
         </div>
@@ -223,7 +233,8 @@ export default function DashboardCommandCenter() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    // Force dark styling for the dashboard so clinicians always get readable contrast.
+    <div className="dark min-h-screen bg-neutral-950 text-neutral-100">
       {/* Onboarding */}
       <ImprovedWelcomeModal />
       <OnboardingChecklist />
@@ -243,14 +254,14 @@ export default function DashboardCommandCenter() {
       <FloatingActionButton onClick={() => setShowWidgetStore(true)} />
 
       {/* Top Header - Redesigned */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+      <header className="bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-800 sticky top-0 z-20 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900" suppressHydrationWarning>
+              <h1 className="text-3xl font-bold text-neutral-100" suppressHydrationWarning>
                 {greeting}, Dr.
               </h1>
-              <p className="text-sm text-gray-600 mt-1" suppressHydrationWarning>
+              <p className="text-sm text-neutral-400 mt-1" suppressHydrationWarning>
                 {currentDate || 'Loading...'}
               </p>
             </div>
@@ -492,19 +503,19 @@ export default function DashboardCommandCenter() {
             )}
 
             {/* Task Management Widget */}
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+            <div className="bg-neutral-950/40 border border-neutral-800 rounded-xl shadow-sm p-6 backdrop-blur">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-bold text-neutral-100">
                   My Tasks
                 </h2>
                 <button
                   onClick={() => router.push('/dashboard/tasks')}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center transition-colors"
+                  className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center transition-colors"
                 >
                   View All →
                 </button>
               </div>
-              <TaskManagementPanel userId="system" compact={true} />
+              <TaskManagementPanel userId={clinicianId || undefined} compact={true} />
             </div>
           </div>
         </div>
