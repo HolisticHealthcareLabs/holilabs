@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import QRCode from 'qrcode';
 
 interface Clinician {
   id: string;
@@ -17,15 +18,13 @@ interface Clinician {
   lastName: string;
   specialty: string;
   licenseNumber: string;
-  user: {
-    email: string;
-    phone: string | null;
-  };
+  email: string | null;
 }
 
 interface ProfileData {
   id: string;
   patientId: string;
+  tokenId: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
@@ -50,6 +49,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [shareQr, setShareQr] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -72,6 +72,16 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    async function buildQr() {
+      if (!data?.tokenId) return;
+      const url = `${window.location.origin}/access/request?patientTokenId=${encodeURIComponent(data.tokenId)}`;
+      const png = await QRCode.toDataURL(url, { margin: 1, width: 220 });
+      setShareQr(png);
+    }
+    buildQr().catch(() => {});
+  }, [data?.tokenId]);
 
   const calculateAge = (dateOfBirth: string): number => {
     const today = new Date();
@@ -385,18 +395,43 @@ export default function ProfilePage() {
                     <span className="font-medium">Licencia:</span> {data.assignedClinician.licenseNumber}
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Email:</span> {data.assignedClinician.user.email}
+                    <span className="font-medium">Email:</span>{' '}
+                    {data.assignedClinician.email || 'No especificado'}
                   </p>
-                  {data.assignedClinician.user.phone && (
-                    <p className="text-gray-700">
-                      <span className="font-medium">Teléfono:</span> {data.assignedClinician.user.phone}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
           </motion.div>
         )}
+
+        {/* Share with clinician (QR access request) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 mt-6"
+        >
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Compartir con tu médico</h3>
+          <p className="text-gray-600 mb-4">
+            Muestra este QR a tu médico. Al escanearlo, podrá solicitar acceso y tú podrás aprobar o rechazar desde Holi Labs.
+          </p>
+
+          {shareQr ? (
+            <div className="flex items-center gap-6 flex-wrap">
+              <img src={shareQr} alt="QR para solicitud de acceso" className="h-[220px] w-[220px] rounded-lg border" />
+              <div className="text-sm text-gray-700 space-y-2">
+                <p>
+                  <span className="font-semibold">Tu identificador (token):</span> {data.tokenId}
+                </p>
+                <p className="text-gray-600">
+                  Privacidad: el QR no revela PII; solo inicia una solicitud que requiere tu aprobación.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-600">Generando QR…</p>
+          )}
+        </motion.div>
       </div>
     </div>
   );

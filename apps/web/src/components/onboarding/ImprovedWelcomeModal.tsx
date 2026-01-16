@@ -207,23 +207,17 @@ export default function ImprovedWelcomeModal() {
               onClick={handleAddFirstPatient}
               className="group relative bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-[#014751] rounded-lg p-6 text-left transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-gray-100 group-hover:bg-[#014751]/10 rounded-lg flex items-center justify-center transition-colors">
-                  <svg className="w-6 h-6 text-gray-600 group-hover:text-[#014751]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                  Add First Patient
+                </h3>
+                <div className="text-sm text-[#014751] font-medium whitespace-nowrap">
+                  Start now
                 </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Add First Patient</h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                 Begin with a fresh start by creating your first patient record
               </p>
-              <div className="flex items-center text-[#014751] text-sm font-medium">
-                Start now
-                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
             </button>
 
             {/* Option 2: Demo Mode - Recommended */}
@@ -231,26 +225,22 @@ export default function ImprovedWelcomeModal() {
               onClick={handleEnableDemoMode}
               className="group relative bg-white hover:bg-[#014751]/5 border-2 border-[#014751] rounded-lg p-6 text-left transition-all"
             >
-              <div className="flex items-start justify-between mb-4">
-                <span className="px-2.5 py-1 bg-[#014751] text-white text-xs font-semibold rounded">
-                  RECOMMENDED
-                </span>
-                <div className="w-12 h-12 bg-[#014751]/10 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-[#014751]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                  Try Demo Mode
+                </h3>
+                <div className="flex flex-col items-end gap-1">
+                  <div className="text-xs font-semibold text-[#014751] uppercase tracking-wide">
+                    Recommended
+                  </div>
+                  <div className="text-sm text-[#014751] font-medium whitespace-nowrap">
+                    Launch demo
+                  </div>
                 </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Try Demo Mode</h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                 Explore with realistic sample data to learn the platform
               </p>
-              <div className="flex items-center text-[#014751] text-sm font-medium">
-                Launch demo
-                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
             </button>
 
             {/* Option 3: Import Patients */}
@@ -259,18 +249,15 @@ export default function ImprovedWelcomeModal() {
               className="group relative bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-[#014751] rounded-lg p-6 text-left transition-all opacity-60 cursor-not-allowed"
               disabled
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                  Import Patients
+                </h3>
+                <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                  Coming soon
                 </div>
-                <span className="px-2.5 py-1 bg-gray-200 text-gray-600 text-xs font-semibold rounded">
-                  COMING SOON
-                </span>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Import Patients</h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                 Upload your existing patient database via CSV
               </p>
             </button>

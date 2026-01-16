@@ -111,6 +111,26 @@ export const POST = createPublicRoute(
         stack: emailError instanceof Error ? emailError.stack : undefined,
       });
 
+      // DEV FALLBACK: allow local testing even if email provider is down/misconfigured.
+      // We still created a DB record above, so the link is valid.
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn({
+          event: 'magic_link_email_dev_fallback',
+          patientUserId: patientUser.id,
+          magicLinkUrl,
+        });
+
+        return NextResponse.json(
+          {
+            success: true,
+            message:
+              'Email provider unavailable in development. Use the devMagicLinkUrl to continue.',
+            devMagicLinkUrl: magicLinkUrl,
+          },
+          { status: 200 }
+        );
+      }
+
       // Audit log for failed attempt
       await createAuditLog({
         action: 'LOGIN',
@@ -130,10 +150,17 @@ export const POST = createPublicRoute(
     }
 
     return NextResponse.json(
-      {
-        success: true,
-        message: 'Magic link sent to your email. Please check your inbox.'
-      },
+      process.env.NODE_ENV === 'development'
+        ? {
+            success: true,
+            message:
+              'Magic link request accepted. If email delivery is unreliable in dev, use devMagicLinkUrl.',
+            devMagicLinkUrl: magicLinkUrl,
+          }
+        : {
+            success: true,
+            message: 'Magic link sent to your email. Please check your inbox.',
+          },
       { status: 200 }
     );
   } catch (error) {

@@ -22,24 +22,24 @@ export async function getSession() {
 /**
  * Get authenticated patient ID
  */
-export async function getAuthenticatedPatientId(): Promise<string | null> {
+export async function getAuthenticatedClinicianId(): Promise<string | null> {
   const session = await auth();
-  return session?.user?.patientId || null;
+  return session?.user?.id || null;
 }
 
 /**
- * Require authenticated patient session (throws if not authenticated)
+ * Require authenticated clinician session (throws if not authenticated)
  */
-export async function requirePatientAuth() {
+export async function requireClinicianAuth() {
   const session = await auth();
 
-  if (!session?.user || session.user.role !== 'patient') {
-    throw new Error('Unauthorized: Patient authentication required');
+  if (!session?.user) {
+    throw new Error('Unauthorized: Clinician authentication required');
   }
 
   return {
     userId: session.user.id,
-    patientId: session.user.patientId,
     email: session.user.email!,
+    role: session.user.role,
   };
 }

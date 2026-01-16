@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TranscriptSegment {
   speaker: string;
@@ -24,6 +25,8 @@ export default function TranscriptViewer({
   onSegmentCorrect,
   readonly = false
 }: TranscriptViewerProps) {
+  const { t: tRaw } = useLanguage();
+  const t = (key: string) => tRaw(`copilot.${key}`);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -92,9 +95,9 @@ export default function TranscriptViewer({
         <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
         </svg>
-        <p className="font-medium">No hay transcripción disponible</p>
+        <p className="font-medium">{t('transcriptEmptyTitle')}</p>
         {/* Decorative - low contrast intentional for empty state helper text */}
-        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">La transcripción aparecerá aquí después de procesar el audio</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{t('transcriptEmptySubtitle')}</p>
       </div>
     );
   }
@@ -114,16 +117,11 @@ export default function TranscriptViewer({
                 </div>
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-bold text-green-900 mb-1">
-                  ✅ Corrección guardada y enviada a entrenamiento
-                </h4>
-                <p className="text-sm text-green-800 leading-relaxed">
-                  Tu corrección ayudará a mejorar la precisión de la IA en futuras transcripciones.
-                  Cada corrección se procesa diariamente para optimizar el modelo de transcripción médica.
-                </p>
+                <h4 className="text-sm font-bold text-green-900 mb-1">{t('transcriptCorrectionSavedTitle')}</h4>
+                <p className="text-sm text-green-800 leading-relaxed">{t('transcriptCorrectionSavedBody')}</p>
                 <div className="mt-2 flex items-center gap-2 text-xs text-green-700">
-                  <span className="font-semibold">🧠 RLHF Loop:</span>
-                  <span className="bg-green-200 px-2 py-1 rounded">Retroalimentación activa</span>
+                  <span className="font-semibold">🧠 {t('transcriptRlhfLabel')}</span>
+                  <span className="bg-green-200 px-2 py-1 rounded">{t('transcriptRlhfActive')}</span>
                 </div>
               </div>
               <button
@@ -191,7 +189,7 @@ export default function TranscriptViewer({
                       : 'bg-gray-600 text-white'
                   }`}
                 >
-                  {segment.speaker === 'Doctor' ? '👨‍⚕️' : '🧑'} {segment.speaker}
+                  {segment.speaker}
                 </span>
                 {/* Decorative - low contrast intentional for timestamp badge */}
                 <span className="text-xs text-gray-500 dark:text-gray-400 font-mono bg-white dark:bg-gray-700 px-2 py-1 rounded">
@@ -219,7 +217,7 @@ export default function TranscriptViewer({
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Corregir
+                    {t('transcriptEdit')}
                   </button>
                 )}
               </div>
@@ -241,14 +239,14 @@ export default function TranscriptViewer({
 
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-600 dark:text-gray-400 italic">
-                    💡 Presiona ⌘+Enter para guardar rápidamente
+                    {t('transcriptQuickSaveHint')}
                   </p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleCancelEdit}
                       className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      Cancelar
+                      {t('transcriptCancel')}
                     </button>
                     <button
                       onClick={() => handleSaveEdit(idx, segment.text)}
@@ -257,14 +255,14 @@ export default function TranscriptViewer({
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Guardar Corrección
+                      {t('transcriptSaveCorrection')}
                     </button>
                   </div>
                 </div>
 
                 {/* Original text for reference */}
                 <div className="p-3 bg-gray-100 border-l-4 border-gray-400 rounded">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">Original (AI):</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mb-1">{t('transcriptOriginalAi')}</p>
                   <p className="text-sm text-gray-700 italic">{segment.text}</p>
                 </div>
               </div>
@@ -276,10 +274,10 @@ export default function TranscriptViewer({
                 {isLowConfidence && (
                   <div className="mt-3 p-2 bg-yellow-100 border-l-4 border-yellow-500 rounded text-xs">
                     <p className="font-semibold text-yellow-800">
-                      ⚠️ Este segmento tiene baja confianza ({Math.round(segment.confidence * 100)}%)
+                      ⚠️ {t('transcriptLowConfidenceTitle')} ({Math.round(segment.confidence * 100)}%)
                     </p>
                     <p className="text-yellow-700 mt-1">
-                      Por favor revise y corrija si es necesario para asegurar precisión médica.
+                      {t('transcriptLowConfidenceBody')}
                     </p>
                   </div>
                 )}
@@ -295,28 +293,28 @@ export default function TranscriptViewer({
           <div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{segments.length}</p>
             {/* Decorative - low contrast intentional for statistics label */}
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Segmentos</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">{t('transcriptStatsSegments')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-green-600 dark:text-green-500">
               {segments.filter(s => s.confidence >= 0.9).length}
             </p>
             {/* Decorative - low contrast intentional for statistics label */}
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Alta confianza</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">{t('transcriptStatsHighConfidence')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
               {segments.filter(s => s.confidence < 0.85 && !s.correctedAt).length}
             </p>
             {/* Decorative - low contrast intentional for statistics label */}
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Requieren revisión</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">{t('transcriptStatsNeedsReview')}</p>
           </div>
           <div className="relative">
             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-500">{totalCorrections}</p>
             {/* Decorative - low contrast intentional for statistics label */}
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Corregidos</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">{t('transcriptStatsCorrected')}</p>
             {totalCorrections > 0 && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-pulse" title="Contribuyendo al entrenamiento de IA" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-pulse" title={t('transcriptStatsContributing')} />
             )}
           </div>
         </div>
@@ -327,8 +325,8 @@ export default function TranscriptViewer({
             {/* Decorative - low contrast intentional for training loop metadata */}
             <div className="flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-              <span className="font-semibold">RLHF Loop activo:</span>
-              <span>{totalCorrections} corrección{totalCorrections !== 1 ? 'es' : ''} contribuyendo a mejorar la IA</span>
+              <span className="font-semibold">{t('transcriptRlhfActiveLabel')}</span>
+              <span>{t('transcriptRlhfActiveBody').replace('{n}', String(totalCorrections)).replace('{s}', totalCorrections !== 1 ? 's' : '')}</span>
             </div>
           </div>
         )}

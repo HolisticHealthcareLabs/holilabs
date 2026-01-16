@@ -78,19 +78,53 @@ export function RealTimeTranscription({
   const [error, setError] = useState<string | null>(null);
   const [connectionQuality, setConnectionQuality] = useState<'excellent' | 'good' | 'poor'>('excellent');
   const [highlightMedicalTerms, setHighlightMedicalTerms] = useState(true);
+  const [dgLanguage, setDgLanguage] = useState(language);
 
   const wsRef = useRef<WebSocket | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null); // legacy (kept to minimize diff)
   const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const processorNodeRef = useRef<ScriptProcessorNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
-  const chunksQueueRef = useRef<Blob[]>([]);
+  const chunksQueueRef = useRef<ArrayBuffer[]>([]);
+  const intentionalCloseRef = useRef(false);
+
+  useEffect(() => {
+    // If parent controls language, reflect it. Don't clobber an active recording.
+    if (!isRecording) setDgLanguage(language);
+  }, [language, isRecording]);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('holi.dgLanguage');
+      if (saved && !isRecording) setDgLanguage(saved);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const floatTo16BitPCM = (input: Float32Array) => {
+    const output = new Int16Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+      const s = Math.max(-1, Math.min(1, input[i] || 0));
+      output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return output;
+  };
 
   /**
    * Initialize Deepgram WebSocket connection
    */
   const connectDeepgram = useCallback(async () => {
     try {
+      // Hard guarantee: we do NOT allow direct browser → Deepgram streaming in this app.
+      // All transcription must be server-mediated (Deepgram → Presidio → UI/DB).
+      setError('Live transcription is running in server mode. Direct browser-to-Deepgram is disabled for compliance.');
+      setIsConnected(false);
+      return;
+
       setError(null);
 
       // Get Deepgram API key from backend
@@ -104,7 +138,7 @@ export function RealTimeTranscription({
       // Build Deepgram WebSocket URL
       const params = new URLSearchParams({
         model: 'nova-2',
-        language: language,
+        language: dgLanguage,
         punctuate: 'true',
         interim_results: 'true',
         smart_format: 'true',
@@ -160,8 +194,29 @@ export function RealTimeTranscription({
 
             if (segment.text.trim()) {
               setSegments(prev => {
-                // If final, add new segment
+                // If final, replace the last interim segment (prevents "double" entries),
+                // and de-dupe identical repeated finals that Deepgram may emit.
                 if (isFinal) {
+                  const lastIndex = prev.length - 1;
+
+                  // Replace last interim with this final if it exists.
+                  if (lastIndex >= 0 && !prev[lastIndex].isFinal) {
+                    const updated = [...prev.slice(0, -1), segment];
+                    onTranscriptUpdate?.(updated);
+                    return updated;
+                  }
+
+                  // If the last is already the same final, don't append.
+                  if (
+                    lastIndex >= 0 &&
+                    prev[lastIndex].isFinal &&
+                    prev[lastIndex].text.trim() === segment.text.trim() &&
+                    (prev[lastIndex].speaker ?? null) === (segment.speaker ?? null)
+                  ) {
+                    onTranscriptUpdate?.(prev);
+                    return prev;
+                  }
+
                   const updated = [...prev, segment];
                   onTranscriptUpdate?.(updated);
                   return updated;
@@ -205,6 +260,11 @@ export function RealTimeTranscription({
         setIsConnected(false);
 
         // Auto-reconnect if still recording
+        if (intentionalCloseRef.current) {
+          intentionalCloseRef.current = false;
+          return;
+        }
+
         if (isRecording && reconnectAttemptsRef.current < 5) {
           reconnectAttemptsRef.current++;
           setError(`Reconnecting... (attempt ${reconnectAttemptsRef.current})`);
@@ -220,7 +280,34 @@ export function RealTimeTranscription({
       setError('Failed to initialize transcription service');
       setIsConnected(false);
     }
-  }, [language, enableDiarization, isRecording, onTranscriptUpdate]);
+  }, [dgLanguage, enableDiarization, isRecording, onTranscriptUpdate]);
+
+  const switchLanguage = useCallback(
+    async (nextLang: string) => {
+      try {
+        window.localStorage.setItem('holi.dgLanguage', nextLang);
+      } catch {}
+      setDgLanguage(nextLang);
+      if (!isRecording) return;
+
+      // Seamless-ish: keep the mic stream running, just swap the websocket.
+      try {
+        reconnectAttemptsRef.current = 0;
+        setError('Switching language…');
+        if (wsRef.current) {
+          intentionalCloseRef.current = true;
+          wsRef.current.close();
+          wsRef.current = null;
+        }
+        await connectDeepgram();
+        setError(null);
+      } catch (e) {
+        // If this fails, user can always Stop/Start recording.
+        setError('Failed to switch language. Try Stop/Start recording.');
+      }
+    },
+    [connectDeepgram, isRecording]
+  );
 
   /**
    * Start recording and streaming to Deepgram
@@ -240,61 +327,74 @@ export function RealTimeTranscription({
         },
       });
 
+      streamRef.current = stream;
+
       // Create AudioContext for resampling
-      audioContextRef.current = new AudioContext({ sampleRate: 16000 });
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      audioContextRef.current = audioContext;
 
-      // Create MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus',
-      });
+      // Create nodes for PCM streaming (Deepgram expects raw linear16, not a WebM container)
+      const sourceNode = audioContext.createMediaStreamSource(stream);
+      sourceNodeRef.current = sourceNode;
 
-      mediaRecorder.ondataavailable = async (event) => {
-        if (event.data.size > 0 && !isPaused) {
-          // Convert to PCM16 for Deepgram
-          const arrayBuffer = await event.data.arrayBuffer();
+      // ScriptProcessor is deprecated but reliable for simple PCM streaming in modern browsers.
+      // bufferSize 4096 @ 16kHz ≈ 256ms chunks.
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processorNodeRef.current = processor;
 
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(arrayBuffer);
-          } else {
-            // Queue chunks if not connected
-            chunksQueueRef.current.push(event.data);
-          }
+      // Mute output (we only need the callback)
+      const gain = audioContext.createGain();
+      gain.gain.value = 0;
+      gainNodeRef.current = gain;
+
+      processor.onaudioprocess = (e) => {
+        if (isPaused) return;
+        const input = e.inputBuffer.getChannelData(0);
+        const pcm16 = floatTo16BitPCM(input);
+        const payload = pcm16.buffer;
+
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(payload);
+        } else {
+          // Queue bytes if not connected yet
+          chunksQueueRef.current.push(payload);
         }
       };
 
-      mediaRecorder.onstop = () => {
-        stream.getTracks().forEach(track => track.stop());
-
-        // Send final transcript
-        const finalTranscript = segments
-          .filter(s => s.isFinal)
-          .map(s => s.text)
-          .join(' ');
-
-        onRecordingStop?.(finalTranscript);
-      };
-
-      mediaRecorderRef.current = mediaRecorder;
+      sourceNode.connect(processor);
+      processor.connect(gain);
+      gain.connect(audioContext.destination);
 
       // Connect to Deepgram
       await connectDeepgram();
 
-      // Start recording with 250ms chunks for real-time streaming
-      mediaRecorder.start(250);
       setIsRecording(true);
       setIsPaused(false);
     } catch (err) {
       console.error('Failed to start recording:', err);
       setError('Microphone access denied or not available');
     }
-  }, [connectDeepgram, onRecordingStop, segments, isPaused]);
+  }, [connectDeepgram, isPaused, onRecordingStop, segments]);
 
   /**
    * Stop recording
    */
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+    // Stop audio graph
+    try {
+      processorNodeRef.current?.disconnect();
+      sourceNodeRef.current?.disconnect();
+      gainNodeRef.current?.disconnect();
+    } catch {}
+
+    processorNodeRef.current = null;
+    sourceNodeRef.current = null;
+    gainNodeRef.current = null;
+
+    // Stop mic stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
 
     if (wsRef.current) {
@@ -307,24 +407,23 @@ export function RealTimeTranscription({
       audioContextRef.current = null;
     }
 
+    // Send final transcript
+    const finalTranscript = segments
+      .filter((s) => s.isFinal)
+      .map((s) => s.text)
+      .join(' ');
+    onRecordingStop?.(finalTranscript);
+
     setIsRecording(false);
     setIsPaused(false);
     setIsConnected(false);
-  }, []);
+  }, [onRecordingStop, segments]);
 
   /**
    * Pause/resume recording
    */
   const togglePause = useCallback(() => {
-    if (!mediaRecorderRef.current) return;
-
-    if (isPaused) {
-      mediaRecorderRef.current.resume();
-      setIsPaused(false);
-    } else {
-      mediaRecorderRef.current.pause();
-      setIsPaused(true);
-    }
+    setIsPaused((p) => !p);
   }, [isPaused]);
 
   /**
@@ -393,6 +492,19 @@ export function RealTimeTranscription({
 
         {/* Controls */}
         <div className="flex items-center gap-2">
+        {/* Language Selector (speech language, not UI language) */}
+        <select
+          value={dgLanguage}
+          onChange={(e) => switchLanguage(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+          title="Speech language for Deepgram (switching will reconnect)"
+        >
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="pt">Português</option>
+          <option value="multi">Auto (multi-language)</option>
+        </select>
+
           {/* Medical Terms Toggle */}
           <button
             onClick={() => setHighlightMedicalTerms(!highlightMedicalTerms)}
@@ -454,6 +566,29 @@ export function RealTimeTranscription({
           )}
         </div>
       </div>
+
+      {/* Medical term legend */}
+      {highlightMedicalTerms && (
+        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+            <span className="font-semibold text-gray-700 dark:text-gray-200">Legend:</span>
+            {(
+              ['symptoms', 'diagnoses', 'medications', 'procedures', 'vitals', 'anatomy'] as const
+            ).map((cat) => (
+              <span
+                key={cat}
+                className={`inline-flex items-center px-2 py-0.5 rounded border font-semibold ${getMedicalTermColor(cat)}`}
+                title={getMedicalTermCategoryName(cat)}
+              >
+                {getMedicalTermCategoryName(cat)}
+              </span>
+            ))}
+            <span className="ml-auto text-[11px] text-gray-500 dark:text-gray-400">
+              Highlighting is a UI aid; persistence is handled separately.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Error Banner */}
       {error && (

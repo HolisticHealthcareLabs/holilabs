@@ -109,6 +109,7 @@ export async function GET(request: NextRequest) {
           id: patient.id,
           // TODO: patientId field doesn't exist - using mrn instead
           patientId: patient.mrn,
+          tokenId: patient.tokenId,
           firstName: patient.firstName,
           lastName: patient.lastName,
           dateOfBirth: patient.dateOfBirth,
