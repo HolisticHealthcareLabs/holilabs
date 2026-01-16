@@ -88,7 +88,7 @@ export function ClinicalSessionProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       liveSoapNote: {
-        ...prev.liveSoapNote,
+        ...(prev.liveSoapNote || {}),
         ...updates,
         lastUpdated: Date.now(),
       } as LiveSoapNote,

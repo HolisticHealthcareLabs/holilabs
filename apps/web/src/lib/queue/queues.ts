@@ -10,6 +10,7 @@ import logger from '@/lib/logger';
 
 // Singleton queue instances
 let correctionAggregationQueue: Queue | null = null;
+let auditArchivalQueue: Queue | null = null;
 let patientRemindersQueue: Queue | null = null;
 let labResultsQueue: Queue | null = null;
 let prescriptionRefillsQueue: Queue | null = null;
@@ -32,6 +33,23 @@ export function getCorrectionAggregationQueue(): Queue {
     });
   }
   return correctionAggregationQueue;
+}
+
+/**
+ * Get or create the audit archival queue
+ */
+export function getAuditArchivalQueue(): Queue {
+  if (!auditArchivalQueue) {
+    auditArchivalQueue = new Queue(
+      QueueName.AUDIT_ARCHIVAL,
+      defaultQueueOptions
+    );
+    logger.info({
+      event: 'queue_initialized',
+      queueName: QueueName.AUDIT_ARCHIVAL,
+    });
+  }
+  return auditArchivalQueue;
 }
 
 /**
@@ -139,6 +157,7 @@ export function getWhatsappMessagesQueue(): Queue {
 export async function closeAllQueues(): Promise<void> {
   const queues = [
     correctionAggregationQueue,
+    auditArchivalQueue,
     patientRemindersQueue,
     labResultsQueue,
     prescriptionRefillsQueue,

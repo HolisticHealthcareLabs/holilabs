@@ -3,7 +3,7 @@
 // Force dynamic rendering for dashboard (requires authentication)
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -34,6 +34,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarPeekOpen, setSidebarPeekOpen] = useState(false);
+  const sidebarPeekCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false); // Disabled by default
   const [isInitialLoad, setIsInitialLoad] = useState(false);
@@ -127,6 +130,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     router.push('/auth/login');
   };
 
+  const openPeek = () => {
+    if (!sidebarCollapsed) return;
+    if (sidebarPeekCloseTimerRef.current) clearTimeout(sidebarPeekCloseTimerRef.current);
+    setSidebarPeekOpen(true);
+  };
+
+  const closePeekSoon = () => {
+    if (!sidebarCollapsed) return;
+    if (sidebarPeekCloseTimerRef.current) clearTimeout(sidebarPeekCloseTimerRef.current);
+    sidebarPeekCloseTimerRef.current = setTimeout(() => setSidebarPeekOpen(false), 150);
+  };
+
   return (
     <>
       {/* Loading Screen - shown only on initial load after sign in */}
@@ -145,9 +160,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-gray-800 shadow-sm transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        onMouseEnter={openPeek}
+        onMouseLeave={closePeekSoon}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -159,6 +176,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 width={32}
                 height={32}
               />
+              {!sidebarCollapsed && (
               <span
                 className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
                 style={{
@@ -168,6 +186,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               >
                 Holi Labs
               </span>
+              )}
             </Link>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -177,23 +196,98 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            <button
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              className="hidden lg:inline-flex text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <svg className={`w-6 h-6 transition-transform ${sidebarCollapsed ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
           </div>
 
           {/* Navigation - Beautiful Circular Gradient Tiles */}
           <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
+            {/* Peek panel: when collapsed, hovering any circle reveals ALL options at once */}
+            {sidebarCollapsed && sidebarPeekOpen && (
+              <div
+                className="absolute left-20 top-16 bottom-24 w-64 z-[70] pointer-events-auto"
+                onMouseEnter={openPeek}
+                onMouseLeave={closePeekSoon}
+              >
+                <div className="h-full overflow-y-auto rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 shadow-2xl p-2">
+                  <div className="px-3 py-2">
+                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      Navigation
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    {navItems.map((ni) => (
+                      <div key={`peek-${ni.href}`} className="rounded-xl">
+                        <Link
+                          href={ni.href}
+                          onClick={() => {
+                            setSidebarOpen(false);
+                            setSidebarPeekOpen(false);
+                          }}
+                          className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {ni.name}
+                          </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-300">
+                            {ni.href.replace('/dashboard', '') || '/'}
+                          </span>
+                        </Link>
+                        {ni.subItems && (
+                          <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700 py-1 space-y-1">
+                            {ni.subItems.map((si) => (
+                              <Link
+                                key={`peek-sub-${si.href}`}
+                                href={si.href}
+                                onClick={() => {
+                                  setSidebarOpen(false);
+                                  setSidebarPeekOpen(false);
+                                }}
+                                className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                              >
+                                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                  {si.name}
+                                </span>
+                                <span className="text-xs text-gray-600 dark:text-gray-300">
+                                  {si.href.replace('/dashboard', '')}
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* All Navigation Items - Clinical Tools First, Then Main Nav */}
             {navItems.map((item) => {
-              const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              const currentPath = pathname || '';
+              const isActive = currentPath === item.href || (item.href !== '/dashboard' && currentPath.startsWith(item.href));
 
-              return (
-                <Link
+              return item.subItems ? (
+                // Parent with submenu - use div instead of Link to avoid nested links
+                <div
                   key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
                   className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300"
+                  onMouseEnter={openPeek}
                 >
                   {/* Circular Gradient Tile */}
-                  <div
+                  <Link
+                    href={item.href}
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      setSidebarPeekOpen(false);
+                    }}
                     className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 backdrop-blur-sm
                       ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
                       ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
@@ -214,7 +308,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         className="dark:invert brightness-0 invert"
                       />
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Floating Text Label or Submenu - Appears on Hover */}
                   <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
@@ -271,6 +365,54 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                       </div>
                     )}
                   </div>
+                </div>
+              ) : (
+                // Regular nav item - use Link
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300"
+                >
+                  {/* Circular Gradient Tile */}
+                  <div
+                    className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 backdrop-blur-sm
+                      ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
+                      ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
+                      ${item.name === 'Calendar' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}
+                      ${item.name === 'Messages' ? 'bg-gradient-to-br from-sky-400/70 to-cyan-500/70 hover:from-sky-500 hover:to-cyan-600 hover:shadow-2xl hover:shadow-sky-400/50' : ''}
+                      ${!['Dashboard', 'Patients', 'Calendar', 'Messages'].includes(item.name) ? 'bg-gradient-to-br from-gray-300/70 to-gray-400/70' : ''}
+                      ${isActive ? 'scale-110 ring-4 ring-white/60 shadow-2xl' : 'shadow-md'}
+                      hover:scale-110 hover:ring-4 hover:ring-white/40`}
+                  >
+                    <div className="relative w-7 h-7 transition-transform duration-300 group-hover:scale-125">
+                      <Image
+                        src={item.icon}
+                        alt={item.name}
+                        width={28}
+                        height={28}
+                        className="dark:invert brightness-0 invert"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Floating Text Label */}
+                  <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
+                    <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                        {item.name}
+                      </p>
+                      {item.badge && (
+                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {item.badge}
+                        </span>
+                      )}
+                      {/* Arrow pointer */}
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+                        <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+                      </div>
+                    </div>
+                  </div>
                 </Link>
               );
             })}
@@ -320,7 +462,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           `}</style>
 
           {/* User Profile with Dropdown Menu */}
-          <div className="relative border-t border-gray-200 dark:border-gray-700 p-4">
+          <div className={`relative border-t border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'p-3' : 'p-4'}`}>
             {/* Profile Menu Dropdown - Expands Upward */}
             {profileMenuOpen && (
               <>
@@ -330,7 +472,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   onClick={() => setProfileMenuOpen(false)}
                 />
                 {/* Menu */}
-                <div className="absolute bottom-full left-4 right-4 mb-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 animate-slideUp">
+                <div
+                  className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 animate-slideUp ${
+                    sidebarCollapsed
+                      ? 'left-full ml-3 w-80'
+                      : 'left-4 right-4'
+                  }`}
+                >
                   {/* Settings Options */}
                   <div className="px-2 pb-2 border-b border-gray-200 dark:border-gray-700">
                     <p className="px-3 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
@@ -454,33 +602,42 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             {/* Profile Button */}
             <button
               onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group"
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group`}
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:scale-105 transition-transform">
-                {user?.email?.[0].toUpperCase()}
+              <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+                {/* subtle "profile photo" background pattern */}
+                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.9),transparent_55%)]" />
+                <svg className="w-7 h-7 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 20.25a7.5 7.5 0 0115 0" />
+                </svg>
               </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                  Dr. {user?.email?.split('@')[0]}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{user?.email}</p>
-              </div>
-              {/* Decorative - low contrast intentional for dropdown chevron icon */}
-              <svg
-                className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
+              {!sidebarCollapsed && (
+                <>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                      Dr. {user?.email?.split('@')[0]}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{user?.email}</p>
+                  </div>
+                  {/* Decorative - low contrast intentional for dropdown chevron icon */}
+                  <svg
+                    className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                </>
+              )}
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="lg:pl-64">
+      <div className={sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}>
         {/* Top Mobile Header */}
         <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
           <div className="flex items-center justify-between h-16 px-4">

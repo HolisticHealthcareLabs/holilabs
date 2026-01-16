@@ -40,10 +40,12 @@ const CACHE_NAMESPACE = {
   LAB_RESULTS: 'patient:labs',
   MEDICATIONS: 'patient:meds',
   ALLERGIES: 'patient:allergies',
-  VITALS: 'patient:vitals',
+  // v2: moved from HealthMetric -> VitalSign; bump namespace to invalidate old cached payloads
+  VITALS: 'patient:vitals:v2',
   PREVENTION: 'patient:prevention',
   RISK_SCORES: 'patient:risk',
-  FULL_CONTEXT: 'patient:context',
+  // v2: includes updated vitals shape
+  FULL_CONTEXT: 'patient:context:v2',
 } as const;
 
 /**
@@ -286,19 +288,22 @@ export async function getCachedVitals(
     CACHE_NAMESPACE.VITALS,
     `${patientId}:${limit}`,
     async () => {
-      return await prisma.healthMetric.findMany({
+      // Use VitalSign model (seeded from Synthea). HealthMetric is for device streams.
+      return await prisma.vitalSign.findMany({
         where: { patientId },
         orderBy: { recordedAt: 'desc' },
         take: limit,
         select: {
           id: true,
-          metricType: true,
-          value: true,
-          unit: true,
           source: true,
-          deviceName: true,
-          isOutOfRange: true,
-          flaggedForReview: true,
+          systolicBP: true,
+          diastolicBP: true,
+          heartRate: true,
+          temperature: true,
+          respiratoryRate: true,
+          oxygenSaturation: true,
+          weight: true,
+          height: true,
           recordedAt: true,
           createdAt: true,
         },

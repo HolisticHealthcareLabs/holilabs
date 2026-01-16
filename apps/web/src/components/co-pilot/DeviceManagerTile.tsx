@@ -340,8 +340,9 @@ export default function DeviceManagerTile({
                         className="w-full px-4 py-3 bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2"
                       >
                         <motion.div
-                          whileHover={{ rotate: [0, -10, 10, 0] }}
-                          transition={{ duration: 0.4 }}
+                          // Avoid multi-keyframe rotate arrays on hover (can crash with spring-based animations)
+                          whileHover={{ rotate: -10 }}
+                          transition={{ duration: 0.15 }}
                         >
                           <TrashIcon className="w-4 h-4" />
                         </motion.div>

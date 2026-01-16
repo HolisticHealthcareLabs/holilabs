@@ -3,7 +3,42 @@
 ## 🎯 MISSION
 You are assisting with debugging and deploying the HoliLabs healthcare platform on a DigitalOcean droplet. The codebase is complete and pushed to GitHub, but changes are not reflecting on holilabs.xyz. Your task is to identify why and fix the deployment.
 
+## 🚀 Begin iOS App Iteration
+
+We are starting the iteration process for the iOS app version of our HoliLabs website.
+
+### 1. Access the Expo Project
+
+- Navigate to the directory containing the Expo-managed React Native app for HoliLabs.
+- Ensure your project includes `expo` as a dependency and has a valid `app.json` or `app.config.js` configuration.
+
+### 2. Start the Expo Development Server
+
+Open your terminal and run:
+```sh
+expo start
+```
+_Alternatively, use_ `npx expo start` _if expo is not installed globally._
+
+### 3. Render the ExpoGo QR Code
+
+- When the development server launches, it will display a QR code in your terminal or browser window (at http://localhost:19002).
+- Open the **Expo Go** app on your iOS device.
+- Use Expo Go’s “Scan QR Code” feature to scan the QR code.
+
+### 4. Visualize the App
+
+- Your iOS device will now load the latest version of your code for live preview and debugging.
+
+> **Tip:** If you’re using a remote server or CI/CD to build your app, ensure your local machine and mobile device are on the same network for QR code scanning.
+
 ---
+
+**Next Steps:**
+- Make code changes as needed and save—the iOS app in Expo Go will auto-refresh.
+- Iteratively test and refine the mobile experience for HoliLabs.
+
+Let me know if you encounter any issues with Expo, QR code generation, or device pairing!
 
 ## 📋 PROJECT OVERVIEW
 

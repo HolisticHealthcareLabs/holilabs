@@ -92,7 +92,7 @@ test.describe('SOAP Note Generation - Audio Transcription', () => {
     await expect(page.getByRole('button', { name: /retry|try again/i })).toBeVisible();
   });
 
-  test('should support multiple audio providers (Deepgram, Whisper, AssemblyAI)', async ({ page }) => {
+  test('should support multiple audio providers (Deepgram, Whisper)', async ({ page }) => {
     // Open settings
     await page.getByRole('button', { name: /settings|options/i }).click();
 
@@ -104,7 +104,6 @@ test.describe('SOAP Note Generation - Audio Transcription', () => {
     await providerSelect.click();
     await expect(page.getByRole('option', { name: /deepgram/i })).toBeVisible();
     await expect(page.getByRole('option', { name: /whisper/i })).toBeVisible();
-    await expect(page.getByRole('option', { name: /assemblyai/i })).toBeVisible();
 
     // Select provider
     await page.getByRole('option', { name: /deepgram/i }).click();

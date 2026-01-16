@@ -16,6 +16,7 @@ export function AICommandCenter({ isOpen, onClose }: AICommandCenterProps) {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const [isThinking, setIsThinking] = useState(false);
   const router = useRouter();
+  const { t } = useLanguage();
 
   // Simple routing logic based on user intent
   const handleUserMessage = async (message: string) => {
@@ -34,46 +35,37 @@ export function AICommandCenter({ isOpen, onClose }: AICommandCenterProps) {
     let navigationPath = '';
 
     // Navigation logic
-    if (lowercaseMessage.includes('cdss') || lowercaseMessage.includes('clinical decision') || lowercaseMessage.includes('decisiones clínicas')) {
-      response = 'Te llevo al Sistema de Soporte a Decisiones Clínicas (CDSS). Aquí encontrarás 12+ reglas activas que detectan problemas antes que ocurran, interacciones medicamentosas, y protocolos WHO/PAHO.';
+    if (lowercaseMessage.includes('cdss') || lowercaseMessage.includes('clinical decision') || lowercaseMessage.includes('decisiones clínicas') || lowercaseMessage.includes('decisão clínica')) {
+      response = t.aiCommandCenter.navigation.cdss;
       shouldNavigate = true;
       navigationPath = '/dashboard/cdss';
-    } else if (lowercaseMessage.includes('scribe') || lowercaseMessage.includes('ai médica') || lowercaseMessage.includes('transcripción')) {
-      response = 'Perfecto! Te llevo al AI Medical Scribe. Esta herramienta transcribe tus consultas en tiempo real y genera notas SOAP automáticamente, ahorrándote 3-4 horas diarias.';
+    } else if (lowercaseMessage.includes('scribe') || lowercaseMessage.includes('ai médica') || lowercaseMessage.includes('transcripción') || lowercaseMessage.includes('transcrição')) {
+      response = t.aiCommandCenter.navigation.scribe;
       shouldNavigate = true;
       navigationPath = '/dashboard/scribe';
-    } else if (lowercaseMessage.includes('prevención') || lowercaseMessage.includes('prevention') || lowercaseMessage.includes('screening')) {
-      response = 'Te dirijo al Hub de Prevención Longitudinal. Aquí puedes ver timelines de 30 años, 7 dominios de salud, y más de 100 intervenciones preventivas basadas en protocolos WHO/PAHO/USPSTF.';
+    } else if (lowercaseMessage.includes('prevención') || lowercaseMessage.includes('prevention') || lowercaseMessage.includes('prevenção') || lowercaseMessage.includes('screening')) {
+      response = t.aiCommandCenter.navigation.prevention;
       shouldNavigate = true;
       navigationPath = '/dashboard/prevention';
     } else if (lowercaseMessage.includes('pacientes') || lowercaseMessage.includes('patient') || lowercaseMessage.includes('portal')) {
-      response = 'Te llevo al Portal de Gestión de Pacientes. Desde aquí puedes ver todos tus pacientes, su historial completo, y acceder al portal de pacientes que reduce tus llamadas en 40%.';
+      response = t.aiCommandCenter.navigation.patients;
       shouldNavigate = true;
       navigationPath = '/dashboard/patients';
-    } else if (lowercaseMessage.includes('precio') || lowercaseMessage.includes('plan') || lowercaseMessage.includes('suscripción')) {
-      response = 'Claro! Te muestro nuestros planes de precios. Ofrecemos desde el plan Starter gratuito hasta Enterprise personalizado. Todos incluyen IA médica, prevención automatizada, y soporte en español.';
+    } else if (lowercaseMessage.includes('precio') || lowercaseMessage.includes('plan') || lowercaseMessage.includes('preço') || lowercaseMessage.includes('suscripción') || lowercaseMessage.includes('assinatura')) {
+      response = t.aiCommandCenter.navigation.pricing;
       shouldNavigate = true;
       navigationPath = '/#precios';
     } else if (lowercaseMessage.includes('login') || lowercaseMessage.includes('entrar') || lowercaseMessage.includes('iniciar sesión')) {
-      response = 'Te llevo a la página de inicio de sesión. Puedes entrar con Google o con tu cuenta de Holi Labs.';
+      response = t.aiCommandCenter.navigation.login;
       shouldNavigate = true;
       navigationPath = '/auth/login';
-    } else if (lowercaseMessage.includes('dashboard') || lowercaseMessage.includes('panel')) {
-      response = 'Te llevo al Dashboard principal donde puedes ver un resumen de tus pacientes activos, citas programadas, prescripciones pendientes, y más.';
+    } else if (lowercaseMessage.includes('dashboard') || lowercaseMessage.includes('panel') || lowercaseMessage.includes('painel')) {
+      response = t.aiCommandCenter.navigation.dashboard;
       shouldNavigate = true;
       navigationPath = '/dashboard';
     } else {
       // Default helpful response
-      response = `Entiendo que buscas "${message}". 
-
-Puedo ayudarte con:
-• **Prevención**: Sistema longitudinal de 30 años con alertas automáticas
-• **AI Scribe**: Transcripción y notas SOAP en tiempo real (ahorra 3-4h/día)
-• **CDSS**: 12+ reglas de soporte clínico con protocolos WHO/PAHO
-• **Pacientes**: Portal completo que reduce llamadas en 40%
-• **E-Prescribing**: Firma digital a 8+ farmacias integradas
-
-¿Sobre cuál te gustaría saber más?`;
+      response = t.aiCommandCenter.defaultResponse.replace('{query}', message);
     }
 
     setMessages(prev => [...prev, { role: 'assistant', content: response }]);

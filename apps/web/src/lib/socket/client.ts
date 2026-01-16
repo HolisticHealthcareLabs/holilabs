@@ -31,7 +31,7 @@ export function initSocketClient(config: SocketClientConfig): Socket {
   const socketUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   socket = io(socketUrl, {
-    path: '/api/socket',
+    path: '/api/socket.io',
     autoConnect: config.autoConnect !== false,
     reconnection: config.reconnection !== false,
     reconnectionAttempts: config.reconnectionAttempts || 5,

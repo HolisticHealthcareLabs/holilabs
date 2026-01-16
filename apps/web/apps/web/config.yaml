@@ -1,0 +1,33 @@
+port: 8317
+auth-dir: "~/.cli-proxy-api"
+
+providers:
+  - name: "anthropic"
+    api_key: "env:ANTHROPIC_API_KEY"
+    base_url: "https://api.anthropic.com/v1"
+
+  - name: "openai"
+    api_key: "env:OPENAI_API_KEY"
+    base_url: "https://api.openai.com/v1"
+
+routing:
+  "claude*": "anthropic.*"
+  "gpt*": "openai.*"
+
+port: 4000
+providers:
+  - name: "anthropic"
+    api_key: "env:ANTHROPIC_API_KEY"
+    base_url: "https://api.anthropic.com/v1"
+  - name: "openai"
+    api_key: "env:OPENAI_API_KEY"
+    base_url: "https://api.openai.com/v1"
+  - name: "lm-studio"
+    api_key: "not-needed"
+    base_url: "http://localhost:1234/v1"
+
+routing:
+  "claude*": "anthropic.*"
+  "gpt-4*": "openai.*"
+  "gpt-oss*": "lm-studio.*"
+

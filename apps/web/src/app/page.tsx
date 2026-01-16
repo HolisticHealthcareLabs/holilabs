@@ -259,7 +259,7 @@ export default function Home() {
             </div>
             
             <a
-              href="/dashboard"
+              href="/sign-in"
               className="hidden md:block text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors px-4 py-2"
             >
               {t.nav.signIn}

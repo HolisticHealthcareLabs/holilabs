@@ -239,7 +239,7 @@ CREATE TYPE "AuthorizationStatus" AS ENUM ('PENDING', 'AUTHORIZED', 'DENIED', 'C
 CREATE TYPE "LoincStatus" AS ENUM ('ACTIVE', 'DEPRECATED', 'DISCOURAGED', 'TRIAL');
 
 -- CreateEnum
-CREATE TYPE "DiagnosisStatus" AS ENUM ('ACTIVE', 'RECURRENCE', 'RELAPSE', 'INACTIVE', 'REMISSION', 'RESOLVED');
+CREATE TYPE "DiagnosisStatus" AS ENUM ('ACTIVE', 'RECURRENCE', 'RELAPSE', 'INACTIVE', 'REMISSION', 'RESOLVED', 'CHRONIC', 'RULED_OUT');
 
 -- CreateEnum
 CREATE TYPE "DiagnosisVerificationStatus" AS ENUM ('UNCONFIRMED', 'PROVISIONAL', 'DIFFERENTIAL', 'CONFIRMED', 'REFUTED', 'ENTERED_IN_ERROR');
@@ -2060,4 +2060,42 @@ CREATE TABLE "icp_brasil_certificates" (
     "notAfter" TIMESTAMP(3) NOT NULL,
     "isExpired" BOOLEAN NOT NULL DEFAULT false,
     "certificatePEM" TEXT NOT NULL,
-    "lastUsedA
+    "lastUsedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "icp_brasil_certificates_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "diagnoses" (
+    "id" TEXT NOT NULL,
+    "patientId" TEXT NOT NULL,
+    "icd10Code" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "snomedCode" TEXT,
+    "severity" TEXT,
+    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
+    "status" "DiagnosisStatus" NOT NULL DEFAULT 'ACTIVE',
+    "onsetDate" TIMESTAMP(3),
+    "diagnosedBy" TEXT,
+    "diagnosedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "resolvedAt" TIMESTAMP(3),
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "diagnoses_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "diagnoses_patientId_diagnosedAt_idx" ON "diagnoses"("patientId", "diagnosedAt");
+
+-- CreateIndex
+CREATE INDEX "diagnoses_patientId_status_idx" ON "diagnoses"("patientId", "status");
+
+-- CreateIndex
+CREATE INDEX "diagnoses_icd10Code_idx" ON "diagnoses"("icd10Code");
+
+-- AddForeignKey
+ALTER TABLE "diagnoses" ADD CONSTRAINT "diagnoses_patientId_fkey" FOREIGN KEY ("patientId") REFERENCES "patients"("id") ON DELETE CASCADE ON UPDATE CASCADE;

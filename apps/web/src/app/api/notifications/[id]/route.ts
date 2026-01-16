@@ -9,8 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { markNotificationAsRead, deleteNotification } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
@@ -25,7 +24,7 @@ export async function PUT(
     const notificationId = params.id;
 
     // Check if it's a clinician or patient request
-    const clinicianSession = await getServerSession(authOptions);
+    const clinicianSession = await auth();
     let userId: string;
     let userType: 'CLINICIAN' | 'PATIENT';
 

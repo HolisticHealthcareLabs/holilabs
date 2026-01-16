@@ -5,9 +5,8 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { updateSession } from '@/lib/supabase/middleware';
 import { applySecurityHeaders, handleCORSPreflight } from '@/lib/security-headers';
-import { locales, defaultLocale } from '../i18n';
+
 
 // LGPD-protected endpoints (require access reason)
 const PHI_ENDPOINTS = [
@@ -30,32 +29,7 @@ const VALID_ACCESS_REASONS = [
   'QUALITY_IMPROVEMENT',
 ];
 
-function getLocale(request: NextRequest): string {
-  // Check if locale is in the pathname
-  const pathname = request.nextUrl.pathname;
-  const pathnameLocale = locales.find(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
-
-  if (pathnameLocale) return pathnameLocale;
-
-  // Check cookie
-  const localeCookie = request.cookies.get('NEXT_LOCALE')?.value;
-  if (localeCookie && locales.includes(localeCookie as any)) {
-    return localeCookie;
-  }
-
-  // Check Accept-Language header
-  const acceptLanguage = request.headers.get('accept-language');
-  if (acceptLanguage) {
-    const browserLocale = acceptLanguage.split(',')[0].split('-')[0];
-    if (locales.includes(browserLocale as any)) {
-      return browserLocale;
-    }
-  }
-
-  return defaultLocale;
-}
+// Locale handling removed - application uses client-side translation system
 
 export async function middleware(request: NextRequest) {
   // Handle CORS preflight requests
@@ -68,7 +42,13 @@ export async function middleware(request: NextRequest) {
   // ===== LGPD ACCESS REASON ENFORCEMENT =====
   const isPHIRequest = PHI_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint));
 
-  if (isPHIRequest && request.method !== 'OPTIONS') {
+  // In production, require an explicit access reason header for PHI reads.
+  // In local development/demo, this can break the UX (the browser won't add the header by default),
+  // so we only enforce it when it actually matters (production) or when explicitly enabled.
+  const enforceAccessReason =
+    process.env.REQUIRE_ACCESS_REASON === 'true' || process.env.NODE_ENV === 'production';
+
+  if (enforceAccessReason && isPHIRequest && request.method !== 'OPTIONS') {
     const accessReason = request.headers.get('X-Access-Reason');
 
     // Only require for READ operations (GET)
@@ -102,40 +82,20 @@ export async function middleware(request: NextRequest) {
   }
   // ===== END LGPD ENFORCEMENT =====
 
-  // Skip locale handling for API routes, static files, auth, portal, dashboard, pricing, etc.
-  if (
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/portal') ||
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/shared') ||
-    pathname.startsWith('/pricing') ||
-    pathname.startsWith('/onboarding') ||
-    pathname === '/' ||
-    pathname.includes('.')
-  ) {
-    const response = await updateSession(request);
-    return applySecurityHeaders(response);
-  }
+  // Supabase has been removed. NextAuth + patient-session handle auth.
+  const response = NextResponse.next();
 
-  // Check if pathname has a locale
-  const pathnameHasLocale = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
-  );
+  // Add pathname to response headers for layout routing logic
+  response.headers.set('x-pathname', pathname);
 
-  // Redirect if no locale in pathname
-  if (!pathnameHasLocale) {
-    const locale = getLocale(request);
-    const newUrl = new URL(`/${locale}${pathname}`, request.url);
-    return NextResponse.redirect(newUrl);
-  }
+  // Generate cryptographically secure nonce for CSP
+  // Nonce is used to allow specific inline scripts while blocking others (XSS protection)
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
 
-  // Update session and get response
-  const response = await updateSession(request);
+  // Make nonce available to pages via header (for inline script tags: <script nonce={nonce}>)
+  response.headers.set('x-nonce', nonce);
 
-  // Apply security headers to all responses
-  return applySecurityHeaders(response);
+  return applySecurityHeaders(response, nonce);
 }
 
 export const config = {
@@ -150,5 +110,4 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\..*|public).*)',
   ],
-  runtime: 'nodejs', // Use Node.js runtime for Supabase compatibility
 };

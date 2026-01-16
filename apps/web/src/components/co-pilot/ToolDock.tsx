@@ -74,7 +74,8 @@ function DraggableTool({ tool, isExpanded, hoveredTool, onHover, onToolSelect }:
       onClick={() => onToolSelect?.(tool)}
       className="relative p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group cursor-grab active:cursor-grabbing"
       style={style}
-      whileHover={{ scale: isDragging ? 1 : 1.15, rotate: isDragging ? 0 : [0, -5, 5, 0] }}
+      // Motion "spring" only supports 2 keyframes; avoid multi-keyframe rotate arrays (crashes the app)
+      whileHover={{ scale: isDragging ? 1 : 1.15, rotate: isDragging ? 0 : -5 }}
       whileTap={{ scale: 0.9 }}
       animate={isDragging ? { opacity: 0.5 } : { opacity: 1 }}
       transition={{ type: 'spring', damping: 15 }}
@@ -150,16 +151,38 @@ interface ToolDockProps {
 export function ToolDock({ onToolSelect, patientId, transcript }: ToolDockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredTool, setHoveredTool] = useState<string | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  const handleExpand = () => {
+    setIsExpanded(true);
+    setHasInteracted(true);
+  };
 
   return (
     <motion.div
       initial={{ x: 100, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ type: 'spring', damping: 25, stiffness: 300, delay: 0.5 }}
-      className="fixed right-0 top-1/2 -translate-y-1/2 z-30"
-      onMouseEnter={() => setIsExpanded(true)}
+      className="fixed right-0 top-1/2 -translate-y-1/2 z-[60]"
+      onMouseEnter={handleExpand}
       onMouseLeave={() => setIsExpanded(false)}
     >
+      {/* Pulsing indicator when not yet interacted */}
+      {!hasInteracted && !isExpanded && (
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full pointer-events-none"
+        />
+      )}
+
       <motion.div
         animate={isExpanded ? { x: 0 } : { x: 8 }}
         transition={{ type: 'spring', damping: 20 }}
