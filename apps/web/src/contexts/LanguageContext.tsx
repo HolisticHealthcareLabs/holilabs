@@ -34,7 +34,10 @@ const detectUserLanguage = (): Locale => {
     }
 
     // 2. Check browser language
-    const browserLang = navigator.language.split('-')[0];
+    const browserLang =
+      typeof navigator !== 'undefined' && typeof navigator.language === 'string'
+        ? navigator.language.split('-')[0]
+        : '';
     if (['es', 'en', 'pt'].includes(browserLang)) {
       return browserLang as Locale;
     }

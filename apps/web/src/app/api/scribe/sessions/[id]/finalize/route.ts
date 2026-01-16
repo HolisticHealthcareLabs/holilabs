@@ -119,6 +119,7 @@ export const POST = createProtectedRoute(
       let deidentifiedTranscript: string;
       let safeSegments: any[] = [];
       let transcriptionResult: any;
+      let transcriptionRecord: any;
 
       if (hasExistingTranscript && existingTranscription) {
         // Realtime mode path: transcript already de-identified + persisted
@@ -131,6 +132,7 @@ export const POST = createProtectedRoute(
           durationSeconds: existingTranscription.durationSeconds,
           processingTimeMs: existingTranscription.processingTime || 0,
         };
+        transcriptionRecord = existingTranscription;
       } else {
         // Classic path: download audio → transcribe → de-identify → persist transcription
 
@@ -234,7 +236,7 @@ export const POST = createProtectedRoute(
 
         // Upsert transcription record (idempotent)
         const wordCount = deidentifiedTranscript.split(/\s+/).length;
-        await prisma.transcription.upsert({
+        transcriptionRecord = await prisma.transcription.upsert({
           where: { sessionId },
           update: {
             rawText: deidentifiedTranscript,
@@ -277,6 +279,32 @@ export const POST = createProtectedRoute(
           success: true
         }
       );
+
+      // If no SOAP provider is configured, still succeed with transcription-only finalization.
+      if (!process.env.ANTHROPIC_API_KEY) {
+        await prisma.scribeSession.update({
+          where: { id: sessionId },
+          data: {
+            status: 'COMPLETED',
+            processingCompletedAt: new Date(),
+            processingError: null,
+          },
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            sessionId,
+            transcription: {
+              id: transcriptionRecord?.id,
+              wordCount: transcriptionRecord?.wordCount ?? null,
+              confidence: transcriptionRecord?.confidence ?? null,
+            },
+            soapNote: null,
+            warning: 'SOAP generation skipped (ANTHROPIC_API_KEY not configured)',
+          },
+        });
+      }
 
       // STEP 3: Generate SOAP note using Claude Sonnet
       const soapNote = await generateSOAPNote(

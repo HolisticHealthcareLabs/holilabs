@@ -41,7 +41,7 @@ export type AlertActionType = z.infer<typeof AlertActionType>;
  */
 export const AlertActionSchema = z.object({
   /** Button/link label (e.g., "Order Colonoscopy") */
-  label: z.string().max(50),
+  label: z.string().trim().min(1, 'Action label is required').max(50),
   /** Type of action */
   type: AlertActionType,
   /** Additional data for the action */
@@ -58,19 +58,19 @@ export type AlertAction = z.infer<typeof AlertActionSchema>;
  */
 export const PreventionAlertSchema = z.object({
   /** Unique identifier for the alert */
-  id: z.string(),
+  id: z.string().trim().min(1, 'Alert ID is required'),
   /** Type of prevention alert */
   type: PreventionAlertType,
   /** Severity level */
   severity: AlertSeverity,
   /** Short title (max 100 chars) */
-  title: z.string().max(100),
+  title: z.string().trim().min(1, 'Alert title is required').max(100),
   /** Description of the alert (max 500 chars) */
-  description: z.string().max(500),
+  description: z.string().trim().min(1, 'Description is required').max(500),
   /** Optional action the user can take */
   action: AlertActionSchema.optional(),
   /** Source of the recommendation (e.g., "USPSTF Grade A") */
-  source: z.string(),
+  source: z.string().trim().min(1, 'Source is required'),
   /** When the alert was created */
   createdAt: z.date(),
 });

@@ -376,7 +376,13 @@ export class ScribeService {
           const cur = this.sessions.get(sessionId);
           await this.emitSanitizedSegments({ sessionId, requestId: cur?.requestId, segments, isFinal: false });
         } catch (e: any) {
-          this.emit(sessionId, 'co_pilot:transcription_error', { message: e?.message || 'De-identification failed' });
+          const msg = String(e?.message || 'De-identification failed');
+          this.emit(sessionId, 'co_pilot:transcription_error', {
+            message:
+              msg.includes('De-identification required')
+                ? `${msg}. If you're running locally, start Presidio (PRESIDIO_ANALYZER_URL/PRESIDIO_ANONYMIZER_URL) or set REQUIRE_DEIDENTIFICATION=false for development.`
+                : msg,
+          });
         }
       });
 
@@ -393,12 +399,47 @@ export class ScribeService {
           }
           this.schedulePersist(sessionId);
         } catch (e: any) {
-          this.emit(sessionId, 'co_pilot:transcription_error', { message: e?.message || 'De-identification failed' });
+          const msg = String(e?.message || 'De-identification failed');
+          this.emit(sessionId, 'co_pilot:transcription_error', {
+            message:
+              msg.includes('De-identification required')
+                ? `${msg}. If you're running locally, start Presidio (PRESIDIO_ANALYZER_URL/PRESIDIO_ANONYMIZER_URL) or set REQUIRE_DEIDENTIFICATION=false for development.`
+                : msg,
+          });
         }
       });
 
-      streamer.on('error', ({ message }) => {
-        this.emit(sessionId, 'co_pilot:transcription_error', { message });
+      streamer.on('error', async ({ message, raw }: any) => {
+        const msg = String(message || raw?.message || 'Deepgram error');
+        const isRateLimited =
+          msg.includes('429') ||
+          msg.includes('Too Many Requests') ||
+          raw?.code === 429 ||
+          raw?.status === 429 ||
+          raw?.statusCode === 429;
+
+        if (isRateLimited) {
+          // Guardrail: prevent reconnect storms + toast spam when Deepgram rate-limits.
+          const retryAfterMs = 60_000;
+          this.failures.set(sessionId, {
+            untilMs: Date.now() + retryAfterMs,
+            message: msg,
+          });
+
+          this.emit(sessionId, 'co_pilot:transcription_error', {
+            message: `Unexpected server response: 429 (rate limited). Pausing live scribe for ${Math.round(
+              retryAfterMs / 1000
+            )}s and stopping the recording to protect system stability.`,
+            code: 429,
+            retryAfterMs,
+            shouldStop: true,
+          });
+
+          await this.stopAndPersist(sessionId).catch(() => {});
+          return;
+        }
+
+        this.emit(sessionId, 'co_pilot:transcription_error', { message: msg });
       });
 
       try {

@@ -31,14 +31,27 @@ describe('Zod Schema Edge Cases', () => {
         expect(result.success).toBe(true);
       });
 
-      it('should accept empty ID (schema does not enforce min length)', () => {
-        // Note: Current schema allows empty ID - consider adding .min(1) if needed
+      it('should reject empty ID', () => {
         const result = PreventionAlertSchema.safeParse({
           ...validAlert,
           id: '',
         });
-        // Document current behavior - empty ID is currently allowed
-        expect(result.success).toBe(true);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.issues[0].code).toBe('too_small');
+          expect(result.error.issues[0].path).toContain('id');
+        }
+      });
+
+      it('should reject whitespace-only ID', () => {
+        const result = PreventionAlertSchema.safeParse({
+          ...validAlert,
+          id: '   ',
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.issues[0].code).toBe('too_small');
+        }
       });
     });
 
@@ -119,14 +132,27 @@ describe('Zod Schema Edge Cases', () => {
         expect(result.success).toBe(true);
       });
 
-      it('should accept empty title (schema only enforces max length)', () => {
-        // Note: Current schema allows empty title - consider adding .min(1) if needed
+      it('should reject empty title', () => {
         const result = PreventionAlertSchema.safeParse({
           ...validAlert,
           title: '',
         });
-        // Document current behavior - empty title is currently allowed
-        expect(result.success).toBe(true);
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.issues[0].code).toBe('too_small');
+          expect(result.error.issues[0].path).toContain('title');
+        }
+      });
+
+      it('should reject whitespace-only title', () => {
+        const result = PreventionAlertSchema.safeParse({
+          ...validAlert,
+          title: '   ',
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          expect(result.error.issues[0].code).toBe('too_small');
+        }
       });
     });
 
