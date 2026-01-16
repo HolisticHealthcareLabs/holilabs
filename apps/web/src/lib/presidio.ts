@@ -1,5 +1,3 @@
-import { env } from 'process';
-
 /**
  * Client for Microsoft Presidio De-identification Service
  * 
@@ -40,7 +38,11 @@ export interface AnonymizeResponse {
  */
 export async function anonymizePatientData(text: string): Promise<string> {
   try {
-    const strict = (process.env.REQUIRE_DEIDENTIFICATION || 'true') === 'true';
+    // Default strictness: production => strict, development => non-strict
+    // unless explicitly forced on via REQUIRE_DEIDENTIFICATION=true.
+    const strictEnv = process.env.REQUIRE_DEIDENTIFICATION;
+    const strict =
+      strictEnv !== undefined ? strictEnv === 'true' : (process.env.NODE_ENV || 'development') === 'production';
     const timeoutMs = Number(process.env.PRESIDIO_TIMEOUT_MS || 8000);
 
     // 1. Analyze the text to find PII
@@ -125,7 +127,9 @@ export async function anonymizePatientData(text: string): Promise<string> {
   } catch (error) {
     console.error('Error in anonymizePatientData:', error);
     // Fail closed if strict.
-    const strict = (process.env.REQUIRE_DEIDENTIFICATION || 'true') === 'true';
+    const strictEnv = process.env.REQUIRE_DEIDENTIFICATION;
+    const strict =
+      strictEnv !== undefined ? strictEnv === 'true' : (process.env.NODE_ENV || 'development') === 'production';
     if (strict) throw error instanceof Error ? error : new Error('De-identification failed');
     return text;
   }

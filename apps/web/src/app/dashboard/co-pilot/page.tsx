@@ -195,6 +195,16 @@ function CoPilotContent() {
     socketConnected: false,
     chunksSent: 0,
   });
+  const [scribeCooldownUntilMs, setScribeCooldownUntilMs] = useState<number | null>(null);
+
+  const isScribeCoolingDown = scribeCooldownUntilMs != null && Date.now() < scribeCooldownUntilMs;
+
+  useEffect(() => {
+    if (scribeCooldownUntilMs == null) return;
+    const ms = Math.max(0, scribeCooldownUntilMs - Date.now());
+    const t = setTimeout(() => setScribeCooldownUntilMs(null), ms);
+    return () => clearTimeout(t);
+  }, [scribeCooldownUntilMs]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -204,12 +214,19 @@ function CoPilotContent() {
   const audioProcessorRef = useRef<ScriptProcessorNode | null>(null);
   const audioGainRef = useRef<GainNode | null>(null);
 
-  // Speech language for transcription (Deepgram). Persist clinician preference.
-  const [speechLanguage, setSpeechLanguage] = useState<'en' | 'es' | 'pt'>('en');
+  // Speech language preference for transcription (Deepgram).
+  // V3: supports "auto" (detect on start) and persists clinician preference.
+  const [speechLanguage, setSpeechLanguage] = useState<'auto' | 'en' | 'es' | 'pt'>('auto');
+  const [detectedLanguage, setDetectedLanguage] = useState<'en' | 'es' | 'pt' | null>(null);
+  const activeStreamLanguageRef = useRef<'en' | 'es' | 'pt'>('en');
+  const detectPendingRef = useRef<boolean>(false);
+  const detectStartedRef = useRef<boolean>(false);
+  const prebufferRef = useRef<ArrayBuffer[]>([]);
+  const prebufferBytesRef = useRef<number>(0);
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem('holi.speechLanguage');
-      if (saved === 'en' || saved === 'es' || saved === 'pt') setSpeechLanguage(saved);
+      if (saved === 'auto' || saved === 'en' || saved === 'es' || saved === 'pt') setSpeechLanguage(saved);
     } catch {}
   }, []);
   useEffect(() => {
@@ -228,11 +245,80 @@ function CoPilotContent() {
     onChunk: (chunk) => {
       const socket = wsRef.current as any;
       if (!socket || !state.sessionId || !state.isRecording) return;
+
+      // If auto-detect is enabled, buffer initial audio until language is detected.
+      if (detectPendingRef.current) {
+        prebufferRef.current.push(chunk.pcm16);
+        prebufferBytesRef.current += chunk.pcm16.byteLength;
+
+        // Once we have ~1.5s of audio (~48KB at 16kHz PCM16 mono per 1.5s = 48000 bytes),
+        // run language detection once.
+        if (!detectStartedRef.current && prebufferBytesRef.current >= 48000) {
+          detectStartedRef.current = true;
+
+          const combined = new Uint8Array(prebufferBytesRef.current);
+          let offset = 0;
+          for (const b of prebufferRef.current) {
+            combined.set(new Uint8Array(b), offset);
+            offset += b.byteLength;
+          }
+
+          fetch('/api/scribe/language-detect?sampleRate=16000', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/octet-stream' },
+            credentials: 'include',
+            body: combined,
+          })
+            .then((r) => r.json().then((j) => ({ ok: r.ok, j })))
+            .then(({ ok, j }) => {
+              const lang = (j?.language as any) as 'en' | 'es' | 'pt' | undefined;
+              const chosen: 'en' | 'es' | 'pt' =
+                ok && (lang === 'es' || lang === 'pt' || lang === 'en') ? lang : 'en';
+
+              activeStreamLanguageRef.current = chosen;
+              setDetectedLanguage(chosen);
+              detectPendingRef.current = false;
+
+              // Flush buffered audio using the detected language
+              for (const buf of prebufferRef.current) {
+                socket.emit('co_pilot:audio_chunk', {
+                  sessionId: state.sessionId,
+                  audioData: buf,
+                  sampleRate: 16000,
+                  language: chosen,
+                });
+              }
+              prebufferRef.current = [];
+              prebufferBytesRef.current = 0;
+            })
+            .catch(() => {
+              // If detection fails, fall back to English.
+              activeStreamLanguageRef.current = 'en';
+              setDetectedLanguage('en');
+              detectPendingRef.current = false;
+
+              // Flush buffered audio anyway (don't stall transcription).
+              for (const buf of prebufferRef.current) {
+                socket.emit('co_pilot:audio_chunk', {
+                  sessionId: state.sessionId,
+                  audioData: buf,
+                  sampleRate: 16000,
+                  language: 'en',
+                });
+              }
+              prebufferRef.current = [];
+              prebufferBytesRef.current = 0;
+            });
+        }
+
+        return;
+      }
+
       socket.emit('co_pilot:audio_chunk', {
         sessionId: state.sessionId,
         audioData: chunk.pcm16,
         sampleRate: chunk.sampleRate,
-        language: speechLanguage,
+        language: activeStreamLanguageRef.current,
       });
       setScribeDebug((prev) => ({ ...prev, chunksSent: prev.chunksSent + 1 }));
     },
@@ -665,6 +751,23 @@ function CoPilotContent() {
       const startRealtimeAudioStreaming = () => {
         if (!useRealTimeMode || !audioStream || !state.sessionId) return;
         try {
+          // Initialize per-recording language mode.
+          if (speechLanguage === 'auto') {
+            setDetectedLanguage(null);
+            activeStreamLanguageRef.current = 'en'; // temporary until detected
+            detectPendingRef.current = true;
+            detectStartedRef.current = false;
+            prebufferRef.current = [];
+            prebufferBytesRef.current = 0;
+          } else {
+            detectPendingRef.current = false;
+            detectStartedRef.current = false;
+            prebufferRef.current = [];
+            prebufferBytesRef.current = 0;
+            activeStreamLanguageRef.current = speechLanguage;
+            setDetectedLanguage(null);
+          }
+
           // Tear down any previous graph
           try {
             audioProcessorRef.current?.disconnect();
@@ -700,13 +803,15 @@ function CoPilotContent() {
       Promise.resolve().then(() => startRealtimeAudioStreaming());
 
       socket.on('co_pilot:transcript_update', (data: any) => {
+        const nowS = Date.now() / 1000;
         const seg = {
           speaker: data.speaker || 'Speaker 1',
           text: data.text,
-          startTime: data.startTime || Date.now(),
-          endTime: data.endTime || Date.now(),
-          confidence: data.confidence || 0.9,
-          isFinal: data.isFinal || false,
+          // Server emits seconds; keep UI consistent if we fall back.
+          startTime: typeof data.startTime === 'number' ? data.startTime : nowS,
+          endTime: typeof data.endTime === 'number' ? data.endTime : nowS,
+          confidence: typeof data.confidence === 'number' ? data.confidence : 0.9,
+          isFinal: typeof data.isFinal === 'boolean' ? data.isFinal : false,
         };
         appendTranscript(seg);
         setScribeDebug((prev) => ({ ...prev, lastTranscriptAt: Date.now() }));
@@ -806,8 +911,17 @@ function CoPilotContent() {
       socket.on('co_pilot:transcription_error', (data: any) => {
         const msg = data?.message || 'Transcription error';
         setScribeDebug((prev) => ({ ...prev, lastError: msg }));
-        // De-dupe toast spam (same message within 6s)
+        // If the server tells us to stop (e.g. 429 rate limit), do it immediately to avoid thrash.
         const now = Date.now();
+        const retryAfterMs = Number.isFinite(Number(data?.retryAfterMs)) ? Number(data.retryAfterMs) : 60_000;
+        const shouldStop = Boolean(data?.shouldStop) || data?.code === 429 || String(msg).includes('429');
+        if (shouldStop) {
+          setScribeCooldownUntilMs(now + Math.max(5_000, retryAfterMs));
+          if (state.isRecording) {
+            void handleStopRecording();
+          }
+        }
+        // De-dupe toast spam (same message within 6s)
         if (msg === lastScribeToastMsgRef.current && now - lastScribeToastAtRef.current < 6000) return;
         lastScribeToastMsgRef.current = msg;
         lastScribeToastAtRef.current = now;
@@ -956,6 +1070,10 @@ function CoPilotContent() {
   const handleStopRecording = async () => {
     setIsRecording(false);
     setIsProcessing(true);
+    detectPendingRef.current = false;
+    detectStartedRef.current = false;
+    prebufferRef.current = [];
+    prebufferBytesRef.current = 0;
 
     // Stop realtime audio graph
     try {
@@ -1237,16 +1355,22 @@ function CoPilotContent() {
                     <select
                       value={speechLanguage}
                       onChange={(e) => setSpeechLanguage(e.target.value as any)}
-                      disabled={state.isRecording}
                       className="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs"
                       title="Select speech language for transcription"
                     >
+                      <option value="auto">Auto (detect on start)</option>
                       <option value="en">English</option>
                       <option value="es">Español</option>
                       <option value="pt">Português</option>
                     </select>
                     {state.isRecording ? (
                       <span className="text-gray-500">• changes apply next recording</span>
+                    ) : null}
+                    {speechLanguage === 'auto' && detectedLanguage ? (
+                      <span className="text-gray-500">• detected: {detectedLanguage.toUpperCase()}</span>
+                    ) : null}
+                    {speechLanguage === 'auto' && state.isRecording && !detectedLanguage ? (
+                      <span className="text-gray-500">• detecting…</span>
                     ) : null}
                   </div>
                   <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
@@ -1269,15 +1393,22 @@ function CoPilotContent() {
                       {scribeDebug.lastError}
                     </div>
                   ) : null}
+                  {isScribeCoolingDown ? (
+                    <div className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                      Rate limited. You can retry in ~
+                      {Math.max(1, Math.ceil((scribeCooldownUntilMs! - Date.now()) / 1000))}s.
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center gap-2">
                   {!state.isRecording ? (
                     <button
                       onClick={handleStartRecording}
-                      className="px-4 py-2 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold shadow"
+                      disabled={isScribeCoolingDown}
+                      className="px-4 py-2 rounded-full bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white text-sm font-semibold shadow"
                     >
-                      Record
+                      {isScribeCoolingDown ? 'Cooling down…' : 'Record'}
                     </button>
                   ) : (
                     <button
