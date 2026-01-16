@@ -147,12 +147,19 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
   const computeCenter = () => {
     const rect = buttonRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    const radius = Math.max(90, Math.min(130, Math.min(window.innerWidth, window.innerHeight) / 2 - 120));
-    const bubbleHalf = 44; // ~ w-20 /2 + slack
+    const radius = Math.max(
+      110,
+      Math.min(170, Math.min(window.innerWidth, window.innerHeight) / 2 - 160)
+    );
+    const bubbleHalf = 64; // includes label footprint; prevents clipping
     const padding = 16;
     const safe = radius + bubbleHalf + padding;
-    const x = Math.min(Math.max(rect.left + rect.width / 2, safe), window.innerWidth - safe);
-    const y = Math.min(Math.max(rect.top + rect.height / 2, safe), window.innerHeight - safe);
+    // When docked on the right, shifting the center left makes the ring feel balanced and keeps all options visible.
+    const rawX = rect.left + rect.width / 2;
+    const rawY = rect.top + rect.height / 2;
+    const shiftLeft = rawX > window.innerWidth - safe ? Math.min(140, radius * 0.75) : 0;
+    const x = Math.min(Math.max(rawX - shiftLeft, safe), window.innerWidth - safe);
+    const y = Math.min(Math.max(rawY, safe), window.innerHeight - safe);
     return { x, y };
   };
 
@@ -174,7 +181,7 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
       <motion.button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className={`
+        className="
           relative w-16 h-16 rounded-full
           bg-gradient-to-br from-yellow-500 to-amber-600
           hover:from-yellow-600 hover:to-amber-700
@@ -182,9 +189,9 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
           transition-all duration-300
           flex items-center justify-center
           group
-          ${isOpen ? 'scale-110 rotate-45' : 'scale-100 rotate-0'}
-        `}
-        whileHover={{ scale: 1.1 }}
+        "
+        animate={{ rotate: isOpen ? 45 : 0, scale: isOpen ? 1.1 : 1, x: isOpen ? -56 : 0 }}
+        whileHover={{ scale: 1.12 }}
         whileTap={{ scale: 0.95 }}
       >
         <div className="relative">
@@ -239,7 +246,10 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
               style={{ left: center.x, top: center.y, transform: 'translate(-50%, -50%)' }}
             >
               {(() => {
-                const radius = Math.max(90, Math.min(130, Math.min(window.innerWidth, window.innerHeight) / 2 - 120));
+                const radius = Math.max(
+                  110,
+                  Math.min(170, Math.min(window.innerWidth, window.innerHeight) / 2 - 160)
+                );
                 return (
                   <>
               {/* Connection lines to center */}
@@ -267,6 +277,11 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
               {orderedTools.map((tool, index) => {
                 const pos = calculateBubblePosition(index, orderedTools.length, radius);
                 const isHovered = hoveredTool === tool.id;
+                const nx = radius ? pos.x / radius : 0;
+                const ny = radius ? pos.y / radius : 0;
+                // Place label outward from the bubble so it doesn't overlap other bubbles.
+                const labelX = nx * 64;
+                const labelY = ny * 64;
 
                 return (
                   <motion.div
@@ -310,14 +325,6 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
                         />
                       </div>
 
-                      {/* Tool label (always visible) */}
-                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[120] pointer-events-none">
-                        <div className="bg-gray-900/90 dark:bg-gray-800/90 text-white text-xs px-3 py-2 rounded-lg shadow-2xl text-center w-[120px]">
-                          <div className="font-semibold leading-tight">{tool.name}</div>
-                          <div className="text-gray-300 text-[10px] leading-tight">{tool.description}</div>
-                        </div>
-                      </div>
-
                       {/* Hover glow effect */}
                       {isHovered && (
                         <motion.div
@@ -327,6 +334,19 @@ export function CoPilotIntegrationBubble({ onToolSelect }: CoPilotIntegrationBub
                         />
                       )}
                     </motion.button>
+
+                    {/* Tool label (balanced radial placement) */}
+                    <div
+                      className="absolute left-1/2 top-1/2 z-[140] pointer-events-none"
+                      style={{
+                        transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+                      }}
+                    >
+                      <div className="bg-gray-900/90 dark:bg-gray-800/90 text-white text-xs px-3 py-2 rounded-lg shadow-2xl text-center w-[118px]">
+                        <div className="font-semibold leading-tight">{tool.name}</div>
+                        <div className="text-gray-300 text-[10px] leading-tight">{tool.description}</div>
+                      </div>
+                    </div>
                   </motion.div>
                 );
               })}

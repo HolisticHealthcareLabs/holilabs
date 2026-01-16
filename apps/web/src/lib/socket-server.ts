@@ -10,22 +10,276 @@ import { Server as SocketIOServer } from 'socket.io';
 import { prisma } from './prisma';
 import logger from './logger';
 import { verifySocketToken } from './socket-auth';
-import { createClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
+import { MedicalAudioStreamer, type MedicalSegment } from './transcription/MedicalAudioStreamer';
+import { getScribeService } from '@/lib/services/scribe.service';
 
 export type SocketServer = SocketIOServer;
 
 let io: SocketIOServer | undefined;
 
 type LiveDgSession = {
-  conn: any;
+  streamer: MedicalAudioStreamer;
   clinicianId: string;
   language: string;
-  sampleRate: number;
+  inputSampleRate: number;
+  requestId?: string;
   lastUsedAt: number;
+  activeSockets: Set<string>;
 };
 
 const dgSessions = new Map<string, LiveDgSession>();
+
+const scribeService = getScribeService((sessionId, event, payload) => {
+  if (!io) return;
+  io.to(`co-pilot:${sessionId}`).emit(event, payload);
+});
+
+type InterimThrottleState = {
+  timer: NodeJS.Timeout | null;
+  latest: MedicalSegment[] | null;
+};
+const interimThrottle = new Map<string, InterimThrottleState>();
+
+type PersistedTranscriptSegment = {
+  speaker: string;
+  speakerIndex: number;
+  role: 'DOCTOR' | 'PATIENT' | 'UNKNOWN';
+  text: string;
+  startTime: number; // seconds
+  endTime: number; // seconds
+  confidence: number;
+};
+
+type LiveTranscriptState = {
+  language: 'en' | 'es' | 'pt';
+  model?: string;
+  rawLines: string[];
+  segments: PersistedTranscriptSegment[];
+  speakerSet: Set<number>;
+  maxEndSeconds: number;
+  persistTimer: NodeJS.Timeout | null;
+  lastPersistAt: number;
+};
+
+const liveTranscript = new Map<string, LiveTranscriptState>();
+
+type StreamFailure = {
+  untilMs: number;
+  message: string;
+};
+const streamFailures = new Map<string, StreamFailure>();
+
+function getEnvTag(): 'prod' | 'staging' | 'dev' {
+  if (process.env.NODE_ENV === 'production') return 'prod';
+  if (process.env.NODE_ENV === 'test') return 'dev';
+  return 'dev';
+}
+
+function normalizeSpeechLanguage(input: unknown): 'en' | 'es' | 'pt' {
+  const raw = String(input || 'en').toLowerCase();
+  if (raw.startsWith('pt')) return 'pt';
+  if (raw.startsWith('es')) return 'es';
+  return 'en';
+}
+
+async function buildPatientContext(patientId: string): Promise<string[]> {
+  // Server-derived context only (never trust client). Keep small & high-signal.
+  try {
+    const [meds, dx, allergies] = await Promise.all([
+      prisma.medication.findMany({
+        where: { patientId, isActive: true },
+        select: { name: true, genericName: true, dose: true },
+        take: 25,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.diagnosis.findMany({
+        where: { patientId, status: 'ACTIVE' },
+        select: { description: true, icd10Code: true },
+        take: 20,
+        orderBy: { diagnosedAt: 'desc' },
+      }),
+      prisma.allergy.findMany({
+        where: { patientId, isActive: true },
+        select: { allergen: true },
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const terms: string[] = [];
+
+    for (const m of meds) {
+      if (m.name) terms.push(m.name);
+      if (m.genericName) terms.push(m.genericName);
+      if (m.dose) terms.push(`${m.name} ${m.dose}`.trim());
+    }
+    for (const d of dx) {
+      if (d.description) terms.push(d.description);
+      if (d.icd10Code) terms.push(d.icd10Code);
+    }
+    for (const a of allergies) {
+      if (a.allergen) terms.push(a.allergen);
+    }
+
+    // Normalize, de-dupe, cap.
+    const uniq = Array.from(
+      new Set(
+        terms
+          .map((t) => String(t || '').trim())
+          .filter(Boolean)
+          .map((t) => (t.length > 80 ? t.slice(0, 80) : t))
+      )
+    );
+
+    return uniq.slice(0, 60);
+  } catch (e: any) {
+    logger.warn({ event: 'patient_context_build_failed', patientId, error: e?.message || e }, 'Failed to build patient context');
+    return [];
+  }
+}
+
+function resamplePcm16(input: Int16Array, inputRate: number, outputRate: number): Int16Array {
+  if (!input.length) return input;
+  if (!Number.isFinite(inputRate) || inputRate <= 0) return input;
+  if (inputRate === outputRate) return input;
+
+  // Linear interpolation resampler (fast, good-enough for speech).
+  const ratio = inputRate / outputRate;
+  const outLength = Math.max(1, Math.floor(input.length / ratio));
+  const output = new Int16Array(outLength);
+
+  for (let i = 0; i < outLength; i++) {
+    const idx = i * ratio;
+    const idx0 = Math.floor(idx);
+    const idx1 = Math.min(idx0 + 1, input.length - 1);
+    const frac = idx - idx0;
+    const s0 = input[idx0] || 0;
+    const s1 = input[idx1] || 0;
+    output[i] = (s0 + (s1 - s0) * frac) as any;
+  }
+
+  return output;
+}
+
+async function emitSanitizedSegments(params: {
+  sessionId: string;
+  segments: MedicalSegment[];
+  isFinal: boolean;
+  requestId?: string;
+}): Promise<PersistedTranscriptSegment[]> {
+  const { sessionId, segments, isFinal, requestId } = params;
+  const out: PersistedTranscriptSegment[] = [];
+  if (!io) return out;
+
+  for (const seg of segments) {
+    const presidioStart = Date.now();
+    const safeText = await deidentifyTranscriptOrThrow(seg.text);
+    const presidioMs = Date.now() - presidioStart;
+
+    const startTime = Math.max(0, (seg.startTimeMs || 0) / 1000);
+    const endTime = Math.max(0, (seg.endTimeMs || 0) / 1000);
+
+    out.push({
+      speaker: seg.speaker,
+      speakerIndex: seg.speakerIndex,
+      role: seg.role,
+      text: safeText,
+      startTime,
+      endTime,
+      confidence: seg.confidence,
+    });
+
+    io.to(`co-pilot:${sessionId}`).emit('co_pilot:transcript_update', {
+      speaker: seg.speaker,
+      speakerIndex: seg.speakerIndex,
+      role: seg.role,
+      text: safeText,
+      confidence: seg.confidence,
+      isFinal,
+      // TranscriptViewer expects seconds (mm:ss formatting).
+      startTime,
+      endTime,
+      metrics: { presidioMs, requestId },
+    });
+  }
+
+  return out;
+}
+
+function getOrInitLiveTranscript(sessionId: string, language: 'en' | 'es' | 'pt'): LiveTranscriptState {
+  const existing = liveTranscript.get(sessionId);
+  if (existing) return existing;
+  const next: LiveTranscriptState = {
+    language,
+    model: undefined,
+    rawLines: [],
+    segments: [],
+    speakerSet: new Set<number>(),
+    maxEndSeconds: 0,
+    persistTimer: null,
+    lastPersistAt: 0,
+  };
+  liveTranscript.set(sessionId, next);
+  return next;
+}
+
+async function persistLiveTranscript(sessionId: string) {
+  const st = liveTranscript.get(sessionId);
+  if (!st) return;
+
+  const rawText = st.rawLines.join('\n').trim();
+  const wordCount = rawText ? rawText.split(/\s+/).length : 0;
+  const speakerCount = st.speakerSet.size || 1;
+  const confidence =
+    st.segments.length > 0
+      ? st.segments.reduce((sum, s) => sum + (Number.isFinite(s.confidence) ? s.confidence : 0.9), 0) / st.segments.length
+      : 0.9;
+  const durationSeconds = Math.max(0, st.maxEndSeconds);
+
+  await prisma.transcription.upsert({
+    where: { sessionId },
+    update: {
+      rawText: rawText || '(no transcript)',
+      segments: st.segments as any,
+      speakerCount,
+      confidence,
+      wordCount,
+      durationSeconds,
+      model: st.model || 'deepgram-live',
+      language: st.language,
+    },
+    create: {
+      sessionId,
+      rawText: rawText || '(no transcript)',
+      segments: st.segments as any,
+      speakerCount,
+      confidence,
+      wordCount,
+      durationSeconds,
+      model: st.model || 'deepgram-live',
+      language: st.language,
+    },
+  });
+
+  st.lastPersistAt = Date.now();
+}
+
+function schedulePersist(sessionId: string, delayMs = 1500) {
+  const st = liveTranscript.get(sessionId);
+  if (!st) return;
+  if (st.persistTimer) return;
+  st.persistTimer = setTimeout(async () => {
+    const cur = liveTranscript.get(sessionId);
+    if (!cur) return;
+    cur.persistTimer = null;
+    try {
+      await persistLiveTranscript(sessionId);
+    } catch (e: any) {
+      logger.warn({ event: 'live_transcript_persist_failed', sessionId, error: e?.message || e }, 'Failed to persist live transcript');
+    }
+  }, delayMs);
+}
 
 export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
   if (io) {
@@ -239,6 +493,8 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
 
     // User disconnection
     socket.on('disconnect', () => {
+      // Delegate cleanup to ScribeService (stops stream + persists transcript when orphaned).
+      void scribeService.onDisconnect(socket.id).catch(() => {});
       logger.info({
         event: 'socket_disconnected',
         socketId: socket.id,
@@ -249,6 +505,7 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
     socket.on('co_pilot:join_session', ({ sessionId }: { sessionId: string }) => {
       const roomId = `co-pilot:${sessionId}`;
       socket.join(roomId);
+      scribeService.onJoinSession(sessionId, socket.id);
       logger.info({
         event: 'co_pilot_session_joined',
         sessionId,
@@ -257,123 +514,47 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
       });
     });
 
+    socket.on('co_pilot:stop_stream', async ({ sessionId }: { sessionId: string }) => {
+      try {
+        if (socket.data.userType !== 'CLINICIAN') return;
+        const clinicianId = socket.data.userId as string;
+
+        const owns = await prisma.scribeSession.findFirst({
+          where: { id: sessionId, clinicianId },
+          select: { id: true },
+        });
+        if (!owns) return;
+
+        await scribeService.stopStream(sessionId, clinicianId);
+        logger.info({ event: 'co_pilot_stream_stopped', sessionId, clinicianId }, 'Stopped Deepgram stream');
+      } catch (e: any) {
+        logger.warn({ event: 'co_pilot_stop_stream_failed', sessionId, error: e?.message || e }, 'Failed to stop stream');
+      }
+    });
+
     socket.on('co_pilot:audio_chunk', async ({
       sessionId,
       audioData,
       language,
       sampleRate,
+      patientContext,
     }: {
       sessionId: string;
-      audioData: ArrayBuffer;
+      audioData: ArrayBuffer | Uint8Array;
       language?: string;
       sampleRate?: number;
+      patientContext?: string[];
     }) => {
       try {
-        if (socket.data.userType !== 'CLINICIAN') {
-          socket.emit('error', { message: 'Unauthorized: clinician required for scribe streaming' });
-          return;
-        }
-        if (!process.env.DEEPGRAM_API_KEY) {
-          socket.emit('error', { message: 'DEEPGRAM_API_KEY is not configured' });
-          return;
-        }
-
-        const clinicianId = socket.data.userId as string;
-
-        // Verify session ownership (prevents cross-session streaming / leaks)
-        const owns = await prisma.scribeSession.findFirst({
-          where: { id: sessionId, clinicianId },
-          select: { id: true },
-        });
-        if (!owns) {
-          socket.emit('error', { message: 'Unauthorized: session not found or access denied' });
-          return;
-        }
-
-        const lang = String(language || 'en');
-        const sr = Number(sampleRate || 48000);
-
-        // Create a Deepgram live connection per scribe session.
-        let dg = dgSessions.get(sessionId);
-        if (!dg || dg.clinicianId !== clinicianId || dg.language !== lang || dg.sampleRate !== sr) {
-          try {
-            dg?.conn?.finish?.();
-          } catch {}
-
-          const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-          const conn = deepgram.listen.live({
-            model: 'nova-2',
-            language: lang,
-            encoding: 'linear16',
-            sample_rate: sr,
-            channels: 1,
-            punctuate: true,
-            smart_format: true,
-            interim_results: false, // hard guarantee: we only emit sanitized finals
-            diarize: true,
-          });
-
-          conn.on(LiveTranscriptionEvents.Open, () => {
-            logger.info({ event: 'deepgram_live_open', sessionId, clinicianId, lang, sr }, 'Deepgram live opened');
-          });
-          conn.on(LiveTranscriptionEvents.Close, () => {
-            logger.info({ event: 'deepgram_live_close', sessionId, clinicianId }, 'Deepgram live closed');
-          });
-          conn.on(LiveTranscriptionEvents.Error, (err: any) => {
-            logger.error({ event: 'deepgram_live_error', sessionId, clinicianId, err }, 'Deepgram live error');
-            io?.to(`co-pilot:${sessionId}`).emit('co_pilot:transcription_error', {
-              message: err?.message || 'Deepgram live error',
-            });
-          });
-
-          conn.on(LiveTranscriptionEvents.Transcript, async (payload: any) => {
-            try {
-              const alt = payload?.channel?.alternatives?.[0];
-              const raw = String(alt?.transcript || '').trim();
-              const isFinal = Boolean(payload?.is_final);
-              if (!isFinal || !raw) return;
-
-              const presidioStart = Date.now();
-              const safe = await deidentifyTranscriptOrThrow(raw);
-              const presidioMs = Date.now() - presidioStart;
-
-              const speaker = alt?.words?.[0]?.speaker;
-              const speakerLabel = typeof speaker === 'number' ? `Speaker ${speaker + 1}` : 'Speaker 1';
-
-              io?.to(`co-pilot:${sessionId}`).emit('co_pilot:transcript_update', {
-                speaker: speakerLabel,
-                text: safe,
-                confidence: alt?.confidence || 0.9,
-                isFinal: true,
-                startTime: Date.now(),
-                endTime: Date.now(),
-                metrics: { presidioMs },
-              });
-            } catch (e: any) {
-              logger.error(
-                { event: 'co_pilot_transcript_sanitize_error', sessionId, clinicianId, error: e?.message || e },
-                'Failed to sanitize transcript'
-              );
-              io?.to(`co-pilot:${sessionId}`).emit('co_pilot:transcription_error', {
-                message: e?.message || 'De-identification failed',
-              });
-            }
-          });
-
-          dg = { conn, clinicianId, language: lang, sampleRate: sr, lastUsedAt: Date.now() };
-          dgSessions.set(sessionId, dg);
-        } else {
-          dg.lastUsedAt = Date.now();
-        }
-
-        // Send PCM16 bytes to Deepgram
-        dg.conn.send(audioData);
-
-        logger.info({
-          event: 'co_pilot_audio_chunk_received',
+        await scribeService.handleAudioChunk({
           sessionId,
-          audioDataSize: audioData.byteLength,
           socketId: socket.id,
+          clinicianId: socket.data.userId as string,
+          userType: socket.data.userType as string,
+          audioData,
+          language,
+          sampleRate,
+          deepgramApiKey: process.env.DEEPGRAM_API_KEY,
         });
       } catch (error) {
         logger.error({
@@ -387,6 +568,7 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
 
     socket.on('co_pilot:leave_session', ({ sessionId }: { sessionId: string }) => {
       socket.leave(`co-pilot:${sessionId}`);
+      void scribeService.onLeaveSession(sessionId, socket.id).catch(() => {});
       logger.info({
         event: 'co_pilot_session_left',
         sessionId,

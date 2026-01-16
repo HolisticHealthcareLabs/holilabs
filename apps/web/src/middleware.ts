@@ -39,6 +39,20 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // ===== LOCALE PREFIX SELF-HEAL =====
+  // We do NOT use locale-prefixed routes in this app. However, older/stale builds
+  // (or cached links) may still point to `/en/...`, `/es/...`, `/pt/...`.
+  // Redirect these to the canonical non-prefixed route to avoid 404s.
+  const supportedLocalePrefixes = ['en', 'es', 'pt'] as const;
+  for (const loc of supportedLocalePrefixes) {
+    if (pathname === `/${loc}` || pathname.startsWith(`/${loc}/`)) {
+      const url = request.nextUrl.clone();
+      const stripped = pathname.replace(new RegExp(`^/${loc}(?=/|$)`), '') || '/';
+      url.pathname = stripped;
+      return NextResponse.redirect(url);
+    }
+  }
+
   // ===== LGPD ACCESS REASON ENFORCEMENT =====
   const isPHIRequest = PHI_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint));
 

@@ -58,10 +58,35 @@ export const defaultWorkerOptions: WorkerOptions = {
 export enum QueueName {
   CORRECTION_AGGREGATION = 'correction-aggregation',
   AUDIT_ARCHIVAL = 'audit-archival',
+  PATIENT_DOSSIER = 'patient-dossier',
   PATIENT_REMINDERS = 'patient-reminders',
   LAB_RESULTS = 'lab-results',
   PRESCRIPTION_REFILLS = 'prescription-refills',
   EMAIL_NOTIFICATIONS = 'email-notifications',
   SMS_NOTIFICATIONS = 'sms-notifications',
   WHATSAPP_MESSAGES = 'whatsapp-messages',
+  // CDSS V3 - Async Processing Queues
+  DOCUMENT_PARSE = 'document-parse',
+  SUMMARY_GENERATION = 'summary-generation',
+  FHIR_SYNC = 'fhir-sync',
 }
+
+// CDSS Queue Options - longer timeouts for document processing
+export const cdssQueueOptions: QueueOptions = {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: {
+      type: 'exponential',
+      delay: 5000, // Start with 5s delay for retries
+    },
+    removeOnComplete: {
+      age: 3600, // Keep completed jobs for 1 hour
+      count: 500,
+    },
+    removeOnFail: {
+      age: 86400, // Keep failed jobs for 24 hours
+      count: 1000,
+    },
+  },
+};
