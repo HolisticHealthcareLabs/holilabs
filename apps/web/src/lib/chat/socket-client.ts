@@ -21,16 +21,11 @@ export function getSocket(): Socket | null {
  */
 async function getAuthToken(userType: 'CLINICIAN' | 'PATIENT'): Promise<string> {
   if (userType === 'CLINICIAN') {
-    // Get NextAuth session token (stored in cookies)
-    // For now, create a simple token - in production, get from session
-    const response = await fetch('/api/auth/whoami');
-    const { session } = await response.json();
-
-    if (session?.user?.id) {
-      // Create auth token
-      return Buffer.from(JSON.stringify({ userId: session.user.id, type: 'CLINICIAN' })).toString('base64');
-    }
-    throw new Error('No clinician session found');
+    // Mint a signed JWT on the server (required by verifySocketToken)
+    const res = await fetch('/api/auth/socket-token', { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data?.token) return data.token;
+    throw new Error(data?.error || 'No clinician session found');
   } else {
     // Patient session cookie is HttpOnly, so we must ask the server for the token.
     const res = await fetch('/api/portal/auth/whoami', { cache: 'no-store' });
@@ -48,8 +43,11 @@ export function initSocket(authToken: string): Socket {
   }
 
   socket = io({
-    path: '/api/socket',
+    path: '/api/socket.io',
     autoConnect: false,
+    // Prevent infinite retry loops when the Socket.IO server is not running.
+    reconnection: false,
+    timeout: 2000,
     auth: {
       token: authToken,
     },

@@ -16,14 +16,14 @@ import {
 } from '@/lib/ai/patient-context-formatter';
 import { logger } from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { getServerSession } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession();
+    const session = await auth();
     if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },

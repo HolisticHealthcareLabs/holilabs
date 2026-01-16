@@ -27,34 +27,46 @@ export default function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [disabled, setDisabled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Fetch notifications
   const fetchNotifications = async () => {
     try {
-      const response = await fetch('/api/notifications?limit=10');
+      if (disabled) return;
+      const response = await fetch('/api/notifications?limit=10', { cache: 'no-store' });
+      if (response.status === 401 || response.status === 403) {
+        setDisabled(true);
+        return;
+      }
       const data = await response.json();
 
       if (data.success) {
         setNotifications(data.data);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      // In demo/dev unauthenticated contexts this can fail; do not spam console.
+      setDisabled(true);
     }
   };
 
   // Fetch unread count
   const fetchUnreadCount = async () => {
     try {
-      const response = await fetch('/api/notifications/unread-count');
+      if (disabled) return;
+      const response = await fetch('/api/notifications/unread-count', { cache: 'no-store' });
+      if (response.status === 401 || response.status === 403) {
+        setDisabled(true);
+        return;
+      }
       const data = await response.json();
 
       if (data.success) {
         setUnreadCount(data.data.count);
       }
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      setDisabled(true);
     }
   };
 
@@ -133,10 +145,11 @@ export default function NotificationCenter() {
   useEffect(() => {
     fetchNotifications();
     fetchUnreadCount();
-  }, []);
+  }, [disabled]);
 
   // Real-time updates with SSE
   useEffect(() => {
+    if (disabled) return;
     const eventSource = new EventSource('/api/notifications/events');
 
     eventSource.onmessage = (event) => {
@@ -150,14 +163,15 @@ export default function NotificationCenter() {
     };
 
     eventSource.onerror = (error) => {
-      console.error('SSE error:', error);
+      // Don't spam console in unauthenticated demo/dev contexts.
       eventSource.close();
+      setDisabled(true);
     };
 
     return () => {
       eventSource.close();
     };
-  }, []);
+  }, [disabled]);
 
   // Get priority color
   const getPriorityColor = (priority: string) => {

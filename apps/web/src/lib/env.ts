@@ -74,6 +74,11 @@ const serverSchema = z.object({
   // AI Transcription Services
   DEEPGRAM_API_KEY: z.string().optional(),
 
+  // De-identification gate (HIPAA/LGPD)
+  // When true, the system must NOT allow raw transcripts to be persisted or sent to the UI/LLMs.
+  REQUIRE_DEIDENTIFICATION: z.enum(['true', 'false']).default('true'),
+  PRESIDIO_TIMEOUT_MS: z.string().regex(/^\d+$/).default('8000'),
+
   // AI Configuration
   AI_PRIMARY_PROVIDER: z.enum(['gemini', 'claude', 'openai']).default('gemini'),
   AI_FALLBACK_ENABLED: z.enum(['true', 'false']).default('true'),
@@ -287,8 +292,24 @@ function validateEnv(): Env {
 
   const isServer = typeof window === 'undefined';
   const isProduction = process.env.NODE_ENV === 'production';
+  const skipValidation =
+    process.env.NODE_ENV === 'test' ||
+    process.env.JEST_WORKER_ID !== undefined ||
+    process.env.SKIP_ENV_VALIDATION === 'true';
 
   try {
+    // In unit tests, Next/Jest may load placeholder .env values that intentionally
+    // don't pass strict production-style validation (e.g., ENCRYPTION_KEY length/prefix checks).
+    // For tests we want the code to import without requiring full runtime config.
+    if (skipValidation) {
+      cachedEnv = {
+        ...(process.env as any),
+        NODE_ENV: (process.env.NODE_ENV as any) || 'test',
+        REQUIRE_DEIDENTIFICATION: (process.env.REQUIRE_DEIDENTIFICATION as any) || 'true',
+      } as Env;
+      return cachedEnv;
+    }
+
     // Parse all environment variables
     const parsed = envSchema.safeParse(process.env);
 
@@ -319,7 +340,7 @@ function validateEnv(): Env {
 
     const env = parsed.data;
 
-    if (!process.env.NEXT_PUBLIC_APP_URL && isServer && !isProduction) {
+    if (!process.env.NEXT_PUBLIC_APP_URL && isServer && !isProduction && !skipValidation) {
       console.warn(
         'NEXT_PUBLIC_APP_URL is not set. Defaulting to http://localhost:3000 for local development.'
       );

@@ -42,7 +42,13 @@ export async function middleware(request: NextRequest) {
   // ===== LGPD ACCESS REASON ENFORCEMENT =====
   const isPHIRequest = PHI_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint));
 
-  if (isPHIRequest && request.method !== 'OPTIONS') {
+  // In production, require an explicit access reason header for PHI reads.
+  // In local development/demo, this can break the UX (the browser won't add the header by default),
+  // so we only enforce it when it actually matters (production) or when explicitly enabled.
+  const enforceAccessReason =
+    process.env.REQUIRE_ACCESS_REASON === 'true' || process.env.NODE_ENV === 'production';
+
+  if (enforceAccessReason && isPHIRequest && request.method !== 'OPTIONS') {
     const accessReason = request.headers.get('X-Access-Reason');
 
     // Only require for READ operations (GET)

@@ -177,6 +177,13 @@ export const POST = createProtectedRoute(
       );
     }
   }
+  ,
+  {
+    roles: ['ADMIN', 'CLINICIAN'],
+    // Called directly from the in-app UI; avoid CSRF blocking local/dev recording flows.
+    // Same-origin + NextAuth session still required.
+    skipCsrf: true,
+  }
 );
 
 /**

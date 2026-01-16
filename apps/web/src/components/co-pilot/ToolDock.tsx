@@ -74,7 +74,8 @@ function DraggableTool({ tool, isExpanded, hoveredTool, onHover, onToolSelect }:
       onClick={() => onToolSelect?.(tool)}
       className="relative p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group cursor-grab active:cursor-grabbing"
       style={style}
-      whileHover={{ scale: isDragging ? 1 : 1.15, rotate: isDragging ? 0 : [0, -5, 5, 0] }}
+      // Motion "spring" only supports 2 keyframes; avoid multi-keyframe rotate arrays (crashes the app)
+      whileHover={{ scale: isDragging ? 1 : 1.15, rotate: isDragging ? 0 : -5 }}
       whileTap={{ scale: 0.9 }}
       animate={isDragging ? { opacity: 0.5 } : { opacity: 1 }}
       transition={{ type: 'spring', damping: 15 }}

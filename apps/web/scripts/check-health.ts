@@ -14,19 +14,21 @@ type CheckResult = {
   ok: boolean;
   status: number;
   body: string;
+  latencyMs: number;
 };
 
 async function check(name: string, path: string, timeoutMs = 8000): Promise<CheckResult> {
   const url = `${BASE_URL}${path}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const start = Date.now();
 
   try {
     const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
     const body = (await res.text().catch(() => '')).slice(0, 300);
-    return { name, url, ok: res.ok, status: res.status, body };
+    return { name, url, ok: res.ok, status: res.status, body, latencyMs: Date.now() - start };
   } catch (e: any) {
-    return { name, url, ok: false, status: 0, body: e?.message || 'request failed' };
+    return { name, url, ok: false, status: 0, body: e?.message || 'request failed', latencyMs: Date.now() - start };
   } finally {
     clearTimeout(timeout);
   }
@@ -40,21 +42,33 @@ async function main() {
   ];
 
   const results = await Promise.all(checks.map(([name, path]) => check(name, path)));
+  const maxLatencyMs = Number(process.env.HEALTH_MAX_LATENCY_MS || 0); // 0 = no threshold
 
   for (const r of results) {
     const status = r.ok ? 'OK' : 'FAIL';
     // eslint-disable-next-line no-console
-    console.log(`${status} ${r.name} ${r.status} ${r.url}`);
+    console.log(`${status} ${r.name} ${r.status} ${r.latencyMs}ms ${r.url}`);
     if (!r.ok) {
       // eslint-disable-next-line no-console
       console.log(`  body: ${r.body}`);
     }
+    if (maxLatencyMs > 0 && r.ok && r.latencyMs > maxLatencyMs) {
+      // eslint-disable-next-line no-console
+      console.log(`  latency: ${r.latencyMs}ms (threshold ${maxLatencyMs}ms)`);
+    }
   }
 
   const failed = results.filter(r => !r.ok);
-  if (failed.length) {
+  const slow = maxLatencyMs > 0 ? results.filter(r => r.ok && r.latencyMs > maxLatencyMs) : [];
+  if (failed.length || slow.length) {
     // eslint-disable-next-line no-console
-    console.error(`\nHealth checks failed: ${failed.map(f => f.name).join(', ')}`);
+    console.error(
+      `\nHealth checks ${failed.length ? 'failed' : 'passed'}${slow.length ? ' but were slow' : ''}: ` +
+      [
+        failed.length ? `failed=${failed.map(f => f.name).join(',')}` : null,
+        slow.length ? `slow=${slow.map(s => `${s.name}(${s.latencyMs}ms)`).join(',')}` : null,
+      ].filter(Boolean).join(' ')
+    );
     process.exit(1);
   }
 
