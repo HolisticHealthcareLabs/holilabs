@@ -1,0 +1,110 @@
+name: holilabs
+region: nyc
+domains:
+  - domain: holilabs.xyz
+    type: PRIMARY
+  - domain: www.holilabs.xyz
+    type: ALIAS
+
+services:
+  - name: web
+    github:
+      repo: HolisticHealthcareLabs/holilabs
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    build_command: |
+      corepack enable && corepack prepare pnpm@8.15.0 --activate && pnpm install --frozen-lockfile && cd apps/web && pnpm prisma generate && pnpm build
+    run_command: cd apps/web && pnpm start
+    http_port: 3000
+    instance_size_slug: professional-xs
+    instance_count: 1
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 30
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+    envs:
+      # Node
+      - key: NODE_ENV
+        value: production
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=2048"
+
+      # App URLs
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://holilabs.xyz
+      - key: NEXTAUTH_URL
+        value: https://holilabs.xyz
+
+      # Database (set as encrypted)
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+
+      # Auth (set as encrypted)
+      - key: NEXTAUTH_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: SESSION_SECRET
+        scope: RUN_TIME
+        type: SECRET
+
+      # AI Services (set as encrypted)
+      - key: ANTHROPIC_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: GOOGLE_AI_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: OPENAI_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      # Supabase (set as encrypted)
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      # Redis/Upstash (set as encrypted)
+      - key: UPSTASH_REDIS_REST_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: UPSTASH_REDIS_REST_TOKEN
+        scope: RUN_TIME
+        type: SECRET
+
+      # Email (set as encrypted)
+      - key: RESEND_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: FROM_EMAIL
+        value: noreply@holilabs.xyz
+      - key: FROM_NAME
+        value: Holi Labs
+
+      # Encryption (set as encrypted)
+      - key: ENCRYPTION_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: ENCRYPTION_MASTER_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      # Sentry (optional)
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        scope: RUN_TIME
+        type: SECRET
+      - key: SENTRY_AUTH_TOKEN
+        scope: RUN_TIME
+        type: SECRET
