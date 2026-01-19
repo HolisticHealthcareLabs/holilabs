@@ -71,6 +71,7 @@ model User {
   preventionTemplateComments PreventionTemplateComment[]     @relation("TemplateComments")
   sharedTemplates            PreventionTemplateShare[]       @relation("SharedTemplates")
   receivedTemplateShares     PreventionTemplateShare[]       @relation("ReceivedTemplateShares")
+  preventionPlanVersions     PreventionPlanVersion[]         @relation("PreventionPlanVersions")
 
   // Phase 5: Advanced Scheduling
   recurringAppointments RecurringAppointment[]
@@ -859,7 +860,8 @@ model Patient {
   waitingList           WaitingList[]
 
   // Preventive Care & Risk Stratification
-  preventionPlans PreventionPlan[]
+  preventionPlans    PreventionPlan[]
+  screeningOutcomes  ScreeningOutcome[] @relation("PatientScreeningOutcomes")
 
   // CDSS V3
   analysisJobs       AnalysisJob[]
@@ -2262,6 +2264,9 @@ model ClinicalEncounter {
 
   // CDSS V3
   analysisJobs AnalysisJob[]
+
+  // Prevention Hub - Links to prevention recommendations detected during encounter
+  preventionEncounterLinks PreventionEncounterLink[]
 
   scheduledAt DateTime
   startedAt   DateTime?
@@ -4871,6 +4876,10 @@ model PreventionPlan {
   // Relations (Phase 7 Feature 5)
   reminders PreventiveCareReminder[] // Associated reminders
 
+  // Enhanced Prevention Hub - Real-time detection links
+  encounterLinks PreventionEncounterLink[] @relation("PlanEncounterLinks")
+  versions       PreventionPlanVersion[]   @relation("PlanVersions")
+
   // Status
   status             PreventionPlanStatus @default(ACTIVE)
   activatedAt        DateTime             @default(now())
@@ -5149,6 +5158,116 @@ model ExercisePlan {
 
   @@index([patientId])
   @@map("exercise_plans")
+}
+
+// ============================================================================
+// ENHANCED PREVENTION HUB - Real-time Prevention System
+// ============================================================================
+
+// Link prevention recommendations to specific clinical encounters
+// Created when conditions are detected during transcription
+model PreventionEncounterLink {
+  id               String   @id @default(cuid())
+  encounterId      String
+  preventionPlanId String
+
+  // What was detected during this encounter
+  detectedConditions Json // Array of {condition, code, displayName}
+  triggeringFindings Json // What in the transcript triggered this
+  confidence         Float // ML confidence score (0.0-1.0)
+
+  // Processing metadata
+  processingTimeMs Int? // How long the detection took
+  sourceType       String @default("transcript") // "transcript", "manual", "ehr_import"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  encounter      ClinicalEncounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  preventionPlan PreventionPlan    @relation("PlanEncounterLinks", fields: [preventionPlanId], references: [id], onDelete: Cascade)
+
+  @@index([encounterId])
+  @@index([preventionPlanId])
+  @@index([createdAt])
+  @@map("prevention_encounter_links")
+}
+
+// Version history for prevention plans (HIPAA audit compliance)
+// Tracks all changes made to a prevention plan
+model PreventionPlanVersion {
+  id      String @id @default(cuid())
+  planId  String
+  version Int // Incremental version number
+
+  // Complete plan state at this version
+  planData Json @db.JsonB // Full snapshot of plan at this version
+
+  // Change tracking
+  changes      Json    @db.JsonB // Diff from previous version {field: {old, new}}
+  changedBy    String // User ID who made the change
+  changeReason String? @db.Text // Optional reason for the change
+
+  createdAt DateTime @default(now())
+
+  plan      PreventionPlan @relation("PlanVersions", fields: [planId], references: [id], onDelete: Cascade)
+  clinician User           @relation("PreventionPlanVersions", fields: [changedBy], references: [id])
+
+  @@unique([planId, version])
+  @@index([planId])
+  @@index([changedBy])
+  @@index([createdAt])
+  @@map("prevention_plan_versions")
+}
+
+// Track screening outcomes (mammogram, colonoscopy, etc.)
+// Linked to patient and optionally to follow-up prevention plans
+model ScreeningOutcome {
+  id        String @id @default(cuid())
+  patientId String
+
+  // Screening details
+  screeningType String // "mammogram", "colonoscopy", "pap_smear", "ldct_lung", etc.
+  screeningCode String? // SNOMED or CPT code
+  description   String? @db.Text
+
+  // Scheduling and completion
+  scheduledDate DateTime
+  completedDate DateTime?
+  dueDate       DateTime? // When screening was/is due
+
+  // Results
+  result           String? // "normal", "abnormal", "inconclusive", "needs_followup"
+  resultDetails    Json? // Detailed findings {biradScore, polypsFound, etc.}
+  resultDocumentId String? // Link to result document if uploaded
+
+  // Follow-up
+  followUpPlanId       String? // Link to follow-up prevention plan if needed
+  followUpRecommended  Boolean @default(false)
+  followUpScheduledFor DateTime?
+
+  // Provider info
+  performedBy     String? // Provider who performed the screening
+  orderingProvider String? // Provider who ordered it
+  facility        String? // Where it was performed
+
+  // Notes and compliance
+  notes         String? @db.Text
+  patientDeclined Boolean @default(false)
+  declineReason  String? @db.Text
+  remindersSent Int     @default(0)
+  lastReminderAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation("PatientScreeningOutcomes", fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([screeningType])
+  @@index([scheduledDate])
+  @@index([result])
+  @@index([patientId, screeningType])
+  @@map("screening_outcomes")
 }
 
 // ============================================================================

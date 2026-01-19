@@ -12,6 +12,16 @@ export {
   type PreventionAlert,
 } from './prevention.service';
 
+// Prevention Engine Service (Real-time detection)
+export {
+  PreventionEngineService,
+  createPreventionEngineService,
+  preventionEngine,
+  type TranscriptFindings,
+  type PreventionRecommendation,
+  type ProcessingResult,
+} from './prevention-engine.service';
+
 // Document Service
 export {
   DocumentService,

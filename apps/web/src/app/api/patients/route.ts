@@ -220,6 +220,12 @@ export const POST = createProtectedRoute(
     // Includes automatic collision detection
     const tokenId = await generateUniquePatientTokenId();
 
+    // Streamlined defaults:
+    // - If caller doesn't specify assignment, assign to the authenticated clinician (tenant isolation).
+    // - Ensure audit fields always have a real user id.
+    const assignedClinicianId = validatedData.assignedClinicianId || context.user.id;
+    const createdBy = validatedData.createdBy || context.user.id;
+
     // Generate blockchain hash (using validated data)
     const dataHash = generatePatientDataHash({
       id: tokenId,
@@ -339,7 +345,7 @@ export const POST = createProtectedRoute(
         flaggedConcerns: validatedData.flaggedConcerns || [],
 
         // Assignment & Blockchain
-        assignedClinicianId: validatedData.assignedClinicianId,
+        assignedClinicianId,
         dataHash,
         lastHashUpdate: new Date(),
       },
@@ -363,11 +369,11 @@ export const POST = createProtectedRoute(
       let defaultConsent = null;
       let accessGrant = null;
 
-      if (validatedData.assignedClinicianId) {
+      if (assignedClinicianId) {
         logger.info({
           event: 'patient_default_consent_creating',
           patientId: patient.id,
-          clinicianId: validatedData.assignedClinicianId
+          clinicianId: assignedClinicianId
         });
 
         // 1. Create default treatment consent
@@ -384,7 +390,7 @@ By accepting this consent, you acknowledge that:
 This consent complies with HIPAA, GDPR Article 7, and LGPD Article 8.
 
 Patient: ${validatedData.firstName} ${validatedData.lastName}
-Assigned Clinician ID: ${validatedData.assignedClinicianId}
+Assigned Clinician ID: ${assignedClinicianId}
 Registration Date: ${new Date().toISOString()}
       `.trim();
 
@@ -411,7 +417,7 @@ Registration Date: ${new Date().toISOString()}
           event: 'patient_default_consent_created',
           patientId: patient.id,
           consentId: defaultConsent.id,
-          clinicianId: validatedData.assignedClinicianId
+          clinicianId: assignedClinicianId
         });
 
         // 2. Create data access grant for assigned clinician
@@ -419,7 +425,7 @@ Registration Date: ${new Date().toISOString()}
         data: {
           patientId: patient.id,
           grantedToType: 'USER',
-          grantedToId: validatedData.assignedClinicianId,
+          grantedToId: assignedClinicianId,
           resourceType: 'ALL',
           canView: true,
           canDownload: false,
@@ -433,20 +439,20 @@ Registration Date: ${new Date().toISOString()}
           event: 'patient_access_grant_created',
           patientId: patient.id,
           accessGrantId: accessGrant.id,
-          clinicianId: validatedData.assignedClinicianId
+          clinicianId: assignedClinicianId
         });
 
         // 3. Create audit log for consent creation (within transaction)
         await tx.auditLog.create({
           data: {
-            userId: validatedData.assignedClinicianId,
+            userId: assignedClinicianId,
             userEmail: 'system',
             action: 'GRANT_DEFAULT_CONSENT',
             resource: 'Patient',
             resourceId: patient.id,
             ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
             details: {
-              assignedClinicianId: validatedData.assignedClinicianId,
+              assignedClinicianId,
               consentId: defaultConsent.id,
               accessGrantId: accessGrant.id,
               consentType: 'GENERAL_CONSULTATION',
@@ -460,14 +466,14 @@ Registration Date: ${new Date().toISOString()}
         logger.info({
           event: 'patient_default_setup_complete',
           patientId: patient.id,
-          clinicianId: validatedData.assignedClinicianId
+          clinicianId: assignedClinicianId
         });
       }
 
       // Create main audit log for patient creation (within transaction)
       await tx.auditLog.create({
         data: {
-          userId: validatedData.createdBy || validatedData.assignedClinicianId || 'system',
+          userId: createdBy,
           userEmail: 'system',
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           action: 'CREATE',
@@ -485,7 +491,7 @@ Registration Date: ${new Date().toISOString()}
     // SECURITY: Log de-identification operation for HIPAA compliance
     await logDeIDOperation(
       'TOKEN_GENERATE',
-      validatedData.createdBy || validatedData.assignedClinicianId || 'system',
+      createdBy,
       [patient.id],
       {
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
@@ -500,7 +506,7 @@ Registration Date: ${new Date().toISOString()}
     // Track analytics event (NO PHI!)
     await trackEvent(
       ServerAnalyticsEvents.PATIENT_CREATED,
-      validatedData.assignedClinicianId || 'system',
+      assignedClinicianId,
       {
         isPalliativeCare: patient.isPalliativeCare,
         hasSpecialNeeds: patient.hasSpecialNeeds,
@@ -519,7 +525,7 @@ Registration Date: ${new Date().toISOString()}
       // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
       await prisma.userBehaviorEvent.create({
         data: {
-          userId: validatedData.assignedClinicianId || context.user.id,
+          userId: assignedClinicianId,
           eventType: 'PATIENT_CREATED',
           metadata: {
             isPalliativeCare: patient.isPalliativeCare,

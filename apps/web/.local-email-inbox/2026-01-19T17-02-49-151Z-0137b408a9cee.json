@@ -1,0 +1,25 @@
+{
+  "provider": "resend",
+  "from": "Holi Labs <noreply@holilabs.xyz>",
+  "to": "nicolacaprirolo@gmail.com",
+  "subject": "Welcome to Holi Labs — Your account is ready",
+  "replyTo": "soporte@holilabs.com",
+  "html": "\n        <div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px;\">\n          <h1 style=\"margin: 0 0 12px 0; color: #0f172a;\">Welcome to Holi Labs</h1>\n          <p style=\"margin: 0 0 16px 0; color: #334155; line-height: 1.6;\">\n            Hi NICOLA, your clinician account has been created.\n          </p>\n          <p style=\"margin: 0 0 20px 0; color: #334155; line-height: 1.6;\">\n            You can sign in here:\n          </p>\n          <p style=\"margin: 0 0 24px 0;\">\n            <a href=\"http://localhost:3000/auth/login\" style=\"display:inline-block;background:#014751;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600;\">\n              Sign in to Holi Labs\n            </a>\n          </p>\n          \n          <hr style=\"border:none;border-top:1px solid #e2e8f0;margin:24px 0;\" />\n          <p style=\"margin:0;color:#64748b;font-size:12px;\">\n            If you did not create this account, please contact support.\n          </p>\n        </div>\n      ",
+  "text": "Welcome to Holi Labs\n\nHi NICOLA, your clinician account has been created.\n\nSign in: http://localhost:3000/auth/login\n",
+  "tags": [
+    {
+      "name": "type",
+      "value": "clinician_welcome"
+    },
+    {
+      "name": "category",
+      "value": "transactional"
+    }
+  ],
+  "resendError": {
+    "statusCode": 403,
+    "message": "The holilabs.xyz domain is not verified. Please, add and verify your domain on https://resend.com/domains",
+    "name": "validation_error"
+  },
+  "createdAt": "2026-01-19T17:02:49.148Z"
+}

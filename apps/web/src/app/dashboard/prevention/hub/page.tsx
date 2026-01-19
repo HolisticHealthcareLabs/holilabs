@@ -15,9 +15,10 @@
  * - One-click workflow for orders, referrals, and patient engagement
  */
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { usePreventionDetection, type DetectedConditionFromServer, type RecommendationFromServer } from '@/hooks/useRealtimePreventionUpdates';
 
 // Force dynamic rendering to avoid build errors with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -149,6 +150,53 @@ export default function PreventionHub() {
   const [selectedIntervention, setSelectedIntervention] = useState<Intervention | null>(null);
   const [patient, setPatient] = useState<PatientProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [realtimeNotifications, setRealtimeNotifications] = useState<Array<{
+    id: string;
+    type: 'condition' | 'recommendation';
+    message: string;
+    timestamp: Date;
+  }>>([]);
+
+  // Real-time prevention detection hook
+  const {
+    connected: realtimeConnected,
+    conditions: realtimeConditions,
+    recommendations: realtimeRecommendations,
+    isProcessing,
+    clearDetections,
+  } = usePreventionDetection({
+    patientId: patientId !== 'demo' ? patientId : '',
+    autoConnect: patientId !== 'demo',
+    onConditionDetected: useCallback((conditions: DetectedConditionFromServer[]) => {
+      // Add notification for newly detected conditions
+      conditions.forEach((condition) => {
+        setRealtimeNotifications((prev) => [
+          {
+            id: `condition-${condition.id}`,
+            type: 'condition',
+            message: `Detected: ${condition.name} (${Math.round(condition.confidence * 100)}% confidence)`,
+            timestamp: new Date(),
+          },
+          ...prev,
+        ].slice(0, 5)); // Keep only last 5
+      });
+    }, []),
+    onRecommendationCreated: useCallback((recommendations: RecommendationFromServer[]) => {
+      recommendations.forEach((rec) => {
+        setRealtimeNotifications((prev) => [
+          {
+            id: `rec-${rec.id}`,
+            type: 'recommendation',
+            message: `New recommendation: ${rec.title}`,
+            timestamp: new Date(),
+          },
+          ...prev,
+        ].slice(0, 5));
+      });
+    }, []),
+  });
 
   // Load patient data
   useEffect(() => {
@@ -158,69 +206,191 @@ export default function PreventionHub() {
   const loadPatientData = async (id: string) => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      const mockData: PatientProfile = {
-        id,
-        age: 45,
-        gender: 'female',
-        riskScores: [
-          {
-            id: 'ascvd',
-            name: '10-Year ASCVD Risk',
-            score: 12.5,
-            level: 'moderate',
-            lastCalculated: new Date(),
-            nextDue: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-          },
-          {
-            id: 'diabetes',
-            name: 'Lifetime Diabetes Risk',
-            score: 35.2,
-            level: 'high',
-            lastCalculated: new Date(),
-            nextDue: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
-          },
-          {
-            id: 'frax',
-            name: 'FRAX Score (10-year fracture)',
-            score: 8.3,
-            level: 'low',
-            lastCalculated: new Date(),
-            nextDue: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-          },
-        ],
-        activeInterventions: [
-          {
-            id: 'mammo-1',
-            name: 'Annual Mammography',
-            domain: 'oncology',
-            type: 'screening',
-            status: 'overdue',
-            dueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            description: 'Screening for breast cancer',
-            evidence: 'USPSTF Grade B recommendation for women 40-74',
-            aiRecommendation: 'Patient is 45 with family history. Consider supplemental ultrasound due to dense breast tissue.',
-          },
-          {
-            id: 'lipid-1',
-            name: 'Advanced Lipid Panel',
-            domain: 'cardiometabolic',
-            type: 'lab',
-            status: 'due',
-            dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-            description: 'ApoB, Lp(a), LDL-P for cardiovascular risk',
-            evidence: 'Enhanced risk stratification beyond standard lipid panel',
-            aiRecommendation: 'Patient has elevated ASCVD risk. Consider adding ApoB and Lp(a) for precision assessment.',
-          },
-        ],
-        completedInterventions: [],
+      // Fetch real data from Prevention Hub API
+      const response = await fetch(`/api/prevention/hub/${id}`);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.error('Patient not found');
+          setPatient(null);
+          return;
+        }
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success || !result.data) {
+        throw new Error('Invalid API response');
+      }
+
+      const { data } = result;
+
+      // Map API response to PatientProfile format
+      const patientProfile: PatientProfile = {
+        id: data.patient.id,
+        age: data.patient.age,
+        gender: data.patient.gender,
+        riskScores: data.riskScores.map((risk: {
+          id: string;
+          name: string;
+          score: number;
+          level: 'low' | 'moderate' | 'high' | 'very-high';
+          lastCalculated: string;
+          nextDue: string;
+        }) => ({
+          id: risk.id,
+          name: risk.name,
+          score: risk.score,
+          level: risk.level,
+          lastCalculated: new Date(risk.lastCalculated),
+          nextDue: new Date(risk.nextDue),
+        })),
+        activeInterventions: data.activeInterventions.map((intervention: {
+          id: string;
+          name: string;
+          domain: HealthDomain;
+          type: InterventionType;
+          status: InterventionStatus;
+          dueDate?: string;
+          completedDate?: string;
+          scheduledDate?: string;
+          description: string;
+          evidence: string;
+          aiRecommendation?: string;
+        }) => ({
+          id: intervention.id,
+          name: intervention.name,
+          domain: intervention.domain,
+          type: intervention.type,
+          status: intervention.status,
+          dueDate: intervention.dueDate ? new Date(intervention.dueDate) : undefined,
+          completedDate: intervention.completedDate ? new Date(intervention.completedDate) : undefined,
+          scheduledDate: intervention.scheduledDate ? new Date(intervention.scheduledDate) : undefined,
+          description: intervention.description,
+          evidence: intervention.evidence,
+          aiRecommendation: intervention.aiRecommendation,
+        })),
+        completedInterventions: data.completedInterventions.map((intervention: {
+          id: string;
+          name: string;
+          domain: HealthDomain;
+          type: InterventionType;
+          status: InterventionStatus;
+          dueDate?: string;
+          completedDate?: string;
+          scheduledDate?: string;
+          description: string;
+          evidence: string;
+          aiRecommendation?: string;
+        }) => ({
+          id: intervention.id,
+          name: intervention.name,
+          domain: intervention.domain,
+          type: intervention.type,
+          status: intervention.status,
+          dueDate: intervention.dueDate ? new Date(intervention.dueDate) : undefined,
+          completedDate: intervention.completedDate ? new Date(intervention.completedDate) : undefined,
+          scheduledDate: intervention.scheduledDate ? new Date(intervention.scheduledDate) : undefined,
+          description: intervention.description,
+          evidence: intervention.evidence,
+          aiRecommendation: intervention.aiRecommendation,
+        })),
       };
 
-      setPatient(mockData);
+      setPatient(patientProfile);
     } catch (error) {
       console.error('Error loading patient data:', error);
+      setPatient(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle adding intervention to prevention plan
+  const handleAddToPlan = async (intervention: Intervention) => {
+    if (!patient) return;
+
+    setActionLoading(true);
+    setActionMessage(null);
+
+    try {
+      const response = await fetch('/api/prevention/hub/add-to-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patient.id,
+          intervention: {
+            name: intervention.name,
+            domain: intervention.domain,
+            type: intervention.type,
+            description: intervention.description,
+            evidence: intervention.evidence,
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to add to plan');
+      }
+
+      setActionMessage({
+        type: 'success',
+        text: `Added "${intervention.name}" to prevention plan`,
+      });
+
+      // Refresh patient data
+      setTimeout(() => {
+        loadPatientData(patient.id);
+        setSelectedIntervention(null);
+        setActionMessage(null);
+      }, 1500);
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to add to plan',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle marking intervention as complete
+  const handleMarkComplete = async (intervention: Intervention) => {
+    if (!patient) return;
+
+    setActionLoading(true);
+    setActionMessage(null);
+
+    try {
+      // For now, update local state - in Phase 3 we'll add the API
+      setPatient({
+        ...patient,
+        activeInterventions: patient.activeInterventions.filter(i => i.id !== intervention.id),
+        completedInterventions: [
+          ...patient.completedInterventions,
+          { ...intervention, status: 'completed' as InterventionStatus, completedDate: new Date() },
+        ],
+      });
+
+      setActionMessage({
+        type: 'success',
+        text: `Marked "${intervention.name}" as complete`,
+      });
+
+      setTimeout(() => {
+        setSelectedIntervention(null);
+        setActionMessage(null);
+      }, 1500);
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to mark complete',
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -301,7 +471,21 @@ export default function PreventionHub() {
                 Proactive, Predictive, and Participatory Care for Patient #{patient.id}
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
+              {/* Real-time status indicator */}
+              {patientId !== 'demo' && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                  realtimeConnected
+                    ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    realtimeConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                  }`} />
+                  {realtimeConnected ? 'Live' : 'Offline'}
+                  {isProcessing && <span className="ml-1 animate-spin">⚙️</span>}
+                </div>
+              )}
               <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium">
                 Export Report
               </button>
@@ -356,6 +540,45 @@ export default function PreventionHub() {
               </div>
             ))}
           </div>
+
+          {/* Real-time Detections Alert */}
+          {realtimeNotifications.length > 0 && (
+            <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl animate-pulse">🔔</span>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-blue-900 dark:text-blue-200 mb-2">
+                      Real-Time Prevention Detections
+                    </h4>
+                    <div className="space-y-1">
+                      {realtimeNotifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className="text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2"
+                        >
+                          <span>{notification.type === 'condition' ? '🔍' : '💡'}</span>
+                          <span>{notification.message}</span>
+                          <span className="text-xs opacity-60">
+                            ({notification.timestamp.toLocaleTimeString()})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setRealtimeNotifications([]);
+                    clearDetections();
+                  }}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Prevention Gaps Alert */}
           {patient.activeInterventions.filter(i => i.status === 'overdue').length > 0 && (
@@ -739,17 +962,56 @@ export default function PreventionHub() {
               </div>
             </div>
 
+            {/* Action Message */}
+            {actionMessage && (
+              <div className={`mx-6 mb-4 p-4 rounded-lg ${
+                actionMessage.type === 'success'
+                  ? 'bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
+                  : 'bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span>{actionMessage.type === 'success' ? '✅' : '❌'}</span>
+                  <span className="font-medium">{actionMessage.text}</span>
+                </div>
+              </div>
+            )}
+
             {/* Modal Footer */}
-            <div className="border-t border-gray-200 dark:border-gray-700 p-6 flex justify-end gap-3">
+            <div className="border-t border-gray-200 dark:border-gray-700 p-6 flex justify-between">
               <button
-                onClick={() => setSelectedIntervention(null)}
-                className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium"
+                onClick={() => handleAddToPlan(selectedIntervention)}
+                disabled={actionLoading}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Cancel
+                {actionLoading ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <span>➕</span>
+                    Add to Plan
+                  </>
+                )}
               </button>
-              <button className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium">
-                Mark as Complete
-              </button>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedIntervention(null)}
+                  disabled={actionLoading}
+                  className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleMarkComplete(selectedIntervention)}
+                  disabled={actionLoading}
+                  className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Mark as Complete
+                </button>
+              </div>
             </div>
           </div>
         </div>

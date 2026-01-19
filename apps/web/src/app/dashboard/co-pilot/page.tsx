@@ -24,6 +24,14 @@ import { FindingsTimeline } from '@/components/co-pilot/FindingsTimeline';
 import { ClinicalDisclosureModal } from '@/components/scribe/ClinicalDisclosureModal';
 import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 import { isDemoModeEnabled } from '@/lib/demo/demo-data-generator';
+import { startTraditionalRecorder, type TraditionalRecorderHandle } from '@/lib/scribe/client/traditional-recorder';
+import {
+  createScribeSession,
+  completeTraditionalScribeSession,
+  patchSoapNote,
+  signSoapNote,
+  notifySoapNote,
+} from '@/lib/scribe/client/scribe-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -202,7 +210,11 @@ function CoPilotContent() {
   const [scribeDebug, setScribeDebug] = useState<{
     socketConnected: boolean;
     chunksSent: number;
+    chunksAcked?: number;
+    lastAudioAckAt?: number;
+    lastServerReadyAt?: number;
     lastTranscriptAt?: number;
+    lastRequestId?: string;
     lastError?: string;
   }>({
     socketConnected: false,
@@ -219,8 +231,11 @@ function CoPilotContent() {
     return () => clearTimeout(t);
   }, [scribeCooldownUntilMs]);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const traditionalRecorderRef = useRef<TraditionalRecorderHandle | null>(null);
+  const traditionalStartedAtMsRef = useRef<number>(0);
+  const [soapNoteRecord, setSoapNoteRecord] = useState<any | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const socketInitInFlightRef = useRef<boolean>(false);
   const lastFindingsPersistMsRef = useRef<number>(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -265,6 +280,27 @@ function CoPilotContent() {
       .slice(0, 200);
   }, []);
 
+  const sanitizeScribeErrorMessage = useCallback(
+    (rawMsg: string, opts?: { retryAfterMs?: number; key?: string }) => {
+      const msg = String(rawMsg || '');
+      const key = opts?.key ?? normalizeScribeErrorKey(msg);
+      const retryAfterMs = Number.isFinite(Number(opts?.retryAfterMs)) ? Number(opts?.retryAfterMs) : 60_000;
+
+      if (key === 'RATE_LIMIT_429') {
+        const seconds = Math.max(1, Math.round(retryAfterMs / 1000));
+        return `Live transcription is temporarily rate limited (429). We switched you to Traditional mode. Retry in ~${seconds}s.`;
+      }
+
+      // Remove vendor/internal details that aren't actionable for clinicians.
+      return msg
+        .replace(/Request ID:\s*[a-z0-9-]+/gi, 'Request ID:<redacted>')
+        .replace(/Ready State:\s*[A-Z_]+/gi, 'Ready State:<state>')
+        .replace(/URL:\s*\S+/gi, '')
+        .trim();
+    },
+    [normalizeScribeErrorKey]
+  );
+
   const audioRecorder = useAudioRecorder({
     chunkMs: 100,
     targetSampleRate: 16000,
@@ -272,10 +308,14 @@ function CoPilotContent() {
       const socket = wsRef.current as any;
       if (!socket || !state.sessionId || !state.isRecording) return;
 
-      // If auto-detect is enabled, buffer initial audio until language is detected.
+      // If auto-detect is enabled, capture ~1.5s sample for detection *without* blocking streaming.
+      // We still stream audio immediately (defaulting to English) so the transcript stays live.
       if (detectPendingRef.current) {
-        prebufferRef.current.push(chunk.pcm16);
-        prebufferBytesRef.current += chunk.pcm16.byteLength;
+        // Keep a small sample window for detection; cap to avoid unbounded memory.
+        if (prebufferBytesRef.current < 96_000) {
+          prebufferRef.current.push(chunk.pcm16);
+          prebufferBytesRef.current += chunk.pcm16.byteLength;
+        }
 
         // Once we have ~1.5s of audio (~48KB at 16kHz PCM16 mono per 1.5s = 48000 bytes),
         // run language detection once.
@@ -304,16 +344,6 @@ function CoPilotContent() {
               activeStreamLanguageRef.current = chosen;
               setDetectedLanguage(chosen);
               detectPendingRef.current = false;
-
-              // Flush buffered audio using the detected language
-              for (const buf of prebufferRef.current) {
-                socket.emit('co_pilot:audio_chunk', {
-                  sessionId: state.sessionId,
-                  audioData: buf,
-                  sampleRate: 16000,
-                  language: chosen,
-                });
-              }
               prebufferRef.current = [];
               prebufferBytesRef.current = 0;
             })
@@ -322,22 +352,10 @@ function CoPilotContent() {
               activeStreamLanguageRef.current = 'en';
               setDetectedLanguage('en');
               detectPendingRef.current = false;
-
-              // Flush buffered audio anyway (don't stall transcription).
-              for (const buf of prebufferRef.current) {
-                socket.emit('co_pilot:audio_chunk', {
-                  sessionId: state.sessionId,
-                  audioData: buf,
-                  sampleRate: 16000,
-                  language: 'en',
-                });
-              }
               prebufferRef.current = [];
               prebufferBytesRef.current = 0;
             });
         }
-
-        return;
       }
 
       socket.emit('co_pilot:audio_chunk', {
@@ -349,6 +367,131 @@ function CoPilotContent() {
       setScribeDebug((prev) => ({ ...prev, chunksSent: prev.chunksSent + 1 }));
     },
   });
+
+  // Live transcription reliability:
+  // - Ensure we join the correct session room once sessionId is available (connect can race state updates).
+  // - Ensure the audio worklet starts once we have {socket connected, stream, sessionId}.
+  const realtimeStartedForSessionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!useRealTimeMode) {
+      realtimeStartedForSessionRef.current = null;
+      return;
+    }
+    if (!state.isRecording || !state.sessionId || !audioStream) {
+      realtimeStartedForSessionRef.current = null;
+      return;
+    }
+
+    const socket = wsRef.current as any;
+    if (!socket || !socket.connected) return;
+
+    // Join (or re-join) the right room after sessionId updates.
+    try {
+      socket.emit('co_pilot:join_session', { sessionId: state.sessionId });
+    } catch {}
+
+    // Start the audio worklet pipeline (connect can happen before state/sessionId/audioStream).
+    if (realtimeStartedForSessionRef.current !== state.sessionId) {
+      realtimeStartedForSessionRef.current = state.sessionId;
+      // Initialize per-recording language mode once per session (avoid resetting mid-recording).
+      if (speechLanguage === 'auto') {
+        setDetectedLanguage(null);
+        activeStreamLanguageRef.current = 'en';
+        detectPendingRef.current = true;
+        detectStartedRef.current = false;
+        prebufferRef.current = [];
+        prebufferBytesRef.current = 0;
+      } else {
+        detectPendingRef.current = false;
+        detectStartedRef.current = false;
+        prebufferRef.current = [];
+        prebufferBytesRef.current = 0;
+        activeStreamLanguageRef.current = speechLanguage;
+        setDetectedLanguage(null);
+      }
+      try {
+        void audioRecorder.stop();
+        void audioRecorder.start(audioStream);
+      } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useRealTimeMode, state.isRecording, state.sessionId, audioStream, scribeDebug.socketConnected]);
+
+  // Create-patient quick flow (Co-Pilot top selector)
+  const [showCreatePatient, setShowCreatePatient] = useState(false);
+  const [createPatientBusy, setCreatePatientBusy] = useState(false);
+  const [createPatientError, setCreatePatientError] = useState<string | null>(null);
+  const [newPatientDraft, setNewPatientDraft] = useState<{
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string; // yyyy-mm-dd
+    mrn: string;
+    email: string;
+    phone: string;
+    gender: 'M' | 'F' | 'O' | 'U';
+  }>({
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    mrn: '',
+    email: '',
+    phone: '',
+    gender: 'U',
+  });
+
+  const generateMrn = () => {
+    const rand = Math.floor(Math.random() * 9000 + 1000);
+    const y = new Date().getFullYear();
+    return `MRN-${y}-${rand}`;
+  };
+
+  const submitCreatePatient = async () => {
+    try {
+      setCreatePatientError(null);
+      setCreatePatientBusy(true);
+
+      const mrn = String(newPatientDraft.mrn || '').trim() || generateMrn();
+      const dobIso = newPatientDraft.dateOfBirth
+        ? new Date(`${newPatientDraft.dateOfBirth}T00:00:00.000Z`).toISOString()
+        : '';
+
+      const payload: any = {
+        firstName: String(newPatientDraft.firstName || '').trim(),
+        lastName: String(newPatientDraft.lastName || '').trim(),
+        dateOfBirth: dobIso,
+        mrn,
+        email: String(newPatientDraft.email || '').trim() || null,
+        phone: String(newPatientDraft.phone || '').trim() || null,
+        gender: newPatientDraft.gender || 'U',
+      };
+
+      const res = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const firstDetail = Array.isArray(data?.details) ? data.details?.[0]?.message : undefined;
+        throw new Error(firstDetail || data?.message || data?.error || 'Failed to create patient');
+      }
+
+      const created = data?.data;
+      if (!created?.id) throw new Error('Patient created but response was missing id');
+
+      // Refresh list + pre-select to streamline workflow.
+      await loadPatients();
+      setSelectedPatient(created);
+      setShowCreatePatient(false);
+      setSearchQuery('');
+      showToast({ type: 'success', title: 'Patient created', message: `${created.firstName} ${created.lastName} is ready.` });
+    } catch (e: any) {
+      setCreatePatientError(e?.message || 'Failed to create patient');
+      showToast({ type: 'error', title: 'Could not create patient', message: e?.message || 'Failed to create patient' });
+    } finally {
+      setCreatePatientBusy(false);
+    }
+  };
 
   const focusScribePanel = () => {
     const el = document.getElementById('scribe-panel') as HTMLElement | null;
@@ -498,6 +641,41 @@ function CoPilotContent() {
     setRightPanelTab('labs');
     document.getElementById('copilot-right-panels')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  const handleSaveSoapNote = useCallback(
+    async (updates: Partial<any>) => {
+      if (!soapNoteRecord?.id) return;
+      const res = await patchSoapNote(soapNoteRecord.id, updates);
+      if (!res.success) {
+        showToast({ type: 'error', title: 'Save failed', message: res.message || res.error });
+        return;
+      }
+      setSoapNoteRecord(res.data);
+      showToast({ type: 'success', title: 'Saved', message: 'SOAP note updated.' });
+    },
+    [soapNoteRecord?.id]
+  );
+
+  const handleSignSoapNote = useCallback(async () => {
+    if (!soapNoteRecord?.id) return;
+    const res = await signSoapNote(soapNoteRecord.id);
+    if (!res.success) {
+      showToast({ type: 'error', title: 'Sign failed', message: res.message || res.error });
+      return;
+    }
+    setSoapNoteRecord(res.data);
+    showToast({ type: 'success', title: 'Signed', message: 'SOAP note signed successfully.' });
+  }, [soapNoteRecord?.id]);
+
+  const handleNotifySoapNote = useCallback(async () => {
+    if (!soapNoteRecord?.id) return;
+    const res = await notifySoapNote(soapNoteRecord.id);
+    if (!res.success) {
+      showToast({ type: 'error', title: 'Notify failed', message: res.message || res.error });
+      return;
+    }
+    showToast({ type: 'success', title: 'Notified', message: 'Patient notification sent.' });
+  }, [soapNoteRecord?.id]);
 
   const onDropFiles = useCallback(
     async (accepted: File[]) => {
@@ -754,8 +932,18 @@ function CoPilotContent() {
 
   const connectSocket = async () => {
     try {
-      // Avoid double-connecting.
-      if ((wsRef.current as any)?.connected) return;
+      // Avoid double-connecting (effects + button can race).
+      if (socketInitInFlightRef.current) return;
+      if (wsRef.current) {
+        const cur = wsRef.current as any;
+        // If there's any socket instance present (connected or connecting), don't create another.
+        if (cur?.connected || cur?.active || cur?.connecting) return;
+        try {
+          cur?.disconnect?.();
+        } catch {}
+        wsRef.current = null;
+      }
+      socketInitInFlightRef.current = true;
 
       // Import socket.io client dynamically
       const { io } = await import('socket.io-client');
@@ -887,6 +1075,25 @@ function CoPilotContent() {
         }
       });
 
+      socket.on('co_pilot:transcription_metadata', (data: any) => {
+        const rid = String(data?.requestId || '').trim();
+        if (!rid) return;
+        setScribeDebug((prev) => ({ ...prev, lastRequestId: rid }));
+      });
+
+      socket.on('co_pilot:server_ready', (data: any) => {
+        setScribeDebug((prev) => ({ ...prev, lastServerReadyAt: Date.now() }));
+      });
+
+      socket.on('co_pilot:audio_ack', (data: any) => {
+        const n = Number(data?.chunksReceived);
+        setScribeDebug((prev) => ({
+          ...prev,
+          chunksAcked: Number.isFinite(n) ? n : prev.chunksAcked,
+          lastAudioAckAt: Date.now(),
+        }));
+      });
+
       socket.on('co_pilot:soap_update', (data: any) => {
         updateLiveSoapNote({
           subjective: data.subjective,
@@ -933,43 +1140,63 @@ function CoPilotContent() {
         }));
         // Graceful fallback: disable realtime mode instead of spamming console forever.
         setUseRealTimeMode(false);
+        wsRef.current = null;
       });
 
       socket.on('disconnect', () => {
         console.log('Socket.io disconnected');
         setScribeDebug((prev) => ({ ...prev, socketConnected: false }));
+        wsRef.current = null;
       });
 
       socket.on('co_pilot:transcription_error', (data: any) => {
         const msg = data?.message || 'Transcription error';
-        setScribeDebug((prev) => ({ ...prev, lastError: msg }));
         // If the server tells us to stop (e.g. 429 rate limit), do it immediately to avoid thrash.
         const now = Date.now();
         const retryAfterMs = Number.isFinite(Number(data?.retryAfterMs)) ? Number(data.retryAfterMs) : 60_000;
         const shouldStop = Boolean(data?.shouldStop) || data?.code === 429 || String(msg).includes('429');
+        const key = normalizeScribeErrorKey(msg);
+        const safeMsg = sanitizeScribeErrorMessage(msg, { retryAfterMs, key });
+
+        // If Deepgram includes a request id in the raw error string, capture it for diagnosis
+        // before we sanitize/redact it from the UI-visible message.
+        const ridFromMsg = (() => {
+          const m = String(msg || '').match(/Request ID:\s*([a-z0-9-]+)/i);
+          return m?.[1] ? String(m[1]) : '';
+        })();
+        const ridFromPayload = String(data?.requestId || '').trim();
+        const requestId = ridFromPayload || ridFromMsg;
+
+        if (requestId) {
+          setScribeDebug((prev) => ({ ...prev, lastRequestId: requestId }));
+        }
+
+        setScribeDebug((prev) => ({ ...prev, lastError: safeMsg }));
         if (shouldStop) {
           setScribeCooldownUntilMs(now + Math.max(5_000, retryAfterMs));
           if (state.isRecording) {
             void handleStopRecording();
           }
           // Product failover: if Deepgram live is rate-limiting, automatically switch out of Live Mode.
-          if (data?.code === 429 || normalizeScribeErrorKey(msg) === 'RATE_LIMIT_429') {
+          if (data?.code === 429 || key === 'RATE_LIMIT_429') {
             setUseRealTimeMode(false);
           }
         }
         // De-dupe toast spam: normalize unstable parts (request id/url), and hard-cap 429 to one toast per cooldown.
-        const key = normalizeScribeErrorKey(msg);
         const dedupeWindowMs = key === 'RATE_LIMIT_429' ? Math.max(10_000, retryAfterMs) : 6000;
         if (key === lastScribeToastKeyRef.current && now - lastScribeToastAtRef.current < dedupeWindowMs) return;
         lastScribeToastKeyRef.current = key;
-        lastScribeToastMsgRef.current = msg;
+        lastScribeToastMsgRef.current = safeMsg;
         lastScribeToastAtRef.current = now;
-        showToast({ type: 'error', title: 'AI Scribe error', message: msg });
+        showToast({ type: 'error', title: 'AI Scribe error', message: safeMsg });
       });
+      socketInitInFlightRef.current = false;
     } catch (error) {
       console.error('Failed to connect Socket.io:', error);
       setScribeDebug((prev) => ({ ...prev, socketConnected: false, lastError: (error as any)?.message || 'Socket init failed' }));
       setUseRealTimeMode(false);
+      wsRef.current = null;
+      socketInitInFlightRef.current = false;
     }
   };
 
@@ -1064,26 +1291,17 @@ function CoPilotContent() {
       }
 
       // Create session (only after we have audio permission, so we don't create orphan sessions)
-      const sessionResponse = await fetch('/api/scribe/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patientId: selectedPatient?.id,
-          // Default required HIPAA access reason for in-visit scribe usage.
-          accessReason: 'DIRECT_PATIENT_CARE',
-          accessPurpose: 'AI_SCRIBE_RECORDING',
-        }),
+      const created = await createScribeSession({
+        patientId: selectedPatient?.id as string,
+        accessReason: 'DIRECT_PATIENT_CARE',
+        accessPurpose: 'AI_SCRIBE_RECORDING',
       });
-
-      if (!sessionResponse.ok) {
-        // Clean up audio if session creation failed
+      if (!created.success) {
         stream.getTracks().forEach((t) => t.stop());
-        const err = await sessionResponse.json().catch(() => ({}));
-        throw new Error(err?.error || err?.message || 'Failed to create session');
+        throw new Error(created.message || created.error);
       }
 
-      const sessionData = await sessionResponse.json();
-      setSessionId(sessionData.data.id);
+      setSessionId(created.data.id);
       setIsRecording(true);
 
       setAudioStream(stream);
@@ -1093,12 +1311,9 @@ function CoPilotContent() {
         // Real-time mode - WebSocket handles everything
         connectSocket();
       } else {
-        // Traditional mode - use MediaRecorder
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'audio/webm',
-        });
-        mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.start(1000);
+        // Traditional mode - record locally, then upload + finalize.
+        traditionalStartedAtMsRef.current = Date.now();
+        traditionalRecorderRef.current = startTraditionalRecorder({ stream, timesliceMs: 1000 });
       }
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -1135,34 +1350,62 @@ function CoPilotContent() {
           (wsRef.current as any).emit('co_pilot:stop_stream', { sessionId: state.sessionId });
         }
       } catch {}
-      wsRef.current.close();
+      try {
+        // Socket.IO client uses disconnect(); WebSocket close() would throw.
+        (wsRef.current as any).disconnect?.();
+      } catch {}
       wsRef.current = null;
     }
 
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-
-    // Finalize session
-    if (state.sessionId) {
+    // If we are in Traditional mode, stop the recorder and upload audio before finalizing.
+    if (!useRealTimeMode && traditionalRecorderRef.current && state.sessionId) {
       try {
-        const finalizeResponse = await fetch(`/api/scribe/sessions/${state.sessionId}/finalize`, {
-          method: 'POST',
-        });
+        const durationSeconds = Math.max(
+          0,
+          Math.round((Date.now() - (traditionalStartedAtMsRef.current || Date.now())) / 1000)
+        );
+        const recorded = await traditionalRecorderRef.current.stop();
+        traditionalRecorderRef.current = null;
 
-        if (finalizeResponse.ok) {
-          const finalizeData = await finalizeResponse.json();
-          if (finalizeData.data?.soapNote) {
-            updateLiveSoapNote({
-              subjective: finalizeData.data.soapNote.subjective,
-              objective: finalizeData.data.soapNote.objective,
-              assessment: finalizeData.data.soapNote.assessment,
-              plan: finalizeData.data.soapNote.plan,
-            });
-          }
+        const done = await completeTraditionalScribeSession({
+          sessionId: state.sessionId,
+          audio: recorded.blob,
+          durationSeconds,
+          filename: 'recording.webm',
+        });
+        if (!done.success) throw new Error(done.message || done.error);
+
+        const tr = done.data.transcription;
+        const raw = String(tr?.rawText || '').trim();
+        if (raw) {
+          updateTranscript([
+            {
+              speaker: 'Transcript',
+              text: raw,
+              startTime: 0,
+              endTime: Number.isFinite(tr?.durationSeconds) ? Number(tr.durationSeconds) : 0,
+              confidence: Number.isFinite(tr?.confidence) ? Number(tr.confidence) : 0.9,
+              isFinal: true,
+            },
+          ]);
         }
-      } catch (error) {
-        console.error('Error finalizing session:', error);
+
+        if (done.data.soapNote) {
+          setSoapNoteRecord(done.data.soapNote);
+          updateLiveSoapNote({
+            chiefComplaint: done.data.soapNote?.chiefComplaint,
+            subjective: done.data.soapNote?.subjective,
+            objective: done.data.soapNote?.objective,
+            assessment: done.data.soapNote?.assessment,
+            plan: done.data.soapNote?.plan,
+            vitalSigns: done.data.soapNote?.vitalSigns,
+          });
+        }
+      } catch (e: any) {
+        const msg = e?.message || 'Failed to process recording';
+        showToast({ type: 'error', title: 'Processing failed', message: msg });
+        setIsProcessing(false);
+        return;
       }
     }
 
@@ -1253,13 +1496,38 @@ function CoPilotContent() {
                     <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                       {t('noPatientsSubtitle')}
                     </div>
-                    {demoModeEnabled ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
                       <button
-                        onClick={attachDemoPatients}
-                        className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                        onClick={() => {
+                          setCreatePatientError(null);
+                          setNewPatientDraft({
+                            firstName: '',
+                            lastName: '',
+                            dateOfBirth: '',
+                            mrn: generateMrn(),
+                            email: '',
+                            phone: '',
+                            gender: 'U',
+                          });
+                          setShowCreatePatient(true);
+                        }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white"
                       >
-                        {t('attachDemoPatients')}
+                        Create new patient
                       </button>
+                      {demoModeEnabled ? (
+                        <button
+                          onClick={attachDemoPatients}
+                          className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                        >
+                          {t('attachDemoPatients')}
+                        </button>
+                      ) : null}
+                    </div>
+                    {demoModeEnabled ? (
+                      <div className="mt-3 text-[11px] text-gray-600 dark:text-gray-300">
+                        Demo patients are available in Demo Mode (development only).
+                      </div>
                     ) : (
                       <div className="mt-3 text-xs text-gray-600 dark:text-gray-300">
                         Demo patients are hidden unless Demo Mode is enabled.
@@ -1313,6 +1581,135 @@ function CoPilotContent() {
           )}
         </div>
       </div>
+
+      {/* Create Patient Modal (fast path) */}
+      {showCreatePatient && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !createPatientBusy && setShowCreatePatient(false)} />
+          <div className="relative w-full max-w-xl rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">Create new patient</div>
+                <div className="text-sm text-gray-700 dark:text-gray-200 mt-1">
+                  Minimal required info. You can add more later.
+                </div>
+              </div>
+              <button
+                className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold disabled:opacity-50"
+                disabled={createPatientBusy}
+                onClick={() => setShowCreatePatient(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">First name</label>
+                <input
+                  value={newPatientDraft.firstName}
+                  onChange={(e) => setNewPatientDraft((p) => ({ ...p, firstName: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="Jane"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Last name</label>
+                <input
+                  value={newPatientDraft.lastName}
+                  onChange={(e) => setNewPatientDraft((p) => ({ ...p, lastName: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="Doe"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Date of birth</label>
+                <input
+                  type="date"
+                  value={newPatientDraft.dateOfBirth}
+                  onChange={(e) => setNewPatientDraft((p) => ({ ...p, dateOfBirth: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Gender</label>
+                <select
+                  value={newPatientDraft.gender}
+                  onChange={(e) => setNewPatientDraft((p) => ({ ...p, gender: e.target.value as any }))}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                >
+                  <option value="U">Unknown</option>
+                  <option value="F">Female</option>
+                  <option value="M">Male</option>
+                  <option value="O">Other</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">MRN</label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    value={newPatientDraft.mrn}
+                    onChange={(e) => setNewPatientDraft((p) => ({ ...p, mrn: e.target.value }))}
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                    placeholder="MRN-2026-1234"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setNewPatientDraft((p) => ({ ...p, mrn: generateMrn() }))}
+                    className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold"
+                  >
+                    Generate
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Email (optional)</label>
+                <input
+                  value={newPatientDraft.email}
+                  onChange={(e) => setNewPatientDraft((p) => ({ ...p, email: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="patient@example.com"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Phone (optional)</label>
+                <input
+                  value={newPatientDraft.phone}
+                  onChange={(e) => setNewPatientDraft((p) => ({ ...p, phone: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="+1 555 123 4567"
+                />
+              </div>
+            </div>
+
+            {createPatientError ? (
+              <div className="mt-3 text-sm text-red-700 dark:text-red-400">{createPatientError}</div>
+            ) : null}
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                disabled={createPatientBusy}
+                onClick={() => setShowCreatePatient(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={
+                  createPatientBusy ||
+                  !newPatientDraft.firstName.trim() ||
+                  !newPatientDraft.lastName.trim() ||
+                  !newPatientDraft.dateOfBirth
+                }
+                onClick={submitCreatePatient}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {createPatientBusy ? 'Creating…' : 'Create patient'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Co-Pilot AI Tools Section - BELOW PATIENT SELECTOR */}
       {selectedPatient && (
@@ -1427,12 +1824,31 @@ function CoPilotContent() {
                     ) : (
                       <span className="font-semibold text-gray-700 dark:text-gray-300">Idle</span>
                     )}
+                    <span className="ml-2 text-gray-500">
+                      • chunks sent {scribeDebug.chunksSent}
+                      {typeof scribeDebug.chunksAcked === 'number' ? ` • server rx ~${scribeDebug.chunksAcked}` : ''}
+                    </span>
                     {scribeDebug.lastTranscriptAt ? (
                       <span className="ml-2 text-gray-500">
                         last transcript {Math.max(0, Math.round((Date.now() - scribeDebug.lastTranscriptAt) / 1000))}s ago
                       </span>
                     ) : null}
                   </div>
+                  {audioRecorder.lastError ? (
+                    <div className="mt-1 text-[11px] text-red-700 dark:text-red-400">
+                      Audio worklet error: {audioRecorder.lastError}
+                    </div>
+                  ) : null}
+                  {scribeDebug.lastAudioAckAt ? (
+                    <div className="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
+                      Server last saw audio {Math.max(0, Math.round((Date.now() - scribeDebug.lastAudioAckAt) / 1000))}s ago
+                    </div>
+                  ) : null}
+                  {scribeDebug.lastRequestId ? (
+                    <div className="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
+                      Deepgram request: <span className="font-mono">{scribeDebug.lastRequestId}</span>
+                    </div>
+                  ) : null}
                   {scribeDebug.lastError ? (
                     <div className="mt-2 text-xs text-red-700 dark:text-red-400">
                       {scribeDebug.lastError}
@@ -1480,8 +1896,8 @@ function CoPilotContent() {
 
             {/* (Intentionally no "server mode"/vendor implementation details in clinician UI) */}
 
-            {/* Transcript Viewer */}
-            {state.transcript.length > 0 && (
+            {/* Transcript Viewer (always visible during recording) */}
+            {(state.isRecording || state.transcript.length > 0) && (
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                   Live Transcript
@@ -1549,6 +1965,21 @@ function CoPilotContent() {
                 </div>
               </div>
             )}
+
+            {/* Persisted SOAP Note (post-finalize) */}
+            {soapNoteRecord && !state.isRecording ? (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                  SOAP Note (editable)
+                </h3>
+                <SOAPNoteEditor
+                  note={soapNoteRecord}
+                  onSave={handleSaveSoapNote}
+                  onSign={handleSignSoapNote}
+                  onNotifyPatient={handleNotifySoapNote}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
 

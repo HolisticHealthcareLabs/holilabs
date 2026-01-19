@@ -24,6 +24,9 @@ import {
   SocketRoom,
   SocketNotification,
   NotificationPriority,
+  PreventionConditionDetectedEvent,
+  PreventionRecommendationEvent,
+  PreventionFindingsProcessedEvent,
 } from '@/lib/socket/events';
 import { logger } from '@/lib/logger';
 
@@ -80,16 +83,25 @@ export function useRealtimePreventionUpdates(
 
   // Default events to subscribe to
   const defaultEvents: SocketEvent[] = [
+    // Real-time prevention detection events (Enhanced Prevention Hub)
+    SocketEvent.CONDITION_DETECTED,
+    SocketEvent.RECOMMENDATION_CREATED,
+    SocketEvent.ALERT_TRIGGERED,
+    SocketEvent.FINDINGS_PROCESSED,
+    SocketEvent.ENCOUNTER_LINKED,
+    // Prevention plan events
     SocketEvent.PLAN_CREATED,
     SocketEvent.PLAN_UPDATED,
     SocketEvent.PLAN_DELETED,
     SocketEvent.PLAN_STATUS_CHANGED,
+    // Template events
     SocketEvent.TEMPLATE_CREATED,
     SocketEvent.TEMPLATE_UPDATED,
     SocketEvent.TEMPLATE_DELETED,
     SocketEvent.TEMPLATE_USED,
     SocketEvent.TEMPLATE_ACTIVATED,
     SocketEvent.TEMPLATE_DEACTIVATED,
+    // Goal events
     SocketEvent.GOAL_ADDED,
     SocketEvent.GOAL_UPDATED,
     SocketEvent.GOAL_COMPLETED,
@@ -308,4 +320,285 @@ export function useSocketConnection() {
   }, []);
 
   return { connected, socketId };
+}
+
+/**
+ * Detection event from server-side Prevention Engine
+ */
+export interface DetectedConditionFromServer {
+  id: string;
+  name: string;
+  category: string;
+  confidence: number;
+  icd10Codes?: string[];
+}
+
+/**
+ * Recommendation from server-side Prevention Engine
+ */
+export interface RecommendationFromServer {
+  id: string;
+  type: 'screening' | 'intervention' | 'lifestyle' | 'medication' | 'monitoring';
+  title: string;
+  description: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  guidelineSource: string;
+  uspstfGrade?: string;
+}
+
+/**
+ * Hook config for real-time prevention detection in the sidebar
+ */
+export interface UsePreventionDetectionConfig {
+  patientId: string;
+  encounterId?: string;
+  sessionId?: string;
+  autoConnect?: boolean;
+  onConditionDetected?: (conditions: DetectedConditionFromServer[]) => void;
+  onRecommendationCreated?: (recommendations: RecommendationFromServer[]) => void;
+  onFindingsProcessed?: (event: PreventionFindingsProcessedEvent) => void;
+}
+
+/**
+ * Hook return type for real-time prevention detection
+ */
+export interface UsePreventionDetectionReturn {
+  connected: boolean;
+  conditions: DetectedConditionFromServer[];
+  recommendations: RecommendationFromServer[];
+  processingTimeMs: number | null;
+  isProcessing: boolean;
+  clearDetections: () => void;
+}
+
+/**
+ * Hook for real-time prevention detection during AI Scribe sessions
+ *
+ * Subscribes to server-side Prevention Engine events and updates UI in real-time
+ * when conditions are detected from transcript analysis.
+ */
+export function usePreventionDetection(
+  config: UsePreventionDetectionConfig
+): UsePreventionDetectionReturn {
+  const { data: session } = useSession();
+  const [connected, setConnected] = useState(false);
+  const [conditions, setConditions] = useState<DetectedConditionFromServer[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendationFromServer[]>([]);
+  const [processingTimeMs, setProcessingTimeMs] = useState<number | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const userId = session?.user?.id;
+
+  // Handle condition detected event
+  const handleConditionDetected = useCallback(
+    (data: PreventionConditionDetectedEvent) => {
+      // Filter by patient if configured
+      if (config.patientId && data.patientId !== config.patientId) {
+        return;
+      }
+
+      // Filter by encounter if configured
+      if (config.encounterId && data.encounterId !== config.encounterId) {
+        return;
+      }
+
+      logger.info({
+        event: 'realtime_condition_detected',
+        patientId: data.patientId,
+        conditionsCount: data.conditions.length,
+      });
+
+      setConditions((prev) => {
+        // Merge new conditions, avoiding duplicates by ID
+        const existingIds = new Set(prev.map((c) => c.id));
+        const newConditions = data.conditions.filter((c) => !existingIds.has(c.id));
+        return [...prev, ...newConditions];
+      });
+
+      config.onConditionDetected?.(data.conditions);
+    },
+    [config]
+  );
+
+  // Handle recommendation created event
+  const handleRecommendationCreated = useCallback(
+    (data: PreventionRecommendationEvent) => {
+      if (config.patientId && data.patientId !== config.patientId) {
+        return;
+      }
+
+      if (config.encounterId && data.encounterId !== config.encounterId) {
+        return;
+      }
+
+      logger.info({
+        event: 'realtime_recommendation_created',
+        patientId: data.patientId,
+        recommendationType: data.type,
+        priority: data.priority,
+      });
+
+      const recommendation: RecommendationFromServer = {
+        id: data.id,
+        type: data.type,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        guidelineSource: data.guidelineSource,
+        uspstfGrade: data.uspstfGrade,
+      };
+
+      setRecommendations((prev) => {
+        const existingIds = new Set(prev.map((r) => r.id));
+        if (existingIds.has(recommendation.id)) {
+          return prev;
+        }
+        return [...prev, recommendation];
+      });
+
+      config.onRecommendationCreated?.([recommendation]);
+    },
+    [config]
+  );
+
+  // Handle findings processed event (batch update)
+  const handleFindingsProcessed = useCallback(
+    (data: PreventionFindingsProcessedEvent) => {
+      if (config.patientId && data.patientId !== config.patientId) {
+        return;
+      }
+
+      if (config.encounterId && data.encounterId !== config.encounterId) {
+        return;
+      }
+
+      logger.info({
+        event: 'realtime_findings_processed',
+        patientId: data.patientId,
+        conditionsCount: data.conditions.length,
+        recommendationsCount: data.recommendations.length,
+        processingTimeMs: data.processingTimeMs,
+      });
+
+      setIsProcessing(false);
+      setProcessingTimeMs(data.processingTimeMs);
+
+      // Update conditions
+      setConditions((prev) => {
+        const existingIds = new Set(prev.map((c) => c.id));
+        const newConditions = data.conditions
+          .filter((c) => !existingIds.has(c.id))
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            category: c.category,
+            confidence: c.confidence,
+          }));
+        return [...prev, ...newConditions];
+      });
+
+      // Update recommendations
+      setRecommendations((prev) => {
+        const existingIds = new Set(prev.map((r) => r.id));
+        const newRecommendations = data.recommendations
+          .filter((r) => !existingIds.has(r.id))
+          .map((r) => ({
+            id: r.id,
+            type: r.type as RecommendationFromServer['type'],
+            title: r.title,
+            description: '',
+            priority: r.priority as RecommendationFromServer['priority'],
+            guidelineSource: '',
+          }));
+        return [...prev, ...newRecommendations];
+      });
+
+      config.onFindingsProcessed?.(data);
+    },
+    [config]
+  );
+
+  // Initialize socket connection and subscribe to events
+  useEffect(() => {
+    if (!userId || config.autoConnect === false) {
+      return;
+    }
+
+    try {
+      const socket = initSocketClient({
+        userId,
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
+
+      socket.on('connect', () => {
+        setConnected(true);
+        logger.info({
+          event: 'prevention_detection_socket_connected',
+          userId,
+          patientId: config.patientId,
+        });
+      });
+
+      socket.on('disconnect', () => {
+        setConnected(false);
+      });
+
+      // Subscribe to prevention detection events
+      // Cast through unknown to handle different event payload types
+      const unsubCondition = subscribeToEvent(
+        SocketEvent.CONDITION_DETECTED,
+        handleConditionDetected as unknown as (notification: SocketNotification) => void
+      );
+
+      const unsubRecommendation = subscribeToEvent(
+        SocketEvent.RECOMMENDATION_CREATED,
+        handleRecommendationCreated as unknown as (notification: SocketNotification) => void
+      );
+
+      const unsubFindings = subscribeToEvent(
+        SocketEvent.FINDINGS_PROCESSED,
+        handleFindingsProcessed as unknown as (notification: SocketNotification) => void
+      );
+
+      // Cleanup on unmount
+      return () => {
+        unsubCondition();
+        unsubRecommendation();
+        unsubFindings();
+      };
+    } catch (error) {
+      logger.error({
+        event: 'prevention_detection_socket_error',
+        error: error instanceof Error ? error.message : String(error),
+        userId,
+      });
+    }
+  }, [
+    userId,
+    config.autoConnect,
+    config.patientId,
+    handleConditionDetected,
+    handleRecommendationCreated,
+    handleFindingsProcessed,
+  ]);
+
+  // Clear detections
+  const clearDetections = useCallback(() => {
+    setConditions([]);
+    setRecommendations([]);
+    setProcessingTimeMs(null);
+    setIsProcessing(false);
+  }, []);
+
+  return {
+    connected,
+    conditions,
+    recommendations,
+    processingTimeMs,
+    isProcessing,
+    clearDetections,
+  };
 }

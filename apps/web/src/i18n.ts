@@ -1,24 +1,9 @@
-import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { defaultLocale, localeFlags, localeLabels, locales, type Locale } from '@/i18n/shared';
 
-// Define supported locales (English primary, Spanish/Portuguese for LATAM)
-export const locales = ['en', 'es', 'pt'] as const;
-export const defaultLocale = 'en' as const;
-export type Locale = (typeof locales)[number];
-
-// Locale display labels
-export const localeLabels: Record<Locale, string> = {
-  en: 'English',
-  es: 'Español',
-  pt: 'Português',
-};
-
-// Locale flag emojis
-export const localeFlags: Record<Locale, string> = {
-  en: '🇺🇸',
-  es: '🇪🇸',
-  pt: '🇧🇷',
-};
+export { locales, defaultLocale, localeLabels, localeFlags };
+export type { Locale };
 
 export default getRequestConfig(async ({ locale }) => {
   // Validate that the incoming `locale` parameter is valid
@@ -26,6 +11,6 @@ export default getRequestConfig(async ({ locale }) => {
 
   return {
     locale: locale as string,
-    messages: (await import(`../../messages/${locale}.json`)).default
+    messages: (await import(`../messages/${locale}.json`)).default,
   };
 });

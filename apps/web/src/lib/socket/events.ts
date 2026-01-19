@@ -50,12 +50,75 @@ export interface PreventionCommentEvent {
   timestamp: Date;
 }
 
+// Real-time Prevention Detection Events (Enhanced Prevention Hub)
+export interface PreventionConditionDetectedEvent {
+  patientId: string;
+  encounterId: string;
+  conditions: Array<{
+    id: string;
+    name: string;
+    category: string;
+    confidence: number;
+    icd10Codes?: string[];
+  }>;
+  recommendationsCount: number;
+  timestamp: Date;
+}
+
+export interface PreventionRecommendationEvent {
+  id: string;
+  patientId: string;
+  encounterId: string;
+  type: 'screening' | 'intervention' | 'lifestyle' | 'medication' | 'monitoring';
+  title: string;
+  description: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  guidelineSource: string;
+  uspstfGrade?: string;
+  timestamp: Date;
+}
+
+export interface PreventionFindingsProcessedEvent {
+  patientId: string;
+  encounterId: string;
+  conditions: Array<{
+    id: string;
+    name: string;
+    category: string;
+    confidence: number;
+  }>;
+  recommendations: Array<{
+    id: string;
+    type: string;
+    title: string;
+    priority: string;
+  }>;
+  processingTimeMs: number;
+  timestamp: Date;
+}
+
+export interface PreventionEncounterLinkedEvent {
+  linkId: string;
+  patientId: string;
+  encounterId: string;
+  preventionPlanId: string;
+  detectedConditionsCount: number;
+  timestamp: Date;
+}
+
 // Event types
 export enum SocketEvent {
   // Connection events
   CONNECT = 'connect',
   DISCONNECT = 'disconnect',
   ERROR = 'error',
+
+  // Real-time Prevention Detection events (Enhanced Prevention Hub)
+  CONDITION_DETECTED = 'prevention:condition_detected',
+  RECOMMENDATION_CREATED = 'prevention:recommendation_created',
+  ALERT_TRIGGERED = 'prevention:alert_triggered',
+  FINDINGS_PROCESSED = 'prevention:findings_processed',
+  ENCOUNTER_LINKED = 'prevention:encounter_linked',
 
   // Prevention Plan events
   PLAN_CREATED = 'prevention:plan:created',
