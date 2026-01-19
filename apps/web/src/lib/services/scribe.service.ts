@@ -419,6 +419,11 @@ export class ScribeService {
           raw?.statusCode === 429;
 
         if (isRateLimited) {
+          const existingFailure = this.failures.get(sessionId);
+          if (existingFailure && Date.now() < existingFailure.untilMs) {
+            // Already cooling down; avoid repeated emits/toasts.
+            return;
+          }
           // Guardrail: prevent reconnect storms + toast spam when Deepgram rate-limits.
           const retryAfterMs = 60_000;
           this.failures.set(sessionId, {
@@ -445,9 +450,26 @@ export class ScribeService {
       try {
         await streamer.startStream();
       } catch (e: any) {
-        const msg = e?.message || 'Failed to start Deepgram live stream';
+        const msg = String(e?.message || 'Failed to start Deepgram live stream');
+        const isRateLimited = msg.includes('429') || msg.includes('Too Many Requests');
+        if (isRateLimited) {
+          const retryAfterMs = 60_000;
+          this.failures.set(sessionId, { untilMs: Date.now() + retryAfterMs, message: msg });
+          this.emit(sessionId, 'co_pilot:transcription_error', {
+            message: `Deepgram is rate limiting live transcription right now (429). Switching off Live Mode; you can retry in ~${Math.round(
+              retryAfterMs / 1000
+            )}s.`,
+            code: 429,
+            retryAfterMs,
+            shouldStop: true,
+          });
+          return;
+        }
+
         this.failures.set(sessionId, { untilMs: Date.now() + 6000, message: msg });
-        this.emit(sessionId, 'co_pilot:transcription_error', { message: `${msg}. Run GET /api/health/deepgram-live to verify Live WS access.` });
+        this.emit(sessionId, 'co_pilot:transcription_error', {
+          message: `Failed to start live transcription. Run GET /api/health/deepgram-live to verify Live WS access.`,
+        });
         return;
       }
 

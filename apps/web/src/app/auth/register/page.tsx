@@ -35,6 +35,8 @@ export default function ClinicianRegisterPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [devInboxFile, setDevInboxFile] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'failed' | null>(null);
   const [enableDemoMode, setEnableDemoMode] = useState(false);
 
@@ -42,7 +44,7 @@ export default function ClinicianRegisterPage() {
     // Only show Google OAuth if the provider is actually configured in NextAuth.
     fetch('/api/auth/providers')
       .then((r) => (r.ok ? r.json() : {}))
-      .then((providers) => setGoogleEnabled(!!providers?.google))
+      .then((providers: any) => setGoogleEnabled(!!providers?.google))
       .catch(() => setGoogleEnabled(false));
   }, []);
 
@@ -97,6 +99,8 @@ export default function ClinicianRegisterPage() {
       }
 
       setSuccess(true);
+      setSuccessMessage(data?.message || 'Account created successfully. Please check your email.');
+      setDevInboxFile(typeof data?.emailDevInboxFile === 'string' ? data.emailDevInboxFile : null);
       setTimeout(() => router.push('/auth/login'), 3000);
     } catch (err) {
       setError('Connection error. Please check your internet.');
@@ -123,10 +127,21 @@ export default function ClinicianRegisterPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Registration Submitted</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Account Created</h2>
           <p className="text-gray-600 mb-6">
-            Your request has been received. Our team will review your application and contact you within 24-48 hours.
+            {successMessage || 'Your account is ready. Please check your email for next steps.'}
           </p>
+          {devInboxFile ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-left">
+              <div className="text-xs font-semibold text-amber-800">Dev mode email inbox</div>
+              <div className="mt-1 text-xs text-amber-800 break-all">
+                {devInboxFile}
+              </div>
+              <div className="mt-2 text-xs text-amber-700">
+                If you didn’t receive an email, open the file above (written locally by the app).
+              </div>
+            </div>
+          ) : null}
           <p className="text-sm text-gray-500">Redirecting to login...</p>
         </motion.div>
       </div>
