@@ -73,9 +73,11 @@ export const registrationSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
   email: emailSchema,
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   role: roleSchema,
   organization: z.string().min(1, 'Organization is required').max(200, 'Organization name too long').trim(),
   reason: textSchema.max(1000, 'Reason too long'),
+  enableDemoMode: z.boolean().optional(),
   // Medical license fields (required for doctors)
   licenseCountry: z.enum(['BR', 'AR', 'US']).optional(),
   licenseNumber: z.string().optional(),

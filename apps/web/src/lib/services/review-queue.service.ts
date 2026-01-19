@@ -405,6 +405,187 @@ export class ReviewQueueService {
       throw error;
     }
   }
+
+  /**
+   * CRITICAL: Enforce clinical review for AI-generated content
+   *
+   * This wrapper ensures ALL clinical AI outputs go through human review.
+   * "AI drafts, human decides. Never the reverse."
+   *
+   * Usage:
+   *   const result = await reviewQueueService.enforceClinicalReview({
+   *     clinicianId: session.user.id,
+   *     patientId: patient.id,
+   *     aiResponse: llmOutput,
+   *     contentType: 'diagnosis_suggestion',
+   *     confidence: 0.85,
+   *   });
+   *
+   *   // Returns reviewQueueId - AI output NOT yet actionable
+   *   // Clinician must approve in review queue before action
+   */
+  async enforceClinicalReview(params: {
+    clinicianId: string;
+    patientId: string;
+    aiResponse: string;
+    contentType: 'diagnosis_suggestion' | 'prescription_recommendation' | 'treatment_plan' | 'clinical_summary' | 'alert';
+    confidence: number;
+    encounterId?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<{
+    reviewQueueId: string;
+    requiresReview: true;
+    expiresAt: Date;
+    draft: string;
+    confidence: number;
+  }> {
+    const { clinicianId, patientId, aiResponse, contentType, confidence, encounterId, metadata } = params;
+
+    // Determine priority based on confidence and content type
+    let priority = 5;
+    let flagReason = 'ai_generated';
+
+    if (confidence < 0.7) {
+      priority = 8;
+      flagReason = 'low_confidence';
+    }
+    if (confidence < 0.5) {
+      priority = 10;
+      flagReason = 'very_low_confidence';
+    }
+    if (['prescription_recommendation', 'diagnosis_suggestion'].includes(contentType)) {
+      priority = Math.max(priority, 8); // Always high priority for prescriptions/diagnoses
+      flagReason = 'high_risk_content';
+    }
+
+    // Create a pending review item (stores the AI draft)
+    const item = await prisma.manualReviewQueueItem.create({
+      data: {
+        clinicianId,
+        patientId,
+        contentType,
+        contentId: encounterId || `draft_${Date.now()}`,
+        sectionType: contentType,
+        confidence,
+        priority,
+        flagReason,
+        flagDetails: JSON.stringify({
+          aiDraft: aiResponse,
+          metadata,
+          generatedAt: new Date().toISOString(),
+        }),
+      },
+    });
+
+    // Expiry: 24 hours - if not reviewed, draft expires
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    logger.info({
+      event: 'clinical_review_enforced',
+      reviewQueueId: item.id,
+      clinicianId,
+      patientId,
+      contentType,
+      confidence,
+      priority,
+    });
+
+    return {
+      reviewQueueId: item.id,
+      requiresReview: true,
+      expiresAt,
+      draft: aiResponse,
+      confidence,
+    };
+  }
+
+  /**
+   * Check if a review item has been approved
+   * Use this before allowing any patient-affecting action
+   */
+  async isApproved(reviewQueueId: string): Promise<boolean> {
+    const item = await prisma.manualReviewQueueItem.findUnique({
+      where: { id: reviewQueueId },
+      select: { status: true },
+    });
+
+    return item?.status === 'APPROVED';
+  }
+
+  /**
+   * Get approved content from review queue
+   * Returns null if not approved - prevents bypass
+   */
+  async getApprovedContent(reviewQueueId: string): Promise<{
+    content: string;
+    reviewedBy: string;
+    reviewedAt: Date;
+    corrections?: string;
+  } | null> {
+    const item = await prisma.manualReviewQueueItem.findUnique({
+      where: { id: reviewQueueId },
+      select: {
+        status: true,
+        flagDetails: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        corrections: true,
+      },
+    });
+
+    if (!item || item.status !== 'APPROVED') {
+      logger.warn({
+        event: 'unapproved_content_access_blocked',
+        reviewQueueId,
+        status: item?.status,
+      });
+      return null;
+    }
+
+    // Parse the original AI draft from flagDetails
+    let content = '';
+    try {
+      const details = JSON.parse(item.flagDetails || '{}');
+      content = item.corrections || details.aiDraft || '';
+    } catch {
+      content = item.corrections || '';
+    }
+
+    return {
+      content,
+      reviewedBy: item.reviewedBy!,
+      reviewedAt: item.reviewedAt!,
+      corrections: item.corrections || undefined,
+    };
+  }
+
+  /**
+   * Verify approval before patient action
+   * Throws error if not approved - fail-safe for clinical actions
+   */
+  async requireApprovalOrFail(reviewQueueId: string, actionDescription: string): Promise<void> {
+    const isApproved = await this.isApproved(reviewQueueId);
+
+    if (!isApproved) {
+      logger.error({
+        event: 'clinical_action_blocked_no_approval',
+        reviewQueueId,
+        actionDescription,
+      });
+
+      throw new Error(
+        `Clinical action "${actionDescription}" blocked: Review item ${reviewQueueId} has not been approved. ` +
+        `Human review is required before proceeding.`
+      );
+    }
+
+    logger.info({
+      event: 'clinical_action_approved',
+      reviewQueueId,
+      actionDescription,
+    });
+  }
 }
 
 // Singleton instance

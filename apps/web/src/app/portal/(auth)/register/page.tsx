@@ -33,6 +33,7 @@ export default function PatientRegisterPage() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successInfo, setSuccessInfo] = useState<{ verificationUrl?: string; emailDevInboxFile?: string; emailConfigured?: boolean } | null>(null);
 
   // Password validation
   const passwordValidation = validatePassword(formData.password);
@@ -92,15 +93,57 @@ export default function PatientRegisterPage() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Show success message and redirect to login
-      alert('¡Cuenta creada exitosamente! Revisa tu correo para verificar tu cuenta.');
-      router.push('/portal/login');
+      // In dev, the API returns verificationUrl/devInboxFile so it's not "silent" when email isn't configured.
+      setSuccessInfo({
+        verificationUrl: data?.verificationUrl,
+        emailDevInboxFile: data?.emailDevInboxFile,
+        emailConfigured: data?.emailConfigured,
+      });
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (successInfo) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+          <h1 className="text-2xl font-bold text-gray-900">Cuenta creada</h1>
+          <p className="mt-2 text-gray-700">
+            Revisa tu correo para verificar tu cuenta.
+          </p>
+
+          {successInfo.emailConfigured === false ? (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              El servicio de email no está configurado en este entorno. Usa el enlace de verificación abajo (solo dev).
+            </div>
+          ) : null}
+
+          {successInfo.verificationUrl ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="text-xs font-semibold text-gray-700 mb-1">Verification link (dev)</div>
+              <a className="text-sm text-green-700 break-all underline" href={successInfo.verificationUrl}>
+                {successInfo.verificationUrl}
+              </a>
+            </div>
+          ) : null}
+
+          {successInfo.emailDevInboxFile ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <div className="text-xs font-semibold text-gray-700 mb-1">Dev email inbox file</div>
+              <div className="text-xs text-gray-700 break-all">{successInfo.emailDevInboxFile}</div>
+            </div>
+          ) : null}
+
+          <Button className="mt-6" variant="primary" fullWidth onClick={() => router.push('/portal/login')}>
+            Ir a iniciar sesión
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
