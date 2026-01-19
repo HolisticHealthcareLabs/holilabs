@@ -145,6 +145,13 @@ export class ScribeService {
   private readonly sessions = new Map<string, LiveSession>();
   private readonly liveTranscript = new Map<string, LiveTranscriptState>();
   private readonly failures = new Map<string, StreamFailure>();
+  // Guardrail: many Deepgram accounts/projects effectively behave like they have low streaming concurrency,
+  // and browsers can accidentally create multiple sessions (multi-tab, double-click, reconnect).
+  // We enforce one active live stream per clinician to prevent 429s and vendor thrash.
+  private readonly activeSessionByClinician = new Map<string, string>();
+  // Startup mutex: audio chunks can arrive concurrently before `sessions.set()` happens.
+  // Without this, multiple streamers can be started for the same session, causing Deepgram 429 storms.
+  private readonly startInFlightBySession = new Map<string, Promise<void>>();
 
   constructor(private readonly emit: CoPilotEmit) {}
 
@@ -253,6 +260,8 @@ export class ScribeService {
     if (s) {
       await s.streamer.stop().catch(() => {});
       this.sessions.delete(sessionId);
+      const active = this.activeSessionByClinician.get(s.clinicianId);
+      if (active === sessionId) this.activeSessionByClinician.delete(s.clinicianId);
     }
     await this.persistTranscript(sessionId).catch(() => {});
     this.liveTranscript.delete(sessionId);
@@ -330,12 +339,35 @@ export class ScribeService {
       return;
     }
 
+    // Concurrency guardrail: ensure this clinician has at most one active live stream.
+    // If another session is active, stop/persist it to avoid Deepgram 429s.
+    const existingActive = this.activeSessionByClinician.get(clinicianId);
+    if (existingActive && existingActive !== sessionId) {
+      this.emit(existingActive, 'co_pilot:transcription_error', {
+        message: 'Another recording started in a different tab/session. Stopping this live stream to prevent conflicts.',
+        code: 409,
+        shouldStop: true,
+      });
+      await this.stopAndPersist(existingActive).catch(() => {});
+    }
+    this.activeSessionByClinician.set(clinicianId, sessionId);
+
     const lang = normalizeSpeechLanguage(input.language);
     const srIn = Number(input.sampleRate || 48000);
 
     // Ensure session exists
     let s = this.sessions.get(sessionId);
     if (!s || s.clinicianId !== clinicianId || s.language !== lang || s.inputSampleRate !== srIn) {
+      // If another chunk is already starting the streamer for this session, wait for it.
+      const inFlight = this.startInFlightBySession.get(sessionId);
+      if (inFlight) {
+        await inFlight.catch(() => {});
+        s = this.sessions.get(sessionId);
+      }
+    }
+
+    if (!s || s.clinicianId !== clinicianId || s.language !== lang || s.inputSampleRate !== srIn) {
+      const startPromise = (async () => {
       try {
         await s?.streamer?.stop?.();
       } catch {}
@@ -438,6 +470,7 @@ export class ScribeService {
             code: 429,
             retryAfterMs,
             shouldStop: true,
+            requestId: this.sessions.get(sessionId)?.requestId,
           });
 
           await this.stopAndPersist(sessionId).catch(() => {});
@@ -450,6 +483,14 @@ export class ScribeService {
       try {
         await streamer.startStream();
       } catch (e: any) {
+        // Ensure we don't leave a half-initialized session around.
+        try {
+          await streamer.stop().catch(() => {});
+        } catch {}
+        this.sessions.delete(sessionId);
+        const active = this.activeSessionByClinician.get(clinicianId);
+        if (active === sessionId) this.activeSessionByClinician.delete(clinicianId);
+
         const msg = String(e?.message || 'Failed to start Deepgram live stream');
         const isRateLimited = msg.includes('429') || msg.includes('Too Many Requests');
         if (isRateLimited) {
@@ -473,7 +514,7 @@ export class ScribeService {
         return;
       }
 
-      s = {
+      const nextSession: LiveSession = {
         streamer,
         clinicianId,
         language: lang,
@@ -482,10 +523,22 @@ export class ScribeService {
         activeSockets: new Set([socketId]),
         patientId: owns.patientId,
       };
-      this.sessions.set(sessionId, s);
+      this.sessions.set(sessionId, nextSession);
+      })();
+
+      this.startInFlightBySession.set(sessionId, startPromise);
+      try {
+        await startPromise;
+      } finally {
+        this.startInFlightBySession.delete(sessionId);
+      }
+
+      s = this.sessions.get(sessionId);
     } else {
       s.activeSockets.add(socketId);
     }
+
+    if (!s) return;
 
     const audioBytes = Buffer.isBuffer(input.audioData) ? (input.audioData as any) : Buffer.from(input.audioData as any);
     const sampleCount = Math.floor(audioBytes.byteLength / 2);

@@ -33,6 +33,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [fatalError, setFatalError] = useState<{ message: string; stack?: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [sidebarPeekOpen, setSidebarPeekOpen] = useState(false);
@@ -47,6 +48,35 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     timeoutMs: 15 * 60 * 1000, // 15 minutes
     warningMs: 2 * 60 * 1000,  // 2 minute warning
   });
+
+  useEffect(() => {
+    // Hard failsafe: surface client-side crashes even if the dev overlay doesn't show.
+    const onError = (event: ErrorEvent) => {
+      try {
+        const err: any = (event as any)?.error;
+        setFatalError({
+          message: String(err?.message || event.message || 'Unknown client error'),
+          stack: err?.stack,
+        });
+      } catch {
+        setFatalError({ message: String(event?.message || 'Unknown client error') });
+      }
+    };
+    const onRejection = (event: PromiseRejectionEvent) => {
+      const reason: any = (event as any)?.reason;
+      setFatalError({
+        message: String(reason?.message || reason || 'Unhandled promise rejection'),
+        stack: reason?.stack,
+      });
+    };
+
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  }, []);
 
   useEffect(() => {
     // Demo mode - no authentication required
@@ -144,6 +174,31 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      {fatalError && (
+        <div className="fixed inset-0 z-[10000] bg-white text-gray-900 p-6 overflow-auto">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold">Dashboard crashed</h2>
+                <p className="text-sm text-gray-600">
+                  This is a failsafe overlay so we can see the real error.
+                </p>
+              </div>
+              <button
+                className="px-4 py-2 rounded-lg bg-gray-900 text-white"
+                onClick={() => window.location.reload()}
+              >
+                Reload
+              </button>
+            </div>
+            <pre className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-auto whitespace-pre-wrap">
+              {fatalError.message}
+              {fatalError.stack ? `\n\n${fatalError.stack}` : ''}
+            </pre>
+          </div>
+        </div>
+      )}
+
       {/* Loading Screen - shown only on initial load after sign in */}
       {showLoadingScreen && isInitialLoad && (
         <LoadingScreen onComplete={handleLoadingComplete} />

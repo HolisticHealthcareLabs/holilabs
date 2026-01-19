@@ -7,7 +7,7 @@
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { type Locale, defaultLocale } from '@/i18n';
+import { type Locale, defaultLocale } from '@/i18n/shared';
 import { logger } from '@/lib/logger';
 
 interface LanguageContextType {

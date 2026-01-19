@@ -35,6 +35,9 @@ const scribeService = getScribeService((sessionId, event, payload) => {
   io.to(`co-pilot:${sessionId}`).emit(event, payload);
 });
 
+// Lightweight debug counters (dev-friendly): lets the client confirm the server is receiving audio.
+const coPilotAudioCountersBySocket = new Map<string, { count: number; lastAt: number }>();
+
 type InterimThrottleState = {
   timer: NodeJS.Timeout | null;
   latest: MedicalSegment[] | null;
@@ -506,6 +509,8 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
       const roomId = `co-pilot:${sessionId}`;
       socket.join(roomId);
       scribeService.onJoinSession(sessionId, socket.id);
+      // Let the client know the join succeeded (helps diagnose "no transcript" issues).
+      socket.emit('co_pilot:server_ready', { sessionId, socketId: socket.id, serverTime: Date.now() });
       logger.info({
         event: 'co_pilot_session_joined',
         sessionId,
@@ -546,6 +551,14 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
       patientContext?: string[];
     }) => {
       try {
+        // Debug: count inbound audio chunks (throttled ack every ~2s).
+        const cur = coPilotAudioCountersBySocket.get(socket.id) || { count: 0, lastAt: 0 };
+        cur.count += 1;
+        const now = Date.now();
+        const shouldAck = now - cur.lastAt > 2000;
+        if (shouldAck) cur.lastAt = now;
+        coPilotAudioCountersBySocket.set(socket.id, cur);
+
         await scribeService.handleAudioChunk({
           sessionId,
           socketId: socket.id,
@@ -556,6 +569,14 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
           sampleRate,
           deepgramApiKey: process.env.DEEPGRAM_API_KEY,
         });
+
+        if (shouldAck) {
+          socket.emit('co_pilot:audio_ack', {
+            sessionId,
+            chunksReceived: cur.count,
+            serverTime: now,
+          });
+        }
       } catch (error) {
         logger.error({
           event: 'co_pilot_audio_processing_error',

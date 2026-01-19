@@ -14,7 +14,7 @@
  * - Integration with AI copilot view
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Shield,
   AlertCircle,
@@ -35,9 +35,16 @@ import {
   getApplicableProtocols,
   ProtocolPriority,
 } from '@/lib/prevention/international-protocols';
+import {
+  usePreventionDetection,
+  DetectedConditionFromServer,
+  RecommendationFromServer,
+} from '@/hooks/useRealtimePreventionUpdates';
 
 interface PreventionHubSidebarProps {
   patientId: string;
+  encounterId?: string;
+  sessionId?: string;
   patientData?: {
     age?: number;
     gender?: 'male' | 'female';
@@ -49,24 +56,74 @@ interface PreventionHubSidebarProps {
   icd10Codes?: string[];
   onProtocolApply?: (protocol: PreventionProtocol) => void;
   onViewFullHub?: () => void;
+  enableRealtimeDetection?: boolean;
 }
 
 export function PreventionHubSidebar({
   patientId,
+  encounterId,
+  sessionId,
   patientData,
   clinicalNote,
   medications,
   icd10Codes,
   onProtocolApply,
   onViewFullHub,
+  enableRealtimeDetection = true,
 }: PreventionHubSidebarProps) {
-  const [detectedConditions, setDetectedConditions] = useState<DetectedCondition[]>([]);
+  const [localDetectedConditions, setLocalDetectedConditions] = useState<DetectedCondition[]>([]);
   const [suggestedProtocols, setSuggestedProtocols] = useState<PreventionProtocol[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasNewProtocols, setHasNewProtocols] = useState(false);
   const [selectedCondition, setSelectedCondition] = useState<DetectedCondition | null>(null);
 
-  // Real-time condition detection
+  // Real-time prevention detection from server
+  const {
+    connected: realtimeConnected,
+    conditions: serverConditions,
+    recommendations: serverRecommendations,
+    processingTimeMs,
+    clearDetections,
+  } = usePreventionDetection({
+    patientId,
+    encounterId,
+    sessionId,
+    autoConnect: enableRealtimeDetection,
+  });
+
+  // Extended condition type with server flag
+  type ExtendedCondition = DetectedCondition & { isFromServer?: boolean };
+
+  // Merge local and server-side detected conditions
+  const detectedConditions = useMemo((): ExtendedCondition[] => {
+    const merged: ExtendedCondition[] = localDetectedConditions.map((c) => ({
+      ...c,
+      isFromServer: false,
+    }));
+    const existingNames = new Set(merged.map((c) => c.name.toLowerCase()));
+
+    // Add server conditions that aren't already detected locally
+    for (const serverCond of serverConditions) {
+      if (!existingNames.has(serverCond.name.toLowerCase())) {
+        merged.push({
+          id: serverCond.id,
+          name: serverCond.name,
+          confidence: serverCond.confidence,
+          category: serverCond.category as DetectedCondition['category'],
+          detectedFrom: 'clinical_note' as DetectedCondition['detectedFrom'],
+          icd10Codes: serverCond.icd10Codes || [],
+          severity: 'moderate',
+          detectedAt: new Date(),
+          relevantProtocols: [],
+          isFromServer: true,
+        });
+      }
+    }
+
+    return merged;
+  }, [localDetectedConditions, serverConditions]);
+
+  // Local condition detection (client-side heuristics)
   useEffect(() => {
     const detectConditions = async () => {
       const conditions = await detectConditionsForPatient({
@@ -75,7 +132,7 @@ export function PreventionHubSidebar({
         icd10Codes,
       });
 
-      setDetectedConditions(conditions);
+      setLocalDetectedConditions(conditions);
 
       // Get applicable protocols for all detected conditions
       const protocols: PreventionProtocol[] = [];
@@ -232,7 +289,30 @@ export function PreventionHubSidebar({
               <Shield className="w-5 h-5" />
               <div>
                 <h3 className="font-bold text-sm">Prevention Hub</h3>
-                <p className="text-xs text-green-100">International Guidelines</p>
+                <div className="flex items-center space-x-1">
+                  <p className="text-xs text-green-100">International Guidelines</p>
+                  {enableRealtimeDetection && (
+                    <span
+                      className={`flex items-center space-x-1 text-xs ${
+                        realtimeConnected ? 'text-green-200' : 'text-green-300/60'
+                      }`}
+                      title={realtimeConnected ? 'Real-time detection active' : 'Connecting...'}
+                    >
+                      <span className="mx-1">•</span>
+                      {realtimeConnected ? (
+                        <>
+                          <Activity className="w-3 h-3" />
+                          <span>Live</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Offline</span>
+                        </>
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <button
@@ -263,33 +343,125 @@ export function PreventionHubSidebar({
                   Detected Conditions ({detectedConditions.length})
                 </h4>
                 <div className="space-y-2">
-                  {detectedConditions.slice(0, 5).map((condition) => (
-                    <button
-                      key={condition.id}
-                      onClick={() => setSelectedCondition(condition)}
-                      className="w-full text-left p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-1">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {condition.name}
-                        </span>
-                        <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 rounded">
-                          {condition.confidence}%
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
-                        <span className="capitalize">{condition.category.replace('_', ' ')}</span>
-                        <span>•</span>
-                        <span className="capitalize">{condition.detectedFrom.replace('_', ' ')}</span>
-                      </div>
-                    </button>
-                  ))}
+                  {detectedConditions.slice(0, 5).map((condition) => {
+                    const isFromServer = condition.isFromServer === true;
+                    return (
+                      <button
+                        key={condition.id}
+                        onClick={() => setSelectedCondition(condition)}
+                        className={`w-full text-left p-3 border rounded-lg hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/10 transition-all ${
+                          isFromServer
+                            ? 'border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-900/10'
+                            : 'border-gray-200 dark:border-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {condition.name}
+                            </span>
+                            {isFromServer && (
+                              <span className="flex items-center px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">
+                                <Star className="w-3 h-3 mr-0.5" />
+                                AI
+                              </span>
+                            )}
+                          </div>
+                          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 rounded">
+                            {condition.confidence}%
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
+                          <span className="capitalize">{condition.category.replace('_', ' ')}</span>
+                          <span>•</span>
+                          <span className="capitalize">{condition.detectedFrom.replace('_', ' ')}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                   {detectedConditions.length > 5 && (
                     <button
                       onClick={onViewFullHub}
                       className="w-full text-sm text-green-600 dark:text-green-400 hover:underline"
                     >
                       View all {detectedConditions.length} conditions →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Server-Side AI Recommendations */}
+            {serverRecommendations.length > 0 && (
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                  <Star className="w-4 h-4 mr-2 text-blue-600" />
+                  AI Recommendations ({serverRecommendations.length})
+                  {processingTimeMs !== null && (
+                    <span className="ml-2 text-xs font-normal text-gray-500">
+                      {processingTimeMs}ms
+                    </span>
+                  )}
+                </h4>
+                <div className="space-y-2">
+                  {serverRecommendations.slice(0, 3).map((rec) => {
+                    const priorityColors = {
+                      HIGH: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800',
+                      MEDIUM: 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800',
+                      LOW: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800',
+                    };
+                    const priorityBadgeColors = {
+                      HIGH: 'bg-red-600 text-white',
+                      MEDIUM: 'bg-yellow-600 text-white',
+                      LOW: 'bg-blue-600 text-white',
+                    };
+                    return (
+                      <div
+                        key={rec.id}
+                        className={`border rounded-lg p-3 ${priorityColors[rec.priority]}`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-bold ${priorityBadgeColors[rec.priority]}`}
+                              >
+                                {rec.priority}
+                              </span>
+                              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 capitalize">
+                                {rec.type}
+                              </span>
+                              {rec.uspstfGrade && (
+                                <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-medium rounded">
+                                  USPSTF {rec.uspstfGrade}
+                                </span>
+                              )}
+                            </div>
+                            <h5 className="font-bold text-sm text-gray-900 dark:text-white mb-1">
+                              {rec.title}
+                            </h5>
+                            {rec.description && (
+                              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {rec.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        {rec.guidelineSource && (
+                          <div className="mt-2 flex items-center text-xs text-gray-500 dark:text-gray-400">
+                            <FileText className="w-3 h-3 mr-1" />
+                            {rec.guidelineSource}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {serverRecommendations.length > 3 && (
+                    <button
+                      onClick={onViewFullHub}
+                      className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
+                      View all {serverRecommendations.length} AI recommendations →
                     </button>
                   )}
                 </div>
