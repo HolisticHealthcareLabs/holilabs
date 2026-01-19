@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { emitCoPilotEvent } from '@/lib/socket-server';
 import crypto from 'crypto';
 import { z } from 'zod';
+import { preventionEngine, type TranscriptFindings } from '@/lib/services';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -148,6 +150,86 @@ export const POST = createProtectedRoute(
       findings,
       dataHash,
     });
+
+    // Prevention Engine Integration - Process findings for real-time prevention recommendations
+    // Non-blocking: runs in parallel with response to maintain low latency
+    const preventionPromise = (async () => {
+      try {
+        // Get encounter ID from scribe session (if linked to an encounter)
+        const encounter = await prisma.clinicalEncounter.findFirst({
+          where: {
+            patientId: session.patientId,
+            status: 'IN_PROGRESS',
+          },
+          select: { id: true },
+          orderBy: { scheduledAt: 'desc' },
+        });
+
+        // Transform findings to PreventionEngine format
+        const preventionFindings: TranscriptFindings = {
+          chiefComplaint: findings.chiefComplaint || '',
+          symptoms: findings.symptoms || [],
+          diagnoses: findings.diagnoses || [],
+          entities: {
+            vitals: (findings.entities?.vitals || []).map((v: string) => ({
+              type: 'vital',
+              value: v,
+              unit: '',
+            })),
+            procedures: findings.entities?.procedures || [],
+            medications: findings.entities?.medications || [],
+            anatomy: findings.entities?.anatomy || [],
+          },
+          rawTranscript: '', // Raw transcript not available in findings payload
+        };
+
+        // Only process if we have meaningful findings
+        const hasFindings =
+          preventionFindings.diagnoses.length > 0 ||
+          preventionFindings.symptoms.length > 0 ||
+          preventionFindings.entities.medications.length > 0;
+
+        if (hasFindings && encounter) {
+          const preventionResult = await preventionEngine.processTranscriptFindings(
+            session.patientId,
+            encounter.id,
+            preventionFindings
+          );
+
+          logger.info({
+            event: 'prevention_engine_findings_processed',
+            sessionId,
+            patientId: session.patientId,
+            encounterId: encounter.id,
+            detectedConditionsCount: preventionResult.detectedConditions.length,
+            recommendationsCount: preventionResult.recommendations.length,
+            processingTimeMs: preventionResult.processingTimeMs,
+          });
+
+          // Emit prevention results to co-pilot session
+          if (preventionResult.detectedConditions.length > 0) {
+            emitCoPilotEvent(sessionId, 'prevention:findings_processed', {
+              patientId: session.patientId,
+              encounterId: encounter.id,
+              conditions: preventionResult.detectedConditions,
+              recommendations: preventionResult.recommendations,
+              processingTimeMs: preventionResult.processingTimeMs,
+            });
+          }
+        }
+      } catch (preventionError) {
+        // Log but don't fail the main request
+        logger.error({
+          event: 'prevention_engine_error',
+          sessionId,
+          patientId: session.patientId,
+          error: preventionError instanceof Error ? preventionError.message : 'Unknown error',
+        });
+      }
+    })();
+
+    // Fire and forget - don't await prevention processing
+    void preventionPromise;
 
     return NextResponse.json({ success: true, data: { id: created.id, timestamp: created.timestamp } }, { status: 201 });
   },

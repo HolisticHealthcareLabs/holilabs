@@ -5,14 +5,33 @@ import { createAuditLog } from '@/lib/audit';
 /**
  * Deepgram Token Endpoint
  *
- * Returns the Deepgram API key for WebSocket streaming.
- * Protected - requires authentication.
+ * SECURITY NOTE:
+ * Never return long-lived vendor API keys to browsers in production.
+ *
+ * This route is deprecated and disabled by default. If you have an explicit,
+ * approved need for browser → Deepgram (rare), set:
+ * - ALLOW_DEEPGRAM_BROWSER_TOKEN=true
+ * and only use it in controlled environments.
  */
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const allowBrowserToken =
+      String(process.env.ALLOW_DEEPGRAM_BROWSER_TOKEN || '').toLowerCase() === 'true';
+
+    if (!allowBrowserToken) {
+      return NextResponse.json(
+        {
+          error: 'Deepgram browser token endpoint is disabled',
+          message:
+            'Use server-mediated transcription. If you must enable this for a controlled environment, set ALLOW_DEEPGRAM_BROWSER_TOKEN=true.',
+        },
+        { status: 410 }
+      );
+    }
+
     // Verify authentication
     const session = await auth();
     if (!session?.user) {

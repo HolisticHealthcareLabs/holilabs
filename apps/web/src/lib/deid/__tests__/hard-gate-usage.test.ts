@@ -24,7 +24,7 @@ describe('Hard de-id gate wiring (no raw transcript to UI/DB)', () => {
   it('Co-Pilot page no longer embeds RealTimeTranscription (browser->Deepgram)', () => {
     const p = path.join(root, 'app/dashboard/co-pilot/page.tsx');
     const s = read(p);
-    expect(s).not.toContain("from '@/components/scribe/RealTimeTranscription'");
+    expect(s).not.toContain("RealTimeTranscription");
   });
 });
 

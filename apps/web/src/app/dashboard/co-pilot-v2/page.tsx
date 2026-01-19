@@ -49,19 +49,30 @@ import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboard
 import AudioWaveform from '@/components/scribe/AudioWaveform';
 import TranscriptViewer from '@/components/scribe/TranscriptViewer';
 import SOAPNoteEditor from '@/components/scribe/SOAPNoteEditor';
-import { RealTimeTranscription } from '@/components/scribe/RealTimeTranscription';
 import type { Patient } from '@prisma/client';
+import { startTraditionalRecorder, type TraditionalRecorderHandle } from '@/lib/scribe/client/traditional-recorder';
+import {
+  createScribeSession,
+  completeTraditionalScribeSession,
+  patchSoapNote,
+  signSoapNote,
+  notifySoapNote,
+} from '@/lib/scribe/client/scribe-api';
 
 export const dynamic = 'force-dynamic';
 
 function CoPilotCommandCenter() {
   const { data: session } = useSession();
-  const { state, setIsRecording } = useClinicalSession();
+  const { state, setIsRecording, setSessionId, updateTranscript, updateLiveSoapNote } = useClinicalSession();
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [isRecording, setRecordingState] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [soapNoteRecord, setSoapNoteRecord] = useState<any | null>(null);
+  const recorderRef = useRef<TraditionalRecorderHandle | null>(null);
+  const startedAtMsRef = useRef<number>(0);
   const [showPermissionManager, setShowPermissionManager] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -108,30 +119,137 @@ function CoPilotCommandCenter() {
     }
 
     try {
+      setSoapNoteRecord(null);
+      setIsProcessing(false);
+
+      const created = await createScribeSession({
+        patientId: selectedPatient.id,
+        accessReason: 'DIRECT_PATIENT_CARE',
+        accessPurpose: 'AI_SCRIBE_RECORDING',
+      });
+      if (!created.success) throw new Error(created.message || created.error);
+      setSessionId(created.data.id);
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setAudioStream(stream);
+      startedAtMsRef.current = Date.now();
+      recorderRef.current = startTraditionalRecorder({ stream, timesliceMs: 1000 });
       setRecordingState(true);
       setIsRecording(true);
       addToast('success', 'Recording Started', `Recording consultation for ${selectedPatient.firstName} ${selectedPatient.lastName}`);
     } catch (error) {
       console.error('Failed to start recording:', error);
+      setSessionId(null);
       addToast('error', 'Recording Failed', 'Failed to access microphone. Please check permissions.');
     }
   };
 
-  const handleStopRecording = () => {
-    if (audioStream) {
-      audioStream.getTracks().forEach((track) => track.stop());
+  const handleStopRecording = async () => {
+    if (!state.sessionId || !recorderRef.current) {
+      // If we somehow lost state, just clean up tracks.
+      try {
+        audioStream?.getTracks().forEach((t) => t.stop());
+      } catch {}
       setAudioStream(null);
+      setRecordingState(false);
+      setIsRecording(false);
+      return;
     }
-    setRecordingState(false);
-    setIsRecording(false);
-    addToast('info', 'Recording Stopped', 'Processing transcript and generating SOAP notes...');
+
+    setIsProcessing(true);
+    addToast('info', 'Recording Stopped', 'Uploading audio and generating SOAP note…');
+
+    try {
+      const durationSeconds = Math.max(0, Math.round((Date.now() - (startedAtMsRef.current || Date.now())) / 1000));
+      const recorded = await recorderRef.current.stop();
+      recorderRef.current = null;
+
+      try {
+        audioStream?.getTracks().forEach((t) => t.stop());
+      } catch {}
+      setAudioStream(null);
+
+      const done = await completeTraditionalScribeSession({
+        sessionId: state.sessionId,
+        audio: recorded.blob,
+        durationSeconds,
+        filename: 'recording.webm',
+      });
+      if (!done.success) throw new Error(done.message || done.error);
+
+      const tr = done.data.transcription;
+      const raw = String(tr?.rawText || '').trim();
+      if (raw) {
+        updateTranscript([
+          {
+            speaker: 'Transcript',
+            text: raw,
+            startTime: 0,
+            endTime: Number.isFinite(tr?.durationSeconds) ? Number(tr.durationSeconds) : 0,
+            confidence: Number.isFinite(tr?.confidence) ? Number(tr.confidence) : 0.9,
+            isFinal: true,
+          },
+        ]);
+      }
+
+      if (done.data.soapNote) {
+        setSoapNoteRecord(done.data.soapNote);
+        updateLiveSoapNote({
+          chiefComplaint: done.data.soapNote?.chiefComplaint,
+          subjective: done.data.soapNote?.subjective,
+          objective: done.data.soapNote?.objective,
+          assessment: done.data.soapNote?.assessment,
+          plan: done.data.soapNote?.plan,
+          vitalSigns: done.data.soapNote?.vitalSigns,
+        });
+      }
+
+      addToast('success', 'Completed', 'Transcript and SOAP note generated.');
+    } catch (e: any) {
+      console.error('Failed to stop/process recording:', e);
+      addToast('error', 'Processing Failed', e?.message || 'Failed to process recording.');
+    } finally {
+      setIsProcessing(false);
+      setRecordingState(false);
+      setIsRecording(false);
+    }
   };
 
   const handleDevicePaired = (deviceId: string) => {
     console.log('Device paired:', deviceId);
     addToast('success', 'Device Paired', 'Mobile device connected successfully.');
+  };
+
+  const handleSaveSoapNote = async (updates: any) => {
+    if (!soapNoteRecord?.id) return;
+    const res = await patchSoapNote(soapNoteRecord.id, updates);
+    if (!res.success) {
+      addToast('error', 'Save Failed', res.message || res.error);
+      return;
+    }
+    setSoapNoteRecord(res.data);
+    addToast('success', 'Saved', 'SOAP note updated.');
+  };
+
+  const handleSignSoapNote = async () => {
+    if (!soapNoteRecord?.id) return;
+    const res = await signSoapNote(soapNoteRecord.id);
+    if (!res.success) {
+      addToast('error', 'Sign Failed', res.message || res.error);
+      return;
+    }
+    setSoapNoteRecord(res.data);
+    addToast('success', 'Signed', 'SOAP note signed.');
+  };
+
+  const handleNotifySoapNote = async () => {
+    if (!soapNoteRecord?.id) return;
+    const res = await notifySoapNote(soapNoteRecord.id);
+    if (!res.success) {
+      addToast('error', 'Notify Failed', res.message || res.error);
+      return;
+    }
+    addToast('success', 'Notified', 'Patient notified.');
   };
 
   // Command Palette Commands
@@ -532,11 +650,7 @@ function CoPilotCommandCenter() {
               isDraggable={true}
             >
               <div className="h-[400px] overflow-y-auto">
-                {selectedPatient && isRecording ? (
-                  <RealTimeTranscription patientId={selectedPatient.id} />
-                ) : (
-                  <TranscriptViewer segments={state.transcript} />
-                )}
+                <TranscriptViewer segments={state.transcript} />
 
                 {!isRecording && state.transcript.length === 0 && (
                   <motion.div
@@ -584,7 +698,14 @@ function CoPilotCommandCenter() {
               isDraggable={true}
             >
               <div className="h-[300px] overflow-y-auto">
-                {state.liveSoapNote ? (
+                {soapNoteRecord ? (
+                  <SOAPNoteEditor
+                    note={soapNoteRecord}
+                    onSave={handleSaveSoapNote}
+                    onSign={handleSignSoapNote}
+                    onNotifyPatient={handleNotifySoapNote}
+                  />
+                ) : state.liveSoapNote ? (
                   <div className="space-y-4 text-sm">
                     {state.liveSoapNote.chiefComplaint && (
                       <div>

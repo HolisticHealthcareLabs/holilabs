@@ -6,7 +6,14 @@ import TranscriptViewer from '@/components/scribe/TranscriptViewer';
 import SOAPNoteEditor from '@/components/scribe/SOAPNoteEditor';
 import AudioWaveform from '@/components/scribe/AudioWaveform';
 import VoiceActivityDetector from '@/components/scribe/VoiceActivityDetector';
-import { RealTimeTranscription } from '@/components/scribe/RealTimeTranscription';
+import { startTraditionalRecorder, type TraditionalRecorderHandle } from '@/lib/scribe/client/traditional-recorder';
+import {
+  createScribeSession,
+  completeTraditionalScribeSession,
+  patchSoapNote,
+  signSoapNote,
+  notifySoapNote,
+} from '@/lib/scribe/client/scribe-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,10 +52,9 @@ export default function AIScribePage() {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [showAudioSourceModal, setShowAudioSourceModal] = useState(false);
   const [audioSource, setAudioSource] = useState<'microphone' | 'system' | 'both'>('microphone');
-  const [useRealTimeTranscription, setUseRealTimeTranscription] = useState(false);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const traditionalRecorderRef = useRef<TraditionalRecorderHandle | null>(null);
+  const traditionalStartedAtMsRef = useRef<number>(0);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load patients
@@ -96,19 +102,9 @@ export default function AIScribePage() {
         throw new Error('Please select a patient before recording');
       }
 
-      // Create scribe session
-      const sessionResponse = await fetch('/api/scribe/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientId: selectedPatient.id }),
-      });
-
-      if (!sessionResponse.ok) {
-        throw new Error('Failed to create session');
-      }
-
-      const sessionData = await sessionResponse.json();
-      setSessionId(sessionData.data.id);
+      const created = await createScribeSession({ patientId: selectedPatient.id });
+      if (!created.success) throw new Error(created.message || created.error);
+      setSessionId(created.data.id);
 
       // Request audio access based on selected source
       let stream: MediaStream;
@@ -144,21 +140,9 @@ export default function AIScribePage() {
       }
       setAudioStream(stream); // Store for waveform visualization
 
-      // Create media recorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
-      });
-
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.start(1000); // Collect data every second
+      // Traditional recording uses a shared, deterministic recorder wrapper.
+      traditionalStartedAtMsRef.current = Date.now();
+      traditionalRecorderRef.current = startTraditionalRecorder({ stream, timesliceMs: 1000 });
       setRecordingState('recording');
 
       // Start timer
@@ -173,8 +157,8 @@ export default function AIScribePage() {
 
   // Pause recording
   const pauseRecording = () => {
-    if (mediaRecorderRef.current && recordingState === 'recording') {
-      mediaRecorderRef.current.pause();
+    if (traditionalRecorderRef.current?.recorder && recordingState === 'recording') {
+      traditionalRecorderRef.current.recorder.pause();
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
@@ -184,8 +168,8 @@ export default function AIScribePage() {
 
   // Resume recording
   const resumeRecording = () => {
-    if (mediaRecorderRef.current && recordingState === 'paused') {
-      mediaRecorderRef.current.resume();
+    if (traditionalRecorderRef.current?.recorder && recordingState === 'paused') {
+      traditionalRecorderRef.current.recorder.resume();
       timerIntervalRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
@@ -208,7 +192,7 @@ export default function AIScribePage() {
 
   // Stop recording and process
   const stopRecording = async () => {
-    if (!mediaRecorderRef.current || !sessionId) return;
+    if (!traditionalRecorderRef.current || !sessionId) return;
 
     setRecordingState('processing');
 
@@ -216,72 +200,36 @@ export default function AIScribePage() {
       clearInterval(timerIntervalRef.current);
     }
 
-    mediaRecorderRef.current.stop();
+    try {
+      const durationSeconds = Math.max(
+        0,
+        Math.round((Date.now() - (traditionalStartedAtMsRef.current || Date.now())) / 1000)
+      );
+      const recorded = await traditionalRecorderRef.current.stop();
+      traditionalRecorderRef.current = null;
 
-    mediaRecorderRef.current.onstop = async () => {
-      try {
-        // Create audio blob
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const done = await completeTraditionalScribeSession({
+        sessionId,
+        audio: recorded.blob,
+        durationSeconds,
+        filename: 'recording.webm',
+      });
+      if (!done.success) throw new Error(done.message || done.error);
 
-        // Upload audio
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-        formData.append('duration', recordingDuration.toString());
+      if (done.data.soapNote) setSoapNote(done.data.soapNote);
+      if (done.data.transcription?.segments) setTranscriptSegments(done.data.transcription.segments);
 
-        const uploadResponse = await fetch(`/api/scribe/sessions/${sessionId}/audio`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload audio');
-        }
-
-        // Finalize session and generate SOAP (triggers real AssemblyAI + Gemini processing)
-        const finalizeResponse = await fetch(`/api/scribe/sessions/${sessionId}/finalize`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!finalizeResponse.ok) {
-          const errorData = await finalizeResponse.json();
-          throw new Error(errorData.error || 'Failed to generate SOAP note');
-        }
-
-        const finalizeData = await finalizeResponse.json();
-
-        // Load the full SOAP note with transcription data
-        if (finalizeData.data?.soapNote?.id) {
-          const noteResponse = await fetch(`/api/scribe/notes/${finalizeData.data.soapNote.id}`);
-          if (noteResponse.ok) {
-            const noteData = await noteResponse.json();
-            setSoapNote(noteData.data);
-          }
-        }
-
-        // Load the transcription with segments
-        if (finalizeData.data?.transcription?.id) {
-          const transcriptResponse = await fetch(`/api/scribe/sessions/${sessionId}`);
-          if (transcriptResponse.ok) {
-            const sessionData = await transcriptResponse.json();
-            if (sessionData.data?.transcription?.segments) {
-              setTranscriptSegments(sessionData.data.transcription.segments);
-            }
-          }
-        }
-
-        setRecordingState('completed');
-      } catch (error) {
-        console.error('Error processing recording:', error);
-        alert('Error al procesar la grabación');
-        setRecordingState('idle');
-      }
-    };
+      setRecordingState('completed');
+    } catch (error) {
+      console.error('Error processing recording:', error);
+      alert('Error al procesar la grabación');
+      setRecordingState('idle');
+    }
 
     // Stop all tracks
-    if (mediaRecorderRef.current.stream) {
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
-    }
+    try {
+      audioStream?.getTracks().forEach((track) => track.stop());
+    } catch {}
     setAudioStream(null); // Clear stream for waveform
   };
 
@@ -292,7 +240,7 @@ export default function AIScribePage() {
     setTranscriptSegments([]);
     setSoapNote(null);
     setSessionId(null);
-    audioChunksRef.current = [];
+    traditionalRecorderRef.current = null;
   };
 
   // Save SOAP note edits
@@ -300,16 +248,8 @@ export default function AIScribePage() {
     if (!soapNote?.id) return;
 
     try {
-      const response = await fetch(`/api/scribe/notes/${soapNote.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedNote),
-      });
-
-      if (response.ok) {
-        const updatedData = await response.json();
-        setSoapNote(updatedData.data);
-      }
+      const res = await patchSoapNote(soapNote.id, updatedNote);
+      if (res.success) setSoapNote(res.data);
     } catch (error) {
       console.error('Error saving note:', error);
       alert('Error al guardar los cambios');
@@ -324,15 +264,12 @@ export default function AIScribePage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/scribe/notes/${soapNote.id}/sign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (response.ok) {
-        const signedData = await response.json();
-        setSoapNote(signedData.data);
+      const res = await signSoapNote(soapNote.id);
+      if (res.success) {
+        setSoapNote(res.data);
         alert('✅ Nota firmada exitosamente con hash blockchain');
+      } else {
+        alert(`❌ Error: ${res.error || 'No se pudo firmar la nota'}`);
       }
     } catch (error) {
       console.error('Error signing note:', error);
@@ -348,17 +285,11 @@ export default function AIScribePage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/scribe/notes/${soapNote.id}/notify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`✅ WhatsApp enviado exitosamente a ${data.data.sentTo}`);
+      const res = await notifySoapNote(soapNote.id);
+      if (res.success) {
+        alert(`✅ Notificación enviada exitosamente`);
       } else {
-        const errorData = await response.json();
-        alert(`❌ Error: ${errorData.error || 'No se pudo enviar WhatsApp'}`);
+        alert(`❌ Error: ${res.error || 'No se pudo enviar notificación'}`);
       }
     } catch (error) {
       console.error('Error sending WhatsApp:', error);
@@ -431,29 +362,6 @@ export default function AIScribePage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">AI Scribe</h1>
             <p className="text-gray-600 dark:text-gray-400">Record voice, get SOAP notes</p>
           </div>
-
-          {/* Real-Time Transcription Toggle */}
-          <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Real-Time Mode
-            </span>
-            <button
-              onClick={() => setUseRealTimeTranscription(!useRealTimeTranscription)}
-              disabled={recordingState !== 'idle'}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                useRealTimeTranscription ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
-              } ${recordingState !== 'idle' ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  useRealTimeTranscription ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {useRealTimeTranscription ? 'Live streaming' : 'Record then process'}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -501,37 +409,9 @@ export default function AIScribePage() {
           </div>
         </div>
 
-        {/* Column 2: Recording Controls & Live Transcript */}
+        {/* Column 2: Recording Controls & Transcript */}
         <div className="lg:col-span-5">
-          {useRealTimeTranscription ? (
-            // Real-Time Transcription Mode
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden h-[800px]">
-              <RealTimeTranscription
-                patientId={selectedPatient?.id}
-                onTranscriptUpdate={(segments) => {
-                  // Convert segments to transcript format
-                  const converted = segments
-                    .filter(s => s.isFinal)
-                    .map((s, idx) => ({
-                      speaker: s.speaker !== undefined ? `Speaker ${s.speaker + 1}` : 'Speaker 1',
-                      text: s.text,
-                      startTime: idx * 1000, // Approximate
-                      endTime: (idx + 1) * 1000,
-                      confidence: s.confidence,
-                    }));
-                  setTranscriptSegments(converted);
-                }}
-                onRecordingStop={(finalTranscript) => {
-                  console.log('Final transcript:', finalTranscript);
-                  // TODO: Generate SOAP note from real-time transcript
-                }}
-                enableDiarization={true}
-                language="en-US"
-              />
-            </div>
-          ) : (
-            // Traditional Recording Mode
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="p-4 bg-gradient-to-r from-purple-500 to-pink-600">
                 <h2 className="text-lg font-bold text-white">Grabación</h2>
               </div>
@@ -725,7 +605,6 @@ export default function AIScribePage() {
               )}
             </div>
           </div>
-          )}
         </div>
 
         {/* Column 3: SOAP Note Editor */}
