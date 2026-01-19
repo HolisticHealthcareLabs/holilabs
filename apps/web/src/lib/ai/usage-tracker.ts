@@ -17,6 +17,8 @@
  */
 
 import type { AIProvider, ChatResponse } from './chat';
+import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export interface UsageMetrics {
   // Request Info
@@ -92,10 +94,14 @@ export function calculateCost(
 }
 
 /**
- * Track AI usage
+ * Track AI usage - persists to database for CFO visibility
  */
 export async function trackUsage(
-  metrics: Omit<UsageMetrics, 'estimatedCost' | 'timestamp'>
+  metrics: Omit<UsageMetrics, 'estimatedCost' | 'timestamp'> & {
+    patientId?: string;
+    model?: string;
+    promptPreview?: string;
+  }
 ): Promise<void> {
   try {
     // Calculate cost
@@ -111,21 +117,47 @@ export async function trackUsage(
       timestamp: new Date(),
     };
 
-    // Log to console for now (will add database logging next)
-    console.log(
-      `[AI Usage] ${metrics.provider} | ` +
-      `Tokens: ${metrics.totalTokens} | ` +
-      `Cost: $${estimatedCost.toFixed(4)} | ` +
-      `Cache: ${metrics.fromCache ? 'HIT' : 'MISS'} | ` +
-      `Time: ${metrics.responseTimeMs}ms | ` +
-      `User: ${metrics.userId || 'N/A'}`
-    );
+    // Structured logging for observability
+    logger.info({
+      event: 'ai_usage_tracked',
+      provider: metrics.provider,
+      model: metrics.model,
+      totalTokens: metrics.totalTokens,
+      estimatedCost,
+      fromCache: metrics.fromCache,
+      responseTimeMs: metrics.responseTimeMs,
+      userId: metrics.userId,
+      clinicId: metrics.clinicId,
+      feature: metrics.feature,
+      queryComplexity: metrics.queryComplexity,
+    });
 
-    // TODO: Store in database (PostgreSQL) when schema is ready
-    // await prisma.aiUsageLog.create({ data: fullMetrics });
+    // Persist to database for CFO dashboard and cost analytics
+    await prisma.aIUsageLog.create({
+      data: {
+        provider: metrics.provider,
+        model: metrics.model,
+        userId: metrics.userId,
+        clinicId: metrics.clinicId,
+        patientId: metrics.patientId,
+        promptTokens: metrics.promptTokens,
+        completionTokens: metrics.completionTokens,
+        totalTokens: metrics.totalTokens,
+        estimatedCost,
+        responseTimeMs: metrics.responseTimeMs,
+        fromCache: metrics.fromCache,
+        queryComplexity: metrics.queryComplexity,
+        feature: metrics.feature,
+        promptPreview: metrics.promptPreview?.slice(0, 500), // Truncate for debugging
+      },
+    });
 
   } catch (error) {
-    console.error('[AI Usage] Error tracking usage:', error);
+    // Don't fail the main request if usage tracking fails
+    logger.error({
+      event: 'ai_usage_tracking_error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 }
 
@@ -163,18 +195,105 @@ export async function trackFromResponse(
 }
 
 /**
- * Get usage summary for a time period (mocked for now)
- * TODO: Implement with real database queries
+ * Get usage summary for a time period
+ * Returns daily breakdown of AI usage for CFO dashboard
  */
 export async function getUsageSummary(
   startDate: Date,
   endDate: Date,
   options?: { userId?: string; clinicId?: string }
 ): Promise<DailyUsageSummary[]> {
-  // Mock implementation
-  console.log('[AI Usage] Getting summary from', startDate, 'to', endDate);
+  logger.info({
+    event: 'ai_usage_summary_request',
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    userId: options?.userId,
+    clinicId: options?.clinicId,
+  });
 
-  return [];
+  // Build where clause
+  const where: {
+    createdAt: { gte: Date; lte: Date };
+    userId?: string;
+    clinicId?: string;
+  } = {
+    createdAt: {
+      gte: startDate,
+      lte: endDate,
+    },
+  };
+
+  if (options?.userId) {
+    where.userId = options.userId;
+  }
+  if (options?.clinicId) {
+    where.clinicId = options.clinicId;
+  }
+
+  // Get all logs in date range
+  const logs = await prisma.aIUsageLog.findMany({
+    where,
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // Group by date
+  const dailyMap = new Map<string, {
+    totalQueries: number;
+    totalTokens: number;
+    totalCost: number;
+    cacheHits: number;
+    providerBreakdown: {
+      gemini: { count: number; cost: number };
+      claude: { count: number; cost: number };
+      openai: { count: number; cost: number };
+    };
+  }>();
+
+  for (const log of logs) {
+    const dateKey = log.createdAt.toISOString().split('T')[0];
+
+    if (!dailyMap.has(dateKey)) {
+      dailyMap.set(dateKey, {
+        totalQueries: 0,
+        totalTokens: 0,
+        totalCost: 0,
+        cacheHits: 0,
+        providerBreakdown: {
+          gemini: { count: 0, cost: 0 },
+          claude: { count: 0, cost: 0 },
+          openai: { count: 0, cost: 0 },
+        },
+      });
+    }
+
+    const day = dailyMap.get(dateKey)!;
+    day.totalQueries++;
+    day.totalTokens += log.totalTokens;
+    day.totalCost += log.estimatedCost;
+    if (log.fromCache) day.cacheHits++;
+
+    // Update provider breakdown
+    const provider = log.provider as AIProvider;
+    if (day.providerBreakdown[provider]) {
+      day.providerBreakdown[provider].count++;
+      day.providerBreakdown[provider].cost += log.estimatedCost;
+    }
+  }
+
+  // Convert to array
+  const summaries: DailyUsageSummary[] = [];
+  for (const [date, data] of dailyMap) {
+    summaries.push({
+      date,
+      totalQueries: data.totalQueries,
+      totalTokens: data.totalTokens,
+      totalCost: data.totalCost,
+      cacheHitRate: data.totalQueries > 0 ? data.cacheHits / data.totalQueries : 0,
+      providerBreakdown: data.providerBreakdown,
+    });
+  }
+
+  return summaries;
 }
 
 /**
@@ -189,6 +308,7 @@ export async function checkUserQuota(
   remaining: number;
   limit: number;
   resetDate: Date;
+  todayUsage: number;
 }> {
   // Quota limits per tier (queries per day)
   const quotas: Record<typeof tier, number> = {
@@ -200,54 +320,121 @@ export async function checkUserQuota(
 
   const limit = quotas[tier];
 
-  // TODO: Query database for today's usage
-  const todayUsage = 0; // Mock
+  // Get start of today (UTC)
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  // Query database for today's usage
+  const todayUsage = await prisma.aIUsageLog.count({
+    where: {
+      userId,
+      createdAt: {
+        gte: todayStart,
+      },
+    },
+  });
 
   const remaining = Math.max(0, limit - todayUsage);
   const allowed = remaining > 0;
 
-  // Reset at midnight
-  const resetDate = new Date();
-  resetDate.setHours(24, 0, 0, 0);
+  // Reset at midnight UTC
+  const resetDate = new Date(todayStart);
+  resetDate.setUTCDate(resetDate.getUTCDate() + 1);
+
+  // Log quota check for monitoring
+  if (!allowed) {
+    logger.warn({
+      event: 'ai_quota_exceeded',
+      userId,
+      tier,
+      todayUsage,
+      limit,
+    });
+  }
 
   return {
     allowed,
     remaining,
     limit,
     resetDate,
+    todayUsage,
   };
 }
 
 /**
  * Cost monitoring alerts
+ * Used for CFO dashboard and budget enforcement
  */
 export async function checkCostAlerts(
-  clinicId: string
+  clinicId: string,
+  monthlyBudget: number = 100.00 // Default $100/month
 ): Promise<{
   isOverBudget: boolean;
+  isApproachingBudget: boolean;
   currentSpend: number;
   monthlyBudget: number;
   percentUsed: number;
+  projectedMonthlySpend: number;
 }> {
-  // Mock implementation
-  const monthlyBudget = 100.00; // $100/month
-  const currentSpend = 0; // TODO: Query database
+  // Get start of current month
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
 
-  const percentUsed = (currentSpend / monthlyBudget) * 100;
+  // Get current day of month and days remaining
+  const now = new Date();
+  const currentDay = now.getUTCDate();
+  const daysInMonth = new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 0).getUTCDate();
+  const daysRemaining = daysInMonth - currentDay;
+
+  // Query database for this month's total spend
+  const result = await prisma.aIUsageLog.aggregate({
+    where: {
+      clinicId,
+      createdAt: {
+        gte: monthStart,
+      },
+    },
+    _sum: {
+      estimatedCost: true,
+    },
+  });
+
+  const currentSpend = result._sum.estimatedCost || 0;
+  const percentUsed = monthlyBudget > 0 ? (currentSpend / monthlyBudget) * 100 : 0;
   const isOverBudget = currentSpend > monthlyBudget;
+  const isApproachingBudget = percentUsed >= 80 && !isOverBudget;
 
+  // Project monthly spend based on current rate
+  const dailyRate = currentDay > 0 ? currentSpend / currentDay : 0;
+  const projectedMonthlySpend = currentSpend + (dailyRate * daysRemaining);
+
+  // Log alerts for monitoring
   if (isOverBudget) {
-    console.warn(
-      `[AI Usage] 🚨 Clinic ${clinicId} is over budget! ` +
-      `Spent: $${currentSpend.toFixed(2)} / $${monthlyBudget.toFixed(2)}`
-    );
+    logger.error({
+      event: 'ai_budget_exceeded',
+      clinicId,
+      currentSpend,
+      monthlyBudget,
+      percentUsed,
+    });
+  } else if (isApproachingBudget) {
+    logger.warn({
+      event: 'ai_budget_approaching',
+      clinicId,
+      currentSpend,
+      monthlyBudget,
+      percentUsed,
+    });
   }
 
   return {
     isOverBudget,
+    isApproachingBudget,
     currentSpend,
     monthlyBudget,
     percentUsed,
+    projectedMonthlySpend,
   };
 }
 

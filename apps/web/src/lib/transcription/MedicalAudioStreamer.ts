@@ -173,6 +173,9 @@ export class MedicalAudioStreamer extends EventEmitter {
   private reconnectTimer: NodeJS.Timeout | null = null;
   private lastCloseCode: number | undefined;
   private lastCloseReason: string | undefined;
+  private haltReconnect = false;
+  private lastErrorKey: string | null = null;
+  private lastErrorAt = 0;
 
   // Observability
   private requestId: string | undefined;
@@ -237,6 +240,7 @@ export class MedicalAudioStreamer extends EventEmitter {
     if (this.started) return;
     this.started = true;
     this.stopping = false;
+    this.haltReconnect = false;
     this.opened = false;
     this.modelIndex = 0;
     this.activeModel = this.modelCandidates[0];
@@ -288,6 +292,7 @@ export class MedicalAudioStreamer extends EventEmitter {
   async stop(): Promise<void> {
     if (!this.started) return;
     this.stopping = true;
+    this.haltReconnect = true;
 
     if (this.flushTimer) clearInterval(this.flushTimer);
     this.flushTimer = null;
@@ -337,6 +342,7 @@ export class MedicalAudioStreamer extends EventEmitter {
   }
 
   private async openConnection(): Promise<void> {
+    if (this.haltReconnect) return;
     const dg = createClient(this.cfg.apiKey);
 
     // Tags required for observability & auditing.
@@ -410,11 +416,28 @@ export class MedicalAudioStreamer extends EventEmitter {
 
     conn.on(LiveTranscriptionEvents.Error, (err: any) => {
       this.logError({ event: 'deepgram_medical_error', requestId: this.requestId, err }, 'Deepgram error');
-      this.emit('error', { message: err?.message || 'Deepgram error', raw: err });
+      const msg = String(err?.message || 'Deepgram error');
+      const isRateLimited = msg.includes('429') || msg.includes('Too Many Requests') || err?.code === 429 || err?.status === 429;
+
+      // Deduplicate identical/noisy errors (prevents UI toast floods via server).
+      const key = isRateLimited ? 'RATE_LIMIT_429' : msg.slice(0, 120);
+      const now = Date.now();
+      if (this.lastErrorKey === key && now - this.lastErrorAt < (isRateLimited ? 60_000 : 5_000)) {
+        return;
+      }
+      this.lastErrorKey = key;
+      this.lastErrorAt = now;
+
+      this.emit('error', { message: msg, raw: err });
+
+      // 429 is a hard stop. Do NOT keep reconnecting (will amplify rate limits).
+      if (isRateLimited) {
+        this.haltReconnect = true;
+        return;
+      }
 
       // Model/language mismatch frequently manifests as a handshake 400 before Open.
       // If that happens, attempt a fallback model without burning reconnect attempts.
-      const msg = String(err?.message || '');
       if (!this.opened && msg.includes('Unexpected server response: 400')) {
         // First, retry without keywords (common 400 source in live WS).
         if (this.keywordsEnabled) {
@@ -439,7 +462,7 @@ export class MedicalAudioStreamer extends EventEmitter {
       this.emit('close', { code: this.lastCloseCode, reason: this.lastCloseReason });
 
       // Non-1000 close = reconnect (unless caller is stopping).
-      if (!this.stopping && this.lastCloseCode && this.lastCloseCode !== 1000) {
+      if (!this.stopping && !this.haltReconnect && this.lastCloseCode && this.lastCloseCode !== 1000) {
         void this.reconnect();
       }
     });
@@ -584,6 +607,7 @@ export class MedicalAudioStreamer extends EventEmitter {
 
   private async reconnect(): Promise<void> {
     if (this.stopping) return;
+    if (this.haltReconnect) return;
     const { maxAttempts, baseDelayMs, maxDelayMs } = this.cfg.reconnect;
     if (this.reconnectAttempts >= maxAttempts) {
       this.emit('error', { message: `Deepgram reconnect exceeded ${maxAttempts} attempts` });
@@ -605,7 +629,7 @@ export class MedicalAudioStreamer extends EventEmitter {
       this.reconnectTimer = setTimeout(() => resolve(), delayMs);
     });
 
-    if (this.stopping) return;
+    if (this.stopping || this.haltReconnect) return;
 
     try {
       // Tear down any old connection

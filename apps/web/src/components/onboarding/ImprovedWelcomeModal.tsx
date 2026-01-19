@@ -18,6 +18,8 @@ export default function ImprovedWelcomeModal() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [demoStarting, setDemoStarting] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if this is first-time user
@@ -38,10 +40,20 @@ export default function ImprovedWelcomeModal() {
   };
 
   const handleEnableDemoMode = () => {
+    // (1) Enable demo mode flag locally (drives UI behavior immediately)
+    // (2) Seed/attach demo patients for Co-Pilot flows that require DB patients
+    setDemoError(null);
+    setDemoStarting(true);
     enableDemoMode();
-    handleClose();
-    // Reload to show demo data
-    window.location.reload();
+
+    fetch('/api/dev/attach-demo-patients?count=10', { method: 'POST' })
+      .then(() => {})
+      .catch((e) => setDemoError(e?.message || 'Failed to attach demo patients'))
+      .finally(() => {
+        handleClose();
+        // Reload to show demo data
+        window.location.reload();
+      });
   };
 
   const handleImport = () => {
@@ -197,6 +209,11 @@ export default function ImprovedWelcomeModal() {
           <p className="text-gray-600 mt-1">
             Select an option below to begin using your clinical dashboard
           </p>
+          {demoError ? (
+            <p className="text-xs text-red-600 mt-2">
+              {demoError}
+            </p>
+          ) : null}
         </div>
 
         {/* Options */}
@@ -223,24 +240,41 @@ export default function ImprovedWelcomeModal() {
             {/* Option 2: Demo Mode - Recommended */}
             <button
               onClick={handleEnableDemoMode}
-              className="group relative bg-white hover:bg-[#014751]/5 border-2 border-[#014751] rounded-lg p-6 text-left transition-all"
+              disabled={demoStarting}
+              className="group relative bg-white hover:bg-[#014751]/5 border-2 border-[#014751] rounded-lg p-6 text-left transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <div className="flex items-start justify-between gap-4">
                 <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-                  Try Demo Mode
+                  Start with Demo Mode
                 </h3>
                 <div className="flex flex-col items-end gap-1">
-                  <div className="text-xs font-semibold text-[#014751] uppercase tracking-wide">
-                    Recommended
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs font-semibold text-[#014751] uppercase tracking-wide">
+                      QUICK START
+                    </div>
+                    <div className="text-xs font-semibold text-[#014751] uppercase tracking-wide">
+                      Recommended
+                    </div>
                   </div>
                   <div className="text-sm text-[#014751] font-medium whitespace-nowrap">
-                    Launch demo
+                    {demoStarting ? 'Starting…' : 'Start now'}
                   </div>
                 </div>
               </div>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                Explore with realistic sample data to learn the platform
+                Get started immediately with 10 pre-loaded sample patients. Perfect for exploring the platform's features. You can disable this later or add real patients at any time.
               </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="px-2 py-1 bg-[#014751]/5 text-xs text-gray-700 rounded border border-[#014751]/20">
+                  ✨ Instant setup
+                </span>
+                <span className="px-2 py-1 bg-[#014751]/5 text-xs text-gray-700 rounded border border-[#014751]/20">
+                  🎯 Full features
+                </span>
+                <span className="px-2 py-1 bg-[#014751]/5 text-xs text-gray-700 rounded border border-[#014751]/20">
+                  🔄 Reversible
+                </span>
+              </div>
             </button>
 
             {/* Option 3: Import Patients */}

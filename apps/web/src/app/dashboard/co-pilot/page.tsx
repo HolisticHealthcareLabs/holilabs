@@ -23,6 +23,7 @@ import { extractMedicalEntities } from '@/lib/medical/terminology';
 import { FindingsTimeline } from '@/components/co-pilot/FindingsTimeline';
 import { ClinicalDisclosureModal } from '@/components/scribe/ClinicalDisclosureModal';
 import { useAudioRecorder } from '@/hooks/use-audio-recorder';
+import { isDemoModeEnabled } from '@/lib/demo/demo-data-generator';
 
 export const dynamic = 'force-dynamic';
 
@@ -139,6 +140,18 @@ function CoPilotContent() {
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+
+  const isDemoPatient = useCallback((p: any) => {
+    const id = String(p?.id || '');
+    const mrn = String(p?.mrn || '');
+    return id.startsWith('demo-') || id.startsWith('demo_patient_') || id.startsWith('demo-patient-') || mrn.toUpperCase().includes('DEMO');
+  }, []);
+
+  useEffect(() => {
+    // Co-Pilot should never show demo patients unless demo mode is explicitly enabled.
+    setDemoModeEnabled(isDemoModeEnabled());
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [useRealTimeMode, setUseRealTimeMode] = useState(true);
@@ -238,6 +251,19 @@ function CoPilotContent() {
   // V3: Float32 -> PCM16 conversion and resampling happens off-main-thread in AudioWorklet.
   const lastScribeToastAtRef = useRef<number>(0);
   const lastScribeToastMsgRef = useRef<string>('');
+  const lastScribeToastKeyRef = useRef<string>('');
+
+  const normalizeScribeErrorKey = useCallback((rawMsg: string) => {
+    const msg = String(rawMsg || '');
+    // Treat ALL 429s as one class so we never spam.
+    if (msg.includes('429') || msg.includes('Too Many Requests')) return 'RATE_LIMIT_429';
+    // Strip highly variable bits that would defeat de-dupe (request IDs, ready state, full URL).
+    return msg
+      .replace(/Request ID:\s*[a-z0-9-]+/gi, 'Request ID:<redacted>')
+      .replace(/Ready State:\s*[A-Z_]+/gi, 'Ready State:<state>')
+      .replace(/URL:\s*\S+/gi, 'URL:<redacted>')
+      .slice(0, 200);
+  }, []);
 
   const audioRecorder = useAudioRecorder({
     chunkMs: 100,
@@ -619,10 +645,16 @@ function CoPilotContent() {
         return;
       }
       const list = Array.isArray(data?.data) ? data.data : [];
-      setPatients(list);
+      const visible = demoModeEnabled ? list : list.filter((p: any) => !isDemoPatient(p));
+      setPatients(visible);
+
+      // If we're not in demo mode, don't allow a demo patient to remain selected.
+      if (selectedPatient && !demoModeEnabled && isDemoPatient(selectedPatient)) {
+        setSelectedPatient(null);
+      }
       // Keep patient selection in sync after attaches/refreshes.
-      if (!selectedPatient && list.length > 0) {
-        setSelectedPatient(list[0]);
+      if (!selectedPatient && visible.length > 0) {
+        setSelectedPatient(visible[0]);
       }
     } catch (error) {
       console.error('Error loading patients:', error);
@@ -920,9 +952,16 @@ function CoPilotContent() {
           if (state.isRecording) {
             void handleStopRecording();
           }
+          // Product failover: if Deepgram live is rate-limiting, automatically switch out of Live Mode.
+          if (data?.code === 429 || normalizeScribeErrorKey(msg) === 'RATE_LIMIT_429') {
+            setUseRealTimeMode(false);
+          }
         }
-        // De-dupe toast spam (same message within 6s)
-        if (msg === lastScribeToastMsgRef.current && now - lastScribeToastAtRef.current < 6000) return;
+        // De-dupe toast spam: normalize unstable parts (request id/url), and hard-cap 429 to one toast per cooldown.
+        const key = normalizeScribeErrorKey(msg);
+        const dedupeWindowMs = key === 'RATE_LIMIT_429' ? Math.max(10_000, retryAfterMs) : 6000;
+        if (key === lastScribeToastKeyRef.current && now - lastScribeToastAtRef.current < dedupeWindowMs) return;
+        lastScribeToastKeyRef.current = key;
         lastScribeToastMsgRef.current = msg;
         lastScribeToastAtRef.current = now;
         showToast({ type: 'error', title: 'AI Scribe error', message: msg });
@@ -1214,12 +1253,18 @@ function CoPilotContent() {
                     <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                       {t('noPatientsSubtitle')}
                     </div>
-                    <button
-                      onClick={attachDemoPatients}
-                      className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
-                    >
-                      {t('attachDemoPatients')}
-                    </button>
+                    {demoModeEnabled ? (
+                      <button
+                        onClick={attachDemoPatients}
+                        className="mt-3 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white"
+                      >
+                        {t('attachDemoPatients')}
+                      </button>
+                    ) : (
+                      <div className="mt-3 text-xs text-gray-600 dark:text-gray-300">
+                        Demo patients are hidden unless Demo Mode is enabled.
+                      </div>
+                    )}
                   </div>
                 ) : (
                   filteredPatients.slice(0, 60).map((patient) => (

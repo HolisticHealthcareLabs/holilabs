@@ -57,6 +57,23 @@ escalation_policies:
           - type: "user"
             id: "backend_lead"
 
+  - name: "AI System Alerts"
+    description: "AI/LLM system health and cost alerts"
+    num_loops: 2
+    escalation_rules:
+      - escalation_delay_in_minutes: 0
+        targets:
+          - type: "schedule"
+            id: "on_call_backend_team"
+      - escalation_delay_in_minutes: 15
+        targets:
+          - type: "user"
+            id: "platform_lead"
+      - escalation_delay_in_minutes: 30
+        targets:
+          - type: "user"
+            id: "cto"
+
 # ============================================================================
 # SERVICES
 # ============================================================================
@@ -82,6 +99,13 @@ services:
     alert_creation: "create_alerts_and_incidents"
     acknowledgement_timeout: 600 # 10 minutes
     auto_resolve_timeout: null # Manual resolution required
+
+  - name: "AI System"
+    description: "AI/LLM system health, cost, and quality monitoring"
+    escalation_policy: "AI System Alerts"
+    alert_creation: "create_alerts_and_incidents"
+    acknowledgement_timeout: 1800 # 30 minutes
+    auto_resolve_timeout: 7200 # 2 hours
 
 # ============================================================================
 # ALERT RULES
@@ -239,6 +263,66 @@ alert_rules:
       component: "api"
 
   # ============================================================================
+  # AI SYSTEM ALERTS - P2 (High Priority)
+  # ============================================================================
+
+  - name: "AI High Override Rate"
+    severity: "critical"
+    service: "AI System"
+    description: "AI decisions being overridden by humans at high rate - AI is failing"
+    query: "rate(holi_ai_human_overrides_total[1h]) / rate(holi_ai_decisions_total[1h]) > 0.3"
+    for: "15m"
+    annotations:
+      summary: "AI quality degradation - 30%+ override rate"
+      description: "More than 30% of AI decisions are being overridden by clinicians. AI model may need retraining or there's a quality issue."
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-high-override"
+    labels:
+      severity: "P2"
+      component: "ai"
+
+  - name: "AI Provider Down"
+    severity: "critical"
+    service: "AI System"
+    description: "Primary AI provider is unreachable"
+    query: "holi_ai_provider_health{provider=\"claude\"} == 0 and holi_ai_provider_health{provider=\"gemini\"} == 0"
+    for: "2m"
+    annotations:
+      summary: "All AI providers unreachable"
+      description: "Both Claude and Gemini are unreachable - AI features unavailable"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-provider-down"
+    labels:
+      severity: "P1"
+      component: "ai"
+
+  - name: "AI Consensus Escalation Spike"
+    severity: "high"
+    service: "AI System"
+    description: "High rate of AI decisions requiring human escalation"
+    query: "rate(holi_ai_consensus_escalations_total[1h]) > 10"
+    for: "30m"
+    annotations:
+      summary: "AI consensus failures spiking"
+      description: "More than 10 AI decisions per hour requiring human escalation due to low confidence or disagreement"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-consensus-failures"
+    labels:
+      severity: "P2"
+      component: "ai"
+
+  - name: "AI Slow Response Time"
+    severity: "high"
+    service: "AI System"
+    description: "AI response times exceeding acceptable latency"
+    query: "histogram_quantile(0.95, sum(rate(holi_ai_response_time_seconds_bucket[5m])) by (le)) > 5"
+    for: "5m"
+    annotations:
+      summary: "AI response latency degradation"
+      description: "p95 AI response time exceeds 5 seconds - user experience impacted"
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-slow-response"
+    labels:
+      severity: "P2"
+      component: "ai"
+
+  # ============================================================================
   # P3 - MEDIUM PRIORITY ALERTS (2 hour response)
   # ============================================================================
 
@@ -326,6 +410,69 @@ alert_rules:
     labels:
       severity: "P3"
       component: "database"
+
+  # ============================================================================
+  # AI SYSTEM ALERTS - P3 (Medium Priority)
+  # ============================================================================
+
+  - name: "AI Budget Threshold 80%"
+    severity: "warning"
+    service: "AI System"
+    description: "AI monthly spend approaching budget limit"
+    query: "holi_ai_monthly_cost_usd > (holi_ai_monthly_budget_usd * 0.8)"
+    for: "5m"
+    annotations:
+      summary: "AI budget at 80% - approaching limit"
+      description: "Monthly AI spend has reached 80% of budget. Review usage patterns and consider optimizations."
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-budget-warning"
+    labels:
+      severity: "P3"
+      component: "ai"
+      cost: "true"
+
+  - name: "AI Budget Exceeded"
+    severity: "high"
+    service: "AI System"
+    description: "AI monthly spend has exceeded budget"
+    query: "holi_ai_monthly_cost_usd > holi_ai_monthly_budget_usd"
+    for: "5m"
+    annotations:
+      summary: "AI budget EXCEEDED"
+      description: "Monthly AI spend has exceeded the allocated budget. Immediate review required."
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-budget-exceeded"
+    labels:
+      severity: "P2"
+      component: "ai"
+      cost: "true"
+
+  - name: "AI Cache Miss Rate High"
+    severity: "warning"
+    service: "AI System"
+    description: "AI cache hit rate is low - increased costs"
+    query: "1 - (rate(holi_ai_cache_hits_total[1h]) / rate(holi_ai_requests_total[1h])) > 0.7"
+    for: "30m"
+    annotations:
+      summary: "AI cache efficiency degraded"
+      description: "More than 70% of AI requests are cache misses. Review caching strategy."
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-cache-miss"
+    labels:
+      severity: "P3"
+      component: "ai"
+      cost: "true"
+
+  - name: "AI Review Queue Backlog"
+    severity: "warning"
+    service: "AI System"
+    description: "Human review queue accumulating unreviewed items"
+    query: "holi_ai_review_queue_pending > 50"
+    for: "1h"
+    annotations:
+      summary: "AI review queue backlog"
+      description: "More than 50 AI-generated items pending human review. Clinical workflow may be impacted."
+      runbook_url: "https://docs.holilabs.xyz/runbooks/ai-review-backlog"
+    labels:
+      severity: "P3"
+      component: "ai"
 
   # ============================================================================
   # P4 - LOW PRIORITY ALERTS (24 hour response)
@@ -442,3 +589,19 @@ alert_grouping:
     repeat_interval: "5m"
     match:
       compliance: "hipaa"
+
+  - name: "AI System Issues"
+    group_by: ["component"]
+    group_wait: "30s"
+    group_interval: "5m"
+    repeat_interval: "30m"
+    match:
+      component: "ai"
+
+  - name: "AI Cost Alerts"
+    group_by: ["cost"]
+    group_wait: "1m"
+    group_interval: "10m"
+    repeat_interval: "1h"
+    match:
+      cost: "true"

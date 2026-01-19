@@ -210,8 +210,9 @@ export const POST = createPublicRoute(
       const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/portal/auth/verify?token=${verificationToken}`;
 
       // Send email verification email
+      let emailResult: any = null;
       try {
-        await sendEmailVerificationEmail(
+        emailResult = await sendEmailVerificationEmail(
           patientUser.email,
           `${patient.firstName} ${patient.lastName}`,
           verificationUrl
@@ -221,6 +222,7 @@ export const POST = createPublicRoute(
           event: 'portal_register_verification_sent',
           patientUserId: patientUser.id,
           patientId: patient.id,
+          emailSuccess: !!emailResult?.success,
         });
       } catch (emailError) {
         logger.error({
@@ -242,7 +244,8 @@ export const POST = createPublicRoute(
           method: 'registration',
           patientId: patient.id,
           mrn: patient.mrn,
-          emailSent: true,
+          emailSent: !!emailResult?.success,
+          emailDevInboxFile: emailResult?.data?.devInboxFile,
         },
         success: true,
       });
@@ -258,6 +261,13 @@ export const POST = createPublicRoute(
         {
           success: true,
           message: 'Account created successfully! Please check your email to verify your account.',
+          ...(process.env.NODE_ENV === 'development'
+            ? {
+                verificationUrl,
+                emailDevInboxFile: emailResult?.data?.devInboxFile,
+                emailConfigured: !!process.env.RESEND_API_KEY,
+              }
+            : {}),
           patient: {
             id: patient.id,
             firstName: patient.firstName,
