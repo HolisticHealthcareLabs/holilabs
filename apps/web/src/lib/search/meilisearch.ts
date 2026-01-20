@@ -34,6 +34,7 @@ const getMeiliClient = () => {
 
 // Index names
 export const PATIENT_INDEX = 'patients';
+export const MESSAGE_INDEX = 'messages';
 
 /**
  * Patient document for Meilisearch
@@ -389,4 +390,311 @@ export async function reindexAllPatients(prisma: any, batchSize: number = 100) {
  */
 export function getMeilisearchClient() {
   return getMeiliClient();
+}
+
+// ============================================================================
+// MESSAGE SEARCH
+// ============================================================================
+
+/**
+ * Message document for Meilisearch
+ */
+export interface MessageSearchDocument {
+  id: string;
+  patientId: string;
+  fromUserId: string;
+  fromUserType: 'CLINICIAN' | 'PATIENT';
+  fromUserName: string;
+  toUserId: string;
+  toUserType: 'CLINICIAN' | 'PATIENT';
+  body: string;
+  subject: string | null;
+  hasAttachments: boolean;
+  isRead: boolean;
+  createdAt: number; // Unix timestamp for sorting
+}
+
+/**
+ * Initialize Message search index
+ */
+export async function initializeMessageIndex() {
+  const client = getMeiliClient();
+
+  try {
+    const messageIndex = client.index(MESSAGE_INDEX);
+
+    // Configure searchable attributes (in order of importance)
+    await messageIndex.updateSearchableAttributes([
+      'body',
+      'subject',
+      'fromUserName',
+    ]);
+
+    // Configure filterable attributes
+    await messageIndex.updateFilterableAttributes([
+      'patientId',
+      'fromUserId',
+      'toUserId',
+      'fromUserType',
+      'toUserType',
+      'isRead',
+      'hasAttachments',
+    ]);
+
+    // Configure sortable attributes
+    await messageIndex.updateSortableAttributes(['createdAt']);
+
+    // Configure displayed attributes
+    await messageIndex.updateDisplayedAttributes([
+      'id',
+      'patientId',
+      'fromUserId',
+      'fromUserType',
+      'fromUserName',
+      'toUserId',
+      'toUserType',
+      'body',
+      'subject',
+      'hasAttachments',
+      'isRead',
+      'createdAt',
+    ]);
+
+    // Configure ranking rules
+    await messageIndex.updateRankingRules([
+      'words',
+      'typo',
+      'proximity',
+      'attribute',
+      'sort',
+      'exactness',
+      'createdAt:desc',
+    ]);
+
+    // Configure typo tolerance
+    await messageIndex.updateTypoTolerance({
+      enabled: true,
+      minWordSizeForTypos: {
+        oneTypo: 4,
+        twoTypos: 8,
+      },
+    });
+
+    console.log('✅ Message search index initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to initialize message search index:', error);
+    return false;
+  }
+}
+
+/**
+ * Index a single message document
+ */
+export async function indexMessage(message: MessageSearchDocument) {
+  const client = getMeiliClient();
+  const index = client.index(MESSAGE_INDEX);
+
+  try {
+    await index.addDocuments([message]);
+    return true;
+  } catch (error) {
+    console.error('Failed to index message:', error);
+    return false;
+  }
+}
+
+/**
+ * Index multiple message documents in bulk
+ */
+export async function indexMessages(messages: MessageSearchDocument[]) {
+  const client = getMeiliClient();
+  const index = client.index(MESSAGE_INDEX);
+
+  try {
+    await index.addDocuments(messages);
+    return true;
+  } catch (error) {
+    console.error('Failed to index messages:', error);
+    return false;
+  }
+}
+
+/**
+ * Update a message document (e.g., when marked as read)
+ */
+export async function updateMessageIndex(message: Partial<MessageSearchDocument> & { id: string }) {
+  const client = getMeiliClient();
+  const index = client.index(MESSAGE_INDEX);
+
+  try {
+    await index.updateDocuments([message]);
+    return true;
+  } catch (error) {
+    console.error('Failed to update message index:', error);
+    return false;
+  }
+}
+
+/**
+ * Delete a message from search index
+ */
+export async function deleteMessageFromIndex(messageId: string) {
+  const client = getMeiliClient();
+  const index = client.index(MESSAGE_INDEX);
+
+  try {
+    await index.deleteDocument(messageId);
+    return true;
+  } catch (error) {
+    console.error('Failed to delete message from index:', error);
+    return false;
+  }
+}
+
+/**
+ * Search messages with filters
+ */
+export interface MessageSearchOptions {
+  query: string;
+  patientId?: string; // Filter by conversation (patient context)
+  userId?: string; // Filter by participant (from or to)
+  fromUserType?: 'CLINICIAN' | 'PATIENT';
+  isRead?: boolean;
+  hasAttachments?: boolean;
+  limit?: number;
+  offset?: number;
+  sort?: string[];
+}
+
+export async function searchMessages(options: MessageSearchOptions) {
+  const client = getMeiliClient();
+  const index = client.index(MESSAGE_INDEX);
+
+  try {
+    // Build filter string
+    const filters: string[] = [];
+
+    if (options.patientId) {
+      filters.push(`patientId = "${options.patientId}"`);
+    }
+
+    if (options.userId) {
+      filters.push(`(fromUserId = "${options.userId}" OR toUserId = "${options.userId}")`);
+    }
+
+    if (options.fromUserType) {
+      filters.push(`fromUserType = "${options.fromUserType}"`);
+    }
+
+    if (options.isRead !== undefined) {
+      filters.push(`isRead = ${options.isRead}`);
+    }
+
+    if (options.hasAttachments !== undefined) {
+      filters.push(`hasAttachments = ${options.hasAttachments}`);
+    }
+
+    // Perform search
+    const results = await index.search(options.query, {
+      filter: filters.length > 0 ? filters.join(' AND ') : undefined,
+      limit: options.limit || 20,
+      offset: options.offset || 0,
+      sort: options.sort || ['createdAt:desc'],
+      attributesToHighlight: ['body', 'subject'],
+      attributesToCrop: ['body'],
+      cropLength: 100,
+    });
+
+    return {
+      hits: results.hits,
+      estimatedTotalHits: results.estimatedTotalHits,
+      query: results.query,
+      limit: results.limit,
+      offset: results.offset,
+      processingTimeMs: results.processingTimeMs,
+    };
+  } catch (error) {
+    console.error('Failed to search messages:', error);
+    throw error;
+  }
+}
+
+/**
+ * Reindex all messages from database
+ */
+export async function reindexAllMessages(prisma: any, batchSize: number = 100) {
+  const client = getMeiliClient();
+
+  try {
+    // Get total count
+    const totalMessages = await prisma.message.count({
+      where: { archivedAt: null },
+    });
+    console.log(`🔄 Reindexing ${totalMessages} messages...`);
+
+    // Process in batches
+    let processed = 0;
+    while (processed < totalMessages) {
+      const messages = await prisma.message.findMany({
+        where: { archivedAt: null },
+        take: batchSize,
+        skip: processed,
+        include: {
+          patient: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+
+      // Convert to search documents
+      const documents: MessageSearchDocument[] = await Promise.all(
+        messages.map(async (m: any) => {
+          // Get sender name based on type
+          let fromUserName = 'Unknown';
+          if (m.fromUserType === 'PATIENT') {
+            fromUserName = `${m.patient.firstName} ${m.patient.lastName}`;
+          } else {
+            const clinician = await prisma.user.findUnique({
+              where: { id: m.fromUserId },
+              select: { firstName: true, lastName: true },
+            });
+            if (clinician) {
+              fromUserName = `Dr. ${clinician.firstName} ${clinician.lastName}`;
+            }
+          }
+
+          return {
+            id: m.id,
+            patientId: m.patientId,
+            fromUserId: m.fromUserId,
+            fromUserType: m.fromUserType,
+            fromUserName,
+            toUserId: m.toUserId,
+            toUserType: m.toUserType,
+            body: m.body,
+            subject: m.subject,
+            hasAttachments: m.attachments && Array.isArray(m.attachments) && m.attachments.length > 0,
+            isRead: !!m.readAt,
+            createdAt: m.createdAt.getTime(),
+          };
+        })
+      );
+
+      // Index batch
+      await indexMessages(documents);
+
+      processed += messages.length;
+      console.log(`  ✓ Indexed ${processed}/${totalMessages} messages`);
+    }
+
+    console.log('✅ Message reindexing complete');
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to reindex messages:', error);
+    return false;
+  }
 }

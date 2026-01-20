@@ -32,6 +32,14 @@ import {
   signSoapNote,
   notifySoapNote,
 } from '@/lib/scribe/client/scribe-api';
+import type {
+  DetectedConditionFromServer,
+  RecommendationFromServer,
+} from '@/hooks/useRealtimePreventionUpdates';
+import { CoPilotPreventionAlerts } from '@/components/co-pilot/CoPilotPreventionAlerts';
+import { CoPilotPreventionHubMini } from '@/components/co-pilot/CoPilotPreventionHubMini';
+import { setSocketClient } from '@/lib/socket/client';
+import type { PreventionConditionDetectedPayload, PreventionFindingsProcessedPayload } from '@/lib/prevention/realtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -176,7 +184,7 @@ function CoPilotContent() {
     weight: '',
     height: '',
   });
-  const [rightPanelTab, setRightPanelTab] = useState<'risk' | 'labs' | 'uploads'>('risk');
+  const [rightPanelTab, setRightPanelTab] = useState<'risk' | 'labs' | 'uploads'>('labs');
   const [riskScores, setRiskScores] = useState<any[] | null>(null);
   const [documents, setDocuments] = useState<any[] | null>(null);
   const [activity, setActivity] = useState<any[] | null>(null);
@@ -209,6 +217,7 @@ function CoPilotContent() {
   const [scribeAttention, setScribeAttention] = useState(false);
   const [scribeDebug, setScribeDebug] = useState<{
     socketConnected: boolean;
+    serverReady: boolean;
     chunksSent: number;
     chunksAcked?: number;
     lastAudioAckAt?: number;
@@ -216,11 +225,22 @@ function CoPilotContent() {
     lastTranscriptAt?: number;
     lastRequestId?: string;
     lastError?: string;
+    lastStreamStatus?: string;
+    lastStreamStatusAt?: number;
+    sessionStartWallClockMs?: number;
   }>({
     socketConnected: false,
+    serverReady: false,
     chunksSent: 0,
   });
   const [scribeCooldownUntilMs, setScribeCooldownUntilMs] = useState<number | null>(null);
+
+  // Prevention Protocol Real-Time Integration (Phase 6)
+  const [preventionConditions, setPreventionConditions] = useState<DetectedConditionFromServer[]>([]);
+  const [preventionRecommendations, setPreventionRecommendations] = useState<RecommendationFromServer[]>([]);
+  const [showPreventionPanel, setShowPreventionPanel] = useState(true);
+  const [lastPreventionUpdateMs, setLastPreventionUpdateMs] = useState<number | null>(null);
+  const preventionAlertCount = preventionConditions.length + preventionRecommendations.length;
 
   const isScribeCoolingDown = scribeCooldownUntilMs != null && Date.now() < scribeCooldownUntilMs;
 
@@ -231,11 +251,31 @@ function CoPilotContent() {
     return () => clearTimeout(t);
   }, [scribeCooldownUntilMs]);
 
+  // Keep serverReadyRef in sync with scribeDebug.serverReady for use in callbacks
+  useEffect(() => {
+    serverReadyRef.current = scribeDebug.serverReady;
+  }, [scribeDebug.serverReady]);
+
+  // Keep sessionIdRef in sync with state.sessionId for use in socket callbacks
+  useEffect(() => {
+    sessionIdRef.current = state.sessionId;
+  }, [state.sessionId]);
+
+  // Keep selectedPatientId ref in sync for socket callbacks
+  const selectedPatientIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedPatientIdRef.current = selectedPatient?.id || null;
+  }, [selectedPatient?.id]);
+
   const traditionalRecorderRef = useRef<TraditionalRecorderHandle | null>(null);
   const traditionalStartedAtMsRef = useRef<number>(0);
   const [soapNoteRecord, setSoapNoteRecord] = useState<any | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const socketInitInFlightRef = useRef<boolean>(false);
+  // Ref to track server readiness (for use in callbacks that capture stale state)
+  const serverReadyRef = useRef<boolean>(false);
+  // Ref to track session ID (for use in socket callbacks that capture stale state)
+  const sessionIdRef = useRef<string | null>(null);
   const lastFindingsPersistMsRef = useRef<number>(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -307,6 +347,10 @@ function CoPilotContent() {
     onChunk: (chunk) => {
       const socket = wsRef.current as any;
       if (!socket || !state.sessionId || !state.isRecording) return;
+      // Wait for server to confirm room join before streaming audio.
+      // This prevents audio chunks from being sent to a room the client hasn't joined yet.
+      // Use ref since this callback may capture stale state.
+      if (!serverReadyRef.current) return;
 
       // If auto-detect is enabled, capture ~1.5s sample for detection *without* blocking streaming.
       // We still stream audio immediately (defaulting to English) so the transcript stays live.
@@ -508,6 +552,15 @@ function CoPilotContent() {
     window.setTimeout(() => setScribeAttention(false), 1200);
   };
 
+  const openCdsPanel = () => {
+    // Open first so embedded drawer is visible when we scroll.
+    setCdsOpen(true);
+    // Scroll the nearest scrollable ancestor (scribe panel) to the CDS section.
+    window.requestAnimationFrame(() => {
+      document.getElementById('cds-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   // Load patients
   useEffect(() => {
     if (session?.user?.id) {
@@ -570,6 +623,13 @@ function CoPilotContent() {
         setActivity([]);
       }
     })();
+  }, [selectedPatient?.id]);
+
+  // Reset prevention state when patient changes (Phase 6)
+  useEffect(() => {
+    setPreventionConditions([]);
+    setPreventionRecommendations([]);
+    setLastPreventionUpdateMs(null);
   }, [selectedPatient?.id]);
 
   useEffect(() => {
@@ -892,6 +952,121 @@ function CoPilotContent() {
 
   const dismissToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
+  // =============================================
+  // PREVENTION ACTION HANDLERS (Phase 6)
+  // =============================================
+
+  const handlePreventionCreateOrder = async (recommendation: RecommendationFromServer) => {
+    if (!selectedPatient) return;
+
+    try {
+      const response = await fetch('/api/prevention/hub/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: selectedPatient.id,
+          orderType: recommendation.type === 'screening' ? 'lab' : 'procedure',
+          orderDetails: {
+            code: recommendation.id,
+            display: recommendation.title,
+          },
+          priority: recommendation.priority === 'HIGH' ? 'urgent' : 'routine',
+          linkedInterventionId: recommendation.id,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create order');
+
+      showToast({
+        type: 'success',
+        title: 'Order Created',
+        message: `${recommendation.title} order placed`,
+      });
+
+      // Remove the recommendation from the list
+      setPreventionRecommendations((prev) => prev.filter((r) => r.id !== recommendation.id));
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Order Failed',
+        message: 'Could not create order',
+      });
+    }
+  };
+
+  const handlePreventionCreateReferral = async (recommendation: RecommendationFromServer) => {
+    if (!selectedPatient) return;
+
+    try {
+      // Extract specialty from recommendation title (e.g., "Refer to Ophthalmology")
+      const specialty = recommendation.title.replace(/^Refer(ral)? to /i, '') || 'Specialist';
+
+      const response = await fetch('/api/prevention/hub/create-referral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: selectedPatient.id,
+          specialty,
+          reason: recommendation.description || recommendation.title,
+          urgency: recommendation.priority === 'HIGH' ? 'urgent' : 'routine',
+          linkedInterventionId: recommendation.id,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create referral');
+
+      showToast({
+        type: 'success',
+        title: 'Referral Created',
+        message: `Referral to ${specialty} placed`,
+      });
+
+      // Remove the recommendation from the list
+      setPreventionRecommendations((prev) => prev.filter((r) => r.id !== recommendation.id));
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Referral Failed',
+        message: 'Could not create referral',
+      });
+    }
+  };
+
+  const handlePreventionCreateTask = async (recommendation: RecommendationFromServer) => {
+    if (!selectedPatient) return;
+
+    try {
+      const response = await fetch('/api/prevention/hub/create-patient-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: selectedPatient.id,
+          title: recommendation.title,
+          description: recommendation.description || `Follow ${recommendation.guidelineSource} guidelines`,
+          taskType: 'self_care',
+          linkedInterventionId: recommendation.id,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create task');
+
+      showToast({
+        type: 'success',
+        title: 'Task Assigned',
+        message: `Patient task "${recommendation.title}" created`,
+      });
+
+      // Remove the recommendation from the list
+      setPreventionRecommendations((prev) => prev.filter((r) => r.id !== recommendation.id));
+    } catch (error) {
+      showToast({
+        type: 'error',
+        title: 'Task Failed',
+        message: 'Could not create patient task',
+      });
+    }
+  };
+
   // Patient search: useDeferredValue keeps typing snappy while filtering + rendering large lists
   const deferredQuery = useDeferredValue(searchQuery);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
@@ -967,9 +1142,14 @@ function CoPilotContent() {
       });
 
       wsRef.current = socket as any;
+      // Register this socket as the singleton so Prevention Hub subscribers can reuse it.
+      try {
+        setSocketClient(socket as any);
+      } catch {}
 
       const startRealtimeAudioStreaming = () => {
-        if (!useRealTimeMode || !audioStream || !state.sessionId) return;
+        // Use sessionIdRef.current to avoid stale closure
+        if (!useRealTimeMode || !audioStream || !sessionIdRef.current) return;
         try {
           // Initialize per-recording language mode.
           if (speechLanguage === 'auto') {
@@ -1006,10 +1186,17 @@ function CoPilotContent() {
 
       socket.on('connect', () => {
         console.log('✅ Co-Pilot Socket.io connected');
-        setScribeDebug((prev) => ({ ...prev, socketConnected: true }));
-        
+        // Reset serverReady - will be set when we receive co_pilot:server_ready after joining
+        setScribeDebug((prev) => ({ ...prev, socketConnected: true, serverReady: false }));
+
         // Join co-pilot session room
-        socket.emit('co_pilot:join_session', { sessionId: state.sessionId });
+        // Use sessionIdRef.current to avoid stale closure capturing old state.sessionId
+        const currentSessionId = sessionIdRef.current;
+        if (currentSessionId) {
+          socket.emit('co_pilot:join_session', { sessionId: currentSessionId });
+        } else {
+          console.warn('⚠️ Socket connected but sessionId not yet available');
+        }
 
         // Start streaming audio to server for Deepgram→Presidio→UI hard guarantee.
         // IMPORTANT: socket may connect before audioStream state is set; startRealtimeAudioStreaming()
@@ -1025,6 +1212,7 @@ function CoPilotContent() {
       socket.on('co_pilot:transcript_update', (data: any) => {
         const nowS = Date.now() / 1000;
         const seg = {
+          id: data.id,
           speaker: data.speaker || 'Speaker 1',
           text: data.text,
           // Server emits seconds; keep UI consistent if we fall back.
@@ -1032,6 +1220,7 @@ function CoPilotContent() {
           endTime: typeof data.endTime === 'number' ? data.endTime : nowS,
           confidence: typeof data.confidence === 'number' ? data.confidence : 0.9,
           isFinal: typeof data.isFinal === 'boolean' ? data.isFinal : false,
+          capturedAtMs: typeof data.capturedAtMs === 'number' ? data.capturedAtMs : Date.now(),
         };
         appendTranscript(seg);
         setScribeDebug((prev) => ({ ...prev, lastTranscriptAt: Date.now() }));
@@ -1082,7 +1271,14 @@ function CoPilotContent() {
       });
 
       socket.on('co_pilot:server_ready', (data: any) => {
-        setScribeDebug((prev) => ({ ...prev, lastServerReadyAt: Date.now() }));
+        const now = Date.now();
+        setScribeDebug((prev) => ({
+          ...prev,
+          serverReady: true,
+          lastServerReadyAt: now,
+          // Track session start for wall-clock timestamp calculation
+          sessionStartWallClockMs: prev.sessionStartWallClockMs || now,
+        }));
       });
 
       socket.on('co_pilot:audio_ack', (data: any) => {
@@ -1091,6 +1287,23 @@ function CoPilotContent() {
           ...prev,
           chunksAcked: Number.isFinite(n) ? n : prev.chunksAcked,
           lastAudioAckAt: Date.now(),
+        }));
+      });
+
+      socket.on('co_pilot:stream_status', (data: any) => {
+        const type = String(data?.type || 'status');
+        const msg =
+          type === 'close'
+            ? `stream closed (${String(data?.code || '')} ${String(data?.reason || '').slice(0, 80)})`
+            : type === 'reconnect'
+              ? `reconnect attempt ${String(data?.attempt ?? '')} in ${String(data?.delayMs ?? '')}ms`
+              : type === 'warning'
+                ? `warning: ${String(data?.message || '').slice(0, 120)}`
+                : String(type);
+        setScribeDebug((prev) => ({
+          ...prev,
+          lastStreamStatus: msg,
+          lastStreamStatusAt: Date.now(),
         }));
       });
 
@@ -1125,6 +1338,89 @@ function CoPilotContent() {
         });
       });
 
+      // =============================================
+      // PREVENTION ENGINE REAL-TIME LISTENERS (Phase 6)
+      // =============================================
+
+      socket.on('prevention:condition_detected', (data: PreventionConditionDetectedPayload) => {
+        // Only process if for current patient
+        if (data.patientId !== selectedPatientIdRef.current) return;
+
+        console.log('🛡️ Prevention condition detected:', data.conditions.length, 'conditions');
+
+        setPreventionConditions((prev) => {
+          const existingIds = new Set(prev.map((c) => c.id));
+          const newConditions = data.conditions.filter((c) => !existingIds.has(c.id));
+          return [...prev, ...newConditions];
+        });
+
+        setLastPreventionUpdateMs(Date.now());
+
+        // Show toast for high-confidence conditions
+        const highConfidenceConditions = data.conditions.filter((c) => {
+          const conf01 = Number(c.confidence) > 1 ? Number(c.confidence) / 100 : Number(c.confidence);
+          return Number.isFinite(conf01) && conf01 > 0.8;
+        });
+        if (highConfidenceConditions.length > 0) {
+          showToast({
+            type: 'info',
+            title: 'Prevention Alert',
+            message: `${highConfidenceConditions[0].name} detected - review recommendations`,
+            duration: 5000,
+          });
+        }
+      });
+
+      socket.on('prevention:findings_processed', (data: PreventionFindingsProcessedPayload) => {
+        // Only process if for current patient
+        if (data.patientId !== selectedPatientIdRef.current) return;
+
+        console.log('🛡️ Prevention findings processed:', data.conditions.length, 'conditions,', data.recommendations.length, 'recommendations in', data.processingTimeMs, 'ms');
+
+        // Update conditions
+        setPreventionConditions((prev) => {
+          const existingIds = new Set(prev.map((c) => c.id));
+          const newConditions = data.conditions
+            .filter((c) => !existingIds.has(c.id))
+            .map((c) => ({
+              id: c.id,
+              name: c.name,
+              category: c.category,
+              confidence: c.confidence,
+            }));
+          return [...prev, ...newConditions];
+        });
+
+        // Update recommendations
+        setPreventionRecommendations((prev) => {
+          const existingIds = new Set(prev.map((r) => r.id));
+          const newRecs = data.recommendations
+            .filter((r) => !existingIds.has(r.id))
+            .map((r) => ({
+              id: r.id,
+              type: r.type as RecommendationFromServer['type'],
+              title: r.title,
+              description: r.description || '',
+              priority: r.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+              guidelineSource: r.guidelineSource || '',
+            }));
+          return [...prev, ...newRecs];
+        });
+
+        setLastPreventionUpdateMs(Date.now());
+
+        // Show aggregated toast if multiple items
+        if (data.conditions.length > 0 || data.recommendations.length > 0) {
+          const totalItems = data.conditions.length + data.recommendations.length;
+          showToast({
+            type: 'info',
+            title: 'Prevention Recommendations',
+            message: `${totalItems} prevention item${totalItems > 1 ? 's' : ''} available`,
+            duration: 4000,
+          });
+        }
+      });
+
       socket.on('error', (error: any) => {
         console.error('Socket.io error:', error);
         const msg = typeof error === 'string' ? error : error?.message || 'Socket error';
@@ -1145,7 +1441,7 @@ function CoPilotContent() {
 
       socket.on('disconnect', () => {
         console.log('Socket.io disconnected');
-        setScribeDebug((prev) => ({ ...prev, socketConnected: false }));
+        setScribeDebug((prev) => ({ ...prev, socketConnected: false, serverReady: false }));
         wsRef.current = null;
       });
 
@@ -1301,11 +1597,20 @@ function CoPilotContent() {
         throw new Error(created.message || created.error);
       }
 
+      // Set sessionIdRef immediately so socket handlers have access before React state updates
+      sessionIdRef.current = created.data.id;
       setSessionId(created.data.id);
       setIsRecording(true);
 
       setAudioStream(stream);
-      setScribeDebug((prev) => ({ ...prev, chunksSent: 0, lastError: undefined, lastTranscriptAt: undefined }));
+      setScribeDebug((prev) => ({
+        ...prev,
+        chunksSent: 0,
+        serverReady: false,
+        lastError: undefined,
+        lastTranscriptAt: undefined,
+        sessionStartWallClockMs: Date.now(),
+      }));
 
       if (useRealTimeMode) {
         // Real-time mode - WebSocket handles everything
@@ -1742,9 +2047,7 @@ function CoPilotContent() {
                     if (toolId === 'scribe') {
                       focusScribePanel();
                     } else if (toolId === 'cds') {
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                      setCdsOpen(true);
-                      document.getElementById('cds-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      openCdsPanel();
                     } else if (toolId === 'risk') {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                       openRiskPanel();
@@ -1818,16 +2121,27 @@ function CoPilotContent() {
                   <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
                     Status:{' '}
                     {state.isRecording ? (
-                      <span className="font-semibold text-red-600 dark:text-red-400">Recording</span>
+                      scribeDebug.serverReady ? (
+                        <span className="font-semibold text-red-600 dark:text-red-400">Recording (streaming)</span>
+                      ) : (
+                        <span className="font-semibold text-amber-600 dark:text-amber-400">Recording (connecting...)</span>
+                      )
                     ) : scribeDebug.socketConnected ? (
                       <span className="font-semibold text-green-700 dark:text-green-400">Connected</span>
                     ) : (
                       <span className="font-semibold text-gray-700 dark:text-gray-300">Idle</span>
                     )}
-                    <span className="ml-2 text-gray-500">
-                      • chunks sent {scribeDebug.chunksSent}
-                      {typeof scribeDebug.chunksAcked === 'number' ? ` • server rx ~${scribeDebug.chunksAcked}` : ''}
-                    </span>
+                    <div className="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
+                      chunks sent {scribeDebug.chunksSent}
+                      {typeof scribeDebug.chunksAcked === 'number' ? ` • server rx ~${scribeDebug.chunksAcked}` : ' • server rx n/a'}
+                      {scribeDebug.lastAudioAckAt ? (
+                        <span>
+                          {' '}
+                          • server last saw audio{' '}
+                          {Math.max(0, Math.round((Date.now() - scribeDebug.lastAudioAckAt) / 1000))}s ago
+                        </span>
+                      ) : null}
+                    </div>
                     {scribeDebug.lastTranscriptAt ? (
                       <span className="ml-2 text-gray-500">
                         last transcript {Math.max(0, Math.round((Date.now() - scribeDebug.lastTranscriptAt) / 1000))}s ago
@@ -1839,9 +2153,15 @@ function CoPilotContent() {
                       Audio worklet error: {audioRecorder.lastError}
                     </div>
                   ) : null}
-                  {scribeDebug.lastAudioAckAt ? (
+                  {scribeDebug.lastStreamStatus ? (
                     <div className="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
-                      Server last saw audio {Math.max(0, Math.round((Date.now() - scribeDebug.lastAudioAckAt) / 1000))}s ago
+                      Stream: {scribeDebug.lastStreamStatus}
+                      {scribeDebug.lastStreamStatusAt ? (
+                        <span className="text-gray-500">
+                          {' '}
+                          • {Math.max(0, Math.round((Date.now() - scribeDebug.lastStreamStatusAt) / 1000))}s ago
+                        </span>
+                      ) : null}
                     </div>
                   ) : null}
                   {scribeDebug.lastRequestId ? (
@@ -2066,7 +2386,7 @@ function CoPilotContent() {
                 {/* Clinical Decision Support Tool */}
                 <button
                   onClick={() => {
-                    setCdsOpen(true);
+                    openCdsPanel();
                   }}
                   className="group relative p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 hover:from-cyan-500/20 hover:to-blue-600/20 border border-cyan-200/50 dark:border-cyan-700/30 transition-all hover:shadow-lg"
                 >
@@ -2079,6 +2399,28 @@ function CoPilotContent() {
                     <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">CDS</span>
                   </div>
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-500/0 to-blue-600/0 group-hover:from-cyan-500/5 group-hover:to-blue-600/5 transition-all"></div>
+                </button>
+
+                {/* Labs Tool */}
+                <button
+                  onClick={() => {
+                    if (!selectedPatient) {
+                      showToast({ type: 'warning', title: 'Select a patient first', message: 'Choose a patient to start a consultation.' });
+                      return;
+                    }
+                    openLabsPanel();
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 hover:from-indigo-500/20 hover:to-purple-600/20 border border-indigo-200/50 dark:border-indigo-700/30 transition-all hover:shadow-lg"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Labs</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-500/0 to-purple-600/0 group-hover:from-indigo-500/5 group-hover:to-purple-600/5 transition-all"></div>
                 </button>
 
                 {/* Risk Stratification Tool */}
@@ -2098,9 +2440,32 @@ function CoPilotContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Risk Score</span>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Risk</span>
                   </div>
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-500/0 to-orange-600/0 group-hover:from-amber-500/5 group-hover:to-orange-600/5 transition-all"></div>
+                </button>
+
+                {/* Uploads Tool */}
+                <button
+                  onClick={() => {
+                    if (!selectedPatient) {
+                      showToast({ type: 'warning', title: 'Select a patient first', message: 'Choose a patient to start a consultation.' });
+                      return;
+                    }
+                    openUploadsPanel();
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-gray-500/10 to-slate-600/10 hover:from-gray-500/20 hover:to-slate-600/20 border border-gray-200/50 dark:border-gray-700/30 transition-all hover:shadow-lg"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-700 to-slate-800 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 000 2.828l2 2a2 2 0 002.828 0L20 11.828a4 4 0 000-5.656l-1.172-1.172a4 4 0 00-5.656 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 15l-2 2a2 2 0 000 2.828l.172.172a2 2 0 002.828 0l2-2" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Uploads</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-500/0 to-slate-600/0 group-hover:from-gray-500/5 group-hover:to-slate-600/5 transition-all"></div>
                 </button>
 
                 {/* Prevention Hub Tool */}
@@ -2123,28 +2488,6 @@ function CoPilotContent() {
                     <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Prevention</span>
                   </div>
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-500/0 to-teal-600/0 group-hover:from-emerald-500/5 group-hover:to-teal-600/5 transition-all"></div>
-                </button>
-
-                {/* Lab Insights Tool */}
-                <button
-                  onClick={() => {
-                    if (!selectedPatient) {
-                      showToast({ type: 'warning', title: 'Select a patient first', message: 'Choose a patient to start a consultation.' });
-                      return;
-                    }
-                    openLabsPanel();
-                  }}
-                  className="group relative p-4 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-600/10 hover:from-indigo-500/20 hover:to-purple-600/20 border border-indigo-200/50 dark:border-indigo-700/30 transition-all hover:shadow-lg"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                      </svg>
-                    </div>
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Lab Insights</span>
-                  </div>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-500/0 to-purple-600/0 group-hover:from-indigo-500/5 group-hover:to-purple-600/5 transition-all"></div>
                 </button>
 
                 {/* Add More Tools Button */}
@@ -2172,6 +2515,32 @@ function CoPilotContent() {
                 </button>
               </div>
             </div>
+
+            {/* Real-Time Prevention Alerts Panel (Phase 6) */}
+            {selectedPatient && state.isRecording && (
+              <CoPilotPreventionAlerts
+                patientId={selectedPatient.id}
+                conditions={preventionConditions}
+                recommendations={preventionRecommendations}
+                isExpanded={showPreventionPanel}
+                onToggleExpand={() => setShowPreventionPanel(!showPreventionPanel)}
+                alertCount={preventionAlertCount}
+                onCreateOrder={handlePreventionCreateOrder}
+                onCreateReferral={handlePreventionCreateReferral}
+                onCreateTask={handlePreventionCreateTask}
+                onViewFullHub={() => window.open(`/dashboard/prevention?patientId=${selectedPatient.id}`, '_blank')}
+                lastUpdateMs={lastPreventionUpdateMs}
+              />
+            )}
+
+            {/* Embedded Prevention Hub (mini) */}
+            {selectedPatient ? (
+              <CoPilotPreventionHubMini
+                patientId={selectedPatient.id}
+                refreshToken={lastPreventionUpdateMs || undefined}
+                onOpenFullHub={() => window.open(`/dashboard/prevention/hub?patient=${selectedPatient.id}`, '_blank')}
+              />
+            ) : null}
 
             {/* Patient Snapshot (auto-filled EHR context) */}
             {selectedPatient && (
@@ -2479,16 +2848,6 @@ function CoPilotContent() {
                   </div>
                   <div className="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
                     <button
-                      onClick={() => setRightPanelTab('risk')}
-                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${
-                        rightPanelTab === 'risk'
-                          ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
-                          : 'text-gray-600 dark:text-gray-300'
-                      }`}
-                    >
-                      Risk
-                    </button>
-                    <button
                       onClick={() => setRightPanelTab('labs')}
                       className={`px-3 py-2 text-sm font-semibold rounded-lg ${
                         rightPanelTab === 'labs'
@@ -2497,6 +2856,16 @@ function CoPilotContent() {
                       }`}
                     >
                       Labs
+                    </button>
+                    <button
+                      onClick={() => setRightPanelTab('risk')}
+                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${
+                        rightPanelTab === 'risk'
+                          ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
+                          : 'text-gray-600 dark:text-gray-300'
+                      }`}
+                    >
+                      Risk
                     </button>
                     <button
                       onClick={() => setRightPanelTab('uploads')}
@@ -2794,6 +3163,7 @@ function CoPilotContent() {
                               kind: d.documentType,
                               addedAt: d.createdAt,
                               previewUrl: d.storageUrl,
+                              mimeType: d.fileType,
                             }));
                             setCdsAttachments((prev) => [...prev, ...refs]);
                             setCdsOpen(true);

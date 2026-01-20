@@ -206,14 +206,33 @@ export const POST = createProtectedRoute(
             processingTimeMs: preventionResult.processingTimeMs,
           });
 
-          // Emit prevention results to co-pilot session
-          if (preventionResult.detectedConditions.length > 0) {
+          // Emit prevention results to co-pilot session.
+          // IMPORTANT: Normalize payload for browser consumers:
+          // - strip server-only fields
+          // - ensure JSON-safe types (no Date objects)
+          // - normalize confidence to 0..1
+          if (preventionResult.detectedConditions.length > 0 || preventionResult.recommendations.length > 0) {
             emitCoPilotEvent(sessionId, 'prevention:findings_processed', {
               patientId: session.patientId,
               encounterId: encounter.id,
-              conditions: preventionResult.detectedConditions,
-              recommendations: preventionResult.recommendations,
+              conditions: preventionResult.detectedConditions.map((c: any) => ({
+                id: String(c.id),
+                name: String(c.name),
+                category: String(c.category),
+                confidence: Math.max(0, Math.min(1, Number(c.confidence) / 100)),
+                icd10Codes: Array.isArray(c.icd10Codes) ? c.icd10Codes.map(String) : undefined,
+              })),
+              recommendations: preventionResult.recommendations.map((r: any) => ({
+                id: String(r.id),
+                type: r.type,
+                title: String(r.title),
+                description: String(r.description || ''),
+                priority: r.priority,
+                guidelineSource: String(r.guidelineSource || ''),
+                uspstfGrade: r.uspstfGrade ? String(r.uspstfGrade) : undefined,
+              })),
               processingTimeMs: preventionResult.processingTimeMs,
+              timestamp: new Date().toISOString(),
             });
           }
         }

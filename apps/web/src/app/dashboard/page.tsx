@@ -293,145 +293,153 @@ export default function DashboardCommandCenter() {
       </header>
 
       {/* Main Content - Command Center Layout */}
-      <div className="container mx-auto px-6 py-8">
-        {/* New KPI Widgets Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {widgets.find((w) => w.id === 'ai-time')?.enabled && <AITimeReclaimedWidgetRadial />}
-          {widgets.find((w) => w.id === 'pending-results')?.enabled && <PendingResultsWidget />}
-          {widgets.find((w) => w.id === 'adherence')?.enabled && <AdherenceScoreWidget />}
-          {widgets.find((w) => w.id === 'billable')?.enabled && <BillableValueWidget />}
+      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* KPI Widgets (responsive bento row) */}
+        <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-6 mb-8">
+          {widgets.find((w) => w.id === 'ai-time')?.enabled && (
+            <div className="min-w-0 md:col-span-3 xl:col-span-3">
+              <AITimeReclaimedWidgetRadial />
+            </div>
+          )}
+          {widgets.find((w) => w.id === 'pending-results')?.enabled && (
+            <div className="min-w-0 md:col-span-3 xl:col-span-3">
+              <PendingResultsWidget />
+            </div>
+          )}
+          {widgets.find((w) => w.id === 'adherence')?.enabled && (
+            <div className="min-w-0 md:col-span-3 xl:col-span-3">
+              <AdherenceScoreWidget />
+            </div>
+          )}
+          {widgets.find((w) => w.id === 'billable')?.enabled && (
+            <div className="min-w-0 md:col-span-3 xl:col-span-3">
+              <BillableValueWidget />
+            </div>
+          )}
           {widgets.find((w) => w.id === 'rlhf-metrics')?.enabled && (
-            <CorrectionMetricsWidget
-              dateRange={{
-                startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-                endDate: new Date()
-              }}
-            />
+            <div className="min-w-0 md:col-span-6 xl:col-span-6">
+              <CorrectionMetricsWidget
+                dateRange={{
+                  startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                  endDate: new Date(),
+                }}
+              />
+            </div>
           )}
         </div>
 
-        {/* Key Metrics - Enhanced with trends */}
-        <EnhancedStatCardGrid columns={4} className="mb-8 dashboard-stats">
-          <EnhancedStatCard
-            label="Total Active Patients"
-            value={stats.totalPatients}
-            change={{ value: 8.2, trend: 'up', period: 'vs last week' }}
-            trendData={trendData.patients}
-            icon={
-              <div className="relative w-8 h-8">
-                <Image
-                  src="/icons/people (1).svg"
-                  alt="Patients"
-                  width={32}
-                  height={32}
-                  className="dark:invert"
-                />
-              </div>
-            }
-            variant="primary"
-            onClick={() => router.push('/dashboard/patients')}
-            tooltip={{
-              title: 'Patient Statistics',
-              details: [
-                { label: 'Active patients', value: stats.activePatients },
-                { label: 'New this week', value: 12 },
-                { label: 'Total appointments', value: 145 },
-              ],
-            }}
-            badge={{ text: 'Growing', variant: 'success' }}
-          />
+        {/* Key Metrics (responsive, no overflow/overlap) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8 dashboard-stats">
+          <div className="min-w-0">
+            <EnhancedStatCard
+              label="Total Active Patients"
+              value={stats.totalPatients}
+              change={{ value: 8.2, trend: 'up', period: 'vs last week' }}
+              trendData={trendData.patients}
+              icon={
+                <div className="relative w-8 h-8">
+                  <Image src="/icons/people (1).svg" alt="Patients" width={32} height={32} className="dark:invert" />
+                </div>
+              }
+              variant="primary"
+              onClick={() => router.push('/dashboard/patients')}
+              tooltip={{
+                title: 'Patient Statistics',
+                details: [
+                  { label: 'Active patients', value: stats.activePatients },
+                  { label: 'New this week', value: 12 },
+                  { label: 'Total appointments', value: 145 },
+                ],
+              }}
+              badge={{ text: 'Growing', variant: 'success' }}
+            />
+          </div>
 
-          <EnhancedStatCard
-            label="Scheduled Appointments"
-            value={stats.todayAppointments}
-            change={{ value: 12.5, trend: 'up', period: 'vs yesterday' }}
-            trendData={trendData.appointments}
-            icon={
-              <div className="relative w-8 h-8">
-                <Image
-                  src="/icons/calendar.svg"
-                  alt="Appointments"
-                  width={32}
-                  height={32}
-                  className="dark:invert"
-                />
-              </div>
-            }
-            variant="success"
-            onClick={() => router.push('/dashboard/appointments')}
-            tooltip={{
-              title: "Today's Schedule",
-              details: [
-                { label: 'Completed', value: 3 },
-                { label: 'Upcoming', value: 5 },
-                { label: 'Cancelled', value: 0 },
-              ],
-            }}
-            badge={{ text: 'Today', variant: 'info' }}
-          />
+          <div className="min-w-0">
+            <EnhancedStatCard
+              label="Scheduled Appointments"
+              value={stats.todayAppointments}
+              change={{ value: 12.5, trend: 'up', period: 'vs yesterday' }}
+              trendData={trendData.appointments}
+              icon={
+                <div className="relative w-8 h-8">
+                  <Image src="/icons/calendar.svg" alt="Appointments" width={32} height={32} className="dark:invert" />
+                </div>
+              }
+              variant="success"
+              onClick={() => router.push('/dashboard/appointments')}
+              tooltip={{
+                title: "Today's Schedule",
+                details: [
+                  { label: 'Completed', value: 3 },
+                  { label: 'Upcoming', value: 5 },
+                  { label: 'Cancelled', value: 0 },
+                ],
+              }}
+              badge={{ text: 'Today', variant: 'info' }}
+            />
+          </div>
 
-          <EnhancedStatCard
-            label="Signed Prescriptions"
-            value={stats.prescriptionsToday}
-            change={{ value: 5.3, trend: 'up', period: 'vs last week' }}
-            trendData={trendData.prescriptions}
-            icon={
-              <div className="relative w-8 h-8">
-                <Image
-                  src="/icons/rx.svg"
-                  alt="Prescriptions"
-                  width={32}
-                  height={32}
-                  className="dark:invert"
-                />
-              </div>
-            }
-            variant="warning"
-            onClick={() => router.push('/dashboard/prescriptions')}
-            tooltip={{
-              title: 'Prescription Activity',
-              details: [
-                { label: 'Signed today', value: stats.prescriptionsToday },
-                { label: 'Pending signature', value: 0 },
-                { label: 'This month', value: 87 },
-              ],
-            }}
-          />
+          <div className="min-w-0">
+            <EnhancedStatCard
+              label="Signed Prescriptions"
+              value={stats.prescriptionsToday}
+              change={{ value: 5.3, trend: 'up', period: 'vs last week' }}
+              trendData={trendData.prescriptions}
+              icon={
+                <div className="relative w-8 h-8">
+                  <Image src="/icons/rx.svg" alt="Prescriptions" width={32} height={32} className="dark:invert" />
+                </div>
+              }
+              variant="warning"
+              onClick={() => router.push('/dashboard/prescriptions')}
+              tooltip={{
+                title: 'Prescription Activity',
+                details: [
+                  { label: 'Signed today', value: stats.prescriptionsToday },
+                  { label: 'Pending signature', value: 0 },
+                  { label: 'This month', value: 87 },
+                ],
+              }}
+            />
+          </div>
 
-          <EnhancedStatCard
-            label="Clinical Notes"
-            value={24}
-            change={{ value: 18.7, trend: 'up', period: 'vs last week' }}
-            trendData={[18, 20, 19, 22, 21, 23, 24]}
-            icon={
-              <div className="relative w-8 h-8">
-                <Image
-                  src="/icons/i-note_action.svg"
-                  alt="Clinical Notes"
-                  width={32}
-                  height={32}
-                  className="dark:invert"
-                />
-              </div>
-            }
-            variant="default"
-            onClick={() => router.push('/dashboard/notes')}
-            tooltip={{
-              title: 'Documentation',
-              details: [
-                { label: 'Notes this week', value: 24 },
-                { label: 'AI Scribe sessions', value: 18 },
-                { label: 'Avg time saved', value: '8 min' },
-              ],
-            }}
-            badge={{ text: 'This week', variant: 'info' }}
-          />
-        </EnhancedStatCardGrid>
+          <div className="min-w-0">
+            <EnhancedStatCard
+              label="Clinical Notes"
+              value={24}
+              change={{ value: 18.7, trend: 'up', period: 'vs last week' }}
+              trendData={[18, 20, 19, 22, 21, 23, 24]}
+              icon={
+                <div className="relative w-8 h-8">
+                  <Image
+                    src="/icons/i-note_action.svg"
+                    alt="Clinical Notes"
+                    width={32}
+                    height={32}
+                    className="dark:invert"
+                  />
+                </div>
+              }
+              variant="default"
+              onClick={() => router.push('/dashboard/notes')}
+              tooltip={{
+                title: 'Documentation',
+                details: [
+                  { label: 'Notes this week', value: 24 },
+                  { label: 'AI Scribe sessions', value: 18 },
+                  { label: 'Avg time saved', value: '8 min' },
+                ],
+              }}
+              badge={{ text: 'This week', variant: 'info' }}
+            />
+          </div>
+        </div>
 
-        {/* Command Center Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Command Center Grid (bento columns; prevents overlap at odd widths) */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* Left Column - Activity & AI Insights */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="min-w-0 xl:col-span-8 space-y-6">
             {/* Activity Timeline */}
             <ActivityTimeline
               activities={recentActivities}
@@ -461,7 +469,7 @@ export default function DashboardCommandCenter() {
           </div>
 
           {/* Right Column - Notifications & Quick Actions */}
-          <div className="space-y-6">
+          <div className="min-w-0 xl:col-span-4 space-y-6">
             {/* Review Queue Widget */}
             <ReviewQueueWidget />
 

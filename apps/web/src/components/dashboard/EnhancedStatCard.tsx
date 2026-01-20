@@ -320,8 +320,9 @@ export function EnhancedStatCard({
               <div className={`mt-4 ${colors.sparkline}`}>
                 <Sparkline
                   data={trendData}
-                  width={180}
-                  height={50}
+                  // Keep charts from overflowing narrow grid cells.
+                  width={140}
+                  height={44}
                   showDots={false}
                   animate={true}
                 />
