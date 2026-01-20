@@ -489,6 +489,22 @@ export class MedicalAudioStreamer extends EventEmitter {
             }))
           : [];
 
+        // Deepgram provides segment timing at the payload level even when word timing/diarization is absent.
+        // Use this for stable "log" timestamps and correct interim→final upserts.
+        const payloadStartSec = typeof payload?.start === 'number' ? payload.start : undefined;
+        const payloadDurationSec = typeof payload?.duration === 'number' ? payload.duration : undefined;
+        const fallbackStartMs =
+          typeof payloadStartSec === 'number' && Number.isFinite(payloadStartSec)
+            ? Math.max(0, Math.round(payloadStartSec * 1000))
+            : undefined;
+        const fallbackEndMs =
+          typeof payloadStartSec === 'number' &&
+          Number.isFinite(payloadStartSec) &&
+          typeof payloadDurationSec === 'number' &&
+          Number.isFinite(payloadDurationSec)
+            ? Math.max(0, Math.round((payloadStartSec + payloadDurationSec) * 1000))
+            : undefined;
+
         // Diarization edge-case: interruption / mixed speakers in one payload.
         // We split the transcript by speaker index using word-level diarization.
         const segments = this.splitBySpeaker({
@@ -496,6 +512,10 @@ export class MedicalAudioStreamer extends EventEmitter {
           words,
           isFinal,
           confidence: alt?.confidence ?? 0.9,
+          fallbackTimingMs:
+            typeof fallbackStartMs === 'number' && typeof fallbackEndMs === 'number'
+              ? { startTimeMs: fallbackStartMs, endTimeMs: fallbackEndMs }
+              : undefined,
         });
 
         if (!segments.length) return;
@@ -654,13 +674,22 @@ export class MedicalAudioStreamer extends EventEmitter {
     words: MedicalWord[];
     confidence: number;
     isFinal: boolean;
+    fallbackTimingMs?: { startTimeMs: number; endTimeMs: number };
   }): MedicalSegment[] {
-    const { rawText, words, confidence, isFinal } = params;
+    const { rawText, words, confidence, isFinal, fallbackTimingMs } = params;
 
     // If diarization data is absent, emit as a single speaker-unknown segment.
     const hasSpeaker = words.some((w) => typeof w.speaker === 'number');
     if (!words.length || !hasSpeaker) {
       const now = Date.now();
+      const startTimeMs =
+        typeof fallbackTimingMs?.startTimeMs === 'number' && Number.isFinite(fallbackTimingMs.startTimeMs)
+          ? fallbackTimingMs.startTimeMs
+          : now;
+      const endTimeMs =
+        typeof fallbackTimingMs?.endTimeMs === 'number' && Number.isFinite(fallbackTimingMs.endTimeMs)
+          ? fallbackTimingMs.endTimeMs
+          : startTimeMs;
       return [
         {
           speaker: 'Speaker 1',
@@ -669,8 +698,8 @@ export class MedicalAudioStreamer extends EventEmitter {
           text: rawText,
           confidence: Number.isFinite(confidence) ? confidence : 0.9,
           isFinal,
-          startTimeMs: now,
-          endTimeMs: now,
+          startTimeMs,
+          endTimeMs,
           words,
         },
       ];

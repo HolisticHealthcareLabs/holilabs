@@ -58,6 +58,11 @@ export function CDSChatDrawer({
   const [showPromptPreview, setShowPromptPreview] = useState(false);
   const [importMenuOpen, setImportMenuOpen] = useState(false);
   const importMenuRef = useRef<HTMLDivElement | null>(null);
+  const [imageLightbox, setImageLightbox] = useState<{
+    id: string;
+    url: string;
+    name: string;
+  } | null>(null);
 
   // Gemini-style "plus" imports (explicit toggles)
   const [includeLabs, setIncludeLabs] = useState(false);
@@ -300,6 +305,47 @@ export function CDSChatDrawer({
 
   return (
     <Shell>
+        {/* Image lightbox (for attachments) */}
+        {imageLightbox ? (
+          <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <button
+              className="absolute inset-0 cursor-zoom-out"
+              onClick={() => setImageLightbox(null)}
+              aria-label="Close image preview"
+            />
+            <div className="relative z-[10000] w-full max-w-5xl">
+              <div className="absolute top-2 right-2 flex items-center gap-2">
+                {onRemoveAttachment ? (
+                  <button
+                    onClick={() => {
+                      onRemoveAttachment(imageLightbox.id);
+                      setImageLightbox(null);
+                    }}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white"
+                    title="Unattach"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+                <button
+                  onClick={() => setImageLightbox(null)}
+                  className="w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white text-lg font-bold flex items-center justify-center"
+                  title="Close"
+                >
+                  ×
+                </button>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageLightbox.url}
+                alt={imageLightbox.name}
+                className="w-full max-h-[85vh] object-contain rounded-xl bg-white"
+              />
+              <div className="mt-2 text-xs text-white/80 truncate">{imageLightbox.name}</div>
+            </div>
+          </div>
+        ) : null}
+
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold text-gray-900 dark:text-white">Clinical Decision Support Agent</div>
@@ -430,7 +476,10 @@ export function CDSChatDrawer({
                       src={a.previewUrl}
                       alt={a.name}
                       className="w-full h-full object-cover"
-                      onClick={() => a.previewUrl && window.open(a.previewUrl, '_blank')}
+                      onClick={() => {
+                        if (!a.previewUrl) return;
+                        setImageLightbox({ id: a.id, url: a.previewUrl, name: a.name });
+                      }}
                       style={{ cursor: a.previewUrl ? 'pointer' : 'default' }}
                     />
                   ) : (

@@ -3,12 +3,16 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 interface TranscriptSegment {
+  /** Stable segment identifier (server-provided). */
+  id?: string;
   speaker: string;
   text: string;
   startTime: number;
   endTime: number;
   confidence: number;
   isFinal?: boolean;
+  /** Wall-clock time when the segment was received/emitted */
+  capturedAtMs?: number;
 }
 
 interface ExtractedSymptom {
@@ -84,6 +88,19 @@ export function ClinicalSessionProvider({ children }: { children: ReactNode }) {
         const next = (prev.transcript || []).slice();
         const last = next[next.length - 1];
 
+        // Upsert by stable segment id (best practice for interim/final streaming).
+        if (segment.id) {
+          const idx = next.findIndex((s) => s.id === segment.id);
+          if (idx >= 0) {
+            next[idx] = { ...next[idx], ...segment };
+          } else {
+            next.push(segment);
+          }
+          // Keep transcript bounded to avoid UI lag in long sessions.
+          if (next.length > 500) return next.slice(next.length - 500);
+          return next;
+        }
+
         // De-dupe identical repeated finals (can happen with socket reconnect/replay).
         if (
           last &&
@@ -108,6 +125,7 @@ export function ClinicalSessionProvider({ children }: { children: ReactNode }) {
         }
 
         next.push(segment);
+        if (next.length > 500) return next.slice(next.length - 500);
         return next;
       })(),
     }));

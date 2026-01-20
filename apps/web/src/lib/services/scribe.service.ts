@@ -31,6 +31,8 @@ type LiveSession = {
 };
 
 type PersistedTranscriptSegment = {
+  /** Stable segment identifier (used to upsert interim/final on client) */
+  id: string;
   speaker: string;
   speakerIndex: number;
   role: 'DOCTOR' | 'PATIENT' | 'UNKNOWN';
@@ -38,6 +40,7 @@ type PersistedTranscriptSegment = {
   startTime: number; // seconds
   endTime: number; // seconds
   confidence: number;
+  capturedAtMs?: number; // wall-clock time when emitted
 };
 
 type LiveTranscriptState = {
@@ -152,8 +155,100 @@ export class ScribeService {
   // Startup mutex: audio chunks can arrive concurrently before `sessions.set()` happens.
   // Without this, multiple streamers can be started for the same session, causing Deepgram 429 storms.
   private readonly startInFlightBySession = new Map<string, Promise<void>>();
+  // Utterance sequencing: turn realtime streaming into readable "logs".
+  // Each speaker gets an incrementing utterance index; interim updates update the current line,
+  // and finals advance the index so subsequent speech becomes a new log entry.
+  private readonly utteranceSeqBySession = new Map<string, Map<number, number>>();
+  // Interim throttle: Deepgram can emit interim updates very frequently. Running Presidio on each one
+  // is expensive and causes perceived UI lag. We throttle de-id + emit to a low, stable cadence.
+  private readonly interimBySession = new Map<
+    string,
+    {
+      timer: NodeJS.Timeout | null;
+      latest: MedicalSegment[] | null;
+      lastEmitAt: number;
+      lastKey: string;
+    }
+  >();
 
   constructor(private readonly emit: CoPilotEmit) {}
+
+  private getUtteranceSeq(sessionId: string, speakerIndex: number): number {
+    let m = this.utteranceSeqBySession.get(sessionId);
+    if (!m) {
+      m = new Map<number, number>();
+      this.utteranceSeqBySession.set(sessionId, m);
+    }
+    return m.get(speakerIndex) ?? 0;
+  }
+
+  private bumpUtteranceSeq(sessionId: string, speakerIndex: number) {
+    const cur = this.getUtteranceSeq(sessionId, speakerIndex);
+    const m = this.utteranceSeqBySession.get(sessionId)!;
+    m.set(speakerIndex, cur + 1);
+  }
+
+  private scheduleInterimEmit(sessionId: string, segments: MedicalSegment[]) {
+    const now = Date.now();
+    const cur = this.interimBySession.get(sessionId) || {
+      timer: null,
+      latest: null,
+      lastEmitAt: 0,
+      lastKey: '',
+    };
+
+    cur.latest = segments;
+
+    // De-dupe identical interim payloads (prevents spam during silence / stable partials).
+    const key = segments
+      .map((s) => `${s.speakerIndex}:${(s.text || '').trim()}:${Math.round((s.startTimeMs || 0) / 200)}:${Math.round((s.endTimeMs || 0) / 200)}`)
+      .join('|')
+      .slice(0, 300);
+    if (key && key === cur.lastKey && now - cur.lastEmitAt < 1500) {
+      this.interimBySession.set(sessionId, cur);
+      return;
+    }
+
+    const minIntervalMs = 750; // “feels live” without burning CPU
+    const dueInMs = Math.max(0, minIntervalMs - (now - cur.lastEmitAt));
+
+    if (!cur.timer) {
+      cur.timer = setTimeout(async () => {
+        const st = this.interimBySession.get(sessionId);
+        if (!st) return;
+        st.timer = null;
+        const latest = st.latest;
+        if (!latest || latest.length === 0) return;
+
+        const sess = this.sessions.get(sessionId);
+        if (!sess) return;
+        // If we are in a failure/cooldown window, drop interim emits entirely.
+        const failure = this.failures.get(sessionId);
+        if (failure && Date.now() < failure.untilMs) return;
+
+        try {
+          await this.emitSanitizedSegments({
+            sessionId,
+            requestId: sess.requestId,
+            segments: latest,
+            isFinal: false,
+          });
+          st.lastEmitAt = Date.now();
+          st.lastKey = key || st.lastKey;
+        } catch (e: any) {
+          const msg = String(e?.message || 'De-identification failed');
+          this.emit(sessionId, 'co_pilot:transcription_error', {
+            message:
+              msg.includes('De-identification required')
+                ? `${msg}. If you're running locally, start Presidio (PRESIDIO_ANALYZER_URL/PRESIDIO_ANONYMIZER_URL) or set REQUIRE_DEIDENTIFICATION=false for development.`
+                : msg,
+          });
+        }
+      }, dueInMs);
+    }
+
+    this.interimBySession.set(sessionId, cur);
+  }
 
   onJoinSession(sessionId: string, socketId: string) {
     const s = this.sessions.get(sessionId);
@@ -263,6 +358,12 @@ export class ScribeService {
       const active = this.activeSessionByClinician.get(s.clinicianId);
       if (active === sessionId) this.activeSessionByClinician.delete(s.clinicianId);
     }
+    const interim = this.interimBySession.get(sessionId);
+    if (interim?.timer) {
+      clearTimeout(interim.timer);
+    }
+    this.interimBySession.delete(sessionId);
+    this.utteranceSeqBySession.delete(sessionId);
     await this.persistTranscript(sessionId).catch(() => {});
     this.liveTranscript.delete(sessionId);
     this.failures.delete(sessionId);
@@ -283,8 +384,14 @@ export class ScribeService {
       const presidioMs = Date.now() - presidioStart;
       const startTime = Math.max(0, (seg.startTimeMs || 0) / 1000);
       const endTime = Math.max(0, (seg.endTimeMs || 0) / 1000);
+      // Stable log identity: per-speaker utterance index.
+      // This ensures history grows as the conversation progresses, instead of everything collapsing into one row.
+      const seq = this.getUtteranceSeq(sessionId, seg.speakerIndex);
+      const id = `${seg.speakerIndex}:${seq}`;
+      const capturedAtMs = Date.now();
 
       const persisted: PersistedTranscriptSegment = {
+        id,
         speaker: seg.speaker,
         speakerIndex: seg.speakerIndex,
         role: seg.role,
@@ -292,6 +399,7 @@ export class ScribeService {
         startTime,
         endTime,
         confidence: seg.confidence,
+        capturedAtMs,
       };
       out.push(persisted);
 
@@ -300,6 +408,11 @@ export class ScribeService {
         isFinal,
         metrics: { presidioMs, requestId },
       });
+
+      // Advance utterance index only when a final segment is emitted.
+      if (isFinal) {
+        this.bumpUtteranceSeq(sessionId, seg.speakerIndex);
+      }
     }
 
     return out;
@@ -403,19 +516,35 @@ export class ScribeService {
         this.emit(sessionId, 'co_pilot:transcription_metadata', { requestId });
       });
 
+      // Stream lifecycle telemetry (helps diagnose “it stopped” without relying on console logs).
+      streamer.on('warning', ({ message, raw }: any) => {
+        this.emit(sessionId, 'co_pilot:stream_status', {
+          type: 'warning',
+          message: String(message || 'warning'),
+          raw: raw ? undefined : undefined,
+          at: Date.now(),
+        });
+      });
+      streamer.on('reconnect', ({ attempt, delayMs }: any) => {
+        this.emit(sessionId, 'co_pilot:stream_status', {
+          type: 'reconnect',
+          attempt,
+          delayMs,
+          at: Date.now(),
+        });
+      });
+      streamer.on('close', ({ code, reason }: any) => {
+        this.emit(sessionId, 'co_pilot:stream_status', {
+          type: 'close',
+          code,
+          reason,
+          at: Date.now(),
+        });
+      });
+
       streamer.on('interim', async (segments: MedicalSegment[]) => {
-        try {
-          const cur = this.sessions.get(sessionId);
-          await this.emitSanitizedSegments({ sessionId, requestId: cur?.requestId, segments, isFinal: false });
-        } catch (e: any) {
-          const msg = String(e?.message || 'De-identification failed');
-          this.emit(sessionId, 'co_pilot:transcription_error', {
-            message:
-              msg.includes('De-identification required')
-                ? `${msg}. If you're running locally, start Presidio (PRESIDIO_ANALYZER_URL/PRESIDIO_ANONYMIZER_URL) or set REQUIRE_DEIDENTIFICATION=false for development.`
-                : msg,
-          });
-        }
+        // Throttle interim emits to prevent Presidio+UI lag.
+        this.scheduleInterimEmit(sessionId, segments);
       });
 
       streamer.on('final', async (segments: MedicalSegment[]) => {
