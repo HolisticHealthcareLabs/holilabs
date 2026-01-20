@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -63,6 +64,7 @@ const modalityIcons: Record<string, string> = {
 };
 
 export default function ImagingStudiesList({ patientId }: ImagingStudiesListProps) {
+  const router = useRouter();
   const [imagingStudies, setImagingStudies] = useState<ImagingStudy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +79,11 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
 
   // Image viewer
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  // Open DICOM viewer
+  const openDicomViewer = (study: ImagingStudy) => {
+    router.push(`/dashboard/patients/${patientId}/imaging/${study.id}/viewer`);
+  };
 
   useEffect(() => {
     fetchImagingStudies();
@@ -451,7 +458,17 @@ export default function ImagingStudiesList({ patientId }: ImagingStudiesListProp
               )}
             </div>
 
-            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-between">
+              <button
+                onClick={() => openDicomViewer(selectedStudy)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Abrir Visor DICOM
+              </button>
               <button
                 onClick={closeDetailView}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"

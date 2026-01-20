@@ -364,8 +364,11 @@ export default function PreventionHub() {
     setActionLoading(true);
     setActionMessage(null);
 
+    // Store previous state for rollback on error
+    const previousPatient = patient;
+
     try {
-      // For now, update local state - in Phase 3 we'll add the API
+      // Optimistic update - update local state immediately
       setPatient({
         ...patient,
         activeInterventions: patient.activeInterventions.filter(i => i.id !== intervention.id),
@@ -374,6 +377,18 @@ export default function PreventionHub() {
           { ...intervention, status: 'completed' as InterventionStatus, completedDate: new Date() },
         ],
       });
+
+      // Call the API to persist the change
+      const response = await fetch('/api/prevention/hub/mark-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interventionId: intervention.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to mark intervention as complete');
+      }
 
       setActionMessage({
         type: 'success',
@@ -385,9 +400,217 @@ export default function PreventionHub() {
         setActionMessage(null);
       }, 1500);
     } catch (error) {
+      // Rollback optimistic update on error
+      setPatient(previousPatient);
       setActionMessage({
         type: 'error',
         text: error instanceof Error ? error.message : 'Failed to mark complete',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle exporting prevention report
+  const handleExport = async (format: 'csv' | 'pdf' = 'csv') => {
+    if (!patient) return;
+
+    setActionLoading(true);
+    setActionMessage(null);
+
+    try {
+      // Build export URL with patient ID and format
+      const exportUrl = `/api/prevention/hub/${patient.id}/export?format=${format}`;
+
+      // Fetch the export file
+      const response = await fetch(exportUrl);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate export');
+      }
+
+      // Get filename from Content-Disposition header or generate default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `prevention_report_${patient.id}_${new Date().toISOString().split('T')[0]}.${format}`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+
+      // Create blob and trigger download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setActionMessage({
+        type: 'success',
+        text: `Downloaded prevention report (${format.toUpperCase()})`,
+      });
+
+      setTimeout(() => {
+        setActionMessage(null);
+      }, 3000);
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to export report',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle creating an order from intervention
+  const handleCreateOrder = async (intervention: Intervention) => {
+    if (!patient) return;
+
+    setActionLoading(true);
+    setActionMessage(null);
+
+    try {
+      // Map intervention type to order type
+      const orderTypeMap: Record<string, 'lab' | 'imaging' | 'procedure'> = {
+        lab: 'lab',
+        screening: 'imaging',
+        referral: 'procedure',
+      };
+      const orderType = orderTypeMap[intervention.type] || 'procedure';
+
+      const response = await fetch('/api/prevention/hub/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patient.id,
+          orderType,
+          orderDetails: {
+            code: intervention.id,
+            display: intervention.name,
+          },
+          priority: 'routine',
+          linkedInterventionId: intervention.id,
+          notes: intervention.description,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create order');
+      }
+
+      setActionMessage({
+        type: 'success',
+        text: `Order created for "${intervention.name}"`,
+      });
+
+      setTimeout(() => setActionMessage(null), 3000);
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to create order',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle creating a referral from intervention
+  const handleCreateReferral = async (intervention: Intervention) => {
+    if (!patient) return;
+
+    setActionLoading(true);
+    setActionMessage(null);
+
+    try {
+      // Map health domain to specialty
+      const domainToSpecialty: Record<HealthDomain, string> = {
+        cardiometabolic: 'Cardiology',
+        oncology: 'Oncology',
+        musculoskeletal: 'Orthopedics',
+        neurocognitive: 'Neurology',
+        gut: 'Gastroenterology',
+        immune: 'Immunology',
+        hormonal: 'Endocrinology',
+      };
+
+      const response = await fetch('/api/prevention/hub/create-referral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patient.id,
+          specialty: domainToSpecialty[intervention.domain] || 'Internal Medicine',
+          reason: intervention.name,
+          referralType: 'consultation',
+          urgency: 'routine',
+          linkedInterventionId: intervention.id,
+          notes: intervention.description,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create referral');
+      }
+
+      setActionMessage({
+        type: 'success',
+        text: `Referral created for "${intervention.name}"`,
+      });
+
+      setTimeout(() => setActionMessage(null), 3000);
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to create referral',
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle creating a patient task from intervention
+  const handleCreatePatientTask = async (intervention: Intervention) => {
+    if (!patient) return;
+
+    setActionLoading(true);
+    setActionMessage(null);
+
+    try {
+      const response = await fetch('/api/prevention/hub/create-patient-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: patient.id,
+          title: intervention.name,
+          description: intervention.description,
+          taskType: 'self_care',
+          linkedInterventionId: intervention.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create patient task');
+      }
+
+      setActionMessage({
+        type: 'success',
+        text: `Task assigned: "${intervention.name}"`,
+      });
+
+      setTimeout(() => setActionMessage(null), 3000);
+    } catch (error) {
+      setActionMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Failed to create task',
       });
     } finally {
       setActionLoading(false);
@@ -486,8 +709,12 @@ export default function PreventionHub() {
                   {isProcessing && <span className="ml-1 animate-spin">⚙️</span>}
                 </div>
               )}
-              <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium">
-                Export Report
+              <button
+                onClick={() => handleExport('csv')}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading ? 'Exporting...' : 'Export Report'}
               </button>
               <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                 Settings
@@ -937,21 +1164,33 @@ export default function PreventionHub() {
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <h4 className="font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <button className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left">
+                  <button
+                    onClick={() => selectedIntervention && handleCreateOrder(selectedIntervention)}
+                    disabled={actionLoading}
+                    className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-2xl mb-2">📋</div>
                     <div className="font-bold text-gray-900 dark:text-white mb-1">Orders</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       Pre-populated lab orders
                     </div>
                   </button>
-                  <button className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left">
+                  <button
+                    onClick={() => selectedIntervention && handleCreateReferral(selectedIntervention)}
+                    disabled={actionLoading}
+                    className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-2xl mb-2">👨‍⚕️</div>
                     <div className="font-bold text-gray-900 dark:text-white mb-1">Referrals</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       One-click specialist referral
                     </div>
                   </button>
-                  <button className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left">
+                  <button
+                    onClick={() => selectedIntervention && handleCreatePatientTask(selectedIntervention)}
+                    disabled={actionLoading}
+                    className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <div className="text-2xl mb-2">📱</div>
                     <div className="font-bold text-gray-900 dark:text-white mb-1">Patient Tasks</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">

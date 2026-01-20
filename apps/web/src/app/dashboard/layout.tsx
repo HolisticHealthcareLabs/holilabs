@@ -160,16 +160,47 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     router.push('/auth/login');
   };
 
-  const openPeek = () => {
-    if (!sidebarCollapsed) return;
-    if (sidebarPeekCloseTimerRef.current) clearTimeout(sidebarPeekCloseTimerRef.current);
-    setSidebarPeekOpen(true);
-  };
+  const hasMultipleOptions = (item: NavItem) => (item.subItems?.length || 0) > 1;
 
-  const closePeekSoon = () => {
-    if (!sidebarCollapsed) return;
-    if (sidebarPeekCloseTimerRef.current) clearTimeout(sidebarPeekCloseTimerRef.current);
-    sidebarPeekCloseTimerRef.current = setTimeout(() => setSidebarPeekOpen(false), 150);
+  const HoverTooltip = ({ item }: { item: NavItem }) => {
+    // Only show hover tooltips when collapsed (expanded sidebar already has labels)
+    if (!sidebarCollapsed) return null;
+
+    const showSubtitlesOnly = hasMultipleOptions(item);
+
+    return (
+      <div className="absolute left-20 top-1/2 -translate-y-1/2 z-50">
+        <div className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap pointer-events-auto">
+          {showSubtitlesOnly ? (
+            <div className="flex flex-col gap-1">
+              {(item.subItems || []).map((sub) => (
+                <Link
+                  key={sub.href}
+                  href={sub.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className="text-sm font-semibold text-gray-900 dark:text-white hover:underline"
+                >
+                  {sub.name}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="font-semibold text-sm text-gray-900 dark:text-white">{item.name}</p>
+          )}
+
+          {item.badge && !showSubtitlesOnly ? (
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+              {item.badge}
+            </span>
+          ) : null}
+
+          {/* Arrow pointer */}
+          <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
+            <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -218,8 +249,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-gray-800 shadow-sm transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        onMouseEnter={openPeek}
-        onMouseLeave={closePeekSoon}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -269,80 +298,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
           {/* Navigation - Beautiful Circular Gradient Tiles */}
           <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
-            {/* Peek panel: when collapsed, hovering any circle reveals ALL options at once */}
-            {sidebarCollapsed && sidebarPeekOpen && (
-              <div
-                className="absolute left-20 top-16 bottom-24 w-64 z-[70] pointer-events-auto"
-                onMouseEnter={openPeek}
-                onMouseLeave={closePeekSoon}
-              >
-                <div className="h-full overflow-y-auto rounded-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 shadow-2xl p-2">
-                  <div className="px-3 py-2">
-                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                      Navigation
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    {navItems.map((ni) => (
-                      <div key={`peek-${ni.href}`} className="rounded-xl">
-                        <Link
-                          href={ni.href}
-                          onClick={() => {
-                            setSidebarOpen(false);
-                            setSidebarPeekOpen(false);
-                          }}
-                          className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${ni.gradient || 'from-gray-400 to-gray-600'} flex items-center justify-center shadow-lg`}>
-                              <div className="relative w-4 h-4">
-                                <Image src={ni.icon} alt={ni.name} width={16} height={16} className="dark:invert" />
-                              </div>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                              {ni.name}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-600 dark:text-gray-300">
-                            {ni.href.replace('/dashboard', '') || '/'}
-                          </span>
-                        </Link>
-                        {ni.subItems && (
-                          <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700 py-1 space-y-1">
-                            {ni.subItems.map((si) => (
-                              <Link
-                                key={`peek-sub-${si.href}`}
-                                href={si.href}
-                                onClick={() => {
-                                  setSidebarOpen(false);
-                                  setSidebarPeekOpen(false);
-                                }}
-                                className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className={`w-7 h-7 rounded-xl bg-gradient-to-br ${si.gradient || 'from-gray-400 to-gray-600'} flex items-center justify-center`}>
-                                    <div className="relative w-4 h-4">
-                                      <Image src={si.icon} alt={si.name} width={16} height={16} className="dark:invert" />
-                                    </div>
-                                  </div>
-                                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                                    {si.name}
-                                  </span>
-                                </div>
-                                <span className="text-xs text-gray-600 dark:text-gray-300">
-                                  {si.href.replace('/dashboard', '')}
-                                </span>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* All Navigation Items - Clinical Tools First, Then Main Nav */}
             {navItems.map((item) => {
               const currentPath = pathname || '';
@@ -353,7 +308,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <div
                   key={item.href}
                   className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300"
-                  onMouseEnter={openPeek}
                 >
                   {/* Circular Gradient Tile */}
                   <Link
@@ -384,61 +338,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     </div>
                   </Link>
 
-                  {/* Floating Text Label or Submenu - Appears on Hover */}
-                  <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
-                    {item.subItems ? (
-                      /* Toolkit Submenu */
-                      <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-2xl overflow-hidden">
-                        <div className="p-3 bg-gradient-to-r from-fuchsia-500/10 to-pink-500/10 border-b border-gray-200/50 dark:border-gray-700/50">
-                          <p className="font-bold text-sm text-gray-900 dark:text-white">
-                            {item.name}
-                          </p>
-                        </div>
-                        <div className="p-2 space-y-1 max-h-96 overflow-y-auto pointer-events-auto">
-                          {item.subItems.map((subItem) => (
-                            <Link
-                              key={subItem.href}
-                              href={subItem.href}
-                              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group/sub"
-                            >
-                              <div className="relative w-5 h-5 flex-shrink-0">
-                                <Image
-                                  src={subItem.icon}
-                                  alt={subItem.name}
-                                  width={20}
-                                  height={20}
-                                  className="dark:invert"
-                                />
-                              </div>
-                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover/sub:text-gray-900 dark:group-hover/sub:text-white whitespace-nowrap">
-                                {subItem.name}
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
-                        {/* Arrow pointer */}
-                        <div className="absolute right-full top-8 -mr-1">
-                          <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
-                        </div>
-                      </div>
-                    ) : (
-                      /* Regular Label */
-                      <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                          {item.name}
-                        </p>
-                        {item.badge && (
-                          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                            {item.badge}
-                          </span>
-                        )}
-                        {/* Arrow pointer */}
-                        <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
-                          <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <HoverTooltip item={item} />
                 </div>
               ) : (
                 // Regular nav item - use Link
@@ -471,22 +371,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   </div>
 
                   {/* Floating Text Label */}
-                  <div className="absolute left-20 top-1/2 -translate-y-1/2 pointer-events-none z-50">
-                    <div className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-white">
-                        {item.name}
-                      </p>
-                      {item.badge && (
-                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                          {item.badge}
-                        </span>
-                      )}
-                      {/* Arrow pointer */}
-                      <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
-                        <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
-                      </div>
-                    </div>
-                  </div>
+                  <HoverTooltip item={item} />
                 </Link>
               );
             })}

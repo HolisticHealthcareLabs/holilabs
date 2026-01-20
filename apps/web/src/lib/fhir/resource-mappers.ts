@@ -552,6 +552,276 @@ export function fromFHIRProcedure(procedure: FHIRProcedure, patientId: string): 
 }
 
 // ============================================================================
+// FHIR DIAGNOSTIC REPORT RESOURCE
+// ============================================================================
+
+export interface FHIRDiagnosticReport {
+  resourceType: 'DiagnosticReport';
+  id?: string;
+  status: 'registered' | 'partial' | 'preliminary' | 'final' | 'amended' | 'corrected' | 'appended' | 'cancelled' | 'entered-in-error' | 'unknown';
+  category?: Array<{
+    coding?: Array<{
+      system: string;
+      code: string;
+      display?: string;
+    }>;
+    text?: string;
+  }>;
+  code: {
+    coding?: Array<{
+      system: string;
+      code: string;
+      display?: string;
+    }>;
+    text?: string;
+  };
+  subject: {
+    reference: string;
+    display?: string;
+  };
+  effectiveDateTime?: string;
+  effectivePeriod?: {
+    start?: string;
+    end?: string;
+  };
+  issued?: string;
+  performer?: Array<{
+    reference?: string;
+    display?: string;
+  }>;
+  result?: Array<{
+    reference: string;
+    display?: string;
+  }>;
+  conclusion?: string;
+  conclusionCode?: Array<{
+    coding?: Array<{
+      system: string;
+      code: string;
+      display?: string;
+    }>;
+    text?: string;
+  }>;
+}
+
+/**
+ * Convert internal LabResult array (from an order) to FHIR DiagnosticReport
+ */
+export function toFHIRDiagnosticReport(
+  orderId: string,
+  orderName: string,
+  patientId: string,
+  labResults: Array<LabResult>,
+  performingLab?: string | null
+): FHIRDiagnosticReport {
+  // Determine overall status from all results
+  const statusPriority: Record<string, number> = {
+    'PRELIMINARY': 1,
+    'FINAL': 2,
+    'CORRECTED': 3,
+    'CANCELLED': 0,
+  };
+  const overallStatus = labResults.reduce((acc, result) => {
+    return statusPriority[result.status] > statusPriority[acc] ? result.status : acc;
+  }, labResults[0]?.status || 'PRELIMINARY');
+
+  // Map to FHIR status
+  const fhirStatusMap: Record<string, 'registered' | 'partial' | 'preliminary' | 'final' | 'amended' | 'corrected' | 'appended' | 'cancelled' | 'entered-in-error' | 'unknown'> = {
+    'PRELIMINARY': 'preliminary',
+    'FINAL': 'final',
+    'CORRECTED': 'corrected',
+    'CANCELLED': 'cancelled',
+  };
+
+  // Get the earliest sample collection time and latest result time
+  const collectedDates = labResults.filter(r => r.sampleCollectedAt).map(r => r.sampleCollectedAt!);
+  const resultDates = labResults.filter(r => r.resultDate).map(r => r.resultDate!);
+
+  // Check for any critical results
+  const hasCritical = labResults.some(r => r.isCritical);
+  const hasAbnormal = labResults.some(r => r.isAbnormal);
+
+  const report: FHIRDiagnosticReport = {
+    resourceType: 'DiagnosticReport',
+    id: orderId,
+    status: fhirStatusMap[overallStatus] || 'unknown',
+    category: [{
+      coding: [{
+        system: 'http://terminology.hl7.org/CodeSystem/v2-0074',
+        code: 'LAB',
+        display: 'Laboratory',
+      }],
+      text: 'Laboratory',
+    }],
+    code: {
+      text: orderName,
+    },
+    subject: {
+      reference: `Patient/${patientId}`,
+    },
+    result: labResults.map(result => ({
+      reference: `Observation/${result.id}`,
+      display: result.testName,
+    })),
+  };
+
+  // Add LOINC code if available from first result
+  const firstLoincCode = labResults.find(r => r.testCode)?.testCode;
+  if (firstLoincCode) {
+    report.code.coding = [{
+      system: 'http://loinc.org',
+      code: firstLoincCode,
+      display: orderName,
+    }];
+  }
+
+  // Add effective date
+  if (collectedDates.length > 0) {
+    const earliestCollection = new Date(Math.min(...collectedDates.map(d => d.getTime())));
+    report.effectiveDateTime = earliestCollection.toISOString();
+  }
+
+  // Add issued date (latest result date)
+  if (resultDates.length > 0) {
+    const latestResult = new Date(Math.max(...resultDates.map(d => d.getTime())));
+    report.issued = latestResult.toISOString();
+  }
+
+  // Add performer (lab)
+  if (performingLab) {
+    report.performer = [{
+      display: performingLab,
+    }];
+  }
+
+  // Add conclusion based on abnormal/critical flags
+  if (hasCritical) {
+    report.conclusion = 'Critical values present. Immediate clinical attention required.';
+    report.conclusionCode = [{
+      coding: [{
+        system: 'http://snomed.info/sct',
+        code: '442104009',
+        display: 'Critical finding',
+      }],
+    }];
+  } else if (hasAbnormal) {
+    report.conclusion = 'Abnormal values present. Review recommended.';
+    report.conclusionCode = [{
+      coding: [{
+        system: 'http://snomed.info/sct',
+        code: '263654008',
+        display: 'Abnormal finding',
+      }],
+    }];
+  }
+
+  return report;
+}
+
+/**
+ * Convert internal LabResult to FHIR Observation (for inclusion in DiagnosticReport)
+ */
+export function toFHIRObservation(labResult: LabResult): FHIRObservation {
+  // Map internal status to FHIR status
+  const fhirStatusMap: Record<string, 'registered' | 'preliminary' | 'final' | 'amended' | 'corrected' | 'cancelled' | 'entered-in-error' | 'unknown'> = {
+    'PRELIMINARY': 'preliminary',
+    'FINAL': 'final',
+    'CORRECTED': 'corrected',
+    'CANCELLED': 'cancelled',
+  };
+
+  const observation: FHIRObservation = {
+    resourceType: 'Observation',
+    id: labResult.id,
+    status: fhirStatusMap[labResult.status] || 'unknown',
+    category: [{
+      coding: [{
+        system: 'http://terminology.hl7.org/CodeSystem/observation-category',
+        code: 'laboratory',
+        display: 'Laboratory',
+      }],
+    }],
+    code: {
+      text: labResult.testName,
+    },
+    subject: {
+      reference: `Patient/${labResult.patientId}`,
+    },
+  };
+
+  // Add LOINC code if available
+  if (labResult.testCode) {
+    observation.code.coding = [{
+      system: 'http://loinc.org',
+      code: labResult.testCode,
+      display: labResult.testName,
+    }];
+  }
+
+  // Add value
+  if (labResult.value) {
+    const numericValue = parseFloat(labResult.value);
+    if (!isNaN(numericValue)) {
+      observation.valueQuantity = {
+        value: numericValue,
+        unit: labResult.unit || undefined,
+      };
+    } else {
+      observation.valueString = labResult.value;
+    }
+  }
+
+  // Add reference range
+  if (labResult.referenceRange) {
+    observation.referenceRange = [{
+      text: labResult.referenceRange,
+    }];
+  }
+
+  // Add interpretation
+  if (labResult.interpretation || labResult.isAbnormal !== undefined) {
+    let interpCode = 'N';
+    let interpDisplay = 'Normal';
+
+    if (labResult.isCritical) {
+      interpCode = labResult.interpretation?.includes('High') ? 'HH' : 'LL';
+      interpDisplay = labResult.interpretation || 'Critical';
+    } else if (labResult.isAbnormal) {
+      interpCode = labResult.interpretation?.includes('High') ? 'H' : labResult.interpretation?.includes('Low') ? 'L' : 'A';
+      interpDisplay = labResult.interpretation || 'Abnormal';
+    }
+
+    observation.interpretation = [{
+      coding: [{
+        system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
+        code: interpCode,
+        display: interpDisplay,
+      }],
+      text: labResult.interpretation || undefined,
+    }];
+  }
+
+  // Add effective date
+  if (labResult.sampleCollectedAt) {
+    observation.effectiveDateTime = labResult.sampleCollectedAt.toISOString();
+  }
+
+  // Add issued date
+  if (labResult.resultDate) {
+    observation.issued = labResult.resultDate.toISOString();
+  }
+
+  // Add notes
+  if (labResult.notes) {
+    observation.note = [{
+      text: labResult.notes,
+    }];
+  }
+
+  return observation;
+}
+
+// ============================================================================
 // FHIR BUNDLE FOR BATCH OPERATIONS
 // ============================================================================
 

@@ -1,14 +1,27 @@
 /**
  * Video Room Component
  *
- * Beautiful, simple video telemedicine interface
- * Industry-grade WebRTC with innovative UX
+ * Production-ready video telemedicine interface using LiveKit.
+ * Beautiful UX with real WebRTC peer-to-peer connections.
+ *
+ * Phase: Telehealth Video Integration (OSS: LiveKit)
  */
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Room,
+  RoomEvent,
+  ConnectionState,
+  Track,
+  LocalParticipant,
+  RemoteParticipant,
+  LocalTrackPublication,
+  RemoteTrackPublication,
+  ConnectionQuality,
+} from 'livekit-client';
 import { logger } from '@/lib/logger';
 
 interface VideoRoomProps {
@@ -17,6 +30,8 @@ interface VideoRoomProps {
   userType: 'clinician' | 'patient';
   onLeave: () => void;
 }
+
+type ConnectionQualityLevel = 'excellent' | 'good' | 'poor' | 'unknown';
 
 export default function VideoRoom({
   roomId,
@@ -28,65 +43,166 @@ export default function VideoRoom({
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [connectionQuality, setConnectionQuality] = useState<
-    'excellent' | 'good' | 'poor'
-  >('excellent');
+  const [connectionQuality, setConnectionQuality] = useState<ConnectionQualityLevel>('unknown');
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(true);
   const [remoteUserName, setRemoteUserName] = useState('');
   const [callDuration, setCallDuration] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
+  const roomRef = useRef<Room | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize media devices
-  useEffect(() => {
-    const initMedia = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: 'user',
-          },
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
-        });
+  // Fetch token and connect to LiveKit
+  const connectToRoom = useCallback(async () => {
+    try {
+      setIsConnecting(true);
+      setError(null);
 
-        localStreamRef.current = stream;
+      // Fetch token from API
+      const response = await fetch('/api/video/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, userName, userType }),
+      });
 
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-
-        // Simulate connection (replace with actual WebRTC logic)
-        setTimeout(() => {
-          setIsConnected(true);
-          setRemoteUserName(userType === 'clinician' ? 'María González' : 'Dr. García');
-        }, 2000);
-      } catch (error) {
-        logger.error({
-          event: 'media_device_access_failed',
-          roomId,
-          userType,
-          error: error instanceof Error ? error.message : String(error)
-        });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get video token');
       }
-    };
 
-    initMedia();
+      const { data } = await response.json();
+      const { token, url } = data;
+
+      // Create room instance
+      const room = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+        videoCaptureDefaults: {
+          resolution: { width: 1280, height: 720, frameRate: 30 },
+        },
+        audioCaptureDefaults: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      roomRef.current = room;
+
+      // Set up event listeners
+      room.on(RoomEvent.Connected, () => {
+        setIsConnected(true);
+        setIsConnecting(false);
+        logger.info({ event: 'livekit_room_connected', roomId });
+      });
+
+      room.on(RoomEvent.Disconnected, () => {
+        setIsConnected(false);
+        logger.info({ event: 'livekit_room_disconnected', roomId });
+      });
+
+      room.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
+        logger.info({ event: 'livekit_connection_state', roomId, state });
+      });
+
+      room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+        setRemoteUserName(participant.name || participant.identity);
+        logger.info({
+          event: 'livekit_participant_connected',
+          roomId,
+          participantId: participant.identity
+        });
+      });
+
+      room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+        if (participant.identity) {
+          setRemoteUserName('');
+        }
+        logger.info({
+          event: 'livekit_participant_disconnected',
+          roomId,
+          participantId: participant.identity
+        });
+      });
+
+      room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+        if (track.kind === Track.Kind.Video && remoteVideoRef.current) {
+          track.attach(remoteVideoRef.current);
+        }
+        if (track.kind === Track.Kind.Audio) {
+          // Audio is automatically played
+          const audioElement = track.attach();
+          audioElement.play();
+        }
+      });
+
+      room.on(RoomEvent.TrackUnsubscribed, (track) => {
+        track.detach();
+      });
+
+      room.on(RoomEvent.LocalTrackPublished, (publication: LocalTrackPublication) => {
+        if (publication.track?.kind === Track.Kind.Video && localVideoRef.current) {
+          publication.track.attach(localVideoRef.current);
+        }
+      });
+
+      room.on(RoomEvent.ConnectionQualityChanged, (quality: ConnectionQuality, participant) => {
+        if (participant instanceof LocalParticipant) {
+          const qualityMap: Record<ConnectionQuality, ConnectionQualityLevel> = {
+            [ConnectionQuality.Excellent]: 'excellent',
+            [ConnectionQuality.Good]: 'good',
+            [ConnectionQuality.Poor]: 'poor',
+            [ConnectionQuality.Lost]: 'poor',
+            [ConnectionQuality.Unknown]: 'unknown',
+          };
+          setConnectionQuality(qualityMap[quality] || 'unknown');
+        }
+      });
+
+      // Check for existing remote participants
+      room.remoteParticipants.forEach((participant) => {
+        setRemoteUserName(participant.name || participant.identity);
+        participant.trackPublications.forEach((publication) => {
+          if (publication.track && publication.kind === Track.Kind.Video && remoteVideoRef.current) {
+            publication.track.attach(remoteVideoRef.current);
+          }
+        });
+      });
+
+      // Connect to room
+      await room.connect(url, token);
+
+      // Enable camera and microphone
+      await room.localParticipant.enableCameraAndMicrophone();
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to connect';
+      setError(message);
+      setIsConnecting(false);
+      logger.error({
+        event: 'livekit_connect_error',
+        roomId,
+        userType,
+        error: message,
+      });
+    }
+  }, [roomId, userName, userType]);
+
+  // Connect on mount
+  useEffect(() => {
+    connectToRoom();
 
     return () => {
       // Cleanup
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track) => track.stop());
+      if (roomRef.current) {
+        roomRef.current.disconnect();
+        roomRef.current = null;
       }
     };
-  }, [userType]);
+  }, [connectToRoom]);
 
   // Call duration timer
   useEffect(() => {
@@ -118,56 +234,46 @@ export default function VideoRoom({
     };
   }, [showControls]);
 
-  const toggleMute = () => {
-    if (localStreamRef.current) {
-      const audioTrack = localStreamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsMuted(!audioTrack.enabled);
-      }
-    }
+  const toggleMute = async () => {
+    if (!roomRef.current) return;
+
+    const newMuteState = !isMuted;
+    await roomRef.current.localParticipant.setMicrophoneEnabled(!newMuteState);
+    setIsMuted(newMuteState);
   };
 
-  const toggleVideo = () => {
-    if (localStreamRef.current) {
-      const videoTrack = localStreamRef.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoOff(!videoTrack.enabled);
-      }
-    }
+  const toggleVideo = async () => {
+    if (!roomRef.current) return;
+
+    const newVideoState = !isVideoOff;
+    await roomRef.current.localParticipant.setCameraEnabled(!newVideoState);
+    setIsVideoOff(newVideoState);
   };
 
   const toggleScreenShare = async () => {
-    if (isScreenSharing) {
-      // Stop screen sharing
-      setIsScreenSharing(false);
-    } else {
-      // Start screen sharing
-      try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-        });
-        setIsScreenSharing(true);
+    if (!roomRef.current) return;
 
-        // When user stops sharing via browser UI
-        screenStream.getVideoTracks()[0].onended = () => {
-          setIsScreenSharing(false);
-        };
-      } catch (error) {
-        logger.error({
-          event: 'screen_share_failed',
-          roomId,
-          userType,
-          error: error instanceof Error ? error.message : String(error)
-        });
+    try {
+      if (isScreenSharing) {
+        await roomRef.current.localParticipant.setScreenShareEnabled(false);
+        setIsScreenSharing(false);
+      } else {
+        await roomRef.current.localParticipant.setScreenShareEnabled(true);
+        setIsScreenSharing(true);
       }
+    } catch (err) {
+      logger.error({
+        event: 'screen_share_failed',
+        roomId,
+        userType,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   };
 
   const handleLeave = () => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
+    if (roomRef.current) {
+      roomRef.current.disconnect();
     }
     onLeave();
   };
@@ -191,6 +297,37 @@ export default function VideoRoom({
     }
   };
 
+  // Error state
+  if (error) {
+    return (
+      <div className="w-full h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">Connection Error</h3>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={connectToRoom}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={onLeave}
+              className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            >
+              Leave
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative w-full h-screen bg-gray-900 overflow-hidden"
@@ -198,7 +335,7 @@ export default function VideoRoom({
     >
       {/* Remote Video (Main) */}
       <div className="absolute inset-0">
-        {isConnected ? (
+        {isConnected && remoteUserName ? (
           <video
             ref={remoteVideoRef}
             autoPlay
@@ -228,7 +365,7 @@ export default function VideoRoom({
                 </svg>
               </motion.div>
               <h3 className="text-2xl font-bold text-white mb-2">
-                Conectando...
+                {isConnecting ? 'Conectando...' : 'Esperando participante...'}
               </h3>
               <p className="text-gray-400">
                 Esperando a que {userType === 'clinician' ? 'el paciente' : 'el médico'} se una
@@ -277,11 +414,13 @@ export default function VideoRoom({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${getConnectionColor()}`} />
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? getConnectionColor() : 'bg-gray-500 animate-pulse'}`} />
                   <span className="text-white font-medium">
-                    {connectionQuality === 'excellent' && 'Excelente'}
-                    {connectionQuality === 'good' && 'Buena'}
-                    {connectionQuality === 'poor' && 'Mala'}
+                    {!isConnected && 'Conectando...'}
+                    {isConnected && connectionQuality === 'excellent' && 'Excelente'}
+                    {isConnected && connectionQuality === 'good' && 'Buena'}
+                    {isConnected && connectionQuality === 'poor' && 'Mala'}
+                    {isConnected && connectionQuality === 'unknown' && 'Conectado'}
                   </span>
                 </div>
                 {isConnected && (
@@ -291,7 +430,7 @@ export default function VideoRoom({
                 )}
               </div>
               <div className="text-white font-medium">
-                {remoteUserName || 'Conectando...'}
+                {remoteUserName || 'Esperando...'}
               </div>
             </div>
           </motion.div>

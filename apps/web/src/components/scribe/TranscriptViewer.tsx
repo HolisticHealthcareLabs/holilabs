@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface TranscriptSegment {
+  id?: string;
   speaker: string;
   text: string;
   startTime: number;
   endTime: number;
   confidence: number;
+  capturedAtMs?: number;
   correctedAt?: string; // ISO timestamp when segment was corrected
   correctedBy?: string; // User ID who corrected it
   originalText?: string; // Original AI-generated text before correction
@@ -27,6 +29,7 @@ export default function TranscriptViewer({
 }: TranscriptViewerProps) {
   const { t: tRaw } = useLanguage();
   const t = (key: string) => tRaw(`copilot.${key}`);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -40,10 +43,31 @@ export default function TranscriptViewer({
     setTotalCorrections(corrected);
   }, [segments]);
 
+  // Auto-scroll: keep the "log" pinned to bottom unless the user is actively editing.
+  useEffect(() => {
+    if (editingIndex != null) return;
+    const el = scrollerRef.current;
+    if (!el) return;
+    // If user is near the bottom, follow new logs.
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom < 120) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [segments, editingIndex]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatWallClock = (ms?: number) => {
+    if (!ms || !Number.isFinite(ms)) return '';
+    try {
+      return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch {
+      return '';
+    }
   };
 
   const getConfidenceColor = (confidence: number) => {
@@ -103,7 +127,7 @@ export default function TranscriptViewer({
   }
 
   return (
-    <div className="relative space-y-3 max-h-[600px] overflow-y-auto pr-2">
+    <div ref={scrollerRef} className="relative space-y-3 max-h-[600px] overflow-y-auto pr-2">
       {/* Training Feedback Toast */}
       {showTrainingFeedback && (
         <div className="sticky top-0 z-50 mb-4 animate-fade-in">
@@ -143,10 +167,11 @@ export default function TranscriptViewer({
         const isHovered = hoveredIndex === idx;
         const isCorrected = !!segment.correctedAt;
         const isJustCorrected = lastCorrectedIndex === idx;
+        const wall = formatWallClock(segment.capturedAtMs);
 
         return (
           <div
-            key={idx}
+            key={segment.id || idx}
             onMouseEnter={() => setHoveredIndex(idx)}
             onMouseLeave={() => setHoveredIndex(null)}
             className={`relative group p-4 rounded-lg border-2 transition-all ${
@@ -194,6 +219,7 @@ export default function TranscriptViewer({
                 {/* Decorative - low contrast intentional for timestamp badge */}
                 <span className="text-xs text-gray-500 dark:text-gray-300 font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700">
                   {formatTime(segment.startTime)} → {formatTime(segment.endTime)}
+                  {wall ? ` • ${wall}` : ''}
                 </span>
               </div>
 

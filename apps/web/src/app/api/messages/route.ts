@@ -10,8 +10,9 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
-import { emitNewMessage } from '@/lib/socket-server';
+import { emitNewMessage, emitUnreadCountUpdate } from '@/lib/socket-server';
 import { notifyNewMessage } from '@/lib/notifications';
+import { indexMessage, MessageSearchDocument } from '@/lib/search/meilisearch';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createAuditLog } from '@/lib/audit';
@@ -237,8 +238,46 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Index message in Meilisearch for search
+    try {
+      const searchDoc: MessageSearchDocument = {
+        id: message.id,
+        patientId: message.patientId,
+        fromUserId,
+        fromUserType,
+        fromUserName,
+        toUserId,
+        toUserType,
+        body: message.body,
+        subject: message.subject,
+        hasAttachments: !!(attachments && attachments.length > 0),
+        isRead: false,
+        createdAt: message.createdAt.getTime(),
+      };
+      await indexMessage(searchDoc);
+    } catch (searchError) {
+      // Log but don't fail the request if search indexing fails
+      logger.warn({
+        event: 'message_search_index_error',
+        messageId: message.id,
+        error: searchError instanceof Error ? searchError.message : 'Unknown error',
+      });
+    }
+
     // Emit real-time notification
     emitNewMessage(message);
+
+    // Emit unread count update to recipient
+    const recipientUnreadCount = await prisma.message.count({
+      where: {
+        patientId,
+        toUserId,
+        toUserType,
+        readAt: null,
+        archivedAt: null,
+      },
+    });
+    emitUnreadCountUpdate(toUserId, toUserType, patientId, recipientUnreadCount);
 
     // Send notification
     await notifyNewMessage(

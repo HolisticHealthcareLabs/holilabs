@@ -29,6 +29,7 @@ import {
   PreventionFindingsProcessedEvent,
 } from '@/lib/socket/events';
 import { logger } from '@/lib/logger';
+import type { DetectedConditionLite, RecommendationLite } from '@/lib/prevention/realtime';
 
 export interface UseRealtimePreventionUpdatesConfig {
   userId?: string;
@@ -325,26 +326,12 @@ export function useSocketConnection() {
 /**
  * Detection event from server-side Prevention Engine
  */
-export interface DetectedConditionFromServer {
-  id: string;
-  name: string;
-  category: string;
-  confidence: number;
-  icd10Codes?: string[];
-}
+export type DetectedConditionFromServer = DetectedConditionLite;
 
 /**
  * Recommendation from server-side Prevention Engine
  */
-export interface RecommendationFromServer {
-  id: string;
-  type: 'screening' | 'intervention' | 'lifestyle' | 'medication' | 'monitoring';
-  title: string;
-  description: string;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  guidelineSource: string;
-  uspstfGrade?: string;
-}
+export type RecommendationFromServer = RecommendationLite;
 
 /**
  * Hook config for real-time prevention detection in the sidebar

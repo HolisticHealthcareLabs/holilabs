@@ -369,12 +369,34 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
     const roomId = `user:${userType}:${userId}`;
     socket.join(roomId);
 
+    // Also join simplified user room for conversation notifications
+    if (userType === 'CLINICIAN') {
+      socket.join(`user:${userId}`);
+    } else if (userType === 'PATIENT') {
+      socket.join(`patient:${userId}`);
+    }
+
     logger.info({
       event: 'user_auto_joined_room',
       userId,
       userType,
       roomId,
       socketId: socket.id,
+    });
+
+    // Update online status for all conversation participants
+    void prisma.conversationParticipant.updateMany({
+      where: {
+        userId,
+        userType: userType as 'CLINICIAN' | 'PATIENT',
+        isActive: true,
+      },
+      data: {
+        isOnline: true,
+        lastSeenAt: new Date(),
+      },
+    }).catch((err) => {
+      logger.warn({ event: 'update_online_status_failed', userId, error: err?.message });
     });
 
     // Notify user is online
@@ -407,23 +429,77 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
     });
 
     // Join conversation room
-    socket.on('join_conversation', ({ conversationId }: { conversationId: string }) => {
+    socket.on('join_conversation', async ({ conversationId }: { conversationId: string }) => {
+      // Verify user is a participant before joining
+      const participant = await prisma.conversationParticipant.findFirst({
+        where: {
+          conversationId,
+          userId,
+          userType: userType as 'CLINICIAN' | 'PATIENT',
+          isActive: true,
+        },
+      });
+
+      if (!participant) {
+        socket.emit('error', { message: 'Not a participant of this conversation' });
+        return;
+      }
+
       socket.join(`conversation:${conversationId}`);
+
+      // Update lastSeenAt when joining conversation
+      await prisma.conversationParticipant.update({
+        where: { id: participant.id },
+        data: { lastSeenAt: new Date() },
+      }).catch((err) => {
+        logger.warn({ event: 'update_last_seen_failed', conversationId, userId, error: err?.message });
+      });
+
+      // Notify others in the conversation
+      socket.to(`conversation:${conversationId}`).emit('participant_joined', {
+        conversationId,
+        userId,
+        userType,
+      });
 
       logger.info({
         event: 'joined_conversation',
         conversationId,
+        userId,
+        userType,
         socketId: socket.id,
       });
     });
 
     // Leave conversation room
-    socket.on('leave_conversation', ({ conversationId }: { conversationId: string }) => {
+    socket.on('leave_conversation', async ({ conversationId }: { conversationId: string }) => {
+      // Update lastSeenAt before leaving
+      await prisma.conversationParticipant.updateMany({
+        where: {
+          conversationId,
+          userId,
+          userType: userType as 'CLINICIAN' | 'PATIENT',
+          isActive: true,
+        },
+        data: { lastSeenAt: new Date() },
+      }).catch((err) => {
+        logger.warn({ event: 'update_last_seen_failed', conversationId, userId, error: err?.message });
+      });
+
+      // Notify others before leaving
+      socket.to(`conversation:${conversationId}`).emit('participant_left', {
+        conversationId,
+        userId,
+        userType,
+      });
+
       socket.leave(`conversation:${conversationId}`);
 
       logger.info({
         event: 'left_conversation',
         conversationId,
+        userId,
+        userType,
         socketId: socket.id,
       });
     });
@@ -498,9 +574,30 @@ export function initSocketServer(httpServer: HTTPServer): SocketIOServer {
     socket.on('disconnect', () => {
       // Delegate cleanup to ScribeService (stops stream + persists transcript when orphaned).
       void scribeService.onDisconnect(socket.id).catch(() => {});
+
+      // Update offline status for all conversation participants
+      void prisma.conversationParticipant.updateMany({
+        where: {
+          userId,
+          userType: userType as 'CLINICIAN' | 'PATIENT',
+          isActive: true,
+        },
+        data: {
+          isOnline: false,
+          lastSeenAt: new Date(),
+        },
+      }).catch((err) => {
+        logger.warn({ event: 'update_offline_status_failed', userId, error: err?.message });
+      });
+
+      // Notify user is offline
+      socket.broadcast.emit('user_offline', { userId, userType });
+
       logger.info({
         event: 'socket_disconnected',
         socketId: socket.id,
+        userId,
+        userType,
       });
     });
 
@@ -691,6 +788,66 @@ export function emitNewMessage(message: any) {
 
   const recipientRoom = `user:${message.toUserType}:${message.toUserId}`;
   io.to(recipientRoom).emit('new_message', message);
+
+  // Also emit to conversation room
+  const conversationRoom = `conversation:${message.patientId}`;
+  io.to(conversationRoom).emit('new_message', message);
+}
+
+/**
+ * Emit read receipt when messages are marked as read
+ */
+export function emitReadReceipt(data: {
+  conversationId: string;
+  readerId: string;
+  readerType: 'CLINICIAN' | 'PATIENT';
+  messageIds: string[];
+  readAt: Date;
+}) {
+  if (!io) return;
+
+  // Emit to conversation room
+  const conversationRoom = `conversation:${data.conversationId}`;
+  io.to(conversationRoom).emit('messages_read', {
+    conversationId: data.conversationId,
+    readerId: data.readerId,
+    readerType: data.readerType,
+    messageIds: data.messageIds,
+    readAt: data.readAt.toISOString(),
+  });
+
+  logger.info({
+    event: 'read_receipt_emitted',
+    conversationId: data.conversationId,
+    readerId: data.readerId,
+    messageCount: data.messageIds.length,
+  });
+}
+
+/**
+ * Emit unread count update to a specific user
+ */
+export function emitUnreadCountUpdate(
+  userId: string,
+  userType: 'CLINICIAN' | 'PATIENT',
+  conversationId: string,
+  unreadCount: number
+) {
+  if (!io) return;
+
+  const userRoom = `user:${userType}:${userId}`;
+  io.to(userRoom).emit('unread_count_update', {
+    conversationId,
+    unreadCount,
+  });
+
+  logger.info({
+    event: 'unread_count_update_emitted',
+    userId,
+    userType,
+    conversationId,
+    unreadCount,
+  });
 }
 
 /**
@@ -864,5 +1021,91 @@ export function emitPreventionEventToUsers(
     eventType: event,
     userCount: userIds.length,
     notificationId: notification.id,
+  });
+}
+
+/**
+ * Conversation - Emit new message to conversation participants
+ */
+export function emitConversationMessage(
+  conversationId: string,
+  message: {
+    id: string;
+    senderId: string;
+    senderType: 'CLINICIAN' | 'PATIENT';
+    senderName: string;
+    content: string;
+    messageType: string;
+    attachments?: unknown;
+    replyTo?: { id: string; content: string; senderId: string; senderType: string } | null;
+    deliveredAt: Date | null;
+    createdAt: Date;
+  }
+) {
+  if (!io) return;
+
+  io.to(`conversation:${conversationId}`).emit('new_message', {
+    ...message,
+    conversationId,
+  });
+
+  logger.info({
+    event: 'conversation_message_emitted',
+    conversationId,
+    messageId: message.id,
+  });
+}
+
+/**
+ * Conversation - Emit conversation list update to a user
+ */
+export function emitConversationListUpdate(
+  userId: string,
+  userType: 'CLINICIAN' | 'PATIENT',
+  update: {
+    conversationId: string;
+    lastMessageAt: Date;
+    lastMessageText: string;
+    hasNewMessage?: boolean;
+    unreadCount?: number;
+  }
+) {
+  if (!io) return;
+
+  const userRoom = userType === 'CLINICIAN' ? `user:${userId}` : `patient:${userId}`;
+  io.to(userRoom).emit('conversation_update', update);
+
+  logger.info({
+    event: 'conversation_list_update_emitted',
+    userId,
+    userType,
+    conversationId: update.conversationId,
+  });
+}
+
+/**
+ * Conversation - Emit presence update to conversation
+ */
+export function emitConversationPresence(
+  conversationId: string,
+  presence: {
+    userId: string;
+    userType: 'CLINICIAN' | 'PATIENT';
+    isOnline: boolean;
+    lastSeenAt: Date;
+  }
+) {
+  if (!io) return;
+
+  io.to(`conversation:${conversationId}`).emit('presence_update', {
+    conversationId,
+    ...presence,
+  });
+
+  logger.info({
+    event: 'conversation_presence_emitted',
+    conversationId,
+    userId: presence.userId,
+    isOnline: presence.isOnline,
   });
 }

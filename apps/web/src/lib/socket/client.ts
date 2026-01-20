@@ -20,11 +20,25 @@ export interface SocketClientConfig {
 }
 
 /**
+ * Register an externally-created Socket.IO client instance as the singleton.
+ * This allows different parts of the app (e.g., Co-Pilot) to share one connection.
+ */
+export function setSocketClient(external: Socket) {
+  socket = external;
+}
+
+/**
  * Initialize socket client connection
  */
 export function initSocketClient(config: SocketClientConfig): Socket {
-  if (socket && socket.connected) {
-    console.log('✓ Socket already connected');
+  if (socket) {
+    // Reuse existing instance (connected or connecting) to avoid duplicate sockets.
+    try {
+      if (!socket.connected && config.autoConnect !== false) {
+        socket.connect();
+      }
+    } catch {}
+    console.log('✓ Reusing existing socket instance');
     return socket;
   }
 
