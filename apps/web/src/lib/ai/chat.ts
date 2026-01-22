@@ -10,7 +10,9 @@
  * - Patient data analysis
  */
 
-export type AIProvider = 'claude' | 'openai' | 'gemini';
+import logger from '@/lib/logger';
+
+export type AIProvider = 'claude' | 'openai' | 'gemini' | 'ollama' | 'vllm' | 'together';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -135,8 +137,12 @@ async function chatWithClaude(request: ChatRequest): Promise<ChatResponse> {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Claude API error:', error);
+      // HIPAA: Do not log response body - may contain reflected PHI
+      logger.error({
+        event: 'claude_api_error',
+        status: response.status,
+        statusText: response.statusText,
+      });
       return {
         success: false,
         error: 'Failed to get Claude response',
@@ -155,7 +161,11 @@ async function chatWithClaude(request: ChatRequest): Promise<ChatResponse> {
       },
     };
   } catch (error: any) {
-    console.error('Claude chat error:', error);
+    // HIPAA: Only log error type, not content
+    logger.error({
+      event: 'claude_chat_error',
+      errorType: error?.name || 'UnknownError',
+    });
     return {
       success: false,
       error: error.message,
@@ -204,8 +214,12 @@ async function chatWithOpenAI(request: ChatRequest): Promise<ChatResponse> {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
+      // HIPAA: Do not log response body - may contain reflected PHI
+      logger.error({
+        event: 'openai_api_error',
+        status: response.status,
+        statusText: response.statusText,
+      });
       return {
         success: false,
         error: 'Failed to get OpenAI response',
@@ -224,7 +238,11 @@ async function chatWithOpenAI(request: ChatRequest): Promise<ChatResponse> {
       },
     };
   } catch (error: any) {
-    console.error('OpenAI chat error:', error);
+    // HIPAA: Only log error type, not content
+    logger.error({
+      event: 'openai_chat_error',
+      errorType: error?.name || 'UnknownError',
+    });
     return {
       success: false,
       error: error.message,
@@ -271,12 +289,15 @@ async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
       };
     });
 
+    // SECURITY: API key moved from URL query parameter to header
+    // This prevents key exposure in server logs, proxies, CDNs, and browser history
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
         },
         body: JSON.stringify({
           contents: conversationParts,
@@ -296,16 +317,25 @@ async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
     );
 
     if (!response.ok) {
+      // HIPAA: Do not log response body - may contain reflected PHI
+      // Parse error for user-facing message but don't log raw content
       const raw = await response.text().catch(() => '');
-      console.error('Gemini API error:', raw);
-      let detail = raw;
+      let detail = response.statusText;
       try {
         const parsed = JSON.parse(raw);
-        detail = parsed?.error?.message || parsed?.message || raw;
-      } catch {}
+        // Only extract safe error message, not full response
+        detail = parsed?.error?.message || parsed?.message || response.statusText;
+      } catch {
+        // JSON parse failed, use status text only
+      }
+      logger.error({
+        event: 'gemini_api_error',
+        status: response.status,
+        statusText: response.statusText,
+      });
       return {
         success: false,
-        error: `Gemini request failed (${response.status}): ${detail || response.statusText}`,
+        error: `Gemini request failed (${response.status}): ${detail}`,
       };
     }
 
@@ -340,7 +370,242 @@ async function chatWithGemini(request: ChatRequest): Promise<ChatResponse> {
       },
     };
   } catch (error: any) {
-    console.error('Gemini chat error:', error);
+    // HIPAA: Only log error type, not content
+    logger.error({
+      event: 'gemini_chat_error',
+      errorType: error?.name || 'UnknownError',
+    });
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+// ============================================================================
+// OLLAMA API (Local Inference)
+// ============================================================================
+
+async function chatWithOllama(request: ChatRequest): Promise<ChatResponse> {
+  try {
+    const baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    const model = request.model || process.env.OLLAMA_MODEL || 'phi3';
+    const systemPrompt = request.systemPrompt || ClinicalSystemPrompts.general;
+
+    const messages = request.messages.map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    // Add system message at the beginning
+    if (systemPrompt) {
+      messages.unshift({ role: 'system', content: systemPrompt });
+    }
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: false,
+        options: {
+          temperature: request.temperature || 0.7,
+          num_predict: request.maxTokens || 4096,
+        },
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (!response.ok) {
+      // HIPAA: Do not log response body - may contain reflected PHI
+      logger.error({
+        event: 'ollama_api_error',
+        status: response.status,
+      });
+      return {
+        success: false,
+        error: `Ollama API error: ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      message: data.message?.content || '',
+      usage: {
+        promptTokens: data.prompt_eval_count || 0,
+        completionTokens: data.eval_count || 0,
+        totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+      },
+    };
+  } catch (error: any) {
+    // HIPAA: Only log error type, not content
+    logger.error({
+      event: 'ollama_chat_error',
+      errorType: error?.name || 'UnknownError',
+    });
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+// ============================================================================
+// VLLM API (Self-Hosted Inference)
+// ============================================================================
+
+async function chatWithVLLM(request: ChatRequest): Promise<ChatResponse> {
+  try {
+    const baseUrl = process.env.VLLM_BASE_URL || 'http://localhost:8000';
+    const apiKey = process.env.VLLM_API_KEY;
+    const model = request.model || process.env.VLLM_MODEL || 'mistralai/Mistral-7B-Instruct-v0.3';
+    const systemPrompt = request.systemPrompt || ClinicalSystemPrompts.general;
+
+    const messages: Array<{ role: string; content: string }> = [];
+
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+
+    messages.push(...request.messages.map(m => ({
+      role: m.role,
+      content: m.content,
+    })));
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: request.temperature || 0.7,
+        max_tokens: request.maxTokens || 4096,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (!response.ok) {
+      // HIPAA: Do not log response body - may contain reflected PHI
+      logger.error({
+        event: 'vllm_api_error',
+        status: response.status,
+      });
+      return {
+        success: false,
+        error: `vLLM API error: ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      message: data.choices?.[0]?.message?.content || '',
+      usage: {
+        promptTokens: data.usage?.prompt_tokens || 0,
+        completionTokens: data.usage?.completion_tokens || 0,
+        totalTokens: data.usage?.total_tokens || 0,
+      },
+    };
+  } catch (error: any) {
+    // HIPAA: Only log error type, not content
+    logger.error({
+      event: 'vllm_chat_error',
+      errorType: error?.name || 'UnknownError',
+    });
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+// ============================================================================
+// TOGETHER.AI API (Cloud Inference)
+// ============================================================================
+
+async function chatWithTogether(request: ChatRequest): Promise<ChatResponse> {
+  try {
+    const apiKey = process.env.TOGETHER_API_KEY;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'Together.ai API key not configured (set TOGETHER_API_KEY)',
+      };
+    }
+
+    const model = request.model || process.env.TOGETHER_MODEL || 'mistralai/Mistral-7B-Instruct-v0.3';
+    const systemPrompt = request.systemPrompt || ClinicalSystemPrompts.general;
+
+    const messages: Array<{ role: string; content: string }> = [];
+
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+
+    messages.push(...request.messages.map(m => ({
+      role: m.role,
+      content: m.content,
+    })));
+
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: request.temperature || 0.7,
+        max_tokens: request.maxTokens || 4096,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+
+    if (!response.ok) {
+      // HIPAA: Do not log response body - may contain reflected PHI
+      logger.error({
+        event: 'together_api_error',
+        status: response.status,
+      });
+      return {
+        success: false,
+        error: `Together.ai API error: ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      message: data.choices?.[0]?.message?.content || '',
+      usage: {
+        promptTokens: data.usage?.prompt_tokens || 0,
+        completionTokens: data.usage?.completion_tokens || 0,
+        totalTokens: data.usage?.total_tokens || 0,
+      },
+    };
+  } catch (error: any) {
+    // HIPAA: Only log error type, not content
+    logger.error({
+      event: 'together_chat_error',
+      errorType: error?.name || 'UnknownError',
+    });
     return {
       success: false,
       error: error.message,
@@ -367,6 +632,15 @@ export async function chat(request: ChatRequest): Promise<ChatResponse> {
 
     case 'gemini':
       return chatWithGemini(request);
+
+    case 'ollama':
+      return chatWithOllama(request);
+
+    case 'vllm':
+      return chatWithVLLM(request);
+
+    case 'together':
+      return chatWithTogether(request);
 
     default:
       return {
