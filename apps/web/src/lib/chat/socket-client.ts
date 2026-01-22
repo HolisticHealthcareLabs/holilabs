@@ -45,8 +45,10 @@ export function initSocket(authToken: string): Socket {
   socket = io({
     path: '/api/socket.io',
     autoConnect: false,
-    // Prevent infinite retry loops when the Socket.IO server is not running.
-    reconnection: false,
+    // Enable auto-recovery on disconnect with controlled retry limits
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
     timeout: 2000,
     auth: {
       token: authToken,

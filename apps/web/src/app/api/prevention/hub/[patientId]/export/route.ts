@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { exportPreventionReport, ExportOptions } from '@/lib/services/prevention-export.service';
 import logger from '@/lib/logger';
 import { auditExport } from '@/lib/audit';
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     // Verify authentication
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(

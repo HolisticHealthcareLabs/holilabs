@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { getPreventionHistoryService } from '@/lib/services/prevention-history.service';
 import logger from '@/lib/logger';
 import { auditView } from '@/lib/audit';
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(

@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { z } from 'zod';
 import { preventionEngine, type TranscriptFindings } from '@/lib/services';
 import logger from '@/lib/logger';
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Authentication check
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(

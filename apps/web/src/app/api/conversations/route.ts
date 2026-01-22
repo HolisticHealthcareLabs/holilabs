@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const cursor = searchParams.get('cursor');
 
     // Determine user identity
-    const clinicianSession = await getServerSession(authOptions);
+    const clinicianSession = await auth();
     let userId: string;
     let userType: 'CLINICIAN' | 'PATIENT';
 
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine creator identity
-    const clinicianSession = await getServerSession(authOptions);
+    const clinicianSession = await auth();
     let creatorId: string;
     let creatorType: 'CLINICIAN' | 'PATIENT';
     let creatorName: string;

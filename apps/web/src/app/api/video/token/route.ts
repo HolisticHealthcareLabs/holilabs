@@ -15,7 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { AccessToken } from 'livekit-server-sdk';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 import { auditCreate } from '@/lib/audit';
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Verify authentication
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(

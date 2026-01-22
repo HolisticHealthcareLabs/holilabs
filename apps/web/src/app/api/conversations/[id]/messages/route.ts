@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
@@ -38,7 +38,7 @@ export async function POST(
     }
 
     // Determine sender identity
-    const clinicianSession = await getServerSession(authOptions);
+    const clinicianSession = await auth();
     let senderId: string;
     let senderType: 'CLINICIAN' | 'PATIENT';
     let senderName: string;
