@@ -141,6 +141,9 @@ jest.mock('next/navigation', () => ({
   useSearchParams: jest.fn(() => new URLSearchParams()),
 }));
 
+// Logger mock is handled via manual mock in src/lib/__mocks__/logger.ts
+// Test files should call jest.mock('@/lib/logger') to use the manual mock
+
 // ==============================================================================
 // Database Helpers
 // ==============================================================================

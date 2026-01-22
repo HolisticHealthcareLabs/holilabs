@@ -16,54 +16,42 @@
  * Task-Based Routing:
  * - High-volume commodity tasks → Gemini (cost optimization)
  * - Clinical decisions requiring accuracy → Claude (safety)
+ *
+ * P2-005: Uses unified types from types.ts
  */
 
 import { chat, type ChatRequest, type ChatResponse, type AIProvider } from './chat';
 import logger from '@/lib/logger';
+import { validateChatMessages } from './validator';
+import {
+  type UnifiedAITask,
+  UNIFIED_TASK_CONFIG,
+  getProviderForTask as getProviderFromConfig,
+  normalizeTask,
+  prefersLocalProvider,
+  type AIProviderType,
+} from './types';
 
 export type QueryComplexity = 'simple' | 'moderate' | 'complex' | 'critical';
 
 /**
- * Task-based model routing for cost optimization
+ * Clinical task type for routing decisions.
  *
- * "The cheapest token is the one you never send."
- * - Commodity tasks → Gemini (cheap, fast)
- * - Safety-critical → Claude (accurate)
+ * P2-005: Now aliases UnifiedAITask for backward compatibility.
+ * @see UnifiedAITask for the canonical type definition
  */
-export type ClinicalTask =
-  | 'translation'           // Simple, high-volume
-  | 'summarization'         // Commodity task
-  | 'drug-interaction'      // Needs accuracy - ALWAYS CLAUDE
-  | 'diagnosis-support'     // Critical - ALWAYS CLAUDE
-  | 'prescription-review'   // Safety-critical - ALWAYS CLAUDE
-  | 'scheduling'            // Low stakes
-  | 'billing-codes'         // Lookup-like
-  | 'patient-education'     // Template-based
-  | 'clinical-notes'        // Moderate complexity
-  | 'lab-interpretation'    // Needs accuracy
-  | 'referral-letter'       // Template-based
-  | 'general';              // Default routing
-
-const TASK_MODEL_MAP: Record<ClinicalTask, AIProvider> = {
-  'translation': 'gemini',        // Simple, high-volume
-  'summarization': 'gemini',      // Commodity task
-  'drug-interaction': 'claude',   // SAFETY: Needs accuracy
-  'diagnosis-support': 'claude',  // CRITICAL: Always highest quality
-  'prescription-review': 'claude', // SAFETY: Drug dosing/interactions
-  'scheduling': 'gemini',         // Low stakes, high volume
-  'billing-codes': 'gemini',      // Lookup-like, deterministic
-  'patient-education': 'gemini',  // Template-based content
-  'clinical-notes': 'gemini',     // Moderate complexity, high volume
-  'lab-interpretation': 'claude', // Needs accuracy for abnormal values
-  'referral-letter': 'gemini',    // Template-based, low risk
-  'general': 'gemini',            // Default to cost-efficient
-};
+export type ClinicalTask = UnifiedAITask;
 
 /**
- * Get the recommended provider for a clinical task
+ * Get the recommended provider for a clinical task.
+ *
+ * P2-005: Uses unified task configuration.
+ *
+ * @param task The clinical task type
+ * @returns The recommended AI provider
  */
 export function getProviderForTask(task: ClinicalTask): AIProvider {
-  return TASK_MODEL_MAP[task] || 'gemini';
+  return getProviderFromConfig(task) as AIProvider;
 }
 
 export interface RouterConfig {
@@ -89,7 +77,7 @@ export interface RouterConfig {
 
 const DEFAULT_CONFIG: RouterConfig = {
   primaryProvider: 'gemini',
-  fallbackProviders: ['claude', 'openai'],
+  fallbackProviders: ['together', 'claude', 'openai', 'ollama'],
   preferCheapest: true,
   maxCostPerQuery: 5, // 5 cents max per query
   minAccuracyThreshold: 0.85,
@@ -161,6 +149,9 @@ function getEstimatedCost(
     gemini: 0.1875,    // $0.075 input + $0.30 output / 1M = ~$0.001 per 2k tokens
     claude: 9.0,       // $3 input + $15 output / 1M = ~$0.03 per 2k tokens
     openai: 10.0,      // $5 input + $15 output / 1M = ~$0.04 per 2k tokens
+    ollama: 0,         // Local inference - no cost
+    vllm: 0,           // Self-hosted - infrastructure cost only
+    together: 0.2,     // ~$0.20 per 1M tokens for 7B models
   };
 
   return (costs[provider] * tokenCount) / 10000; // Convert to cents per query
@@ -187,6 +178,23 @@ export async function routeAIRequest(
   config: Partial<RouterConfig> = {}
 ): Promise<ChatResponse & { provider: AIProvider; complexity: QueryComplexity }> {
   const fullConfig: RouterConfig = { ...DEFAULT_CONFIG, ...config };
+
+  // SECURITY: Validate input for prompt injection before processing
+  const validationResult = validateChatMessages(request.messages);
+  if (!validationResult.valid) {
+    logger.warn({
+      event: 'ai_router_input_blocked',
+      reason: validationResult.reason,
+      severity: validationResult.severity,
+      messageCount: request.messages.length,
+    });
+    return {
+      success: false,
+      error: validationResult.reason || 'Input validation failed',
+      provider: 'gemini', // Placeholder - request not sent
+      complexity: 'simple',
+    };
+  }
 
   // Analyze query complexity
   const complexity = analyzeComplexity(request.messages);
@@ -381,3 +389,12 @@ export const AIRouter = {
    */
   byTask: routeByTask,
 };
+
+// P2-005: Re-export unified types for convenience
+export {
+  type UnifiedAITask,
+  type AIProviderType,
+  UNIFIED_TASK_CONFIG,
+  normalizeTask,
+  prefersLocalProvider,
+} from './types';
