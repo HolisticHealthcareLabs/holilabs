@@ -49,6 +49,7 @@ const customJestConfig = {
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
     '!**/*.manual.[jt]s', // Exclude manual test scripts
+    '!**/*.fixture.[jt]s?(x)', // Exclude fixture files
   ],
 
   // Ignore patterns
@@ -60,6 +61,7 @@ const customJestConfig = {
     '<rootDir>/tests/', // All tests/ directory tests (E2E/load/smoke) run with Playwright/k6, not Jest
     '\\.skip\\.',      // Skip .skip.ts files (temporarily disabled tests)
     '\\.manual\\.',    // Skip .manual.ts files (manual verification scripts)
+    '\\.fixture\\.',   // Skip .fixture.ts files (test fixtures, not tests)
   ],
 
   // Transform ESM modules in node_modules
