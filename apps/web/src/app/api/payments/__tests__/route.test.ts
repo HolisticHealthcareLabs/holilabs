@@ -1,5 +1,5 @@
 /**
- * Payment Processing Tests
+ * Payment Processing Tests (Integration)
  *
  * Tests the complete payment workflow including:
  * - Payment creation (with and without invoice)
@@ -10,13 +10,31 @@
  *
  * Coverage Target: 80%+ (critical financial transactions)
  * Compliance: HIPAA audit logging, PCI-DSS payment security
+ *
+ * REQUIRES: Database connection and ENCRYPTION_KEY environment variable
+ * Skip in unit test mode - run in CI with proper environment
  */
+
+// Skip integration tests if required environment is not available
+const isIntegrationTest = process.env.ENCRYPTION_KEY && process.env.DATABASE_URL;
+const describeIntegration = isIntegrationTest ? describe : describe.skip;
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
-import { POST, GET } from '../route';
-import { GET as GET_DETAIL, PATCH as PATCH_PAYMENT } from '../[id]/route';
-import { prisma } from '@/lib/prisma';
+
+// Only import database-dependent modules if running integration tests
+let POST: any, GET: any, GET_DETAIL: any, PATCH_PAYMENT: any, prisma: any;
+
+if (isIntegrationTest) {
+  const routeModule = require('../route');
+  POST = routeModule.POST;
+  GET = routeModule.GET;
+  const detailModule = require('../[id]/route');
+  GET_DETAIL = detailModule.GET;
+  PATCH_PAYMENT = detailModule.PATCH;
+  prisma = require('@/lib/prisma').prisma;
+}
+
 import crypto from 'crypto';
 
 // Test data
@@ -69,7 +87,7 @@ function createMockRequest(options: {
   });
 }
 
-describe('Payment API', () => {
+describeIntegration('Payment API', () => {
   let testPatient: any;
   let testInvoice: any;
   let createdPaymentIds: string[] = [];

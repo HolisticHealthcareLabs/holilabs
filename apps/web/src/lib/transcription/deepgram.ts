@@ -40,24 +40,29 @@ function getDeepgramClient() {
  * Transcribe audio buffer using Deepgram
  *
  * @param audioBuffer - Decrypted audio file buffer
- * @param languageCode - 'pt' (Portuguese) or 'es' (Spanish)
+ * @param languageCode - Optional language hint ('pt', 'es', 'en'). If not provided, uses auto-detection.
  * @returns Transcription result with speaker diarization
  */
 export async function transcribeAudioWithDeepgram(
   audioBuffer: Buffer,
-  languageCode: 'pt' | 'es'
+  languageCode?: 'pt' | 'es' | 'en' | null
 ): Promise<DeepgramTranscriptResult> {
   const startTime = Date.now();
 
   try {
     const deepgram = getDeepgramClient();
 
+    // Build options based on whether language is specified
+    const languageOptions = languageCode
+      ? { language: languageCode, detect_language: false }
+      : { detect_language: true }; // Enable auto-language detection when no language specified
+
     // Call Deepgram API with medical-optimized settings
     const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
       audioBuffer,
       {
         model: 'nova-2', // Latest model (most accurate)
-        language: languageCode, // Portuguese or Spanish
+        ...languageOptions, // Auto-detect or use specified language
         smart_format: true, // Auto-format numbers, dates, times
         punctuate: true, // Add punctuation
         paragraphs: true, // Group into paragraphs
@@ -68,7 +73,6 @@ export async function transcribeAudioWithDeepgram(
         profanity_filter: false, // Don't filter medical terms
         redact: ['pci', 'numbers', 'ssn'], // Basic PHI redaction (HIPAA)
         numerals: true, // Convert "twenty three" → "23"
-        detect_language: false, // We know the language (faster)
       }
     );
 
@@ -106,8 +110,11 @@ export async function transcribeAudioWithDeepgram(
 
     const processingTimeMs = Date.now() - startTime;
 
+    // Get detected or specified language
+    const detectedLanguage = result.results.channels[0].detected_language || languageCode || 'unknown';
+
     console.log(`✅ Deepgram transcription completed in ${processingTimeMs}ms`);
-    console.log(`   Language: ${languageCode}, Duration: ${durationSeconds}s, Speakers: ${speakerCount}`);
+    console.log(`   Language: ${detectedLanguage}${!languageCode ? ' (auto-detected)' : ''}, Duration: ${durationSeconds}s, Speakers: ${speakerCount}`);
     console.log(`   Words: ${result.results.channels[0].alternatives[0].words?.length || 0}, Confidence: ${(avgConfidence * 100).toFixed(1)}%`);
 
     return {
@@ -115,7 +122,7 @@ export async function transcribeAudioWithDeepgram(
       segments,
       speakerCount,
       confidence: avgConfidence,
-      language: languageCode,
+      language: detectedLanguage,
       durationSeconds,
       processingTimeMs,
     };

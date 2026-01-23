@@ -5,7 +5,7 @@
  */
 
 import { CDSSService } from '../cdss.service';
-import { mockPatients, mockClinician } from '@/lib/__tests__/fixtures/cdss-test-data';
+import { mockPatients, mockClinician } from '@/lib/__tests__/fixtures/cdss-fixtures';
 
 // Mock Prisma
 jest.mock('@/lib/prisma', () => ({
@@ -16,6 +16,7 @@ jest.mock('@/lib/prisma', () => ({
     patient: {
       findMany: jest.fn(),
       findUnique: jest.fn(), // Used by getPatientContext
+      count: jest.fn(), // Used by checkOperationalOptimizations
     },
     manualReviewQueueItem: {
       create: jest.fn(),
@@ -33,19 +34,50 @@ jest.mock('../review-queue.service', () => ({
 const { prisma } = require('@/lib/prisma');
 const { reviewQueueService } = require('../review-queue.service');
 
-// Helper to mock patient data for CDSS tests
-function mockPatientData(patient: any) {
-  const patientData = {
+// Transform fixture patient to have Prisma-expected field names
+function toPatientData(patient: any) {
+  return {
     ...patient,
     assignedClinicianId: mockClinician.id,
     vitalSigns: patient.vitals || [],
-    appointments: patient.appointments || (patient.lastVisit ? [{ endTime: patient.lastVisit }] : []),
+    medications: patient.medications || [],
+    labResults: patient.labResults || [],
+    allergies: patient.allergies || [],
+    diagnoses: patient.diagnoses || [],
+    appointments: patient.appointments || (patient.lastVisit ? [{ endTime: patient.lastVisit, status: 'COMPLETED' }] : []),
   };
+}
 
-  prisma.patient.findMany.mockResolvedValue([patientData]);
-  prisma.patient.findUnique.mockResolvedValue(patientData);
+// Helper to mock patient data for CDSS tests - sets up both findMany AND findUnique
+function mockPatientData(patient: any, debug = false) {
+  const patientData = toPatientData(patient);
+
+  prisma.patient.findMany.mockImplementation(() => {
+    if (debug) console.log('findMany returning:', JSON.stringify(patientData.medications));
+    return Promise.resolve([patientData]);
+  });
+  prisma.patient.findUnique.mockImplementation((args: any) => {
+    if (debug) console.log('findUnique called with:', JSON.stringify(args));
+    if (debug) console.log('findUnique returning medications:', JSON.stringify(patientData.medications));
+    return Promise.resolve(patientData);
+  });
+  prisma.patient.count.mockResolvedValue(0); // Default to 0 for operational optimizations
 
   return patientData;
+}
+
+// Helper for multiple patients - properly sets up findUnique to return correct patient by ID
+function mockMultiplePatients(patients: any[]) {
+  const patientDataList = patients.map(toPatientData);
+
+  prisma.patient.findMany.mockResolvedValue(patientDataList);
+  prisma.patient.findUnique.mockImplementation(({ where }: { where: { id: string } }) => {
+    const found = patientDataList.find((p) => p.id === where.id);
+    return Promise.resolve(found || null);
+  });
+  prisma.patient.count.mockResolvedValue(0);
+
+  return patientDataList;
 }
 
 describe('CDSSService', () => {
@@ -81,19 +113,7 @@ describe('CDSSService', () => {
     });
 
     it('should sort insights by priority (critical > high > medium > low)', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockClinician);
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withSepsisRisk,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withSepsisRisk.vitals,
-        },
-        {
-          ...mockPatients.withDrugInteraction,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withDrugInteraction.vitals,
-        },
-      ]);
+      mockMultiplePatients([mockPatients.withSepsisRisk, mockPatients.withDrugInteraction]);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -109,14 +129,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag critical insights for review', async () => {
-      prisma.user.findUnique.mockResolvedValue(mockClinician);
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withCriticalLabs);
 
       await cdssService.generateInsights(mockClinician.id);
 
@@ -126,11 +139,27 @@ describe('CDSSService', () => {
 
   describe('Drug Interactions', () => {
     beforeEach(() => {
+      jest.clearAllMocks();
       prisma.user.findUnique.mockResolvedValue(mockClinician);
     });
 
     it('should detect warfarin + aspirin interaction', async () => {
-      mockPatientData(mockPatients.withDrugInteraction);
+      // Create fresh patient object for aspirin
+      const patientWithAspirin = {
+        id: 'patient-aspirin',
+        firstName: 'Test',
+        lastName: 'Aspirin',
+        dateOfBirth: new Date('1960-01-01'),
+        medications: [
+          { id: 'med-1', name: 'Warfarin', dose: '5mg', isActive: true },
+          { id: 'med-2', name: 'Aspirin', dose: '81mg', isActive: true },
+        ],
+        vitals: [],
+        labResults: [],
+        allergies: [],
+        diagnoses: [],
+      };
+      mockPatientData(patientWithAspirin);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -142,29 +171,47 @@ describe('CDSSService', () => {
     });
 
     it('should detect warfarin + ibuprofen interaction', async () => {
+      // Create fresh patient object for ibuprofen
       const patientWithIbuprofen = {
-        ...mockPatients.withDrugInteraction,
+        id: 'patient-ibuprofen',
+        firstName: 'Test',
+        lastName: 'Ibuprofen',
+        dateOfBirth: new Date('1960-01-01'),
         medications: [
           { id: 'med-1', name: 'Warfarin', dose: '5mg', isActive: true },
           { id: 'med-2', name: 'Ibuprofen', dose: '400mg', isActive: true },
         ],
-      };mockPatientData(patientWithIbuprofen);
+        vitals: [],
+        labResults: [],
+        allergies: [],
+        diagnoses: [],
+      };
+      mockPatientData(patientWithIbuprofen);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
       const interaction = insights.find((i) => i.type === 'interaction_warning');
       expect(interaction).toBeDefined();
       expect(interaction?.description.toLowerCase()).toContain('warfarin');
+      expect(interaction?.description.toLowerCase()).toContain('ibuprofen');
     });
 
     it('should not flag when drugs do not interact', async () => {
       const patientNoInteractions = {
-        ...mockPatients.healthy,
+        id: 'patient-no-interactions',
+        firstName: 'Safe',
+        lastName: 'Patient',
+        dateOfBirth: new Date('1970-01-01'),
         medications: [
           { id: 'med-1', name: 'Lisinopril', dose: '10mg', isActive: true },
           { id: 'med-2', name: 'Metformin', dose: '500mg', isActive: true },
         ],
-      };mockPatientData(patientNoInteractions);
+        vitals: [],
+        labResults: [],
+        allergies: [],
+        diagnoses: [],
+      };
+      mockPatientData(patientNoInteractions);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -176,12 +223,20 @@ describe('CDSSService', () => {
 
     it('should handle case-insensitive drug names', async () => {
       const patientUpperCase = {
-        ...mockPatients.withDrugInteraction,
+        id: 'patient-uppercase',
+        firstName: 'Upper',
+        lastName: 'Case',
+        dateOfBirth: new Date('1960-01-01'),
         medications: [
           { id: 'med-1', name: 'WARFARIN', dose: '5mg', isActive: true },
           { id: 'med-2', name: 'ASPIRIN', dose: '81mg', isActive: true },
         ],
-      };mockPatientData(patientUpperCase);
+        vitals: [],
+        labResults: [],
+        allergies: [],
+        diagnoses: [],
+      };
+      mockPatientData(patientUpperCase);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -196,13 +251,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag sepsis when qSOFA >= 2', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withSepsisRisk,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withSepsisRisk.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withSepsisRisk);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -212,13 +261,7 @@ describe('CDSSService', () => {
     });
 
     it('should not flag when vitals are normal', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.healthy,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.healthy.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.healthy);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -261,13 +304,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag hypertension when BP >= 140/90', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withHypertension,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withHypertension.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withHypertension);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -318,13 +355,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag critical lab results', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withCriticalLabs);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -334,13 +365,7 @@ describe('CDSSService', () => {
     });
 
     it('should use isCritical field correctly', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withCriticalLabs);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -350,13 +375,7 @@ describe('CDSSService', () => {
     });
 
     it('should include test details in insight', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withCriticalLabs);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -372,47 +391,22 @@ describe('CDSSService', () => {
     });
 
     it('should flag overdue wellness visit (>365 days)', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withOverduePreventiveCare,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withOverduePreventiveCare.vitals || [],
-          appointments: [
-            {
-              endTime: mockPatients.withOverduePreventiveCare.lastVisit,
-            },
-          ],
-        },
-      ]);
+      mockPatientData(mockPatients.withOverduePreventiveCare);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
-      const preventive = insights.find((i) => i.title?.includes('Preventive Care'));
+      // Service uses "Annual Wellness Visit Overdue" title
+      const preventive = insights.find((i) => i.title?.includes('Wellness Visit'));
       expect(preventive).toBeDefined();
     });
 
     it('should not flag recent wellness visit', async () => {
-      const patientRecentVisit = {
-        ...mockPatients.healthy,
-      };
-
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...patientRecentVisit,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: patientRecentVisit.vitals,
-          appointments: [
-            {
-              endTime: patientRecentVisit.lastVisit,
-            },
-          ],
-        },
-      ]);
+      mockPatientData(mockPatients.healthy);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
       const preventive = insights.find(
-        (i) => i.patientId === patientRecentVisit.id && i.title?.includes('Preventive Care')
+        (i) => i.patientId === mockPatients.healthy.id && i.title?.includes('Wellness Visit')
       );
       expect(preventive).toBeUndefined();
     });
@@ -421,16 +415,9 @@ describe('CDSSService', () => {
       const patientNeverVisited = {
         ...mockPatients.healthy,
         lastVisit: undefined,
+        appointments: [],
       };
-
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...patientNeverVisited,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: patientNeverVisited.vitals,
-          appointments: [],
-        },
-      ]);
+      mockPatientData(patientNeverVisited);
 
       // Should not throw error
       await expect(cdssService.generateInsights(mockClinician.id)).resolves.toBeDefined();
@@ -443,13 +430,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag when patient has >= 10 medications', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withPolypharmacy,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withPolypharmacy.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withPolypharmacy);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -459,13 +440,7 @@ describe('CDSSService', () => {
     });
 
     it('should not flag with < 10 medications', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withDrugInteraction,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withDrugInteraction.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withDrugInteraction);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -482,13 +457,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag nephrotoxic drugs without recent creatinine', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withRenalDosingNeed,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withRenalDosingNeed.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withRenalDosingNeed);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -527,13 +496,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag warfarin without INR in 30 days', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withAnticoagulationNeedMonitoring,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withAnticoagulationNeedMonitoring.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withAnticoagulationNeedMonitoring);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -542,13 +505,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag INR out of therapeutic range (< 2.0)', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withINRTooLow,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withINRTooLow.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withINRTooLow);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -558,13 +515,7 @@ describe('CDSSService', () => {
     });
 
     it('should flag INR out of therapeutic range (> 3.5)', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withINRTooHigh,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withINRTooHigh.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withINRTooHigh);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -604,13 +555,7 @@ describe('CDSSService', () => {
     });
 
     it('should detect multiple statins', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withDuplicateTherapy,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withDuplicateTherapy.vitals,
-        },
-      ]);
+      mockPatientData(mockPatients.withDuplicateTherapy);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 

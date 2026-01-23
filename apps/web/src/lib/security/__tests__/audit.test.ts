@@ -6,11 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { createAuditLog, type AuditLogData } from '@/lib/audit';
-import { prisma } from '@/lib/prisma';
 import { NextRequest } from 'next/server';
 
-// Mock dependencies
+// Mock dependencies BEFORE imports
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     auditLog: {
@@ -22,10 +20,12 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
+  __esModule: true,
   default: {
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn(),
+    debug: jest.fn(),
   },
 }));
 
@@ -37,6 +37,13 @@ jest.mock('@/lib/auth', () => ({
 jest.mock('@/lib/auth/patient-session', () => ({
   getPatientSession: jest.fn(),
 }));
+
+// Import mocked modules AFTER jest.mock() using require()
+const { prisma } = require('@/lib/prisma');
+const { createAuditLog } = require('@/lib/audit');
+
+// Type import (doesn't need require())
+import type { AuditLogData } from '@/lib/audit';
 
 describe('Audit Logging', () => {
   beforeEach(() => {

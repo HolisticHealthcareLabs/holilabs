@@ -1,5 +1,5 @@
 /**
- * Prescription Workflow Tests
+ * Prescription Workflow Tests (Integration)
  *
  * Tests the complete prescription workflow including:
  * - Prescription creation with medications
@@ -12,20 +12,36 @@
  *
  * Coverage Target: 80%+ (critical medical prescriptions)
  * Compliance: HIPAA tenant isolation, 21 CFR Part 11 e-signatures
+ *
+ * REQUIRES: Database connection and ENCRYPTION_KEY environment variable
+ * Skip in unit test mode - run in CI with proper environment
  */
+
+// Skip integration tests if required environment is not available
+const isIntegrationTest = process.env.ENCRYPTION_KEY && process.env.DATABASE_URL;
+const describeIntegration = isIntegrationTest ? describe : describe.skip;
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
-import { POST as CREATE_PRESCRIPTION, GET as LIST_PRESCRIPTIONS } from '../route';
-import {
-  GET as GET_PRESCRIPTION,
-  PATCH as UPDATE_PRESCRIPTION,
-  DELETE as DELETE_PRESCRIPTION
-} from '../[id]/route';
-import { POST as SIGN_PRESCRIPTION } from '../[id]/sign/route';
-import { POST as SEND_TO_PHARMACY } from '../[id]/send-to-pharmacy/route';
-import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+
+// Only import database-dependent modules if running integration tests
+let CREATE_PRESCRIPTION: any, LIST_PRESCRIPTIONS: any, GET_PRESCRIPTION: any;
+let UPDATE_PRESCRIPTION: any, DELETE_PRESCRIPTION: any, SIGN_PRESCRIPTION: any;
+let SEND_TO_PHARMACY: any, prisma: any;
+
+if (isIntegrationTest) {
+  const routeModule = require('../route');
+  CREATE_PRESCRIPTION = routeModule.POST;
+  LIST_PRESCRIPTIONS = routeModule.GET;
+  const detailModule = require('../[id]/route');
+  GET_PRESCRIPTION = detailModule.GET;
+  UPDATE_PRESCRIPTION = detailModule.PATCH;
+  DELETE_PRESCRIPTION = detailModule.DELETE;
+  SIGN_PRESCRIPTION = require('../[id]/sign/route').POST;
+  SEND_TO_PHARMACY = require('../[id]/send-to-pharmacy/route').POST;
+  prisma = require('@/lib/prisma').prisma;
+}
 
 // Test data
 const TEST_CLINICIAN = {
@@ -92,7 +108,7 @@ function createMockRequest(options: {
   });
 }
 
-describe('Prescription API', () => {
+describeIntegration('Prescription API', () => {
   let testPatient: any;
   let testClinician: any;
   let createdPrescriptionIds: string[] = [];

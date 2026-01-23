@@ -1,0 +1,95 @@
+{
+  "version": "1.0",
+  "description": "Agent file ownership rules for parallel worktree development",
+  "agents": {
+    "agent1": {
+      "name": "AI Validation Agent",
+      "worktree": "ai-validation",
+      "branch": "feature/ai-validation",
+      "ownedFiles": [
+        "prisma/migrations/*_agent1_*.sql",
+        "apps/web/src/lib/ai/usage-tracker.ts",
+        "apps/web/src/lib/ai/validators/**",
+        "apps/web/src/lib/ai/quality/**",
+        "apps/web/src/app/api/ai/usage/**",
+        "apps/web/src/app/api/ai/quality/**"
+      ],
+      "responsibilities": [
+        "AI usage tracking and persistence",
+        "Input/output validation",
+        "DICOM metadata parsing",
+        "LLM-as-a-Judge QA pipeline"
+      ]
+    },
+    "agent2": {
+      "name": "AI Scribe Agent",
+      "worktree": "ai-scribe",
+      "branch": "feature/ai-scribe",
+      "ownedFiles": [
+        "prisma/migrations/*_agent2_*.sql",
+        "apps/web/src/lib/transcription/**",
+        "apps/web/src/lib/ai/patient-state-extractor.ts",
+        "apps/web/src/components/scribe/**",
+        "apps/web/src/app/api/transcribe/**",
+        "apps/web/src/app/api/patients/*/transcripts/**"
+      ],
+      "responsibilities": [
+        "Deepgram integration and auto-language detection",
+        "PatientState JSON extraction",
+        "Transcript saving and corrections",
+        "Real-time transcription UI"
+      ]
+    },
+    "agent3": {
+      "name": "Prevention Hub Agent",
+      "worktree": "prevention-hub",
+      "branch": "feature/prevention-hub",
+      "ownedFiles": [
+        "prisma/migrations/*_agent3_*.sql",
+        "apps/web/src/lib/prevention/**",
+        "apps/web/src/lib/prevention/rule-engine.ts",
+        "apps/web/src/components/prevention/**",
+        "apps/web/src/app/api/prevention/**",
+        "apps/web/src/app/dashboard/prevention/**"
+      ],
+      "responsibilities": [
+        "JSON-Logic rule engine",
+        "ClinicalProtocol database model",
+        "Prevention Hub UI redesign",
+        "FHIR export",
+        "Historical prevention tracking"
+      ]
+    }
+  },
+  "sharedFiles": {
+    "readonly": [
+      "packages/types/**",
+      "prisma/schema.prisma"
+    ],
+    "coordination": "human_required",
+    "notes": "Schema changes to prisma/schema.prisma require human coordination to prevent conflicts"
+  },
+  "migrations": {
+    "namingConvention": "YYYYMMDDHHMMSS_agentN_description.sql",
+    "examples": [
+      "20260122100000_agent1_ai_usage_quality_columns.sql",
+      "20260122100100_agent2_transcript_sessions.sql",
+      "20260122100200_agent3_clinical_protocols.sql"
+    ],
+    "rules": [
+      "Each agent MUST use their agent number prefix (agent1, agent2, agent3)",
+      "Timestamp MUST be unique - coordinate if multiple migrations same minute",
+      "Never modify another agent's migration file",
+      "Test migrations independently before merging to main"
+    ]
+  },
+  "mergeOrder": {
+    "description": "Suggested order for merging agent branches to main",
+    "order": [
+      "feature/ai-validation",
+      "feature/ai-scribe",
+      "feature/prevention-hub"
+    ],
+    "notes": "Validation comes first as it provides the quality infrastructure"
+  }
+}

@@ -249,24 +249,25 @@ export class CDSSService {
     const insights: AIInsight[] = [];
 
     // Known major drug interactions (simplified - in production, use DrugBank API)
-    const interactions = new Map<string, { with: string; risk: string; priority: 'critical' | 'high' }>([
-      ['warfarin', { with: 'aspirin', risk: 'Increased bleeding risk', priority: 'critical' }],
-      ['warfarin', { with: 'ibuprofen', risk: 'Increased bleeding risk', priority: 'high' }],
-      ['metformin', { with: 'alcohol', risk: 'Lactic acidosis risk', priority: 'high' }],
-      ['lisinopril', { with: 'spironolactone', risk: 'Hyperkalemia risk', priority: 'high' }],
-      ['simvastatin', { with: 'clarithromycin', risk: 'Rhabdomyolysis risk', priority: 'critical' }],
-    ]);
+    // Use array instead of Map to support multiple interactions per drug
+    const interactions: Array<{ drug1: string; drug2: string; risk: string; priority: 'critical' | 'high' }> = [
+      { drug1: 'warfarin', drug2: 'aspirin', risk: 'Increased bleeding risk', priority: 'critical' },
+      { drug1: 'warfarin', drug2: 'ibuprofen', risk: 'Increased bleeding risk', priority: 'high' },
+      { drug1: 'metformin', drug2: 'alcohol', risk: 'Lactic acidosis risk', priority: 'high' },
+      { drug1: 'lisinopril', drug2: 'spironolactone', risk: 'Hyperkalemia risk', priority: 'high' },
+      { drug1: 'simvastatin', drug2: 'clarithromycin', risk: 'Rhabdomyolysis risk', priority: 'critical' },
+    ];
 
     const meds = patient.medications.map((m) => m.name.toLowerCase());
 
-    for (const [drug1, interaction] of interactions) {
-      if (meds.includes(drug1) && meds.includes(interaction.with)) {
+    for (const interaction of interactions) {
+      if (meds.includes(interaction.drug1) && meds.includes(interaction.drug2)) {
         insights.push({
-          id: `drug_interaction_${patient.id}_${drug1}_${interaction.with}`,
+          id: `drug_interaction_${patient.id}_${interaction.drug1}_${interaction.drug2}`,
           type: 'interaction_warning',
           priority: interaction.priority,
           title: 'Drug Interaction Warning',
-          description: `${patient.firstName} ${patient.lastName}: ${drug1} interacts with ${interaction.with}. ${interaction.risk} detected.`,
+          description: `${patient.firstName} ${patient.lastName}: ${interaction.drug1} interacts with ${interaction.drug2}. ${interaction.risk} detected.`,
           confidence: 95,
           category: 'clinical',
           patientId: patient.id,
@@ -277,7 +278,7 @@ export class CDSSService {
               label: 'Adjust Dosage',
               type: 'primary',
               actionType: 'adjust_medication',
-              metadata: { patientId: patient.id, drug1, drug2: interaction.with },
+              metadata: { patientId: patient.id, drug1: interaction.drug1, drug2: interaction.drug2 },
             },
             {
               label: 'View Interactions',
@@ -289,10 +290,10 @@ export class CDSSService {
           evidence: [
             {
               source: 'FDA Drug Safety Database',
-              citation: `Major interaction: ${drug1} + ${interaction.with}`,
+              citation: `Major interaction: ${interaction.drug1} + ${interaction.drug2}`,
             },
           ],
-          metadata: { drug1, drug2: interaction.with, risk: interaction.risk },
+          metadata: { drug1: interaction.drug1, drug2: interaction.drug2, risk: interaction.risk },
         });
       }
     }

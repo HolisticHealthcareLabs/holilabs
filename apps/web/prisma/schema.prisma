@@ -129,13 +129,13 @@ model User {
 // ============================================================================
 
 model UserAPIKey {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider  String   // "gemini", "anthropic", "openai"
-  encryptedKey String @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String // "gemini", "anthropic", "openai"
+  encryptedKey String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([userId, provider]) // One key per provider per user
   @@index([userId])
@@ -262,7 +262,7 @@ enum OTPChannel {
 // ============================================================================
 
 model PasswordResetToken {
-  id            String  @id @default(cuid())
+  id            String   @id @default(cuid())
   userId        String? // For clinicians
   patientUserId String? // For patients
   userType      UserType
@@ -600,10 +600,10 @@ model Patient {
   country           String  @default("MX")
 
   // Medical Record Number (ENCRYPTED for HIPAA compliance)
-  mrn               String @unique @db.Text // Internal MRN
-  mrnKeyVersion     Int    @default(1)
-  externalMrn       String? @db.Text // External system MRN
-  externalMrnKeyVersion Int? @default(1)
+  mrn                   String  @unique @db.Text // Internal MRN
+  mrnKeyVersion         Int     @default(1)
+  externalMrn           String? @db.Text // External system MRN
+  externalMrnKeyVersion Int?    @default(1)
 
   // De-identification
   tokenId String  @unique // Public-facing token (e.g., PT-892a-4f3e-b1c2)
@@ -615,12 +615,12 @@ model Patient {
   // ========================================================================
 
   // Primary identifiers
-  cns             String? @unique @db.Text // Cartão Nacional de Saúde (15 digits)
-  cnsKeyVersion   Int?    @default(1)
-  cpf             String? @unique @db.Text // CPF (11 digits)
-  cpfKeyVersion   Int?    @default(1)
-  rg              String? @db.Text // RG (identity document)
-  rgKeyVersion    Int?    @default(1)
+  cns           String? @unique @db.Text // Cartão Nacional de Saúde (15 digits)
+  cnsKeyVersion Int?    @default(1)
+  cpf           String? @unique @db.Text // CPF (11 digits)
+  cpfKeyVersion Int?    @default(1)
+  rg            String? @db.Text // RG (identity document)
+  rgKeyVersion  Int?    @default(1)
 
   // Healthcare system identifiers
   municipalityCode String? // IBGE municipality code (7 digits)
@@ -864,6 +864,9 @@ model Patient {
 
   // GDPR/LGPD Compliance (Priority 3: Legal Compliance)
   deletionRequests DeletionRequest[]
+
+  // Prevention Outcomes (Logic-as-Data Protocol Engine)
+  preventionOutcomes PreventionOutcome[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -1299,7 +1302,6 @@ model DataAccessGrant {
   @@index([expiresAt])
   @@map("data_access_grants")
 }
-
 
 // ============================================================================
 // PRESCRIPTIONS (E-Prescribing)
@@ -2735,43 +2737,43 @@ model PatientPreferences {
 }
 
 model ClinicianPreferences {
-  id         String @id @default(cuid())
+  id          String @id @default(cuid())
   clinicianId String @unique
   clinician   User   @relation("ClinicianPreferences", fields: [clinicianId], references: [id], onDelete: Cascade)
 
   // Email Preferences
-  emailEnabled                Boolean @default(true)
-  emailNewAppointments        Boolean @default(true)
-  emailAppointmentChanges     Boolean @default(true)
+  emailEnabled                  Boolean @default(true)
+  emailNewAppointments          Boolean @default(true)
+  emailAppointmentChanges       Boolean @default(true)
   emailAppointmentCancellations Boolean @default(true)
-  emailPatientMessages        Boolean @default(true)
-  emailFormCompletions        Boolean @default(true)
-  emailLabResults             Boolean @default(true)
-  emailSystemUpdates          Boolean @default(true)
-  emailMarketing              Boolean @default(false)
+  emailPatientMessages          Boolean @default(true)
+  emailFormCompletions          Boolean @default(true)
+  emailLabResults               Boolean @default(true)
+  emailSystemUpdates            Boolean @default(true)
+  emailMarketing                Boolean @default(false)
 
   // Email Consent
-  emailConsentedAt   DateTime?
-  emailOptedOutAt    DateTime?
+  emailConsentedAt DateTime?
+  emailOptedOutAt  DateTime?
 
   // SMS Preferences
-  smsEnabled              Boolean @default(false) // Default off for clinicians
-  smsUrgentAppointments   Boolean @default(false)
-  smsUrgentMessages       Boolean @default(false)
-  smsSystemAlerts         Boolean @default(false)
+  smsEnabled            Boolean @default(false) // Default off for clinicians
+  smsUrgentAppointments Boolean @default(false)
+  smsUrgentMessages     Boolean @default(false)
+  smsSystemAlerts       Boolean @default(false)
 
   // SMS Consent
-  smsConsentedAt   DateTime?
-  smsOptedOutAt    DateTime?
+  smsConsentedAt DateTime?
+  smsOptedOutAt  DateTime?
 
   // Push Notification Preferences
-  pushEnabled             Boolean @default(true)
-  pushNewAppointments     Boolean @default(true)
-  pushAppointmentChanges  Boolean @default(true)
-  pushPatientMessages     Boolean @default(true)
-  pushFormCompletions     Boolean @default(true)
-  pushLabResults          Boolean @default(true)
-  pushSystemAlerts        Boolean @default(true)
+  pushEnabled            Boolean @default(true)
+  pushNewAppointments    Boolean @default(true)
+  pushAppointmentChanges Boolean @default(true)
+  pushPatientMessages    Boolean @default(true)
+  pushFormCompletions    Boolean @default(true)
+  pushLabResults         Boolean @default(true)
+  pushSystemAlerts       Boolean @default(true)
 
   // WhatsApp Preferences (for international use)
   whatsappEnabled     Boolean   @default(false)
@@ -3074,6 +3076,12 @@ model AIUsageLog {
   feature         String? // "diagnosis", "prescriptions", "clinical-notes", etc.
   promptPreview   String? @db.Text // First 500 chars of prompt for debugging
 
+  // Quality Tracking (LLM-as-a-Judge)
+  qualityScore Int? // 0-100, from LLM-as-a-Judge grading
+  gradingNotes Json? // { hallucinations: [], criticalIssues: [], recommendation: "pass"|"review_required"|"fail" }
+  gradedAt     DateTime? // When quality grading was completed
+  gradedBy     String? // "gemini-flash", "human", etc.
+
   // Timestamps
   createdAt DateTime @default(now())
 
@@ -3082,6 +3090,7 @@ model AIUsageLog {
   @@index([provider])
   @@index([createdAt])
   @@index([clinicId])
+  @@index([qualityScore]) // For quality dashboard queries
   @@map("ai_usage_logs")
 }
 
@@ -4712,12 +4721,12 @@ model PreventionPlan {
 }
 
 model PreventionPlanTemplate {
-  id          String  @id @default(cuid())
+  id String @id @default(cuid())
 
   // Template metadata
-  templateName    String // e.g., "Standard Diabetes Prevention Plan"
-  planType        PreventionPlanType
-  description     String? @db.Text
+  templateName String // e.g., "Standard Diabetes Prevention Plan"
+  planType     PreventionPlanType
+  description  String?            @db.Text
 
   // Evidence & Guidelines
   guidelineSource  String? // USPSTF, ADA, AHA, ACC, etc.
@@ -4729,15 +4738,15 @@ model PreventionPlanTemplate {
   recommendations Json // Array of {title, description, category, priority}
 
   // Template status
-  isActive     Boolean   @default(true)
-  useCount     Int       @default(0) // How many times this template has been used
-  lastUsedAt   DateTime? // Last time this template was used
+  isActive   Boolean   @default(true)
+  useCount   Int       @default(0) // How many times this template has been used
+  lastUsedAt DateTime? // Last time this template was used
 
   // Relations
-  versions  PreventionPlanTemplateVersion[] @relation("TemplateVersions")
-  comments  PreventionTemplateComment[]     @relation("TemplateComments")
-  shares    PreventionTemplateShare[]       @relation("TemplateShares")
-  createdByUser User @relation("CreatedTemplates", fields: [createdBy], references: [id])
+  versions      PreventionPlanTemplateVersion[] @relation("TemplateVersions")
+  comments      PreventionTemplateComment[]     @relation("TemplateComments")
+  shares        PreventionTemplateShare[]       @relation("TemplateShares")
+  createdByUser User                            @relation("CreatedTemplates", fields: [createdBy], references: [id])
 
   // Audit
   createdBy String // User ID who created the template
@@ -4751,25 +4760,25 @@ model PreventionPlanTemplate {
 }
 
 model PreventionPlanTemplateVersion {
-  id              String   @id @default(cuid())
-  templateId      String
-  template        PreventionPlanTemplate @relation("TemplateVersions", fields: [templateId], references: [id], onDelete: Cascade)
+  id         String                 @id @default(cuid())
+  templateId String
+  template   PreventionPlanTemplate @relation("TemplateVersions", fields: [templateId], references: [id], onDelete: Cascade)
 
   // Version info
-  versionNumber   Int      // 1, 2, 3, etc.
-  versionLabel    String?  // "v1.0", "Initial", "Updated 2025"
+  versionNumber Int // 1, 2, 3, etc.
+  versionLabel  String? // "v1.0", "Initial", "Updated 2025"
 
   // Complete template snapshot
-  templateData    Json     @db.JsonB // Full template state at this version
+  templateData Json @db.JsonB // Full template state at this version
 
   // Change tracking
-  changeLog       String?  @db.Text // Description of changes
-  changedFields   Json?    // Array of changed field names
+  changeLog     String? @db.Text // Description of changes
+  changedFields Json? // Array of changed field names
 
   // Metadata
-  createdBy       String
-  createdByUser   User     @relation("CreatedVersions", fields: [createdBy], references: [id])
-  createdAt       DateTime @default(now())
+  createdBy     String
+  createdByUser User     @relation("CreatedVersions", fields: [createdBy], references: [id])
+  createdAt     DateTime @default(now())
 
   @@index([templateId, versionNumber])
   @@index([templateId, createdAt])
@@ -4777,19 +4786,19 @@ model PreventionPlanTemplateVersion {
 }
 
 model PreventionTemplateComment {
-  id          String   @id @default(cuid())
-  templateId  String
-  template    PreventionPlanTemplate @relation("TemplateComments", fields: [templateId], references: [id], onDelete: Cascade)
+  id         String                 @id @default(cuid())
+  templateId String
+  template   PreventionPlanTemplate @relation("TemplateComments", fields: [templateId], references: [id], onDelete: Cascade)
 
-  userId      String
-  user        User     @relation("TemplateComments", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("TemplateComments", fields: [userId], references: [id], onDelete: Cascade)
 
-  content     String   @db.Text
-  mentions    String[] @default([]) // Array of mentioned user IDs
+  content  String   @db.Text
+  mentions String[] @default([]) // Array of mentioned user IDs
 
   // Metadata
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([templateId, createdAt])
   @@index([userId])
@@ -4797,23 +4806,23 @@ model PreventionTemplateComment {
 }
 
 model PreventionTemplateShare {
-  id          String   @id @default(cuid())
-  templateId  String
-  template    PreventionPlanTemplate @relation("TemplateShares", fields: [templateId], references: [id], onDelete: Cascade)
+  id         String                 @id @default(cuid())
+  templateId String
+  template   PreventionPlanTemplate @relation("TemplateShares", fields: [templateId], references: [id], onDelete: Cascade)
 
-  sharedBy    String
-  sharedByUser User    @relation("SharedTemplates", fields: [sharedBy], references: [id], onDelete: Cascade)
+  sharedBy     String
+  sharedByUser User   @relation("SharedTemplates", fields: [sharedBy], references: [id], onDelete: Cascade)
 
-  sharedWith  String
-  sharedWithUser User  @relation("ReceivedTemplateShares", fields: [sharedWith], references: [id], onDelete: Cascade)
+  sharedWith     String
+  sharedWithUser User   @relation("ReceivedTemplateShares", fields: [sharedWith], references: [id], onDelete: Cascade)
 
   // Permissions
-  permission  SharePermission @default(VIEW) // VIEW, EDIT, ADMIN
+  permission SharePermission @default(VIEW) // VIEW, EDIT, ADMIN
 
   // Metadata
-  message     String?  @db.Text // Optional message when sharing
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime? // Optional expiration date
+  message   String?   @db.Text // Optional message when sharing
+  createdAt DateTime  @default(now())
+  expiresAt DateTime? // Optional expiration date
 
   @@unique([templateId, sharedWith]) // Can't share same template to same user twice
   @@index([sharedWith, createdAt])
@@ -5547,12 +5556,12 @@ model CasbinRule {
  * SOC 2 Control: CC6.1 (Logical access controls)
  */
 model DevicePairing {
-  id          String     @id @default(cuid())
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deviceId    String     @unique // Unique device identifier
-  deviceType  DeviceType
-  deviceName  String? // Optional friendly name
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId   String     @unique // Unique device identifier
+  deviceType DeviceType
+  deviceName String? // Optional friendly name
 
   // Session management
   sessionToken String   @unique // Token for this pairing session
@@ -5593,7 +5602,7 @@ model DevicePermission {
   permission PermissionScope
 
   // Metadata
-  grantedAt DateTime @default(now())
+  grantedAt DateTime  @default(now())
   expiresAt DateTime? // Optional expiration for temporary permissions
 
   createdAt DateTime @default(now())
@@ -5629,24 +5638,22 @@ enum PermissionScope {
 
 /**
  * SecurityReport model
- *
  * Stores security violation reports from browsers:
  * - Content Security Policy (CSP) violations
  * - Cross-Origin-Embedder-Policy (COEP) violations
  * - Cross-Origin-Opener-Policy (COOP) violations
  * - Network Error Logging (NEL) reports
  * - Crash reports
- *
  * Used for security monitoring, attack detection, and policy tuning.
  */
 model SecurityReport {
   id                 String   @id @default(cuid())
   type               String // 'csp-violation', 'coep', 'coop', 'nel', 'crash'
-  url                String? @db.VarChar(500) // Page where violation occurred
-  userAgent          String? @db.VarChar(500)
-  violatedDirective  String? @db.VarChar(200) // CSP directive that was violated
-  blockedUrl         String? @db.VarChar(500) // URL that was blocked
-  effectiveDirective String? @db.VarChar(200) // Effective CSP directive
+  url                String?  @db.VarChar(500) // Page where violation occurred
+  userAgent          String?  @db.VarChar(500)
+  violatedDirective  String?  @db.VarChar(200) // CSP directive that was violated
+  blockedUrl         String?  @db.VarChar(500) // URL that was blocked
+  effectiveDirective String?  @db.VarChar(200) // Effective CSP directive
   disposition        String? // 'enforce' or 'report'
   lineNumber         Int? // Line number in source file
   columnNumber       Int? // Column number in source file
@@ -5658,4 +5665,106 @@ model SecurityReport {
   @@index([createdAt])
   @@index([type, createdAt])
   @@map("security_reports")
+}
+
+// ============================================================================
+// CLINICAL PROTOCOL ENGINE (Logic-as-Data)
+// ============================================================================
+
+/**
+ * ClinicalProtocol model
+ * Stores clinical protocols as JSON-Logic rules that can be evaluated
+ * at runtime without code changes. Replaces hardcoded TypeScript rules.
+ * Benefits:
+ * - Rules can be updated without deployment
+ * - Audit trail for rule changes
+ * - Version control for protocols
+ * - Future: Rule Builder UI
+ */
+model ClinicalProtocol {
+  id          String  @id @default(cuid())
+  ruleId      String  @unique // e.g., "PROTOCOL-DM-001"
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+  category    String // screening, prevention, drug_interaction, etc.
+  version     String  @default("1.0")
+  source      String // USPSTF, WHO, NHS, ESC, AHA, custom
+
+  // The actual JSON-Logic rule
+  logic Json // { if: {...}, then: "action", fallback: "safe_default" }
+
+  // Validation requirements
+  minConfidence      Float   @default(0.85)
+  requireHumanReview Boolean @default(false)
+  maxDataAgeHours    Int? // Data freshness requirement
+  requiredFields     Json? // Array of field paths that must be present
+
+  // Evidence and documentation
+  evidenceLevel String @default("C") // A, B, C, D, I
+  references    Json? // Array of citation URLs
+  tags          Json? // Array of tags for filtering
+
+  // Lifecycle
+  isActive          Boolean   @default(true)
+  activatedAt       DateTime?
+  deactivatedAt     DateTime?
+  deactivatedReason String?   @db.Text
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+  updatedBy String?
+
+  // Relations
+  outcomes PreventionOutcome[]
+
+  @@index([category, isActive])
+  @@index([source])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("clinical_protocols")
+}
+
+/**
+ * PreventionOutcome model
+ * Tracks the outcomes of prevention interventions triggered by
+ * clinical protocols. Used for analytics and protocol effectiveness.
+ */
+model PreventionOutcome {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Link to triggering protocol (optional for backward compat)
+  protocolId String?
+  protocol   ClinicalProtocol? @relation(fields: [protocolId], references: [id], onDelete: SetNull)
+
+  // Intervention details
+  interventionId   String // Internal intervention identifier
+  interventionType String // screening, vaccination, lab_order, referral, etc.
+  action           String // The clinical action taken
+
+  // Scheduling
+  scheduledDate DateTime
+  completedDate DateTime?
+  status        String    @default("scheduled") // scheduled, completed, missed, declined, cancelled
+
+  // Outcome data
+  result         Json? // Lab values, screening results, etc.
+  followUpNeeded Boolean @default(false)
+  notes          String? @db.Text
+
+  // Provider who completed
+  completedBy String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId, status])
+  @@index([scheduledDate])
+  @@index([protocolId])
+  @@index([interventionType])
+  @@map("prevention_outcomes")
 }

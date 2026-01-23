@@ -17,6 +17,8 @@
  */
 
 import type { AIProvider, ChatResponse } from './chat';
+import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 export interface UsageMetrics {
   // Request Info
@@ -92,11 +94,11 @@ export function calculateCost(
 }
 
 /**
- * Track AI usage
+ * Track AI usage - persists to database
  */
 export async function trackUsage(
-  metrics: Omit<UsageMetrics, 'estimatedCost' | 'timestamp'>
-): Promise<void> {
+  metrics: Omit<UsageMetrics, 'estimatedCost' | 'timestamp'> & { promptPreview?: string }
+): Promise<string | null> {
   try {
     // Calculate cost
     const estimatedCost = calculateCost(
@@ -105,32 +107,49 @@ export async function trackUsage(
       metrics.completionTokens
     );
 
-    const fullMetrics: UsageMetrics = {
-      ...metrics,
+    // Persist to database
+    const record = await prisma.aIUsageLog.create({
+      data: {
+        provider: metrics.provider,
+        userId: metrics.userId || null,
+        clinicId: metrics.clinicId || null,
+        promptTokens: metrics.promptTokens,
+        completionTokens: metrics.completionTokens,
+        totalTokens: metrics.totalTokens,
+        estimatedCost,
+        responseTimeMs: metrics.responseTimeMs,
+        fromCache: metrics.fromCache,
+        queryComplexity: metrics.queryComplexity || null,
+        feature: metrics.feature || null,
+        promptPreview: metrics.promptPreview || null,
+      },
+    });
+
+    logger.info({
+      event: 'ai_usage_tracked',
+      provider: metrics.provider,
+      totalTokens: metrics.totalTokens,
       estimatedCost,
-      timestamp: new Date(),
-    };
+      fromCache: metrics.fromCache,
+      responseTimeMs: metrics.responseTimeMs,
+      userId: metrics.userId,
+      recordId: record.id,
+    });
 
-    // Log to console for now (will add database logging next)
-    console.log(
-      `[AI Usage] ${metrics.provider} | ` +
-      `Tokens: ${metrics.totalTokens} | ` +
-      `Cost: $${estimatedCost.toFixed(4)} | ` +
-      `Cache: ${metrics.fromCache ? 'HIT' : 'MISS'} | ` +
-      `Time: ${metrics.responseTimeMs}ms | ` +
-      `User: ${metrics.userId || 'N/A'}`
-    );
-
-    // TODO: Store in database (PostgreSQL) when schema is ready
-    // await prisma.aiUsageLog.create({ data: fullMetrics });
-
+    return record.id;
   } catch (error) {
-    console.error('[AI Usage] Error tracking usage:', error);
+    logger.error({
+      event: 'ai_usage_tracking_failed',
+      error: error instanceof Error ? error.message : String(error),
+      provider: metrics.provider,
+    });
+    return null;
   }
 }
 
 /**
  * Wrapper function to track usage from ChatResponse
+ * Returns the usage log record ID for quality grading
  */
 export async function trackFromResponse(
   response: ChatResponse & { provider?: AIProvider },
@@ -141,14 +160,15 @@ export async function trackFromResponse(
     fromCache?: boolean;
     queryComplexity?: UsageMetrics['queryComplexity'];
     feature?: string;
+    promptPreview?: string;
   }
-): Promise<void> {
+): Promise<string | null> {
   if (!response.usage) {
-    console.warn('[AI Usage] No usage data in response');
-    return;
+    logger.warn({ event: 'ai_usage_no_data', message: 'No usage data in response' });
+    return null;
   }
 
-  await trackUsage({
+  return trackUsage({
     provider: response.provider || 'claude',
     userId: options.userId,
     clinicId: options.clinicId,
@@ -159,22 +179,82 @@ export async function trackFromResponse(
     fromCache: options.fromCache || false,
     queryComplexity: options.queryComplexity,
     feature: options.feature,
+    promptPreview: options.promptPreview,
   });
 }
 
 /**
- * Get usage summary for a time period (mocked for now)
- * TODO: Implement with real database queries
+ * Get usage summary for a time period
  */
 export async function getUsageSummary(
   startDate: Date,
   endDate: Date,
   options?: { userId?: string; clinicId?: string }
 ): Promise<DailyUsageSummary[]> {
-  // Mock implementation
-  console.log('[AI Usage] Getting summary from', startDate, 'to', endDate);
+  const whereClause: Record<string, unknown> = {
+    createdAt: {
+      gte: startDate,
+      lte: endDate,
+    },
+  };
 
-  return [];
+  if (options?.userId) {
+    whereClause.userId = options.userId;
+  }
+
+  if (options?.clinicId) {
+    whereClause.clinicId = options.clinicId;
+  }
+
+  // Fetch raw data grouped by date
+  const logs = await prisma.aIUsageLog.findMany({
+    where: whereClause,
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // Aggregate by date
+  const dailyMap = new Map<string, DailyUsageSummary>();
+
+  for (const log of logs) {
+    const dateKey = log.createdAt.toISOString().split('T')[0];
+
+    if (!dailyMap.has(dateKey)) {
+      dailyMap.set(dateKey, {
+        date: dateKey,
+        totalQueries: 0,
+        totalTokens: 0,
+        totalCost: 0,
+        cacheHitRate: 0,
+        providerBreakdown: {
+          gemini: { count: 0, cost: 0 },
+          claude: { count: 0, cost: 0 },
+          openai: { count: 0, cost: 0 },
+        },
+      });
+    }
+
+    const summary = dailyMap.get(dateKey)!;
+    summary.totalQueries++;
+    summary.totalTokens += log.totalTokens;
+    summary.totalCost += log.estimatedCost;
+
+    const provider = log.provider as AIProvider;
+    if (summary.providerBreakdown[provider]) {
+      summary.providerBreakdown[provider].count++;
+      summary.providerBreakdown[provider].cost += log.estimatedCost;
+    }
+  }
+
+  // Calculate cache hit rates
+  for (const [dateKey, summary] of dailyMap) {
+    const dayLogs = logs.filter(
+      l => l.createdAt.toISOString().split('T')[0] === dateKey
+    );
+    const cacheHits = dayLogs.filter(l => l.fromCache).length;
+    summary.cacheHitRate = dayLogs.length > 0 ? cacheHits / dayLogs.length : 0;
+  }
+
+  return Array.from(dailyMap.values());
 }
 
 /**
@@ -200,8 +280,18 @@ export async function checkUserQuota(
 
   const limit = quotas[tier];
 
-  // TODO: Query database for today's usage
-  const todayUsage = 0; // Mock
+  // Query database for today's usage
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const todayUsage = await prisma.aIUsageLog.count({
+    where: {
+      userId,
+      createdAt: {
+        gte: todayStart,
+      },
+    },
+  });
 
   const remaining = Math.max(0, limit - todayUsage);
   const allowed = remaining > 0;
@@ -222,25 +312,43 @@ export async function checkUserQuota(
  * Cost monitoring alerts
  */
 export async function checkCostAlerts(
-  clinicId: string
+  clinicId: string,
+  monthlyBudget: number = 100.00 // $100/month default
 ): Promise<{
   isOverBudget: boolean;
   currentSpend: number;
   monthlyBudget: number;
   percentUsed: number;
 }> {
-  // Mock implementation
-  const monthlyBudget = 100.00; // $100/month
-  const currentSpend = 0; // TODO: Query database
+  // Query database for current month's spend
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
 
+  const result = await prisma.aIUsageLog.aggregate({
+    where: {
+      clinicId,
+      createdAt: {
+        gte: monthStart,
+      },
+    },
+    _sum: {
+      estimatedCost: true,
+    },
+  });
+
+  const currentSpend = result._sum.estimatedCost || 0;
   const percentUsed = (currentSpend / monthlyBudget) * 100;
   const isOverBudget = currentSpend > monthlyBudget;
 
   if (isOverBudget) {
-    console.warn(
-      `[AI Usage] 🚨 Clinic ${clinicId} is over budget! ` +
-      `Spent: $${currentSpend.toFixed(2)} / $${monthlyBudget.toFixed(2)}`
-    );
+    logger.warn({
+      event: 'clinic_over_budget',
+      clinicId,
+      currentSpend,
+      monthlyBudget,
+      percentUsed,
+    });
   }
 
   return {
@@ -303,4 +411,146 @@ export function printCostComparison(): void {
   });
 
   console.log('');
+}
+
+// ============================================================================
+// QUALITY GRADING INTEGRATION
+// ============================================================================
+
+export interface QualityGradingInput {
+  qualityScore: number; // 0-100
+  gradingNotes: {
+    hallucinations: string[];
+    criticalIssues: string[];
+    recommendation: 'pass' | 'review_required' | 'fail';
+  };
+  gradedBy: string; // "gemini-flash", "human", etc.
+}
+
+/**
+ * Update a usage record with quality grading results
+ * Called by the LLM-as-a-Judge async job
+ */
+export async function updateQualityGrading(
+  usageLogId: string,
+  grading: QualityGradingInput
+): Promise<boolean> {
+  try {
+    await prisma.aIUsageLog.update({
+      where: { id: usageLogId },
+      data: {
+        qualityScore: grading.qualityScore,
+        gradingNotes: grading.gradingNotes,
+        gradedAt: new Date(),
+        gradedBy: grading.gradedBy,
+      },
+    });
+
+    logger.info({
+      event: 'quality_grading_updated',
+      usageLogId,
+      qualityScore: grading.qualityScore,
+      recommendation: grading.gradingNotes.recommendation,
+      gradedBy: grading.gradedBy,
+    });
+
+    return true;
+  } catch (error) {
+    logger.error({
+      event: 'quality_grading_update_failed',
+      usageLogId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+/**
+ * Get a usage record by ID (for quality grading jobs)
+ */
+export async function getUsageRecord(usageLogId: string) {
+  return prisma.aIUsageLog.findUnique({
+    where: { id: usageLogId },
+  });
+}
+
+/**
+ * Get records pending quality grading
+ */
+export async function getPendingGradingRecords(limit: number = 100) {
+  return prisma.aIUsageLog.findMany({
+    where: {
+      qualityScore: null,
+      fromCache: false, // Only grade non-cached responses
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
+}
+
+/**
+ * Get quality metrics summary
+ */
+export async function getQualityMetrics(
+  startDate: Date,
+  endDate: Date,
+  options?: { clinicId?: string }
+): Promise<{
+  averageScore: number;
+  passRate: number;
+  reviewRate: number;
+  failRate: number;
+  totalGraded: number;
+}> {
+  const whereClause: Record<string, unknown> = {
+    gradedAt: {
+      gte: startDate,
+      lte: endDate,
+    },
+    qualityScore: { not: null },
+  };
+
+  if (options?.clinicId) {
+    whereClause.clinicId = options.clinicId;
+  }
+
+  const records = await prisma.aIUsageLog.findMany({
+    where: whereClause,
+    select: {
+      qualityScore: true,
+      gradingNotes: true,
+    },
+  });
+
+  if (records.length === 0) {
+    return {
+      averageScore: 0,
+      passRate: 0,
+      reviewRate: 0,
+      failRate: 0,
+      totalGraded: 0,
+    };
+  }
+
+  const scores = records.map(r => r.qualityScore!);
+  const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  let passCount = 0;
+  let reviewCount = 0;
+  let failCount = 0;
+
+  for (const record of records) {
+    const notes = record.gradingNotes as { recommendation?: string } | null;
+    if (notes?.recommendation === 'pass') passCount++;
+    else if (notes?.recommendation === 'review_required') reviewCount++;
+    else if (notes?.recommendation === 'fail') failCount++;
+  }
+
+  return {
+    averageScore,
+    passRate: passCount / records.length,
+    reviewRate: reviewCount / records.length,
+    failRate: failCount / records.length,
+    totalGraded: records.length,
+  };
 }

@@ -152,11 +152,33 @@ global.generateTestUserId = () => `test-user-${Date.now()}-${Math.random().toStr
 global.generateTestPatientId = () => `test-patient-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
 // ==============================================================================
-// Cleanup
+// Cleanup - CRITICAL: Prevent memory leaks and connection exhaustion
 // ==============================================================================
 
-// Global teardown
+// Global teardown - explicitly close all connections
 afterAll(async () => {
-  // Close any open database connections
-  // Note: Prisma client will be cleaned up automatically
+  // Close Prisma connections
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    if (prisma && typeof prisma.$disconnect === 'function') {
+      await prisma.$disconnect();
+    }
+  } catch (e) {
+    // Prisma may not be imported in all test files
+  }
+
+  // Close Redis connections
+  try {
+    const { redis } = await import('@/lib/redis');
+    if (redis && typeof redis.quit === 'function') {
+      await redis.quit();
+    }
+  } catch (e) {
+    // Redis may not be imported in all test files
+  }
+
+  // Force garbage collection if available (Node.js with --expose-gc flag)
+  if (global.gc) {
+    global.gc();
+  }
 });

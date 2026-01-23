@@ -383,7 +383,8 @@ export class ConfidenceScoringService {
     }
 
     // Missing diagnosis in assessment
-    if (!/diagnosis|impression|assessment.*:.*\w/i.test(sections.assessment)) {
+    // Matches: diagnosis, impression, probable, likely, consistent with, differential, appears to be
+    if (!/diagnosis|impression|probable|likely|consistent\s+with|differential|appears\s+to\s+be|assessment.*:.*\w/i.test(sections.assessment)) {
       flags.push({
         severity: 'critical',
         category: 'clinical_standards',

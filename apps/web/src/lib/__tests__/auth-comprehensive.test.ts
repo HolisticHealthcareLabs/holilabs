@@ -1,5 +1,5 @@
 /**
- * Comprehensive Authentication Tests
+ * Comprehensive Authentication Tests (Integration)
  *
  * Tests authentication, authorization, MFA, and session management including:
  * - User registration
@@ -12,10 +12,27 @@
  *
  * Coverage Target: 80%+ (critical security infrastructure)
  * Compliance: HIPAA §164.312(a)(2)(i) unique user identification, §164.312(d) authentication
+ *
+ * REQUIRES: Database connection and ENCRYPTION_KEY environment variable
+ * Skip in unit test mode - run in CI with proper environment
  */
 
+// Mock ESM modules that Jest can't parse before any imports
+jest.mock('@auth/prisma-adapter', () => ({
+  PrismaAdapter: jest.fn(() => ({})),
+}));
+
+// Skip integration tests if required environment is not available
+const isIntegrationTest = process.env.ENCRYPTION_KEY && process.env.DATABASE_URL;
+const describeIntegration = isIntegrationTest ? describe : describe.skip;
+
 import { describe, it, expect, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
-import { prisma } from '@/lib/prisma';
+
+// Only import database-dependent modules if running integration tests
+let prisma: any;
+if (isIntegrationTest) {
+  prisma = require('@/lib/prisma').prisma;
+}
 import {
   enrollMFA,
   verifyMFAEnrollment,
@@ -61,7 +78,7 @@ const TEST_NURSE = {
 
 const TEST_PHONE_NUMBER = '+15555551234'; // Test phone number (E.164 format)
 
-describe('Authentication System', () => {
+describeIntegration('Authentication System', () => {
   let testAdmin: any;
   let testPhysician: any;
   let testNurse: any;
