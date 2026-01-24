@@ -27,6 +27,7 @@
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
+    "db:seed:clinical": "tsx prisma/seed-clinical-rules.ts",
     "validate-translations": "tsx scripts/validate-translations.ts",
     "translations:validate": "tsx scripts/validate-translations.ts"
   },
@@ -95,6 +96,7 @@
     "ioredis": "^5.8.2",
     "isomorphic-dompurify": "^2.35.0",
     "jose": "^5.2.0",
+    "json-logic-js": "^2.0.5",
     "jspdf": "^4.0.0",
     "livekit-client": "^2.17.0",
     "livekit-server-sdk": "^2.15.0",
@@ -149,6 +151,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/express": "^5.0.5",
     "@types/jest": "^30.0.0",
+    "@types/json-logic-js": "^2.0.8",
     "@types/multer": "^2.0.0",
     "@types/node": "^20",
     "@types/node-cron": "^3.0.11",
