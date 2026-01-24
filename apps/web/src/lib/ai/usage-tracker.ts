@@ -14,11 +14,25 @@
  * - Response time
  * - Cache hit/miss
  * - User/Clinic association
+ *
+ * PHI Security:
+ * - promptPreview REMOVED (contained PHI)
+ * - promptHash used for debugging (SHA-256, no PHI)
+ * - appointmentId links to clinical encounter for audit trail
  */
 
 import type { AIProvider, ChatResponse } from './chat';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createHash } from 'crypto';
+
+/**
+ * Create SHA-256 hash of prompt for debugging
+ * This allows tracing without storing PHI
+ */
+export function hashPrompt(prompt: string): string {
+  return createHash('sha256').update(prompt).digest('hex');
+}
 
 export interface UsageMetrics {
   // Request Info
@@ -95,12 +109,17 @@ export function calculateCost(
 
 /**
  * Track AI usage - persists to database for CFO visibility
+ *
+ * PHI Security:
+ * - DO NOT pass raw prompts - use prompt parameter and we'll hash it
+ * - appointmentId links to clinical encounter for audit trail
  */
 export async function trackUsage(
   metrics: Omit<UsageMetrics, 'estimatedCost' | 'timestamp'> & {
     patientId?: string;
     model?: string;
-    promptPreview?: string;
+    prompt?: string; // We hash this - NEVER stored raw
+    appointmentId?: string; // Links to clinical encounter for audit
   }
 ): Promise<void> {
   try {
@@ -117,6 +136,9 @@ export async function trackUsage(
       timestamp: new Date(),
     };
 
+    // Hash prompt for debugging (PHI-safe)
+    const promptHash = metrics.prompt ? hashPrompt(metrics.prompt) : undefined;
+
     // Structured logging for observability
     logger.info({
       event: 'ai_usage_tracked',
@@ -130,6 +152,8 @@ export async function trackUsage(
       clinicId: metrics.clinicId,
       feature: metrics.feature,
       queryComplexity: metrics.queryComplexity,
+      appointmentId: metrics.appointmentId,
+      promptHash, // Safe to log - SHA-256 hash only
     });
 
     // Persist to database for CFO dashboard and cost analytics
@@ -140,6 +164,7 @@ export async function trackUsage(
         userId: metrics.userId,
         clinicId: metrics.clinicId,
         patientId: metrics.patientId,
+        appointmentId: metrics.appointmentId, // Audit trail - links to encounter
         promptTokens: metrics.promptTokens,
         completionTokens: metrics.completionTokens,
         totalTokens: metrics.totalTokens,
@@ -148,7 +173,7 @@ export async function trackUsage(
         fromCache: metrics.fromCache,
         queryComplexity: metrics.queryComplexity,
         feature: metrics.feature,
-        promptPreview: metrics.promptPreview?.slice(0, 500), // Truncate for debugging
+        promptHash, // PHI-safe: SHA-256 hash for debugging/deduplication
       },
     });
 

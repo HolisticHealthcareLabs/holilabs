@@ -24,6 +24,7 @@ export interface DeepgramTranscriptResult {
   speakerCount: number;
   confidence: number;
   language: string;
+  detectedLanguage?: string; // Language detected by Deepgram (if auto-detect enabled)
   durationSeconds: number;
   processingTimeMs: number;
 }
@@ -42,40 +43,60 @@ function getDeepgramClient() {
  * Transcribe audio buffer using Deepgram
  *
  * @param audioBuffer - Decrypted audio file buffer
- * @param languageCode - 'pt' (Portuguese) or 'es' (Spanish)
+ * @param languageCode - Optional. If not provided, auto-detects language (en/pt/es)
  * @returns Transcription result with speaker diarization
+ *
+ * Auto-Detection:
+ * When languageCode is not provided, Deepgram will automatically detect
+ * Portuguese, Spanish, and English. This is useful for:
+ * - Multilingual clinics
+ * - Patients who switch languages mid-consultation
+ * - Unknown language scenarios
  */
 export async function transcribeAudioWithDeepgram(
   audioBuffer: Buffer,
-  languageCode: 'en' | 'pt' | 'es'
+  languageCode?: 'en' | 'pt' | 'es'
 ): Promise<DeepgramTranscriptResult> {
   const startTime = Date.now();
+  const autoDetect = !languageCode;
 
   try {
     const deepgram = getDeepgramClient();
 
     // Best-practice model selection:
     // - English: medical model
-    // - Spanish/Portuguese: general Nova (medical model is not consistently supported cross-lingual)
+    // - Spanish/Portuguese/Auto: general Nova (medical model is not consistently supported cross-lingual)
+    // When auto-detecting, use nova-3 which supports all languages
     const model = languageCode === 'en' ? 'nova-3-medical' : 'nova-3';
+
+    // Build transcription options
+    // When auto-detecting, we omit the language parameter and enable detect_language
+    const transcriptionOptions: Record<string, unknown> = {
+      model,
+      smart_format: true, // Auto-format numbers, dates, times
+      punctuate: true, // Add punctuation
+      paragraphs: true, // Group into paragraphs
+      diarize: true, // Speaker diarization
+      diarize_version: '2023-09-27',
+      utterances: true, // Group by speaker turns
+      filler_words: false, // Remove "um", "ah" (cleaner medical notes)
+      profanity_filter: false, // Don't filter medical terms
+      numerals: true, // Convert "twenty three" → "23"
+    };
+
+    if (autoDetect) {
+      // Auto-detect language - useful for multilingual clinics
+      transcriptionOptions.detect_language = true;
+    } else {
+      // Known language - faster processing
+      transcriptionOptions.language = languageCode;
+      transcriptionOptions.detect_language = false;
+    }
 
     // Call Deepgram API with medical-optimized settings
     const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
       audioBuffer,
-      {
-        model,
-        language: languageCode, // Portuguese or Spanish
-        smart_format: true, // Auto-format numbers, dates, times
-        punctuate: true, // Add punctuation
-        paragraphs: true, // Group into paragraphs
-        diarize: true, // Speaker diarization
-        diarize_version: '2023-09-27',
-        utterances: true, // Group by speaker turns
-        filler_words: false, // Remove "um", "ah" (cleaner medical notes)
-        profanity_filter: false, // Don't filter medical terms
-        numerals: true, // Convert "twenty three" → "23"
-        detect_language: false, // We know the language (faster)
-      }
+      transcriptionOptions
     );
 
     if (error) {
@@ -112,10 +133,14 @@ export async function transcribeAudioWithDeepgram(
     // Get audio duration from metadata
     const durationSeconds = result.results.channels[0].alternatives[0].words?.slice(-1)[0]?.end || 0;
 
+    // Extract detected language from Deepgram response
+    const detectedLanguage = result.results.channels[0]?.detected_language || undefined;
+    const finalLanguage = languageCode || detectedLanguage || 'unknown';
+
     const processingTimeMs = Date.now() - startTime;
 
     console.log(`✅ Deepgram transcription completed in ${processingTimeMs}ms`);
-    console.log(`   Language: ${languageCode}, Duration: ${durationSeconds}s, Speakers: ${speakerCount}`);
+    console.log(`   Language: ${finalLanguage}${autoDetect ? ' (auto-detected)' : ''}, Duration: ${durationSeconds}s, Speakers: ${speakerCount}`);
     console.log(`   Words: ${result.results.channels[0].alternatives[0].words?.length || 0}, Confidence: ${(avgConfidence * 100).toFixed(1)}%`);
 
     return {
@@ -123,7 +148,8 @@ export async function transcribeAudioWithDeepgram(
       segments,
       speakerCount,
       confidence: avgConfidence,
-      language: languageCode,
+      language: finalLanguage,
+      detectedLanguage: autoDetect ? detectedLanguage : undefined,
       durationSeconds,
       processingTimeMs,
     };

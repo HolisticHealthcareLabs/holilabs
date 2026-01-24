@@ -46,15 +46,15 @@ model User {
   organization   Organization? @relation("OrganizationPractitioners", fields: [organizationId], references: [id])
 
   // Security & MFA (SOC 2 Control CC6.1)
-  mfaEnabled       Boolean   @default(false)
-  mfaServiceSid    String?   // Twilio Verify Service SID
-  mfaPhoneNumber   String?   // Encrypted phone number (E.164 format)
-  mfaBackupCodes   String[]  @default([]) // Encrypted backup codes (single-use)
-  mfaEnrolledAt    DateTime? // When MFA was enabled
+  mfaEnabled        Boolean   @default(false)
+  mfaServiceSid     String? // Twilio Verify Service SID
+  mfaPhoneNumber    String? // Encrypted phone number (E.164 format)
+  mfaBackupCodes    String[]  @default([]) // Encrypted backup codes (single-use)
+  mfaEnrolledAt     DateTime? // When MFA was enabled
   passwordChangedAt DateTime? // For session revocation tracking
-  lastLoginAt      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
   patients              Patient[]
@@ -743,8 +743,8 @@ model Patient {
   formInstances    FormInstance[]
   labResults       LabResult[]
   imagingStudies   ImagingStudy[]
-  grantedAccess    DataAccessGrant[] @relation("PatientAccess")
-  receivedAccess   DataAccessGrant[] @relation("GrantedToUser")
+  grantedAccess    DataAccessGrant[]   @relation("PatientAccess")
+  receivedAccess   DataAccessGrant[]   @relation("GrantedToUser")
   invoices         Invoice[]
   payments         Payment[]
   aiUsageLogs      AIUsageLog[]
@@ -778,8 +778,8 @@ model Patient {
   reviewQueueItems ManualReviewQueueItem[]
 
   // CDSS V3 - Async Processing Relations
-  analysisJobs     AnalysisJob[]       @relation("PatientAnalysisJobs")
-  parsedDocuments  ParsedDocument[]    @relation("PatientParsedDocuments")
+  analysisJobs       AnalysisJob[]       @relation("PatientAnalysisJobs")
+  parsedDocuments    ParsedDocument[]    @relation("PatientParsedDocuments")
   clinicalEncounters ClinicalEncounter[] @relation("PatientEncounters")
 
   @@index([mrn])
@@ -804,12 +804,12 @@ enum DossierStatus {
 }
 
 model PatientDossier {
-  id        String   @id @default(cuid())
-  patientId String   @unique
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  patientId String  @unique
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  status DossierStatus @default(PENDING)
-  version Int          @default(1)
+  status  DossierStatus @default(PENDING)
+  version Int           @default(1)
 
   // Human-readable de-identified longitudinal summary (safe to send to AI)
   deidentifiedSummary String @db.Text
@@ -821,9 +821,9 @@ model PatientDossier {
   dataHash String @db.Char(64)
 
   // Telemetry / debugging
-  lastComputedAt  DateTime?
+  lastComputedAt    DateTime?
   lastSourceEventAt DateTime?
-  lastError       String? @db.Text
+  lastError         String?   @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1211,7 +1211,7 @@ model Prescription {
   // ICP-Brasil digital signature (Brazilian legal requirement)
   icpBrasilCertificateId String? // FK to ICPBrasilCertificate
   icpBrasilCertificate   ICPBrasilCertificate? @relation("ICPBrasilPrescriptions", fields: [icpBrasilCertificateId], references: [id])
-  icpBrasilSignature     String? @db.Text // CMS/PKCS#7 signature
+  icpBrasilSignature     String?               @db.Text // CMS/PKCS#7 signature
 
   // Status
   status         PrescriptionStatus @default(PENDING)
@@ -1294,15 +1294,15 @@ enum ConsentType {
 // ============================================================================
 
 model DeletionRequest {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   // Request details
-  requestedAt DateTime @default(now())
+  requestedAt DateTime              @default(now())
   requestedBy String // User ID or email who initiated the request
-  reason      String?  @db.Text
-  legalBasis  String?  @db.Text // GDPR/LGPD legal basis for deletion
+  reason      String?               @db.Text
+  legalBasis  String?               @db.Text // GDPR/LGPD legal basis for deletion
   status      DeletionRequestStatus @default(PENDING_CONFIRMATION)
 
   // Confirmation workflow
@@ -1315,7 +1315,7 @@ model DeletionRequest {
   processedBy   String? // User ID who processed the request
   completedAt   DateTime?
   rejectedAt    DateTime?
-  rejectionNote String?  @db.Text
+  rejectionNote String?   @db.Text
 
   // Audit trail
   ipAddress String?
@@ -2463,6 +2463,18 @@ model PatientPreferences {
   // Language
   preferredLanguage String @default("es") // 'es', 'en'
 
+  // Clinical Intelligence MVP - Additional Consent (LGPD/GDPR)
+  researchConsent     Boolean @default(false)
+  dataShareWithFamily Boolean @default(false)
+  aiProcessingConsent Boolean @default(true) // Consent for AI-assisted clinical decisions
+
+  // Clinical Intelligence MVP - Preventive Care
+  preventiveCareAlerts Boolean @default(true) // Care gap and screening reminders
+
+  // Accessibility
+  largeText             Boolean @default(false)
+  screenReaderOptimized Boolean @default(false)
+
   // Audit
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2540,8 +2552,8 @@ model Invoice {
   cfdiPaymentMethod String?    @default("PUE") // Método de pago (PUE = Pago en una sola exhibición)
 
   // Relations
-  lineItems             InvoiceLineItem[]
-  payments              Payment[]
+  lineItems              InvoiceLineItem[]
+  payments               Payment[]
   insuranceAuthorization InsuranceAuthorization? // TISS insurance authorization
 
   // Audit
@@ -4230,12 +4242,12 @@ model Organization {
   organizationType OrgType @default(CLINIC)
 
   // Relations
-  practitioners              User[]                      @relation("OrganizationPractitioners")
-  patients                   Patient[]                   @relation("PatientOrganization")
-  icpBrasilCertificates      ICPBrasilCertificate[]
-  insuranceAuthorizations    InsuranceAuthorization[]
-  rndsExchangeLogs           RNDSExchangeLog[]
-  dicomSeries                DicomSeries[]
+  practitioners           User[]                   @relation("OrganizationPractitioners")
+  patients                Patient[]                @relation("PatientOrganization")
+  icpBrasilCertificates   ICPBrasilCertificate[]
+  insuranceAuthorizations InsuranceAuthorization[]
+  rndsExchangeLogs        RNDSExchangeLog[]
+  dicomSeries             DicomSeries[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -4295,13 +4307,13 @@ model ICPBrasilCertificate {
   usageCount Int       @default(0)
 
   // Metadata
-  uploadedAt DateTime @default(now())
+  uploadedAt DateTime  @default(now())
   revokedAt  DateTime?
 
   // Relations
-  users             User[]
-  rndsExchangeLogs  RNDSExchangeLog[]
-  prescriptions     Prescription[]        @relation("ICPBrasilPrescriptions")
+  users            User[]
+  rndsExchangeLogs RNDSExchangeLog[]
+  prescriptions    Prescription[]    @relation("ICPBrasilPrescriptions")
 
   @@index([subjectCPF])
   @@index([serialNumber])
@@ -4337,7 +4349,7 @@ model RNDSExchangeLog {
 
   // FHIR payload
   fhirPayload Json // Complete FHIR R4 JSON
-  fhirVersion String  @default("4.0.1")
+  fhirVersion String @default("4.0.1")
 
   // Response
   statusCode   Int
@@ -4346,7 +4358,7 @@ model RNDSExchangeLog {
   errorCode    String? // RNDS-specific error code
 
   // Security (ICP-Brasil signature)
-  signature         String? @db.Text // Digital signature
+  signature         String?               @db.Text // Digital signature
   certificateId     String?
   certificate       ICPBrasilCertificate? @relation(fields: [certificateId], references: [id])
   certificateSerial String? // Certificate serial for audit
@@ -4357,7 +4369,7 @@ model RNDSExchangeLog {
   userAgent String? @db.Text
 
   // Timing
-  requestedAt DateTime @default(now())
+  requestedAt DateTime  @default(now())
   completedAt DateTime?
   durationMs  Int? // Latency tracking
 
@@ -4476,15 +4488,15 @@ model LoincCode {
   loincNumber String @id @db.VarChar(10) // e.g., "2085-9"
 
   // Core components (LOINC 6-part structure)
-  component   String // e.g., "HDL Cholesterol"
-  property    String // e.g., "MCnc" (Mass Concentration)
-  timeAspect  String // e.g., "Pt" (Point in time)
-  system      String // e.g., "Ser/Plas" (Serum/Plasma)
-  scale       String // e.g., "Qn" (Quantitative)
-  method      String? // e.g., "Enzymatic"
+  component  String // e.g., "HDL Cholesterol"
+  property   String // e.g., "MCnc" (Mass Concentration)
+  timeAspect String // e.g., "Pt" (Point in time)
+  system     String // e.g., "Ser/Plas" (Serum/Plasma)
+  scale      String // e.g., "Qn" (Quantitative)
+  method     String? // e.g., "Enzymatic"
 
   // Display names
-  longCommonName String @db.Text
+  longCommonName String  @db.Text
   shortName      String?
 
   // Classification
@@ -4529,7 +4541,7 @@ model SnomedConcept {
   // Relations
   diagnoses  Diagnosis[]
   procedures ProcedureRecord[]
-  allergies  Allergy[]           @relation("AllergenConcept")
+  allergies  Allergy[]         @relation("AllergenConcept")
 
   @@index([semanticTag])
   @@index([preferredTerm])
@@ -4583,8 +4595,8 @@ model Diagnosis {
   ciap2Code String? @db.VarChar(7) // ICPC-2 for primary care (Brazil uses this)
 
   // Clinical details
-  display            String                       @db.Text // Human-readable diagnosis
-  clinicalStatus     DiagnosisStatus              @default(ACTIVE)
+  display            String                      @db.Text // Human-readable diagnosis
+  clinicalStatus     DiagnosisStatus             @default(ACTIVE)
   verificationStatus DiagnosisVerificationStatus @default(CONFIRMED)
 
   // Timing
@@ -4655,7 +4667,7 @@ model Immunization {
   // Administration
   dateAdministered DateTime
   doseNumber       Int? // e.g., 1 for first dose, 2 for second
-  seriesCompleted  Boolean @default(false)
+  seriesCompleted  Boolean  @default(false)
 
   // Manufacturer
   manufacturer   String?
@@ -4713,7 +4725,7 @@ model ProcedureRecord {
   cbhpmCode String? @db.VarChar(10) // Brazilian procedure code (CBHPM)
 
   // Procedure details
-  display String        @db.Text
+  display String          @db.Text
   status  ProcedureStatus @default(COMPLETED)
 
   // Timing
@@ -4827,7 +4839,7 @@ model DicomInstance {
   instanceNumber Int?
 
   // Storage
-  imageUrl     String @db.Text // R2/S3 URL
+  imageUrl     String  @db.Text // R2/S3 URL
   thumbnailUrl String? @db.Text
 
   // Metadata
@@ -4900,11 +4912,11 @@ model ManualReviewQueueItem {
   sectionType String // 'subjective', 'objective', 'assessment', 'plan', etc.
 
   // Patient & Clinician
-  patientId   String
-  patient     Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   clinicianId String
-  clinician   User    @relation("ReviewQueueClinician", fields: [clinicianId], references: [id])
+  clinician   User   @relation("ReviewQueueClinician", fields: [clinicianId], references: [id])
 
   // Flag details
   flagReason  String // 'low_confidence', 'inconsistent_data', 'missing_info', etc.
@@ -4915,7 +4927,7 @@ model ManualReviewQueueItem {
 
   // Review
   reviewedBy String? // User ID
-  reviewer   User?   @relation("ReviewQueueReviewer", fields: [reviewedBy], references: [id])
+  reviewer   User?     @relation("ReviewQueueReviewer", fields: [reviewedBy], references: [id])
   reviewedAt DateTime?
 
   // Priority
@@ -4950,24 +4962,24 @@ model BetaSignup {
   name  String @default("")
 
   // Invitation tracking
-  invitationCode   String?         @unique
-  usedInviteCode   InvitationCode? @relation("UsedInvites", fields: [invitationCode], references: [code])
-  
+  invitationCode String?         @unique
+  usedInviteCode InvitationCode? @relation("UsedInvites", fields: [invitationCode], references: [code])
+
   // First 100 tracking
-  signupNumber     Int?     @unique // Sequential number (1-100 for first 100)
-  isFirst100       Boolean  @default(false)
-  
+  signupNumber Int?    @unique // Sequential number (1-100 for first 100)
+  isFirst100   Boolean @default(false)
+
   // Subscription status
-  hasSubscribed    Boolean  @default(false)
-  userId           String?  @unique // Link to User when they complete registration
-  
+  hasSubscribed Boolean @default(false)
+  userId        String? @unique // Link to User when they complete registration
+
   // Free year tracking
-  freeYearStart    DateTime?
-  freeYearEnd      DateTime?
-  
+  freeYearStart DateTime?
+  freeYearEnd   DateTime?
+
   // Timestamps
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([signupNumber])
@@ -4982,26 +4994,26 @@ model InvitationCode {
   code String @unique @default(cuid())
 
   // Code type
-  codeType  InvitationCodeType @default(FRIEND_FAMILY)
-  
+  codeType InvitationCodeType @default(FRIEND_FAMILY)
+
   // Status
-  isActive  Boolean @default(true)
-  isUsed    Boolean @default(false)
-  
+  isActive Boolean @default(true)
+  isUsed   Boolean @default(false)
+
   // Usage tracking
-  maxUses   Int     @default(1) // How many times this code can be used
-  usedCount Int     @default(0)
-  
+  maxUses   Int @default(1) // How many times this code can be used
+  usedCount Int @default(0)
+
   // Created by
   createdByEmail String? // Email of the person who gets to generate this
   createdByAdmin Boolean @default(true) // Was this created by an admin?
-  
+
   // Metadata
   notes String? @db.Text // Admin notes about this code
-  
+
   // Relations
   usedBy BetaSignup[] @relation("UsedInvites")
-  
+
   // Timestamps
   createdAt DateTime  @default(now())
   expiresAt DateTime? // Optional expiration
@@ -5017,10 +5029,10 @@ model InvitationCode {
 }
 
 enum InvitationCodeType {
-  FIRST_100          // Automatically assigned to first 100
-  FRIEND_FAMILY      // Personal invite codes
-  PARTNER            // Partner/affiliate codes
-  ADMIN              // Admin-generated codes
+  FIRST_100 // Automatically assigned to first 100
+  FRIEND_FAMILY // Personal invite codes
+  PARTNER // Partner/affiliate codes
+  ADMIN // Admin-generated codes
 }
 
 // Global counter for tracking first 100 signups
@@ -5040,7 +5052,7 @@ model SignupCounter {
 // Stores access control policies for role-based and attribute-based access control
 model CasbinRule {
   id    Int     @id @default(autoincrement())
-  ptype String  // Policy type (p = policy, g = grouping/role)
+  ptype String // Policy type (p = policy, g = grouping/role)
   v0    String? // Subject (role or user)
   v1    String? // Object (resource)
   v2    String? // Action (read, write, delete, etc.)
@@ -5060,9 +5072,9 @@ model CasbinRule {
 model RevokedToken {
   id        String   @id @default(cuid())
   tokenHash String   @unique // SHA-256 hash of JWT
-  userId    String   // User who owned the token
-  reason    String   // Why token was revoked
-  revokedBy String?  // Admin user ID if applicable
+  userId    String // User who owned the token
+  reason    String // Why token was revoked
+  revokedBy String? // Admin user ID if applicable
   revokedAt DateTime @default(now())
   expiresAt DateTime // When revocation can be purged
 
@@ -5080,10 +5092,10 @@ model RevokedToken {
 // Captures high-fidelity behavioral data for CDS training
 // PHI-compliant: No patient identifiers stored
 model UserBehaviorEvent {
-  id        String   @id @default(cuid())
-  userId    String   // Clinician who performed the action
-  eventType String   // PATIENT_SEARCH, PATIENT_CREATED, CONTEXT_LOADED, etc.
-  metadata  Json     // Event-specific data (search queries, filters, timing)
+  id        String @id @default(cuid())
+  userId    String // Clinician who performed the action
+  eventType String // PATIENT_SEARCH, PATIENT_CREATED, CONTEXT_LOADED, etc.
+  metadata  Json // Event-specific data (search queries, filters, timing)
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -5097,12 +5109,12 @@ model UserBehaviorEvent {
 // Data Quality Event Tracking
 // Captures validation errors and data completeness issues
 model DataQualityEvent {
-  id           String   @id @default(cuid())
-  source       String   // CSV_IMPORT, MANUAL_ENTRY, FHIR_SYNC, etc.
-  errorType    String   // VALIDATION_ERROR, MISSING_FIELD, FORMAT_ERROR
-  errorMessage String   @db.Text
-  userId       String?  // Clinician who triggered the error (if applicable)
-  metadata     Json?    // Additional context (field names, row numbers)
+  id           String  @id @default(cuid())
+  source       String // CSV_IMPORT, MANUAL_ENTRY, FHIR_SYNC, etc.
+  errorType    String // VALIDATION_ERROR, MISSING_FIELD, FORMAT_ERROR
+  errorMessage String  @db.Text
+  userId       String? // Clinician who triggered the error (if applicable)
+  metadata     Json? // Additional context (field names, row numbers)
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -5117,12 +5129,12 @@ model DataQualityEvent {
 // Access Reason Aggregate Statistics
 // HIPAA-compliant aggregated access patterns (no PHI)
 model AccessReasonAggregate {
-  id            String   @id @default(cuid())
-  accessReason  String   // DIRECT_PATIENT_CARE, EMERGENCY_ACCESS, etc.
-  hourOfDay     Int      // 0-23
-  dayOfWeek     Int      // 0-6 (Sunday = 0)
-  accessCount   Int      @default(1)
-  avgDuration   Float?   // Average time spent (seconds)
+  id           String @id @default(cuid())
+  accessReason String // DIRECT_PATIENT_CARE, EMERGENCY_ACCESS, etc.
+  hourOfDay    Int // 0-23
+  dayOfWeek    Int // 0-6 (Sunday = 0)
+  accessCount  Int    @default(1)
+  avgDuration  Float? // Average time spent (seconds)
 
   // Date tracking (for time-series analysis)
   date      DateTime @db.Date
@@ -5138,21 +5150,21 @@ model AccessReasonAggregate {
 // Clinician Demographics Aggregate
 // De-identified population health statistics
 model ClinicianDemographics {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // De-identified aggregates
-  totalPatients   Int      @default(0)
-  activePatients  Int      @default(0)
-  avgPatientAge   Float?
+  totalPatients      Int    @default(0)
+  activePatients     Int    @default(0)
+  avgPatientAge      Float?
   genderDistribution Json? // {"M": 45, "F": 55, "O": 0}
 
   // Specialty-specific metrics
-  specialty       String?
-  regionCode      String?  // State/province code (not full address)
+  specialty  String?
+  regionCode String? // State/province code (not full address)
 
   // Time window
-  weekStart   DateTime @db.Date
-  weekEnd     DateTime @db.Date
+  weekStart DateTime @db.Date
+  weekEnd   DateTime @db.Date
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -5173,30 +5185,30 @@ model ClinicianDemographics {
 // Clinical Note Embeddings for semantic search
 // Stores vector embeddings of clinical notes, diagnoses, and observations
 model ClinicalEmbedding {
-  id        String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Source reference
-  sourceType String   // NOTE, DIAGNOSIS, LAB_RESULT, MEDICATION, etc.
-  sourceId   String   // ID of the source record
-  patientId  String   // For patient-scoped searches
-  
+  sourceType String // NOTE, DIAGNOSIS, LAB_RESULT, MEDICATION, etc.
+  sourceId   String // ID of the source record
+  patientId  String // For patient-scoped searches
+
   // Embedding data
   // Note: pgvector uses the vector type, but Prisma doesn't support it natively
   // We use Unsupported type and handle it in raw queries
-  embedding  Unsupported("vector(1536)")? // OpenAI ada-002 uses 1536 dimensions
-  
+  embedding Unsupported("vector(1536)")? // OpenAI ada-002 uses 1536 dimensions
+
   // Content metadata (for result display, no PHI)
-  contentPreview String?  @db.Text // First 200 chars (for search results)
-  contentHash    String?  // SHA-256 of content (for deduplication)
-  
+  contentPreview String? @db.Text // First 200 chars (for search results)
+  contentHash    String? // SHA-256 of content (for deduplication)
+
   // Search metadata
-  language       String   @default("en")
-  embeddingModel String   @default("text-embedding-ada-002")
-  
+  language       String @default("en")
+  embeddingModel String @default("text-embedding-ada-002")
+
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([patientId])
   @@index([sourceType])
   @@index([contentHash])
@@ -5206,54 +5218,54 @@ model ClinicalEmbedding {
 // Patient Summary Embeddings
 // High-level patient summaries for similarity matching
 model PatientSummaryEmbedding {
-  id        String   @id @default(cuid())
-  patientId String   @unique
-  
+  id        String @id @default(cuid())
+  patientId String @unique
+
   // Embedding (1536 dimensions for OpenAI ada-002)
   embedding Unsupported("vector(1536)")?
-  
+
   // Summary metadata (no PHI)
-  ageBand            String?
-  gender             String?
-  primaryDiagnoses   String[] // ICD codes only, no names
-  medicationCount    Int      @default(0)
-  labResultCount     Int      @default(0)
-  isPalliativeCare   Boolean  @default(false)
-  
+  ageBand          String?
+  gender           String?
+  primaryDiagnoses String[] // ICD codes only, no names
+  medicationCount  Int      @default(0)
+  labResultCount   Int      @default(0)
+  isPalliativeCare Boolean  @default(false)
+
   // Model info
-  summaryVersion     String   @default("v1")
-  embeddingModel     String   @default("text-embedding-ada-002")
-  
+  summaryVersion String @default("v1")
+  embeddingModel String @default("text-embedding-ada-002")
+
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([isPalliativeCare])
   @@map("patient_summary_embeddings")
 }
 
 // Diagnosis Embeddings for similar condition matching
 model DiagnosisEmbedding {
-  id           String   @id @default(cuid())
-  diagnosisId  String   @unique
-  patientId    String
-  
+  id          String @id @default(cuid())
+  diagnosisId String @unique
+  patientId   String
+
   // Embedding
-  embedding    Unsupported("vector(1536)")?
-  
+  embedding Unsupported("vector(1536)")?
+
   // Diagnosis metadata (no PHI)
-  icdCode      String?
-  snomedCode   String?
-  severity     String?
-  isActive     Boolean  @default(true)
-  
+  icdCode    String?
+  snomedCode String?
+  severity   String?
+  isActive   Boolean @default(true)
+
   // Model info
   embeddingModel String @default("text-embedding-ada-002")
-  
+
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([patientId])
   @@index([icdCode])
   @@map("diagnosis_embeddings")
@@ -5285,7 +5297,7 @@ model AnalysisJob {
 
   // Relations
   patientId   String
-  patient     Patient        @relation("PatientAnalysisJobs", fields: [patientId], references: [id], onDelete: Cascade)
+  patient     Patient            @relation("PatientAnalysisJobs", fields: [patientId], references: [id], onDelete: Cascade)
   encounterId String?
   encounter   ClinicalEncounter? @relation(fields: [encounterId], references: [id])
 
@@ -5433,7 +5445,7 @@ model ClinicalEncounter {
   patient   Patient @relation("PatientEncounters", fields: [patientId], references: [id], onDelete: Cascade)
 
   providerId String
-  provider   User @relation("ProviderEncounters", fields: [providerId], references: [id])
+  provider   User   @relation("ProviderEncounters", fields: [providerId], references: [id])
 
   // Link to appointment (if scheduled)
   appointmentId String?      @unique
@@ -5460,4 +5472,182 @@ model ClinicalEncounter {
   @@index([status])
   @@index([appointmentId])
   @@map("clinical_encounters")
+}
+
+// ============================================================================
+// CLINICAL INTELLIGENCE MVP - Logic-as-Data (Law 1)
+// ============================================================================
+// "Never hardcode business logic that is subject to frequent change."
+// The Check: "If the business requirement changes, do I have to merge a PR to fix it?"
+// Answer: No, because rules are stored in the database as JSON.
+// ============================================================================
+
+enum RuleType {
+  SYMPTOM_DIAGNOSIS // Symptom -> Differential
+  TREATMENT_PROTOCOL // Condition -> Treatment
+  LAB_ACTION // Lab result -> Clinical action
+  DRUG_INTERACTION // Drug pair -> Alert
+  ALLERGY_CHECK // Allergy + Med -> Alert
+  VITAL_ALERT // Vital trend -> Alert
+  ADHERENCE_RISK // Pattern -> Risk score
+  CARE_GAP // Missing preventive care -> Alert
+}
+
+model ClinicalRule {
+  id String @id @default(cuid())
+
+  // Rule identification
+  ruleType RuleType
+  name     String
+  version  String   @default("1.0.0")
+
+  // The rule itself (JSON - Logic-as-Data)
+  conditions Json // Array of EligibilityCriterion
+  actions    Json // What to do when conditions match
+
+  // Metadata
+  source        String? // "ACC/AHA 2022", "Internal"
+  sourceUrl     String?
+  evidenceGrade String? // A, B, C, D
+
+  // Lifecycle
+  effectiveDate  DateTime  @default(now())
+  expirationDate DateTime?
+  isActive       Boolean   @default(true)
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+
+  @@index([ruleType, isActive])
+  @@index([effectiveDate, expirationDate])
+  @@map("clinical_rules")
+}
+
+model TreatmentProtocol {
+  id String @id @default(cuid())
+
+  // Identification
+  conditionIcd10 String
+  conditionName  String
+  version        String @default("1.0.0")
+
+  // Guideline source
+  guidelineSource   String // "ACC/AHA 2022"
+  guidelineUrl      String?
+  guidelineCitation String?
+
+  // The protocol (JSON - Logic-as-Data)
+  eligibility     Json // Array of EligibilityCriterion
+  recommendations Json // Array of TreatmentRecommendation
+
+  // Lifecycle
+  effectiveDate  DateTime  @default(now())
+  expirationDate DateTime?
+  isActive       Boolean   @default(true)
+
+  // Audit
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  createdBy  String?
+  approvedBy String?
+  approvedAt DateTime?
+
+  @@unique([conditionIcd10, version])
+  @@index([conditionIcd10, isActive])
+  @@map("treatment_protocols")
+}
+
+model SymptomDiagnosisMap {
+  id String @id @default(cuid())
+
+  // Symptom matching
+  symptomKeywords String[]
+  symptomCategory String // "cardiovascular", "respiratory"
+
+  // Diagnosis output
+  icd10Code       String
+  diagnosisName   String
+  baseProbability Float // Prior probability before patient factors
+
+  // Modifiers (JSON - how patient factors affect probability)
+  probabilityModifiers Json // { "age>65": 1.3, "diabetes": 1.5, "smoker": 1.4 }
+
+  // Red flags
+  redFlags          String[]
+  workupSuggestions String[]
+
+  // Metadata
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([symptomCategory, isActive])
+  @@map("symptom_diagnosis_maps")
+}
+
+// ============================================================================
+// CLINICAL INTELLIGENCE MVP - LLM-as-a-Judge Quality Loop (Law 6)
+// ============================================================================
+// "You cannot trust AI outputs without measuring them."
+// The Check: "Is every AI interaction logged with quality scores in the database?"
+// ============================================================================
+
+model AIQualityMetrics {
+  id            String @id @default(cuid())
+  interactionId String @unique
+  taskType      String
+
+  // Quality scores (0-1)
+  hallucinationRate     Float?
+  completenessScore     Float?
+  clinicalAccuracyScore Float?
+
+  // Issues found
+  flaggedIssues Json? // Array of {type, description, severity}
+  reasoning     String? @db.Text
+
+  // Failure tracking
+  evaluationFailed Boolean @default(false)
+  failureReason    String? @db.Text
+
+  // Cost tracking
+  primaryModelCost Float?
+  judgeModelCost   Float?
+  totalTokensUsed  Int?
+
+  evaluatedAt DateTime @default(now())
+
+  @@index([taskType, evaluatedAt])
+  @@index([hallucinationRate])
+  @@map("ai_quality_metrics")
+}
+
+// ============================================================================
+// CLINICAL INTELLIGENCE MVP - Audit Log Hash Chain (P0 Blocker)
+// ============================================================================
+// Tamper-evident audit logs using hash chaining.
+// Each log entry includes hash of previous entry.
+// ============================================================================
+
+model AuditLogHashChain {
+  id String @id @default(cuid())
+
+  // Reference to actual audit log
+  auditLogId String @unique
+
+  // Hash chain fields
+  previousHash String? // Hash of previous entry
+  entryHash    String // Hash of this entry (tamper detection)
+
+  // Chain metadata
+  chainSequence Int // Sequential position in chain
+  chainBroken   Boolean @default(false) // Flag if verification fails
+
+  createdAt DateTime @default(now())
+
+  @@index([entryHash])
+  @@index([chainSequence])
+  @@map("audit_log_hash_chain")
 }

@@ -1838,6 +1838,7 @@ model Appointment {
   clinicalEncounters ClinicalEncounter[]
   situations         AppointmentSituation[]
   noShowHistory      NoShowHistory? // Phase 5: No-show tracking
+  aiUsageLogs        AIUsageLog[] // Track AI usage during this encounter
 
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
@@ -2106,11 +2107,16 @@ model AuditLog {
   // When
   timestamp DateTime @default(now())
 
+  // Hash Chain (Tamper Detection)
+  previousHash String? // SHA-256 hash of previous entry, "GENESIS" for first
+  entryHash    String? // SHA-256 hash of this entry including previousHash
+
   @@index([userId])
   @@index([action])
   @@index([resourceId])
   @@index([timestamp])
   @@index([accessReason])
+  @@index([entryHash])
   @@map("audit_logs")
 }
 
@@ -3392,6 +3398,77 @@ enum PaymentStatus {
 }
 
 // ============================================================================
+// FEATURE FLAGS (Kill Switch for AI and other features)
+// ============================================================================
+
+model FeatureFlag {
+  id String @id @default(cuid())
+
+  // Flag identification
+  name        String // e.g., "ai.diagnosis.enabled", "ai.scribe.enabled"
+  description String? @db.Text
+
+  // Scope: null = global, otherwise clinic-specific override
+  clinicId String?
+
+  // Status
+  enabled Boolean @default(true)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // User who created/modified
+  reason    String? @db.Text // Why this flag was toggled
+
+  // Unique constraint: one flag per name per scope
+  @@unique([name, clinicId])
+  @@index([name])
+  @@index([clinicId])
+  @@map("feature_flags")
+}
+
+// ============================================================================
+// CLINICAL RULES ENGINE (Business Rules via JSON-Logic)
+// ============================================================================
+
+model ClinicalRule {
+  id String @id @default(cuid())
+
+  // Rule identification
+  ruleId   String @unique // e.g., "RISK-SCORE-HIGH", "ROUTING-NEW-SIGNUP"
+  name     String // Human-readable name
+  category String // "business", "routing", "alert", "scoring"
+
+  // JSON-Logic rule definition
+  // See: https://jsonlogic.com/
+  logic Json // JSON-Logic expression
+
+  // Configuration
+  priority   Int     @default(0) // Higher priority = evaluated first
+  isActive   Boolean @default(true)
+  version    Int     @default(1)
+
+  // Scope (optional - for clinic-specific rules)
+  clinicId String?
+
+  // Metadata
+  description   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     String? // User who created/modified
+  lastEvaluated DateTime? // Last time this rule was evaluated
+
+  // Audit
+  evaluationCount Int @default(0) // How many times this rule has fired
+
+  @@unique([ruleId, clinicId])
+  @@index([category, isActive])
+  @@index([clinicId])
+  @@index([priority])
+  @@map("clinical_rules")
+}
+
+// ============================================================================
 // AI SERVICES & USAGE TRACKING
 // ============================================================================
 
@@ -3424,7 +3501,13 @@ model AIUsageLog {
   // Context
   queryComplexity String? // "simple", "moderate", "complex", "critical"
   feature         String? // "diagnosis", "prescriptions", "clinical-notes", etc.
-  promptPreview   String? @db.Text // First 500 chars of prompt for debugging
+
+  // PHI-Safe Debugging (promptPreview removed - contained PHI)
+  promptHash String? // SHA-256 hash of prompt for debugging/deduplication
+
+  // Audit Trail - Link to clinical encounter
+  appointmentId String? // Links AI usage to specific clinical encounter
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -3434,6 +3517,7 @@ model AIUsageLog {
   @@index([provider])
   @@index([createdAt])
   @@index([clinicId])
+  @@index([appointmentId]) // Query AI usage by encounter
   @@map("ai_usage_logs")
 }
 
@@ -5763,6 +5847,126 @@ model AIQualityMetrics {
   @@index([clinicianId])
   @@index([periodType])
   @@map("ai_quality_metrics")
+}
+
+// Per-Interaction AI Evaluation (LLM-as-Judge)
+// Law 6: Every AI interaction graded asynchronously by a cheaper judge model
+model AIInteractionEvaluation {
+  id            String @id @default(cuid())
+  interactionId String @unique // Links to original AI call
+
+  taskType String // "diagnosis-support", "clinical-notes", "treatment-protocol", etc.
+
+  // Quality scores (0-1)
+  hallucinationScore     Float? // 0 = no hallucination, 1 = complete hallucination
+  completenessScore      Float? // 0 = nothing relevant, 1 = fully complete
+  clinicalAccuracyScore  Float? // 0 = clinically wrong, 1 = clinically accurate
+
+  // Issues found (JSON array)
+  flaggedIssues Json? // Array of {type, description, severity}
+  reasoning     String? @db.Text
+
+  // Evaluation metadata
+  judgeModel     String? // Model used for evaluation (e.g., "gemini-flash")
+  judgeLatencyMs Int?
+
+  // Failure tracking
+  evaluationFailed Boolean @default(false)
+  failureReason    String?
+
+  // Cost tracking
+  primaryModelCost Float?
+  judgeModelCost   Float?
+
+  // Timestamps
+  evaluatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([taskType, evaluatedAt])
+  @@index([hallucinationScore])
+  @@index([evaluationFailed])
+  @@map("ai_interaction_evaluations")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLINICAL INTELLIGENCE (Logic-as-Data)
+// Clinical rules stored as data, not code
+// ═══════════════════════════════════════════════════════════════
+
+// Symptom-to-Diagnosis Mapping
+// Maps symptom keywords to potential diagnoses with base probabilities
+model SymptomDiagnosisMap {
+  id String @id @default(cuid())
+
+  // Symptom matching
+  symptomKeywords String[] // Keywords to match against chief complaint
+  symptomCategory String // "cardiovascular", "respiratory", "neurological", etc.
+
+  // Diagnosis output
+  icd10Code     String
+  diagnosisName String
+
+  // Probability
+  baseProbability Float // Prior probability before patient modifiers (0-1)
+
+  // Probability modifiers (JSON)
+  // e.g., { "age>65": 1.3, "diabetes": 1.5, "smoker": 1.4 }
+  probabilityModifiers Json?
+
+  // Clinical guidance
+  redFlags          String[] // Warning signs for this diagnosis
+  workupSuggestions String[] // Recommended tests/evaluations
+
+  // Lifecycle
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+
+  @@index([symptomCategory, isActive])
+  @@index([icd10Code])
+  @@map("symptom_diagnosis_maps")
+}
+
+// Treatment Protocol
+// Evidence-based treatment guidelines stored as data
+model TreatmentProtocol {
+  id String @id @default(cuid())
+
+  // Identification
+  conditionIcd10 String // ICD-10 code this protocol applies to
+  conditionName  String // Human-readable condition name
+  version        String @default("1.0.0")
+
+  // Guideline source
+  guidelineSource   String // "ACC/AHA 2022", "ADA 2024", etc.
+  guidelineUrl      String?
+  guidelineCitation String?
+
+  // Eligibility criteria (JSON - Logic-as-Data)
+  // Array of EligibilityCriterion: { field, operator, value, required }
+  eligibility Json
+
+  // Treatment recommendations (JSON)
+  // Array of TreatmentRecommendation objects
+  recommendations Json
+
+  // Lifecycle
+  effectiveDate  DateTime  @default(now())
+  expirationDate DateTime?
+  isActive       Boolean   @default(true)
+
+  // Audit
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  createdBy  String?
+  approvedBy String?
+  approvedAt DateTime?
+
+  @@unique([conditionIcd10, version])
+  @@index([conditionIcd10, isActive])
+  @@index([effectiveDate, expirationDate])
+  @@map("treatment_protocols")
 }
 
 // Manual Review Queue

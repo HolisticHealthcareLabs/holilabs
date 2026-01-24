@@ -37,6 +37,12 @@
       ],
       "@holi/schemas": [
         "../../packages/schemas/src"
+      ],
+      "@holilabs/shared-types": [
+        "../../packages/shared-types/src"
+      ],
+      "@holilabs/shared-types/*": [
+        "../../packages/shared-types/src/*"
       ]
     }
   },
