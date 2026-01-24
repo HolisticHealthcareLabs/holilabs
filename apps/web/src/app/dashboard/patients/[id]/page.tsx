@@ -11,6 +11,7 @@ import SchedulingModal from '@/components/patient/SchedulingModal';
 import DataIngestion from '@/components/patient/DataIngestion';
 import ClinicalNotesEditor from '@/components/patient/ClinicalNotesEditor';
 import SupportContact from '@/components/SupportContact';
+import { PatientDetailSkeleton } from '@/components/skeletons';
 
 type Tab = 'personal' | 'clinical' | 'history' | 'documents' | 'consents' | 'ai';
 
@@ -259,11 +260,8 @@ export default function PatientProfile() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4" />
-          <h3 className="text-xl font-bold text-gray-800">Cargando paciente...</h3>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <PatientDetailSkeleton />
       </div>
     );
   }

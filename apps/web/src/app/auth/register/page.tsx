@@ -634,13 +634,13 @@ export default function ClinicianRegisterPage() {
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className="px-2 py-1 bg-white/50 dark:bg-gray-800/50 text-xs text-gray-600 dark:text-gray-400 rounded border border-blue-200 dark:border-blue-800">
-                      ✨ Instant setup
+                      Instant setup
                     </span>
                     <span className="px-2 py-1 bg-white/50 dark:bg-gray-800/50 text-xs text-gray-600 dark:text-gray-400 rounded border border-blue-200 dark:border-blue-800">
-                      🎯 Full features
+                      Full features
                     </span>
                     <span className="px-2 py-1 bg-white/50 dark:bg-gray-800/50 text-xs text-gray-600 dark:text-gray-400 rounded border border-blue-200 dark:border-blue-800">
-                      🔄 Reversible
+                      Reversible
                     </span>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -93,7 +93,6 @@ const ADDITIONAL_ACTIONS: QuickAction[] = [
 ];
 
 export function QuickActionsMenu() {
-  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -105,9 +104,10 @@ export function QuickActionsMenu() {
       {/* Primary Actions Grid - 2x2 */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         {PRIMARY_ACTIONS.map((action) => (
-          <button
+          <Link
             key={action.id}
-            onClick={() => router.push(action.href)}
+            href={action.href}
+            prefetch={true}
             className={`flex flex-col items-center justify-center p-4 bg-gradient-to-br ${action.gradient} hover:${action.hoverGradient} hover:-translate-y-1 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-xl`}
           >
             <div className="relative w-12 h-12 mb-2 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
@@ -122,7 +122,7 @@ export function QuickActionsMenu() {
             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 text-center">
               {action.name}
             </span>
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -155,28 +155,32 @@ export function QuickActionsMenu() {
           >
             <div className="grid grid-cols-2 gap-3">
               {ADDITIONAL_ACTIONS.map((action, index) => (
-                <motion.button
+                <motion.div
                   key={action.id}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ delay: index * 0.05 }}
-                  onClick={() => router.push(action.href)}
-                  className={`flex flex-col items-center justify-center p-3 bg-gradient-to-br ${action.gradient} hover:${action.hoverGradient} hover:-translate-y-1 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-xl`}
                 >
-                  <div className="relative w-10 h-10 mb-1.5 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-                    <Image
-                      src={action.icon}
-                      alt={action.name}
-                      width={28}
-                      height={28}
-                      className="dark:invert"
-                    />
-                  </div>
-                  <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 text-center">
-                    {action.name}
-                  </span>
-                </motion.button>
+                  <Link
+                    href={action.href}
+                    prefetch={true}
+                    className={`flex flex-col items-center justify-center p-3 bg-gradient-to-br ${action.gradient} hover:${action.hoverGradient} hover:-translate-y-1 hover:scale-105 rounded-xl transition-all duration-300 group shadow-sm hover:shadow-xl`}
+                  >
+                    <div className="relative w-10 h-10 mb-1.5 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                      <Image
+                        src={action.icon}
+                        alt={action.name}
+                        width={28}
+                        height={28}
+                        className="dark:invert"
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 text-center">
+                      {action.name}
+                    </span>
+                  </Link>
+                </motion.div>
               ))}
             </div>
           </motion.div>

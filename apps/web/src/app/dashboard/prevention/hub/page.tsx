@@ -18,6 +18,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { PreventionHubSkeleton } from '@/components/skeletons';
 
 // Force dynamic rendering to avoid build errors with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -245,13 +246,8 @@ export default function PreventionHub() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4" />
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-            Loading Prevention Hub...
-          </h3>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <PreventionHubSkeleton />
       </div>
     );
   }

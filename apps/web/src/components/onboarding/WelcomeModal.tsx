@@ -80,8 +80,12 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
       >
         <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in duration-300">
           {/* Header with gradient */}
-          <div className="bg-gradient-to-r from-primary to-purple-700 text-white p-8 text-center">
-            <div className="text-6xl mb-4" aria-hidden="true">🎉</div>
+          <div className="bg-gradient-to-r from-[#014751] to-[#017a8c] text-white p-8 text-center">
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
             <h1 id="welcome-modal-title" className="text-3xl font-bold mb-2">
               {t('onboarding.welcome')}{userName ? `, ${userName}` : ''}!
             </h1>
@@ -105,8 +109,11 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                   1
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    📝 {t('onboarding.steps.note.title')}
+                  <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {t('onboarding.steps.note.title')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     {t('onboarding.steps.note.description')}
@@ -127,8 +134,11 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                   2
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    📊 {t('onboarding.steps.transfer.title')}
+                  <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    {t('onboarding.steps.transfer.title')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     {t('onboarding.steps.transfer.description')}
@@ -149,8 +159,11 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
                   3
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    👤 {t('onboarding.steps.invite.title')}
+                  <h3 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    {t('onboarding.steps.invite.title')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                     {t('onboarding.steps.invite.description')}
@@ -169,7 +182,11 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
             {/* Optional: WhatsApp Setup */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
               <div className="flex items-start space-x-3">
-                <span className="text-2xl">📱</span>
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {t('onboarding.optional.title')}
@@ -199,9 +216,12 @@ export default function WelcomeModal({ userName }: WelcomeModalProps) {
               <button
                 ref={startButtonRef}
                 onClick={handleDismiss}
-                className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all hover:scale-105"
+                className="px-6 py-3 bg-gradient-to-r from-[#014751] to-[#017a8c] text-white font-semibold rounded-lg hover:shadow-lg transition-all hover:scale-105 flex items-center gap-2"
               >
-                {t('onboarding.start')} 🚀
+                {t('onboarding.start')}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </button>
             </div>
           </div>

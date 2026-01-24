@@ -752,6 +752,7 @@ model Patient {
   familyPortalAccess        FamilyPortalAccess[]
   allergies                 Allergy[]
   preventiveCareReminders   PreventiveCareReminder[]
+  preventionOutcomes        PreventionOutcome[]
   medicationSchedules       MedicationSchedule[]
   medicationAdministrations MedicationAdministration[]
 
@@ -5193,24 +5194,160 @@ model DiagnosisEmbedding {
   id           String   @id @default(cuid())
   diagnosisId  String   @unique
   patientId    String
-  
+
   // Embedding
   embedding    Unsupported("vector(1536)")?
-  
+
   // Diagnosis metadata (no PHI)
   icdCode      String?
   snomedCode   String?
   severity     String?
   isActive     Boolean  @default(true)
-  
+
   // Model info
   embeddingModel String @default("text-embedding-ada-002")
-  
+
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([patientId])
   @@index([icdCode])
   @@map("diagnosis_embeddings")
+}
+
+// ============================================================================
+// PROTOCOL OMEGA - CLINICAL PROTOCOL RULES (JSON-Logic)
+// ============================================================================
+// Stores clinical protocols as JSON-Logic rules for the Prevention Hub
+// Replaces hardcoded rules with database-stored, versioned protocols
+
+model ClinicalProtocol {
+  id       String @id @default(cuid())
+  ruleId   String @unique // e.g., "PROTOCOL-DM-001"
+  name     String
+  category ProtocolCategory
+  version  String @default("1.0")
+  source   String // USPSTF, WHO, NHS, ESC, AHA, custom
+
+  // THE RULE LOGIC (JSON-Logic format)
+  // { if: {...}, then: "action", fallback: "safe_default" }
+  logic Json
+
+  // Validation requirements
+  minConfidence      Float   @default(0.85)
+  requireHumanReview Boolean @default(false)
+  maxDataAgeHours    Int? // Data freshness requirement (null = no limit)
+
+  // Metadata
+  evidenceLevel String? // A, B, C, D (clinical evidence grades)
+  references    Json? // Array of citation URLs
+  isActive      Boolean @default(true)
+
+  // Targeting (optional - limit to specific demographics)
+  minAge Int? // Minimum patient age for this protocol
+  maxAge Int? // Maximum patient age for this protocol
+  gender String? // "male", "female", or null for all
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String // User ID who created/modified
+  approvedBy String? // User ID who approved for production
+  approvedAt DateTime?
+
+  // Relations
+  outcomes PreventionOutcome[]
+
+  @@index([category, isActive])
+  @@index([source])
+  @@index([ruleId])
+  @@map("clinical_protocols")
+}
+
+enum ProtocolCategory {
+  SCREENING
+  PREVENTION
+  DRUG_INTERACTION
+  DIAGNOSIS_SUPPORT
+  EMERGENCY_ALERT
+  CHRONIC_MANAGEMENT
+  IMMUNIZATION
+}
+
+// ============================================================================
+// PREVENTION OUTCOME TRACKING
+// ============================================================================
+// Tracks the outcomes of prevention interventions for analytics and quality
+
+model PreventionOutcome {
+  id        String  @id @default(cuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Protocol reference (optional - may be from rule engine or manual)
+  protocolId String?
+  protocol   ClinicalProtocol? @relation(fields: [protocolId], references: [id], onDelete: SetNull)
+
+  // Intervention details
+  interventionType  String // screening, immunization, referral, lab_order, etc.
+  interventionName  String // e.g., "Colorectal Cancer Screening", "A1C Test"
+  cptCode           String? // CPT code if applicable
+  icdCode           String? // ICD-10 code if applicable
+
+  // Scheduling
+  scheduledDate DateTime
+  completedDate DateTime?
+  dueDate       DateTime? // Different from scheduled if rescheduled
+
+  // Status tracking
+  status OutcomeStatus @default(SCHEDULED)
+
+  // Outcome data
+  result          Json? // Lab values, screening results, etc.
+  resultSummary   String? // Human-readable summary
+  isAbnormal      Boolean @default(false)
+  followUpNeeded  Boolean @default(false)
+  followUpNotes   String? @db.Text
+
+  // Provider information
+  orderedBy       String? // User ID who ordered
+  completedBy     String? // User ID who completed/documented
+  reviewedBy      String? // User ID who reviewed results
+  reviewedAt      DateTime?
+
+  // Patient interaction
+  patientDeclined Boolean   @default(false)
+  declineReason   String?   @db.Text
+  declinedAt      DateTime?
+
+  // Notification tracking
+  remindersSent   Int       @default(0)
+  lastReminderAt  DateTime?
+
+  // Quality metrics (for analytics)
+  daysToCompletion Int? // Days from scheduled to completed
+  wasOverdue       Boolean @default(false)
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId, status])
+  @@index([scheduledDate])
+  @@index([status])
+  @@index([interventionType])
+  @@index([protocolId])
+  @@map("prevention_outcomes")
+}
+
+enum OutcomeStatus {
+  SCHEDULED // Scheduled but not yet due
+  DUE // Currently due
+  OVERDUE // Past due date
+  IN_PROGRESS // Started but not complete
+  COMPLETED // Successfully completed
+  CANCELLED // Cancelled by provider
+  DECLINED // Patient declined
+  NOT_INDICATED // No longer indicated
 }

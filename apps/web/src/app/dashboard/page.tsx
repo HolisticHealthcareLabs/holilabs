@@ -57,6 +57,7 @@ import {
 } from '@/components/dashboard/KPIWidgets';
 import CorrectionMetricsWidget from '@/components/dashboard/CorrectionMetricsWidget';
 import { ReviewQueueWidget } from '@/components/dashboard/ReviewQueueWidget';
+import { DashboardSkeleton } from '@/components/skeletons';
 
 export default function DashboardCommandCenter() {
   const router = useRouter();
@@ -211,13 +212,8 @@ export default function DashboardCommandCenter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900">
-            Loading...
-          </h3>
-        </div>
+      <div className="min-h-screen bg-white">
+        <DashboardSkeleton />
       </div>
     );
   }

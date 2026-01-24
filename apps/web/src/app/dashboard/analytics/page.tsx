@@ -18,6 +18,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { exportAnalyticsToExcel } from '@/lib/export/excel-export';
+import { AnalyticsSkeleton } from '@/components/skeletons';
 import { exportAnalyticsToPDF } from '@/lib/export/pdf-export';
 
 interface AnalyticsData {
@@ -164,11 +165,8 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gradient-to-r from-blue-600 to-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Cargando analíticas...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <AnalyticsSkeleton />
       </div>
     );
   }
