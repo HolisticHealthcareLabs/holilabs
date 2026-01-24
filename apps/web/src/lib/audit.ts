@@ -11,6 +11,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from './auth';
 import { getPatientSession } from './auth/patient-session';
 import crypto from 'crypto';
+import { createChainedAuditEntry } from './security/audit-chain';
 
 // TODO: Updated to match Prisma AuditAction enum - removed VIEW, ACCESS_DENIED, PASSWORD_RESET, CONSENT_GRANTED, CONSENT_REVOKED
 export type AuditAction =
@@ -170,24 +171,22 @@ export async function createAuditLog(
       dataHash = createDataHash(data.details);
     }
 
-    // Create audit log in database
-    await prisma.auditLog.create({
-      data: {
-        userId: finalUserId,
-        userEmail: finalUserEmail,
-        ipAddress,
-        userAgent,
-        action: data.action,
-        resource: data.resource,
-        resourceId: data.resourceId,
-        details: data.details || {},
-        dataHash,
-        success: data.success ?? true,
-        errorMessage: data.errorMessage,
-        // LGPD/Law 25.326 Compliance
-        accessReason: data.accessReason as any, // Cast to AccessReason enum
-        accessPurpose: data.accessPurpose,
-      },
+    // Create hash-chained audit log entry (HIPAA/Compliance)
+    await createChainedAuditEntry({
+      userId: finalUserId,
+      userEmail: finalUserEmail,
+      ipAddress,
+      userAgent,
+      action: data.action,
+      resource: data.resource,
+      resourceId: data.resourceId,
+      details: data.details || {},
+      dataHash,
+      success: data.success ?? true,
+      errorMessage: data.errorMessage,
+      // LGPD/Law 25.326 Compliance
+      accessReason: data.accessReason as any, // Cast to AccessReason enum
+      accessPurpose: data.accessPurpose,
     });
 
     // Also log to application logger for real-time monitoring
@@ -393,3 +392,12 @@ export const logAuditEvent = createAuditLog;
  * Alias for createAuditLog (legacy compatibility)
  */
 export const logAudit = createAuditLog;
+
+/**
+ * Re-export hash chain verification functions for compliance
+ */
+export {
+  verifyAuditChain,
+  getAuditChainStats,
+  generateComplianceReport,
+} from './security/audit-chain';
