@@ -5,12 +5,9 @@
  * Tests for comprehensive audit logging of PHI access
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { createAuditLog, type AuditLogData } from '@/lib/audit';
-import { prisma } from '@/lib/prisma';
 import { NextRequest } from 'next/server';
 
-// Mock dependencies
+// Mock dependencies - define mocks inside factory to avoid hoisting issues
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     auditLog: {
@@ -21,13 +18,23 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-jest.mock('@/lib/logger', () => ({
-  default: {
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
-  },
-}));
+// Mock the hash-chained audit entry function - define inside factory to avoid hoisting
+jest.mock('@/lib/security/audit-chain', () => {
+  const mockFn = jest.fn().mockResolvedValue({
+    id: 'audit-log-123',
+    createdAt: new Date(),
+  });
+  return {
+    createChainedAuditEntry: mockFn,
+    __mockCreateChainedAuditEntry: mockFn,
+  };
+});
+
+// Import the mock after jest.mock
+const mockCreateChainedAuditEntry = require('@/lib/security/audit-chain').__mockCreateChainedAuditEntry;
+
+// Logger mock is provided by src/lib/__mocks__/logger.ts (manual mock)
+jest.mock('@/lib/logger');
 
 jest.mock('@/lib/auth', () => ({
   getServerSession: jest.fn(),
@@ -38,6 +45,10 @@ jest.mock('@/lib/auth/patient-session', () => ({
   getPatientSession: jest.fn(),
 }));
 
+// Import after mocks are set up
+import { createAuditLog, type AuditLogData } from '@/lib/audit';
+import { prisma } from '@/lib/prisma';
+
 describe('Audit Logging', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -45,8 +56,7 @@ describe('Audit Logging', () => {
 
   describe('createAuditLog', () => {
     it('should create audit log with all required fields', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'READ',
@@ -56,21 +66,20 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123', 'user@example.com');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           userId: 'user-123',
           userEmail: 'user@example.com',
           action: 'READ',
           resource: 'Patient',
           resourceId: 'patient-123',
           success: true,
-        }),
-      });
+        })
+      );
     });
 
     it('should include metadata in audit log', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'UPDATE',
@@ -85,20 +94,19 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           details: {
             changes: {
               name: { from: 'John Doe', to: 'Jane Doe' },
             },
           },
-        }),
-      });
+        })
+      );
     });
 
     it('should log failed operations', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'DELETE',
@@ -110,17 +118,16 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           success: false,
           errorMessage: 'Permission denied',
-        }),
-      });
+        })
+      );
     });
 
     it('should extract IP address from request headers', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const mockRequest = {
         headers: {
@@ -140,17 +147,16 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, mockRequest, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           ipAddress: '192.168.1.1', // First IP in forwarded list
           userAgent: 'Mozilla/5.0',
-        }),
-      });
+        })
+      );
     });
 
     it('should handle x-real-ip header', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const mockRequest = {
         headers: {
@@ -169,16 +175,15 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, mockRequest, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           ipAddress: '203.0.113.0',
-        }),
-      });
+        })
+      );
     });
 
     it('should use "unknown" IP when no headers present', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const mockRequest = {
         headers: {
@@ -194,16 +199,15 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, mockRequest, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           ipAddress: 'unknown',
-        }),
-      });
+        })
+      );
     });
 
     it('should create data hash for sensitive operations', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'EXPORT',
@@ -216,16 +220,15 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           dataHash: expect.any(String), // SHA-256 hash
-        }),
-      });
+        })
+      );
     });
 
     it('should log all PHI access actions', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const actions: Array<AuditLogData['action']> = [
         'CREATE',
@@ -248,12 +251,11 @@ describe('Audit Logging', () => {
         );
       }
 
-      expect(mockCreate).toHaveBeenCalledTimes(actions.length);
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledTimes(actions.length);
     });
 
     it('should include LGPD compliance fields', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'READ',
@@ -265,17 +267,16 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           accessReason: 'TREATMENT',
           accessPurpose: 'Reviewing patient chart for scheduled appointment',
-        }),
-      });
+        })
+      );
     });
 
     it('should handle audit log creation errors gracefully', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockRejectedValue(new Error('Database connection failed'));
+      mockCreateChainedAuditEntry.mockRejectedValue(new Error('Database connection failed'));
 
       const auditData: AuditLogData = {
         action: 'READ',
@@ -290,8 +291,7 @@ describe('Audit Logging', () => {
     });
 
     it('should log authentication events', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'LOGIN',
@@ -305,20 +305,19 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123', 'user@example.com');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           action: 'LOGIN',
           details: {
             method: 'OAuth',
             provider: 'Google',
           },
-        }),
-      });
+        })
+      );
     });
 
     it('should log de-identification operations', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'DEIDENTIFY',
@@ -332,20 +331,19 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           action: 'DEIDENTIFY',
           details: {
             method: 'SAFE_HARBOR',
             recordCount: 100,
           },
-        }),
-      });
+        })
+      );
     });
 
     it('should log prescription actions', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'PRESCRIBE',
@@ -360,17 +358,16 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'physician-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           action: 'PRESCRIBE',
           resource: 'Prescription',
-        }),
-      });
+        })
+      );
     });
 
     it('should log document signing', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'SIGN',
@@ -384,17 +381,16 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'physician-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           action: 'SIGN',
           resource: 'ClinicalNote',
-        }),
-      });
+        })
+      );
     });
 
     it('should handle missing user information', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'READ',
@@ -405,17 +401,16 @@ describe('Audit Logging', () => {
       // No userId provided, no request
       await createAuditLog(auditData);
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           userId: null,
           userEmail: null,
-        }),
-      });
+        })
+      );
     });
 
     it('should log security alerts', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'SECURITY_ALERT',
@@ -431,12 +426,12 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'user-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           action: 'SECURITY_ALERT',
           success: false,
-        }),
-      });
+        })
+      );
     });
   });
 
@@ -448,8 +443,7 @@ describe('Audit Logging', () => {
     });
 
     it('should create consistent data hashes', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'EXPORT',
@@ -464,9 +458,9 @@ describe('Audit Logging', () => {
       await createAuditLog(auditData, undefined, 'user-123');
       await createAuditLog(auditData, undefined, 'user-123');
 
-      const calls = mockCreate.mock.calls;
-      const hash1 = calls[0][0].data.dataHash;
-      const hash2 = calls[1][0].data.dataHash;
+      const calls = mockCreateChainedAuditEntry.mock.calls;
+      const hash1 = calls[0][0].dataHash;
+      const hash2 = calls[1][0].dataHash;
 
       // Hashes should be identical for identical data
       expect(hash1).toBe(hash2);
@@ -476,8 +470,7 @@ describe('Audit Logging', () => {
 
   describe('Concurrent Audit Log Creation', () => {
     it('should handle concurrent audit log creation', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditPromises = Array.from({ length: 10 }, (_, i) =>
         createAuditLog(
@@ -492,14 +485,13 @@ describe('Audit Logging', () => {
       );
 
       await expect(Promise.all(auditPromises)).resolves.not.toThrow();
-      expect(mockCreate).toHaveBeenCalledTimes(10);
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledTimes(10);
     });
   });
 
   describe('HIPAA Compliance Scenarios', () => {
     it('should log emergency access override', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'READ',
@@ -515,19 +507,18 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'physician-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           accessReason: 'EMERGENCY',
           details: expect.objectContaining({
             override: true,
           }),
-        }),
-      });
+        })
+      );
     });
 
     it('should log batch PHI access', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'READ',
@@ -542,19 +533,18 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'receptionist-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           details: expect.objectContaining({
             batchAccess: true,
             recordCount: 50,
           }),
-        }),
-      });
+        })
+      );
     });
 
     it('should log PHI disclosure', async () => {
-      const mockCreate = prisma.auditLog.create as jest.MockedFunction<any>;
-      mockCreate.mockResolvedValue({});
+      mockCreateChainedAuditEntry.mockResolvedValue({ id: 'test-audit-id' });
 
       const auditData: AuditLogData = {
         action: 'EXPORT',
@@ -570,12 +560,12 @@ describe('Audit Logging', () => {
 
       await createAuditLog(auditData, undefined, 'physician-123');
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(mockCreateChainedAuditEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
           action: 'EXPORT',
           accessReason: 'DISCLOSURE',
-        }),
-      });
+        })
+      );
     });
   });
 });

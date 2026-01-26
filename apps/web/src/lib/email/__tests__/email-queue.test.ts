@@ -28,9 +28,79 @@ import * as resendModule from '../resend';
 import * as sendgridModule from '../sendgrid';
 import logger from '@/lib/logger';
 
-// Mock dependencies
-jest.mock('bullmq');
-jest.mock('ioredis');
+// Define mock functions inside jest.mock factory to avoid hoisting issues
+// These are defined at module level but accessed via require after mocking
+jest.mock('bullmq', () => {
+  // Define all mocks inside the factory - this runs before any other code
+  const mockAdd = jest.fn();
+  const mockGetJob = jest.fn();
+  const mockGetWaitingCount = jest.fn();
+  const mockGetActiveCount = jest.fn();
+  const mockGetCompletedCount = jest.fn();
+  const mockGetFailedCount = jest.fn();
+  const mockGetDelayedCount = jest.fn();
+  const mockClean = jest.fn();
+  const mockClose = jest.fn();
+  const mockWorkerOn = jest.fn().mockReturnThis();
+  const mockWorkerClose = jest.fn().mockResolvedValue(undefined);
+
+  return {
+    Queue: jest.fn().mockImplementation(() => ({
+      add: mockAdd,
+      getJob: mockGetJob,
+      getWaitingCount: mockGetWaitingCount,
+      getActiveCount: mockGetActiveCount,
+      getCompletedCount: mockGetCompletedCount,
+      getFailedCount: mockGetFailedCount,
+      getDelayedCount: mockGetDelayedCount,
+      clean: mockClean,
+      close: mockClose,
+    })),
+    Worker: jest.fn().mockImplementation(() => ({
+      on: mockWorkerOn,
+      close: mockWorkerClose,
+    })),
+    QueueEvents: jest.fn().mockImplementation(() => ({
+      on: jest.fn().mockReturnThis(),
+      close: jest.fn().mockResolvedValue(undefined),
+    })),
+    Job: jest.fn(),
+    // Export mocks for test access
+    __mocks: {
+      mockAdd,
+      mockGetJob,
+      mockGetWaitingCount,
+      mockGetActiveCount,
+      mockGetCompletedCount,
+      mockGetFailedCount,
+      mockGetDelayedCount,
+      mockClean,
+      mockClose,
+      mockWorkerOn,
+      mockWorkerClose,
+    },
+  };
+});
+
+// Import mocks after jest.mock (require is not hoisted)
+const bullmqMocks = require('bullmq').__mocks;
+const mockAdd = bullmqMocks.mockAdd;
+const mockGetJob = bullmqMocks.mockGetJob;
+const mockGetWaitingCount = bullmqMocks.mockGetWaitingCount;
+const mockGetActiveCount = bullmqMocks.mockGetActiveCount;
+const mockGetCompletedCount = bullmqMocks.mockGetCompletedCount;
+const mockGetFailedCount = bullmqMocks.mockGetFailedCount;
+const mockGetDelayedCount = bullmqMocks.mockGetDelayedCount;
+const mockClean = bullmqMocks.mockClean;
+const mockClose = bullmqMocks.mockClose;
+const mockWorkerOn = bullmqMocks.mockWorkerOn;
+const mockWorkerClose = bullmqMocks.mockWorkerClose;
+jest.mock('ioredis', () => {
+  return jest.fn().mockImplementation(() => ({
+    quit: jest.fn().mockResolvedValue(undefined),
+    on: jest.fn().mockReturnThis(),
+  }));
+});
 jest.mock('../resend');
 jest.mock('../sendgrid');
 jest.mock('@/lib/logger');
@@ -68,22 +138,17 @@ describe('Email Queue System', () => {
     jest.clearAllMocks();
 
     // Setup default mocks
-    (Queue.prototype.add as jest.Mock) = jest.fn().mockResolvedValue({
-      id: 'test-job-123',
-    });
-
-    (Queue.prototype.getJob as jest.Mock) = jest.fn();
-    (Queue.prototype.getWaitingCount as jest.Mock) = jest.fn().mockResolvedValue(5);
-    (Queue.prototype.getActiveCount as jest.Mock) = jest.fn().mockResolvedValue(2);
-    (Queue.prototype.getCompletedCount as jest.Mock) = jest.fn().mockResolvedValue(100);
-    (Queue.prototype.getFailedCount as jest.Mock) = jest.fn().mockResolvedValue(3);
-    (Queue.prototype.getDelayedCount as jest.Mock) = jest.fn().mockResolvedValue(1);
-    (Queue.prototype.clean as jest.Mock) = jest.fn().mockResolvedValue([]);
-    (Queue.prototype.close as jest.Mock) = jest.fn().mockResolvedValue(undefined);
-
-    (Worker.prototype.on as jest.Mock) = jest.fn().mockReturnThis();
-
-    (Redis.prototype.quit as jest.Mock) = jest.fn().mockResolvedValue(undefined);
+    mockAdd.mockResolvedValue({ id: 'test-job-123' });
+    mockGetJob.mockResolvedValue(undefined);
+    mockGetWaitingCount.mockResolvedValue(5);
+    mockGetActiveCount.mockResolvedValue(2);
+    mockGetCompletedCount.mockResolvedValue(100);
+    mockGetFailedCount.mockResolvedValue(3);
+    mockGetDelayedCount.mockResolvedValue(1);
+    mockClean.mockResolvedValue([]);
+    mockClose.mockResolvedValue(undefined);
+    mockWorkerOn.mockReturnThis();
+    mockWorkerClose.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -95,7 +160,7 @@ describe('Email Queue System', () => {
       const jobId = await queueEmail(mockEmailData);
 
       expect(jobId).toBe('test-job-123');
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         mockEmailData,
         {
@@ -119,7 +184,7 @@ describe('Email Queue System', () => {
       const highPriorityEmail = { ...mockEmailData, priority: 'high' as const };
       await queueEmail(highPriorityEmail);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         highPriorityEmail,
         expect.objectContaining({
@@ -132,7 +197,7 @@ describe('Email Queue System', () => {
       const lowPriorityEmail = { ...mockEmailData, priority: 'low' as const };
       await queueEmail(lowPriorityEmail);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         lowPriorityEmail,
         expect.objectContaining({
@@ -166,7 +231,7 @@ describe('Email Queue System', () => {
 
       await queueEmail(emailWithCcBcc);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         emailWithCcBcc,
         expect.any(Object)
@@ -175,7 +240,7 @@ describe('Email Queue System', () => {
 
     it('should handle queue error and log it', async () => {
       const error = new Error('Redis connection failed');
-      (Queue.prototype.add as jest.Mock).mockRejectedValueOnce(error);
+      (mockAdd as jest.Mock).mockRejectedValueOnce(error);
 
       await expect(queueEmail(mockEmailData)).rejects.toThrow('Redis connection failed');
       expect(logger.error).toHaveBeenCalledWith(
@@ -190,7 +255,7 @@ describe('Email Queue System', () => {
       const emailWithoutPriority = { ...mockEmailData, priority: undefined };
       await queueEmail(emailWithoutPriority);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         emailWithoutPriority,
         expect.objectContaining({
@@ -401,6 +466,14 @@ describe('Email Queue System', () => {
   });
 
   describe('Worker Initialization', () => {
+    beforeEach(() => {
+      // Restore Worker mock to use mockWorkerOn (may have been overridden by previous tests)
+      (Worker as jest.MockedClass<typeof Worker>).mockImplementation(() => ({
+        on: mockWorkerOn,
+        close: mockWorkerClose,
+      }) as any);
+    });
+
     it('should start worker with correct configuration', () => {
       const worker = startEmailWorker();
 
@@ -433,15 +506,14 @@ describe('Email Queue System', () => {
     });
 
     it('should log when job completes', () => {
-      const mockOn = jest.fn((event, handler) => {
+      // Set up mockWorkerOn to invoke the 'completed' handler
+      mockWorkerOn.mockImplementation((event: string, handler: (...args: any[]) => void) => {
         if (event === 'completed') {
           // Simulate job completion
           handler({ id: 'completed-job-1', attemptsMade: 1 });
         }
-        return {} as any;
+        return { on: mockWorkerOn };
       });
-
-      (Worker.prototype.on as jest.Mock) = mockOn;
 
       startEmailWorker();
 
@@ -455,7 +527,8 @@ describe('Email Queue System', () => {
     });
 
     it('should log when job fails', () => {
-      const mockOn = jest.fn((event, handler) => {
+      // Set up mockWorkerOn to invoke the 'failed' handler
+      mockWorkerOn.mockImplementation((event: string, handler: (...args: any[]) => void) => {
         if (event === 'failed') {
           // Simulate job failure
           handler(
@@ -463,10 +536,8 @@ describe('Email Queue System', () => {
             new Error('All attempts failed')
           );
         }
-        return {} as any;
+        return { on: mockWorkerOn };
       });
-
-      (Worker.prototype.on as jest.Mock) = mockOn;
 
       startEmailWorker();
 
@@ -481,15 +552,14 @@ describe('Email Queue System', () => {
     });
 
     it('should log worker errors', () => {
-      const mockOn = jest.fn((event, handler) => {
+      // Set up mockWorkerOn to invoke the 'error' handler
+      mockWorkerOn.mockImplementation((event: string, handler: (...args: any[]) => void) => {
         if (event === 'error') {
           // Simulate worker error
           handler(new Error('Worker connection lost'));
         }
-        return {} as any;
+        return { on: mockWorkerOn };
       });
-
-      (Worker.prototype.on as jest.Mock) = mockOn;
 
       startEmailWorker();
 
@@ -505,7 +575,7 @@ describe('Email Queue System', () => {
   describe('getEmailJobStatus', () => {
     it('should return job status for existing job', async () => {
       const mockJob = createMockJob('status-job-1', mockEmailData, 1, 'active');
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(mockJob);
+      mockGetJob.mockResolvedValueOnce(mockJob);
 
       const status = await getEmailJobStatus('status-job-1');
 
@@ -522,7 +592,7 @@ describe('Email Queue System', () => {
     });
 
     it('should return null for non-existent job', async () => {
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(null);
+      mockGetJob.mockResolvedValueOnce(null);
 
       const status = await getEmailJobStatus('non-existent-job');
 
@@ -534,7 +604,7 @@ describe('Email Queue System', () => {
         ...createMockJob('failed-job-1', mockEmailData, 3, 'failed'),
         failedReason: 'All providers unavailable',
       };
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(failedJob);
+      mockGetJob.mockResolvedValueOnce(failedJob);
 
       const status = await getEmailJobStatus('failed-job-1');
 
@@ -549,7 +619,7 @@ describe('Email Queue System', () => {
         finishedOn: Date.now(),
         processedOn: Date.now() - 1000,
       };
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(completedJob);
+      mockGetJob.mockResolvedValueOnce(completedJob);
 
       const status = await getEmailJobStatus('completed-job-1');
 
@@ -571,19 +641,19 @@ describe('Email Queue System', () => {
         delayed: 1,
         total: 111,
       });
-      expect(Queue.prototype.getWaitingCount).toHaveBeenCalled();
-      expect(Queue.prototype.getActiveCount).toHaveBeenCalled();
-      expect(Queue.prototype.getCompletedCount).toHaveBeenCalled();
-      expect(Queue.prototype.getFailedCount).toHaveBeenCalled();
-      expect(Queue.prototype.getDelayedCount).toHaveBeenCalled();
+      expect(mockGetWaitingCount).toHaveBeenCalled();
+      expect(mockGetActiveCount).toHaveBeenCalled();
+      expect(mockGetCompletedCount).toHaveBeenCalled();
+      expect(mockGetFailedCount).toHaveBeenCalled();
+      expect(mockGetDelayedCount).toHaveBeenCalled();
     });
 
     it('should handle zero counts', async () => {
-      (Queue.prototype.getWaitingCount as jest.Mock).mockResolvedValueOnce(0);
-      (Queue.prototype.getActiveCount as jest.Mock).mockResolvedValueOnce(0);
-      (Queue.prototype.getCompletedCount as jest.Mock).mockResolvedValueOnce(0);
-      (Queue.prototype.getFailedCount as jest.Mock).mockResolvedValueOnce(0);
-      (Queue.prototype.getDelayedCount as jest.Mock).mockResolvedValueOnce(0);
+      mockGetWaitingCount.mockResolvedValueOnce(0);
+      mockGetActiveCount.mockResolvedValueOnce(0);
+      mockGetCompletedCount.mockResolvedValueOnce(0);
+      mockGetFailedCount.mockResolvedValueOnce(0);
+      mockGetDelayedCount.mockResolvedValueOnce(0);
 
       const metrics = await getEmailQueueMetrics();
 
@@ -591,11 +661,11 @@ describe('Email Queue System', () => {
     });
 
     it('should calculate total correctly', async () => {
-      (Queue.prototype.getWaitingCount as jest.Mock).mockResolvedValueOnce(10);
-      (Queue.prototype.getActiveCount as jest.Mock).mockResolvedValueOnce(5);
-      (Queue.prototype.getCompletedCount as jest.Mock).mockResolvedValueOnce(200);
-      (Queue.prototype.getFailedCount as jest.Mock).mockResolvedValueOnce(15);
-      (Queue.prototype.getDelayedCount as jest.Mock).mockResolvedValueOnce(3);
+      mockGetWaitingCount.mockResolvedValueOnce(10);
+      mockGetActiveCount.mockResolvedValueOnce(5);
+      mockGetCompletedCount.mockResolvedValueOnce(200);
+      mockGetFailedCount.mockResolvedValueOnce(15);
+      mockGetDelayedCount.mockResolvedValueOnce(3);
 
       const metrics = await getEmailQueueMetrics();
 
@@ -606,7 +676,7 @@ describe('Email Queue System', () => {
   describe('retryFailedEmail', () => {
     it('should retry failed email successfully', async () => {
       const mockJob = createMockJob('retry-job-1', mockEmailData, 3, 'failed');
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(mockJob);
+      mockGetJob.mockResolvedValueOnce(mockJob);
 
       const result = await retryFailedEmail('retry-job-1');
 
@@ -621,7 +691,7 @@ describe('Email Queue System', () => {
     });
 
     it('should return false for non-existent job', async () => {
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(null);
+      mockGetJob.mockResolvedValueOnce(null);
 
       const result = await retryFailedEmail('non-existent-job');
 
@@ -637,7 +707,7 @@ describe('Email Queue System', () => {
     it('should handle retry error', async () => {
       const mockJob = createMockJob('error-job-1', mockEmailData, 3, 'failed');
       (mockJob.retry as jest.Mock).mockRejectedValueOnce(new Error('Retry failed'));
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(mockJob);
+      mockGetJob.mockResolvedValueOnce(mockJob);
 
       const result = await retryFailedEmail('error-job-1');
 
@@ -655,12 +725,12 @@ describe('Email Queue System', () => {
   describe('clearCompletedJobs', () => {
     it('should clear completed jobs', async () => {
       const removedJobs = ['job-1', 'job-2', 'job-3'];
-      (Queue.prototype.clean as jest.Mock).mockResolvedValueOnce(removedJobs);
+      mockClean.mockResolvedValueOnce(removedJobs);
 
       const count = await clearCompletedJobs();
 
       expect(count).toBe(3);
-      expect(Queue.prototype.clean).toHaveBeenCalledWith(
+      expect(mockClean).toHaveBeenCalledWith(
         86400000, // 24 hours in ms
         1000,
         'completed'
@@ -675,7 +745,7 @@ describe('Email Queue System', () => {
     });
 
     it('should handle empty cleanup', async () => {
-      (Queue.prototype.clean as jest.Mock).mockResolvedValueOnce([]);
+      mockClean.mockResolvedValueOnce([]);
 
       const count = await clearCompletedJobs();
 
@@ -687,7 +757,7 @@ describe('Email Queue System', () => {
     it('should shutdown queue and close Redis connection', async () => {
       await shutdownEmailQueue();
 
-      expect(Queue.prototype.close).toHaveBeenCalled();
+      expect(mockClose).toHaveBeenCalled();
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'email_queue_shutdown_started',
@@ -706,7 +776,7 @@ describe('Email Queue System', () => {
       const highPriorityEmail = { ...mockEmailData, priority: 'high' as const };
       await queueEmail(highPriorityEmail);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         highPriorityEmail,
         expect.objectContaining({ priority: 1 })
@@ -717,7 +787,7 @@ describe('Email Queue System', () => {
       const normalPriorityEmail = { ...mockEmailData, priority: 'normal' as const };
       await queueEmail(normalPriorityEmail);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         normalPriorityEmail,
         expect.objectContaining({ priority: 5 })
@@ -728,7 +798,7 @@ describe('Email Queue System', () => {
       const lowPriorityEmail = { ...mockEmailData, priority: 'low' as const };
       await queueEmail(lowPriorityEmail);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         lowPriorityEmail,
         expect.objectContaining({ priority: 10 })
@@ -740,7 +810,7 @@ describe('Email Queue System', () => {
     it('should configure completed jobs to be removed', async () => {
       await queueEmail(mockEmailData);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         mockEmailData,
         expect.objectContaining({
@@ -752,7 +822,7 @@ describe('Email Queue System', () => {
     it('should keep failed jobs for debugging', async () => {
       await queueEmail(mockEmailData);
 
-      expect(Queue.prototype.add).toHaveBeenCalledWith(
+      expect(mockAdd).toHaveBeenCalledWith(
         'send-email',
         mockEmailData,
         expect.objectContaining({
@@ -763,6 +833,14 @@ describe('Email Queue System', () => {
   });
 
   describe('Rate Limiting', () => {
+    beforeEach(() => {
+      // Restore Worker mock to use mockWorkerOn
+      (Worker as jest.MockedClass<typeof Worker>).mockImplementation(() => ({
+        on: mockWorkerOn,
+        close: mockWorkerClose,
+      }) as any);
+    });
+
     it('should configure worker with rate limiting', () => {
       startEmailWorker();
 
@@ -780,6 +858,14 @@ describe('Email Queue System', () => {
   });
 
   describe('Concurrency', () => {
+    beforeEach(() => {
+      // Restore Worker mock to use mockWorkerOn
+      (Worker as jest.MockedClass<typeof Worker>).mockImplementation(() => ({
+        on: mockWorkerOn,
+        close: mockWorkerClose,
+      }) as any);
+    });
+
     it('should process up to 5 emails concurrently', () => {
       startEmailWorker();
 
@@ -795,7 +881,7 @@ describe('Email Queue System', () => {
 
   describe('Error Scenarios', () => {
     it('should handle unknown error types', async () => {
-      (Queue.prototype.add as jest.Mock).mockRejectedValueOnce('Unknown error');
+      (mockAdd as jest.Mock).mockRejectedValueOnce('Unknown error');
 
       await expect(queueEmail(mockEmailData)).rejects.toBe('Unknown error');
       expect(logger.error).toHaveBeenCalledWith(
@@ -807,7 +893,7 @@ describe('Email Queue System', () => {
     });
 
     it('should handle job without ID', async () => {
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce({
+      mockGetJob.mockResolvedValueOnce({
         ...createMockJob('', mockEmailData),
         id: undefined,
       });
@@ -826,7 +912,7 @@ describe('Email Queue System', () => {
 
       // Get status
       const mockJob = createMockJob(jobId, mockEmailData, 0, 'waiting');
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(mockJob);
+      mockGetJob.mockResolvedValueOnce(mockJob);
       const status = await getEmailJobStatus(jobId);
       expect(status?.state).toBe('waiting');
     });
@@ -837,12 +923,12 @@ describe('Email Queue System', () => {
 
       // First check - failed
       const failedJob = createMockJob(jobId, mockEmailData, 3, 'failed');
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(failedJob);
+      mockGetJob.mockResolvedValueOnce(failedJob);
       const failedStatus = await getEmailJobStatus(jobId);
       expect(failedStatus?.state).toBe('failed');
 
       // Retry
-      (Queue.prototype.getJob as jest.Mock).mockResolvedValueOnce(failedJob);
+      mockGetJob.mockResolvedValueOnce(failedJob);
       const retryResult = await retryFailedEmail(jobId);
       expect(retryResult).toBe(true);
     });

@@ -50,11 +50,8 @@ describe('Read Replica Configuration', () => {
 
       const client = createPrismaWithReplicas(mockPrisma);
 
-      expect(mockPrisma.$extends).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: '@prisma/extension-read-replicas',
-        })
-      );
+      // readReplicas() returns a function that is passed to $extends
+      expect(mockPrisma.$extends).toHaveBeenCalledWith(expect.any(Function));
     });
 
     it('should parse multiple replica URLs from DATABASE_REPLICA_URLS', () => {

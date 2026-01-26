@@ -29,11 +29,11 @@ export const authConfig: NextAuthConfig = {
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
-          Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
+        Google({
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        }),
+      ]
       : []),
     Credentials({
       name: 'credentials',
@@ -44,9 +44,11 @@ export const authConfig: NextAuthConfig = {
       async authorize(credentials) {
         try {
           // Validate credentials
+          console.log('🔐 [Auth] Starting authorization for:', credentials?.email);
           const validation = LoginSchema.safeParse(credentials);
 
           if (!validation.success) {
+            console.log('❌ [Auth] Validation failed:', validation.error.errors);
             logger.warn({
               event: 'auth_validation_failed',
               errors: validation.error.errors,
@@ -55,60 +57,63 @@ export const authConfig: NextAuthConfig = {
           }
 
           const { email, password } = validation.data;
+          console.log('🔎 [Auth] Looking up user:', email);
 
           // Find clinician user
-          const user = await prisma.user.findUnique({
-            where: { email },
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              role: true,
-              passwordHash: true,
-            },
-          });
-
-          if (!user || !user.passwordHash) {
-            logger.warn({
-              event: 'auth_user_not_found',
-              email,
+          try {
+            const user = await prisma.user.findUnique({
+              where: { email },
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                role: true,
+                passwordHash: true,
+              },
             });
+
+            if (!user) {
+              console.log('❌ [Auth] User not found in DB');
+              return null;
+            }
+
+            if (!user.passwordHash) {
+              console.log('❌ [Auth] User has no password hash');
+              return null;
+            }
+
+            console.log('🗝 [Auth] User found, verifying password...');
+            // Verify password
+            const isValid = await bcrypt.compare(password, user.passwordHash);
+
+            console.log('🔐 [Auth] Password valid?', isValid);
+
+            if (!isValid) {
+              console.log('❌ [Auth] Password verification failed');
+              return null;
+            }
+
+            // Update last login
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { lastLoginAt: new Date() },
+            });
+
+            console.log('✅ [Auth] Login successful for user:', user.id);
+
+            return {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              name: `${user.firstName} ${user.lastName}`,
+              role: user.role,
+            };
+          } catch (dbError) {
+            console.error('💥 [Auth] Database error during authorize:', dbError);
             return null;
           }
-
-          // Verify password
-          const isValid = await bcrypt.compare(password, user.passwordHash);
-
-          if (!isValid) {
-            logger.warn({
-              event: 'auth_invalid_password',
-              email,
-            });
-            return null;
-          }
-
-          // Update last login
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { lastLoginAt: new Date() },
-          });
-
-          logger.info({
-            event: 'auth_login_success',
-            userId: user.id,
-            role: user.role,
-          });
-
-          // Return user object
-          return {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            name: `${user.firstName} ${user.lastName}`,
-            role: user.role,
-          };
         } catch (error) {
           logger.error({
             event: 'auth_error',
