@@ -44,29 +44,31 @@ const customJestConfig = {
     },
   },
 
-  // Test match patterns
+  // Test match patterns - only match tests inside src/
   testMatch: [
-    '**/__tests__/**/*.[jt]s?(x)',
-    '**/?(*.)+(spec|test).[jt]s?(x)',
-    '!**/*.manual.[jt]s', // Exclude manual test scripts
-    '!**/*.fixture.[jt]s?(x)', // Exclude fixture files
+    '<rootDir>/src/**/__tests__/**/*.[jt]s?(x)',
+    '<rootDir>/src/**/?(*.)+(spec|test).[jt]s?(x)',
   ],
 
-  // Ignore patterns
+  // Ignore patterns (use double backslash for regex special chars)
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',
     '/out/',
     '/build/',
-    '<rootDir>/tests/', // All tests/ directory tests (E2E/load/smoke) run with Playwright/k6, not Jest
-    '\\.skip\\.',      // Skip .skip.ts files (temporarily disabled tests)
-    '\\.manual\\.',    // Skip .manual.ts files (manual verification scripts)
-    '\\.fixture\\.',   // Skip .fixture.ts files (test fixtures, not tests)
+    '/tests/',         // All tests/ directory tests (E2E/load/smoke) run with Playwright/k6, not Jest
+    '\\.skip\\.ts$',   // Skip .skip.ts files (temporarily disabled tests)
+    '\\.manual\\.ts$', // Skip .manual.ts files (manual verification scripts)
+    '\\.fixture\\.ts$', // Skip .fixture.ts files (test fixtures, not tests)
+    '__tests__/fixtures/', // Skip files in __tests__/fixtures directories
+    'cdss-test-data',  // Skip CDSS test data files
   ],
 
   // Transform ESM modules in node_modules
+  // Pattern handles both regular node_modules and pnpm's .pnpm folder structure
+  // For pnpm, scoped packages use + instead of / (e.g., @auth/prisma-adapter becomes @auth+prisma-adapter)
   transformIgnorePatterns: [
-    'node_modules/(?!(@auth|next-auth|@prisma)/)',
+    'node_modules/(?!(@auth/|next-auth|@prisma/|@auth\\+|next-auth\\+|@prisma\\+|uuid))',
   ],
 
   // Transform files with ts-jest

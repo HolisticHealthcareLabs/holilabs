@@ -20,6 +20,8 @@ process.env.CRON_SECRET = 'test-cron-secret-key';
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-supabase-anon-key-for-testing';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-supabase-service-role-key';
+// 32-byte (64-hex char) test encryption key for PHI encryption
+process.env.ENCRYPTION_KEY = 'test-encryption-key-00000000000000000000000000000000000000000000';
 
 // ==============================================================================
 // Global Test Utilities
@@ -36,6 +38,57 @@ global.console = {
 // ==============================================================================
 // Mock External Services
 // ==============================================================================
+
+// Mock @auth/prisma-adapter (ESM module that Jest can't transform)
+jest.mock('@auth/prisma-adapter', () => ({
+  PrismaAdapter: jest.fn(() => ({
+    createUser: jest.fn(),
+    getUser: jest.fn(),
+    getUserByEmail: jest.fn(),
+    getUserByAccount: jest.fn(),
+    updateUser: jest.fn(),
+    linkAccount: jest.fn(),
+    createSession: jest.fn(),
+    getSessionAndUser: jest.fn(),
+    updateSession: jest.fn(),
+    deleteSession: jest.fn(),
+    createVerificationToken: jest.fn(),
+    useVerificationToken: jest.fn(),
+  })),
+}));
+
+// Mock next-auth and its providers (ESM modules that Jest can't transform)
+jest.mock('next-auth/providers/google', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    id: 'google',
+    name: 'Google',
+    type: 'oauth',
+  })),
+}));
+
+jest.mock('next-auth/providers/credentials', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    id: 'credentials',
+    name: 'Credentials',
+    type: 'credentials',
+  })),
+}));
+
+jest.mock('next-auth', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    auth: jest.fn().mockResolvedValue(null),
+    handlers: {
+      GET: jest.fn(),
+      POST: jest.fn(),
+    },
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+  })),
+  getServerSession: jest.fn().mockResolvedValue(null),
+}));
 
 // Mock Twilio SMS (to avoid real API calls)
 jest.mock('twilio', () => {
@@ -61,6 +114,14 @@ jest.mock('resend', () => {
     })),
   };
 });
+
+// Mock uuid (ESM module)
+jest.mock('uuid', () => ({
+  v4: jest.fn(() => 'test-uuid-v4-' + Math.random().toString(36).substring(7)),
+  v7: jest.fn(() => 'test-uuid-v7-' + Date.now().toString(36)),
+  validate: jest.fn(() => true),
+  version: jest.fn(() => 4),
+}));
 
 // Mock Web Push Notifications
 jest.mock('web-push', () => ({

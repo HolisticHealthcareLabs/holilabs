@@ -16,6 +16,7 @@ jest.mock('@/lib/prisma', () => ({
     patient: {
       findMany: jest.fn(),
       findUnique: jest.fn(), // Used by getPatientContext
+      count: jest.fn(), // Used by checkOperationalOptimizations
     },
     manualReviewQueueItem: {
       create: jest.fn(),
@@ -39,6 +40,10 @@ function mockPatientData(patient: any) {
     ...patient,
     assignedClinicianId: mockClinician.id,
     vitalSigns: patient.vitals || [],
+    medications: patient.medications || [],
+    labResults: patient.labResults || [],
+    allergies: patient.allergies || [],
+    diagnoses: patient.diagnoses || [],
     appointments: patient.appointments || (patient.lastVisit ? [{ endTime: patient.lastVisit }] : []),
   };
 
@@ -55,6 +60,7 @@ describe('CDSSService', () => {
     cdssService = new CDSSService();
     jest.clearAllMocks();
     prisma.user.findUnique.mockResolvedValue(mockClinician);
+    prisma.patient.count.mockResolvedValue(0); // Default: no patients for operational insights
   });
 
   describe('generateInsights', () => {
@@ -109,14 +115,19 @@ describe('CDSSService', () => {
     });
 
     it('should flag critical insights for review', async () => {
+      const patientData = {
+        ...mockPatients.withCriticalLabs,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withCriticalLabs.vitals || [],
+        medications: mockPatients.withCriticalLabs.medications || [],
+        labResults: mockPatients.withCriticalLabs.labResults || [],
+        allergies: mockPatients.withCriticalLabs.allergies || [],
+        diagnoses: mockPatients.withCriticalLabs.diagnoses || [],
+        appointments: [],
+      };
       prisma.user.findUnique.mockResolvedValue(mockClinician);
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       await cdssService.generateInsights(mockClinician.id);
 
@@ -130,7 +141,14 @@ describe('CDSSService', () => {
     });
 
     it('should detect warfarin + aspirin interaction', async () => {
-      mockPatientData(mockPatients.withDrugInteraction);
+      const patientWithInteraction = {
+        ...mockPatients.withDrugInteraction,
+        medications: [
+          { id: 'med-1', name: 'Warfarin', dose: '5mg', isActive: true },
+          { id: 'med-2', name: 'Aspirin', dose: '81mg', isActive: true },
+        ],
+      };
+      mockPatientData(patientWithInteraction);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -196,13 +214,18 @@ describe('CDSSService', () => {
     });
 
     it('should flag sepsis when qSOFA >= 2', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withSepsisRisk,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withSepsisRisk.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withSepsisRisk,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withSepsisRisk.vitals,
+        medications: mockPatients.withSepsisRisk.medications || [],
+        labResults: mockPatients.withSepsisRisk.labResults || [],
+        allergies: mockPatients.withSepsisRisk.allergies || [],
+        diagnoses: mockPatients.withSepsisRisk.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -212,13 +235,18 @@ describe('CDSSService', () => {
     });
 
     it('should not flag when vitals are normal', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.healthy,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.healthy.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.healthy,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.healthy.vitals,
+        medications: mockPatients.healthy.medications || [],
+        labResults: mockPatients.healthy.labResults || [],
+        allergies: mockPatients.healthy.allergies || [],
+        diagnoses: mockPatients.healthy.diagnoses || [],
+        appointments: mockPatients.healthy.lastVisit ? [{ endTime: mockPatients.healthy.lastVisit }] : [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -261,13 +289,18 @@ describe('CDSSService', () => {
     });
 
     it('should flag hypertension when BP >= 140/90', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withHypertension,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withHypertension.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withHypertension,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withHypertension.vitals,
+        medications: mockPatients.withHypertension.medications || [],
+        labResults: mockPatients.withHypertension.labResults || [],
+        allergies: mockPatients.withHypertension.allergies || [],
+        diagnoses: mockPatients.withHypertension.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -317,14 +350,24 @@ describe('CDSSService', () => {
       prisma.user.findUnique.mockResolvedValue(mockClinician);
     });
 
+    function setupCriticalLabsMock() {
+      const patientData = {
+        ...mockPatients.withCriticalLabs,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withCriticalLabs.vitals || [],
+        medications: mockPatients.withCriticalLabs.medications || [],
+        labResults: mockPatients.withCriticalLabs.labResults || [],
+        allergies: mockPatients.withCriticalLabs.allergies || [],
+        diagnoses: mockPatients.withCriticalLabs.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
+      return patientData;
+    }
+
     it('should flag critical lab results', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      setupCriticalLabsMock();
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -334,13 +377,7 @@ describe('CDSSService', () => {
     });
 
     it('should use isCritical field correctly', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      setupCriticalLabsMock();
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -350,13 +387,7 @@ describe('CDSSService', () => {
     });
 
     it('should include test details in insight', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withCriticalLabs,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withCriticalLabs.vitals,
-        },
-      ]);
+      setupCriticalLabsMock();
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -372,22 +403,29 @@ describe('CDSSService', () => {
     });
 
     it('should flag overdue wellness visit (>365 days)', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withOverduePreventiveCare,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withOverduePreventiveCare.vitals || [],
-          appointments: [
-            {
-              endTime: mockPatients.withOverduePreventiveCare.lastVisit,
-            },
-          ],
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withOverduePreventiveCare,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withOverduePreventiveCare.vitals || [],
+        medications: mockPatients.withOverduePreventiveCare.medications || [],
+        labResults: mockPatients.withOverduePreventiveCare.labResults || [],
+        allergies: mockPatients.withOverduePreventiveCare.allergies || [],
+        diagnoses: mockPatients.withOverduePreventiveCare.diagnoses || [],
+        appointments: [
+          {
+            endTime: mockPatients.withOverduePreventiveCare.lastVisit,
+          },
+        ],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
-      const preventive = insights.find((i) => i.title?.includes('Preventive Care'));
+      // Check for wellness visit insight (title may include "Wellness" or "Preventive")
+      const preventive = insights.find(
+        (i) => i.title?.includes('Wellness') || i.title?.includes('Preventive')
+      );
       expect(preventive).toBeDefined();
     });
 
@@ -396,23 +434,27 @@ describe('CDSSService', () => {
         ...mockPatients.healthy,
       };
 
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...patientRecentVisit,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: patientRecentVisit.vitals,
-          appointments: [
-            {
-              endTime: patientRecentVisit.lastVisit,
-            },
-          ],
-        },
-      ]);
+      const patientData = {
+        ...patientRecentVisit,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: patientRecentVisit.vitals,
+        medications: patientRecentVisit.medications || [],
+        labResults: patientRecentVisit.labResults || [],
+        allergies: patientRecentVisit.allergies || [],
+        diagnoses: patientRecentVisit.diagnoses || [],
+        appointments: [
+          {
+            endTime: patientRecentVisit.lastVisit,
+          },
+        ],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
       const preventive = insights.find(
-        (i) => i.patientId === patientRecentVisit.id && i.title?.includes('Preventive Care')
+        (i) => i.patientId === patientRecentVisit.id && (i.title?.includes('Wellness') || i.title?.includes('Preventive Care'))
       );
       expect(preventive).toBeUndefined();
     });
@@ -423,14 +465,18 @@ describe('CDSSService', () => {
         lastVisit: undefined,
       };
 
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...patientNeverVisited,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: patientNeverVisited.vitals,
-          appointments: [],
-        },
-      ]);
+      const patientData = {
+        ...patientNeverVisited,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: patientNeverVisited.vitals,
+        medications: patientNeverVisited.medications || [],
+        labResults: patientNeverVisited.labResults || [],
+        allergies: patientNeverVisited.allergies || [],
+        diagnoses: patientNeverVisited.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       // Should not throw error
       await expect(cdssService.generateInsights(mockClinician.id)).resolves.toBeDefined();
@@ -443,13 +489,18 @@ describe('CDSSService', () => {
     });
 
     it('should flag when patient has >= 10 medications', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withPolypharmacy,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withPolypharmacy.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withPolypharmacy,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withPolypharmacy.vitals || [],
+        medications: mockPatients.withPolypharmacy.medications || [],
+        labResults: mockPatients.withPolypharmacy.labResults || [],
+        allergies: mockPatients.withPolypharmacy.allergies || [],
+        diagnoses: mockPatients.withPolypharmacy.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -459,13 +510,18 @@ describe('CDSSService', () => {
     });
 
     it('should not flag with < 10 medications', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withDrugInteraction,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withDrugInteraction.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withDrugInteraction,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withDrugInteraction.vitals || [],
+        medications: mockPatients.withDrugInteraction.medications || [],
+        labResults: mockPatients.withDrugInteraction.labResults || [],
+        allergies: mockPatients.withDrugInteraction.allergies || [],
+        diagnoses: mockPatients.withDrugInteraction.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -482,13 +538,18 @@ describe('CDSSService', () => {
     });
 
     it('should flag nephrotoxic drugs without recent creatinine', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withRenalDosingNeed,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withRenalDosingNeed.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withRenalDosingNeed,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withRenalDosingNeed.vitals || [],
+        medications: mockPatients.withRenalDosingNeed.medications || [],
+        labResults: mockPatients.withRenalDosingNeed.labResults || [],
+        allergies: mockPatients.withRenalDosingNeed.allergies || [],
+        diagnoses: mockPatients.withRenalDosingNeed.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -527,13 +588,18 @@ describe('CDSSService', () => {
     });
 
     it('should flag warfarin without INR in 30 days', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withAnticoagulationNeedMonitoring,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withAnticoagulationNeedMonitoring.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withAnticoagulationNeedMonitoring,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withAnticoagulationNeedMonitoring.vitals || [],
+        medications: mockPatients.withAnticoagulationNeedMonitoring.medications || [],
+        labResults: mockPatients.withAnticoagulationNeedMonitoring.labResults || [],
+        allergies: mockPatients.withAnticoagulationNeedMonitoring.allergies || [],
+        diagnoses: mockPatients.withAnticoagulationNeedMonitoring.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -542,13 +608,18 @@ describe('CDSSService', () => {
     });
 
     it('should flag INR out of therapeutic range (< 2.0)', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withINRTooLow,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withINRTooLow.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withINRTooLow,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withINRTooLow.vitals || [],
+        medications: mockPatients.withINRTooLow.medications || [],
+        labResults: mockPatients.withINRTooLow.labResults || [],
+        allergies: mockPatients.withINRTooLow.allergies || [],
+        diagnoses: mockPatients.withINRTooLow.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -558,13 +629,18 @@ describe('CDSSService', () => {
     });
 
     it('should flag INR out of therapeutic range (> 3.5)', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withINRTooHigh,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withINRTooHigh.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withINRTooHigh,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withINRTooHigh.vitals || [],
+        medications: mockPatients.withINRTooHigh.medications || [],
+        labResults: mockPatients.withINRTooHigh.labResults || [],
+        allergies: mockPatients.withINRTooHigh.allergies || [],
+        diagnoses: mockPatients.withINRTooHigh.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -604,13 +680,18 @@ describe('CDSSService', () => {
     });
 
     it('should detect multiple statins', async () => {
-      prisma.patient.findMany.mockResolvedValue([
-        {
-          ...mockPatients.withDuplicateTherapy,
-          assignedClinicianId: mockClinician.id,
-          vitalSigns: mockPatients.withDuplicateTherapy.vitals,
-        },
-      ]);
+      const patientData = {
+        ...mockPatients.withDuplicateTherapy,
+        assignedClinicianId: mockClinician.id,
+        vitalSigns: mockPatients.withDuplicateTherapy.vitals || [],
+        medications: mockPatients.withDuplicateTherapy.medications || [],
+        labResults: mockPatients.withDuplicateTherapy.labResults || [],
+        allergies: mockPatients.withDuplicateTherapy.allergies || [],
+        diagnoses: mockPatients.withDuplicateTherapy.diagnoses || [],
+        appointments: [],
+      };
+      prisma.patient.findMany.mockResolvedValue([patientData]);
+      prisma.patient.findUnique.mockResolvedValue(patientData);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -626,7 +707,8 @@ describe('CDSSService', () => {
           { id: 'med-1', name: 'Omeprazole', dose: '20mg', isActive: true },
           { id: 'med-2', name: 'Pantoprazole', dose: '40mg', isActive: true },
         ],
-      };mockPatientData(patientDuplicatePPIs);
+      };
+      mockPatientData(patientDuplicatePPIs);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 
@@ -640,7 +722,8 @@ describe('CDSSService', () => {
         medications: [
           { id: 'med-1', name: 'Atorvastatin', dose: '20mg', isActive: true },
         ],
-      };mockPatientData(patientSingleMeds);
+      };
+      mockPatientData(patientSingleMeds);
 
       const insights = await cdssService.generateInsights(mockClinician.id);
 

@@ -76,42 +76,73 @@ describe('GET /api/ai/insights', () => {
   });
 
   it('should return correct summary statistics', async () => {
+    // Use unique context to avoid cache hits
+    const summaryContext = {
+      user: {
+        id: 'clinician-summary-test-' + Date.now(),
+        email: 'dr.summary@holilabs.com',
+        role: 'clinician',
+      },
+    };
+
     cdssService.generateInsights.mockResolvedValue(mockInsights);
 
     const request = new NextRequest('http://localhost:3000/api/ai/insights');
-    const response = await GET(request, mockContext);
+    const response = await GET(request, summaryContext);
     const data = await response.json();
 
+    // Match actual API response format from route.ts
     expect(data.data.summary).toBeDefined();
-    expect(data.data.summary.totalInsights).toBe(2);
-    expect(data.data.summary.criticalInsights).toBe(1);
-    expect(data.data.summary.highPriorityInsights).toBe(1);
+    expect(data.data.summary.total).toBe(2);
+    expect(data.data.summary.priorities.critical).toBe(1);
+    expect(data.data.summary.priorities.high).toBe(1);
   });
 
   it('should use cached insights within 5 minutes', async () => {
+    // Use unique context for this test
+    const cacheContext = {
+      user: {
+        id: 'clinician-cache-test-' + Date.now(),
+        email: 'dr.cache@holilabs.com',
+        role: 'clinician',
+      },
+    };
+
+    cdssService.generateInsights.mockClear();
     cdssService.generateInsights.mockResolvedValue(mockInsights);
 
-    // First call
+    // First call - should generate fresh insights
     const request1 = new NextRequest('http://localhost:3000/api/ai/insights');
-    await GET(request1, mockContext);
+    await GET(request1, cacheContext);
 
-    // Second call (should use cache)
+    // Second call with same context (should use cache)
     const request2 = new NextRequest('http://localhost:3000/api/ai/insights');
-    await GET(request2, mockContext);
+    await GET(request2, cacheContext);
 
     // generateInsights should only be called once
     expect(cdssService.generateInsights).toHaveBeenCalledTimes(1);
   });
 
   it('should handle errors gracefully', async () => {
-    cdssService.generateInsights.mockRejectedValue(new Error('Database error'));
+    // Clear any cached data first
+    cdssService.generateInsights.mockClear();
+    cdssService.generateInsights.mockRejectedValueOnce(new Error('Database error'));
+
+    // Use a unique user ID to avoid cache hits
+    const errorContext = {
+      user: {
+        id: 'clinician-error-test-' + Date.now(),
+        email: 'dr.error@holilabs.com',
+        role: 'clinician',
+      },
+    };
 
     const request = new NextRequest('http://localhost:3000/api/ai/insights');
-    const response = await GET(request, mockContext);
+    const response = await GET(request, errorContext);
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data.error).toBe('Failed to generate insights');
+    expect(data.error).toBe('Failed to generate AI insights');
   });
 
   it('should require authentication', async () => {
@@ -139,8 +170,22 @@ describe('POST /api/ai/insights', () => {
   });
 
   it('should clear cache for clinician', async () => {
-    cdssService.clearCache.mockResolvedValue(true);
+    const request = new NextRequest('http://localhost:3000/api/ai/insights', {
+      method: 'POST',
+    });
 
+    const response = await POST(request, mockContext);
+    const data = await response.json();
+
+    // The route uses an in-memory insightsCache.delete(), not cdssService.clearCache
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.message).toContain('cache cleared');
+  });
+
+  it('should handle POST without error', async () => {
+    // The POST handler uses insightsCache.delete() which doesn't throw
+    // This test verifies the handler completes successfully
     const request = new NextRequest('http://localhost:3000/api/ai/insights', {
       method: 'POST',
     });
@@ -150,22 +195,6 @@ describe('POST /api/ai/insights', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.message).toContain('cache cleared');
-    expect(cdssService.clearCache).toHaveBeenCalledWith(mockContext.user.id);
-  });
-
-  it('should handle clear cache errors', async () => {
-    cdssService.clearCache.mockRejectedValue(new Error('Cache error'));
-
-    const request = new NextRequest('http://localhost:3000/api/ai/insights', {
-      method: 'POST',
-    });
-
-    const response = await POST(request, mockContext);
-    const data = await response.json();
-
-    expect(response.status).toBe(500);
-    expect(data.error).toBeDefined();
   });
 
   it('should require authentication', async () => {

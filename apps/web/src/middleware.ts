@@ -109,7 +109,22 @@ export async function middleware(request: NextRequest) {
   // Make nonce available to pages via header (for inline script tags: <script nonce={nonce}>)
   response.headers.set('x-nonce', nonce);
 
-  return applySecurityHeaders(response, nonce);
+  // IMPORTANT: Set nonce on REQUEST headers so RootLayout (Server Component) can read it via headers()
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  // If there are other modifications to request headers needed, apply them here
+  const finalResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // Copy response headers (like x-pathname and x-nonce) to the final response
+  finalResponse.headers.set('x-pathname', pathname);
+  finalResponse.headers.set('x-nonce', nonce);
+
+  return applySecurityHeaders(finalResponse, nonce);
 }
 
 export const config = {

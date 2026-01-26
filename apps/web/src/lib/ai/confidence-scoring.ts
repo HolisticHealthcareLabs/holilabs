@@ -383,7 +383,7 @@ export class ConfidenceScoringService {
     }
 
     // Missing diagnosis in assessment
-    if (!/diagnosis|impression|assessment.*:.*\w/i.test(sections.assessment)) {
+    if (!/diagnosis|differential|impression|assessment.*:.*\w/i.test(sections.assessment)) {
       flags.push({
         severity: 'critical',
         category: 'clinical_standards',

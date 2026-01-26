@@ -13,10 +13,9 @@
  * - Development mode bypass
  */
 
-// @ts-nocheck - Module under test does not exist yet
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest, NextResponse } from 'next/server';
-import { applyRateLimit, checkRateLimit, rateLimiters } from '../rate-limit';
+import { applyRateLimit, checkRateLimit, rateLimiters } from '@/lib/rate-limit';
 
 // Mock Upstash Redis
 jest.mock('@upstash/redis', () => ({
@@ -47,7 +46,7 @@ describe('Rate Limiting', () => {
   let mockRequest: NextRequest;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     // Create mock request
     mockRequest = new NextRequest('https://holilabs.xyz/api/test', {
@@ -59,7 +58,7 @@ describe('Rate Limiting', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('Rate Limiter Configuration', () => {
@@ -128,7 +127,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
@@ -147,7 +146,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
@@ -173,7 +172,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
@@ -196,7 +195,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
@@ -217,7 +216,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
@@ -239,7 +238,7 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000; // Reset in 60 seconds
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset,
@@ -262,7 +261,7 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000;
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset,
@@ -296,7 +295,7 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000;
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset,
@@ -321,7 +320,7 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000; // Reset in 60 seconds
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset,
@@ -346,7 +345,7 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 45000; // Reset in 45 seconds
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset,
@@ -371,7 +370,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 5,
         reset: Date.now() + 900000, // 15 minutes
@@ -393,7 +392,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 3,
         reset: Date.now() + 3600000, // 1 hour
@@ -415,7 +414,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 10,
         reset: Date.now() + 60000, // 1 minute
@@ -437,7 +436,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 20,
         reset: Date.now() + 60000,
@@ -488,7 +487,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockRejectedValue(new Error('Redis connection failed'));
+      const mockLimit = jest.fn().mockRejectedValue(new Error('Redis connection failed'));
 
       rateLimiters.api.limit = mockLimit;
 
@@ -506,7 +505,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
@@ -525,7 +524,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset: Date.now() + 60000,
@@ -547,7 +546,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn()
+      const mockLimit = jest.fn()
         .mockResolvedValueOnce({
           success: true,
           limit: 100,
@@ -595,7 +594,7 @@ describe('Rate Limiting', () => {
 
       const userId = 'user-123';
 
-      const mockLimit = vi.fn()
+      const mockLimit = jest.fn()
         .mockResolvedValueOnce({
           success: true,
           limit: 100,
@@ -630,7 +629,7 @@ describe('Rate Limiting', () => {
       const userId1 = 'user-123';
       const userId2 = 'user-456';
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
@@ -659,7 +658,7 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000;
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset,
@@ -699,7 +698,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: false,
         limit: 100,
         reset: Date.now() + 60000,
@@ -730,7 +729,7 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = vi.fn().mockResolvedValue({
+      const mockLimit = jest.fn().mockResolvedValue({
         success: true,
         limit: 100,
         reset: Date.now() + 60000,
