@@ -23,6 +23,10 @@ jest.mock('@/lib/prisma', () => ({
     aIUsageLog: {
       create: jest.fn(),
     },
+    featureFlag: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+    },
   },
 }));
 
@@ -37,12 +41,17 @@ jest.mock('@/lib/ai/retry', () => ({
   },
 }));
 
+jest.mock('@/lib/feature-flags', () => ({
+  isFeatureEnabled: jest.fn().mockResolvedValue(true),
+}));
+
 jest.mock('@/lib/logger');
 
 // Import mocks after jest.mock()
 const { prisma } = require('@/lib/prisma');
 const { aiToJSON } = require('@/lib/ai/bridge');
 const { withRetry } = require('@/lib/ai/retry');
+const { isFeatureEnabled } = require('@/lib/feature-flags');
 const logger = require('@/lib/logger').default;
 
 // Import module under test - need to clear singleton for tests
@@ -586,6 +595,9 @@ describe('SymptomDiagnosisEngine', () => {
 
   describe('AI Success Path', () => {
     it('should use AI result when available and confident', async () => {
+      // Use real timers for this test since it tests async AI success path
+      jest.useRealTimers();
+
       const aiDiagnosis = {
         differentials: [
           {
@@ -604,19 +616,25 @@ describe('SymptomDiagnosisEngine', () => {
         timestamp: new Date().toISOString(),
       };
 
-      (aiToJSON as jest.Mock).mockImplementation(() => Promise.resolve(aiDiagnosis));
+      // Ensure feature flag returns true (AI enabled)
+      (isFeatureEnabled as jest.Mock).mockResolvedValue(true);
+      // Mock AI to succeed immediately
+      (aiToJSON as jest.Mock).mockResolvedValue(aiDiagnosis);
+      // Re-establish withRetry mock to pass through immediately
+      (withRetry as jest.Mock).mockImplementation(async (fn: () => Promise<unknown>) => fn());
 
       const symptoms: SymptomInput = {
         chiefComplaint: 'Chest pain',
       };
 
-      const resultPromise = engine.evaluate(symptoms);
-      await jest.advanceTimersByTimeAsync(100);
-      const result = await resultPromise;
+      const result = await engine.evaluate(symptoms);
 
       expect(result.method).toBe('ai');
       expect(result.confidence).toBe('high');
       expect(result.data).toEqual(aiDiagnosis);
+
+      // Restore fake timers for subsequent tests
+      jest.useFakeTimers();
     });
   });
 });
