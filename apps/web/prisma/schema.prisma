@@ -125,6 +125,9 @@ model User {
   // EHR Integration (SMART on FHIR)
   ehrSessions EhrSession[]
 
+  // Clinical Governance
+  interactionSessions InteractionSession[]
+
   @@index([email])
   @@index([walletAddress])
   @@index([invitationCodeId])
@@ -794,10 +797,15 @@ model Patient {
   // ========================================================================
 
   // Care preferences
+
+  // Palliative Care
   isPalliativeCare        Boolean                  @default(false)
   comfortCareOnly         Boolean                  @default(false)
   advanceDirectivesStatus AdvanceDirectivesStatus?
   advanceDirectivesDate   DateTime?
+
+  // Clinical Governance
+  interactionSessions InteractionSession[]
   advanceDirectivesNotes  String?                  @db.Text
 
   // DNR/DNI (Do Not Resuscitate / Do Not Intubate)
@@ -1158,6 +1166,10 @@ enum DiagnosisStatus {
   RESOLVED
   RULED_OUT
   CHRONIC
+  RECURRENCE
+  RELAPSE
+  INACTIVE
+  REMISSION
 }
 
 // ============================================================================
@@ -2299,6 +2311,9 @@ model ScribeSession {
   // AI Quality Control (Phase 2.3)
   aiContentFeedback AIContentFeedback[]
 
+  // Clinical Governance
+  interactionSessions InteractionSession[]
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2431,6 +2446,9 @@ model ClinicalEncounter {
 
   // Prevention Hub - Links to prevention recommendations detected during encounter
   preventionEncounterLinks PreventionEncounterLink[]
+
+  // Clinical Governance
+  interactionSessions InteractionSession[]
 
   scheduledAt DateTime
   startedAt   DateTime?
@@ -6396,4 +6414,294 @@ model OAuthState {
 
   @@index([expiresAt])
   @@map("oauth_states")
+}
+
+// ============================================================================
+// CLINICAL GOVERNANCE & SAFETY (The "Black Box" Recorder)
+// ============================================================================
+
+model InteractionSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  // Context
+  patientId String?
+  patient   Patient? @relation(fields: [patientId], references: [id])
+  
+  encounterId String?
+  encounter   ClinicalEncounter? @relation(fields: [encounterId], references: [id])
+
+  // Link to specific feature sessions if applicable
+  scribeSessionId String?
+  scribeSession   ScribeSession? @relation(fields: [scribeSessionId], references: [id])
+
+  logs GovernanceLog[]
+
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+
+  @@index([userId])
+  @@index([patientId])
+  @@map("interaction_sessions")
+}
+
+model GovernanceLog {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   InteractionSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // The "Flight Recorder" Data
+  inputPrompt      String   @db.Text // The exact prompt sent to the LLM
+  rawModelOutput   String?  @db.Text // What the LLM said (potentially unsafe)
+  sanitizedOutput  String?  @db.Text // What the user saw (after governance)
+  
+  // Metadata
+  provider         String   @default("unknown") // "claude-3-5", "gemini-flash"
+  latencyMs        Int      @default(0)
+  tokenCount       Int      @default(0)
+  
+  // Analysis
+  safetyScore      Int?     // 0-100
+  
+  events GovernanceEvent[]
+
+  timestamp DateTime @default(now())
+
+  @@index([sessionId])
+  @@map("governance_logs")
+}
+
+model GovernanceEvent {
+  id        String   @id @default(cuid())
+  logId     String
+  log       GovernanceLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+
+  // Rule Details
+  ruleId          String? // If we have a rule table later
+  ruleName        String  // e.g., "BSTH-001: Asthma/Beta-Blocker"
+  severity        GovernanceSeverity // HARD_BLOCK, SOFT_NUDGE, INFO
+  
+  description     String?
+  
+  // Outcome
+  actionTaken     GovernanceAction // BLOCKED, FLAGGED, PASSED
+  overrideByUser  Boolean @default(false)
+  overrideReason  String?
+
+  timestamp DateTime @default(now())
+
+  @@index([logId])
+  @@index([severity])
+  @@map("governance_events")
+}
+
+enum GovernanceSeverity {
+  HARD_BLOCK
+  SOFT_NUDGE
+  INFO
+}
+
+enum GovernanceAction {
+  BLOCKED
+  FLAGGED
+  PASSED
+  SHADOW_BLOCK
+}
+
+// ============================================================================
+// RLHF DATA CAPTURE (Clinical Assurance Platform - Pivot Phase 1)
+// ============================================================================
+// Purpose: Capture AI/Rules vs Human/Doctor divergence data as defensible IP
+// LGPD Compliance: All patient IDs are de-identified via SHA256(patient_id + SALT_KEY)
+//
+// CRITICAL: TISS XML Reconciliation Logic
+// -----------------------------------------------------------------------
+// TISS XML returns from insurers do NOT contain our internal IDs.
+// Insurers only know their protocols, not our AssuranceEventIds.
+//
+// Matching Strategy:
+// 1. Ingest TISS XML (XML -> JSON) from insurer glosa reports
+// 2. Fuzzy Match against AssuranceEvent where:
+//    - patientIdHash == incoming_patient_hash
+//    - ABS(eventTimestamp - billingTimestamp) < 24_hours
+//    - inputContext.procedureCode == xml.procedureCode
+// 3. If Match Score > 0.95, create OutcomeGroundTruth record linked to AssuranceEvent
+// 4. If Match Score < 0.95, queue for manual reconciliation
+// ============================================================================
+
+/// Captures AI/Rules recommendations and human decisions for RLHF training
+/// Each event represents a point where AI made a recommendation that may differ from human action
+model AssuranceEvent {
+  id              String   @id @default(cuid())
+  patientIdHash   String   // SHA256(patient_id + SALT_KEY) - LGPD compliant
+  encounterId     String?
+  eventType       AssuranceEventType
+
+  // CRITICAL: Raw input for model training replay
+  // Contains the state BEFORE AI evaluation ran
+  // Example: {"prescriptionText": "Amox 500mg", "tissCode": "10101012", "domState": {...}}
+  inputContextSnapshot Json
+
+  // AI/Rules Output - What the system recommended
+  aiRecommendation Json     // Structured recommendation from AI/rules engine
+  aiConfidence     Float?   // Confidence score 0.0-1.0
+  aiProvider       String?  // claude | gemini | ollama | rules-engine
+  aiLatencyMs      Int?     // Processing time in milliseconds
+
+  // Human Decision - What the clinician actually did
+  humanDecision    Json?    // The action taken by the human
+  humanOverride    Boolean  @default(false)  // True if human disagreed with AI
+  overrideReason   String?  @db.Text         // LGPD Article 20: explanation for override
+
+  // Rule Versioning for regression tracking
+  ruleVersionId    String?
+  ruleVersion      RuleVersion? @relation(fields: [ruleVersionId], references: [id])
+
+  // Clinic context
+  clinicId         String
+
+  // Timestamps
+  createdAt        DateTime @default(now())
+  decidedAt        DateTime? // When human made decision (null if pending)
+
+  // Relations
+  feedback         HumanFeedback[]
+  outcome          OutcomeGroundTruth?
+
+  @@index([patientIdHash])
+  @@index([clinicId, createdAt])
+  @@index([humanOverride])
+  @@index([ruleVersionId])
+  @@index([eventType, createdAt])
+  @@map("assurance_events")
+}
+
+/// Types of assurance events captured for RLHF
+enum AssuranceEventType {
+  DIAGNOSIS       // AI suggested diagnosis vs human diagnosis
+  TREATMENT       // AI suggested treatment vs human prescription
+  ORDER           // AI suggested orders (labs, imaging) vs human orders
+  ALERT           // Clinical alert (drug interaction, allergy) vs human response
+  BILLING         // Billing validation (TISS code, coverage) vs human submission
+}
+
+/// Human feedback on AI recommendations for RLHF fine-tuning
+/// Captures explicit feedback beyond just override decisions
+model HumanFeedback {
+  id               String   @id @default(cuid())
+  assuranceEventId String
+  assuranceEvent   AssuranceEvent @relation(fields: [assuranceEventId], references: [id], onDelete: Cascade)
+
+  feedbackType     FeedbackType
+  feedbackValue    Json        // Structured feedback data
+  feedbackSource   FeedbackSource
+
+  createdAt        DateTime @default(now())
+
+  @@index([assuranceEventId])
+  @@index([feedbackType])
+  @@map("human_feedback")
+}
+
+/// Types of feedback that can be provided
+enum FeedbackType {
+  THUMBS_UP      // Quick positive signal
+  THUMBS_DOWN    // Quick negative signal
+  CORRECTION     // Specific correction with details
+  COMMENT        // Free-form text feedback
+}
+
+/// Source of feedback for weighting in RLHF
+enum FeedbackSource {
+  PHYSICIAN      // Highest weight - medical decision maker
+  NURSE          // Clinical feedback
+  PHARMACIST     // Medication expertise
+  ADMIN          // Administrative perspective
+  BILLING        // Revenue integrity perspective
+}
+
+/// Ground truth outcomes for retrospective analysis
+/// Links assurance events to actual patient outcomes or billing results
+model OutcomeGroundTruth {
+  id               String   @id @default(cuid())
+  assuranceEventId String   @unique
+  assuranceEvent   AssuranceEvent @relation(fields: [assuranceEventId], references: [id], onDelete: Cascade)
+
+  outcomeType      OutcomeType
+  outcomeValue     Json         // Structured outcome data
+  outcomeDate      DateTime
+
+  // Glosa-specific fields (Brazilian billing denials)
+  glosaCode        String?      // Brazilian denial code (e.g., "001.01")
+  glosaAmount      Float?       // R$ value denied
+  glosaRecovered   Boolean?     // Was appeal successful?
+  appealStrategy   String?  @db.Text // What worked to recover (for learning)
+
+  // TISS Reconciliation Fields
+  // Used for matching insurer XML returns to our AssuranceEvents
+  matchScore       Float?       // Confidence of the match (0-1)
+  matchMethod      MatchMethod? // How the match was determined
+  insurerProtocol  String?      // The insurer's protocol number from XML
+
+  createdAt        DateTime @default(now())
+
+  @@index([outcomeType])
+  @@index([glosaCode])
+  @@index([matchScore])
+  @@map("outcome_ground_truth")
+}
+
+/// Types of outcomes that can be linked to assurance events
+enum OutcomeType {
+  READMISSION    // Patient was readmitted within X days
+  COMPLICATION   // Clinical complication occurred
+  GLOSA          // Billing denial (Brazilian healthcare)
+  SUCCESS        // Positive outcome confirmed
+  APPEAL_WON     // Initially denied, but appeal succeeded
+  APPEAL_LOST    // Appeal was unsuccessful
+}
+
+/// Methods used to match insurer data to our events
+enum MatchMethod {
+  EXACT          // All fields matched exactly
+  FUZZY          // High-confidence fuzzy match
+  MANUAL         // Human reviewed and linked
+}
+
+/// Version tracking for rules to enable regression analysis
+/// When a rule is updated, we can track which version was active for each event
+model RuleVersion {
+  id          String   @id @default(cuid())
+  ruleId      String   // Logical rule identifier (e.g., "DRUG_INTERACTION_001")
+  version     Int      // Incrementing version number
+  ruleType    RuleType
+
+  // The actual rule definition
+  // For clinical: {"condition": {...}, "action": "BLOCK", "severity": "HIGH"}
+  // For billing: {"tissCode": "10101012", "planExclusions": [...]}
+  ruleLogic   Json     @db.JsonB
+
+  // Metadata
+  description String?  @db.Text
+  active      Boolean  @default(true)
+
+  // Audit trail
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  assuranceEvents AssuranceEvent[]
+
+  @@unique([ruleId, version])
+  @@index([ruleType, active])
+  @@index([ruleId])
+  @@map("rule_versions")
+}
+
+/// Categories of rules in the system
+enum RuleType {
+  CLINICAL       // Drug interactions, allergies, clinical guidelines
+  ADMINISTRATIVE // Documentation requirements, prior auth
+  BILLING        // TISS codes, plan coverage, glosa prevention
 }

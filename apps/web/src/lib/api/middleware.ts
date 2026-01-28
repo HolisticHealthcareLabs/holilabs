@@ -12,6 +12,7 @@ import { getOrCreateRequestId, REQUEST_ID_HEADER } from '@/lib/request-id';
 import { logger, createLogger, logError } from '@/lib/logger';
 import { applySecurityHeaders } from './security-headers';
 import { Redis } from '@upstash/redis';
+import crypto from 'crypto';
 
 // ============================================================================
 // TYPES
@@ -35,6 +36,35 @@ export interface ApiContext {
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
   maxRequests: number; // Max requests per window
+}
+
+// ============================================================================
+// INTERNAL AGENT GATEWAY TOKEN VERIFICATION
+// ============================================================================
+
+/**
+ * Verify internal token from agent gateway.
+ * Returns true if the request is a trusted internal request.
+ */
+function verifyInternalToken(token: string | null): boolean {
+  if (!token) return false;
+
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const now = Math.floor(Date.now() / 60000);
+
+  // Check current and previous minute (handles clock skew)
+  for (const timestamp of [now, now - 1]) {
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`agent-internal:${timestamp}`)
+      .digest('hex');
+
+    if (token === expected) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -240,6 +270,47 @@ export function requireAuth() {
           role: 'CLINICIAN',
         };
         return next();
+      }
+
+      // ===================================================================
+      // INTERNAL AGENT GATEWAY AUTHENTICATION
+      // ===================================================================
+      // Agent gateway validates user session BEFORE making internal requests.
+      // Internal requests include a signed token + user info in headers.
+      // ===================================================================
+      const internalToken = request.headers.get('X-Agent-Internal-Token');
+      if (internalToken && verifyInternalToken(internalToken)) {
+        const userId = request.headers.get('X-Agent-User-Id');
+        const userEmail = request.headers.get('X-Agent-User-Email');
+
+        if (userEmail) {
+          // Verify user exists in database (prefer email lookup as session ID may not match DB ID)
+          const dbUser = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { id: userId || '' },
+                { email: userEmail },
+              ],
+            },
+            select: { id: true, email: true, role: true },
+          });
+
+          if (dbUser) {
+            context.user = {
+              id: dbUser.id,
+              email: dbUser.email,
+              role: dbUser.role,
+            };
+
+            log.debug({
+              event: 'internal_auth_success',
+              userId: dbUser.id,
+              source: 'agent-gateway',
+            }, 'Internal agent gateway authentication successful');
+
+            return next();
+          }
+        }
       }
 
       // ===================================================================

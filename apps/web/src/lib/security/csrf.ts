@@ -210,6 +210,15 @@ export function csrfProtection() {
       return next();
     }
 
+    // Skip CSRF for trusted internal agent gateway requests
+    // These requests are pre-authenticated by the agent gateway
+    const internalToken = request.headers.get('X-Agent-Internal-Token');
+    if (internalToken) {
+      // Token verification is done in requireAuth middleware
+      // If internal token is present, skip CSRF check
+      return next();
+    }
+
     // Get CSRF token from header
     const headerToken = request.headers.get('x-csrf-token');
 

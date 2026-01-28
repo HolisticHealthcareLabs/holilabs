@@ -8,6 +8,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import {
+  emitTaskUpdatedEvent,
+  emitTaskCompletedEvent,
+  emitTaskDismissedEvent,
+  emitTaskDeletedEvent,
+} from '@/lib/socket-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,11 +49,12 @@ export async function PATCH(
 
     // Handle quick actions
     if (action === 'complete') {
+      const completedAt = new Date();
       updatedTask = await prisma.providerTask.update({
         where: { id },
         data: {
           status: 'COMPLETED',
-          completedAt: new Date(),
+          completedAt,
         },
       });
       logger.info({
@@ -55,17 +62,39 @@ export async function PATCH(
         taskId: id,
         category: task.category,
       });
+
+      // Real-time Socket.IO broadcast for task completion
+      emitTaskCompletedEvent({
+        id: updatedTask.id,
+        title: updatedTask.title,
+        category: updatedTask.category,
+        priority: updatedTask.priority as 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW',
+        assignedTo: updatedTask.assignedTo,
+        completedAt,
+        userId: updatedTask.assignedTo,
+      });
     } else if (action === 'dismiss') {
+      const dismissedAt = new Date();
       updatedTask = await prisma.providerTask.update({
         where: { id },
         data: {
           status: 'DISMISSED',
-          dismissedAt: new Date(),
+          dismissedAt,
         },
       });
       logger.info({
         event: 'task_dismissed',
         taskId: id,
+      });
+
+      // Real-time Socket.IO broadcast for task dismissal
+      emitTaskDismissedEvent({
+        id: updatedTask.id,
+        title: updatedTask.title,
+        category: updatedTask.category,
+        assignedTo: updatedTask.assignedTo,
+        dismissedAt,
+        userId: updatedTask.assignedTo,
       });
     } else if (action === 'start') {
       updatedTask = await prisma.providerTask.update({
@@ -73,6 +102,20 @@ export async function PATCH(
         data: {
           status: 'IN_PROGRESS',
         },
+      });
+
+      // Real-time Socket.IO broadcast for task status update
+      emitTaskUpdatedEvent({
+        id: updatedTask.id,
+        title: updatedTask.title,
+        category: updatedTask.category,
+        priority: updatedTask.priority as 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW',
+        status: updatedTask.status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DISMISSED',
+        assignedTo: updatedTask.assignedTo,
+        dueDate: updatedTask.dueDate ?? undefined,
+        relatedType: updatedTask.relatedType ?? undefined,
+        relatedId: updatedTask.relatedId ?? undefined,
+        userId: updatedTask.assignedTo,
       });
     } else {
       // General update
@@ -86,6 +129,20 @@ export async function PATCH(
       updatedTask = await prisma.providerTask.update({
         where: { id },
         data: updateData,
+      });
+
+      // Real-time Socket.IO broadcast for general task update
+      emitTaskUpdatedEvent({
+        id: updatedTask.id,
+        title: updatedTask.title,
+        category: updatedTask.category,
+        priority: updatedTask.priority as 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW',
+        status: updatedTask.status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DISMISSED',
+        assignedTo: updatedTask.assignedTo,
+        dueDate: updatedTask.dueDate ?? undefined,
+        relatedType: updatedTask.relatedType ?? undefined,
+        relatedId: updatedTask.relatedId ?? undefined,
+        userId: updatedTask.assignedTo,
       });
     }
 
@@ -121,6 +178,21 @@ export async function DELETE(
   try {
     const { id } = params;
 
+    // First fetch the task to get assignedTo for broadcasting
+    const task = await prisma.providerTask.findUnique({
+      where: { id },
+    });
+
+    if (!task) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Task not found',
+        },
+        { status: 404 }
+      );
+    }
+
     await prisma.providerTask.delete({
       where: { id },
     });
@@ -128,6 +200,14 @@ export async function DELETE(
     logger.info({
       event: 'task_deleted',
       taskId: id,
+    });
+
+    // Real-time Socket.IO broadcast for task deletion
+    emitTaskDeletedEvent({
+      id,
+      title: task.title,
+      assignedTo: task.assignedTo,
+      userId: task.assignedTo,
     });
 
     return NextResponse.json({

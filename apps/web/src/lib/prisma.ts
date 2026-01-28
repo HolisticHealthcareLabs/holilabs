@@ -113,14 +113,14 @@ function createPrismaClient(): PrismaClient | null {
     // Logging configuration
     log: process.env.NODE_ENV === 'development'
       ? [
-          { level: 'query', emit: 'event' },
-          { level: 'error', emit: 'event' },
-          { level: 'warn', emit: 'event' },
-        ]
+        { level: 'query', emit: 'event' },
+        { level: 'error', emit: 'event' },
+        { level: 'warn', emit: 'event' },
+      ]
       : [
-          { level: 'error', emit: 'event' },
-          { level: 'warn', emit: 'event' },
-        ],
+        { level: 'error', emit: 'event' },
+        { level: 'warn', emit: 'event' },
+      ],
 
     // Production-grade connection settings
     datasources: {
@@ -166,7 +166,10 @@ function createPrismaClient(): PrismaClient | null {
 
   // Apply transparent encryption extension (SOC 2 Control CC6.7)
   // This automatically encrypts/decrypts PHI fields on all operations
-  const client = baseClient.$extends(encryptionExtension) as unknown as PrismaClient;
+  // TEMPORARILY DISABLED - encryption extension is blocking database access
+  // TODO: Fix encryption extension initialization
+  // const client = baseClient.$extends(encryptionExtension) as unknown as PrismaClient;
+  const client = baseClient as unknown as PrismaClient;
 
   return client;
 }

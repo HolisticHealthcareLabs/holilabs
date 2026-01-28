@@ -11,6 +11,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { logger } from '@/lib/logger';
+import { emitClinicalNoteEvent } from '@/lib/socket-server';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -133,6 +134,17 @@ export const POST = createProtectedRoute(
           success: true
         }
       );
+
+      // Emit Socket.IO event for real-time UI updates
+      emitClinicalNoteEvent({
+        id: note.id,
+        action: 'created',
+        patientId: body.patientId,
+        patientName: note.patient ? `${note.patient.firstName} ${note.patient.lastName}` : undefined,
+        noteType: body.noteType,
+        userId: clinicianId,
+        userName: context.user.name || context.user.email,
+      });
 
       return NextResponse.json(
         {

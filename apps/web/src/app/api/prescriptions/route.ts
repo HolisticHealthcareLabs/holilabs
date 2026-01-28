@@ -10,6 +10,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
 import crypto from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import { emitMedicationEvent } from '@/lib/socket-server';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -132,7 +133,26 @@ export const POST = createProtectedRoute(
         });
       });
 
-      await Promise.all(medicationPromises);
+      const createdMedications = await Promise.all(medicationPromises);
+
+      // Emit Socket.IO events for real-time UI updates
+      const patientName = prescription.patient
+        ? `${prescription.patient.firstName} ${prescription.patient.lastName}`
+        : undefined;
+
+      createdMedications.forEach((med) => {
+        emitMedicationEvent({
+          id: med.id,
+          action: 'created',
+          patientId: body.patientId,
+          patientName,
+          medicationName: med.name,
+          dose: med.dose || undefined,
+          frequency: med.frequency || undefined,
+          userId: clinicianId,
+          userName: context.user.name || context.user.email,
+        });
+      });
 
       // Create audit log
       await prisma.auditLog.create({

@@ -9,6 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { emitAppointmentEvent } from '@/lib/socket-server';
 
 const VALID_STATUSES = [
   'SCHEDULED',
@@ -110,6 +111,32 @@ export async function PATCH(
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
         userAgent: request.headers.get('user-agent') || undefined,
       },
+    });
+
+    // Determine action type based on status change
+    let action: 'created' | 'updated' | 'cancelled' | 'completed' = 'updated';
+    if (status === 'CANCELLED') {
+      action = 'cancelled';
+    } else if (status === 'COMPLETED') {
+      action = 'completed';
+    }
+
+    // Real-time Socket.IO broadcast for appointment status change
+    emitAppointmentEvent({
+      id: updatedAppointment.id,
+      action,
+      patientId: updatedAppointment.patientId,
+      patientName: updatedAppointment.patient
+        ? `${updatedAppointment.patient.firstName} ${updatedAppointment.patient.lastName}`
+        : undefined,
+      clinicianId: updatedAppointment.clinicianId,
+      clinicianName: updatedAppointment.clinician
+        ? `${updatedAppointment.clinician.firstName} ${updatedAppointment.clinician.lastName}`
+        : undefined,
+      appointmentType: updatedAppointment.type || undefined,
+      startTime: updatedAppointment.startTime,
+      userId: (session.user as any).id,
+      userName: (session.user as any).name || (session.user as any).email,
     });
 
     return NextResponse.json({

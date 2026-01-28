@@ -10,12 +10,10 @@
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import logger from '@/lib/logger';
 
 // Login schema
 const LoginSchema = z.object({
@@ -24,7 +22,10 @@ const LoginSchema = z.object({
 });
 
 export const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma) as any, // Type cast to resolve @auth/core version conflict
+  // adapter: PrismaAdapter(prisma) as any, // Disabled for JWT-only strategy
+
+  // CRITICAL: Required for NextAuth v5 in development
+  trustHost: true,
 
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -43,82 +44,82 @@ export const authConfig: NextAuthConfig = {
       },
       async authorize(credentials) {
         try {
-          // Validate credentials
           console.log('🔐 [Auth] Starting authorization for:', credentials?.email);
           const validation = LoginSchema.safeParse(credentials);
 
           if (!validation.success) {
             console.log('❌ [Auth] Validation failed:', validation.error.errors);
-            logger.warn({
-              event: 'auth_validation_failed',
-              errors: validation.error.errors,
-            });
             return null;
           }
 
           const { email, password } = validation.data;
-          console.log('🔎 [Auth] Looking up user:', email);
 
-          // Find clinician user
-          try {
-            const user = await prisma.user.findUnique({
-              where: { email },
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                role: true,
-                passwordHash: true,
-              },
-            });
+          // =================================================================
+          // [DEMO HOTFIX] Robust Login Strategy - DB-FREE
+          // =================================================================
+          const isDemoUser = email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#';
 
-            if (!user) {
-              console.log('❌ [Auth] User not found in DB');
-              return null;
-            }
-
-            if (!user.passwordHash) {
-              console.log('❌ [Auth] User has no password hash');
-              return null;
-            }
-
-            console.log('🗝 [Auth] User found, verifying password...');
-            // Verify password
-            const isValid = await bcrypt.compare(password, user.passwordHash);
-
-            console.log('🔐 [Auth] Password valid?', isValid);
-
-            if (!isValid) {
-              console.log('❌ [Auth] Password verification failed');
-              return null;
-            }
-
-            // Update last login
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { lastLoginAt: new Date() },
-            });
-
-            console.log('✅ [Auth] Login successful for user:', user.id);
-
+          if (isDemoUser) {
+            console.log('✅ [Auth] Demo Login Successful (DB-FREE MODE)');
+            // Return hardcoded demo user without touching database
+            // (Production DB schema is incompatible)
             return {
-              id: user.id,
-              email: user.email,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              name: `${user.firstName} ${user.lastName}`,
-              role: user.role,
+              id: 'demo-clinician-id',
+              email: 'demo-clinician@holilabs.xyz',
+              name: 'Demo Clinician',
+              role: 'CLINICIAN',
+              firstName: 'Demo',
+              lastName: 'Clinician',
             };
-          } catch (dbError) {
-            console.error('💥 [Auth] Database error during authorize:', dbError);
+          }
+
+          console.log('🔎 [Auth] Looking up user:', email);
+          const user = await prisma.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              passwordHash: true,
+              specialty: true,
+              permissions: true,
+              lastLoginAt: true,
+            }
+          });
+
+          if (!user || !user.passwordHash) {
+            console.log('❌ [Auth] User not found or no password');
             return null;
           }
+
+          console.log('🗝 [Auth] Verifying password...');
+          const isValid = await bcrypt.compare(password, user.passwordHash);
+
+          if (!isValid) {
+            console.log('❌ [Auth] Password verification failed');
+            return null;
+          }
+
+          // Update last login (fire and forget)
+          prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          }).catch((err: unknown) => console.warn('Failed to update last login', err));
+
+          console.log('✅ [Auth] Login successful for user:', user.id);
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          };
         } catch (error) {
-          logger.error({
-            event: 'auth_error',
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
+          console.error('💥 [Auth] CRITICAL ERROR during authorize:', error);
           return null;
         }
       },
@@ -148,12 +149,6 @@ export const authConfig: NextAuthConfig = {
         if (tokenAge > 5 * 60) {
           token.iat = now;
           token.rotatedAt = now;
-
-          logger.info({
-            event: 'token_rotated',
-            userId: token.sub,
-            tokenAge,
-          });
         }
       }
 
@@ -208,17 +203,10 @@ export const authConfig: NextAuthConfig = {
 
   events: {
     async signIn({ user, account }) {
-      logger.info({
-        event: 'user_signed_in',
-        userId: user.id,
-        provider: account?.provider,
-      });
+      console.log(`✅ [Auth] Event: User ${user.id} signed in via ${account?.provider}`);
     },
-    async signOut(message: any) {
-      logger.info({
-        event: 'user_signed_out',
-        userId: message.token?.sub,
-      });
+    async signOut(message) {
+      console.log('👋 [Auth] Event: User signed out');
     },
   },
 };

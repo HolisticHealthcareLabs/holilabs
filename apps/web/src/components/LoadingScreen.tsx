@@ -49,9 +49,8 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] transition-opacity duration-500 ${
-        videoEnded ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}
+      className={`fixed inset-0 z-[9999] transition-opacity duration-500 ${videoEnded ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
     >
       {/* Blurred UI Preview Background */}
       <div className="absolute inset-0 bg-gray-50 dark:bg-gray-900">
@@ -118,7 +117,6 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
         </div>
       </div>
 
-      {/* Skip button (optional - appears after 3 seconds) */}
       <button
         onClick={() => {
           setVideoEnded(true);
@@ -126,10 +124,10 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
             onComplete();
           }
         }}
-        className="absolute bottom-8 right-8 px-6 py-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:scale-105 opacity-0 animate-fadeIn"
-        style={{ animationDelay: '3s', animationFillMode: 'forwards' }}
+        className="absolute bottom-12 right-12 px-6 py-3 bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/20 rounded-full shadow-2xl hover:bg-white/20 transition-all duration-300 text-xs font-bold tracking-widest uppercase text-white hover:scale-105 opacity-0 animate-fadeIn"
+        style={{ animationDelay: '1.5s', animationFillMode: 'forwards' }}
       >
-        Skip
+        Skip Intro
       </button>
 
       <style jsx>{`
