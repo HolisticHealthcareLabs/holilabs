@@ -11,9 +11,11 @@ import {
     CreateClinicalNoteSchema,
     GetClinicalNotesSchema,
     UpdateClinicalNoteSchema,
+    DeleteClinicalNoteSchema,
     type CreateClinicalNoteInput,
     type GetClinicalNotesInput,
     type UpdateClinicalNoteInput,
+    type DeleteClinicalNoteInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
 import crypto from 'crypto';
@@ -217,6 +219,76 @@ async function updateClinicalNoteHandler(
 }
 
 // =============================================================================
+// TOOL: delete_clinical_note (soft delete)
+// =============================================================================
+
+async function deleteClinicalNoteHandler(
+    input: DeleteClinicalNoteInput,
+    context: MCPContext
+): Promise<MCPResult> {
+    // Find the note and verify access
+    const existingNote: any = await prisma.clinicalNote.findFirst({
+        where: { id: input.noteId },
+        include: { patient: true },
+    });
+
+    if (!existingNote) {
+        return { success: false, error: 'Note not found', data: null };
+    }
+
+    if (existingNote.patient?.assignedClinicianId !== context.clinicianId) {
+        return { success: false, error: 'Access denied', data: null };
+    }
+
+    // Only allow deletion of unsigned notes
+    if (existingNote.signedAt) {
+        return {
+            success: false,
+            error: 'Cannot delete signed notes. Signed notes are part of the permanent medical record.',
+            data: null,
+        };
+    }
+
+    // Soft delete by marking the note with deletion metadata
+    // Since there's no deletedAt field in the schema, we'll append deletion info to assessment
+    // and set a convention that deleted notes have a specific marker
+    const deletionMarker = `[DELETED: ${new Date().toISOString()}] Reason: ${input.reason}`;
+    const updatedAssessment = existingNote.assessment
+        ? `${deletionMarker}\n\n---ORIGINAL CONTENT---\n${existingNote.assessment}`
+        : deletionMarker;
+
+    const note: any = await prisma.clinicalNote.update({
+        where: { id: input.noteId },
+        data: {
+            assessment: updatedAssessment,
+            // Mark as deleted by setting a specific type indicator in the subjective field
+            subjective: existingNote.subjective
+                ? `[SOFT_DELETED] ${existingNote.subjective}`
+                : '[SOFT_DELETED]',
+        },
+    });
+
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'delete_clinical_note',
+        noteId: input.noteId,
+        reason: input.reason,
+        agentId: context.agentId,
+    });
+
+    return {
+        success: true,
+        data: {
+            noteId: note.id,
+            status: 'DELETED',
+            message: 'Clinical note soft deleted. The note has been marked as deleted but preserved for audit purposes.',
+            deletedAt: new Date().toISOString(),
+            reason: input.reason,
+        },
+    };
+}
+
+// =============================================================================
 // EXPORT: Clinical Note Tools
 // =============================================================================
 
@@ -244,5 +316,13 @@ export const clinicalNoteTools: MCPTool[] = [
         inputSchema: UpdateClinicalNoteSchema,
         requiredPermissions: ['note:write'],
         handler: updateClinicalNoteHandler,
+    },
+    {
+        name: 'delete_clinical_note',
+        description: 'Soft delete an unsigned clinical note. Cannot delete signed notes as they are part of the permanent medical record. The note is preserved for audit purposes.',
+        category: 'clinical-note',
+        inputSchema: DeleteClinicalNoteSchema,
+        requiredPermissions: ['note:write'],
+        handler: deleteClinicalNoteHandler,
     },
 ];

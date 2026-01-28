@@ -24,9 +24,11 @@ import {
     PrescribeMedicationSchema,
     GetMedicationInteractionsSchema,
     DiscontinueMedicationSchema,
+    UpdateMedicationSchema,
     type PrescribeMedicationInput,
     type GetMedicationInteractionsInput,
     type DiscontinueMedicationInput,
+    type UpdateMedicationInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
 
@@ -465,6 +467,78 @@ async function discontinueMedicationHandler(
 }
 
 // =============================================================================
+// PRIMITIVE: update_medication
+// Update medication details (dose, frequency, instructions, notes, isActive, route)
+// =============================================================================
+
+async function updateMedicationHandler(
+    input: UpdateMedicationInput,
+    context: MCPContext
+): Promise<MCPResult> {
+    // Find medication and verify access
+    const medication: any = await prisma.medication.findFirst({
+        where: { id: input.medicationId },
+        include: { patient: { select: { id: true, assignedClinicianId: true } } },
+    });
+
+    if (!medication) {
+        return { success: false, error: 'Medication not found', data: null };
+    }
+
+    if (medication.patient?.assignedClinicianId !== context.clinicianId) {
+        return { success: false, error: 'Access denied', data: null };
+    }
+
+    // Build update data with only provided fields
+    const updateData: Record<string, any> = {};
+    if (input.dose !== undefined) updateData.dose = input.dose;
+    if (input.frequency !== undefined) updateData.frequency = input.frequency;
+    if (input.instructions !== undefined) updateData.instructions = input.instructions;
+    if (input.notes !== undefined) updateData.notes = input.notes;
+    if (input.isActive !== undefined) updateData.isActive = input.isActive;
+    if (input.route !== undefined) updateData.route = input.route;
+
+    // Check if any updates were provided
+    if (Object.keys(updateData).length === 0) {
+        return {
+            success: false,
+            error: 'No update fields provided',
+            data: null,
+        };
+    }
+
+    const updated: any = await prisma.medication.update({
+        where: { id: input.medicationId },
+        data: updateData,
+    });
+
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'update_medication',
+        medicationId: input.medicationId,
+        medicationName: medication.name,
+        updatedFields: Object.keys(updateData),
+        agentId: context.agentId,
+    });
+
+    return {
+        success: true,
+        data: {
+            medicationId: updated.id,
+            patientId: updated.patientId,
+            name: updated.name,
+            dose: updated.dose,
+            frequency: updated.frequency,
+            route: updated.route,
+            isActive: updated.isActive,
+            instructions: updated.instructions,
+            notes: updated.notes,
+            updatedAt: updated.updatedAt,
+        },
+    };
+}
+
+// =============================================================================
 // EXPORT: Medication Tools
 // =============================================================================
 
@@ -503,6 +577,14 @@ export const medicationTools: MCPTool[] = [
         inputSchema: DiscontinueMedicationSchema,
         requiredPermissions: ['medication:write'],
         handler: discontinueMedicationHandler,
+    },
+    {
+        name: 'update_medication',
+        description: 'Update medication details including dose, frequency, instructions, notes, active status, or route. Pure update operation.',
+        category: 'medication',
+        inputSchema: UpdateMedicationSchema,
+        requiredPermissions: ['medication:write'],
+        handler: updateMedicationHandler,
     },
     // ==========================================================================
     // LEGACY TOOLS (Deprecated - use primitives)
