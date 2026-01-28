@@ -17,6 +17,7 @@ export type {
     MCPToolResponse,
     MCPRegistry,
     PermissionCheckResult,
+    MCPToolExample,
 } from './types';
 
 // Server
@@ -31,7 +32,36 @@ export {
     searchTools,
     getToolSchemas,
     executeTool,
+    // Enhanced discovery
+    getToolWithExamples,
+    getToolDependents,
+    getToolDependencies,
+    // Workflow exports
+    getWorkflows,
+    getWorkflowByIdFromRegistry,
+    getWorkflowsByCategoryFromRegistry,
+    searchWorkflowsFromRegistry,
+    getWorkflowSchemasFromRegistry,
+    executeWorkflowFromRegistry,
 } from './registry';
+
+// Workflow types and functions
+export type {
+    WorkflowTemplate,
+    WorkflowStep,
+    WorkflowResult,
+    WorkflowStepResult,
+} from './workflows';
+
+export {
+    getWorkflowTemplates,
+    getWorkflowById,
+    getWorkflowsByCategory,
+    searchWorkflows,
+    getWorkflowSchemas,
+    executeWorkflow,
+    WORKFLOW_TEMPLATES,
+} from './workflows';
 
 // Individual tool modules
 export { patientTools } from './tools/patient.tools';
@@ -49,6 +79,7 @@ export { referralTools } from './tools/referral.tools';
 export { documentTools } from './tools/document.tools';
 export { billingTools } from './tools/billing.tools';
 export { settingsTools } from './tools/settings.tools';
+export { prescriptionTools } from './tools/prescription.tools';
 
 // Schemas (for external validation)
 export * from './schemas/tool-schemas';

@@ -24,6 +24,11 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import {
+    UpdateAppointmentSchema,
+    type UpdateAppointmentInput,
+} from '../schemas/tool-schemas';
+import type { MCPContext, MCPResult, MCPTool } from '../types';
 
 // =============================================================================
 // PRIMITIVE SCHEMAS
@@ -57,7 +62,7 @@ const GetClinicianScheduleSchema = z.object({
 
 // PRIMITIVE: get_available_slots
 // Returns raw slot data - no filtering, no availability logic
-async function getAvailableSlotsHandler(input: any, context: { userId: string; clinicId: string }) {
+async function getAvailableSlotsHandler(input: any, context: MCPContext): Promise<MCPResult> {
     const checkDate = new Date(input.date);
     const { clinicianId, slotDuration } = input;
 
@@ -104,7 +109,7 @@ async function getAvailableSlotsHandler(input: any, context: { userId: string; c
 
 // PRIMITIVE: create_appointment_record
 // Pure create - no clinician fallback, no automatic selection
-async function createAppointmentRecordHandler(input: any, context: { userId: string; clinicId: string }) {
+async function createAppointmentRecordHandler(input: any, context: MCPContext): Promise<MCPResult> {
     // Verify patient exists
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId },
@@ -161,7 +166,7 @@ async function createAppointmentRecordHandler(input: any, context: { userId: str
 
 // PRIMITIVE: get_clinician_schedule
 // Returns raw schedule data for a date range
-async function getClinicianScheduleHandler(input: any, context: { userId: string }) {
+async function getClinicianScheduleHandler(input: any, context: MCPContext): Promise<MCPResult> {
     const { clinicianId, startDate, endDate } = input;
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -204,30 +209,96 @@ async function getClinicianScheduleHandler(input: any, context: { userId: string
 }
 
 // =============================================================================
+// PRIMITIVE: update_appointment
+// Update appointment details (time, notes, status, type)
+// =============================================================================
+
+async function updateAppointmentHandler(
+    input: UpdateAppointmentInput,
+    context: MCPContext
+): Promise<MCPResult> {
+    const { appointmentId, dateTime, duration, status, type, notes, reason } = input;
+
+    // Build update object with only provided fields
+    const updateData: Record<string, any> = {};
+    if (dateTime !== undefined) updateData.scheduledAt = new Date(dateTime);
+    if (duration !== undefined) updateData.duration = duration;
+    if (status !== undefined) updateData.status = status;
+    if (type !== undefined) updateData.type = type;
+    if (notes !== undefined) updateData.notes = notes;
+    if (reason !== undefined) updateData.reason = reason;
+
+    // Check if any updates were provided
+    if (Object.keys(updateData).length === 0) {
+        return {
+            success: false,
+            error: 'No update fields provided',
+            data: null,
+        };
+    }
+
+    updateData.updatedAt = new Date();
+
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'update_appointment',
+        appointmentId,
+        updatedFields: Object.keys(updateData),
+        agentId: context.agentId,
+    });
+
+    // Return mock updated appointment (no Appointment model in Prisma)
+    return {
+        success: true,
+        data: {
+            appointmentId,
+            ...updateData,
+            scheduledAt: updateData.scheduledAt?.toISOString(),
+            updatedAt: updateData.updatedAt.toISOString(),
+            message: 'Appointment updated successfully',
+        },
+    };
+}
+
+// =============================================================================
 // LEGACY TOOL DEFINITIONS (DEPRECATED)
 // =============================================================================
 
-export const appointmentTools = [
+export const appointmentTools: MCPTool[] = [
     // ==========================================================================
     // PRIMITIVE TOOLS (Agent-native architecture)
     // ==========================================================================
     {
         name: 'get_available_slots',
         description: 'Get all time slots for a clinician on a date with booking status. Returns raw slot data - agent decides which to offer.',
+        category: 'appointment',
         inputSchema: GetAvailableSlotsSchema,
+        requiredPermissions: ['patient:read'],
         handler: getAvailableSlotsHandler,
     },
     {
         name: 'create_appointment_record',
         description: 'Create an appointment record. Requires explicit clinician ID - no automatic selection. Returns raw appointment data.',
+        category: 'appointment',
         inputSchema: CreateAppointmentRecordSchema,
+        requiredPermissions: ['patient:read', 'patient:write'],
         handler: createAppointmentRecordHandler,
     },
     {
         name: 'get_clinician_schedule',
         description: 'Get clinician working hours and availability for a date range. Returns raw schedule data.',
+        category: 'appointment',
         inputSchema: GetClinicianScheduleSchema,
+        requiredPermissions: ['patient:read'],
         handler: getClinicianScheduleHandler,
+    },
+    {
+        name: 'update_appointment',
+        description: 'Update appointment details including time, duration, status, type, notes, or reason. Pure update operation.',
+        category: 'appointment',
+        inputSchema: UpdateAppointmentSchema,
+        requiredPermissions: ['patient:write'],
+        handler: updateAppointmentHandler,
     },
     // ==========================================================================
     // LEGACY TOOLS (Deprecated - use primitives)
@@ -235,6 +306,7 @@ export const appointmentTools = [
     {
         name: 'schedule_appointment',
         description: '[DEPRECATED: Use get_available_slots + create_appointment_record] Schedule with automatic clinician fallback.',
+        category: 'appointment',
         inputSchema: z.object({
             patientId: z.string().describe('The patient UUID'),
             clinicianId: z.string().optional().describe('Optional clinician UUID (defaults to assigned clinician)'),
@@ -244,9 +316,10 @@ export const appointmentTools = [
             reason: z.string().optional().describe('Reason for the appointment'),
             notes: z.string().optional().describe('Additional notes'),
         }),
+        requiredPermissions: ['patient:read', 'patient:write'],
         deprecated: true,
         alternatives: ['get_available_slots', 'create_appointment_record'],
-        handler: async (input: any, context: { userId: string; clinicId: string }) => {
+        handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             logger.warn({
                 event: 'deprecated_tool_called',
                 tool: 'schedule_appointment',
@@ -261,10 +334,10 @@ export const appointmentTools = [
                 });
 
                 if (!patient) {
-                    return { success: false, error: 'Patient not found' };
+                    return { success: false, error: 'Patient not found', data: null };
                 }
 
-                const clinicianId = input.clinicianId || patient.assignedClinicianId || context.userId;
+                const clinicianId = input.clinicianId || patient.assignedClinicianId || context.clinicianId;
                 const appointmentDate = new Date(input.dateTime);
 
                 // Create appointment (using generic scheduledEvent or similar)
@@ -300,7 +373,7 @@ export const appointmentTools = [
                     },
                 };
             } catch (error: any) {
-                return { success: false, error: error.message };
+                return { success: false, error: error.message, data: null };
             }
         },
     },
@@ -308,6 +381,7 @@ export const appointmentTools = [
     {
         name: 'get_patient_appointments',
         description: 'Get upcoming appointments for a patient',
+        category: 'appointment',
         inputSchema: z.object({
             patientId: z.string().describe('The patient UUID'),
             startDate: z.string().optional().describe('Filter start date (ISO 8601)'),
@@ -315,7 +389,8 @@ export const appointmentTools = [
             status: z.enum(['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
             limit: z.number().default(10).describe('Max results'),
         }),
-        handler: async (input: any, context: { userId: string; clinicId: string }) => {
+        requiredPermissions: ['patient:read'],
+        handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             // Return mock appointments for demo
             const appointments = [
                 {
@@ -351,17 +426,19 @@ export const appointmentTools = [
     {
         name: 'cancel_appointment',
         description: 'Cancel an existing appointment',
+        category: 'appointment',
         inputSchema: z.object({
             appointmentId: z.string().describe('The appointment ID to cancel'),
             reason: z.string().optional().describe('Reason for cancellation'),
             notifyPatient: z.boolean().default(true).describe('Send notification to patient'),
         }),
-        handler: async (input: any, context: { userId: string }) => {
+        requiredPermissions: ['patient:write'],
+        handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             logger.info({
                 event: 'appointment_cancelled_by_agent',
                 appointmentId: input.appointmentId,
                 reason: input.reason,
-                userId: context.userId,
+                agentId: context.agentId,
             });
 
             return {
@@ -379,20 +456,22 @@ export const appointmentTools = [
     {
         name: 'reschedule_appointment',
         description: 'Reschedule an appointment to a new date/time',
+        category: 'appointment',
         inputSchema: z.object({
             appointmentId: z.string().describe('The appointment ID to reschedule'),
             newDateTime: z.string().describe('New datetime (ISO 8601)'),
             newDuration: z.number().optional().describe('New duration in minutes'),
             notifyPatient: z.boolean().default(true),
         }),
-        handler: async (input: any, context: { userId: string }) => {
+        requiredPermissions: ['patient:write'],
+        handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             const newDate = new Date(input.newDateTime);
 
             logger.info({
                 event: 'appointment_rescheduled_by_agent',
                 appointmentId: input.appointmentId,
                 newDateTime: input.newDateTime,
-                userId: context.userId,
+                agentId: context.agentId,
             });
 
             return {
@@ -411,14 +490,16 @@ export const appointmentTools = [
     {
         name: 'check_availability',
         description: '[DEPRECATED: Use get_available_slots] Check availability with pre-filtered available slots.',
+        category: 'appointment',
         inputSchema: z.object({
             clinicianId: z.string().optional().describe('Clinician UUID (defaults to current user)'),
             date: z.string().describe('Date to check (ISO 8601)'),
             duration: z.number().default(30).describe('Appointment duration in minutes'),
         }),
+        requiredPermissions: ['patient:read'],
         deprecated: true,
         alternatives: ['get_available_slots'],
-        handler: async (input: any, context: { userId: string }) => {
+        handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             logger.warn({
                 event: 'deprecated_tool_called',
                 tool: 'check_availability',
@@ -426,7 +507,7 @@ export const appointmentTools = [
             });
 
             const checkDate = new Date(input.date);
-            const clinicianId = input.clinicianId || context.userId;
+            const clinicianId = input.clinicianId || context.clinicianId;
 
             // Generate available slots (mock)
             const slots = [];

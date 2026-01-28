@@ -1,0 +1,5 @@
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:14:43.540"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:15:13.558"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:15:43.549"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:16:13.561"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:16:43.553"}
