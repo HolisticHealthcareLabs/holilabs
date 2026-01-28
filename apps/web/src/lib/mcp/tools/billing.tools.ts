@@ -1,176 +1,611 @@
 /**
  * MCP Billing Tools
  *
- * REFACTORED: Decomposed into pure primitives per agent-native architecture audit.
- * Business logic (benefit calculations, cost splits) removed - agent orchestrates.
+ * REFACTORED: Real Prisma CRUD operations per agent-native architecture.
  *
  * Primitives:
- * - get_raw_insurance_data: Returns raw payer and plan data without calculations
- * - get_procedure_fees: Returns raw procedure costs without insurance split
- * - get_patient_insurance_info: Returns patient's insurance record
- *
- * Legacy (deprecated):
- * - verify_insurance: Still available but marked deprecated
- * - get_cost_estimate: Still available but marked deprecated
- *
- * Tools for AI agents to manage billing and claims:
- * - Submit claims
- * - Check claim status
- * - Verify insurance
- * - Get cost estimates
+ * - get_patient_insurance: Get patient's insurance record from database
+ * - create_patient_insurance: Add insurance coverage for a patient
+ * - update_patient_insurance: Update insurance details
+ * - submit_claim: Submit an insurance claim (stored in database)
+ * - get_claim: Get a specific claim by ID
+ * - list_claims: List claims with filtering
+ * - update_claim_status: Update claim status (processed, paid, denied)
  */
 
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import type { MCPTool, MCPContext, MCPResult } from '../types';
 
 // =============================================================================
-// PRIMITIVE SCHEMAS
+// SCHEMAS
 // =============================================================================
 
-const GetRawInsuranceDataSchema = z.object({
+const GetPatientInsuranceSchema = z.object({
     patientId: z.string().describe('The patient UUID'),
-    serviceDate: z.string().optional().describe('Date of service (ISO 8601)'),
+    insuranceType: z.enum(['PRIMARY', 'SECONDARY', 'TERTIARY']).optional().describe('Filter by insurance type'),
 });
 
-const GetProcedureFeesSchema = z.object({
-    procedureCodes: z.array(z.string()).describe('CPT codes for procedures'),
-    facilityType: z.enum(['HOSPITAL', 'OUTPATIENT', 'OFFICE']).optional().describe('Facility type for fee lookup'),
-});
-
-const GetPatientInsuranceInfoSchema = z.object({
+const CreatePatientInsuranceSchema = z.object({
     patientId: z.string().describe('The patient UUID'),
+    insuranceType: z.enum(['PRIMARY', 'SECONDARY', 'TERTIARY']).default('PRIMARY'),
+    payerId: z.string().describe('Payer identifier'),
+    payerName: z.string().describe('Payer name'),
+    payerType: z.enum(['COMMERCIAL', 'MEDICARE', 'MEDICAID', 'VA', 'OTHER']).default('COMMERCIAL'),
+    planId: z.string().describe('Plan identifier'),
+    planName: z.string().describe('Plan name'),
+    planType: z.enum(['PPO', 'HMO', 'EPO', 'POS', 'HDHP']).default('PPO'),
+    memberId: z.string().describe('Member ID on insurance card'),
+    groupNumber: z.string().optional().describe('Group number'),
+    subscriberName: z.string().optional().describe('Policy holder name'),
+    relationshipToPatient: z.enum(['SELF', 'SPOUSE', 'CHILD', 'OTHER']).default('SELF'),
+    effectiveDate: z.string().describe('Coverage effective date (ISO 8601)'),
+    terminationDate: z.string().optional().describe('Coverage end date (ISO 8601)'),
+    inNetworkDeductible: z.number().optional().describe('In-network deductible in cents'),
+    outOfNetworkDeductible: z.number().optional().describe('Out-of-network deductible in cents'),
+    coinsurancePercent: z.number().optional().describe('Coinsurance percentage (e.g., 20)'),
+    copayPrimaryCare: z.number().optional().describe('Primary care copay in cents'),
+    copaySpecialist: z.number().optional().describe('Specialist copay in cents'),
+});
+
+const UpdatePatientInsuranceSchema = z.object({
+    insuranceId: z.string().describe('The insurance record UUID'),
+    isVerified: z.boolean().optional().describe('Verification status'),
+    verificationNote: z.string().optional().describe('Verification notes'),
+    isActive: z.boolean().optional().describe('Active status'),
+    terminationDate: z.string().optional().describe('Coverage end date (ISO 8601)'),
+    inNetworkDeductible: z.number().optional().describe('In-network deductible in cents'),
+    coinsurancePercent: z.number().optional().describe('Coinsurance percentage'),
+});
+
+const SubmitClaimSchema = z.object({
+    patientId: z.string().describe('The patient UUID'),
+    patientInsuranceId: z.string().optional().describe('Insurance record to bill'),
+    encounterId: z.string().optional().describe('Encounter/visit ID'),
+    diagnosisCodes: z.array(z.string()).describe('ICD-10 diagnosis codes'),
+    procedureCodes: z.array(z.object({
+        code: z.string().describe('CPT/HCPCS code'),
+        modifier: z.string().optional().describe('CPT modifier'),
+        units: z.number().default(1).describe('Service units'),
+        chargeAmount: z.number().describe('Charge amount in cents'),
+    })).describe('Procedure codes with charges'),
+    serviceDate: z.string().describe('Date of service (ISO 8601)'),
+    placeOfService: z.string().default('11').describe('CMS place of service code'),
+    billedAmount: z.number().describe('Total billed amount in cents'),
+    notes: z.string().optional().describe('Claim notes'),
+});
+
+const GetClaimSchema = z.object({
+    claimId: z.string().describe('The claim UUID or claim number'),
+});
+
+const ListClaimsSchema = z.object({
+    patientId: z.string().optional().describe('Filter by patient'),
+    status: z.enum(['DRAFT', 'SUBMITTED', 'PENDING', 'IN_REVIEW', 'APPROVED', 'PAID', 'DENIED', 'APPEALED', 'VOIDED']).optional(),
+    startDate: z.string().optional().describe('Filter claims submitted after this date'),
+    endDate: z.string().optional().describe('Filter claims submitted before this date'),
+    limit: z.number().default(20).describe('Maximum results to return'),
+    offset: z.number().default(0).describe('Pagination offset'),
+});
+
+const UpdateClaimStatusSchema = z.object({
+    claimId: z.string().describe('The claim UUID'),
+    status: z.enum(['PENDING', 'IN_REVIEW', 'APPROVED', 'PAID', 'DENIED', 'APPEALED', 'VOIDED']).describe('New status'),
+    allowedAmount: z.number().optional().describe('Amount allowed by payer in cents'),
+    paidAmount: z.number().optional().describe('Amount paid by payer in cents'),
+    adjustmentAmount: z.number().optional().describe('Contractual adjustments in cents'),
+    patientResponsibility: z.number().optional().describe('Patient share in cents'),
+    denialCode: z.string().optional().describe('Denial code if denied'),
+    denialReason: z.string().optional().describe('Denial reason'),
+    notes: z.string().optional().describe('Processing notes'),
 });
 
 // =============================================================================
-// PRIMITIVE HANDLERS
+// HANDLERS
 // =============================================================================
 
-// PRIMITIVE: get_raw_insurance_data
-// Returns raw payer/plan data without benefit calculations
-async function getRawInsuranceDataHandler(input: any, context: { userId: string }) {
-    const { patientId, serviceDate } = input;
+async function getPatientInsuranceHandler(
+    input: z.infer<typeof GetPatientInsuranceSchema>,
+    context: MCPContext
+): Promise<MCPResult> {
+    const { patientId, insuranceType } = input;
 
     logger.info({
         event: 'mcp_tool_executed',
-        tool: 'get_raw_insurance_data',
+        tool: 'get_patient_insurance',
         patientId,
-        serviceDate,
+        insuranceType,
     });
 
-    // Return raw insurance data - no calculations
+    const insuranceRecords = await prisma.patientInsurance.findMany({
+        where: {
+            patientId,
+            ...(insuranceType && { insuranceType }),
+        },
+        orderBy: {
+            insuranceType: 'asc',
+        },
+    });
+
     return {
         success: true,
         data: {
             patientId,
-            asOfDate: serviceDate || new Date().toISOString(),
-            payer: {
-                payerId: 'EHI001',
-                payerName: 'Example Health Insurance',
-                payerType: 'COMMERCIAL',
+            hasInsurance: insuranceRecords.length > 0,
+            insuranceRecords: insuranceRecords.map(record => ({
+                id: record.id,
+                insuranceType: record.insuranceType,
+                payer: {
+                    payerId: record.payerId,
+                    payerName: record.payerName,
+                    payerType: record.payerType,
+                },
+                plan: {
+                    planId: record.planId,
+                    planName: record.planName,
+                    planType: record.planType,
+                },
+                subscriber: {
+                    memberId: record.memberId,
+                    groupNumber: record.groupNumber,
+                    subscriberName: record.subscriberName,
+                    relationshipToPatient: record.relationshipToPatient,
+                },
+                coverage: {
+                    effectiveDate: record.effectiveDate.toISOString(),
+                    terminationDate: record.terminationDate?.toISOString() || null,
+                    isActive: record.isActive,
+                },
+                benefits: {
+                    inNetworkDeductible: record.inNetworkDeductible,
+                    outOfNetworkDeductible: record.outOfNetworkDeductible,
+                    inNetworkOopMax: record.inNetworkOopMax,
+                    outOfNetworkOopMax: record.outOfNetworkOopMax,
+                    coinsurancePercent: record.coinsurancePercent,
+                },
+                copays: {
+                    primaryCare: record.copayPrimaryCare,
+                    specialist: record.copaySpecialist,
+                    urgentCare: record.copayUrgentCare,
+                    emergencyRoom: record.copayEmergencyRoom,
+                    genericRx: record.copayGenericRx,
+                    brandRx: record.copayBrandRx,
+                },
+                verification: {
+                    isVerified: record.isVerified,
+                    lastVerifiedAt: record.lastVerifiedAt?.toISOString() || null,
+                    verificationNote: record.verificationNote,
+                },
+            })),
+            count: insuranceRecords.length,
+        },
+    };
+}
+
+async function createPatientInsuranceHandler(
+    input: z.infer<typeof CreatePatientInsuranceSchema>,
+    context: MCPContext
+): Promise<MCPResult> {
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'create_patient_insurance',
+        patientId: input.patientId,
+        insuranceType: input.insuranceType,
+    });
+
+    // Verify patient exists
+    const patient = await prisma.patient.findUnique({
+        where: { id: input.patientId },
+    });
+
+    if (!patient) {
+        return {
+            success: false,
+            error: `Patient not found: ${input.patientId}`,
+        };
+    }
+
+    const insurance = await prisma.patientInsurance.create({
+        data: {
+            patientId: input.patientId,
+            insuranceType: input.insuranceType,
+            payerId: input.payerId,
+            payerName: input.payerName,
+            payerType: input.payerType,
+            planId: input.planId,
+            planName: input.planName,
+            planType: input.planType,
+            memberId: input.memberId,
+            groupNumber: input.groupNumber,
+            subscriberName: input.subscriberName,
+            relationshipToPatient: input.relationshipToPatient,
+            effectiveDate: new Date(input.effectiveDate),
+            terminationDate: input.terminationDate ? new Date(input.terminationDate) : null,
+            inNetworkDeductible: input.inNetworkDeductible,
+            outOfNetworkDeductible: input.outOfNetworkDeductible,
+            coinsurancePercent: input.coinsurancePercent,
+            copayPrimaryCare: input.copayPrimaryCare,
+            copaySpecialist: input.copaySpecialist,
+        },
+    });
+
+    return {
+        success: true,
+        data: {
+            id: insurance.id,
+            patientId: insurance.patientId,
+            insuranceType: insurance.insuranceType,
+            payerName: insurance.payerName,
+            planName: insurance.planName,
+            memberId: insurance.memberId,
+            effectiveDate: insurance.effectiveDate.toISOString(),
+            createdAt: insurance.createdAt.toISOString(),
+        },
+    };
+}
+
+async function updatePatientInsuranceHandler(
+    input: z.infer<typeof UpdatePatientInsuranceSchema>,
+    context: MCPContext
+): Promise<MCPResult> {
+    const { insuranceId, ...updates } = input;
+
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'update_patient_insurance',
+        insuranceId,
+    });
+
+    const existing = await prisma.patientInsurance.findUnique({
+        where: { id: insuranceId },
+    });
+
+    if (!existing) {
+        return {
+            success: false,
+            error: `Insurance record not found: ${insuranceId}`,
+        };
+    }
+
+    const insurance = await prisma.patientInsurance.update({
+        where: { id: insuranceId },
+        data: {
+            ...(updates.isVerified !== undefined && {
+                isVerified: updates.isVerified,
+                lastVerifiedAt: updates.isVerified ? new Date() : existing.lastVerifiedAt,
+            }),
+            ...(updates.verificationNote && { verificationNote: updates.verificationNote }),
+            ...(updates.isActive !== undefined && { isActive: updates.isActive }),
+            ...(updates.terminationDate && { terminationDate: new Date(updates.terminationDate) }),
+            ...(updates.inNetworkDeductible !== undefined && { inNetworkDeductible: updates.inNetworkDeductible }),
+            ...(updates.coinsurancePercent !== undefined && { coinsurancePercent: updates.coinsurancePercent }),
+        },
+    });
+
+    return {
+        success: true,
+        data: {
+            id: insurance.id,
+            patientId: insurance.patientId,
+            isVerified: insurance.isVerified,
+            isActive: insurance.isActive,
+            updatedAt: insurance.updatedAt.toISOString(),
+        },
+    };
+}
+
+async function submitClaimHandler(
+    input: z.infer<typeof SubmitClaimSchema>,
+    context: MCPContext
+): Promise<MCPResult> {
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'submit_claim',
+        patientId: input.patientId,
+        encounterId: input.encounterId,
+    });
+
+    // Verify patient exists
+    const patient = await prisma.patient.findUnique({
+        where: { id: input.patientId },
+    });
+
+    if (!patient) {
+        return {
+            success: false,
+            error: `Patient not found: ${input.patientId}`,
+        };
+    }
+
+    // Generate claim number
+    const year = new Date().getFullYear();
+    const count = await prisma.insuranceClaim.count({
+        where: {
+            claimNumber: {
+                startsWith: `CLM-${year}`,
             },
-            plan: {
-                planId: 'PLN-PPO-2025',
-                planName: 'PPO Standard',
-                planType: 'PPO',
-                effectiveDate: '2025-01-01',
-                terminationDate: null,
-            },
-            subscriber: {
-                memberId: 'MEM-12345',
-                groupNumber: 'GRP-67890',
-                relationshipToPatient: 'SELF',
-            },
-            coverageDetails: {
-                inNetworkDeductible: 1500,
-                outOfNetworkDeductible: 3000,
-                inNetworkOopMax: 6000,
-                outOfNetworkOopMax: 12000,
-                coinsurancePercent: 20,
-            },
-            copays: {
-                primaryCare: 25,
-                specialist: 50,
-                urgentCare: 75,
-                emergencyRoom: 250,
-                genericRx: 10,
-                brandRx: 35,
-            },
-            priorAuthServices: [
-                'Advanced imaging (MRI, CT, PET)',
-                'Specialty medications',
-                'Durable medical equipment',
-                'Inpatient admissions',
+        },
+    });
+    const claimNumber = `CLM-${year}-${String(count + 1).padStart(5, '0')}`;
+
+    const claim = await prisma.insuranceClaim.create({
+        data: {
+            patientId: input.patientId,
+            patientInsuranceId: input.patientInsuranceId,
+            encounterId: input.encounterId,
+            claimNumber,
+            serviceDate: new Date(input.serviceDate),
+            placeOfService: input.placeOfService,
+            diagnosisCodes: input.diagnosisCodes,
+            procedureCodes: input.procedureCodes,
+            billedAmount: input.billedAmount,
+            status: 'SUBMITTED',
+            notes: input.notes,
+            createdBy: context.userId,
+        },
+    });
+
+    logger.info({
+        event: 'claim_submitted',
+        claimId: claim.id,
+        claimNumber: claim.claimNumber,
+        patientId: input.patientId,
+        billedAmount: input.billedAmount,
+        userId: context.userId,
+    });
+
+    return {
+        success: true,
+        data: {
+            claimId: claim.id,
+            claimNumber: claim.claimNumber,
+            patientId: claim.patientId,
+            encounterId: claim.encounterId,
+            status: claim.status,
+            billedAmount: claim.billedAmount,
+            serviceDate: claim.serviceDate.toISOString(),
+            submittedAt: claim.submittedAt.toISOString(),
+            diagnosisCodes: claim.diagnosisCodes,
+            procedureCodes: claim.procedureCodes,
+        },
+    };
+}
+
+async function getClaimHandler(
+    input: z.infer<typeof GetClaimSchema>,
+    context: MCPContext
+): Promise<MCPResult> {
+    const { claimId } = input;
+
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'get_claim',
+        claimId,
+    });
+
+    // Try to find by ID or claim number
+    const claim = await prisma.insuranceClaim.findFirst({
+        where: {
+            OR: [
+                { id: claimId },
+                { claimNumber: claimId },
             ],
         },
-    };
-}
+        include: {
+            patient: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    mrn: true,
+                },
+            },
+            patientInsurance: {
+                select: {
+                    payerName: true,
+                    planName: true,
+                    memberId: true,
+                },
+            },
+        },
+    });
 
-// PRIMITIVE: get_procedure_fees
-// Returns raw procedure costs without insurance calculations
-async function getProcedureFeesHandler(input: any, context: { userId: string }) {
-    const { procedureCodes, facilityType } = input;
-
-    // Mock fee schedule - in production would query actual fee schedule
-    const fees = procedureCodes.map((code: string, index: number) => {
-        const baseFee = 150 + (index * 75);
+    if (!claim) {
         return {
-            cptCode: code,
-            description: `Procedure ${code}`,
-            facilityFee: facilityType === 'HOSPITAL' ? baseFee * 1.5 : baseFee,
-            professionalFee: baseFee * 0.6,
-            medicareRate: baseFee * 0.8,
-            facilityType: facilityType || 'OFFICE',
+            success: false,
+            error: `Claim not found: ${claimId}`,
         };
-    });
+    }
 
-    logger.info({
-        event: 'mcp_tool_executed',
-        tool: 'get_procedure_fees',
-        procedureCount: procedureCodes.length,
-        facilityType,
-    });
-
-    // Return raw fee data - no totals, no insurance split
     return {
         success: true,
         data: {
-            procedureCodes,
-            facilityType: facilityType || 'OFFICE',
-            fees,
+            claimId: claim.id,
+            claimNumber: claim.claimNumber,
+            externalClaimId: claim.externalClaimId,
+            status: claim.status,
+            claimType: claim.claimType,
+            patient: claim.patient,
+            insurance: claim.patientInsurance,
+            serviceDate: claim.serviceDate.toISOString(),
+            placeOfService: claim.placeOfService,
+            diagnosisCodes: claim.diagnosisCodes,
+            procedureCodes: claim.procedureCodes,
+            financials: {
+                billedAmount: claim.billedAmount,
+                allowedAmount: claim.allowedAmount,
+                paidAmount: claim.paidAmount,
+                adjustmentAmount: claim.adjustmentAmount,
+                patientResponsibility: claim.patientResponsibility,
+                deductibleApplied: claim.deductibleApplied,
+                coinsuranceAmount: claim.coinsuranceAmount,
+                copayAmount: claim.copayAmount,
+            },
+            denial: claim.denialCode ? {
+                code: claim.denialCode,
+                reason: claim.denialReason,
+            } : null,
+            dates: {
+                submittedAt: claim.submittedAt.toISOString(),
+                processedAt: claim.processedAt?.toISOString() || null,
+                paidAt: claim.paidAt?.toISOString() || null,
+                appealedAt: claim.appealedAt?.toISOString() || null,
+            },
+            appeal: claim.appealStatus ? {
+                status: claim.appealStatus,
+                note: claim.appealNote,
+            } : null,
+            notes: claim.notes,
         },
     };
 }
 
-// PRIMITIVE: get_patient_insurance_info
-// Returns patient's insurance record details
-async function getPatientInsuranceInfoHandler(input: any, context: { userId: string }) {
-    const { patientId } = input;
+async function listClaimsHandler(
+    input: z.infer<typeof ListClaimsSchema>,
+    context: MCPContext
+): Promise<MCPResult> {
+    const { patientId, status, startDate, endDate, limit, offset } = input;
 
     logger.info({
         event: 'mcp_tool_executed',
-        tool: 'get_patient_insurance_info',
+        tool: 'list_claims',
         patientId,
+        status,
     });
 
-    // Return raw insurance record
+    const where = {
+        ...(patientId && { patientId }),
+        ...(status && { status }),
+        ...(startDate || endDate ? {
+            submittedAt: {
+                ...(startDate && { gte: new Date(startDate) }),
+                ...(endDate && { lte: new Date(endDate) }),
+            },
+        } : {}),
+    };
+
+    const [claims, total] = await Promise.all([
+        prisma.insuranceClaim.findMany({
+            where,
+            include: {
+                patient: {
+                    select: {
+                        firstName: true,
+                        lastName: true,
+                        mrn: true,
+                    },
+                },
+                patientInsurance: {
+                    select: {
+                        payerName: true,
+                    },
+                },
+            },
+            orderBy: {
+                submittedAt: 'desc',
+            },
+            take: limit,
+            skip: offset,
+        }),
+        prisma.insuranceClaim.count({ where }),
+    ]);
+
     return {
         success: true,
         data: {
-            patientId,
-            hasInsurance: true,
-            primaryInsurance: {
-                payerId: 'EHI001',
-                payerName: 'Example Health Insurance',
-                memberId: 'MEM-12345',
-                groupNumber: 'GRP-67890',
-                planType: 'PPO',
-                effectiveDate: '2025-01-01',
-                isActive: true,
+            claims: claims.map(claim => ({
+                claimId: claim.id,
+                claimNumber: claim.claimNumber,
+                status: claim.status,
+                patient: {
+                    name: `${claim.patient.firstName} ${claim.patient.lastName}`,
+                    mrn: claim.patient.mrn,
+                },
+                payerName: claim.patientInsurance?.payerName || 'Self-Pay',
+                serviceDate: claim.serviceDate.toISOString(),
+                billedAmount: claim.billedAmount,
+                paidAmount: claim.paidAmount,
+                patientResponsibility: claim.patientResponsibility,
+                submittedAt: claim.submittedAt.toISOString(),
+                processedAt: claim.processedAt?.toISOString() || null,
+            })),
+            total,
+            limit,
+            offset,
+            hasMore: offset + claims.length < total,
+        },
+    };
+}
+
+async function updateClaimStatusHandler(
+    input: z.infer<typeof UpdateClaimStatusSchema>,
+    context: MCPContext
+): Promise<MCPResult> {
+    const { claimId, status, ...updates } = input;
+
+    logger.info({
+        event: 'mcp_tool_executed',
+        tool: 'update_claim_status',
+        claimId,
+        status,
+    });
+
+    const existing = await prisma.insuranceClaim.findUnique({
+        where: { id: claimId },
+    });
+
+    if (!existing) {
+        return {
+            success: false,
+            error: `Claim not found: ${claimId}`,
+        };
+    }
+
+    const now = new Date();
+    const claim = await prisma.insuranceClaim.update({
+        where: { id: claimId },
+        data: {
+            status,
+            ...(updates.allowedAmount !== undefined && { allowedAmount: updates.allowedAmount }),
+            ...(updates.paidAmount !== undefined && { paidAmount: updates.paidAmount }),
+            ...(updates.adjustmentAmount !== undefined && { adjustmentAmount: updates.adjustmentAmount }),
+            ...(updates.patientResponsibility !== undefined && { patientResponsibility: updates.patientResponsibility }),
+            ...(updates.denialCode && { denialCode: updates.denialCode }),
+            ...(updates.denialReason && { denialReason: updates.denialReason }),
+            ...(updates.notes && { notes: updates.notes }),
+            // Set timestamps based on status
+            ...(status === 'APPROVED' || status === 'DENIED' ? { processedAt: now } : {}),
+            ...(status === 'PAID' ? { paidAt: now } : {}),
+            ...(status === 'APPEALED' ? { appealedAt: now, appealStatus: 'PENDING' } : {}),
+        },
+    });
+
+    logger.info({
+        event: 'claim_status_updated',
+        claimId: claim.id,
+        claimNumber: claim.claimNumber,
+        previousStatus: existing.status,
+        newStatus: claim.status,
+        userId: context.userId,
+    });
+
+    return {
+        success: true,
+        data: {
+            claimId: claim.id,
+            claimNumber: claim.claimNumber,
+            status: claim.status,
+            previousStatus: existing.status,
+            financials: {
+                billedAmount: claim.billedAmount,
+                allowedAmount: claim.allowedAmount,
+                paidAmount: claim.paidAmount,
+                patientResponsibility: claim.patientResponsibility,
             },
-            secondaryInsurance: null,
-            selfPay: false,
-            lastVerified: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            processedAt: claim.processedAt?.toISOString() || null,
+            paidAt: claim.paidAt?.toISOString() || null,
+            updatedAt: claim.updatedAt.toISOString(),
         },
     };
 }
@@ -179,217 +614,51 @@ async function getPatientInsuranceInfoHandler(input: any, context: { userId: str
 // TOOL DEFINITIONS
 // =============================================================================
 
-export const billingTools = [
-    // ==========================================================================
-    // PRIMITIVE TOOLS (Agent-native architecture)
-    // ==========================================================================
+export const billingTools: MCPTool[] = [
+    // Patient Insurance CRUD
     {
-        name: 'get_raw_insurance_data',
-        description: 'Get raw insurance payer, plan, and coverage data for a patient. No benefit calculations - returns raw data for agent to use.',
-        inputSchema: GetRawInsuranceDataSchema,
-        handler: getRawInsuranceDataHandler,
+        name: 'get_patient_insurance',
+        description: 'Get patient insurance records from database. Returns payer, plan, subscriber, benefits, copays, and verification status.',
+        inputSchema: GetPatientInsuranceSchema,
+        handler: getPatientInsuranceHandler,
     },
     {
-        name: 'get_procedure_fees',
-        description: 'Get raw procedure fees from fee schedule. No insurance split calculations - returns base fees for agent to calculate.',
-        inputSchema: GetProcedureFeesSchema,
-        handler: getProcedureFeesHandler,
+        name: 'create_patient_insurance',
+        description: 'Add insurance coverage for a patient. Creates a new insurance record with payer, plan, and benefit details.',
+        inputSchema: CreatePatientInsuranceSchema,
+        handler: createPatientInsuranceHandler,
     },
     {
-        name: 'get_patient_insurance_info',
-        description: 'Get patient insurance record info (payer, member ID, plan type). Raw data only.',
-        inputSchema: GetPatientInsuranceInfoSchema,
-        handler: getPatientInsuranceInfoHandler,
+        name: 'update_patient_insurance',
+        description: 'Update patient insurance details including verification status, coverage dates, and benefit amounts.',
+        inputSchema: UpdatePatientInsuranceSchema,
+        handler: updatePatientInsuranceHandler,
     },
-    // ==========================================================================
-    // CLAIM TOOLS (Not deprecated - already primitive)
-    // ==========================================================================
+
+    // Insurance Claims CRUD
     {
         name: 'submit_claim',
-        description: 'Submit an insurance claim for a patient encounter',
-        inputSchema: z.object({
-            patientId: z.string().describe('The patient UUID'),
-            encounterId: z.string().describe('The encounter/visit ID'),
-            diagnosisCodes: z.array(z.string()).describe('ICD-10 diagnosis codes'),
-            procedureCodes: z.array(z.string()).describe('CPT/HCPCS procedure codes'),
-            serviceDate: z.string().describe('Date of service (ISO 8601)'),
-            placeOfService: z.string().default('11').describe('CMS place of service code'),
-            modifiers: z.array(z.string()).optional().describe('CPT modifiers'),
-        }),
-        handler: async (input: any, context: { userId: string; clinicId: string }) => {
-            const claimId = `CLM-${Date.now().toString(36).toUpperCase()}`;
-
-            logger.info({
-                event: 'claim_submitted_by_agent',
-                claimId,
-                patientId: input.patientId,
-                encounterId: input.encounterId,
-                diagnosisCodes: input.diagnosisCodes,
-                procedureCodes: input.procedureCodes,
-                userId: context.userId,
-            });
-
-            return {
-                success: true,
-                data: {
-                    claimId,
-                    patientId: input.patientId,
-                    encounterId: input.encounterId,
-                    status: 'SUBMITTED',
-                    submittedAt: new Date().toISOString(),
-                    diagnosisCodes: input.diagnosisCodes,
-                    procedureCodes: input.procedureCodes,
-                    estimatedProcessingDays: 14,
-                },
-            };
-        },
+        description: 'Submit an insurance claim for a patient encounter. Stores claim with diagnosis codes, procedure codes, and billed amount.',
+        inputSchema: SubmitClaimSchema,
+        handler: submitClaimHandler,
     },
-
     {
-        name: 'get_claim_status',
-        description: 'Check the status of submitted insurance claims',
-        inputSchema: z.object({
-            claimId: z.string().optional().describe('Specific claim ID'),
-            patientId: z.string().optional().describe('Get all claims for patient'),
-            status: z.enum(['SUBMITTED', 'PENDING', 'APPROVED', 'DENIED', 'APPEALED']).optional(),
-            startDate: z.string().optional(),
-            limit: z.number().default(10),
-        }),
-        handler: async (input: any, context: { userId: string }) => {
-            // Mock claim data
-            const claims = [
-                {
-                    claimId: 'CLM-DEMO1',
-                    encounterId: 'ENC-001',
-                    status: 'APPROVED',
-                    submittedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-                    processedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                    billedAmount: 450.00,
-                    approvedAmount: 380.00,
-                    patientResponsibility: 70.00,
-                },
-                {
-                    claimId: 'CLM-DEMO2',
-                    encounterId: 'ENC-002',
-                    status: 'PENDING',
-                    submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                    billedAmount: 1250.00,
-                },
-            ];
-
-            let filtered = claims;
-            if (input.status) {
-                filtered = claims.filter(c => c.status === input.status);
-            }
-
-            return {
-                success: true,
-                data: {
-                    claims: filtered.slice(0, input.limit),
-                    count: filtered.length,
-                },
-            };
-        },
+        name: 'get_claim',
+        description: 'Get a specific insurance claim by ID or claim number. Returns full claim details including financials and status.',
+        inputSchema: GetClaimSchema,
+        handler: getClaimHandler,
     },
-
-    // ==========================================================================
-    // LEGACY TOOLS (Deprecated - use primitives)
-    // ==========================================================================
     {
-        name: 'verify_insurance',
-        description: '[DEPRECATED: Use get_raw_insurance_data] Verify insurance with embedded benefit calculations.',
-        inputSchema: z.object({
-            patientId: z.string().describe('The patient UUID'),
-            serviceDate: z.string().optional().describe('Date of service for eligibility check'),
-            serviceType: z.enum(['MEDICAL', 'MENTAL_HEALTH', 'DENTAL', 'VISION', 'PHARMACY']).default('MEDICAL'),
-        }),
-        deprecated: true,
-        alternatives: ['get_raw_insurance_data', 'get_patient_insurance_info'],
-        handler: async (input: any, context: { userId: string }) => {
-            logger.warn({
-                event: 'deprecated_tool_called',
-                tool: 'verify_insurance',
-                message: 'Use get_raw_insurance_data primitive instead',
-            });
-
-            // Mock insurance verification
-            return {
-                success: true,
-                data: {
-                    patientId: input.patientId,
-                    verified: true,
-                    verifiedAt: new Date().toISOString(),
-                    payer: {
-                        name: 'Example Health Insurance',
-                        payerId: 'EHI001',
-                        planType: 'PPO',
-                    },
-                    eligibility: {
-                        active: true,
-                        effectiveDate: '2025-01-01',
-                        terminationDate: null,
-                    },
-                    benefits: {
-                        deductible: { individual: 1500, family: 3000, met: 750 },
-                        outOfPocketMax: { individual: 6000, family: 12000, met: 1200 },
-                        copay: { primaryCare: 25, specialist: 50, emergencyRoom: 250 },
-                        coinsurance: 20,
-                    },
-                    priorAuthRequired: ['Advanced imaging', 'Specialty medications', 'DME'],
-                },
-            };
-        },
+        name: 'list_claims',
+        description: 'List insurance claims with filtering by patient, status, and date range. Supports pagination.',
+        inputSchema: ListClaimsSchema,
+        handler: listClaimsHandler,
     },
-
     {
-        name: 'get_cost_estimate',
-        description: '[DEPRECATED: Use get_procedure_fees + get_raw_insurance_data] Get cost estimate with embedded 80/20 split calculation.',
-        inputSchema: z.object({
-            patientId: z.string().describe('The patient UUID'),
-            procedureCodes: z.array(z.string()).describe('CPT codes for procedures'),
-            diagnosisCodes: z.array(z.string()).optional().describe('ICD-10 codes'),
-            includeInsurance: z.boolean().default(true).describe('Calculate with insurance'),
-        }),
-        deprecated: true,
-        alternatives: ['get_procedure_fees', 'get_raw_insurance_data'],
-        handler: async (input: any, context: { userId: string }) => {
-            logger.warn({
-                event: 'deprecated_tool_called',
-                tool: 'get_cost_estimate',
-                message: 'Use get_procedure_fees + get_raw_insurance_data primitives instead',
-            });
-
-            // Mock cost estimate
-            const procedures = input.procedureCodes.map((code: string, index: number) => ({
-                code,
-                description: `Procedure ${code}`,
-                facilityFee: 200 + (index * 100),
-                professionalFee: 150 + (index * 50),
-            }));
-
-            const totalCharge = procedures.reduce(
-                (sum: number, p: any) => sum + p.facilityFee + p.professionalFee,
-                0
-            );
-
-            const insuranceEstimate = input.includeInsurance ? {
-                coveredAmount: totalCharge * 0.8,
-                patientResponsibility: totalCharge * 0.2,
-                appliedToDeductible: Math.min(totalCharge * 0.2, 750),
-            } : null;
-
-            return {
-                success: true,
-                data: {
-                    patientId: input.patientId,
-                    procedures,
-                    totalCharge,
-                    insuranceEstimate,
-                    disclaimer: 'This is an estimate only. Actual costs may vary based on services provided.',
-                    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                },
-            };
-        },
+        name: 'update_claim_status',
+        description: 'Update claim status and financials (approved, paid, denied). Records allowed amount, paid amount, and denial information.',
+        inputSchema: UpdateClaimStatusSchema,
+        handler: updateClaimStatusHandler,
     },
 ];
 

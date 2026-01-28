@@ -488,6 +488,62 @@ export const appointmentTools: MCPTool[] = [
     },
 
     {
+        name: 'send_appointment_reminder',
+        description: 'Send a reminder notification to a patient about their upcoming appointment',
+        category: 'appointment',
+        inputSchema: z.object({
+            appointmentId: z.string().describe('The appointment ID'),
+            patientId: z.string().describe('The patient UUID'),
+            channel: z.enum(['email', 'sms', 'push', 'all']).default('all').describe('Notification channel(s)'),
+            customMessage: z.string().optional().describe('Optional custom message to include'),
+        }),
+        requiredPermissions: ['patient:read', 'notification:write'],
+        handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
+            // Create notification record
+            try {
+                const notification = await prisma.notification.create({
+                    data: {
+                        patientId: input.patientId,
+                        type: 'APPOINTMENT_REMINDER',
+                        title: 'Appointment Reminder',
+                        message: input.customMessage || 'You have an upcoming appointment. Please confirm your attendance.',
+                        priority: 'MEDIUM',
+                        channel: input.channel,
+                        metadata: JSON.stringify({ appointmentId: input.appointmentId }),
+                    },
+                });
+
+                logger.info({
+                    event: 'appointment_reminder_sent',
+                    appointmentId: input.appointmentId,
+                    patientId: input.patientId,
+                    notificationId: notification.id,
+                    channel: input.channel,
+                    agentId: context.agentId,
+                });
+
+                return {
+                    success: true,
+                    data: {
+                        notificationId: notification.id,
+                        appointmentId: input.appointmentId,
+                        patientId: input.patientId,
+                        channel: input.channel,
+                        sentAt: notification.createdAt.toISOString(),
+                    },
+                };
+            } catch (error: any) {
+                logger.error({
+                    event: 'appointment_reminder_failed',
+                    appointmentId: input.appointmentId,
+                    error: error.message,
+                });
+                return { success: false, error: error.message, data: null };
+            }
+        },
+    },
+
+    {
         name: 'check_availability',
         description: '[DEPRECATED: Use get_available_slots] Check availability with pre-filtered available slots.',
         category: 'appointment',
