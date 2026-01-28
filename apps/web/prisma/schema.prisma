@@ -64,6 +64,7 @@ model User {
   doctorPreferences     DoctorPreferences?
   notificationTemplates NotificationTemplate[]
   createdTemplates      ClinicalTemplate[]     @relation("CreatedTemplates")
+  clinicalReferrals     ClinicalReferral[]     @relation("ReferringClinician")
 
   // Prevention Hub
   preventionTemplates        PreventionPlanTemplate[]        @relation("CreatedTemplates")
@@ -1005,9 +1006,12 @@ model Patient {
   receivedAccess      DataAccessGrant[]    @relation("GrantedToUser")
   invoices            Invoice[]
   payments            Payment[]
+  patientInsurance    PatientInsurance[]
+  insuranceClaims     InsuranceClaim[]
   aiUsageLogs         AIUsageLog[]
   vitalSigns          VitalSign[]
   diagnoses           Diagnosis[]
+  clinicalReferrals   ClinicalReferral[]
 
   // Palliative care relations
   carePlans                 CarePlan[]
@@ -2842,6 +2846,11 @@ model FormInstance {
   progressPercent  Int @default(0)
   currentStepIndex Int @default(0)
 
+  // Review tracking
+  reviewedBy String?
+  reviewedAt DateTime?
+  notes      String?  @db.Text
+
   // Audit trail
   dataHash  String? // SHA-256 of final submission
   ipAddress String?
@@ -2868,6 +2877,7 @@ enum FormStatus {
   IN_PROGRESS // Patient started filling
   COMPLETED // Submitted but not signed
   SIGNED // Fully completed with signature
+  REVIEWED // Clinician reviewed submission
   EXPIRED // Link expired
   REVOKED // Clinician revoked access
 }
@@ -3413,6 +3423,175 @@ enum PaymentStatus {
   REFUNDED // Payment refunded
   PARTIALLY_REFUNDED // Payment partially refunded
   DISPUTED // Payment disputed/chargeback
+}
+
+// ============================================================================
+// PATIENT INSURANCE (Insurance coverage tracking)
+// ============================================================================
+
+model PatientInsurance {
+  id String @id @default(cuid())
+
+  // Patient relationship
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Insurance type
+  insuranceType InsuranceType @default(PRIMARY)
+
+  // Payer information
+  payerId   String // e.g., "EHI001", "UNIMED-SP"
+  payerName String // e.g., "Example Health Insurance"
+  payerType String @default("COMMERCIAL") // COMMERCIAL, MEDICARE, MEDICAID, VA, OTHER
+
+  // Plan information
+  planId   String // e.g., "PLN-PPO-2025"
+  planName String // e.g., "PPO Standard"
+  planType String @default("PPO") // PPO, HMO, EPO, POS, HDHP
+
+  // Subscriber information
+  memberId               String // Member ID on insurance card
+  groupNumber            String? // Group number
+  subscriberName         String? // Name of policy holder
+  relationshipToPatient  String  @default("SELF") // SELF, SPOUSE, CHILD, OTHER
+
+  // Coverage dates
+  effectiveDate   DateTime
+  terminationDate DateTime?
+
+  // Coverage details
+  inNetworkDeductible    Int? // In cents
+  outOfNetworkDeductible Int? // In cents
+  inNetworkOopMax        Int? // Out-of-pocket max in cents
+  outOfNetworkOopMax     Int? // Out-of-pocket max in cents
+  coinsurancePercent     Int? // e.g., 20 for 20%
+
+  // Copays (stored in cents)
+  copayPrimaryCare   Int?
+  copaySpecialist    Int?
+  copayUrgentCare    Int?
+  copayEmergencyRoom Int?
+  copayGenericRx     Int?
+  copayBrandRx       Int?
+
+  // Verification
+  isVerified       Boolean   @default(false)
+  lastVerifiedAt   DateTime?
+  verificationNote String?   @db.Text
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  claims InsuranceClaim[]
+
+  @@unique([patientId, insuranceType]) // One primary, one secondary per patient
+  @@index([patientId])
+  @@index([memberId])
+  @@index([payerId])
+  @@map("patient_insurance")
+}
+
+enum InsuranceType {
+  PRIMARY
+  SECONDARY
+  TERTIARY
+}
+
+// ============================================================================
+// INSURANCE CLAIMS (Claims submitted to payers)
+// ============================================================================
+
+model InsuranceClaim {
+  id String @id @default(cuid())
+
+  // Patient relationship
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Insurance relationship
+  patientInsuranceId String?
+  patientInsurance   PatientInsurance? @relation(fields: [patientInsuranceId], references: [id], onDelete: SetNull)
+
+  // Encounter reference
+  encounterId String?
+
+  // Claim identification
+  claimNumber   String  @unique // Auto-generated: CLM-2026-00001
+  externalClaimId String? // Payer's claim reference
+
+  // Claim details
+  status          InsuranceClaimStatus @default(SUBMITTED)
+  claimType       String               @default("PROFESSIONAL") // PROFESSIONAL, INSTITUTIONAL
+  placeOfService  String               @default("11") // CMS place of service code
+
+  // Service information
+  serviceDate     DateTime
+  admissionDate   DateTime?
+  dischargeDate   DateTime?
+
+  // Diagnosis codes (ICD-10)
+  diagnosisCodes Json // Array of ICD-10 codes
+
+  // Procedure codes (CPT/HCPCS)
+  procedureCodes Json // Array of procedure codes with modifiers
+
+  // Financial amounts (in cents)
+  billedAmount           Int // Total amount billed
+  allowedAmount          Int? // Amount allowed by payer
+  paidAmount             Int? // Amount paid by insurance
+  adjustmentAmount       Int? // Contractual adjustments
+  patientResponsibility  Int? // Patient's share (copay + coinsurance + deductible)
+  deductibleApplied      Int? // Amount applied to deductible
+  coinsuranceAmount      Int? // Patient coinsurance amount
+  copayAmount            Int? // Patient copay amount
+
+  // Denial information
+  denialCode   String? // Payer denial code
+  denialReason String? @db.Text // Denial reason description
+
+  // Dates
+  submittedAt DateTime  @default(now())
+  processedAt DateTime?
+  paidAt      DateTime?
+  appealedAt  DateTime?
+
+  // Appeal information
+  appealStatus String? // PENDING, APPROVED, DENIED
+  appealNote   String? @db.Text
+
+  // Provider information
+  renderingProviderId String? // Clinician who performed service
+  billingProviderId   String? // Provider responsible for billing
+
+  // Metadata
+  notes     String? @db.Text
+  createdBy String? // User who submitted claim
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientId])
+  @@index([patientInsuranceId])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([claimNumber])
+  @@map("insurance_claims")
+}
+
+enum InsuranceClaimStatus {
+  DRAFT       // Claim created but not submitted
+  SUBMITTED   // Claim submitted to payer
+  PENDING     // Claim received, pending processing
+  IN_REVIEW   // Claim under review
+  APPROVED    // Claim approved for payment
+  PAID        // Claim paid
+  DENIED      // Claim denied
+  APPEALED    // Claim under appeal
+  VOIDED      // Claim voided
 }
 
 // ============================================================================
@@ -6704,4 +6883,74 @@ enum RuleType {
   CLINICAL       // Drug interactions, allergies, clinical guidelines
   ADMINISTRATIVE // Documentation requirements, prior auth
   BILLING        // TISS codes, plan coverage, glosa prevention
+}
+
+// =============================================================================
+// CLINICAL REFERRAL SYSTEM
+// Medical referrals to specialists (distinct from product/user referrals)
+// =============================================================================
+
+model ClinicalReferral {
+  id        String @id @default(cuid())
+
+  // Patient being referred
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  // Referring clinician
+  referringClinicianId String
+  referringClinician   User @relation("ReferringClinician", fields: [referringClinicianId], references: [id])
+
+  // Specialist details
+  specialty         String          // e.g., "Cardiology", "Endocrinology"
+  preferredProvider String?         // Preferred specialist name/ID
+  receivingProvider String?         // Actual specialist who accepts
+
+  // Referral details
+  priority       ClinicalReferralPriority @default(ROUTINE)
+  status         ClinicalReferralStatus   @default(PENDING)
+  reason         String   @db.Text        // Clinical reason for referral
+  clinicalNotes  String?  @db.Text        // Notes for the specialist
+
+  // Attachments flags
+  includeDiagnoses   Boolean @default(true)
+  includeMedications Boolean @default(true)
+  includeLabResults  Boolean @default(false)
+
+  // Specialist response
+  specialistResponse String?   @db.Text
+  appointmentDate    DateTime?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  acceptedAt  DateTime?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  // Cancellation
+  cancellationReason String?
+
+  @@index([patientId])
+  @@index([referringClinicianId])
+  @@index([specialty])
+  @@index([status])
+  @@index([priority])
+  @@map("clinical_referrals")
+}
+
+enum ClinicalReferralPriority {
+  ROUTINE   // Standard referral, no urgency
+  URGENT    // Needs to be seen within days
+  EMERGENT  // Immediate specialist consultation needed
+}
+
+enum ClinicalReferralStatus {
+  PENDING    // Referral created, awaiting acceptance
+  ACCEPTED   // Specialist accepted the referral
+  SCHEDULED  // Appointment scheduled with specialist
+  COMPLETED  // Referral completed, patient seen
+  CANCELLED  // Referral cancelled
+  REJECTED   // Specialist rejected the referral
 }

@@ -326,6 +326,32 @@ export const GetMessagesSchema = z.object({
     before: z.string().optional().describe('Get messages before this message ID (pagination)'),
 });
 
+export const GetConversationSchema = z.object({
+    conversationId: UUIDSchema.describe('The conversation ID to retrieve'),
+});
+
+export const UpdateConversationSchema = z.object({
+    conversationId: UUIDSchema.describe('The conversation ID to update'),
+    title: z.string().optional().describe('Updated title'),
+    description: z.string().optional().describe('Updated description'),
+    isArchived: z.boolean().optional().describe('Archive status'),
+});
+
+export const DeleteConversationSchema = z.object({
+    conversationId: UUIDSchema.describe('The conversation ID to archive'),
+    reason: z.string().min(5).describe('Reason for archiving'),
+});
+
+export const UpdateMessageSchema = z.object({
+    messageId: UUIDSchema.describe('The message ID to update'),
+    content: z.string().min(1).describe('Updated message content'),
+});
+
+export const DeleteMessageSchema = z.object({
+    messageId: UUIDSchema.describe('The message ID to delete'),
+    reason: z.string().min(5).describe('Reason for deletion'),
+});
+
 // =============================================================================
 // TYPE EXPORTS
 // =============================================================================
@@ -367,6 +393,11 @@ export type CreateConversationInput = z.infer<typeof CreateConversationSchema>;
 export type GetConversationsInput = z.infer<typeof GetConversationsSchema>;
 export type CreateMessageInput = z.infer<typeof CreateMessageSchema>;
 export type GetMessagesInput = z.infer<typeof GetMessagesSchema>;
+export type GetConversationInput = z.infer<typeof GetConversationSchema>;
+export type UpdateConversationInput = z.infer<typeof UpdateConversationSchema>;
+export type DeleteConversationInput = z.infer<typeof DeleteConversationSchema>;
+export type UpdateMessageInput = z.infer<typeof UpdateMessageSchema>;
+export type DeleteMessageInput = z.infer<typeof DeleteMessageSchema>;
 
 // =============================================================================
 // APPOINTMENT UPDATE SCHEMA
@@ -543,10 +574,11 @@ export const FormStatusEnum = z.enum([
     'PENDING',
     'VIEWED',
     'IN_PROGRESS',
-    'SUBMITTED',
+    'COMPLETED',
     'SIGNED',
+    'REVIEWED',
     'EXPIRED',
-    'CANCELLED',
+    'REVOKED',
 ]);
 
 export const CreateFormSchema = z.object({
@@ -585,6 +617,37 @@ export const ListFormInstancesSchema = z.object({
     patientId: UUIDSchema.describe('The patient ID to list form instances for'),
     status: FormStatusEnum.optional().describe('Filter by form status'),
     ...PaginationSchema.shape,
+});
+
+export const GetFormSchema = z.object({
+    templateId: UUIDSchema.describe('The form template ID to retrieve'),
+});
+
+export const UpdateFormSchema = z.object({
+    templateId: UUIDSchema.describe('The form template ID to update'),
+    title: z.string().min(1).optional().describe('Updated title'),
+    description: z.string().optional().describe('Updated description'),
+    structure: z.record(z.any()).optional().describe('Updated form structure'),
+    tags: z.array(z.string()).optional().describe('Updated tags'),
+    estimatedMinutes: z.number().int().min(1).optional().describe('Updated estimated time'),
+    isActive: z.boolean().optional().describe('Active status'),
+});
+
+export const DeleteFormSchema = z.object({
+    templateId: UUIDSchema.describe('The form template ID to archive'),
+    reason: z.string().min(5).describe('Reason for archiving'),
+});
+
+export const UpdateFormInstanceSchema = z.object({
+    formInstanceId: UUIDSchema.describe('The form instance ID to update'),
+    status: FormStatusEnum.optional().describe('Updated status'),
+    reviewedAt: z.string().optional().describe('Date reviewed by clinician (ISO format)'),
+    notes: z.string().optional().describe('Clinician notes'),
+});
+
+export const DeleteFormInstanceSchema = z.object({
+    formInstanceId: UUIDSchema.describe('The form instance ID to revoke'),
+    reason: z.string().min(5).describe('Reason for revocation'),
 });
 
 // =============================================================================
@@ -712,6 +775,11 @@ export type GetFormResponsesInput = z.infer<typeof GetFormResponsesSchema>;
 export type ListFormsInput = z.infer<typeof ListFormsSchema>;
 export type GetFormInstanceInput = z.infer<typeof GetFormInstanceSchema>;
 export type ListFormInstancesInput = z.infer<typeof ListFormInstancesSchema>;
+export type GetFormInput = z.infer<typeof GetFormSchema>;
+export type UpdateFormInput = z.infer<typeof UpdateFormSchema>;
+export type DeleteFormInput = z.infer<typeof DeleteFormSchema>;
+export type UpdateFormInstanceInput = z.infer<typeof UpdateFormInstanceSchema>;
+export type DeleteFormInstanceInput = z.infer<typeof DeleteFormInstanceSchema>;
 
 // =============================================================================
 // PORTAL TYPE EXPORTS
