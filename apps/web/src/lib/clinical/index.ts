@@ -1,38 +1,23 @@
 /**
- * Clinical Intelligence Module
- *
- * Entry point for all clinical decision support functionality.
- *
- * Implements the Clinical Intelligence MVP per the architectural laws:
- * - Law 1: Logic-as-Data (rules in database, not code)
- * - Law 3: Design for Failure (processWithFallback pattern)
- * - Law 4: Hybrid Core (AI extracts, deterministic executes)
- * - Law 5: Data Contract (Zod validation on all AI outputs)
- * - Law 7: Context Merging (AI output + patient history before rules)
+ * Clinical Services Index
+ * 
+ * Unified exports for all clinical data integration services.
  */
 
-// Core fallback pattern
-export {
-  processWithFallback,
-  ClinicalProcessor,
-  FallbackError,
-  type ProcessingResult,
-  type FallbackOptions,
-} from './process-with-fallback';
+// Drug Services
+export { rxnormService } from './rxnorm.service';
+export { openFDAService } from './openfda.service';
 
-// Clinical engines
-export {
-  SymptomDiagnosisEngine,
-  symptomDiagnosisEngine,
-  TreatmentProtocolEngine,
-  treatmentProtocolEngine,
-  MedicationAdherenceEngine,
-  medicationAdherenceEngine,
-} from './engines';
+// Prevention Services
+export { uspstfService } from './uspstf.service';
 
-// Context merging (Law 7)
-export { ContextMerger, contextMerger } from './context';
+// International Standards
+export { icd11Service } from './icd11.service';
+export { internationalGuidelinesService } from './international-guidelines.service';
+export { snomedService } from './snomed.service';
 
-// Re-export lab utilities (existing)
-export * from './lab-decision-rules';
-export * from './lab-reference-ranges';
+// Clinical Trials
+export { clinicalTrialsService } from './clinical-trials.service';
+
+// Coverage & Payer
+export { cmsCoverageService } from './cms-coverage.service';

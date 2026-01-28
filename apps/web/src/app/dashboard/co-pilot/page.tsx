@@ -41,6 +41,13 @@ import { CoPilotPreventionHubMini } from '@/components/co-pilot/CoPilotPreventio
 import { setSocketClient } from '@/lib/socket/client';
 import type { PreventionConditionDetectedPayload, PreventionFindingsProcessedPayload } from '@/lib/prevention/realtime';
 
+// --- Governance / UX-01 Imports ---
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
+import RiskCard from '@/components/governance/RiskCard';
+import { useSafetyInterceptor } from '@/hooks/useSafetyInterceptor';
+// ----------------------------------
+
 export const dynamic = 'force-dynamic';
 
 // Droppable Tool Workspace Component
@@ -143,6 +150,17 @@ function CoPilotContent() {
   const { data: session } = useSession();
   const { t: tRaw } = useLanguage();
   const t = (key: string) => tRaw(`copilot.${key}`);
+
+  // Governance / Safety Layer (UX-01)
+  const { toast } = useToast();
+  const {
+    activeBlock,
+    dismissBlock,
+    handleOverride,
+    triggerRedBlock,
+    triggerYellowNudge
+  } = useSafetyInterceptor(toast);
+
   const {
     state,
     updateTranscript,
@@ -244,6 +262,7 @@ function CoPilotContent() {
 
   const isScribeCoolingDown = scribeCooldownUntilMs != null && Date.now() < scribeCooldownUntilMs;
 
+
   useEffect(() => {
     if (scribeCooldownUntilMs == null) return;
     const ms = Math.max(0, scribeCooldownUntilMs - Date.now());
@@ -295,12 +314,12 @@ function CoPilotContent() {
     try {
       const saved = window.localStorage.getItem('holi.speechLanguage');
       if (saved === 'auto' || saved === 'en' || saved === 'es' || saved === 'pt') setSpeechLanguage(saved);
-    } catch {}
+    } catch { }
   }, []);
   useEffect(() => {
     try {
       window.localStorage.setItem('holi.speechLanguage', speechLanguage);
-    } catch {}
+    } catch { }
   }, [speechLanguage]);
 
   // V3: Float32 -> PCM16 conversion and resampling happens off-main-thread in AudioWorklet.
@@ -432,7 +451,7 @@ function CoPilotContent() {
     // Join (or re-join) the right room after sessionId updates.
     try {
       socket.emit('co_pilot:join_session', { sessionId: state.sessionId });
-    } catch {}
+    } catch { }
 
     // Start the audio worklet pipeline (connect can happen before state/sessionId/audioStream).
     if (realtimeStartedForSessionRef.current !== state.sessionId) {
@@ -456,7 +475,7 @@ function CoPilotContent() {
       try {
         void audioRecorder.stop();
         void audioRecorder.start(audioStream);
-      } catch {}
+      } catch { }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useRealTimeMode, state.isRecording, state.sessionId, audioStream, scribeDebug.socketConnected]);
@@ -546,7 +565,7 @@ function CoPilotContent() {
       try {
         // If it's a scroll container, scroll it to top.
         (el as any).scrollTo?.({ top: 0, behavior: 'smooth' });
-      } catch {}
+      } catch { }
     }
     setScribeAttention(true);
     window.setTimeout(() => setScribeAttention(false), 1200);
@@ -594,7 +613,7 @@ function CoPilotContent() {
   // This enables fast CDS prompts without re-processing the entire chart on every interaction.
   useEffect(() => {
     if (!selectedPatient?.id) return;
-    fetch(`/api/patients/${selectedPatient.id}/dossier/ensure`, { method: 'POST' }).catch(() => {});
+    fetch(`/api/patients/${selectedPatient.id}/dossier/ensure`, { method: 'POST' }).catch(() => { });
   }, [selectedPatient?.id]);
 
   useEffect(() => {
@@ -683,7 +702,7 @@ function CoPilotContent() {
     return () => {
       try {
         URL.revokeObjectURL(url);
-      } catch {}
+      } catch { }
     };
   }, [uploadPendingFile]);
 
@@ -808,8 +827,8 @@ function CoPilotContent() {
     const url =
       kind === 'xray'
         ? ['/demo/xray-chest.svg', '/demo/xray-hand.svg', '/demo/xray-knee.svg'][
-            Math.floor(Math.random() * 3)
-          ]
+        Math.floor(Math.random() * 3)
+        ]
         : kind === 'lab'
           ? '/demo/lab-cbc-sample.png'
           : kind === 'consult'
@@ -941,7 +960,7 @@ function CoPilotContent() {
     try {
       const next = getToolUsage(toolId) + 1;
       window.localStorage.setItem(`holi.toolUsage.${toolId}`, String(next));
-    } catch {}
+    } catch { }
     setToolUsageTick((x) => x + 1);
   };
 
@@ -1115,14 +1134,14 @@ function CoPilotContent() {
         if (cur?.connected || cur?.active || cur?.connecting) return;
         try {
           cur?.disconnect?.();
-        } catch {}
+        } catch { }
         wsRef.current = null;
       }
       socketInitInFlightRef.current = true;
 
       // Import socket.io client dynamically
       const { io } = await import('socket.io-client');
-      
+
       // Get auth token
       const tokenResponse = await fetch('/api/auth/socket-token');
       if (!tokenResponse.ok) throw new Error('Failed to get socket token');
@@ -1131,8 +1150,8 @@ function CoPilotContent() {
 
       // Ensure Socket.IO server is bootstrapped in Next.js (dev/self-host).
       // This endpoint attaches the Socket.IO server to the underlying HTTP server.
-      await fetch('/api/socketio').catch(() => {});
-      
+      await fetch('/api/socketio').catch(() => { });
+
       const socket = io({
         path: '/api/socket.io',
         auth: { token },
@@ -1145,7 +1164,7 @@ function CoPilotContent() {
       // Register this socket as the singleton so Prevention Hub subscribers can reuse it.
       try {
         setSocketClient(socket as any);
-      } catch {}
+      } catch { }
 
       const startRealtimeAudioStreaming = () => {
         // Use sessionIdRef.current to avoid stale closure
@@ -1174,7 +1193,7 @@ function CoPilotContent() {
             audioSourceRef.current?.disconnect();
             audioGainRef.current?.disconnect();
             audioCtxRef.current?.close?.();
-          } catch {}
+          } catch { }
 
           // V3: AudioWorklet pipeline (off-main-thread)
           void audioRecorder.stop();
@@ -1258,9 +1277,9 @@ function CoPilotContent() {
                   diagnoses,
                   entities,
                 }),
-              }).catch(() => {});
+              }).catch(() => { });
             }
-          } catch {}
+          } catch { }
         }
       });
 
@@ -1509,7 +1528,7 @@ function CoPilotContent() {
         setShowDisclosureModal(true);
         return;
       }
-    } catch {}
+    } catch { }
 
     // Then show patient consent modal
     setShowConsentModal(true);
@@ -1637,7 +1656,7 @@ function CoPilotContent() {
     // Stop realtime audio graph
     try {
       await audioRecorder.stop();
-    } catch {}
+    } catch { }
     audioProcessorRef.current = null;
     audioSourceRef.current = null;
     audioGainRef.current = null;
@@ -1654,11 +1673,11 @@ function CoPilotContent() {
         if (state.sessionId) {
           (wsRef.current as any).emit('co_pilot:stop_stream', { sessionId: state.sessionId });
         }
-      } catch {}
+      } catch { }
       try {
         // Socket.IO client uses disconnect(); WebSocket close() would throw.
         (wsRef.current as any).disconnect?.();
-      } catch {}
+      } catch { }
       wsRef.current = null;
     }
 
@@ -1729,7 +1748,7 @@ function CoPilotContent() {
         onAccept={() => {
           try {
             window.localStorage.setItem('holi.disclosureAccepted.v1', 'true');
-          } catch {}
+          } catch { }
           setShowDisclosureModal(false);
           setShowConsentModal(true);
         }}
@@ -1841,16 +1860,16 @@ function CoPilotContent() {
                   </div>
                 ) : (
                   filteredPatients.slice(0, 60).map((patient) => (
-                  <button
-                    key={patient.id}
-                    onClick={() => setSelectedPatient(patient)}
-                    className="text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
-                  >
-                    <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                      {formatPatientDisplayName(patient.firstName, patient.lastName)}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">MRN: {patient.mrn}</div>
-                  </button>
+                    <button
+                      key={patient.id}
+                      onClick={() => setSelectedPatient(patient)}
+                      className="text-left p-4 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
+                    >
+                      <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                        {formatPatientDisplayName(patient.firstName, patient.lastName)}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">MRN: {patient.mrn}</div>
+                    </button>
                   ))
                 )}
               </div>
@@ -2076,9 +2095,8 @@ function CoPilotContent() {
         {/* Left Panel: The Ear (Scribe) - Transcript & SOAP */}
         <div
           id="scribe-panel"
-          className={`flex-1 lg:w-1/2 bg-white dark:bg-gray-800 overflow-y-auto transition-all ${
-            scribeAttention ? 'ring-4 ring-purple-500/40 shadow-2xl' : ''
-          }`}
+          className={`flex-1 lg:w-1/2 bg-white dark:bg-gray-800 overflow-y-auto transition-all ${scribeAttention ? 'ring-4 ring-purple-500/40 shadow-2xl' : ''
+            }`}
         >
           <div className="p-6">
             {/* Always-visible AI Scribe "tool" (even before transcript exists) */}
@@ -2224,7 +2242,7 @@ function CoPilotContent() {
                 </h3>
                 <TranscriptViewer
                   segments={state.transcript}
-                  onSegmentCorrect={() => {}}
+                  onSegmentCorrect={() => { }}
                   readonly={state.isRecording}
                 />
               </div>
@@ -2306,7 +2324,7 @@ function CoPilotContent() {
         {/* Right Panel: Co-Pilot Toolkit */}
         <div className="flex-1 lg:w-1/2 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-y-auto">
           <div className="p-6 space-y-6">
-            
+
             {/* Header */}
             <div className="backdrop-blur-xl bg-white/80 dark:bg-gray-800/80 rounded-2xl border border-white/30 dark:border-gray-700/50 shadow-lg p-6 relative">
               <div className="flex items-start justify-between mb-3">
@@ -2490,6 +2508,24 @@ function CoPilotContent() {
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-500/0 to-teal-600/0 group-hover:from-emerald-500/5 group-hover:to-teal-600/5 transition-all"></div>
                 </button>
 
+                {/* Governance / Mission Control Tool */}
+                <button
+                  onClick={() => {
+                    window.open('/dashboard/governance', '_blank');
+                  }}
+                  className="group relative p-4 rounded-xl bg-gradient-to-br from-red-500/10 to-orange-600/10 hover:from-red-500/20 hover:to-orange-600/20 border border-red-200/50 dark:border-red-700/30 transition-all hover:shadow-lg"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-md">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center leading-tight">Governance</span>
+                  </div>
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-500/0 to-orange-600/0 group-hover:from-red-500/5 group-hover:to-orange-600/5 transition-all"></div>
+                </button>
+
                 {/* Add More Tools Button */}
                 <button
                   onClick={() => {
@@ -2558,9 +2594,9 @@ function CoPilotContent() {
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(JSON.stringify(patientContext || {}, null, 2));
-                        showToast({ type: 'success', title: 'Copied', message: 'Patient snapshot copied to clipboard.' });
+                          showToast({ type: 'success', title: 'Copied', message: 'Patient snapshot copied to clipboard.' });
                         } catch {
-                        showToast({ type: 'error', title: 'Copy failed', message: 'Could not copy to clipboard.' });
+                          showToast({ type: 'error', title: 'Copy failed', message: 'Could not copy to clipboard.' });
                         }
                       }}
                       className="text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -2849,31 +2885,28 @@ function CoPilotContent() {
                   <div className="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
                     <button
                       onClick={() => setRightPanelTab('labs')}
-                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${
-                        rightPanelTab === 'labs'
-                          ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
-                          : 'text-gray-600 dark:text-gray-300'
-                      }`}
+                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${rightPanelTab === 'labs'
+                        ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
+                        : 'text-gray-600 dark:text-gray-300'
+                        }`}
                     >
                       Labs
                     </button>
                     <button
                       onClick={() => setRightPanelTab('risk')}
-                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${
-                        rightPanelTab === 'risk'
-                          ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
-                          : 'text-gray-600 dark:text-gray-300'
-                      }`}
+                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${rightPanelTab === 'risk'
+                        ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
+                        : 'text-gray-600 dark:text-gray-300'
+                        }`}
                     >
                       Risk
                     </button>
                     <button
                       onClick={() => setRightPanelTab('uploads')}
-                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${
-                        rightPanelTab === 'uploads'
-                          ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
-                          : 'text-gray-600 dark:text-gray-300'
-                      }`}
+                      className={`px-3 py-2 text-sm font-semibold rounded-lg ${rightPanelTab === 'uploads'
+                        ? 'bg-white dark:bg-gray-900 shadow text-gray-900 dark:text-white'
+                        : 'text-gray-600 dark:text-gray-300'
+                        }`}
                     >
                       Uploads
                     </button>
@@ -2984,11 +3017,10 @@ function CoPilotContent() {
                     {/* Dropzone */}
                     <div
                       {...getRootProps()}
-                      className={`rounded-2xl border-2 border-dashed p-6 transition ${
-                        isDragActive
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/30'
-                      }`}
+                      className={`rounded-2xl border-2 border-dashed p-6 transition ${isDragActive
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-900/30'
+                        }`}
                     >
                       <input {...getInputProps()} />
                       <div className="flex items-center justify-between gap-4">

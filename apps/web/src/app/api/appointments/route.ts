@@ -19,6 +19,7 @@ import {
   CreateAppointmentSchema,
   AppointmentQuerySchema,
 } from '@/lib/api/schemas';
+import { emitAppointmentEvent } from '@/lib/socket-server';
 
 // ============================================================================
 // POST /api/appointments - Create appointment
@@ -118,6 +119,24 @@ export const POST = createProtectedRoute(
           },
         },
       },
+    });
+
+    // Emit Socket.IO event for real-time UI updates
+    emitAppointmentEvent({
+      id: appointment.id,
+      action: 'created',
+      patientId: appointment.patientId,
+      patientName: appointment.patient
+        ? `${appointment.patient.firstName} ${appointment.patient.lastName}`
+        : undefined,
+      clinicianId: appointment.clinicianId,
+      clinicianName: appointment.clinician
+        ? `${appointment.clinician.firstName} ${appointment.clinician.lastName}`
+        : undefined,
+      appointmentType: appointment.type || undefined,
+      startTime: appointment.startTime,
+      userId: context.user?.id || validated.clinicianId,
+      userName: context.user?.name || context.user?.email,
     });
 
     // TODO: Send calendar invites (Google Calendar/Outlook integration)

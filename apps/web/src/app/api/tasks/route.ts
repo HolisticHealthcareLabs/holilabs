@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { emitTaskCreatedEvent } from '@/lib/socket-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -173,6 +174,21 @@ export async function POST(request: NextRequest) {
       taskId: task.id,
       category: task.category,
       priority: task.priority,
+    });
+
+    // Real-time Socket.IO broadcast for task creation
+    // Pushes to assignee's room for immediate UI update
+    emitTaskCreatedEvent({
+      id: task.id,
+      title: task.title,
+      category: task.category,
+      priority: task.priority as 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW',
+      status: task.status as 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DISMISSED',
+      assignedTo: task.assignedTo,
+      dueDate: task.dueDate ?? undefined,
+      relatedType: task.relatedType ?? undefined,
+      relatedId: task.relatedId ?? undefined,
+      userId: assignedTo, // Creator is also the context user
     });
 
     return NextResponse.json({

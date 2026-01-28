@@ -15,6 +15,7 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
 import { MedicalAudioStreamer, type MedicalSegment } from '@/lib/transcription/MedicalAudioStreamer';
+import { governance, type GovernanceVerdict } from '@/lib/governance/governance.service';
 
 export type ScribeLanguage = 'en' | 'es' | 'pt';
 
@@ -28,6 +29,7 @@ type LiveSession = {
   requestId?: string;
   activeSockets: Set<string>;
   patientId: string;
+  governanceContext?: { conditions: string[] };
 };
 
 type PersistedTranscriptSegment = {
@@ -41,6 +43,7 @@ type PersistedTranscriptSegment = {
   endTime: number; // seconds
   confidence: number;
   capturedAtMs?: number; // wall-clock time when emitted
+  governance?: GovernanceVerdict; // [BACK-02] Traffic Cop Verdict
 };
 
 type LiveTranscriptState = {
@@ -171,7 +174,7 @@ export class ScribeService {
     }
   >();
 
-  constructor(private readonly emit: CoPilotEmit) {}
+  constructor(private readonly emit: CoPilotEmit) { }
 
   private getUtteranceSeq(sessionId: string, speakerIndex: number): number {
     let m = this.utteranceSeqBySession.get(sessionId);
@@ -260,7 +263,7 @@ export class ScribeService {
     if (!s) return;
     s.activeSockets.delete(socketId);
     if (s.activeSockets.size === 0) {
-      await this.stopAndPersist(sessionId).catch(() => {});
+      await this.stopAndPersist(sessionId).catch(() => { });
     }
   }
 
@@ -269,7 +272,7 @@ export class ScribeService {
       if (s.activeSockets.has(socketId)) {
         s.activeSockets.delete(socketId);
         if (s.activeSockets.size === 0) {
-          await this.stopAndPersist(sessionId).catch(() => {});
+          await this.stopAndPersist(sessionId).catch(() => { });
         }
       }
     }
@@ -320,7 +323,7 @@ export class ScribeService {
     const confidence =
       st.segments.length > 0
         ? st.segments.reduce((sum, seg) => sum + (Number.isFinite(seg.confidence) ? seg.confidence : 0.9), 0) /
-          st.segments.length
+        st.segments.length
         : 0.9;
     const durationSeconds = Math.max(0, st.maxEndSeconds);
 
@@ -353,7 +356,7 @@ export class ScribeService {
   private async stopAndPersist(sessionId: string) {
     const s = this.sessions.get(sessionId);
     if (s) {
-      await s.streamer.stop().catch(() => {});
+      await s.streamer.stop().catch(() => { });
       this.sessions.delete(sessionId);
       const active = this.activeSessionByClinician.get(s.clinicianId);
       if (active === sessionId) this.activeSessionByClinician.delete(s.clinicianId);
@@ -364,7 +367,7 @@ export class ScribeService {
     }
     this.interimBySession.delete(sessionId);
     this.utteranceSeqBySession.delete(sessionId);
-    await this.persistTranscript(sessionId).catch(() => {});
+    await this.persistTranscript(sessionId).catch(() => { });
     this.liveTranscript.delete(sessionId);
     this.failures.delete(sessionId);
   }
@@ -378,17 +381,33 @@ export class ScribeService {
     const { sessionId, requestId, segments, isFinal } = params;
     const out: PersistedTranscriptSegment[] = [];
 
+    // [BACK-02] Retrieve session for context
+    const session = this.sessions.get(sessionId);
+
     for (const seg of segments) {
       const presidioStart = Date.now();
       const safeText = await deidentifyTranscriptOrThrow(seg.text);
       const presidioMs = Date.now() - presidioStart;
       const startTime = Math.max(0, (seg.startTimeMs || 0) / 1000);
       const endTime = Math.max(0, (seg.endTimeMs || 0) / 1000);
-      // Stable log identity: per-speaker utterance index.
-      // This ensures history grows as the conversation progresses, instead of everything collapsing into one row.
       const seq = this.getUtteranceSeq(sessionId, seg.speakerIndex);
       const id = `${seg.speakerIndex}:${seq}`;
       const capturedAtMs = Date.now();
+
+      // [BACK-02] TRAFFIC COP: Fast Lane Check (Only on Final segments or critical updates)
+      let governanceVerdict: GovernanceVerdict | undefined;
+      // Optimisation: Only check governance if Role is Doctor (or unknown) - Patients don't prescribe
+      // And only check if text is long enough to be a command
+      if (safeText.length > 5 && (seg.role === 'DOCTOR' || seg.role === 'UNKNOWN')) {
+        governanceVerdict = await governance.checkFastLane(
+          safeText,
+          {
+            patientId: session?.patientId,
+            conditions: session?.governanceContext?.conditions
+          },
+          sessionId
+        );
+      }
 
       const persisted: PersistedTranscriptSegment = {
         id,
@@ -400,6 +419,7 @@ export class ScribeService {
         endTime,
         confidence: seg.confidence,
         capturedAtMs,
+        governance: governanceVerdict,
       };
       out.push(persisted);
 
@@ -461,7 +481,7 @@ export class ScribeService {
         code: 409,
         shouldStop: true,
       });
-      await this.stopAndPersist(existingActive).catch(() => {});
+      await this.stopAndPersist(existingActive).catch(() => { });
     }
     this.activeSessionByClinician.set(clinicianId, sessionId);
 
@@ -474,185 +494,187 @@ export class ScribeService {
       // If another chunk is already starting the streamer for this session, wait for it.
       const inFlight = this.startInFlightBySession.get(sessionId);
       if (inFlight) {
-        await inFlight.catch(() => {});
+        await inFlight.catch(() => { });
         s = this.sessions.get(sessionId);
       }
     }
 
     if (!s || s.clinicianId !== clinicianId || s.language !== lang || s.inputSampleRate !== srIn) {
       const startPromise = (async () => {
-      try {
-        await s?.streamer?.stop?.();
-      } catch {}
-
-      const contextTerms = await buildPatientContext(owns.patientId);
-
-      const streamer = new MedicalAudioStreamer({
-        apiKey: input.deepgramApiKey,
-        language: lang,
-        sampleRateHz: 16000,
-        channels: 1,
-        chunkMs: 100,
-        keepAliveMs: 5000,
-        endpointingMs: 300,
-        utteranceEndMs: 1000,
-        patientContext: contextTerms,
-        tag: {
-          clinic_id: process.env.CLINIC_ID || 'local',
-          user_id: clinicianId,
-          env: getEnvTag(),
-        },
-        logger,
-      });
-
-      streamer.on('open', ({ model }) => {
-        const st = this.getOrInitTranscript(sessionId, lang);
-        st.model = model;
-      });
-
-      streamer.on('metadata', ({ requestId }) => {
-        const cur = this.sessions.get(sessionId);
-        if (cur && requestId) cur.requestId = requestId;
-        this.emit(sessionId, 'co_pilot:transcription_metadata', { requestId });
-      });
-
-      // Stream lifecycle telemetry (helps diagnose “it stopped” without relying on console logs).
-      streamer.on('warning', ({ message, raw }: any) => {
-        this.emit(sessionId, 'co_pilot:stream_status', {
-          type: 'warning',
-          message: String(message || 'warning'),
-          raw: raw ? undefined : undefined,
-          at: Date.now(),
-        });
-      });
-      streamer.on('reconnect', ({ attempt, delayMs }: any) => {
-        this.emit(sessionId, 'co_pilot:stream_status', {
-          type: 'reconnect',
-          attempt,
-          delayMs,
-          at: Date.now(),
-        });
-      });
-      streamer.on('close', ({ code, reason }: any) => {
-        this.emit(sessionId, 'co_pilot:stream_status', {
-          type: 'close',
-          code,
-          reason,
-          at: Date.now(),
-        });
-      });
-
-      streamer.on('interim', async (segments: MedicalSegment[]) => {
-        // Throttle interim emits to prevent Presidio+UI lag.
-        this.scheduleInterimEmit(sessionId, segments);
-      });
-
-      streamer.on('final', async (segments: MedicalSegment[]) => {
         try {
-          const cur = this.sessions.get(sessionId);
-          const safe = await this.emitSanitizedSegments({ sessionId, requestId: cur?.requestId, segments, isFinal: true });
+          await s?.streamer?.stop?.();
+        } catch { }
+
+        const contextTerms = await buildPatientContext(owns.patientId);
+
+        const streamer = new MedicalAudioStreamer({
+          apiKey: input.deepgramApiKey,
+          language: lang,
+          sampleRateHz: 16000,
+          channels: 1,
+          chunkMs: 100,
+          keepAliveMs: 5000,
+          endpointingMs: 300,
+          utteranceEndMs: 1000,
+          patientContext: contextTerms,
+          tag: {
+            clinic_id: process.env.CLINIC_ID || 'local',
+            user_id: clinicianId,
+            env: getEnvTag(),
+          },
+          logger,
+        });
+
+        streamer.on('open', ({ model }) => {
           const st = this.getOrInitTranscript(sessionId, lang);
-          for (const seg of safe) {
-            st.segments.push(seg);
-            st.speakerSet.add(seg.speakerIndex);
-            st.maxEndSeconds = Math.max(st.maxEndSeconds, seg.endTime || 0);
-            st.rawLines.push(`[${seg.role}] ${seg.text}`);
-          }
-          this.schedulePersist(sessionId);
-        } catch (e: any) {
-          const msg = String(e?.message || 'De-identification failed');
-          this.emit(sessionId, 'co_pilot:transcription_error', {
-            message:
-              msg.includes('De-identification required')
-                ? `${msg}. If you're running locally, start Presidio (PRESIDIO_ANALYZER_URL/PRESIDIO_ANONYMIZER_URL) or set REQUIRE_DEIDENTIFICATION=false for development.`
-                : msg,
+          st.model = model;
+        });
+
+        streamer.on('metadata', ({ requestId }) => {
+          const cur = this.sessions.get(sessionId);
+          if (cur && requestId) cur.requestId = requestId;
+          this.emit(sessionId, 'co_pilot:transcription_metadata', { requestId });
+        });
+
+        // Stream lifecycle telemetry (helps diagnose “it stopped” without relying on console logs).
+        streamer.on('warning', ({ message, raw }: any) => {
+          this.emit(sessionId, 'co_pilot:stream_status', {
+            type: 'warning',
+            message: String(message || 'warning'),
+            raw: raw ? undefined : undefined,
+            at: Date.now(),
           });
-        }
-      });
+        });
+        streamer.on('reconnect', ({ attempt, delayMs }: any) => {
+          this.emit(sessionId, 'co_pilot:stream_status', {
+            type: 'reconnect',
+            attempt,
+            delayMs,
+            at: Date.now(),
+          });
+        });
+        streamer.on('close', ({ code, reason }: any) => {
+          this.emit(sessionId, 'co_pilot:stream_status', {
+            type: 'close',
+            code,
+            reason,
+            at: Date.now(),
+          });
+        });
 
-      streamer.on('error', async ({ message, raw }: any) => {
-        const msg = String(message || raw?.message || 'Deepgram error');
-        const isRateLimited =
-          msg.includes('429') ||
-          msg.includes('Too Many Requests') ||
-          raw?.code === 429 ||
-          raw?.status === 429 ||
-          raw?.statusCode === 429;
+        streamer.on('interim', async (segments: MedicalSegment[]) => {
+          // Throttle interim emits to prevent Presidio+UI lag.
+          this.scheduleInterimEmit(sessionId, segments);
+        });
 
-        if (isRateLimited) {
-          const existingFailure = this.failures.get(sessionId);
-          if (existingFailure && Date.now() < existingFailure.untilMs) {
-            // Already cooling down; avoid repeated emits/toasts.
+        streamer.on('final', async (segments: MedicalSegment[]) => {
+          try {
+            const cur = this.sessions.get(sessionId);
+            const safe = await this.emitSanitizedSegments({ sessionId, requestId: cur?.requestId, segments, isFinal: true });
+            const st = this.getOrInitTranscript(sessionId, lang);
+            for (const seg of safe) {
+              st.segments.push(seg);
+              st.speakerSet.add(seg.speakerIndex);
+              st.maxEndSeconds = Math.max(st.maxEndSeconds, seg.endTime || 0);
+              st.rawLines.push(`[${seg.role}] ${seg.text}`);
+            }
+            this.schedulePersist(sessionId);
+          } catch (e: any) {
+            const msg = String(e?.message || 'De-identification failed');
+            this.emit(sessionId, 'co_pilot:transcription_error', {
+              message:
+                msg.includes('De-identification required')
+                  ? `${msg}. If you're running locally, start Presidio (PRESIDIO_ANALYZER_URL/PRESIDIO_ANONYMIZER_URL) or set REQUIRE_DEIDENTIFICATION=false for development.`
+                  : msg,
+            });
+          }
+        });
+
+        streamer.on('error', async ({ message, raw }: any) => {
+          const msg = String(message || raw?.message || 'Deepgram error');
+          const isRateLimited =
+            msg.includes('429') ||
+            msg.includes('Too Many Requests') ||
+            raw?.code === 429 ||
+            raw?.status === 429 ||
+            raw?.statusCode === 429;
+
+          if (isRateLimited) {
+            const existingFailure = this.failures.get(sessionId);
+            if (existingFailure && Date.now() < existingFailure.untilMs) {
+              // Already cooling down; avoid repeated emits/toasts.
+              return;
+            }
+            // Guardrail: prevent reconnect storms + toast spam when Deepgram rate-limits.
+            const retryAfterMs = 60_000;
+            this.failures.set(sessionId, {
+              untilMs: Date.now() + retryAfterMs,
+              message: msg,
+            });
+
+            this.emit(sessionId, 'co_pilot:transcription_error', {
+              message: `Unexpected server response: 429 (rate limited). Pausing live scribe for ${Math.round(
+                retryAfterMs / 1000
+              )}s and stopping the recording to protect system stability.`,
+              code: 429,
+              retryAfterMs,
+              shouldStop: true,
+              requestId: this.sessions.get(sessionId)?.requestId,
+            });
+
+            await this.stopAndPersist(sessionId).catch(() => { });
             return;
           }
-          // Guardrail: prevent reconnect storms + toast spam when Deepgram rate-limits.
-          const retryAfterMs = 60_000;
-          this.failures.set(sessionId, {
-            untilMs: Date.now() + retryAfterMs,
-            message: msg,
-          });
 
-          this.emit(sessionId, 'co_pilot:transcription_error', {
-            message: `Unexpected server response: 429 (rate limited). Pausing live scribe for ${Math.round(
-              retryAfterMs / 1000
-            )}s and stopping the recording to protect system stability.`,
-            code: 429,
-            retryAfterMs,
-            shouldStop: true,
-            requestId: this.sessions.get(sessionId)?.requestId,
-          });
-
-          await this.stopAndPersist(sessionId).catch(() => {});
-          return;
-        }
-
-        this.emit(sessionId, 'co_pilot:transcription_error', { message: msg });
-      });
-
-      try {
-        await streamer.startStream();
-      } catch (e: any) {
-        // Ensure we don't leave a half-initialized session around.
-        try {
-          await streamer.stop().catch(() => {});
-        } catch {}
-        this.sessions.delete(sessionId);
-        const active = this.activeSessionByClinician.get(clinicianId);
-        if (active === sessionId) this.activeSessionByClinician.delete(clinicianId);
-
-        const msg = String(e?.message || 'Failed to start Deepgram live stream');
-        const isRateLimited = msg.includes('429') || msg.includes('Too Many Requests');
-        if (isRateLimited) {
-          const retryAfterMs = 60_000;
-          this.failures.set(sessionId, { untilMs: Date.now() + retryAfterMs, message: msg });
-          this.emit(sessionId, 'co_pilot:transcription_error', {
-            message: `Deepgram is rate limiting live transcription right now (429). Switching off Live Mode; you can retry in ~${Math.round(
-              retryAfterMs / 1000
-            )}s.`,
-            code: 429,
-            retryAfterMs,
-            shouldStop: true,
-          });
-          return;
-        }
-
-        this.failures.set(sessionId, { untilMs: Date.now() + 6000, message: msg });
-        this.emit(sessionId, 'co_pilot:transcription_error', {
-          message: `Failed to start live transcription. Run GET /api/health/deepgram-live to verify Live WS access.`,
+          this.emit(sessionId, 'co_pilot:transcription_error', { message: msg });
         });
-        return;
-      }
 
-      const nextSession: LiveSession = {
-        streamer,
-        clinicianId,
-        language: lang,
-        inputSampleRate: srIn,
-        requestId: undefined,
-        activeSockets: new Set([socketId]),
-        patientId: owns.patientId,
-      };
-      this.sessions.set(sessionId, nextSession);
+        try {
+          await streamer.startStream();
+        } catch (e: any) {
+          // Ensure we don't leave a half-initialized session around.
+          try {
+            await streamer.stop().catch(() => { });
+          } catch { }
+          this.sessions.delete(sessionId);
+          const active = this.activeSessionByClinician.get(clinicianId);
+          if (active === sessionId) this.activeSessionByClinician.delete(clinicianId);
+
+          const msg = String(e?.message || 'Failed to start Deepgram live stream');
+          const isRateLimited = msg.includes('429') || msg.includes('Too Many Requests');
+          if (isRateLimited) {
+            const retryAfterMs = 60_000;
+            this.failures.set(sessionId, { untilMs: Date.now() + retryAfterMs, message: msg });
+            this.emit(sessionId, 'co_pilot:transcription_error', {
+              message: `Deepgram is rate limiting live transcription right now (429). Switching off Live Mode; you can retry in ~${Math.round(
+                retryAfterMs / 1000
+              )}s.`,
+              code: 429,
+              retryAfterMs,
+              shouldStop: true,
+              requestId: this.sessions.get(sessionId)?.requestId,
+            });
+            return;
+          }
+
+          this.failures.set(sessionId, { untilMs: Date.now() + 6000, message: msg });
+          this.emit(sessionId, 'co_pilot:transcription_error', {
+            message: `Failed to start live transcription. Run GET /api/health/deepgram-live to verify Live WS access.`,
+          });
+          return;
+        }
+
+        const nextSession: LiveSession = {
+          streamer,
+          clinicianId,
+          language: lang,
+          inputSampleRate: srIn,
+          requestId: undefined,
+          activeSockets: new Set([socketId]),
+          patientId: owns.patientId,
+          governanceContext: { conditions: contextTerms }, // [BACK-02] Store for Fast Lane
+        };
+        this.sessions.set(sessionId, nextSession);
       })();
 
       this.startInFlightBySession.set(sessionId, startPromise);
@@ -682,5 +704,3 @@ export function getScribeService(emit: CoPilotEmit): ScribeService {
   if (!singleton) singleton = new ScribeService(emit);
   return singleton;
 }
-
-

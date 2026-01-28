@@ -13,6 +13,7 @@ import crypto from 'crypto';
 import { logger } from '@/lib/logger';
 import { monitorLabResult } from '@/lib/prevention/lab-result-monitors';
 import { onLabResultCreated } from '@/lib/cache/patient-context-cache';
+import { emitLabResultEvent } from '@/lib/socket-server';
 import {
   getReferenceRange,
   getReferenceRangeByTestName,
@@ -381,6 +382,18 @@ export const POST = createProtectedRoute(
           labResultId: labResult.id,
         });
       }
+
+      // Emit Socket.IO event for real-time UI updates
+      emitLabResultEvent({
+        id: labResult.id,
+        action: 'created',
+        patientId: labResult.patientId,
+        testName: labResult.testName,
+        value: labResult.value || undefined,
+        unit: labResult.unit || undefined,
+        userId: context.user.id,
+        userName: context.user.name || context.user.email,
+      });
 
       return NextResponse.json({
         success: true,

@@ -1,0 +1,634 @@
+openapi: 3.0.3
+info:
+  title: Holi Labs Governance API
+  description: |
+    ## Overview
+    The Governance API provides endpoints for monitoring, auditing, and managing
+    AI safety governance within the Holi Labs Clinical Assurance Platform.
+
+    ## HIPAA Compliance Notice
+    This API handles Protected Health Information (PHI) and is designed to comply
+    with HIPAA regulations. All requests are logged for audit purposes with immutable
+    hash chains. Access requires valid authentication and appropriate role permissions.
+
+    ## Security Requirements
+    - All endpoints require Bearer token authentication via NextAuth session
+    - TLS 1.2+ required for all connections
+    - Session tokens expire after 24 hours
+    - Failed authentication attempts are logged and may trigger account lockout
+
+    ## Rate Limiting
+    - Standard rate limit: 100 requests per minute per user
+    - Burst limit: 20 requests per second
+    - Rate limit headers included in responses: X-RateLimit-Limit, X-RateLimit-Remaining
+
+    ## Audit Trail
+    All API interactions are logged with:
+    - Request timestamp (ISO 8601)
+    - User identity
+    - Request/response payload hashes
+    - Source IP address
+  version: 1.0.0
+  contact:
+    name: Holi Labs Engineering
+    email: engineering@holilabs.com
+  license:
+    name: Proprietary
+    url: https://holilabs.com/license
+
+servers:
+  - url: https://api.holilabs.com
+    description: Production server
+  - url: https://staging-api.holilabs.com
+    description: Staging server
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Governance Logs
+    description: Audit log retrieval and monitoring
+  - name: Governance Statistics
+    description: Aggregated safety metrics and dashboard data
+  - name: Governance Events
+    description: Event logging for overrides, impressions, and latency metrics
+
+paths:
+  /api/governance/logs:
+    get:
+      tags:
+        - Governance Logs
+      summary: Fetch audit logs
+      description: |
+        Retrieves the last 50 governance audit logs with associated events for the
+        Mission Control dashboard. Logs are ordered by timestamp descending (most recent first).
+
+        **HIPAA Note:** This endpoint returns PHI-adjacent data including session metadata.
+        Access is restricted to users with governance:read permission.
+
+        **Use Cases:**
+        - Populating the Mission Control audit dashboard
+        - Reviewing recent AI interactions and safety interventions
+        - Compliance auditing and incident investigation
+      operationId: getGovernanceLogs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved governance logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceLogsResponse'
+              examples:
+                withLogs:
+                  summary: Response with audit logs
+                  value:
+                    data:
+                      - id: "log_abc123"
+                        createdAt: "2024-01-15T10:30:00.000Z"
+                        provider: "gpt-4o-mini"
+                        safetyScore: 98
+                        latencyMs: 245
+                        session:
+                          user:
+                            email: "doctor@clinic.com"
+                          patient: "patient_xyz789"
+                        events:
+                          - id: "evt_001"
+                            ruleName: "medication-contraindication-check"
+                            severity: "WARN"
+                            actionTaken: "FLAGGED"
+                            description: "Potential drug interaction detected"
+                emptyLogs:
+                  summary: No logs available (tables not migrated)
+                  value:
+                    data: []
+                    message: "Governance tables not yet migrated. Run prisma db push."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceLogsErrorResponse'
+              example:
+                data: []
+                error: "Failed to fetch governance logs"
+
+  /api/governance/stats:
+    get:
+      tags:
+        - Governance Statistics
+      summary: Get 24-hour statistics
+      description: |
+        Returns aggregated safety statistics for the last 24 hours, designed for the
+        Mission Control dashboard KPI cards.
+
+        **Metrics Included:**
+        - `sessionsAudited`: Total number of AI sessions that went through governance checks
+        - `interventionsTriggered`: Count of HARD_BLOCK severity events (critical safety interventions)
+        - `avgSafetyScore`: Average safety score across all audited sessions (0-100 scale)
+
+        **HIPAA Note:** This endpoint returns aggregate statistics only, no PHI is exposed.
+      operationId: getGovernanceStats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceStatsResponse'
+              examples:
+                withData:
+                  summary: Response with statistics
+                  value:
+                    data:
+                      sessionsAudited: 1247
+                      interventionsTriggered: 3
+                      avgSafetyScore: 97
+                noData:
+                  summary: No data available (tables not migrated)
+                  value:
+                    data:
+                      sessionsAudited: 0
+                      interventionsTriggered: 0
+                      avgSafetyScore: 0
+                    message: "Governance tables not yet migrated. Run prisma db push."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceStatsErrorResponse'
+              example:
+                data:
+                  sessionsAudited: 0
+                  interventionsTriggered: 0
+                  avgSafetyScore: 0
+                error: "Failed to fetch safety stats"
+
+  /api/governance/event:
+    post:
+      tags:
+        - Governance Events
+      summary: Log governance event
+      description: |
+        Logs governance events including clinician overrides, UI impressions, and latency metrics.
+        This endpoint supports multiple event types for comprehensive telemetry.
+
+        **Event Types:**
+        - `OVERRIDE`: Records when a clinician overrides an AI safety recommendation (liability tracking)
+        - `IMPRESSION`: Tracks UI impressions for analytics (PostHog/Mixpanel integration)
+        - `LATENCY`: Records latency metrics for performance monitoring
+
+        **HIPAA Note:** Override events are logged with full audit trail for liability purposes.
+        All events are immutably recorded and cannot be deleted or modified.
+      operationId: postGovernanceEvent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/OverrideEventRequest'
+                - $ref: '#/components/schemas/ImpressionEventRequest'
+                - $ref: '#/components/schemas/LatencyEventRequest'
+            examples:
+              override:
+                summary: Override event (clinician override)
+                value:
+                  type: "OVERRIDE"
+                  sessionId: "session_abc123"
+                  ruleId: "medication-contraindication-check"
+                  reason: "Patient has documented tolerance to this combination"
+                  userId: "user_doctor456"
+              impression:
+                summary: Impression event (UI tracking)
+                value:
+                  type: "IMPRESSION"
+                  component: "safety-warning-banner"
+                  sessionId: "session_abc123"
+              latency:
+                summary: Latency event (performance metric)
+                value:
+                  type: "LATENCY"
+                  operation: "ai-inference"
+                  durationMs: 342
+      responses:
+        '200':
+          description: Event logged successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/OverrideEventResponse'
+                  - $ref: '#/components/schemas/ImpressionEventResponse'
+                  - $ref: '#/components/schemas/LatencyEventResponse'
+              examples:
+                override:
+                  summary: Override logged
+                  value:
+                    success: true
+                    message: "Override Logged"
+                impression:
+                  summary: Impression tracked
+                  value:
+                    success: true
+                    tracked: true
+                latency:
+                  summary: Latency recorded
+                  value:
+                    success: true
+                    latency_metric_recorded: true
+        '400':
+          description: Invalid event type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventErrorResponse'
+              example:
+                success: false
+                error: "Unknown event type"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventErrorResponse'
+              example:
+                success: false
+                error: "Internal Server Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        NextAuth session token. Obtain by authenticating through the NextAuth signin flow.
+        Token should be passed in the Authorization header as: `Bearer <token>`
+
+  schemas:
+    # Governance Logs Schemas
+    GovernanceLog:
+      type: object
+      required:
+        - id
+        - createdAt
+        - provider
+        - safetyScore
+        - latencyMs
+        - events
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the governance log
+          example: "log_abc123"
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the log was created
+          example: "2024-01-15T10:30:00.000Z"
+        provider:
+          type: string
+          description: AI model/provider used for the interaction
+          example: "gpt-4o-mini"
+        safetyScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Safety score for the interaction (0-100, higher is safer)
+          example: 98
+        latencyMs:
+          type: integer
+          minimum: 0
+          description: Response latency in milliseconds
+          example: 245
+        session:
+          type: object
+          nullable: true
+          description: Associated session information
+          properties:
+            user:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email of the user who initiated the session
+                  example: "doctor@clinic.com"
+            patient:
+              type: string
+              nullable: true
+              description: Patient identifier (if applicable)
+              example: "patient_xyz789"
+        events:
+          type: array
+          description: List of governance events associated with this log
+          items:
+            $ref: '#/components/schemas/GovernanceEvent'
+
+    GovernanceEvent:
+      type: object
+      required:
+        - id
+        - ruleName
+        - severity
+        - actionTaken
+        - description
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the event
+          example: "evt_001"
+        ruleName:
+          type: string
+          description: Name of the governance rule that triggered this event
+          example: "medication-contraindication-check"
+        severity:
+          type: string
+          enum:
+            - PASS
+            - WARN
+            - SOFT_BLOCK
+            - HARD_BLOCK
+          description: |
+            Severity level of the event:
+            - PASS: Rule passed, no issues
+            - WARN: Warning issued but action allowed
+            - SOFT_BLOCK: Action blocked but can be overridden
+            - HARD_BLOCK: Action blocked, no override allowed
+          example: "WARN"
+        actionTaken:
+          type: string
+          enum:
+            - NONE
+            - FLAGGED
+            - BLOCKED
+            - OVERRIDE
+          description: Action taken in response to the rule evaluation
+          example: "FLAGGED"
+        description:
+          type: string
+          description: Human-readable description of the event
+          example: "Potential drug interaction detected"
+
+    GovernanceLogsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GovernanceLog'
+        message:
+          type: string
+          description: Optional message (e.g., when tables not migrated)
+          example: "Governance tables not yet migrated. Run prisma db push."
+
+    GovernanceLogsErrorResponse:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          type: array
+          items: {}
+          example: []
+        error:
+          type: string
+          description: Error message
+          example: "Failed to fetch governance logs"
+
+    # Governance Stats Schemas
+    GovernanceStats:
+      type: object
+      required:
+        - sessionsAudited
+        - interventionsTriggered
+        - avgSafetyScore
+      properties:
+        sessionsAudited:
+          type: integer
+          minimum: 0
+          description: Total number of sessions audited in the last 24 hours
+          example: 1247
+        interventionsTriggered:
+          type: integer
+          minimum: 0
+          description: Number of HARD_BLOCK events (critical interventions) in the last 24 hours
+          example: 3
+        avgSafetyScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Average safety score across all audited sessions (0-100)
+          example: 97
+
+    GovernanceStatsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/GovernanceStats'
+        message:
+          type: string
+          description: Optional message (e.g., when tables not migrated)
+          example: "Governance tables not yet migrated. Run prisma db push."
+
+    GovernanceStatsErrorResponse:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/GovernanceStats'
+        error:
+          type: string
+          description: Error message
+          example: "Failed to fetch safety stats"
+
+    # Event Request Schemas
+    OverrideEventRequest:
+      type: object
+      required:
+        - type
+        - ruleId
+        - reason
+      properties:
+        type:
+          type: string
+          enum:
+            - OVERRIDE
+          description: Event type identifier
+        sessionId:
+          type: string
+          description: Session identifier (defaults to 'demo-session' if not provided)
+          example: "session_abc123"
+        ruleId:
+          type: string
+          description: ID of the rule being overridden
+          example: "medication-contraindication-check"
+        reason:
+          type: string
+          description: Clinician's justification for the override (required for liability)
+          example: "Patient has documented tolerance to this combination"
+        userId:
+          type: string
+          description: ID of the user performing the override
+          example: "user_doctor456"
+
+    ImpressionEventRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - IMPRESSION
+          description: Event type identifier
+        component:
+          type: string
+          description: UI component that was viewed
+          example: "safety-warning-banner"
+        sessionId:
+          type: string
+          description: Associated session identifier
+          example: "session_abc123"
+
+    LatencyEventRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - LATENCY
+          description: Event type identifier
+        operation:
+          type: string
+          description: Name of the operation being measured
+          example: "ai-inference"
+        durationMs:
+          type: integer
+          minimum: 0
+          description: Duration in milliseconds
+          example: 342
+
+    # Event Response Schemas
+    OverrideEventResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Override Logged"
+
+    ImpressionEventResponse:
+      type: object
+      required:
+        - success
+        - tracked
+      properties:
+        success:
+          type: boolean
+          example: true
+        tracked:
+          type: boolean
+          example: true
+
+    LatencyEventResponse:
+      type: object
+      required:
+        - success
+        - latency_metric_recorded
+      properties:
+        success:
+          type: boolean
+          example: true
+        latency_metric_recorded:
+          type: boolean
+          example: true
+
+    EventErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: "Unknown event type"
+
+    # Common Error Schemas
+    UnauthorizedError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Unauthorized"
+        message:
+          type: string
+          example: "Valid authentication token required"
+
+    ForbiddenError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Forbidden"
+        message:
+          type: string
+          example: "Insufficient permissions to access this resource"
+
+  responses:
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedError'
+          example:
+            error: "Unauthorized"
+            message: "Valid authentication token required"
+
+    Forbidden:
+      description: Authenticated but lacks required permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ForbiddenError'
+          example:
+            error: "Forbidden"
+            message: "Insufficient permissions to access this resource"
