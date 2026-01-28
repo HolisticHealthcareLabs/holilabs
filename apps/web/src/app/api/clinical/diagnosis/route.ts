@@ -20,8 +20,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
+import * as crypto from 'crypto';
 import { trackUsage } from '@/lib/ai/usage-tracker';
 import { prisma } from '@/lib/prisma';
 import {
@@ -135,13 +135,58 @@ interface DiagnosisResponse {
   error?: string;
 }
 
+/**
+ * Verify internal token from agent gateway
+ */
+function verifyInternalToken(token: string | null): boolean {
+  if (!token) return false;
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const now = Math.floor(Date.now() / 60000);
+  for (const timestamp of [now, now - 1]) {
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`agent-internal:${timestamp}`)
+      .digest('hex');
+    if (token === expected) return true;
+  }
+  return false;
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResponse>> {
   const startTime = Date.now();
 
   try {
-    // 1. Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 1. Authenticate user (support internal agent gateway requests)
+    let userId: string | undefined;
+
+    // Check for internal agent gateway token first
+    const internalToken = req.headers.get('X-Agent-Internal-Token');
+    if (internalToken && verifyInternalToken(internalToken)) {
+      // Get user from headers - prefer email lookup as session ID may differ from DB ID
+      const userEmail = req.headers.get('X-Agent-User-Email');
+      const headerUserId = req.headers.get('X-Agent-User-Id');
+
+      if (userEmail) {
+        const dbUser = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { id: headerUserId || '' },
+              { email: userEmail },
+            ],
+          },
+          select: { id: true },
+        });
+        userId = dbUser?.id;
+      }
+    }
+
+    // Fall back to session auth
+    if (!userId) {
+      const session = await auth();
+      userId = (session?.user as any)?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -260,7 +305,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
 
     // 4. Check user's subscription tier and quota
     const subscriptionTier = await prisma.subscriptionTier.findUnique({
-      where: { userId: (session.user as any).id },
+      where: { userId: userId },
     });
 
     const tier = subscriptionTier?.tier || 'FREE';
@@ -352,7 +397,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
     // 9. Track usage in database (fallback uses no AI provider, record as claude with 0 tokens)
     await trackUsage({
       provider: 'claude', // Always record as claude since that's the primary provider
-      userId: (session.user as any).id,
+      userId: userId,
       promptTokens: result.aiLatencyMs ? 500 : 0, // Estimated if AI was used
       completionTokens: result.aiLatencyMs ? 1000 : 0,
       totalTokens: result.aiLatencyMs ? 1500 : 0,
@@ -365,7 +410,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
     // 10. Update user's daily usage count
     if (subscriptionTier) {
       await prisma.subscriptionTier.update({
-        where: { userId: (session.user as any).id },
+        where: { userId: userId },
         data: {
           dailyAIUsed: dailyUsed + 1,
           monthlyAIUsed: { increment: 1 },
@@ -375,7 +420,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
       // Create default FREE tier for user if doesn't exist
       await prisma.subscriptionTier.create({
         data: {
-          userId: (session.user as any).id,
+          userId: userId,
           tier: 'FREE',
           dailyAIUsed: 1,
           monthlyAIUsed: 1,

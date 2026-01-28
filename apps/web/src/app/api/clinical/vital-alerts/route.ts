@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
+import * as crypto from 'crypto';
 import { createAuditLog } from '@/lib/audit';
+import { prisma } from '@/lib/prisma';
+
+/**
+ * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
+ */
+function verifyInternalToken(token: string | null): boolean {
+  if (!token) return false;
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const now = Math.floor(Date.now() / 60000);
+  for (const timestamp of [now, now - 1]) {
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`agent-internal:${timestamp}`)
+      .digest('hex');
+    if (token === expected) return true;
+  }
+  return false;
+}
 
 /**
  * Vital Signs Critical Alert System
@@ -218,17 +236,50 @@ function generateVitalRecommendation(
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // Check for internal agent gateway token first
+    let userId: string | undefined;
+    const internalToken = request.headers.get('X-Agent-Internal-Token');
+
+    if (internalToken && verifyInternalToken(internalToken)) {
+      const userEmail = request.headers.get('X-Agent-User-Email');
+      const headerUserId = request.headers.get('X-Agent-User-Id');
+      if (userEmail) {
+        const dbUser = await prisma.user.findFirst({
+          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
+          select: { id: true },
+        });
+        userId = dbUser?.id;
+      }
+    }
+
+    // Fall back to session auth
+    if (!userId) {
+      const session = await auth();
+      userId = (session?.user as any)?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { patientAge, vitals } = body;
 
-    if (patientAge === undefined || !vitals) {
+    // Support both nested format { patientAge, vitals } and flat format { age, heartRate, ... }
+    let patientAge: number;
+    let vitals: Record<string, unknown>;
+
+    if (body.vitals && body.patientAge !== undefined) {
+      // Nested format
+      patientAge = body.patientAge;
+      vitals = body.vitals;
+    } else if (body.age !== undefined) {
+      // Flat format (for agent tools)
+      patientAge = body.age;
+      const { age, ...vitalFields } = body;
+      vitals = vitalFields;
+    } else {
       return NextResponse.json(
-        { error: 'Patient age and vitals are required' },
+        { error: 'Patient age and vitals are required. Use { patientAge, vitals } or { age, heartRate, ... }' },
         { status: 400 }
       );
     }
