@@ -14,9 +14,27 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
+import * as crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+
+/**
+ * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
+ */
+function verifyInternalToken(token: string | null): boolean {
+  if (!token) return false;
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const now = Math.floor(Date.now() / 60000);
+  for (const timestamp of [now, now - 1]) {
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`agent-internal:${timestamp}`)
+      .digest('hex');
+    if (token === expected) return true;
+  }
+  return false;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -206,9 +224,29 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const startTime = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    // Check for internal agent gateway token first
+    let userId: string | undefined;
+    const internalToken = request.headers.get('X-Agent-Internal-Token');
 
-    if (!session?.user?.id) {
+    if (internalToken && verifyInternalToken(internalToken)) {
+      const userEmail = request.headers.get('X-Agent-User-Email');
+      const headerUserId = request.headers.get('X-Agent-User-Id');
+      if (userEmail) {
+        const dbUser = await prisma.user.findFirst({
+          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
+          select: { id: true },
+        });
+        userId = dbUser?.id;
+      }
+    }
+
+    // Fall back to session auth
+    if (!userId) {
+      const session = await auth();
+      userId = (session?.user as any)?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized - Please log in' }, { status: 401 });
     }
 

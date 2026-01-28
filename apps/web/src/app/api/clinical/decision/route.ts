@@ -17,9 +17,27 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
+import * as crypto from 'crypto';
 import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+
+/**
+ * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
+ */
+function verifyInternalToken(token: string | null): boolean {
+  if (!token) return false;
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const now = Math.floor(Date.now() / 60000);
+  for (const timestamp of [now, now - 1]) {
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`agent-internal:${timestamp}`)
+      .digest('hex');
+    if (token === expected) return true;
+  }
+  return false;
+}
 import {
   processClinicalDecision,
   processDiagnosisOnly,
@@ -126,9 +144,29 @@ export async function POST(req: NextRequest): Promise<NextResponse<ClinicalDecis
   const startTime = Date.now();
 
   try {
-    // 1. Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // 1. Authenticate user (internal token or session)
+    let userId: string | undefined;
+    const internalToken = req.headers.get('X-Agent-Internal-Token');
+
+    if (internalToken && verifyInternalToken(internalToken)) {
+      const userEmail = req.headers.get('X-Agent-User-Email');
+      const headerUserId = req.headers.get('X-Agent-User-Id');
+      if (userEmail) {
+        const dbUser = await prisma.user.findFirst({
+          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
+          select: { id: true },
+        });
+        userId = dbUser?.id;
+      }
+    }
+
+    // Fall back to session auth
+    if (!userId) {
+      const session = await auth();
+      userId = (session?.user as any)?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -151,7 +189,20 @@ export async function POST(req: NextRequest): Promise<NextResponse<ClinicalDecis
 
     const { patientId, aiScribeOutput, mode, icd10Code } = validationResult.data;
 
-    // 3. Validate mode-specific requirements
+    // 3. Check patient exists
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+      select: { id: true },
+    });
+
+    if (!patient) {
+      return NextResponse.json(
+        { success: false, error: 'Patient not found' },
+        { status: 404 }
+      );
+    }
+
+    // 4. Validate mode-specific requirements
     if (mode === 'treatment-only' && !icd10Code) {
       return NextResponse.json(
         { success: false, error: 'icd10Code is required for treatment-only mode' },
@@ -320,8 +371,29 @@ export async function POST(req: NextRequest): Promise<NextResponse<ClinicalDecis
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // Check for internal agent gateway token first
+    let userId: string | undefined;
+    const internalToken = req.headers.get('X-Agent-Internal-Token');
+
+    if (internalToken && verifyInternalToken(internalToken)) {
+      const userEmail = req.headers.get('X-Agent-User-Email');
+      const headerUserId = req.headers.get('X-Agent-User-Id');
+      if (userEmail) {
+        const dbUser = await prisma.user.findFirst({
+          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
+          select: { id: true },
+        });
+        userId = dbUser?.id;
+      }
+    }
+
+    // Fall back to session auth
+    if (!userId) {
+      const session = await auth();
+      userId = (session?.user as any)?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
