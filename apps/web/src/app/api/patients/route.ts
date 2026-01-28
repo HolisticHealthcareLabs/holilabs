@@ -16,6 +16,7 @@ import { generateUniquePatientTokenId } from '@/lib/security/token-generation';
 import { logDeIDOperation } from '@/lib/audit/deid-audit';
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
+import { emitPatientEvent } from '@/lib/socket-server';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -555,6 +556,17 @@ Registration Date: ${new Date().toISOString()}
         error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
       });
     }
+
+    // Emit Socket.IO event for real-time UI updates
+    emitPatientEvent({
+      id: patient.id,
+      action: 'created',
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      mrn: patient.mrn || undefined,
+      clinicId: patient.assignedClinician?.id,
+      userId: assignedClinicianId,
+      userName: context.user.name || context.user.email,
+    });
 
     return NextResponse.json({
       success: true,

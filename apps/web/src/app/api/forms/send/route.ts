@@ -6,10 +6,28 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth/auth';
 import { sendFormNotificationEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
+ */
+function verifyInternalToken(token: string | null): boolean {
+  if (!token) return false;
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const now = Math.floor(Date.now() / 60000);
+  for (const timestamp of [now, now - 1]) {
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`agent-internal:${timestamp}`)
+      .digest('hex');
+    if (token === expected) return true;
+  }
+  return false;
+}
 
 function generateAccessToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -21,6 +39,32 @@ function generateDataHash(data: any): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user (internal token or session)
+    let userId: string | undefined;
+    const internalToken = request.headers.get('X-Agent-Internal-Token');
+
+    if (internalToken && verifyInternalToken(internalToken)) {
+      const userEmail = request.headers.get('X-Agent-User-Email');
+      const headerUserId = request.headers.get('X-Agent-User-Id');
+      if (userEmail) {
+        const dbUser = await prisma.user.findFirst({
+          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
+          select: { id: true },
+        });
+        userId = dbUser?.id;
+      }
+    }
+
+    // Fall back to session auth
+    if (!userId) {
+      const session = await auth();
+      userId = (session?.user as any)?.id;
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { patientId, templateId, expiresAt, message } = body;
 
@@ -63,7 +107,7 @@ export async function POST(request: NextRequest) {
       data: {
         patientId,
         templateId,
-        assignedBy: 'system', // TODO: Get from session
+        assignedBy: userId,
         status: 'PENDING',
         progressPercent: 0,
         accessToken,
@@ -85,7 +129,8 @@ export async function POST(request: NextRequest) {
       data: {
         formInstanceId: formInstance.id,
         event: 'SENT',
-        userType: 'clinician', // TODO: Get from session
+        userType: 'clinician',
+        userId,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
         metadata: {
