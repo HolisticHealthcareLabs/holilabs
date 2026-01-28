@@ -39,6 +39,20 @@ export interface MCPResult {
 }
 
 /**
+ * Example usage for a tool
+ */
+export interface MCPToolExample {
+    /** Description of what this example demonstrates */
+    description: string;
+
+    /** Example input parameters */
+    input: Record<string, any>;
+
+    /** Optional: Expected output description or structure */
+    expectedOutput?: string;
+}
+
+/**
  * MCP Tool definition
  */
 export interface MCPTool {
@@ -49,7 +63,7 @@ export interface MCPTool {
     description: string;
 
     /** Tool category for organization */
-    category: 'patient' | 'clinical-note' | 'governance' | 'medication' | 'diagnosis' | 'appointment' | 'admin' | 'messaging';
+    category: 'patient' | 'clinical-note' | 'governance' | 'medication' | 'diagnosis' | 'appointment' | 'admin' | 'messaging' | 'document' | 'form' | 'portal' | 'lab';
 
     /** Zod schema for input validation */
     inputSchema: z.ZodType<any>;
@@ -65,6 +79,12 @@ export interface MCPTool {
 
     /** Optional: Suggested alternatives if deprecated */
     alternatives?: string[];
+
+    /** Optional: Tool names this tool depends on (should be called first) */
+    dependsOn?: string[];
+
+    /** Optional: Usage examples for discovery and documentation */
+    examples?: MCPToolExample[];
 }
 
 /**

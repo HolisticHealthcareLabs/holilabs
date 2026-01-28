@@ -14,7 +14,23 @@ import { diagnosisTools } from './tools/diagnosis.tools';
 import { allergyTools } from './tools/allergy.tools';
 import { featureFlagTools } from './tools/feature-flag.tools';
 import { messagingTools } from './tools/messaging.tools';
-import type { MCPTool, MCPContext, MCPResult, MCPRegistry, MCPToolRequest, MCPToolResponse, PermissionCheckResult } from './types';
+import { prescriptionTools } from './tools/prescription.tools';
+import { appointmentTools } from './tools/appointment.tools';
+import { labOrderTools } from './tools/lab-order.tools';
+import { documentTools } from './tools/document.tools';
+import { formTools } from './tools/form.tools';
+import { portalTools } from './tools/portal.tools';
+import type { MCPTool, MCPContext, MCPResult, MCPRegistry, MCPToolRequest, MCPToolResponse, PermissionCheckResult, MCPToolExample } from './types';
+import {
+    getWorkflowTemplates,
+    getWorkflowById,
+    getWorkflowsByCategory,
+    searchWorkflows,
+    getWorkflowSchemas,
+    executeWorkflow,
+    type WorkflowTemplate,
+    type WorkflowResult,
+} from './workflows';
 
 // =============================================================================
 // TOOL REGISTRY
@@ -47,6 +63,12 @@ class MCPToolRegistry implements MCPRegistry {
             ...allergyTools,
             ...featureFlagTools,
             ...messagingTools,
+            ...prescriptionTools,
+            ...appointmentTools,
+            ...labOrderTools,
+            ...documentTools,
+            ...formTools,
+            ...portalTools,
         ];
 
         for (const tool of allTools) {
@@ -230,6 +252,107 @@ class MCPToolRegistry implements MCPRegistry {
         }));
     }
 
+    /**
+     * Get a tool with full details including examples and dependencies
+     */
+    getToolWithExamples(name: string): {
+        name: string;
+        description: string;
+        category: string;
+        inputSchema: object;
+        requiredPermissions: string[];
+        dependsOn?: string[];
+        examples?: MCPToolExample[];
+        deprecated?: boolean;
+        alternatives?: string[];
+    } | undefined {
+        const tool = this.tools.get(name);
+        if (!tool) {
+            return undefined;
+        }
+
+        return {
+            name: tool.name,
+            description: tool.description,
+            category: tool.category,
+            inputSchema: this.zodToJsonSchema(tool.inputSchema),
+            requiredPermissions: tool.requiredPermissions,
+            dependsOn: tool.dependsOn,
+            examples: tool.examples,
+            deprecated: tool.deprecated,
+            alternatives: tool.alternatives,
+        };
+    }
+
+    /**
+     * Get all workflow templates
+     */
+    getWorkflows(): WorkflowTemplate[] {
+        return getWorkflowTemplates();
+    }
+
+    /**
+     * Get workflow by ID
+     */
+    getWorkflowById(id: string): WorkflowTemplate | undefined {
+        return getWorkflowById(id);
+    }
+
+    /**
+     * Get workflows by category
+     */
+    getWorkflowsByCategory(category: 'clinical' | 'administrative' | 'billing'): WorkflowTemplate[] {
+        return getWorkflowsByCategory(category);
+    }
+
+    /**
+     * Search workflows by query
+     */
+    searchWorkflows(query: string): WorkflowTemplate[] {
+        return searchWorkflows(query);
+    }
+
+    /**
+     * Get workflow schemas for agent discovery
+     */
+    getWorkflowSchemas() {
+        return getWorkflowSchemas();
+    }
+
+    /**
+     * Execute a workflow template
+     */
+    async executeWorkflow(
+        workflowId: string,
+        context: MCPContext,
+        initialInputs: Record<string, any>
+    ): Promise<WorkflowResult> {
+        return executeWorkflow(workflowId, context, initialInputs);
+    }
+
+    /**
+     * Get tools that depend on a specific tool
+     */
+    getToolDependents(toolName: string): MCPTool[] {
+        return Array.from(this.tools.values()).filter(
+            t => t.dependsOn?.includes(toolName)
+        );
+    }
+
+    /**
+     * Get tools that a specific tool depends on
+     */
+    getToolDependencies(toolName: string): MCPTool[] {
+        const tool = this.tools.get(toolName);
+        if (!tool?.dependsOn) {
+            return [];
+        }
+
+        return tool.dependsOn
+            .map(name => this.tools.get(name))
+            .filter((t): t is MCPTool => t !== undefined);
+    }
+
     // =========================================================================
     // PRIVATE HELPERS
     // =========================================================================
@@ -244,6 +367,8 @@ class MCPToolRegistry implements MCPRegistry {
                 'note:write',
                 'medication:read',
                 'medication:write',
+                'prescription:read',
+                'prescription:write',
                 'allergy:read',
                 'allergy:write',
                 'condition:read',
@@ -253,16 +378,30 @@ class MCPToolRegistry implements MCPRegistry {
                 'message:read',
                 'message:write',
                 'admin:read',
+                'document:read',
+                'document:write',
+                'document:share',
+                'form:read',
+                'form:write',
+                'notification:read',
+                'notification:write',
+                'preferences:read',
+                'preferences:write',
             ],
             NURSE: [
                 'patient:read',
                 'note:read',
                 'note:write',
                 'medication:read',
+                'prescription:read',
                 'allergy:read',
                 'condition:read',
                 'governance:read',
                 'message:read',
+                'document:read',
+                'form:read',
+                'notification:read',
+                'preferences:read',
             ],
             AGENT: [
                 'patient:read',
@@ -271,6 +410,8 @@ class MCPToolRegistry implements MCPRegistry {
                 'note:write',
                 'medication:read',
                 'medication:write',
+                'prescription:read',
+                'prescription:write',
                 'allergy:read',
                 'allergy:write',
                 'condition:read',
@@ -280,6 +421,15 @@ class MCPToolRegistry implements MCPRegistry {
                 'message:read',
                 'message:write',
                 'admin:read',
+                'document:read',
+                'document:write',
+                'document:share',
+                'form:read',
+                'form:write',
+                'notification:read',
+                'notification:write',
+                'preferences:read',
+                'preferences:write',
             ],
         };
 
@@ -373,3 +523,55 @@ export function getToolSchemas() {
 export async function executeTool(request: MCPToolRequest): Promise<MCPToolResponse> {
     return registry.executeTool(request);
 }
+
+// =============================================================================
+// WORKFLOW EXPORTS
+// =============================================================================
+
+export function getWorkflows(): WorkflowTemplate[] {
+    return registry.getWorkflows();
+}
+
+export function getWorkflowByIdFromRegistry(id: string): WorkflowTemplate | undefined {
+    return registry.getWorkflowById(id);
+}
+
+export function getWorkflowsByCategoryFromRegistry(category: 'clinical' | 'administrative' | 'billing'): WorkflowTemplate[] {
+    return registry.getWorkflowsByCategory(category);
+}
+
+export function searchWorkflowsFromRegistry(query: string): WorkflowTemplate[] {
+    return registry.searchWorkflows(query);
+}
+
+export function getWorkflowSchemasFromRegistry() {
+    return registry.getWorkflowSchemas();
+}
+
+export async function executeWorkflowFromRegistry(
+    workflowId: string,
+    context: MCPContext,
+    initialInputs: Record<string, any>
+): Promise<WorkflowResult> {
+    return registry.executeWorkflow(workflowId, context, initialInputs);
+}
+
+// =============================================================================
+// ENHANCED DISCOVERY EXPORTS
+// =============================================================================
+
+export function getToolWithExamples(name: string) {
+    return registry.getToolWithExamples(name);
+}
+
+export function getToolDependents(toolName: string): MCPTool[] {
+    return registry.getToolDependents(toolName);
+}
+
+export function getToolDependencies(toolName: string): MCPTool[] {
+    return registry.getToolDependencies(toolName);
+}
+
+// Re-export workflow types
+export type { WorkflowTemplate, WorkflowResult } from './workflows';
+export type { WorkflowStep, WorkflowStepResult } from './workflows';

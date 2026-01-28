@@ -1,0 +1,175 @@
+// Edge Node Prisma Schema - SQLite for Local-First Operation
+// This is a lightweight schema for hospital LAN deployment
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SYNC STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Tracks synchronization state with the cloud
+model SyncState {
+  id               String   @id @default(cuid())
+  lastSyncTime     DateTime @default(now())
+  lastRuleVersion  String   @default("v0.0.0")
+  connectionStatus String   @default("offline") // online | degraded | offline
+  cloudUrl         String?
+  clinicId         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OFFLINE QUEUE - Events waiting to sync to cloud
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Queue of items to sync to cloud when connection is restored
+model QueueItem {
+  id          String   @id @default(cuid())
+  type        String   // assurance_event | human_feedback | outcome
+  priority    String   @default("routine") // critical | high | routine
+  payload     String   // JSON payload
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(5)
+  lastError   String?
+  createdAt   DateTime @default(now())
+  scheduledAt DateTime @default(now())
+  processedAt DateTime?
+  status      String   @default("pending") // pending | processing | completed | failed
+
+  @@index([status, priority])
+  @@index([scheduledAt])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOCAL RULES CACHE - Traffic Light rules synced from cloud
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Cached rules for offline Traffic Light evaluation
+model RuleCache {
+  id           String   @id @default(cuid())
+  ruleId       String   @unique
+  category     String   // clinical | administrative | billing
+  ruleType     String   // drug_interaction | allergy | tiss_validation | etc.
+  name         String
+  description  String?
+  priority     Int      @default(0)
+  isActive     Boolean  @default(true)
+  ruleLogic    String   // JSON rule definition
+  version      String
+  checksum     String   // SHA256 for integrity verification
+  syncedAt     DateTime @default(now())
+  expiresAt    DateTime?
+
+  @@index([category, isActive])
+  @@index([ruleType])
+}
+
+/// Rule version tracking for sync
+model RuleVersion {
+  id        String   @id @default(cuid())
+  version   String   @unique
+  timestamp DateTime @default(now())
+  checksum  String   // SHA256 of all rules in this version
+  isActive  Boolean  @default(true)
+  changelog String?
+  appliedAt DateTime?
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PATIENT CACHE - De-identified patient context for offline evaluation
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Lightweight patient cache for offline Traffic Light evaluation
+model PatientCache {
+  id            String   @id @default(cuid())
+  patientHash   String   @unique // SHA256(patientId + salt)
+  clinicId      String
+  // De-identified medication list for interaction checks
+  medications   String   // JSON array of active medications
+  // Allergy information for safety checks
+  allergies     String   // JSON array of allergies
+  // Key diagnoses for billing validation
+  diagnoses     String   // JSON array of ICD-10 codes
+  // Insurance/plan info for billing rules
+  planInfo      String?  // JSON plan details
+  lastUpdated   DateTime @default(now())
+  expiresAt     DateTime // Cache TTL
+
+  @@index([clinicId])
+  @@index([expiresAt])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ASSURANCE EVENTS - Local capture before cloud sync
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Local copy of assurance events pending sync
+model LocalAssuranceEvent {
+  id                   String   @id @default(cuid())
+  patientHash          String   // SHA256(patientId + salt) - de-identified
+  encounterId          String?
+  eventType            String   // diagnosis | treatment | order | alert | billing
+  inputContextSnapshot String   // JSON - raw input for RLHF replay
+  aiRecommendation     String   // JSON - what AI/rules suggested
+  aiConfidence         Float?
+  aiProvider           String?  // claude | gemini | ollama | rules-engine
+  aiLatencyMs          Int?
+  humanDecision        String?  // JSON - what clinician did
+  humanOverride        Boolean  @default(false)
+  overrideReason       String?
+  ruleVersionId        String?
+  clinicId             String
+  syncStatus           String   @default("pending") // pending | synced | failed
+  syncedAt             DateTime?
+  createdAt            DateTime @default(now())
+
+  @@index([syncStatus])
+  @@index([clinicId, createdAt])
+}
+
+/// Local copy of human feedback pending sync
+model LocalHumanFeedback {
+  id                 String   @id @default(cuid())
+  assuranceEventId   String
+  feedbackType       String   // thumbs_up | thumbs_down | correction | comment
+  feedbackValue      String   // JSON
+  feedbackSource     String   // physician | nurse | pharmacist | admin | billing
+  syncStatus         String   @default("pending") // pending | synced | failed
+  syncedAt           DateTime?
+  createdAt          DateTime @default(now())
+
+  @@index([syncStatus])
+  @@index([assuranceEventId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TRAFFIC LIGHT EVALUATION LOG
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Log of Traffic Light evaluations for audit trail
+model TrafficLightLog {
+  id            String   @id @default(cuid())
+  patientHash   String
+  action        String   // order | prescription | procedure | diagnosis | billing
+  resultColor   String   // RED | YELLOW | GREEN
+  signalCount   Int      // Number of signals triggered
+  signals       String   // JSON array of triggered signals
+  ruleVersion   String
+  evaluationMs  Int      // Evaluation time in milliseconds
+  overridden    Boolean  @default(false)
+  overrideBy    String?
+  overrideReason String?
+  createdAt     DateTime @default(now())
+
+  @@index([patientHash, createdAt])
+  @@index([resultColor])
+}

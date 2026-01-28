@@ -1,0 +1,46 @@
+{"level":"info","message":"Starting Holi Labs Edge Node...","service":"edge-node","timestamp":"2026-01-28 18:11:52.696"}
+{"level":"info","message":"Starting Holi Labs Edge Node...","service":"edge-node","timestamp":"2026-01-28 18:13:42.605"}
+{"level":"info","message":"Database connection established (SQLite)","service":"edge-node","timestamp":"2026-01-28 18:13:42.608"}
+{"clinicId":"demo-clinic","cloudUrl":"http://localhost:3000","level":"info","message":"Starting sync services","service":"edge-node","timestamp":"2026-01-28 18:13:42.610"}
+{"level":"info","message":"Edge node listening on port 3001","service":"edge-node","timestamp":"2026-01-28 18:13:42.611"}
+{"level":"info","message":"Cloud URL: http://localhost:3000","service":"edge-node","timestamp":"2026-01-28 18:13:42.611"}
+{"level":"info","message":"Clinic ID: demo-clinic","service":"edge-node","timestamp":"2026-01-28 18:13:42.611"}
+{"consecutiveFailures":1,"error":"Health check returned 404","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-01-28 18:13:43.478"}
+{"checkIntervalMs":300000,"cloudUrl":"http://localhost:3000","level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-28 18:13:43.480"}
+{"level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-28 18:13:43.480"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-28 18:13:43.481"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-01-28 18:13:43.502"}
+{"cloudUrl":"http://localhost:3000","level":"info","message":"Rule updater started","pollIntervalMs":60000,"service":"edge-node","timestamp":"2026-01-28 18:13:43.502"}
+{"level":"info","message":"Rule updater started","service":"edge-node","timestamp":"2026-01-28 18:13:43.502"}
+{"intervalMs":30000,"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-28 18:13:43.503"}
+{"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-28 18:13:43.503"}
+{"level":"info","message":"All sync services started successfully","service":"edge-node","timestamp":"2026-01-28 18:13:43.503"}
+{"connectionStatus":"online","hoursSinceSync":0,"isCritical":false,"isRunning":true,"isStale":false,"lastSync":"2026-01-28T21:13:43.501Z","level":"info","message":"Initial sync status","pendingQueueItems":0,"ruleVersion":null,"service":"edge-node","timestamp":"2026-01-28 18:13:43.504"}
+{"action":"prescription","applicableRules":0,"level":"debug","message":"Evaluating traffic light","service":"edge-node","timestamp":"2026-01-28 18:14:21.811"}
+{"color":"GREEN","evaluationMs":"0.20","level":"info","message":"Traffic light evaluation complete","service":"edge-node","signalCount":0,"timestamp":"2026-01-28 18:14:21.811"}
+{"action":"prescription","color":"GREEN","evaluationMs":1,"level":"info","message":"Traffic light evaluation","patientHash":"abc123...","service":"edge-node","signalCount":0,"timestamp":"2026-01-28 18:14:21.812"}
+{"eventId":"cmkyiwqs60002xft6hsow18g4","level":"debug","message":"Assurance event queued","priority":"routine","service":"edge-node","timestamp":"2026-01-28 18:14:27.608"}
+{"clinicId":"demo-clinic","eventId":"cmkyiwqs60002xft6hsow18g4","eventType":"diagnosis","level":"info","message":"Assurance event captured","service":"edge-node","timestamp":"2026-01-28 18:14:27.608"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-28 18:14:43.503"}
+{"level":"info","message":"Processing 1 queued items","service":"edge-node","timestamp":"2026-01-28 18:14:43.504"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-01-28 18:14:43.539"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:14:43.540"}
+{"attempts":1,"itemId":"cmkyiwqs70003xft6kx05baob","level":"debug","message":"Queue item scheduled for retry","scheduledAt":"2026-01-28T21:14:45.540Z","service":"edge-node","timestamp":"2026-01-28 18:14:43.541"}
+{"level":"info","message":"Processing 1 queued items","service":"edge-node","timestamp":"2026-01-28 18:15:13.507"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:15:13.558"}
+{"attempts":2,"itemId":"cmkyiwqs70003xft6kx05baob","level":"debug","message":"Queue item scheduled for retry","scheduledAt":"2026-01-28T21:15:17.559Z","service":"edge-node","timestamp":"2026-01-28 18:15:13.560"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-28 18:15:43.506"}
+{"level":"info","message":"Processing 1 queued items","service":"edge-node","timestamp":"2026-01-28 18:15:43.508"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:15:43.549"}
+{"attempts":3,"itemId":"cmkyiwqs70003xft6kx05baob","level":"debug","message":"Queue item scheduled for retry","scheduledAt":"2026-01-28T21:15:51.549Z","service":"edge-node","timestamp":"2026-01-28 18:15:43.550"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-01-28 18:15:43.551"}
+{"level":"info","message":"Processing 1 queued items","service":"edge-node","timestamp":"2026-01-28 18:16:13.510"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:16:13.561"}
+{"attempts":4,"itemId":"cmkyiwqs70003xft6kx05baob","level":"debug","message":"Queue item scheduled for retry","scheduledAt":"2026-01-28T21:16:29.561Z","service":"edge-node","timestamp":"2026-01-28 18:16:13.562"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-28 18:16:43.508"}
+{"level":"info","message":"Processing 1 queued items","service":"edge-node","timestamp":"2026-01-28 18:16:43.512"}
+{"count":1,"error":"Cloud returned 404: Not Found","level":"error","message":"Failed to sync assurance_event items","service":"edge-node","timestamp":"2026-01-28 18:16:43.553"}
+{"attempts":5,"itemId":"cmkyiwqs70003xft6kx05baob","level":"warn","message":"Queue item failed permanently","service":"edge-node","timestamp":"2026-01-28 18:16:43.554","type":"assurance_event"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-01-28 18:16:43.555"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-28 18:17:43.508"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-01-28 18:17:43.558"}
