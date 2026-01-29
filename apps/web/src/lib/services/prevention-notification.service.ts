@@ -187,16 +187,26 @@ export class PreventionNotificationService {
       const enabledChannels = this.filterChannelsByPreferences(channels, preferences);
 
       // Create in-app notification record
+      // Note: Custom prevention notification types are stored using SYSTEM_ALERT
+      // The actual type is preserved in 'metadata' for filtering
+      // Map service priority to Prisma enum (medium -> NORMAL)
+      const prismaPriority = priority === 'medium' ? 'NORMAL' : priority.toUpperCase();
+      // Map recipient type to Prisma enum
+      const prismaRecipientType = payload.recipientType === 'clinician' ? 'CLINICIAN' : 'PATIENT';
       const notification = await prisma.notification.create({
         data: {
-          userId: payload.recipientId,
-          type: payload.type,
+          recipientId: payload.recipientId,
+          recipientType: prismaRecipientType,
+          type: 'SYSTEM_ALERT',
           title: payload.title,
           message: payload.message,
-          data: payload.data as any,
-          priority: priority.toUpperCase(),
-          channels: enabledChannels,
-          scheduledFor: payload.scheduledFor,
+          metadata: {
+            ...payload.data,
+            originalType: payload.type,
+            channels: enabledChannels,
+            scheduledFor: payload.scheduledFor?.toISOString(),
+          },
+          priority: prismaPriority as 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT',
         },
       });
 
@@ -218,16 +228,25 @@ export class PreventionNotificationService {
       });
 
       // Update notification with delivery results
+      // Track delivery status per channel using the schema's boolean fields
+      const deliveredInApp = results.some(
+        (r) => r.channel === 'in_app' && (r.status === 'sent' || r.status === 'delivered')
+      );
+      const deliveredEmail = results.some(
+        (r) => r.channel === 'email' && (r.status === 'sent' || r.status === 'delivered')
+      );
+      const deliveredSMS = results.some(
+        (r) => r.channel === 'sms' && (r.status === 'sent' || r.status === 'delivered')
+      );
       await prisma.notification.update({
         where: { id: notification.id },
         data: {
-          deliveryStatus: results.every((r) => r.status === 'sent' || r.status === 'delivered')
-            ? 'DELIVERED'
-            : results.some((r) => r.status === 'sent' || r.status === 'delivered')
-              ? 'PARTIAL'
-              : 'FAILED',
-          deliveredAt: new Date(),
-          metadata: { deliveryResults: results },
+          deliveredInApp,
+          deliveredEmail,
+          deliveredSMS,
+          emailSentAt: deliveredEmail ? new Date() : undefined,
+          smsSentAt: deliveredSMS ? new Date() : undefined,
+          metadata: { deliveryResults: results } as any,
         },
       });
 
@@ -245,12 +264,12 @@ export class PreventionNotificationService {
 
       // HIPAA Audit
       await createAuditLog({
-        action: 'notification_sent',
-        entityType: 'Notification',
-        entityId: notification.id,
-        userId: payload.recipientId,
+        action: 'NOTIFY',
+        resource: 'Notification',
+        resourceId: notification.id,
         details: {
           type: payload.type,
+          recipientId: payload.recipientId,
           channels: enabledChannels,
           deliveryStatus: results.map((r) => r.status),
         },
@@ -335,7 +354,7 @@ export class PreventionNotificationService {
           recipientType: 'clinician',
           title: `Condition Detected: ${alert.conditionName}`,
           message: `${alert.patientName} - ${alert.conditionName} detected with ${alert.confidence}% confidence`,
-          data: alert,
+          data: alert as unknown as Record<string, unknown>,
           priority: 'high',
         });
       } else {
@@ -382,12 +401,13 @@ export class PreventionNotificationService {
     }
 
     // Get patient user for notification
+    // PatientUser is the user account for patients, it doesn't have a separate user relation
     const patientUser = await prisma.patientUser.findFirst({
       where: { patientId: data.patientId },
-      include: { user: true },
     });
 
-    const recipientId = patientUser?.userId || data.patientId;
+    // Use the patientUser id as recipient, fall back to patientId
+    const recipientId = patientUser?.id || data.patientId;
     const patientName = patient.firstName || 'Patient';
 
     const daysUntil = Math.ceil(
@@ -426,12 +446,13 @@ export class PreventionNotificationService {
       return { id: '', success: false, deliveryResults: [], error: 'Patient not found' };
     }
 
+    // PatientUser is the user account for patients, it doesn't have a separate user relation
     const patientUser = await prisma.patientUser.findFirst({
       where: { patientId: data.patientId },
-      include: { user: true },
     });
 
-    const recipientId = patientUser?.userId || data.patientId;
+    // Use the patientUser id as recipient, fall back to patientId
+    const recipientId = patientUser?.id || data.patientId;
 
     return this.sendNotification({
       type: 'SCREENING_OVERDUE',
@@ -478,7 +499,7 @@ export class PreventionNotificationService {
 
     return this.sendNotification({
       type: 'SCREENING_RESULT',
-      recipientId: patientUser?.userId || patientId,
+      recipientId: patientUser?.id || patientId,
       recipientType: 'patient',
       title: 'Screening Results Available',
       message: 'Your screening results are now available. Please review them in your patient portal.',
@@ -522,7 +543,7 @@ export class PreventionNotificationService {
 
     return this.sendNotification({
       type: 'PLAN_UPDATED',
-      recipientId: patientUser?.userId || patientId,
+      recipientId: patientUser?.id || patientId,
       recipientType: 'patient',
       title: 'Prevention Plan Updated',
       message: `Your ${plan.planName} has been updated by ${clinicianName}`,
@@ -750,14 +771,32 @@ export class PreventionNotificationService {
     try {
       if (recipientType === 'clinician') {
         const prefs = await prisma.clinicianPreferences.findUnique({
-          where: { userId: recipientId },
+          where: { clinicianId: recipientId },
         });
-        return (prefs?.notificationPreferences as Record<string, boolean>) || {};
+        // Map individual boolean fields to channel preferences
+        return prefs
+          ? {
+              in_app: true, // In-app is always enabled
+              push: prefs.pushEnabled,
+              email: prefs.emailEnabled,
+              sms: prefs.smsEnabled,
+              whatsapp: prefs.whatsappEnabled,
+            }
+          : {};
       } else {
         const prefs = await prisma.patientPreferences.findUnique({
           where: { patientId: recipientId },
         });
-        return (prefs?.communicationPreferences as Record<string, boolean>) || {};
+        // Map individual boolean fields to channel preferences
+        return prefs
+          ? {
+              in_app: true, // In-app is always enabled
+              push: prefs.pushEnabled,
+              email: prefs.emailEnabled,
+              sms: prefs.smsEnabled,
+              whatsapp: prefs.whatsappEnabled,
+            }
+          : {};
       }
     } catch {
       return {};
@@ -920,7 +959,7 @@ export class PreventionNotificationService {
     await prisma.notification.update({
       where: { id: notificationId },
       data: {
-        metadata: { ...metadata, retryCount: retryCount + 1 },
+        metadata: { ...metadata, retryCount: retryCount + 1 } as any,
       },
     });
 
@@ -933,13 +972,15 @@ export class PreventionNotificationService {
       return { id: notificationId, success: true, deliveryResults: [] };
     }
 
+    // Map Prisma recipientType to service recipientType
+    const recipientType = notification.recipientType === 'CLINICIAN' ? 'clinician' : 'patient';
     return this.sendNotification({
-      type: notification.type as NotificationTemplate,
-      recipientId: notification.userId,
-      recipientType: 'clinician', // Default
+      type: notification.type as unknown as NotificationTemplate,
+      recipientId: notification.recipientId,
+      recipientType,
       title: notification.title,
       message: notification.message,
-      data: notification.data as Record<string, unknown>,
+      data: (notification.metadata || {}) as Record<string, unknown>,
       channels: failedChannels,
     });
   }

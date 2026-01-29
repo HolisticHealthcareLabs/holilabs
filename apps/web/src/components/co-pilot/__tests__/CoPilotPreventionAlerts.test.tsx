@@ -10,13 +10,15 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import '@testing-library/jest-dom';
+import { describe, it, beforeEach, jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CoPilotPreventionAlerts } from '../CoPilotPreventionAlerts';
 import type {
   DetectedConditionFromServer,
   RecommendationFromServer,
 } from '@/hooks/useRealtimePreventionUpdates';
+import type { RecommendationLite } from '@/lib/prevention/realtime';
 
 // Mock framer-motion to avoid animation issues in tests
 jest.mock('framer-motion', () => ({
@@ -66,13 +68,15 @@ describe('CoPilotPreventionAlerts', () => {
       title: 'Blood Pressure Check',
       priority: 'MEDIUM',
       description: 'Regular blood pressure monitoring',
+      guidelineSource: 'ACC/AHA',
     },
     {
       id: 'rec-3',
-      type: 'counseling',
+      type: 'lifestyle',
       title: 'Refer to Nutritionist',
       priority: 'LOW',
       description: 'Dietary counseling for diabetes management',
+      guidelineSource: 'ADA',
     },
   ];
 
@@ -83,9 +87,9 @@ describe('CoPilotPreventionAlerts', () => {
     isExpanded: true,
     onToggleExpand: jest.fn(),
     alertCount: 5,
-    onCreateOrder: jest.fn().mockResolvedValue(undefined),
-    onCreateReferral: jest.fn().mockResolvedValue(undefined),
-    onCreateTask: jest.fn().mockResolvedValue(undefined),
+    onCreateOrder: jest.fn() as jest.MockedFunction<(recommendation: RecommendationLite) => Promise<void>>,
+    onCreateReferral: jest.fn() as jest.MockedFunction<(recommendation: RecommendationLite) => Promise<void>>,
+    onCreateTask: jest.fn() as jest.MockedFunction<(recommendation: RecommendationLite) => Promise<void>>,
     onViewFullHub: jest.fn(),
     lastUpdateMs: Date.now() - 5000,
   };
@@ -247,6 +251,7 @@ describe('CoPilotPreventionAlerts', () => {
           title: 'HbA1c Monitoring',
           priority: 'HIGH',
           description: 'Quarterly HbA1c monitoring',
+          guidelineSource: 'ADA',
         },
       ];
 
@@ -297,8 +302,8 @@ describe('CoPilotPreventionAlerts', () => {
 
     it('should disable buttons while action is loading', async () => {
       const slowCreateOrder = jest.fn(
-        () => new Promise((resolve) => setTimeout(resolve, 1000))
-      );
+        () => new Promise<void>((resolve) => setTimeout(resolve, 1000))
+      ) as jest.MockedFunction<(recommendation: RecommendationLite) => Promise<void>>;
 
       render(
         <CoPilotPreventionAlerts {...defaultProps} onCreateOrder={slowCreateOrder} />
@@ -389,6 +394,8 @@ describe('CoPilotPreventionAlerts', () => {
           type: 'screening',
           title: 'Colonoscopy Screening',
           priority: 'HIGH',
+          description: 'Colorectal cancer screening',
+          guidelineSource: 'USPSTF',
         },
       ];
 
@@ -408,9 +415,11 @@ describe('CoPilotPreventionAlerts', () => {
       const referralRec: RecommendationFromServer[] = [
         {
           id: 'rec-referral',
-          type: 'counseling',
+          type: 'intervention',
           title: 'Refer to Cardiologist',
           priority: 'HIGH',
+          description: 'Cardiology consultation for heart health',
+          guidelineSource: 'ACC/AHA',
         },
       ];
 
@@ -430,9 +439,11 @@ describe('CoPilotPreventionAlerts', () => {
       const taskRec: RecommendationFromServer[] = [
         {
           id: 'rec-task',
-          type: 'education',
+          type: 'lifestyle',
           title: 'Patient Education on Diet',
           priority: 'LOW',
+          description: 'Dietary education for improved health',
+          guidelineSource: 'ADA',
         },
       ];
 

@@ -137,51 +137,81 @@ async function getLabPanelDefinitionsHandler(input: any, context: MCPContext): P
 async function getLabResultsRawHandler(input: any, context: MCPContext): Promise<MCPResult> {
     const { patientId, orderId, startDate, limit } = input;
 
-    // Mock lab results - in production would query actual results
-    const results = [
-        {
-            orderId: 'LAB-DEMO1',
-            panel: 'CMP',
-            collectedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'COMPLETED',
-            results: [
-                { test: 'Glucose', value: 126, unit: 'mg/dL', referenceRange: '70-100' },
-                { test: 'Creatinine', value: 1.1, unit: 'mg/dL', referenceRange: '0.7-1.3' },
-                { test: 'Potassium', value: 4.0, unit: 'mEq/L', referenceRange: '3.5-5.0' },
-                { test: 'ALT', value: 45, unit: 'U/L', referenceRange: '7-56' },
-            ],
-        },
-        {
-            orderId: 'LAB-DEMO2',
-            panel: 'A1C',
-            collectedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'COMPLETED',
-            results: [
-                { test: 'HbA1c', value: 7.2, unit: '%', referenceRange: '<5.7' },
-            ],
-        },
-    ];
+    try {
+        // Verify patient access
+        const patient = await prisma.patient.findFirst({
+            where: { id: patientId, assignedClinicianId: context.clinicianId },
+            select: { id: true },
+        });
 
-    logger.info({
-        event: 'mcp_tool_executed',
-        tool: 'get_lab_results_raw',
-        patientId,
-        resultCount: results.length,
-    });
+        if (!patient) {
+            return { success: false, error: 'Patient not found or access denied', data: null };
+        }
 
-    // Return raw data - no abnormal flags, no hasAbnormal
-    return {
-        success: true,
-        data: {
+        // Build query filters
+        const whereClause: any = { patientId };
+
+        if (startDate) {
+            whereClause.resultDate = { gte: new Date(startDate) };
+        }
+
+        // Query lab results from database
+        const labResults: any[] = await prisma.labResult.findMany({
+            where: whereClause,
+            orderBy: { resultDate: 'desc' },
+            take: limit,
+        });
+
+        // Transform results to expected format
+        const results = labResults.map((result) => ({
+            id: result.id,
+            testName: result.testName,
+            testCode: result.testCode,
+            category: result.category,
+            value: result.value,
+            unit: result.unit,
+            referenceRange: result.referenceRange,
+            status: result.status,
+            interpretation: result.interpretation,
+            isAbnormal: result.isAbnormal,
+            isCritical: result.isCritical,
+            collectedDate: result.collectedDate?.toISOString(),
+            resultDate: result.resultDate.toISOString(),
+            orderingDoctor: result.orderingDoctor,
+            performingLab: result.performingLab,
+            notes: result.notes,
+        }));
+
+        logger.info({
+            event: 'mcp_tool_executed',
+            tool: 'get_lab_results_raw',
             patientId,
-            results: results.slice(0, limit),
-            totalCount: results.length,
-        },
-    };
+            resultCount: results.length,
+            agentId: context.agentId,
+        });
+
+        // Return raw data - no abnormal flags, no hasAbnormal
+        return {
+            success: true,
+            data: {
+                patientId,
+                results,
+                totalCount: results.length,
+            },
+        };
+    } catch (error: any) {
+        logger.error({
+            event: 'mcp_tool_error',
+            tool: 'get_lab_results_raw',
+            error: error.message,
+            agentId: context.agentId,
+        });
+        return { success: false, error: error.message, data: null };
+    }
 }
 
 // PRIMITIVE: create_lab_order
-// Pure create operation
+// Pure create operation - creates LabResult records with PRELIMINARY status to track the order
 async function createLabOrderHandler(input: any, context: MCPContext): Promise<MCPResult> {
     const { patientId, panelCode, priority, fasting, indication, notes } = input;
 
@@ -190,34 +220,83 @@ async function createLabOrderHandler(input: any, context: MCPContext): Promise<M
         return { success: false, error: `Unknown panel: ${panelCode}`, data: null };
     }
 
-    const orderId = `LAB-${Date.now().toString(36).toUpperCase()}`;
+    try {
+        // Verify patient access
+        const patient = await prisma.patient.findFirst({
+            where: { id: patientId, assignedClinicianId: context.clinicianId },
+            select: { id: true },
+        });
 
-    logger.info({
-        event: 'mcp_tool_executed',
-        tool: 'create_lab_order',
-        orderId,
-        patientId,
-        panelCode,
-        priority,
-    });
+        if (!patient) {
+            return { success: false, error: 'Patient not found or access denied', data: null };
+        }
 
-    return {
-        success: true,
-        data: {
+        const orderId = `LAB-${Date.now().toString(36).toUpperCase()}`;
+        const orderedAt = new Date();
+
+        // Create a LabResult record for each test in the panel with PRELIMINARY status
+        // This tracks the order in the database
+        const createdResults: any[] = [];
+        for (const testName of panel.tests) {
+            const labResult = await prisma.labResult.create({
+                data: {
+                    patientId,
+                    testName,
+                    testCode: `${panelCode}-${testName.toUpperCase().replace(/\s+/g, '_')}`,
+                    category: panelCode,
+                    status: 'PRELIMINARY',
+                    orderedDate: orderedAt,
+                    resultDate: orderedAt, // Will be updated when results come in
+                    notes: [
+                        `Order ID: ${orderId}`,
+                        `Priority: ${priority}`,
+                        fasting ? 'Fasting required' : null,
+                        indication ? `Indication: ${indication}` : null,
+                        notes || null,
+                    ].filter(Boolean).join('\n'),
+                },
+            });
+            createdResults.push(labResult);
+        }
+
+        logger.info({
+            event: 'mcp_tool_executed',
+            tool: 'create_lab_order',
             orderId,
             patientId,
             panelCode,
-            panelName: panel.name,
-            tests: panel.tests,
             priority,
-            fasting,
-            indication,
-            notes,
-            status: 'ORDERED',
-            orderedAt: new Date().toISOString(),
-            estimatedTurnaroundHours: panel.turnaroundHours,
-        },
-    };
+            testsCreated: createdResults.length,
+            agentId: context.agentId,
+        });
+
+        return {
+            success: true,
+            data: {
+                orderId,
+                patientId,
+                panelCode,
+                panelName: panel.name,
+                tests: panel.tests,
+                labResultIds: createdResults.map((r) => r.id),
+                priority,
+                fasting,
+                indication,
+                notes,
+                status: 'ORDERED',
+                orderedAt: orderedAt.toISOString(),
+                estimatedTurnaroundHours: panel.turnaroundHours,
+            },
+        };
+    } catch (error: any) {
+        logger.error({
+            event: 'mcp_tool_error',
+            tool: 'create_lab_order',
+            error: error.message,
+            agentId: context.agentId,
+        });
+        return { success: false, error: error.message, data: null };
+    }
 }
 
 // =============================================================================
@@ -573,25 +652,89 @@ export const labOrderTools: MCPTool[] = [
         }),
         requiredPermissions: ['patient:read'],
         handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
-            // Mock pending labs
-            const pending = [
-                {
-                    orderId: 'LAB-PENDING1',
-                    panel: 'CBC',
-                    panelName: 'Complete Blood Count',
-                    status: 'SPECIMEN_COLLECTED',
-                    orderedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-                    expectedResultTime: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
-                },
-            ];
+            try {
+                // Verify patient access
+                const patient = await prisma.patient.findFirst({
+                    where: { id: input.patientId, assignedClinicianId: context.clinicianId },
+                    select: { id: true },
+                });
 
-            return {
-                success: true,
-                data: {
-                    pendingOrders: pending,
-                    count: pending.length,
-                },
-            };
+                if (!patient) {
+                    return { success: false, error: 'Patient not found or access denied', data: null };
+                }
+
+                // Query lab results with PRELIMINARY status (pending results)
+                const pendingResults: any[] = await prisma.labResult.findMany({
+                    where: {
+                        patientId: input.patientId,
+                        status: 'PRELIMINARY',
+                    },
+                    orderBy: { orderedDate: 'desc' },
+                });
+
+                // Group by category (panel) and order date to reconstruct order structure
+                const orderGroups = new Map<string, any[]>();
+                for (const result of pendingResults) {
+                    // Use category + orderedDate as key to group tests from the same order
+                    const orderedDateKey = result.orderedDate?.toISOString().slice(0, 16) || 'unknown';
+                    const key = `${result.category || 'MISC'}-${orderedDateKey}`;
+                    if (!orderGroups.has(key)) {
+                        orderGroups.set(key, []);
+                    }
+                    orderGroups.get(key)!.push(result);
+                }
+
+                // Transform grouped results into pending orders format
+                const pendingOrders = Array.from(orderGroups.entries()).map(([key, results]) => {
+                    const [panelCode] = key.split('-');
+                    const panel = LAB_PANELS[panelCode as keyof typeof LAB_PANELS];
+                    const firstResult = results[0];
+
+                    // Extract order ID from notes if available
+                    const orderIdMatch = firstResult.notes?.match(/Order ID: (LAB-[A-Z0-9]+)/);
+                    const orderId = orderIdMatch ? orderIdMatch[1] : `LAB-${firstResult.id.slice(0, 8).toUpperCase()}`;
+
+                    return {
+                        orderId,
+                        panel: panelCode,
+                        panelName: panel?.name || panelCode,
+                        status: 'PENDING',
+                        tests: results.map((r: any) => r.testName),
+                        labResultIds: results.map((r: any) => r.id),
+                        orderedAt: firstResult.orderedDate?.toISOString(),
+                        expectedResultTime: panel?.turnaroundHours
+                            ? new Date(
+                                  (firstResult.orderedDate?.getTime() || Date.now()) +
+                                      panel.turnaroundHours * 60 * 60 * 1000
+                              ).toISOString()
+                            : null,
+                    };
+                });
+
+                logger.info({
+                    event: 'mcp_tool_executed',
+                    tool: 'get_pending_labs',
+                    patientId: input.patientId,
+                    pendingCount: pendingOrders.length,
+                    agentId: context.agentId,
+                });
+
+                return {
+                    success: true,
+                    data: {
+                        pendingOrders,
+                        count: pendingOrders.length,
+                    },
+                };
+            } catch (error: any) {
+                logger.error({
+                    event: 'mcp_tool_error',
+                    tool: 'get_pending_labs',
+                    error: error.message,
+                    agentId: context.agentId,
+                });
+                return { success: false, error: error.message, data: null };
+            }
         },
     },
 
@@ -600,35 +743,78 @@ export const labOrderTools: MCPTool[] = [
         description: 'Flag a lab result as critical and notify care team',
         category: 'lab',
         inputSchema: z.object({
-            orderId: z.string().describe('The lab order ID'),
-            testName: z.string().describe('The specific test to flag'),
+            labResultId: z.string().describe('The lab result ID to flag'),
+            testName: z.string().optional().describe('The specific test name (for logging)'),
             reason: z.string().describe('Reason for flagging'),
             urgency: z.enum(['URGENT', 'CRITICAL']).default('URGENT'),
             notifyProvider: z.boolean().default(true),
         }),
         requiredPermissions: ['medication:write'],
         handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
-            logger.warn({
-                event: 'critical_lab_flagged_by_agent',
-                orderId: input.orderId,
-                testName: input.testName,
-                reason: input.reason,
-                urgency: input.urgency,
-                agentId: context.agentId,
-            });
+            try {
+                // Find lab result and verify access
+                const existingResult: any = await prisma.labResult.findFirst({
+                    where: { id: input.labResultId },
+                    include: { patient: { select: { id: true, assignedClinicianId: true } } },
+                });
 
-            return {
-                success: true,
-                data: {
-                    flagId: `FLAG-${Date.now()}`,
-                    orderId: input.orderId,
-                    testName: input.testName,
+                if (!existingResult) {
+                    return { success: false, error: 'Lab result not found', data: null };
+                }
+
+                if (existingResult.patient?.assignedClinicianId !== context.clinicianId) {
+                    return { success: false, error: 'Access denied', data: null };
+                }
+
+                // Update the lab result to mark as critical
+                const updatedResult: any = await prisma.labResult.update({
+                    where: { id: input.labResultId },
+                    data: {
+                        isCritical: true,
+                        isAbnormal: true, // Critical results are always abnormal
+                        interpretation: input.urgency,
+                        notes: existingResult.notes
+                            ? `${existingResult.notes}\n\n[CRITICAL FLAG - ${new Date().toISOString()}]\nReason: ${input.reason}\nUrgency: ${input.urgency}`
+                            : `[CRITICAL FLAG - ${new Date().toISOString()}]\nReason: ${input.reason}\nUrgency: ${input.urgency}`,
+                    },
+                });
+
+                logger.warn({
+                    event: 'critical_lab_flagged_by_agent',
+                    labResultId: input.labResultId,
+                    testName: updatedResult.testName,
+                    reason: input.reason,
                     urgency: input.urgency,
-                    status: 'FLAGGED',
-                    providerNotified: input.notifyProvider,
-                    flaggedAt: new Date().toISOString(),
-                },
-            };
+                    agentId: context.agentId,
+                });
+
+                return {
+                    success: true,
+                    data: {
+                        flagId: `FLAG-${Date.now()}`,
+                        labResultId: input.labResultId,
+                        testName: updatedResult.testName,
+                        testCode: updatedResult.testCode,
+                        value: updatedResult.value,
+                        unit: updatedResult.unit,
+                        referenceRange: updatedResult.referenceRange,
+                        urgency: input.urgency,
+                        reason: input.reason,
+                        status: 'FLAGGED',
+                        isCritical: true,
+                        providerNotified: input.notifyProvider,
+                        flaggedAt: new Date().toISOString(),
+                    },
+                };
+            } catch (error: any) {
+                logger.error({
+                    event: 'mcp_tool_error',
+                    tool: 'flag_critical_result',
+                    error: error.message,
+                    agentId: context.agentId,
+                });
+                return { success: false, error: error.message, data: null };
+            }
         },
     },
 ];

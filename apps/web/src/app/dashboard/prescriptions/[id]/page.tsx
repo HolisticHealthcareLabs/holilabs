@@ -48,7 +48,7 @@ interface Prescription {
 export default function PrescriptionDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const prescriptionId = params.id as string;
+  const prescriptionId = (params?.id as string) || '';
 
   const [prescription, setPrescription] = useState<Prescription | null>(null);
   const [loading, setLoading] = useState(true);

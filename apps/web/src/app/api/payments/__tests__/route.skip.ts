@@ -80,6 +80,7 @@ describe('Payment API', () => {
       data: {
         ...TEST_PATIENT,
         dateOfBirth: new Date('1990-01-01'),
+        tokenId: `PT-${crypto.randomUUID()}`, // Required unique token
       },
     });
 
@@ -90,6 +91,8 @@ describe('Payment API', () => {
         patientId: testPatient.id,
         issueDate: new Date(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        subtotal: 15000, // Required field (in cents, $150.00)
+        totalAmount: 15000, // Convert to cents
       },
     });
   });
@@ -198,7 +201,8 @@ describe('Payment API', () => {
         data: {
           invoiceNumber: 'INV-2026-0002',
           patientId: testPatient.id,
-          totalAmount: 200.00,
+          subtotal: 20000, // Required (in cents)
+          totalAmount: 20000, // In cents ($200.00)
           status: 'PENDING',
           issueDate: new Date(),
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -241,7 +245,8 @@ describe('Payment API', () => {
         data: {
           invoiceNumber: 'INV-2026-0003',
           patientId: testPatient.id,
-          totalAmount: 100.00,
+          subtotal: 10000, // Required (in cents)
+          totalAmount: 10000, // In cents ($100.00)
           status: 'PENDING',
           issueDate: new Date(),
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -277,7 +282,8 @@ describe('Payment API', () => {
         data: {
           invoiceNumber: 'INV-2026-0004',
           patientId: testPatient.id,
-          totalAmount: 100.00,
+          subtotal: 10000, // Required (in cents)
+          totalAmount: 10000, // In cents ($100.00)
           status: 'VOID',
           issueDate: new Date(),
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -313,7 +319,8 @@ describe('Payment API', () => {
         data: {
           invoiceNumber: 'INV-2026-0005',
           patientId: testPatient.id,
-          totalAmount: 100.00,
+          subtotal: 10000, // Required (in cents)
+          totalAmount: 10000, // In cents ($100.00)
           status: 'PAID',
           issueDate: new Date(),
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -582,7 +589,8 @@ describe('Payment API', () => {
         data: {
           invoiceNumber: 'INV-FILTER-001',
           patientId: testPatient.id,
-          totalAmount: 100.00,
+          subtotal: 10000, // Required (in cents)
+          totalAmount: 10000, // In cents ($100.00)
           status: 'PENDING',
           issueDate: new Date(),
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -929,7 +937,8 @@ describe('Payment API', () => {
         data: {
           invoiceNumber: 'INV-REFUND-001',
           patientId: testPatient.id,
-          totalAmount: 100.00,
+          subtotal: 10000, // Required (in cents)
+          totalAmount: 10000, // In cents ($100.00)
           status: 'PAID',
           issueDate: new Date(),
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

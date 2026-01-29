@@ -10,6 +10,10 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
+// Type helper for jest mocks with @jest/globals
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = jest.Mock<any>;
+
 // Mock all dependencies FIRST using the CLAUDE.md pattern
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -45,6 +49,7 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 // Import mocks after jest.mock()
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { prisma } = require('@/lib/prisma');
 
 describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
@@ -90,19 +95,19 @@ describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
     jest.clearAllMocks();
 
     // Default mock responses
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(mockPlan);
-    (prisma.preventionPlan.update as jest.Mock).mockImplementation((args: { data: unknown }) =>
+    (prisma.patient.findUnique as AnyMock).mockResolvedValue(mockPatient);
+    (prisma.preventionPlan.findUnique as AnyMock).mockResolvedValue(mockPlan);
+    (prisma.preventionPlan.update as AnyMock).mockImplementation((args: { data: Record<string, unknown> }) =>
       Promise.resolve({ ...mockPlan, ...args.data })
     );
-    (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue(mockEncounter);
-    (prisma.preventionEncounterLink.create as jest.Mock).mockResolvedValue({
+    (prisma.clinicalEncounter.findUnique as AnyMock).mockResolvedValue(mockEncounter);
+    (prisma.preventionEncounterLink.create as AnyMock).mockResolvedValue({
       id: 'link-new',
       encounterId: mockEncounterId,
       preventionPlanId: mockPlanId,
     });
-    (prisma.preventionPlanVersion.findFirst as jest.Mock).mockResolvedValue({ version: 1 });
-    (prisma.preventionPlanVersion.create as jest.Mock).mockResolvedValue({
+    (prisma.preventionPlanVersion.findFirst as AnyMock).mockResolvedValue({ version: 1 });
+    (prisma.preventionPlanVersion.create as AnyMock).mockResolvedValue({
       id: 'version-new',
       planId: mockPlanId,
       version: 2,
@@ -120,7 +125,7 @@ describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
     });
 
     it('should return null for non-existent patient', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.patient.findUnique as AnyMock).mockResolvedValue(null);
 
       const patient = await prisma.patient.findUnique({
         where: { id: 'non-existent' },
@@ -141,7 +146,7 @@ describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
         goals: [],
       };
 
-      (prisma.preventionPlan.create as jest.Mock).mockResolvedValue(newPlan);
+      (prisma.preventionPlan.create as AnyMock).mockResolvedValue(newPlan);
 
       // Map domain to plan type
       const DOMAIN_TO_PLAN_TYPE: Record<string, string> = {
@@ -197,7 +202,7 @@ describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
     });
 
     it('should return null for non-existent plan', async () => {
-      (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.preventionPlan.findUnique as AnyMock).mockResolvedValue(null);
 
       const plan = await prisma.preventionPlan.findUnique({
         where: { id: 'non-existent' },
@@ -247,7 +252,7 @@ describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
     });
 
     it('should validate encounter belongs to same patient', async () => {
-      (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.clinicalEncounter.findUnique as AnyMock).mockResolvedValue({
         id: mockEncounterId,
         patientId: 'different-patient',
         status: 'IN_PROGRESS',
@@ -349,7 +354,7 @@ describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      (prisma.preventionPlan.update as jest.Mock).mockRejectedValue(
+      (prisma.preventionPlan.update as AnyMock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -362,7 +367,7 @@ describe('POST /api/prevention/hub/add-to-plan - Unit Tests', () => {
     });
 
     it('should handle encounter not found', async () => {
-      (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.clinicalEncounter.findUnique as AnyMock).mockResolvedValue(null);
 
       const encounter = await prisma.clinicalEncounter.findUnique({
         where: { id: 'non-existent' },

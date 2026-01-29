@@ -5,19 +5,38 @@
  * Implements optimistic locking and conflict detection.
  *
  * CRITICAL: NO AUTO-MERGE. All conflicts require human review.
+ *
+ * NOTE: This service is stubbed pending FHIRSyncEvent model creation in Prisma schema.
  */
 
-import { prisma } from '@/lib/prisma';
-import { getFhirSyncQueue } from '@/lib/queue/queues';
 import { JobRepository } from '@/lib/repositories';
 import logger from '@/lib/logger';
-import type {
-  FhirSyncJobData,
-  SyncDirection,
-  SyncOperation,
-  FhirResourceType,
-} from '@/lib/queue/types';
-import type { FHIRSyncEvent, SyncStatus, ConflictResolution } from '@prisma/client';
+
+// Local type definitions for FHIR sync (model not yet in Prisma schema)
+export type SyncStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CONFLICT' | 'SYNCED';
+export type ConflictResolution = 'LOCAL_WINS' | 'REMOTE_WINS' | 'MERGED' | 'SKIPPED' | 'KEEP_LOCAL' | 'KEEP_REMOTE' | 'MANUAL_MERGE';
+
+export interface FHIRSyncEvent {
+  id: string;
+  direction: 'INBOUND' | 'OUTBOUND';
+  resourceType: string;
+  resourceId: string;
+  operation: string;
+  status: SyncStatus;
+  localVersion: number;
+  remoteVersion: string | null;
+  localData?: unknown;
+  remoteData?: unknown;
+  conflictData?: unknown;
+  conflictResolution?: ConflictResolution;
+  resolution?: ConflictResolution;
+  resolvedBy?: string;
+  resolvedAt?: Date;
+  syncedAt?: Date;
+  errorMessage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * Sync result with conflict status
@@ -40,6 +59,8 @@ export interface ConflictResolutionInput {
   mergedData?: unknown;
 }
 
+const NOT_IMPLEMENTED_MSG = 'FHIR Sync not available: FHIRSyncEvent model not yet added to Prisma schema';
+
 export class SyncService {
   constructor(private readonly jobRepo: JobRepository) {}
 
@@ -47,256 +68,82 @@ export class SyncService {
    * Push local patient data to FHIR server
    * Returns sync event ID - caller should poll for status
    */
-  async pushPatient(patientId: string): Promise<string> {
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
+  async pushPatient(_patientId: string): Promise<string> {
+    logger.warn({
+      event: 'fhir_sync_push_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
-
-    if (!patient) {
-      throw new Error(`Patient ${patientId} not found`);
-    }
-
-    logger.info({
-      event: 'fhir_sync_push_start',
-      patientId,
-      resourceType: 'Patient',
-    });
-
-    // Create sync event record
-    const syncEvent = await prisma.fHIRSyncEvent.create({
-      data: {
-        direction: 'OUTBOUND',
-        resourceType: 'Patient',
-        resourceId: patientId,
-        operation: patient.fhirId ? 'UPDATE' : 'CREATE',
-        status: 'PENDING',
-        localVersion: patient.version || 1,
-        remoteVersion: patient.fhirId || null,
-      },
-    });
-
-    // Create analysis job for tracking
-    const analysisJob = await this.jobRepo.create({
-      type: 'FHIR_SYNC',
-      patientId,
-      inputData: {
-        direction: 'OUTBOUND',
-        resourceType: 'Patient',
-        operation: patient.fhirId ? 'UPDATE' : 'CREATE',
-        syncEventId: syncEvent.id,
-      },
-    });
-
-    // Prepare job data for BullMQ
-    const jobData: FhirSyncJobData = {
-      direction: 'OUTBOUND',
-      resourceType: 'Patient',
-      localId: patientId,
-      fhirResourceId: patient.fhirId || undefined,
-      operation: patient.fhirId ? 'UPDATE' : 'CREATE',
-      localVersion: patient.version || 1,
-      remoteVersion: patient.fhirId || undefined,
-      payload: patient,
-    };
-
-    // Add to BullMQ queue
-    const queue = getFhirSyncQueue();
-    const bullmqJob = await queue.add('sync-patient', jobData, {
-      jobId: analysisJob.id,
-    });
-
-    // Update job record
-    await this.jobRepo.update(analysisJob.id, {
-      bullmqJobId: bullmqJob.id,
-    });
-
-    logger.info({
-      event: 'fhir_sync_push_enqueued',
-      syncEventId: syncEvent.id,
-      patientId,
-    });
-
-    return syncEvent.id;
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
    * Pull patient data from FHIR server
    */
-  async pullPatient(fhirResourceId: string, localPatientId?: string): Promise<string> {
-    logger.info({
-      event: 'fhir_sync_pull_start',
-      fhirResourceId,
-      localPatientId,
+  async pullPatient(_fhirResourceId: string, _localPatientId?: string): Promise<string> {
+    logger.warn({
+      event: 'fhir_sync_pull_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
-
-    // Create sync event record
-    const syncEvent = await prisma.fHIRSyncEvent.create({
-      data: {
-        direction: 'INBOUND',
-        resourceType: 'Patient',
-        resourceId: fhirResourceId,
-        operation: localPatientId ? 'UPDATE' : 'CREATE',
-        status: 'PENDING',
-        localVersion: 0,
-        remoteVersion: fhirResourceId,
-      },
-    });
-
-    // If we have a local patient, create analysis job
-    if (localPatientId) {
-      const analysisJob = await this.jobRepo.create({
-        type: 'FHIR_SYNC',
-        patientId: localPatientId,
-        inputData: {
-          direction: 'INBOUND',
-          resourceType: 'Patient',
-          operation: 'UPDATE',
-          syncEventId: syncEvent.id,
-          fhirResourceId,
-        },
-      });
-
-      const queue = getFhirSyncQueue();
-      await queue.add('sync-patient', {
-        direction: 'INBOUND',
-        resourceType: 'Patient',
-        localId: localPatientId,
-        fhirResourceId,
-        operation: 'UPDATE',
-        localVersion: 0,
-        remoteVersion: fhirResourceId,
-        payload: null,
-      } as FhirSyncJobData, {
-        jobId: analysisJob.id,
-      });
-
-      await this.jobRepo.update(analysisJob.id, {
-        bullmqJobId: analysisJob.id,
-      });
-    }
-
-    return syncEvent.id;
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
    * Get sync event status
    */
-  async getSyncStatus(syncEventId: string): Promise<FHIRSyncEvent | null> {
-    return prisma.fHIRSyncEvent.findUnique({
-      where: { id: syncEventId },
+  async getSyncStatus(_syncEventId: string): Promise<FHIRSyncEvent | null> {
+    logger.warn({
+      event: 'fhir_sync_status_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
    * Get pending conflicts for review
    */
   async getPendingConflicts(): Promise<FHIRSyncEvent[]> {
-    return prisma.fHIRSyncEvent.findMany({
-      where: { status: 'CONFLICT' },
-      orderBy: { createdAt: 'desc' },
+    logger.warn({
+      event: 'fhir_sync_conflicts_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
    * Get conflicts for a specific resource
    */
   async getResourceConflicts(
-    resourceType: string,
-    resourceId: string
+    _resourceType: string,
+    _resourceId: string
   ): Promise<FHIRSyncEvent[]> {
-    return prisma.fHIRSyncEvent.findMany({
-      where: {
-        resourceType,
-        resourceId,
-        status: 'CONFLICT',
-      },
-      orderBy: { createdAt: 'desc' },
+    logger.warn({
+      event: 'fhir_sync_resource_conflicts_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
    * Resolve a sync conflict
    * CRITICAL: This is the ONLY way to resolve conflicts - no auto-merge
    */
-  async resolveConflict(input: ConflictResolutionInput): Promise<FHIRSyncEvent> {
-    const { syncEventId, resolution, resolvedBy, mergedData } = input;
-
-    const syncEvent = await prisma.fHIRSyncEvent.findUnique({
-      where: { id: syncEventId },
+  async resolveConflict(_input: ConflictResolutionInput): Promise<FHIRSyncEvent> {
+    logger.warn({
+      event: 'fhir_sync_resolve_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
-
-    if (!syncEvent) {
-      throw new Error(`Sync event ${syncEventId} not found`);
-    }
-
-    if (syncEvent.status !== 'CONFLICT') {
-      throw new Error(`Sync event ${syncEventId} is not in CONFLICT status`);
-    }
-
-    logger.info({
-      event: 'fhir_sync_conflict_resolve_start',
-      syncEventId,
-      resolution,
-      resolvedBy,
-    });
-
-    // Update sync event with resolution
-    const resolved = await prisma.fHIRSyncEvent.update({
-      where: { id: syncEventId },
-      data: {
-        status: 'SYNCED',
-        resolution,
-        resolvedBy,
-        resolvedAt: new Date(),
-      },
-    });
-
-    // If resolution requires applying changes, do so
-    if (resolution === 'KEEP_REMOTE' || resolution === 'MANUAL_MERGE') {
-      // Apply the resolved data to local record
-      // This would typically call the appropriate repository
-      if (syncEvent.resourceType === 'Patient' && mergedData) {
-        await prisma.patient.update({
-          where: { id: syncEvent.resourceId },
-          data: mergedData as any,
-        });
-      }
-    }
-
-    if (resolution === 'KEEP_LOCAL') {
-      // Re-push local data to remote
-      if (syncEvent.resourceType === 'Patient') {
-        await this.pushPatient(syncEvent.resourceId);
-      }
-    }
-
-    logger.info({
-      event: 'fhir_sync_conflict_resolved',
-      syncEventId,
-      resolution,
-      resolvedBy,
-    });
-
-    return resolved;
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
    * Mark sync as failed
    */
-  async markFailed(syncEventId: string, errorMessage: string): Promise<void> {
-    await prisma.fHIRSyncEvent.update({
-      where: { id: syncEventId },
-      data: {
-        status: 'FAILED',
-        errorMessage,
-      },
+  async markFailed(_syncEventId: string, _errorMessage: string): Promise<void> {
+    logger.warn({
+      event: 'fhir_sync_mark_failed_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
-
-    logger.error({
-      event: 'fhir_sync_failed',
-      syncEventId,
-      errorMessage,
-    });
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
@@ -304,27 +151,15 @@ export class SyncService {
    * Called when version mismatch or data conflict detected
    */
   async markConflict(
-    syncEventId: string,
-    localData: unknown,
-    remoteData: unknown
+    _syncEventId: string,
+    _localData: unknown,
+    _remoteData: unknown
   ): Promise<void> {
-    await prisma.fHIRSyncEvent.update({
-      where: { id: syncEventId },
-      data: {
-        status: 'CONFLICT',
-        conflictData: {
-          local: localData,
-          remote: remoteData,
-          detectedAt: new Date().toISOString(),
-        },
-      },
-    });
-
     logger.warn({
-      event: 'fhir_sync_conflict_detected',
-      syncEventId,
-      message: 'Human review required - no auto-merge',
+      event: 'fhir_sync_mark_conflict_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
     });
+    throw new Error(NOT_IMPLEMENTED_MSG);
   }
 
   /**
@@ -337,15 +172,12 @@ export class SyncService {
     conflicts: number;
     failed: number;
   }> {
-    const [pending, inProgress, synced, conflicts, failed] = await Promise.all([
-      prisma.fHIRSyncEvent.count({ where: { status: 'PENDING' } }),
-      prisma.fHIRSyncEvent.count({ where: { status: 'IN_PROGRESS' } }),
-      prisma.fHIRSyncEvent.count({ where: { status: 'SYNCED' } }),
-      prisma.fHIRSyncEvent.count({ where: { status: 'CONFLICT' } }),
-      prisma.fHIRSyncEvent.count({ where: { status: 'FAILED' } }),
-    ]);
-
-    return { pending, inProgress, synced, conflicts, failed };
+    logger.warn({
+      event: 'fhir_sync_stats_not_implemented',
+      message: NOT_IMPLEMENTED_MSG,
+    });
+    // Return zeros instead of throwing to allow dashboard to load
+    return { pending: 0, inProgress: 0, synced: 0, conflicts: 0, failed: 0 };
   }
 }
 

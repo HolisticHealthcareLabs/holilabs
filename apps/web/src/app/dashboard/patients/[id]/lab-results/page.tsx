@@ -7,7 +7,7 @@ import LabResultForm from '@/components/lab-results/LabResultForm';
 
 export default function PatientLabResultsPage() {
   const params = useParams();
-  const patientId = params.id as string;
+  const patientId = (params?.id as string) || '';
 
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);

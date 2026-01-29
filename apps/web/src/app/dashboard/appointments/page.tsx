@@ -43,8 +43,8 @@ function AppointmentsContent() {
 
   // Check for OAuth callback messages
   useEffect(() => {
-    const success = searchParams.get('success');
-    const error = searchParams.get('error');
+    const success = searchParams?.get('success');
+    const error = searchParams?.get('error');
 
     if (success === 'google_connected') {
       setMessage({ type: 'success', text: 'Google Calendar conectado exitosamente' });

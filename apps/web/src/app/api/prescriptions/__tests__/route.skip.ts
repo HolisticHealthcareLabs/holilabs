@@ -102,7 +102,7 @@ describe('Prescription API', () => {
     testClinician = await prisma.user.create({
       data: {
         ...TEST_CLINICIAN,
-        password: 'hashed_password',
+        passwordHash: 'hashed_password',
       },
     });
 
@@ -110,6 +110,7 @@ describe('Prescription API', () => {
     testPatient = await prisma.patient.create({
       data: {
         ...TEST_PATIENT,
+        tokenId: `PT-test-${Date.now()}`,
         assignedClinicianId: testClinician.id,
       },
     });
@@ -222,6 +223,7 @@ describe('Prescription API', () => {
           lastName: 'Patient',
           email: 'other@test.com',
           mrn: 'MRN-OTHER-001',
+          tokenId: `PT-other-${Date.now()}`,
           dateOfBirth: new Date('1990-01-01'),
           assignedClinicianId: 'different-clinician-id',
         },
@@ -420,6 +422,7 @@ describe('Prescription API', () => {
           lastName: 'Patient',
           email: 'another@test.com',
           mrn: 'MRN-ANOTHER-001',
+          tokenId: `PT-another-${Date.now()}`,
           dateOfBirth: new Date('1992-03-20'),
           assignedClinicianId: 'different-clinician',
         },
@@ -509,7 +512,7 @@ describe('Prescription API', () => {
           email: 'other@test.com',
           firstName: 'Other',
           lastName: 'Doctor',
-          password: 'hashed',
+          passwordHash: 'hashed',
           role: 'CLINICIAN',
         },
       });
@@ -558,11 +561,11 @@ describe('Prescription API', () => {
         data: {
           patientId: testPatient.id,
           clinicianId: testClinician.id,
-          prescriptionHash: null,
+          prescriptionHash: `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           medications: [TEST_MEDICATIONS[0]],
           status: 'PENDING',
-          signatureMethod: null,
-          signatureData: null,
+          signatureMethod: 'pending',
+          signatureData: 'pending',
         },
       });
 
@@ -601,11 +604,11 @@ describe('Prescription API', () => {
         data: {
           patientId: testPatient.id,
           clinicianId: testClinician.id,
-          prescriptionHash: null,
+          prescriptionHash: `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           medications: [TEST_MEDICATIONS[1]],
           status: 'PENDING',
-          signatureMethod: null,
-          signatureData: null,
+          signatureMethod: 'pending',
+          signatureData: 'pending',
         },
       });
 
@@ -638,11 +641,11 @@ describe('Prescription API', () => {
         data: {
           patientId: testPatient.id,
           clinicianId: testClinician.id,
-          prescriptionHash: null,
+          prescriptionHash: `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           medications: [TEST_MEDICATIONS[0]],
           status: 'PENDING',
-          signatureMethod: null,
-          signatureData: null,
+          signatureMethod: 'pending',
+          signatureData: 'pending',
         },
       });
 
@@ -711,11 +714,11 @@ describe('Prescription API', () => {
         data: {
           patientId: testPatient.id,
           clinicianId: testClinician.id,
-          prescriptionHash: null,
+          prescriptionHash: `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           medications: [TEST_MEDICATIONS[0]],
           status: 'PENDING',
-          signatureMethod: null,
-          signatureData: null,
+          signatureMethod: 'pending',
+          signatureData: 'pending',
         },
       });
 
@@ -798,11 +801,11 @@ describe('Prescription API', () => {
         data: {
           patientId: testPatient.id,
           clinicianId: testClinician.id,
-          prescriptionHash: null,
+          prescriptionHash: `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           medications: [TEST_MEDICATIONS[0]],
           status: 'PENDING',
-          signatureMethod: null,
-          signatureData: null,
+          signatureMethod: 'pending',
+          signatureData: 'pending',
         },
       });
 
@@ -1027,11 +1030,11 @@ describe('Prescription API', () => {
         data: {
           patientId: testPatient.id,
           clinicianId: testClinician.id,
-          prescriptionHash: null,
+          prescriptionHash: `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           medications: [TEST_MEDICATIONS[0]],
           status: 'PENDING',
-          signatureMethod: null,
-          signatureData: null,
+          signatureMethod: 'pending',
+          signatureData: 'pending',
         },
       });
 

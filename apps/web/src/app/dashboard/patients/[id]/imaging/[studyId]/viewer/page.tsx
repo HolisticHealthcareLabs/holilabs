@@ -2,7 +2,23 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { CornerstoneDicomViewer } from '@/components/imaging/CornerstoneDicomViewer';
+import dynamic from 'next/dynamic';
+
+// Dynamic import with SSR disabled to prevent Node.js module bundling
+const CornerstoneDicomViewer = dynamic(
+  () => import('@/components/imaging/CornerstoneDicomViewer').then(mod => mod.CornerstoneDicomViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4" />
+          <p>Loading DICOM viewer...</p>
+        </div>
+      </div>
+    )
+  }
+);
 
 interface StudyData {
   id: string;
@@ -22,8 +38,8 @@ interface StudyData {
 export default function DicomViewerPage() {
   const params = useParams();
   const router = useRouter();
-  const patientId = params.id as string;
-  const studyId = params.studyId as string;
+  const patientId = (params?.id as string) || '';
+  const studyId = (params?.studyId as string) || '';
 
   const [study, setStudy] = useState<StudyData | null>(null);
   const [loading, setLoading] = useState(true);

@@ -8,7 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
+import { NotificationType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { auditUpdate } from '@/lib/audit';
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -36,8 +37,8 @@ export async function POST(request: NextRequest) {
     // Update all unread prevention notifications for this user
     const result = await prisma.notification.updateMany({
       where: {
-        userId: session.user.id,
-        type: { in: Object.keys(NOTIFICATION_TEMPLATES) },
+        recipientId: session.user.id,
+        type: { in: Object.keys(NOTIFICATION_TEMPLATES) as NotificationType[] },
         readAt: null,
       },
       data: {

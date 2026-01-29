@@ -532,3 +532,93 @@ export function createLaunchContext(
 export function isTokenExpired(context: SMARTLaunchContext, bufferSeconds: number = 60): boolean {
   return Date.now() >= context.expiresAt - bufferSeconds * 1000;
 }
+
+// Cookie name for SMART session
+const SMART_SESSION_COOKIE = 'smart_session';
+
+/**
+ * Encode SMART session for cookie storage
+ *
+ * In production, this should use proper encryption with a secret key.
+ * For now, we use Base64 encoding which provides basic obfuscation.
+ *
+ * @param context - SMART launch context
+ * @returns Encoded session string
+ */
+export function encodeSmartSession(context: SMARTLaunchContext): string {
+  // Create a minimal session object (exclude sensitive refresh token from cookie)
+  const sessionData = {
+    iss: context.iss,
+    pat: context.patientId,
+    enc: context.encounterId,
+    usr: context.fhirUser,
+    exp: context.expiresAt,
+    scp: context.scope,
+    // Access token is stored but should be encrypted in production
+    // Consider using jose (JWT) for proper encryption
+    tok: context.accessToken,
+  };
+
+  // Base64 encode the session data
+  // TODO: In production, encrypt with jose or similar library
+  return Buffer.from(JSON.stringify(sessionData)).toString('base64url');
+}
+
+/**
+ * Decode SMART session from cookie
+ *
+ * @param encoded - Encoded session string from cookie
+ * @returns SMART launch context or null if invalid
+ */
+export function decodeSmartSession(encoded: string): SMARTLaunchContext | null {
+  try {
+    const decoded = Buffer.from(encoded, 'base64url').toString('utf-8');
+    const sessionData = JSON.parse(decoded);
+
+    return {
+      iss: sessionData.iss,
+      patientId: sessionData.pat,
+      encounterId: sessionData.enc,
+      fhirUser: sessionData.usr,
+      expiresAt: sessionData.exp,
+      scope: sessionData.scp,
+      accessToken: sessionData.tok,
+    };
+  } catch (error) {
+    logger.warn({
+      event: 'smart_session_decode_failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return null;
+  }
+}
+
+/**
+ * Get SMART session from request cookies
+ * Utility function for API routes that need SMART context
+ *
+ * @returns SMART launch context or null if not authenticated
+ */
+export async function getSmartSession(): Promise<SMARTLaunchContext | null> {
+  // Dynamic import to avoid issues with cookies() in non-server contexts
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(SMART_SESSION_COOKIE);
+
+  if (!sessionCookie?.value) {
+    return null;
+  }
+
+  const context = decodeSmartSession(sessionCookie.value);
+
+  // Check if token is expired
+  if (context && context.expiresAt < Date.now()) {
+    logger.info({
+      event: 'smart_session_expired',
+      iss: context.iss,
+    });
+    return null;
+  }
+
+  return context;
+}

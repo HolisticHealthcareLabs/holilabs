@@ -21,11 +21,11 @@ import { useSearchParams } from 'next/navigation';
 import { ReadonlyURLSearchParams } from 'next/navigation';
 
 interface SearchParamsHandlerProps {
-  children: (searchParams: ReadonlyURLSearchParams) => ReactNode;
+  children: (searchParams: ReadonlyURLSearchParams | null) => ReactNode;
   fallback?: ReactNode;
 }
 
-function SearchParamsContent({ children }: { children: (searchParams: ReadonlyURLSearchParams) => ReactNode }) {
+function SearchParamsContent({ children }: { children: (searchParams: ReadonlyURLSearchParams | null) => ReactNode }) {
   const searchParams = useSearchParams();
   return <>{children(searchParams)}</>;
 }

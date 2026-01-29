@@ -17,7 +17,7 @@ type Tab = 'overview' | 'care-plans' | 'pain-history' | 'clinical-notes' | 'fami
 
 export default function PalliativePatientDetailPage() {
   const params = useParams();
-  const patientId = params.id as string;
+  const patientId = (params?.id as string) || '';
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

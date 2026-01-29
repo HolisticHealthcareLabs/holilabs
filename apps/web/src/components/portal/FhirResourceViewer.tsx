@@ -108,8 +108,8 @@ export default function FhirResourceViewer({
 
   // Handle URL parameters
   useEffect(() => {
-    const resourceId = searchParams.get('resourceId');
-    const resourceType = searchParams.get('resourceType');
+    const resourceId = searchParams?.get('resourceId');
+    const resourceType = searchParams?.get('resourceType');
 
     if (resourceId && resourceType && bundle?.entry) {
       const resource = bundle.entry.find(

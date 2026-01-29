@@ -10,6 +10,12 @@
  * the actual route to avoid Jest ESM compatibility issues.
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
+// Type helper for jest mocks with @jest/globals
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = jest.Mock<any>;
+
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     screeningOutcome: {
@@ -38,7 +44,7 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 jest.mock('@/lib/audit', () => ({
-  auditUpdate: jest.fn().mockResolvedValue(undefined),
+  auditUpdate: jest.fn(() => Promise.resolve(undefined)),
 }));
 
 const { prisma } = require('@/lib/prisma');
@@ -87,17 +93,17 @@ describe('POST /api/prevention/hub/mark-complete - Unit Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
-    (prisma.screeningOutcome.findUnique as jest.Mock).mockResolvedValue(mockScreeningOutcome);
-    (prisma.screeningOutcome.update as jest.Mock).mockImplementation((args: { data: { completedDate?: Date; notes?: string } }) =>
+    (getServerSession as AnyMock).mockResolvedValue(mockSession);
+    (prisma.screeningOutcome.findUnique as AnyMock).mockResolvedValue(mockScreeningOutcome);
+    (prisma.screeningOutcome.update as AnyMock).mockImplementation((args: { data: { completedDate?: Date; notes?: string } }) =>
       Promise.resolve({
         ...mockScreeningOutcome,
         completedDate: args.data.completedDate || new Date(),
         notes: args.data.notes || mockScreeningOutcome.notes,
       })
     );
-    (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(mockPreventionPlan);
-    (prisma.preventionPlan.update as jest.Mock).mockImplementation((args: { data: { goals: unknown[] } }) =>
+    (prisma.preventionPlan.findUnique as AnyMock).mockResolvedValue(mockPreventionPlan);
+    (prisma.preventionPlan.update as AnyMock).mockImplementation((args: { data: { goals: unknown[] } }) =>
       Promise.resolve({
         ...mockPreventionPlan,
         goals: args.data.goals,
@@ -113,7 +119,7 @@ describe('POST /api/prevention/hub/mark-complete - Unit Tests', () => {
     });
 
     it('should reject when not authenticated', async () => {
-      (getServerSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as AnyMock).mockResolvedValue(null);
       const session = await getServerSession();
       expect(session).toBeNull();
     });
@@ -220,7 +226,7 @@ describe('POST /api/prevention/hub/mark-complete - Unit Tests', () => {
   describe('Prevention Plan Goal Completion', () => {
     it('should find plan and update goal status', async () => {
       // First, screening lookup returns null (not a screening)
-      (prisma.screeningOutcome.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.screeningOutcome.findUnique as AnyMock).mockResolvedValue(null);
 
       // Then plan lookup succeeds
       const plan = await prisma.preventionPlan.findUnique({
@@ -260,8 +266,8 @@ describe('POST /api/prevention/hub/mark-complete - Unit Tests', () => {
 
   describe('Not Found Cases', () => {
     it('should return not found when screening and plan both null', async () => {
-      (prisma.screeningOutcome.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.screeningOutcome.findUnique as AnyMock).mockResolvedValue(null);
+      (prisma.preventionPlan.findUnique as AnyMock).mockResolvedValue(null);
 
       const screening = await prisma.screeningOutcome.findUnique({
         where: { id: 'non-existent' },
@@ -302,7 +308,7 @@ describe('POST /api/prevention/hub/mark-complete - Unit Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors', async () => {
-      (prisma.screeningOutcome.findUnique as jest.Mock).mockRejectedValue(
+      (prisma.screeningOutcome.findUnique as AnyMock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -312,7 +318,7 @@ describe('POST /api/prevention/hub/mark-complete - Unit Tests', () => {
     });
 
     it('should handle update failures', async () => {
-      (prisma.screeningOutcome.update as jest.Mock).mockRejectedValue(
+      (prisma.screeningOutcome.update as AnyMock).mockRejectedValue(
         new Error('Update failed')
       );
 

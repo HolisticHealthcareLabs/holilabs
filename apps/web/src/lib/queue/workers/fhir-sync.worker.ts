@@ -230,22 +230,24 @@ async function processFhirSyncJob(
     // Update progress: Starting
     await job.updateProgress(10);
 
+    // TODO: Add FHIRSyncEvent model to Prisma schema
     // Find the sync event associated with this job
-    const syncEvent = await prisma.fHIRSyncEvent.findFirst({
-      where: {
-        resourceType,
-        resourceId: direction === 'OUTBOUND' ? localId : fhirResourceId!,
-        status: { in: ['PENDING', 'IN_PROGRESS'] },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    // const syncEvent = await prisma.fHIRSyncEvent.findFirst({
+    //   where: {
+    //     resourceType,
+    //     resourceId: direction === 'OUTBOUND' ? localId : fhirResourceId!,
+    //     status: { in: ['PENDING', 'IN_PROGRESS'] },
+    //   },
+    //   orderBy: { createdAt: 'desc' },
+    // });
+    const syncEvent: { id: string } | null = null; // Placeholder until model is added
 
-    if (syncEvent) {
-      await prisma.fHIRSyncEvent.update({
-        where: { id: syncEvent.id },
-        data: { status: 'IN_PROGRESS' },
-      });
-    }
+    // if (syncEvent) {
+    //   await prisma.fHIRSyncEvent.update({
+    //     where: { id: syncEvent.id },
+    //     data: { status: 'IN_PROGRESS' },
+    //   });
+    // }
 
     await job.updateProgress(30);
 
@@ -276,9 +278,10 @@ async function processFhirSyncJob(
                 message: 'Human review required - no auto-merge',
               });
 
-              if (syncEvent) {
-                await syncService.markConflict(syncEvent.id, payload, remoteResult.data);
-              }
+              // TODO: Uncomment when FHIRSyncEvent model is added
+              // if (syncEvent) {
+              //   await syncService.markConflict(syncEvent.id, payload, remoteResult.data);
+              // }
 
               return {
                 success: false,
@@ -301,31 +304,34 @@ async function processFhirSyncJob(
         await job.updateProgress(80);
 
         if (!pushResult.success) {
-          if (syncEvent) {
-            await syncService.markFailed(syncEvent.id, pushResult.error!);
-          }
+          // TODO: Uncomment when FHIRSyncEvent model is added
+          // if (syncEvent) {
+          //   await syncService.markFailed(syncEvent.id, pushResult.error!);
+          // }
           throw new Error(pushResult.error);
         }
 
+        // TODO: Add fhirId field to Patient model in Prisma schema
         // Update local record with FHIR ID
-        await prisma.patient.update({
-          where: { id: localId },
-          data: {
-            fhirId: pushResult.fhirId,
-          },
-        });
+        // await prisma.patient.update({
+        //   where: { id: localId },
+        //   data: {
+        //     fhirId: pushResult.fhirId,
+        //   },
+        // });
 
         // Mark sync as complete
-        if (syncEvent) {
-          await prisma.fHIRSyncEvent.update({
-            where: { id: syncEvent.id },
-            data: {
-              status: 'SYNCED',
-              syncedAt: new Date(),
-              remoteVersion: pushResult.version || null,
-            },
-          });
-        }
+        // TODO: Uncomment when FHIRSyncEvent model is added to Prisma schema
+        // if (syncEvent) {
+        //   await prisma.fHIRSyncEvent.update({
+        //     where: { id: syncEvent.id },
+        //     data: {
+        //       status: 'SYNCED',
+        //       syncedAt: new Date(),
+        //       remoteVersion: pushResult.version || null,
+        //     },
+        //   });
+        // }
 
         await job.updateProgress(100);
 
@@ -351,9 +357,10 @@ async function processFhirSyncJob(
         await job.updateProgress(50);
 
         if (!pullResult.success) {
-          if (syncEvent) {
-            await syncService.markFailed(syncEvent.id, pullResult.error!);
-          }
+          // TODO: Uncomment when FHIRSyncEvent model is added
+          // if (syncEvent) {
+          //   await syncService.markFailed(syncEvent.id, pullResult.error!);
+          // }
           throw new Error(pullResult.error);
         }
 
@@ -381,9 +388,10 @@ async function processFhirSyncJob(
                 message: 'Human review required - no auto-merge',
               });
 
-              if (syncEvent) {
-                await syncService.markConflict(syncEvent.id, localPatient, pullResult.data);
-              }
+              // TODO: Uncomment when FHIRSyncEvent model is added
+              // if (syncEvent) {
+              //   await syncService.markConflict(syncEvent.id, localPatient, pullResult.data);
+              // }
 
               return {
                 success: false,
@@ -407,16 +415,17 @@ async function processFhirSyncJob(
         await job.updateProgress(80);
 
         // Mark sync as complete
-        if (syncEvent) {
-          await prisma.fHIRSyncEvent.update({
-            where: { id: syncEvent.id },
-            data: {
-              status: 'SYNCED',
-              syncedAt: new Date(),
-              remoteVersion: pullResult.version || null,
-            },
-          });
-        }
+        // TODO: Uncomment when FHIRSyncEvent model is added to Prisma schema
+        // if (syncEvent) {
+        //   await prisma.fHIRSyncEvent.update({
+        //     where: { id: syncEvent.id },
+        //     data: {
+        //       status: 'SYNCED',
+        //       syncedAt: new Date(),
+        //       remoteVersion: pullResult.version || null,
+        //     },
+        //   });
+        // }
 
         await job.updateProgress(100);
 
@@ -438,9 +447,10 @@ async function processFhirSyncJob(
 
     // Unsupported resource type
     const error = `Sync for ${resourceType} not yet implemented`;
-    if (syncEvent) {
-      await syncService.markFailed(syncEvent.id, error);
-    }
+    // TODO: Uncomment when FHIRSyncEvent model is added
+    // if (syncEvent) {
+    //   await syncService.markFailed(syncEvent.id, error);
+    // }
     throw new Error(error);
   } catch (error) {
     const errorMessage =

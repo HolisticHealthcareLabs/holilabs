@@ -152,10 +152,10 @@ describe('PreventionHistoryService', () => {
     jest.clearAllMocks();
 
     // Default mock responses
-    (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(mockPlan);
-    (prisma.preventionPlanVersion.findMany as jest.Mock).mockResolvedValue(mockVersions);
-    (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreeningOutcomes);
-    (prisma.preventionEncounterLink.findMany as jest.Mock).mockResolvedValue(mockEncounterLinks);
+    (prisma.preventionPlan.findUnique as jest.Mock<any>).mockResolvedValue(mockPlan);
+    (prisma.preventionPlanVersion.findMany as jest.Mock<any>).mockResolvedValue(mockVersions);
+    (prisma.screeningOutcome.findMany as jest.Mock<any>).mockResolvedValue(mockScreeningOutcomes);
+    (prisma.preventionEncounterLink.findMany as jest.Mock<any>).mockResolvedValue(mockEncounterLinks);
   });
 
   describe('getPlanVersionHistory', () => {
@@ -171,7 +171,7 @@ describe('PreventionHistoryService', () => {
     });
 
     it('should return empty array for plan with no versions', async () => {
-      (prisma.preventionPlanVersion.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.preventionPlanVersion.findMany as jest.Mock<any>).mockResolvedValue([]);
 
       const versions = await prisma.preventionPlanVersion.findMany({
         where: { planId: 'non-existent' },
@@ -361,7 +361,7 @@ describe('PreventionHistoryService', () => {
         notes: 'LDL elevated at 145',
       };
 
-      (prisma.screeningOutcome.create as jest.Mock).mockResolvedValue(newOutcome);
+      (prisma.screeningOutcome.create as jest.Mock<any>).mockResolvedValue(newOutcome);
 
       const created = await prisma.screeningOutcome.create({
         data: {
@@ -385,7 +385,7 @@ describe('PreventionHistoryService', () => {
         result: 'normal',
       };
 
-      (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue(updatedOutcome);
+      (prisma.screeningOutcome.update as jest.Mock<any>).mockResolvedValue(updatedOutcome);
 
       const updated = await prisma.screeningOutcome.update({
         where: { id: 'screening-2' },
@@ -457,7 +457,7 @@ describe('PreventionHistoryService', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      (prisma.preventionPlanVersion.findMany as jest.Mock).mockRejectedValue(
+      (prisma.preventionPlanVersion.findMany as jest.Mock<any>).mockRejectedValue(
         new Error('Database timeout')
       );
 
@@ -467,7 +467,7 @@ describe('PreventionHistoryService', () => {
     });
 
     it('should handle plan not found', async () => {
-      (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.preventionPlan.findUnique as jest.Mock<any>).mockResolvedValue(null);
 
       const plan = await prisma.preventionPlan.findUnique({
         where: { id: 'non-existent' },

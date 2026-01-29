@@ -98,7 +98,8 @@ export class PreventionHistoryService {
           clinician: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               email: true,
             },
           },
@@ -125,7 +126,7 @@ export class PreventionHistoryService {
         clinician: v.clinician
           ? {
               id: v.clinician.id,
-              name: v.clinician.name,
+              name: `${v.clinician.firstName} ${v.clinician.lastName}`,
               email: v.clinician.email || undefined,
             }
           : undefined,
@@ -213,14 +214,14 @@ export class PreventionHistoryService {
           ? prisma.preventionPlanVersion.findMany({
               where: { planId },
               orderBy: { createdAt: 'asc' },
-              include: { clinician: { select: { name: true } } },
+              include: { clinician: { select: { firstName: true, lastName: true } } },
             })
           : prisma.preventionPlanVersion.findMany({
               where: {
                 plan: { patientId },
               },
               orderBy: { createdAt: 'asc' },
-              include: { clinician: { select: { name: true } } },
+              include: { clinician: { select: { firstName: true, lastName: true } } },
             }),
         prisma.screeningOutcome.findMany({
           where: { patientId },
@@ -233,8 +234,8 @@ export class PreventionHistoryService {
                 encounter: {
                   select: {
                     id: true,
-                    encounterDate: true,
-                    encounterType: true,
+                    scheduledAt: true,
+                    status: true,
                     chiefComplaint: true,
                   },
                 },
@@ -263,7 +264,7 @@ export class PreventionHistoryService {
           date: v.createdAt,
           title: index === 0 ? 'Prevention plan created' : `Plan updated to v${v.version}`,
           description: v.changeReason || this.describeChange(v.changes as Record<string, unknown>),
-          actor: v.clinician?.name || 'Unknown',
+          actor: v.clinician ? `${v.clinician.firstName} ${v.clinician.lastName}` : 'Unknown',
           metadata: {
             version: v.version,
             changes: v.changes,
@@ -320,7 +321,7 @@ export class PreventionHistoryService {
               : 'Manual linkage',
           metadata: {
             encounterId: l.encounterId,
-            encounterType: l.encounter?.encounterType,
+            encounterType: l.encounter?.status,
           },
         });
       });

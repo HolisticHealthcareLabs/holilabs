@@ -35,7 +35,7 @@ interface Version {
 export default function PreventionHistoryPage() {
   const params = useParams();
   const router = useRouter();
-  const patientId = params.patientId as string;
+  const patientId = (params?.patientId as string) || '';
 
   const [viewMode, setViewMode] = useState<'history' | 'comparison'>('history');
   const [comparisonVersions, setComparisonVersions] = useState<{

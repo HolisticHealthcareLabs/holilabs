@@ -157,7 +157,7 @@ export async function fetchPatientPreventionData(
       patient: patient as PatientData,
       riskScores: riskScores as RiskScore[],
       screenings: screenings as Screening[],
-      plans: plans as PreventionPlan[],
+      plans: plans as unknown as PreventionPlan[],
     };
   } catch (error) {
     logger.error({

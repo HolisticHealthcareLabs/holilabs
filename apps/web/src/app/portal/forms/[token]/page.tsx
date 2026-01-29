@@ -48,7 +48,7 @@ interface FormData {
 export default function PatientFormPage() {
   const params = useParams();
   const router = useRouter();
-  const token = params.token as string;
+  const token = (params?.token as string) || '';
 
   const [formData, setFormData] = useState<FormData | null>(null);
   const [loading, setLoading] = useState(true);

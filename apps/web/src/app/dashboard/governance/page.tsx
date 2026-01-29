@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { RefreshCw, Shield, AlertTriangle, Activity, Clock, CheckCircle2, XCircle, ChevronRight, TrendingUp, Eye, Wifi, WifiOff } from 'lucide-react';
+import { RefreshCw, Shield, AlertTriangle, Activity, Clock, CheckCircle2, XCircle, ChevronRight, TrendingUp, Eye } from 'lucide-react';
 import { ReplayModal } from '@/components/governance/ReplayModal';
 import { useGovernanceRealtime } from '@/hooks/useGovernanceRealtime';
 import type { GovernanceLogEvent } from '@/lib/socket/events';
@@ -197,12 +197,12 @@ export default function GovernanceDashboard() {
                             }`}>
                                 {socketConnected ? (
                                     <>
-                                        <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+                                        <Activity className="w-3.5 h-3.5 text-emerald-400" />
                                         <span className="text-xs text-emerald-300 font-medium">Real-time</span>
                                     </>
                                 ) : (
                                     <>
-                                        <WifiOff className="w-3.5 h-3.5 text-amber-400" />
+                                        <Clock className="w-3.5 h-3.5 text-amber-400" />
                                         <span className="text-xs text-amber-300 font-medium">Polling</span>
                                     </>
                                 )}

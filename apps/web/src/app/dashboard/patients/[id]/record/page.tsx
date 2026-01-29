@@ -29,7 +29,7 @@ interface Appointment {
 export default function PatientRecordPage() {
   const params = useParams();
   const router = useRouter();
-  const patientId = params.id as string;
+  const patientId = (params?.id as string) || '';
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);

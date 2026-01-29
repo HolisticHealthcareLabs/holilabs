@@ -84,7 +84,7 @@ const typeLabels = {
 export default function AppointmentDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const appointmentId = params.id as string;
+  const appointmentId = (params?.id as string) || '';
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
