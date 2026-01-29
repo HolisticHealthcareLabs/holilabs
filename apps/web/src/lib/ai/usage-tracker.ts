@@ -66,11 +66,7 @@ export interface DailyUsageSummary {
   totalTokens: number;
   totalCost: number;
   cacheHitRate: number;
-  providerBreakdown: {
-    gemini: { count: number; cost: number };
-    claude: { count: number; cost: number };
-    openai: { count: number; cost: number };
-  };
+  providerBreakdown: Record<AIProvider, { count: number; cost: number }>;
 }
 
 /**
@@ -88,6 +84,18 @@ const PROVIDER_COSTS: Record<AIProvider, { input: number; output: number }> = {
   openai: {
     input: 5.00,     // $5.00 per 1M tokens (GPT-4 Turbo)
     output: 15.00,   // $15.00 per 1M tokens
+  },
+  ollama: {
+    input: 0,        // Local inference - no cost
+    output: 0,
+  },
+  vllm: {
+    input: 0,        // Self-hosted - infrastructure cost only
+    output: 0,
+  },
+  together: {
+    input: 0.20,     // ~$0.20 per 1M tokens for 7B models
+    output: 0.20,
   },
 };
 
@@ -267,11 +275,7 @@ export async function getUsageSummary(
     totalTokens: number;
     totalCost: number;
     cacheHits: number;
-    providerBreakdown: {
-      gemini: { count: number; cost: number };
-      claude: { count: number; cost: number };
-      openai: { count: number; cost: number };
-    };
+    providerBreakdown: Record<AIProvider, { count: number; cost: number }>;
   }>();
 
   for (const log of logs) {
@@ -287,6 +291,9 @@ export async function getUsageSummary(
           gemini: { count: 0, cost: 0 },
           claude: { count: 0, cost: 0 },
           openai: { count: 0, cost: 0 },
+          ollama: { count: 0, cost: 0 },
+          vllm: { count: 0, cost: 0 },
+          together: { count: 0, cost: 0 },
         },
       });
     }

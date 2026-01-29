@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -143,30 +143,20 @@ export async function GET(request: NextRequest) {
 
     // Check clinician preferences
     const clinicianPrefs = await prisma.clinicianPreferences.findUnique({
-      where: { userId: session.user.id },
+      where: { clinicianId: session.user.id },
     });
 
-    if (clinicianPrefs?.notificationPreferences) {
-      const notifPrefs = clinicianPrefs.notificationPreferences as Record<string, unknown>;
-      preferences = (notifPrefs.prevention as Record<string, unknown>) || {};
+    if (clinicianPrefs) {
+      // Map individual boolean fields to preferences object
+      preferences = {
+        email: clinicianPrefs.emailEnabled,
+        sms: clinicianPrefs.smsEnabled,
+        push: clinicianPrefs.pushEnabled,
+        whatsapp: clinicianPrefs.whatsappEnabled,
+      };
       preferencesSource = 'clinician';
-    } else {
-      // Check if user has a patient profile
-      const patientUser = await prisma.patientUser.findFirst({
-        where: { userId: session.user.id },
-      });
-
-      if (patientUser) {
-        const patientPrefs = await prisma.patientPreferences.findUnique({
-          where: { patientId: patientUser.patientId },
-        });
-
-        if (patientPrefs?.communicationPreferences) {
-          preferences = patientPrefs.communicationPreferences as Record<string, unknown>;
-          preferencesSource = 'patient';
-        }
-      }
     }
+    // If no clinician preferences, defaults will be used (preferencesSource = 'default')
 
     // Merge with defaults
     const mergedPreferences = deepMerge(DEFAULT_PREVENTION_PREFERENCES, preferences);
@@ -217,7 +207,7 @@ export async function PATCH(request: NextRequest) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -238,67 +228,70 @@ export async function PATCH(request: NextRequest) {
 
     const newPreferences = validation.data;
 
-    // Check if user is a clinician or patient
+    // Map incoming preferences to individual boolean fields
+    const updateData: Record<string, boolean | string | null> = {};
+
+    // Map channel preferences to individual fields
+    if (newPreferences.conditionDetected?.channels) {
+      if (newPreferences.conditionDetected.channels.email !== undefined) {
+        updateData.emailEnabled = newPreferences.conditionDetected.channels.email;
+      }
+      if (newPreferences.conditionDetected.channels.sms !== undefined) {
+        updateData.smsEnabled = newPreferences.conditionDetected.channels.sms;
+      }
+      if (newPreferences.conditionDetected.channels.push !== undefined) {
+        updateData.pushEnabled = newPreferences.conditionDetected.channels.push;
+      }
+    }
+
+    // Apply screeningReminder channel preferences (more granular)
+    if (newPreferences.screeningReminder?.channels) {
+      if (newPreferences.screeningReminder.channels.email !== undefined) {
+        updateData.emailEnabled = newPreferences.screeningReminder.channels.email;
+      }
+      if (newPreferences.screeningReminder.channels.sms !== undefined) {
+        updateData.smsEnabled = newPreferences.screeningReminder.channels.sms;
+      }
+      if (newPreferences.screeningReminder.channels.push !== undefined) {
+        updateData.pushEnabled = newPreferences.screeningReminder.channels.push;
+      }
+    }
+
+    // Quiet hours settings
+    if (newPreferences.quietHours) {
+      if (newPreferences.quietHours.enabled !== undefined) {
+        updateData.quietHoursEnabled = newPreferences.quietHours.enabled;
+      }
+      if (newPreferences.quietHours.start !== undefined) {
+        updateData.quietHoursStart = newPreferences.quietHours.start;
+      }
+      if (newPreferences.quietHours.end !== undefined) {
+        updateData.quietHoursEnd = newPreferences.quietHours.end;
+      }
+      if (newPreferences.quietHours.timezone !== undefined) {
+        updateData.timezone = newPreferences.quietHours.timezone;
+      }
+    }
+
+    // Check if clinician preferences exist
     const clinicianPrefs = await prisma.clinicianPreferences.findUnique({
-      where: { userId: session.user.id },
+      where: { clinicianId: session.user.id },
     });
 
     if (clinicianPrefs) {
-      // Update clinician preferences
-      const existingNotifPrefs = (clinicianPrefs.notificationPreferences as Record<string, unknown>) || {};
-      const existingPreventionPrefs = (existingNotifPrefs.prevention as Record<string, unknown>) || {};
-
-      const updatedPreventionPrefs = deepMerge(existingPreventionPrefs, newPreferences);
-
+      // Update existing clinician preferences
       await prisma.clinicianPreferences.update({
-        where: { userId: session.user.id },
-        data: {
-          notificationPreferences: {
-            ...existingNotifPrefs,
-            prevention: updatedPreventionPrefs,
-          },
-        },
+        where: { clinicianId: session.user.id },
+        data: updateData,
       });
     } else {
-      // Check for patient user
-      const patientUser = await prisma.patientUser.findFirst({
-        where: { userId: session.user.id },
+      // Create new clinician preferences
+      await prisma.clinicianPreferences.create({
+        data: {
+          clinicianId: session.user.id,
+          ...updateData,
+        },
       });
-
-      if (patientUser) {
-        const existingPrefs = await prisma.patientPreferences.findUnique({
-          where: { patientId: patientUser.patientId },
-        });
-
-        const existingCommPrefs = (existingPrefs?.communicationPreferences as Record<string, unknown>) || {};
-        const updatedPrefs = deepMerge(existingCommPrefs, newPreferences);
-
-        if (existingPrefs) {
-          await prisma.patientPreferences.update({
-            where: { patientId: patientUser.patientId },
-            data: {
-              communicationPreferences: updatedPrefs,
-            },
-          });
-        } else {
-          await prisma.patientPreferences.create({
-            data: {
-              patientId: patientUser.patientId,
-              communicationPreferences: updatedPrefs,
-            },
-          });
-        }
-      } else {
-        // Create clinician preferences for this user
-        await prisma.clinicianPreferences.create({
-          data: {
-            userId: session.user.id,
-            notificationPreferences: {
-              prevention: newPreferences,
-            },
-          },
-        });
-      }
     }
 
     // Sync with Novu if configured

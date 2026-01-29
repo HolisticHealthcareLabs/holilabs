@@ -508,7 +508,7 @@ export class ScribeService {
         const contextTerms = await buildPatientContext(owns.patientId);
 
         const streamer = new MedicalAudioStreamer({
-          apiKey: input.deepgramApiKey,
+          apiKey: input.deepgramApiKey!,
           language: lang,
           sampleRateHz: 16000,
           channels: 1,

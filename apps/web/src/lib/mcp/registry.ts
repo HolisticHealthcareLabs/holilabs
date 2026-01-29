@@ -20,6 +20,15 @@ import { labOrderTools } from './tools/lab-order.tools';
 import { documentTools } from './tools/document.tools';
 import { formTools } from './tools/form.tools';
 import { portalTools } from './tools/portal.tools';
+import { aiTools } from './tools/ai.tools';
+import { consentTools } from './tools/consent.tools';
+import { scribeTools } from './tools/scribe.tools';
+import { preventionTools } from './tools/prevention.tools';
+import { schedulingTools } from './tools/scheduling.tools';
+import { notificationTools } from './tools/notification.tools';
+import { searchTools as searchToolsModule } from './tools/search.tools';
+import { analyticsTools } from './tools/analytics.tools';
+import { clinicalDecisionTools } from './tools/clinical-decision.tools';
 import type { MCPTool, MCPContext, MCPResult, MCPRegistry, MCPToolRequest, MCPToolResponse, PermissionCheckResult, MCPToolExample } from './types';
 import {
     getWorkflowTemplates,
@@ -69,6 +78,15 @@ class MCPToolRegistry implements MCPRegistry {
             ...documentTools,
             ...formTools,
             ...portalTools,
+            ...aiTools,
+            ...consentTools,
+            ...scribeTools,
+            ...preventionTools,
+            ...schedulingTools,
+            ...notificationTools,
+            ...searchToolsModule,
+            ...analyticsTools,
+            ...clinicalDecisionTools,
         ];
 
         for (const tool of allTools) {
@@ -365,6 +383,7 @@ class MCPToolRegistry implements MCPRegistry {
                 'patient:write',
                 'note:read',
                 'note:write',
+                'note:sign',
                 'medication:read',
                 'medication:write',
                 'prescription:read',
@@ -387,6 +406,18 @@ class MCPToolRegistry implements MCPRegistry {
                 'notification:write',
                 'preferences:read',
                 'preferences:write',
+                'ai:read',
+                'ai:write',
+                'consent:read',
+                'consent:write',
+                'prevention:read',
+                'prevention:write',
+                'scribe:read',
+                'scribe:write',
+                'search:read',
+                'search:write',
+                'analytics:read',
+                'billing:read',
             ],
             NURSE: [
                 'patient:read',
@@ -402,12 +433,18 @@ class MCPToolRegistry implements MCPRegistry {
                 'form:read',
                 'notification:read',
                 'preferences:read',
+                'ai:read',
+                'consent:read',
+                'prevention:read',
+                'scribe:read',
+                'search:read',
             ],
             AGENT: [
                 'patient:read',
                 'patient:write',
                 'note:read',
                 'note:write',
+                'note:sign',
                 'medication:read',
                 'medication:write',
                 'prescription:read',
@@ -430,6 +467,19 @@ class MCPToolRegistry implements MCPRegistry {
                 'notification:write',
                 'preferences:read',
                 'preferences:write',
+                'ai:read',
+                'ai:write',
+                'consent:read',
+                'consent:write',
+                'prevention:read',
+                'prevention:write',
+                'scribe:read',
+                'scribe:write',
+                'analytics:read',
+                'analytics:export',
+                'billing:read',
+                'search:read',
+                'search:write',
             ],
         };
 

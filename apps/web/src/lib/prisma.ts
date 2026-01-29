@@ -62,7 +62,9 @@ function buildDatabaseUrl(baseUrl: string): string {
     }
 
     // Add SSL mode if not present (required for most cloud databases)
-    if (!params.has('sslmode') && process.env.NODE_ENV === 'production') {
+    // Skip SSL for localhost connections
+    const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    if (!params.has('sslmode') && process.env.NODE_ENV === 'production' && !isLocalhost) {
       params.set('sslmode', 'require');
     }
 

@@ -118,7 +118,7 @@ function createTray(): void {
     },
   ]);
 
-  tray.setToolTip('Clinical Assurance Sidecar');
+  tray.setToolTip('Cortex Assurance');
   tray.setContextMenu(contextMenu);
 
   tray.on('click', () => {

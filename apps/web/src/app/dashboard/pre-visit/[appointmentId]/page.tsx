@@ -70,7 +70,7 @@ const ImageIcon = () => (
 export default function PreVisitPage() {
   const params = useParams();
   const router = useRouter();
-  const appointmentId = params.appointmentId as string;
+  const appointmentId = (params?.appointmentId as string) || '';
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [processedDocs, setProcessedDocs] = useState<ProcessedDocument[]>([]);

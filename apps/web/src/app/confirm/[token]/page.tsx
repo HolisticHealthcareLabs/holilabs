@@ -41,7 +41,7 @@ type ActionType = 'confirm' | 'reschedule' | 'cancel';
 
 export default function ConfirmAppointmentPage() {
   const params = useParams();
-  const token = params.token as string;
+  const token = (params?.token as string) || '';
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);

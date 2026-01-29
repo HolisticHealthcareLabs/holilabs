@@ -270,7 +270,7 @@ export class MedicalAudioStreamer extends EventEmitter {
       : Buffer.from(buf instanceof ArrayBuffer ? new Uint8Array(buf) : buf);
 
     if (b.length === 0) return;
-    this.buffer = this.buffer.length ? Buffer.concat([this.buffer, b]) : b;
+    this.buffer = (this.buffer.length ? Buffer.concat([this.buffer, b]) : b) as Buffer<ArrayBuffer>;
 
     // Backpressure: cap buffer to avoid unbounded memory growth under jitter/backlog.
     if (this.buffer.length > this.maxBufferBytes) {
@@ -409,7 +409,7 @@ export class MedicalAudioStreamer extends EventEmitter {
       this.emit('metadata', { requestId: this.requestId, model: this.activeModel, raw: m });
     });
 
-    conn.on(LiveTranscriptionEvents.Warning, (w: any) => {
+    conn.on('Warning' as any, (w: any) => {
       this.logWarn({ event: 'deepgram_medical_warning', requestId: this.requestId, warning: w }, 'Deepgram warning');
       this.emit('warning', { message: w?.message || 'Deepgram warning', raw: w });
     });
@@ -628,7 +628,7 @@ export class MedicalAudioStreamer extends EventEmitter {
   private async reconnect(): Promise<void> {
     if (this.stopping) return;
     if (this.haltReconnect) return;
-    const { maxAttempts, baseDelayMs, maxDelayMs } = this.cfg.reconnect;
+    const { maxAttempts = 5, baseDelayMs = 1000, maxDelayMs = 30000 } = this.cfg.reconnect ?? {};
     if (this.reconnectAttempts >= maxAttempts) {
       this.emit('error', { message: `Deepgram reconnect exceeded ${maxAttempts} attempts` });
       return;

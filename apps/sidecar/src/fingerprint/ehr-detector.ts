@@ -193,6 +193,8 @@ export class EHRDetector {
   private currentFingerprint: EHRFingerprint | null = null;
   private watchCallback: ((fingerprint: EHRFingerprint) => void) | null = null;
   private watchInterval: NodeJS.Timeout | null = null;
+  private lastUnknownLogTime: number = 0;
+  private static UNKNOWN_LOG_INTERVAL_MS = 60000; // Only log unknown EHR once per minute
 
   /**
    * Fingerprint the active EHR window
@@ -327,7 +329,12 @@ export class EHRDetector {
     }
 
     // Unknown EHR - use OCR fallback
-    console.warn('Unknown EHR version, defaulting to OCR');
+    // Throttle logging to avoid spam during development
+    const now = Date.now();
+    if (now - this.lastUnknownLogTime > EHRDetector.UNKNOWN_LOG_INTERVAL_MS) {
+      console.warn('Unknown EHR version, defaulting to OCR');
+      this.lastUnknownLogTime = now;
+    }
     return {
       ehrName: 'unknown',
       version: 'unknown',

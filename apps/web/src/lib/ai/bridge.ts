@@ -113,7 +113,7 @@ export async function aiToJSON<T>(
       temperature: opts.temperature,
     } as TaskAwareRequest);
 
-    if (!response.success || !response.content) {
+    if (!response.success || !response.message) {
       lastError = response.error || 'AI request failed';
       logger.warn({
         event: 'bridge_ai_request_failed',
@@ -124,13 +124,13 @@ export async function aiToJSON<T>(
     }
 
     // Parse JSON from response
-    const parsed = safeParseJSON(response.content);
+    const parsed = safeParseJSON(response.message);
     if (parsed === null) {
       lastError = 'Failed to parse JSON from AI response';
       logger.warn({
         event: 'bridge_json_parse_failed',
         attempt: attempt + 1,
-        responsePreview: response.content.substring(0, 200),
+        responsePreview: response.message.substring(0, 200),
       });
       continue;
     }
@@ -179,7 +179,7 @@ function buildJSONSystemPrompt<T>(schema: ZodSchema<T>): string {
   try {
     // For Zod objects, we can provide structure hints
     if ('shape' in schema) {
-      const shape = (schema as z.ZodObject<any>).shape;
+      const shape = (schema as unknown as z.ZodObject<any>).shape;
       const fields = Object.keys(shape);
       schemaHint = `\nRequired fields: ${fields.join(', ')}`;
     }

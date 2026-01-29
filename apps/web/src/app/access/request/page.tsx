@@ -17,7 +17,7 @@ export default function AccessRequestPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const patientTokenId = sp.get('patientTokenId') || '';
+  const patientTokenId = sp?.get('patientTokenId') || '';
   const [purpose, setPurpose] = useState('Clinical care');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);

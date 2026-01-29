@@ -8,6 +8,11 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "dev:all": "concurrently --names 'web,edge,sidecar' --prefix-colors 'blue,green,magenta' 'pnpm --filter @holi/web dev' 'pnpm --filter @holilabs/edge dev' 'sleep 3 && pnpm --filter @holilabs/sidecar dev'",
+    "dev:web": "pnpm --filter @holi/web dev",
+    "dev:edge": "pnpm --filter @holilabs/edge dev",
+    "dev:sidecar": "pnpm --filter @holilabs/sidecar dev",
+    "simulate-ehr": "node apps/sidecar/scripts/simulate-ehr.js",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
@@ -21,6 +26,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "concurrently": "^8.2.0",
     "turbo": "^2.0.0",
     "typescript": "^5.3.3",
     "tsx": "^4.7.0",

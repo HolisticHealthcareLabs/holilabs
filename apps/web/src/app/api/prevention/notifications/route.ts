@@ -9,7 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
+import { NotificationType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
     const { type, unreadOnly, limit, offset } = validation.data;
 
     // Build query conditions
-    const where: Record<string, unknown> = { userId: session.user.id };
+    const where: Record<string, unknown> = { recipientId: session.user.id };
 
     if (type) {
       where.type = type;
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest) {
 
     // Filter to prevention-related notifications
     where.type = {
-      in: Object.keys(NOTIFICATION_TEMPLATES),
+      in: Object.keys(NOTIFICATION_TEMPLATES) as NotificationType[],
     };
 
     // Fetch notifications with counts in parallel
@@ -113,18 +114,20 @@ export async function GET(request: NextRequest) {
           type: true,
           title: true,
           message: true,
-          data: true,
+          metadata: true,
           priority: true,
           readAt: true,
           createdAt: true,
-          deliveryStatus: true,
+          deliveredInApp: true,
+          deliveredEmail: true,
+          deliveredSMS: true,
         },
       }),
       prisma.notification.count({ where }),
       prisma.notification.count({
         where: {
-          userId: session.user.id,
-          type: { in: Object.keys(NOTIFICATION_TEMPLATES) },
+          recipientId: session.user.id,
+          type: { in: Object.keys(NOTIFICATION_TEMPLATES) as NotificationType[] },
           readAt: null,
         },
       }),
@@ -189,7 +192,7 @@ export async function POST(request: NextRequest) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(

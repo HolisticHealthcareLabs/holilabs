@@ -201,27 +201,57 @@ export async function setFeatureFlag(
 ): Promise<void> {
   const clinicId = options?.clinicId ?? null;
 
-  await prisma.featureFlag.upsert({
-    where: {
-      name_clinicId: {
+  // Handle null clinicId case separately since Prisma compound unique doesn't handle null well
+  if (clinicId === null) {
+    // For global flags (null clinicId), use findFirst + create/update pattern
+    const existing = await prisma.featureFlag.findFirst({
+      where: { name: flagName, clinicId: null },
+    });
+
+    if (existing) {
+      await prisma.featureFlag.update({
+        where: { id: existing.id },
+        data: {
+          enabled,
+          createdBy: options?.userId,
+          reason: options?.reason,
+        },
+      });
+    } else {
+      await prisma.featureFlag.create({
+        data: {
+          name: flagName,
+          clinicId: null,
+          enabled,
+          description: options?.description,
+          createdBy: options?.userId,
+          reason: options?.reason,
+        },
+      });
+    }
+  } else {
+    await prisma.featureFlag.upsert({
+      where: {
+        name_clinicId: {
+          name: flagName,
+          clinicId,
+        },
+      },
+      create: {
         name: flagName,
         clinicId,
+        enabled,
+        description: options?.description,
+        createdBy: options?.userId,
+        reason: options?.reason,
       },
-    },
-    create: {
-      name: flagName,
-      clinicId,
-      enabled,
-      description: options?.description,
-      createdBy: options?.userId,
-      reason: options?.reason,
-    },
-    update: {
-      enabled,
-      createdBy: options?.userId,
-      reason: options?.reason,
-    },
-  });
+      update: {
+        enabled,
+        createdBy: options?.userId,
+        reason: options?.reason,
+      },
+    });
+  }
 
   // Invalidate cache for this flag
   const cacheKey = `${flagName}:${clinicId || 'global'}`;

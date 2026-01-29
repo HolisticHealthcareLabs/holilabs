@@ -32,7 +32,7 @@ export const settingsTools: MCPTool[] = [
         requiredPermissions: ['settings:read'],
         handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             try {
-                const userId = input.userId || context.userId;
+                const userId = input.userId || context.clinicianId;
 
                 const settings = await prisma.userSettings.findUnique({
                     where: { userId },
@@ -115,6 +115,7 @@ export const settingsTools: MCPTool[] = [
                 logger.error({ event: 'get_user_settings_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to get user settings',
                 };
             }
@@ -180,23 +181,24 @@ export const settingsTools: MCPTool[] = [
                 if (Object.keys(updateData).length === 0) {
                     return {
                         success: false,
+                        data: null,
                         error: 'No settings to update. Provide at least one setting field.',
                     };
                 }
 
                 // Upsert - create if doesn't exist, update if exists
                 const settings = await prisma.userSettings.upsert({
-                    where: { userId: context.userId },
+                    where: { userId: context.clinicianId },
                     update: updateData,
                     create: {
-                        userId: context.userId,
+                        userId: context.clinicianId,
                         ...updateData,
                     },
                 });
 
                 logger.info({
                     event: 'user_settings_updated',
-                    userId: context.userId,
+                    userId: context.clinicianId,
                     updatedFields: Object.keys(updateData),
                 });
 
@@ -212,6 +214,7 @@ export const settingsTools: MCPTool[] = [
                 logger.error({ event: 'update_user_settings_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to update user settings',
                 };
             }
@@ -231,7 +234,7 @@ export const settingsTools: MCPTool[] = [
         requiredPermissions: ['settings:read'],
         handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             try {
-                const doctorId = input.doctorId || context.userId;
+                const doctorId = input.doctorId || context.clinicianId;
 
                 const preferences = await prisma.doctorPreferences.findUnique({
                     where: { doctorId },
@@ -314,6 +317,7 @@ export const settingsTools: MCPTool[] = [
                 logger.error({ event: 'get_doctor_preferences_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to get doctor preferences',
                 };
             }
@@ -380,23 +384,24 @@ export const settingsTools: MCPTool[] = [
                 if (Object.keys(updateData).length === 0) {
                     return {
                         success: false,
+                        data: null,
                         error: 'No preferences to update. Provide at least one field.',
                     };
                 }
 
                 // Upsert
                 const preferences = await prisma.doctorPreferences.upsert({
-                    where: { doctorId: context.userId },
+                    where: { doctorId: context.clinicianId },
                     update: updateData,
                     create: {
-                        doctorId: context.userId,
+                        doctorId: context.clinicianId,
                         ...updateData,
                     },
                 });
 
                 logger.info({
                     event: 'doctor_preferences_updated',
-                    doctorId: context.userId,
+                    doctorId: context.clinicianId,
                     updatedFields: Object.keys(updateData),
                 });
 
@@ -412,6 +417,7 @@ export const settingsTools: MCPTool[] = [
                 logger.error({ event: 'update_doctor_preferences_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to update doctor preferences',
                 };
             }
@@ -442,7 +448,7 @@ export const settingsTools: MCPTool[] = [
                 if (input.publicOnly) {
                     where.OR = [
                         { isPublic: true },
-                        { createdById: context.userId },
+                        { createdById: context.clinicianId },
                     ];
                 }
 
@@ -500,6 +506,7 @@ export const settingsTools: MCPTool[] = [
                 logger.error({ event: 'list_clinical_templates_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to list templates',
                 };
             }
@@ -520,6 +527,7 @@ export const settingsTools: MCPTool[] = [
                 if (!input.templateId && !input.shortcut) {
                     return {
                         success: false,
+                        data: null,
                         error: 'Provide either templateId or shortcut',
                     };
                 }
@@ -538,6 +546,7 @@ export const settingsTools: MCPTool[] = [
                 if (!template) {
                     return {
                         success: false,
+                        data: null,
                         error: input.templateId
                             ? `Template not found: ${input.templateId}`
                             : `No template with shortcut: ${input.shortcut}`,
@@ -578,6 +587,7 @@ export const settingsTools: MCPTool[] = [
                 logger.error({ event: 'get_clinical_template_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to get template',
                 };
             }

@@ -16,8 +16,8 @@ export async function getGovernanceLogs() {
                     include: {
                         scribeSession: {
                             select: {
-                                transcript: true,
-                                clinicalNote: true
+                                transcription: true,
+                                soapNote: true
                             }
                         }
                     }

@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify ownership
-    if (notification.userId !== session.user.id) {
+    if (notification.recipientId !== session.user.id) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -91,7 +91,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -121,7 +121,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    if (existing.userId !== session.user.id) {
+    if (existing.recipientId !== session.user.id) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -180,7 +180,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const start = performance.now();
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -200,7 +200,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    if (existing.userId !== session.user.id) {
+    if (existing.recipientId !== session.user.id) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 

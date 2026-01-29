@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import type { ClinicalEncounter, EncounterStatus, Prisma } from '@prisma/client';
+import { Prisma, type ClinicalEncounter, type EncounterStatus } from '@prisma/client';
 
 export interface CreateEncounterInput {
   patientId: string;
@@ -31,7 +31,8 @@ export interface EncounterWithRelations extends ClinicalEncounter {
   };
   provider: {
     id: string;
-    name: string | null;
+    firstName: string;
+    lastName: string;
   };
 }
 
@@ -49,7 +50,7 @@ export class EncounterRepository {
    * Find encounter with patient and provider details
    */
   async findWithRelations(encounterId: string): Promise<EncounterWithRelations | null> {
-    return prisma.clinicalEncounter.findUnique({
+    const encounter = await prisma.clinicalEncounter.findUnique({
       where: { id: encounterId },
       include: {
         patient: {
@@ -62,11 +63,13 @@ export class EncounterRepository {
         provider: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },
     });
+    return encounter as EncounterWithRelations | null;
   }
 
   /**
@@ -92,9 +95,14 @@ export class EncounterRepository {
     encounterId: string,
     data: UpdateEncounterInput
   ): Promise<ClinicalEncounter> {
+    // Transform summaryDraft to handle null properly for Prisma
+    const transformedData = {
+      ...data,
+      summaryDraft: data.summaryDraft === null ? Prisma.JsonNull : data.summaryDraft,
+    };
     return prisma.clinicalEncounter.update({
       where: { id: encounterId },
-      data,
+      data: transformedData,
     });
   }
 
@@ -133,7 +141,7 @@ export class EncounterRepository {
   ): Promise<ClinicalEncounter> {
     return prisma.clinicalEncounter.update({
       where: { id: encounterId },
-      data: { summaryDraft },
+      data: { summaryDraft: summaryDraft === null ? Prisma.JsonNull : summaryDraft },
     });
   }
 
@@ -181,7 +189,8 @@ export class EncounterRepository {
         provider: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },

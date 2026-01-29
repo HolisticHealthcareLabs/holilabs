@@ -10,6 +10,10 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { performance } from 'perf_hooks';
 
+// Type helper for jest mocks with @jest/globals
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = jest.Mock<any>;
+
 // Mock all dependencies FIRST using the CLAUDE.md pattern
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -47,6 +51,7 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 // Import mocks after jest.mock()
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { prisma } = require('@/lib/prisma');
 
 describe('GET /api/prevention/hub/[patientId] - Unit Tests', () => {
@@ -144,11 +149,11 @@ describe('GET /api/prevention/hub/[patientId] - Unit Tests', () => {
     jest.clearAllMocks();
 
     // Default mock responses
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.riskScore.findMany as jest.Mock).mockResolvedValue(mockRiskScores);
-    (prisma.preventionPlan.findMany as jest.Mock).mockResolvedValue(mockPreventionPlans);
-    (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreeningOutcomes);
-    (prisma.preventionEncounterLink.findMany as jest.Mock).mockResolvedValue([]);
+    (prisma.patient.findUnique as AnyMock).mockResolvedValue(mockPatient);
+    (prisma.riskScore.findMany as AnyMock).mockResolvedValue(mockRiskScores);
+    (prisma.preventionPlan.findMany as AnyMock).mockResolvedValue(mockPreventionPlans);
+    (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue(mockScreeningOutcomes);
+    (prisma.preventionEncounterLink.findMany as AnyMock).mockResolvedValue([]);
   });
 
   describe('Data Fetching', () => {
@@ -163,7 +168,7 @@ describe('GET /api/prevention/hub/[patientId] - Unit Tests', () => {
     });
 
     it('should return null when patient not found', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.patient.findUnique as AnyMock).mockResolvedValue(null);
 
       const patient = await prisma.patient.findUnique({
         where: { id: 'non-existent' },
@@ -300,7 +305,7 @@ describe('GET /api/prevention/hub/[patientId] - Unit Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockRejectedValue(
+      (prisma.patient.findUnique as AnyMock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -310,7 +315,7 @@ describe('GET /api/prevention/hub/[patientId] - Unit Tests', () => {
     });
 
     it('should handle partial data failures with Promise.allSettled', async () => {
-      (prisma.riskScore.findMany as jest.Mock).mockRejectedValue(
+      (prisma.riskScore.findMany as AnyMock).mockRejectedValue(
         new Error('Risk score query failed')
       );
 

@@ -64,6 +64,7 @@ export const referralTools: MCPTool[] = [
                 if (!patient) {
                     return {
                         success: false,
+                        data: null,
                         error: `Patient not found: ${input.patientId}`,
                     };
                 }
@@ -72,7 +73,7 @@ export const referralTools: MCPTool[] = [
                 const referral = await prisma.clinicalReferral.create({
                     data: {
                         patientId: input.patientId,
-                        referringClinicianId: context.userId,
+                        referringClinicianId: context.clinicianId,
                         specialty: input.specialty,
                         priority: input.priority,
                         status: 'PENDING',
@@ -99,7 +100,7 @@ export const referralTools: MCPTool[] = [
                     patientId: input.patientId,
                     specialty: input.specialty,
                     priority: input.priority,
-                    userId: context.userId,
+                    clinicianId: context.clinicianId,
                 });
 
                 return {
@@ -126,6 +127,7 @@ export const referralTools: MCPTool[] = [
                 logger.error({ event: 'create_referral_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to create referral',
                 };
             }
@@ -160,6 +162,7 @@ export const referralTools: MCPTool[] = [
                 if (!referral) {
                     return {
                         success: false,
+                        data: null,
                         error: `Referral not found: ${input.referralId}`,
                     };
                 }
@@ -207,6 +210,7 @@ export const referralTools: MCPTool[] = [
                 logger.error({ event: 'get_referral_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to get referral',
                 };
             }
@@ -290,6 +294,7 @@ export const referralTools: MCPTool[] = [
                 logger.error({ event: 'list_referrals_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to list referrals',
                 };
             }
@@ -323,6 +328,7 @@ export const referralTools: MCPTool[] = [
                 if (!existing) {
                     return {
                         success: false,
+                        data: null,
                         error: `Referral not found: ${input.referralId}`,
                     };
                 }
@@ -345,6 +351,7 @@ export const referralTools: MCPTool[] = [
                         if (!input.cancellationReason) {
                             return {
                                 success: false,
+                                data: null,
                                 error: 'cancellationReason is required when status is CANCELLED',
                             };
                         }
@@ -372,7 +379,7 @@ export const referralTools: MCPTool[] = [
                     referralId: referral.id,
                     patientId: referral.patientId,
                     newStatus: referral.status,
-                    userId: context.userId,
+                    clinicianId: context.clinicianId,
                 });
 
                 return {
@@ -393,6 +400,7 @@ export const referralTools: MCPTool[] = [
                 logger.error({ event: 'update_referral_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to update referral',
                 };
             }
@@ -421,6 +429,7 @@ export const referralTools: MCPTool[] = [
                 if (!referral) {
                     return {
                         success: false,
+                        data: null,
                         error: `Referral not found: ${input.referralId}`,
                     };
                 }
@@ -429,6 +438,7 @@ export const referralTools: MCPTool[] = [
                 if (!['PENDING', 'CANCELLED', 'REJECTED'].includes(referral.status)) {
                     return {
                         success: false,
+                        data: null,
                         error: `Cannot delete referral with status ${referral.status}. Only PENDING, CANCELLED, or REJECTED referrals can be deleted.`,
                     };
                 }
@@ -442,7 +452,7 @@ export const referralTools: MCPTool[] = [
                     referralId: input.referralId,
                     patientId: referral.patientId,
                     reason: input.reason,
-                    userId: context.userId,
+                    clinicianId: context.clinicianId,
                 });
 
                 return {
@@ -458,6 +468,7 @@ export const referralTools: MCPTool[] = [
                 logger.error({ event: 'delete_referral_error', error, input });
                 return {
                     success: false,
+                    data: null,
                     error: error instanceof Error ? error.message : 'Failed to delete referral',
                 };
             }

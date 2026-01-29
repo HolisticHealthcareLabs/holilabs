@@ -30,7 +30,7 @@ const SummaryRequestSchema = z.object({
   transcript: z.string().min(10, 'Transcript must be at least 10 characters'),
   patientContext: z.object({
     age: z.number().int().min(0).max(150),
-    sex: z.string(),
+    sex: z.enum(['male', 'female', 'other']),
     conditions: z.array(z.string()).default([]),
     medications: z.array(z.string()).default([]),
   }),

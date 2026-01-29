@@ -51,8 +51,18 @@ jest.mock('@anthropic-ai/sdk', () => ({
   })),
 }));
 
-// Import after mocks
-const { prisma } = require('@/lib/prisma');
+// Import after mocks - use require for mocked modules
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { prisma } = require('@/lib/prisma') as {
+  prisma: {
+    clinicalRule: {
+      findMany: ReturnType<typeof jest.fn>;
+      update: ReturnType<typeof jest.fn>;
+    };
+    featureFlag: { findMany: ReturnType<typeof jest.fn> };
+    aIUsageLog: { create: ReturnType<typeof jest.fn> };
+  };
+};
 
 import { evaluateRules, clearRulesCache, type RuleContext } from '../rule-engine';
 import { evaluateCompliance, type ComplianceContext } from '../compliance-rules';
@@ -107,11 +117,11 @@ describe('Clinical Integration Flow', () => {
     clearRulesCache();
 
     // Default: return mock business rules
-    (prisma.clinicalRule.findMany as jest.Mock).mockResolvedValue(MOCK_BUSINESS_RULES);
-    (prisma.clinicalRule.update as jest.Mock).mockResolvedValue({});
+    prisma.clinicalRule.findMany.mockResolvedValue(MOCK_BUSINESS_RULES);
+    prisma.clinicalRule.update.mockResolvedValue({});
 
     // Default: AI features enabled (empty array = defaults to true)
-    (prisma.featureFlag.findMany as jest.Mock).mockResolvedValue([]);
+    prisma.featureFlag.findMany.mockResolvedValue([]);
   });
 
   // ─────────────────────────────────────────────────────────────
@@ -332,7 +342,7 @@ describe('Clinical Integration Flow', () => {
     });
 
     it('should allow requests when circuit is closed', async () => {
-      const mockFn = jest.fn().mockResolvedValue('success');
+      const mockFn = jest.fn<() => Promise<string>>().mockResolvedValue('success');
 
       const result = await circuitBreakers.gemini.execute(mockFn);
 
@@ -341,7 +351,7 @@ describe('Clinical Integration Flow', () => {
     });
 
     it('should open circuit after consecutive failures', async () => {
-      const failingFn = jest.fn().mockRejectedValue(new Error('API error'));
+      const failingFn = jest.fn<() => Promise<string>>().mockRejectedValue(new Error('API error'));
 
       // Gemini has failureThreshold of 5
       for (let i = 0; i < 5; i++) {
@@ -356,14 +366,13 @@ describe('Clinical Integration Flow', () => {
       expect(circuitBreakers.gemini.getState()).toBe('OPEN');
 
       // Next request should fail immediately with CircuitOpenError
-      await expect(
-        circuitBreakers.gemini.execute(jest.fn().mockResolvedValue('ok'))
-      ).rejects.toThrow(CircuitOpenError);
+      const okFn = jest.fn<() => Promise<string>>().mockResolvedValue('ok');
+      await expect(circuitBreakers.gemini.execute(okFn)).rejects.toThrow(CircuitOpenError);
     });
 
     it('should track stats correctly', async () => {
-      const successFn = jest.fn().mockResolvedValue('success');
-      const failFn = jest.fn().mockRejectedValue(new Error('fail'));
+      const successFn = jest.fn<() => Promise<string>>().mockResolvedValue('success');
+      const failFn = jest.fn<() => Promise<string>>().mockRejectedValue(new Error('fail'));
 
       await circuitBreakers.claude.execute(successFn);
       await circuitBreakers.claude.execute(successFn);
@@ -484,8 +493,8 @@ describe('Clinical Integration Flow', () => {
     beforeEach(() => {
       clearFlagCache();
       clearRulesCache();
-      (prisma.clinicalRule.findMany as jest.Mock).mockResolvedValue(MOCK_BUSINESS_RULES);
-      (prisma.featureFlag.findMany as jest.Mock).mockResolvedValue([]);
+      prisma.clinicalRule.findMany.mockResolvedValue(MOCK_BUSINESS_RULES);
+      prisma.featureFlag.findMany.mockResolvedValue([]);
     });
 
     it('should process a complete clinical scenario', async () => {

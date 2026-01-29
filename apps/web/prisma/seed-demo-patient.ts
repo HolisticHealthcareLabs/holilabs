@@ -82,7 +82,7 @@ async function main() {
         severity: allergy.severity,
         allergyType: allergy.allergyType,
         isActive: true,
-        verificationStatus: 'CONFIRMED',
+        verificationStatus: 'CLINICIAN_VERIFIED',
         createdBy: clinician.id,
       },
     });
@@ -106,7 +106,7 @@ async function main() {
         route: med.route,
         isActive: true,
         startDate: new Date('2024-01-01'),
-        prescriberId: clinician.id,
+        prescribedBy: clinician.id,
       },
     });
   }
@@ -134,12 +134,12 @@ async function main() {
 
   // Add some lab results
   const labResults = [
-    { testName: 'HbA1c', value: 7.2, unit: '%', referenceRange: '4.0-5.6', status: 'ABNORMAL' as const },
-    { testName: 'Total Cholesterol', value: 210, unit: 'mg/dL', referenceRange: '<200', status: 'ABNORMAL' as const },
-    { testName: 'LDL Cholesterol', value: 130, unit: 'mg/dL', referenceRange: '<100', status: 'ABNORMAL' as const },
-    { testName: 'HDL Cholesterol', value: 45, unit: 'mg/dL', referenceRange: '>40', status: 'NORMAL' as const },
-    { testName: 'Creatinine', value: 1.1, unit: 'mg/dL', referenceRange: '0.7-1.3', status: 'NORMAL' as const },
-    { testName: 'eGFR', value: 75, unit: 'mL/min/1.73m2', referenceRange: '>60', status: 'NORMAL' as const },
+    { testName: 'HbA1c', value: '7.2', unit: '%', referenceRange: '4.0-5.6', status: 'FINAL' as const },
+    { testName: 'Total Cholesterol', value: '210', unit: 'mg/dL', referenceRange: '<200', status: 'FINAL' as const },
+    { testName: 'LDL Cholesterol', value: '130', unit: 'mg/dL', referenceRange: '<100', status: 'FINAL' as const },
+    { testName: 'HDL Cholesterol', value: '45', unit: 'mg/dL', referenceRange: '>40', status: 'FINAL' as const },
+    { testName: 'Creatinine', value: '1.1', unit: 'mg/dL', referenceRange: '0.7-1.3', status: 'FINAL' as const },
+    { testName: 'eGFR', value: '75', unit: 'mL/min/1.73m2', referenceRange: '>60', status: 'FINAL' as const },
   ];
 
   for (const lab of labResults) {
@@ -152,7 +152,7 @@ async function main() {
         referenceRange: lab.referenceRange,
         status: lab.status,
         resultDate: new Date(),
-        orderedBy: 'Demo Clinician',
+        orderingDoctor: 'Demo Clinician',
       },
     });
   }

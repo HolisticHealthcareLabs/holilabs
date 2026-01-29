@@ -10,7 +10,7 @@ import VersionComparison from '@/components/prevention/VersionComparison';
 export default function TemplateVersionsPage() {
   const params = useParams();
   const router = useRouter();
-  const templateId = params.id as string;
+  const templateId = (params?.id as string) || '';
 
   const [viewMode, setViewMode] = useState<'history' | 'comparison'>('history');
   const [comparisonVersions, setComparisonVersions] = useState<{

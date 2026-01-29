@@ -16,6 +16,36 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest, NextResponse } from 'next/server';
 import { applyRateLimit, checkRateLimit, rateLimiters } from '@/lib/rate-limit';
+import type { Ratelimit } from '@upstash/ratelimit';
+
+// Type for the limit function's return value
+type RatelimitResponse = {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+  pending: Promise<unknown>;
+  reason?: 'timeout' | 'cacheBlock' | 'denyList';
+  deniedValue?: string;
+};
+
+// Type for the mock limit function - compatible with jest.fn() from @jest/globals
+type MockLimitFn = jest.Mock<(identifier: string) => Promise<RatelimitResponse>>;
+
+// Helper to create a typed mock limit function
+function createMockLimitFn(): MockLimitFn {
+  return jest.fn<(identifier: string) => Promise<RatelimitResponse>>();
+}
+
+// Helper to create mock rate limit responses
+function createMockRateLimitResponse(
+  overrides: Partial<Omit<RatelimitResponse, 'pending'>> & { success: boolean; limit: number; reset: number; remaining: number }
+): RatelimitResponse {
+  return {
+    ...overrides,
+    pending: Promise.resolve(),
+  };
+}
 
 // Mock Upstash Redis
 jest.mock('@upstash/redis', () => ({
@@ -127,14 +157,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       await applyRateLimit(mockRequest, 'api', userId);
 
@@ -146,14 +178,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       await applyRateLimit(mockRequest, 'api');
 
@@ -172,14 +206,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       await applyRateLimit(requestWithRealIp, 'api');
 
@@ -195,14 +231,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       await applyRateLimit(requestWithoutIp, 'api');
 
@@ -216,14 +254,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -238,14 +278,16 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000; // Reset in 60 seconds
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -261,14 +303,16 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000;
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -295,14 +339,16 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000;
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -320,14 +366,16 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000; // Reset in 60 seconds
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -345,14 +393,16 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 45000; // Reset in 45 seconds
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -370,14 +420,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 5,
-        reset: Date.now() + 900000, // 15 minutes
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 5,
+          reset: Date.now() + 900000, // 15 minutes
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.auth.limit = mockLimit;
+      (rateLimiters.auth as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'auth');
 
@@ -392,14 +444,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 3,
-        reset: Date.now() + 3600000, // 1 hour
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 3,
+          reset: Date.now() + 3600000, // 1 hour
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.registration.limit = mockLimit;
+      (rateLimiters.registration as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'registration');
 
@@ -414,14 +468,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 10,
-        reset: Date.now() + 60000, // 1 minute
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 10,
+          reset: Date.now() + 60000, // 1 minute
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.upload.limit = mockLimit;
+      (rateLimiters.upload as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'upload');
 
@@ -436,14 +492,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 20,
-        reset: Date.now() + 60000,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 20,
+          reset: Date.now() + 60000,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.search.limit = mockLimit;
+      (rateLimiters.search as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'search');
 
@@ -487,9 +545,9 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockRejectedValue(new Error('Redis connection failed'));
+      const mockLimit = createMockLimitFn().mockRejectedValue(new Error('Redis connection failed'));
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -505,14 +563,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const response = await checkRateLimit(mockRequest, 'api');
 
@@ -524,14 +584,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const response = await checkRateLimit(mockRequest, 'api');
 
@@ -546,27 +608,33 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn()
-        .mockResolvedValueOnce({
-          success: true,
-          limit: 100,
-          reset: Date.now() + 60000,
-          remaining: 99,
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          limit: 100,
-          reset: Date.now() + 60000,
-          remaining: 98,
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          limit: 100,
-          reset: Date.now() + 60000,
-          remaining: 97,
-        });
+      const mockLimit = createMockLimitFn()
+        .mockResolvedValueOnce(
+          createMockRateLimitResponse({
+            success: true,
+            limit: 100,
+            reset: Date.now() + 60000,
+            remaining: 99,
+          })
+        )
+        .mockResolvedValueOnce(
+          createMockRateLimitResponse({
+            success: true,
+            limit: 100,
+            reset: Date.now() + 60000,
+            remaining: 98,
+          })
+        )
+        .mockResolvedValueOnce(
+          createMockRateLimitResponse({
+            success: true,
+            limit: 100,
+            reset: Date.now() + 60000,
+            remaining: 97,
+          })
+        );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       // Request 1
       const result1 = await applyRateLimit(mockRequest, 'api');
@@ -594,21 +662,25 @@ describe('Rate Limiting', () => {
 
       const userId = 'user-123';
 
-      const mockLimit = jest.fn()
-        .mockResolvedValueOnce({
-          success: true,
-          limit: 100,
-          reset: Date.now() + 60000,
-          remaining: 99,
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          limit: 100,
-          reset: Date.now() + 60000,
-          remaining: 98,
-        });
+      const mockLimit = createMockLimitFn()
+        .mockResolvedValueOnce(
+          createMockRateLimitResponse({
+            success: true,
+            limit: 100,
+            reset: Date.now() + 60000,
+            remaining: 99,
+          })
+        )
+        .mockResolvedValueOnce(
+          createMockRateLimitResponse({
+            success: true,
+            limit: 100,
+            reset: Date.now() + 60000,
+            remaining: 98,
+          })
+        );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       // Request 1
       await applyRateLimit(mockRequest, 'api', userId);
@@ -629,14 +701,16 @@ describe('Rate Limiting', () => {
       const userId1 = 'user-123';
       const userId2 = 'user-456';
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       // User 1
       await applyRateLimit(mockRequest, 'api', userId1);
@@ -658,14 +732,16 @@ describe('Rate Limiting', () => {
 
       const reset = Date.now() + 60000;
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -698,14 +774,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: false,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 0,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: false,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 0,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       const result = await applyRateLimit(mockRequest, 'api');
 
@@ -729,14 +807,16 @@ describe('Rate Limiting', () => {
         return;
       }
 
-      const mockLimit = jest.fn().mockResolvedValue({
-        success: true,
-        limit: 100,
-        reset: Date.now() + 60000,
-        remaining: 99,
-      });
+      const mockLimit = createMockLimitFn().mockResolvedValue(
+        createMockRateLimitResponse({
+          success: true,
+          limit: 100,
+          reset: Date.now() + 60000,
+          remaining: 99,
+        })
+      );
 
-      rateLimiters.api.limit = mockLimit;
+      (rateLimiters.api as Ratelimit).limit = mockLimit as unknown as Ratelimit['limit'];
 
       await applyRateLimit(maliciousRequest, 'api');
 

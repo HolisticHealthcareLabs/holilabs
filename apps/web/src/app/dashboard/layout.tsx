@@ -153,6 +153,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { name: 'Prescriptions', href: '/dashboard/prescriptions', icon: '/icons/rx (1).svg', emoji: '💊', gradient: 'from-orange-500 to-red-600' },
         { name: 'Forms', href: '/dashboard/forms', icon: '/icons/clinical-f.svg', emoji: '📋', gradient: 'from-indigo-500 to-purple-600' },
         { name: 'Governance', href: '/dashboard/governance', icon: '/icons/shield.svg', emoji: '🔐', gradient: 'from-red-500 to-orange-600' },
+        { name: 'Revenue Auditor', href: '/dashboard/auditor', icon: '/icons/diagnostics (1).svg', emoji: '💰', gradient: 'from-emerald-500 to-green-600' },
         { name: 'Analytics', href: '/dashboard/analytics', icon: '/icons/diagnostics (1).svg', emoji: '📈', gradient: 'from-blue-500 to-cyan-600' },
         { name: 'Share Profile', href: '/dashboard/share-profile', icon: '/icons/telemedicine (1).svg', emoji: '🔗', gradient: 'from-teal-500 to-green-600' },
         { name: 'Credentials', href: '/dashboard/credentials', icon: '/icons/doctor (1).svg', emoji: '🏅', gradient: 'from-yellow-500 to-amber-600' },

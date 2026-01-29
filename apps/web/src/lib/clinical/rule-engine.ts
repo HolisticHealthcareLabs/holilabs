@@ -305,7 +305,8 @@ export async function evaluateRules(context: RuleContext): Promise<RuleEngineRes
       }
 
       // Evaluate JSON-Logic rule (now safe)
-      const outcome = jsonLogic.apply(rule.logic, context);
+      // Type cast: rule.logic is validated by isRuleSecure() before reaching here
+      const outcome = jsonLogic.apply(rule.logic as Parameters<typeof jsonLogic.apply>[0], context);
       const ruleTimeMs = Date.now() - ruleStart;
 
       outcomes.push({
@@ -496,7 +497,7 @@ export async function upsertBusinessRule(input: {
       ruleId: input.ruleId,
       name: input.name,
       category: input.category,
-      logic: input.logic,
+      logic: input.logic as object,
       priority: input.priority ?? 0,
       isActive: input.isActive ?? true,
       description: input.description,
@@ -505,7 +506,7 @@ export async function upsertBusinessRule(input: {
     },
     update: {
       name: input.name,
-      logic: input.logic,
+      logic: input.logic as object,
       priority: input.priority,
       isActive: input.isActive,
       description: input.description,
@@ -619,7 +620,7 @@ export function validateJsonLogic(logic: unknown): { valid: boolean; error?: str
   try {
     // Try to apply the logic with empty context
     // This will catch syntax errors in the JSON-Logic
-    jsonLogic.apply(logic, {});
+    jsonLogic.apply(logic as Parameters<typeof jsonLogic.apply>[0], {});
     return { valid: true };
   } catch (error) {
     return {

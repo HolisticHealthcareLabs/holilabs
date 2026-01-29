@@ -40,7 +40,7 @@ interface SOAPNotes {
 
 export default function RecordingDetailPage() {
   const params = useParams();
-  const recordingId = params.id as string;
+  const recordingId = (params?.id as string) || '';
 
   const [recording, setRecording] = useState<Recording | null>(null);
   const [soapNotes, setSOAPNotes] = useState<SOAPNotes | null>(null);

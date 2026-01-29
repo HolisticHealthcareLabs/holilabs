@@ -43,7 +43,7 @@ interface MedicationResponse {
 export default function MedicationDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const medicationId = params.id as string;
+  const medicationId = (params?.id as string) || '';
 
   const [medication, setMedication] = useState<Medication | null>(null);
   const [loading, setLoading] = useState(true);

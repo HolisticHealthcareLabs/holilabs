@@ -82,7 +82,7 @@ const statusLabels = {
 export default function RecordDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const recordId = params.id as string;
+  const recordId = (params?.id as string) || '';
 
   const [record, setRecord] = useState<SOAPNote | null>(null);
   const [loading, setLoading] = useState(true);

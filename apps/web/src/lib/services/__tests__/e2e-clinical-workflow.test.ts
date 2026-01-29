@@ -11,7 +11,8 @@
  * 5. POST-ENCOUNTER: FHIR sync
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+// Empty export to make this file a module and avoid conflicts with global declarations
+export {};
 
 // Mock dependencies
 jest.mock('@/lib/prisma', () => ({
@@ -172,7 +173,7 @@ describe('E2E Clinical Workflow', () => {
       });
 
       expect(jobs.length).toBe(3);
-      expect(jobs.every((j) => j.status === 'COMPLETED')).toBe(true);
+      expect(jobs.every((j: { status: string }) => j.status === 'COMPLETED')).toBe(true);
     });
   });
 
@@ -248,7 +249,7 @@ describe('E2E Clinical Workflow', () => {
       // Mocked, so should be fast
       expect(duration).toBeLessThan(100);
       expect(medications.length).toBe(2);
-      expect(screenings.some((s) => s.status === 'OVERDUE')).toBe(true);
+      expect(screenings.some((s: { status: string }) => s.status === 'OVERDUE')).toBe(true);
     });
 
     it('should show alerts banner with drug interactions and overdue screenings', () => {

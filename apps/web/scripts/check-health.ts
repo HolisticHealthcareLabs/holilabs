@@ -6,6 +6,8 @@
  *   BASE_URL=http://localhost:3000 pnpm check:health
  */
 
+export {}; // Make this a module to isolate scope
+
 const BASE_URL = process.env.BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 type CheckResult = {

@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 export default function FormSuccessPage() {
   const params = useParams();
   const router = useRouter();
-  const token = params.token as string;
+  const token = (params?.token as string) || '';
   const [submissionTime] = useState(new Date());
 
   return (

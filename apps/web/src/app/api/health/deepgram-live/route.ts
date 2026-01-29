@@ -32,7 +32,7 @@ export async function GET() {
     logger,
   } as any);
 
-  return await new Promise((resolve) => {
+  return await new Promise<Response>((resolve) => {
     const timeout = setTimeout(async () => {
       try {
         await streamer.stop();

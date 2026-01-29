@@ -121,7 +121,7 @@ export async function PUT(
 
     const flag = await prisma.featureFlag.findUnique({
       where: { id },
-      select: { id: true, flagKey: true, enabled: true },
+      select: { id: true, name: true, enabled: true },
     });
 
     if (!flag) {
@@ -139,7 +139,7 @@ export async function PUT(
         resource: 'FeatureFlag',
         resourceId: id,
         details: {
-          flagKey: flag.flagKey,
+          name: flag.name,
           changes: Object.keys(validation.data),
           previousEnabled: flag.enabled,
           newEnabled: validation.data.enabled,
@@ -152,7 +152,7 @@ export async function PUT(
     logger.info({
       event: 'feature_flag_updated',
       flagId: id,
-      flagKey: flag.flagKey,
+      name: flag.name,
       changes: Object.keys(validation.data),
     });
 
@@ -185,7 +185,7 @@ export async function DELETE(
 
     const flag = await prisma.featureFlag.findUnique({
       where: { id },
-      select: { id: true, flagKey: true },
+      select: { id: true, name: true },
     });
 
     if (!flag) {
@@ -199,7 +199,7 @@ export async function DELETE(
         action: 'DELETE',
         resource: 'FeatureFlag',
         resourceId: id,
-        details: { flagKey: flag.flagKey },
+        details: { name: flag.name },
         success: true,
       },
       req
@@ -208,7 +208,7 @@ export async function DELETE(
     logger.info({
       event: 'feature_flag_deleted',
       flagId: id,
-      flagKey: flag.flagKey,
+      name: flag.name,
     });
 
     return NextResponse.json({

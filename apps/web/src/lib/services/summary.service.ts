@@ -23,9 +23,14 @@ const anthropic = process.env.ANTHROPIC_API_KEY
  */
 export interface PatientContext {
   age: number;
-  sex: string;
+  sex: 'male' | 'female' | 'other';
   conditions: string[];
   medications: string[];
+  allergies?: string[];
+  demographics?: {
+    height?: number;
+    weight?: number;
+  };
 }
 
 export class SummaryService {
@@ -72,7 +77,7 @@ export class SummaryService {
         patientContext,
         providerId,
         language,
-      },
+      } as unknown as import('@prisma/client').Prisma.JsonValue,
     });
 
     // Prepare job data for BullMQ

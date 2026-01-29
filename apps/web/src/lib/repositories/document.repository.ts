@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import type { ParsedDocument, Prisma } from '@prisma/client';
+import { Prisma, type ParsedDocument } from '@prisma/client';
 
 export interface CreateParsedDocumentInput {
   patientId: string;
@@ -57,7 +57,7 @@ export class DocumentRepository {
         fileSizeBytes: data.fileSizeBytes,
         fileHash: data.fileHash,
         extractedText: data.extractedText,
-        structuredData: data.structuredData,
+        structuredData: data.structuredData ?? Prisma.JsonNull,
         fhirResources: data.fhirResources || [],
       },
     });

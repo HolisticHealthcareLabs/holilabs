@@ -50,7 +50,7 @@ export default function TraceDetailModal({ isOpen, onClose, log }: TraceDetailMo
                             Timestamp: {new Date(log.timestamp).toLocaleString()}
                         </p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={onClose}>
+                    <Button variant="ghost" size="sm" onClick={onClose}>
                         <X className="w-4 h-4" />
                     </Button>
                 </div>

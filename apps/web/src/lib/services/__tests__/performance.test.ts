@@ -68,10 +68,10 @@ describe('Performance Tests', () => {
         { id: 'med-2', name: 'Lisinopril', patientId: 'patient-123' },
       ];
 
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-      (prisma.medication.findMany as jest.Mock).mockResolvedValue(mockMedications);
-      (prisma.labResult.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.screening.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.patient.findUnique as jest.Mock<any>).mockResolvedValue(mockPatient);
+      (prisma.medication.findMany as jest.Mock<any>).mockResolvedValue(mockMedications);
+      (prisma.labResult.findMany as jest.Mock<any>).mockResolvedValue([]);
+      (prisma.screening.findMany as jest.Mock<any>).mockResolvedValue([]);
 
       const startTime = Date.now();
 
@@ -136,7 +136,7 @@ describe('Performance Tests', () => {
         errorMessage: null,
       };
 
-      (prisma.analysisJob.findUnique as jest.Mock).mockResolvedValue(mockJob);
+      (prisma.analysisJob.findUnique as jest.Mock<any>).mockResolvedValue(mockJob);
 
       const startTime = Date.now();
 

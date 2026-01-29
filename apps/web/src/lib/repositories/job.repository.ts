@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import type { AnalysisJob, JobType, JobStatus, Prisma } from '@prisma/client';
+import { Prisma, type AnalysisJob, type JobType, type JobStatus } from '@prisma/client';
 
 export interface CreateJobInput {
   type: JobType;
@@ -22,6 +22,7 @@ export interface UpdateJobInput {
   errorMessage?: string;
   startedAt?: Date;
   completedAt?: Date;
+  bullmqJobId?: string;
 }
 
 export interface JobWithPatient extends AnalysisJob {
@@ -62,7 +63,7 @@ export class JobRepository {
         progress: 0,
         patientId: data.patientId,
         encounterId: data.encounterId,
-        inputData: data.inputData,
+        inputData: data.inputData ?? Prisma.JsonNull,
         bullmqJobId: data.bullmqJobId,
       },
     });
@@ -72,9 +73,14 @@ export class JobRepository {
    * Update job status and progress
    */
   async update(jobId: string, data: UpdateJobInput): Promise<AnalysisJob> {
+    // Transform resultData to handle null properly for Prisma
+    const transformedData = {
+      ...data,
+      resultData: data.resultData === null ? Prisma.JsonNull : data.resultData,
+    };
     return prisma.analysisJob.update({
       where: { id: jobId },
-      data,
+      data: transformedData,
     });
   }
 
@@ -103,7 +109,7 @@ export class JobRepository {
       data: {
         status: 'COMPLETED',
         progress: 100,
-        resultData,
+        resultData: resultData === null ? Prisma.JsonNull : resultData,
         completedAt: new Date(),
       },
     });

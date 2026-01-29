@@ -32,7 +32,7 @@ const PATIENTS = {
 
 export default function WalletPage() {
   const params = useParams();
-  const patientId = params.id as string;
+  const patientId = (params?.id as string) || '';
   const patient = PATIENTS[patientId as keyof typeof PATIENTS];
   const documents = MOCK_DOCUMENTS[patientId as keyof typeof MOCK_DOCUMENTS] || [];
 

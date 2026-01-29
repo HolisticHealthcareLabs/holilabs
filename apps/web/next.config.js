@@ -44,6 +44,29 @@ const nextConfig = {
       }),
     })
 
+    // Provide fallbacks for Node.js modules used by @cornerstonejs packages
+    // These packages try to use fs, path, etc. which don't exist in browser
+    if (!isServer) {
+      config.resolve = {
+        ...config.resolve,
+        fallback: {
+          ...config.resolve?.fallback,
+          fs: false,
+          path: false,
+          crypto: false,
+          stream: false,
+          buffer: false,
+          util: false,
+          assert: false,
+          http: false,
+          https: false,
+          os: false,
+          url: false,
+          zlib: false,
+        },
+      }
+    }
+
     // Reduce memory footprint during build
     if (process.env.NODE_ENV === 'production') {
       config.optimization = {

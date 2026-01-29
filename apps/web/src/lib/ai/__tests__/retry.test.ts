@@ -129,17 +129,17 @@ describe('retry', () => {
       const operation = jest.fn().mockRejectedValue(timeoutError);
 
       // Attach catch handler before running timers to prevent unhandled rejection
-      let caughtError: Error | null = null;
+      let caughtError: Error | undefined;
       const resultPromise = withRetry(operation, { maxAttempts: 3 }).catch(
-        (e) => {
-          caughtError = e;
+        (e: unknown) => {
+          caughtError = e as Error;
         }
       );
 
       await jest.runAllTimersAsync();
       await resultPromise;
 
-      expect(caughtError?.message).toBe('Persistent timeout');
+      expect(caughtError!.message).toBe('Persistent timeout');
       expect(operation).toHaveBeenCalledTimes(3);
     });
 

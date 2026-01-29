@@ -128,9 +128,9 @@ describe('Email Queue System', () => {
     attemptsMade,
     getState: jest.fn().mockResolvedValue(state),
     progress: 0,
-    failedReason: null,
-    finishedOn: null,
-    processedOn: null,
+    failedReason: undefined,
+    finishedOn: undefined,
+    processedOn: undefined,
     retry: jest.fn().mockResolvedValue(true),
   });
 
