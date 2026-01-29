@@ -135,20 +135,20 @@ describe('Prevention Hub Integration Tests', () => {
     jest.clearAllMocks();
 
     // Setup default mock responses
-    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.riskScore.findMany as jest.Mock).mockResolvedValue(mockRiskScores);
-    (prisma.preventionPlan.findMany as jest.Mock).mockResolvedValue([mockPreventionPlan]);
-    (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(mockPreventionPlan);
-    (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreeningOutcomes);
-    (prisma.preventionEncounterLink.findMany as jest.Mock).mockResolvedValue([]);
-    (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue(mockEncounter);
-    (prisma.preventionPlanVersion.findFirst as jest.Mock).mockResolvedValue({ version: 1 });
-    (prisma.preventionPlanVersion.create as jest.Mock).mockResolvedValue({ id: 'version-new', version: 2 });
-    (prisma.preventionPlan.update as jest.Mock).mockImplementation((args: { data: unknown }) =>
-      Promise.resolve({ ...mockPreventionPlan, ...args.data })
+    (getServerSession as jest.Mock<any>).mockResolvedValue(mockSession);
+    (prisma.patient.findUnique as jest.Mock<any>).mockResolvedValue(mockPatient);
+    (prisma.riskScore.findMany as jest.Mock<any>).mockResolvedValue(mockRiskScores);
+    (prisma.preventionPlan.findMany as jest.Mock<any>).mockResolvedValue([mockPreventionPlan]);
+    (prisma.preventionPlan.findUnique as jest.Mock<any>).mockResolvedValue(mockPreventionPlan);
+    (prisma.screeningOutcome.findMany as jest.Mock<any>).mockResolvedValue(mockScreeningOutcomes);
+    (prisma.preventionEncounterLink.findMany as jest.Mock<any>).mockResolvedValue([]);
+    (prisma.clinicalEncounter.findUnique as jest.Mock<any>).mockResolvedValue(mockEncounter);
+    (prisma.preventionPlanVersion.findFirst as jest.Mock<any>).mockResolvedValue({ version: 1 });
+    (prisma.preventionPlanVersion.create as jest.Mock<any>).mockResolvedValue({ id: 'version-new', version: 2 });
+    (prisma.preventionPlan.update as jest.Mock<any>).mockImplementation((args: { data: unknown }) =>
+      Promise.resolve({ ...mockPreventionPlan, ...(args.data as object) })
     );
-    (prisma.preventionEncounterLink.create as jest.Mock).mockResolvedValue({
+    (prisma.preventionEncounterLink.create as jest.Mock<any>).mockResolvedValue({
       id: 'link-int-new',
       encounterId: mockEncounterId,
       preventionPlanId: mockPreventionPlan.id,
@@ -297,7 +297,7 @@ describe('Prevention Hub Integration Tests', () => {
     });
 
     it('should prevent encounter link if encounter belongs to different patient', async () => {
-      (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.clinicalEncounter.findUnique as jest.Mock<any>).mockResolvedValue({
         id: 'different-encounter',
         patientId: 'different-patient',
         status: 'IN_PROGRESS',
@@ -314,7 +314,7 @@ describe('Prevention Hub Integration Tests', () => {
 
   describe('End-to-End: Plan Creation Workflow', () => {
     it('should create new plan if none exists for domain', async () => {
-      (prisma.preventionPlan.create as jest.Mock).mockResolvedValue({
+      (prisma.preventionPlan.create as jest.Mock<any>).mockResolvedValue({
         id: 'new-plan-id',
         patientId: mockPatientId,
         planName: 'Oncology Screening Plan',
@@ -356,7 +356,7 @@ describe('Prevention Hub Integration Tests', () => {
         changeReason: 'Added new screening intervention',
       };
 
-      (prisma.preventionPlanVersion.create as jest.Mock).mockResolvedValue({
+      (prisma.preventionPlanVersion.create as jest.Mock<any>).mockResolvedValue({
         id: 'version-id',
         ...versionData,
         createdAt: new Date(),
@@ -385,7 +385,7 @@ describe('Prevention Hub Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle patient not found gracefully', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.patient.findUnique as jest.Mock<any>).mockResolvedValue(null);
 
       const patient = await prisma.patient.findUnique({
         where: { id: 'non-existent' },
@@ -395,7 +395,7 @@ describe('Prevention Hub Integration Tests', () => {
     });
 
     it('should handle database connection errors', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockRejectedValue(
+      (prisma.patient.findUnique as jest.Mock<any>).mockRejectedValue(
         new Error('Connection refused')
       );
 
@@ -406,7 +406,7 @@ describe('Prevention Hub Integration Tests', () => {
 
     it('should handle partial data fetch failures', async () => {
       // Risk scores fail, but patient and plans succeed
-      (prisma.riskScore.findMany as jest.Mock).mockRejectedValue(
+      (prisma.riskScore.findMany as jest.Mock<any>).mockRejectedValue(
         new Error('Timeout')
       );
 

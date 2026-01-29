@@ -75,3 +75,67 @@ export {
   HYPERTENSION_DRUGS,
   DIABETES_DRUGS,
 } from './cdss-rules';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CLINICAL ENGINES (Prompt-Native Architecture)
+// ═══════════════════════════════════════════════════════════════════════════
+// These exports provide prompt-native definitions for the three core clinical
+// engines, migrating hardcoded TypeScript logic to declarative templates.
+
+// Symptom-to-Diagnosis Engine
+export {
+  buildSymptomDiagnosisPrompt,
+  buildSymptomDiagnosisPromptWithExamples,
+  SYMPTOM_DIAGNOSIS_SYSTEM_PROMPT,
+  SYMPTOM_DIAGNOSIS_RULES,
+  EMERGENT_ICD10_RULES,
+  SEVERITY_MODIFIERS,
+  getLoadedSymptomDiagnosisRules,
+  getSymptomDiagnosisRuleTemplates,
+  reloadSymptomDiagnosisRules,
+  SYMPTOM_DIAGNOSIS_EVALUATION_CRITERIA,
+  type SymptomDiagnosisPromptContext,
+} from './clinical-engines';
+
+// Treatment Protocol Engine
+export {
+  buildTreatmentProtocolPrompt,
+  buildTreatmentProtocolPromptWithExamples,
+  TREATMENT_PROTOCOL_SYSTEM_PROMPT,
+  TREATMENT_PROTOCOLS,
+  GENERIC_FALLBACK_RECOMMENDATIONS,
+  RENAL_DOSE_ADJUSTMENTS,
+  getLoadedProtocols,
+  getProtocolTemplates,
+  findMatchingProtocol,
+  reloadTreatmentProtocols,
+  TREATMENT_PROTOCOL_EVALUATION_CRITERIA,
+  type TreatmentProtocolPromptContext,
+} from './clinical-engines';
+
+// Medication Adherence Engine
+export {
+  buildMedicationAdherencePrompt,
+  buildMedicationAdherencePromptWithExamples,
+  MEDICATION_ADHERENCE_SYSTEM_PROMPT,
+  ADHERENCE_THRESHOLDS,
+  RISK_FACTOR_RULES,
+  INTERVENTION_TEMPLATES,
+  COMPLEX_DOSING_PATTERNS,
+  getLoadedThresholds,
+  getLoadedInterventions,
+  getAdherenceTemplates,
+  reloadAdherenceRules,
+  isComplexDosingSchedule,
+  calculateAdherenceScore,
+  determineRiskLevel,
+  MEDICATION_ADHERENCE_EVALUATION_CRITERIA,
+  type MedicationAdherencePromptContext,
+} from './clinical-engines';
+
+// Clinical Engine Schemas (Zod)
+export {
+  symptomDiagnosisOutputSchema,
+  treatmentRecommendationOutputSchema,
+  adherenceAssessmentOutputSchema,
+} from './clinical-engines';

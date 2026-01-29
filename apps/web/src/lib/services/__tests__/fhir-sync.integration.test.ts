@@ -7,6 +7,10 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
+// Use Jest's built-in mock types with proper generic parameters
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMockFn = jest.Mock<(...args: any[]) => any>;
+
 // Mock dependencies
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -33,7 +37,21 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
-const { prisma } = require('@/lib/prisma');
+const { prisma } = require('@/lib/prisma') as {
+  prisma: {
+    patient: {
+      findUnique: AnyMockFn;
+      update: AnyMockFn;
+    };
+    fHIRSyncEvent: {
+      create: AnyMockFn;
+      findUnique: AnyMockFn;
+      findFirst: AnyMockFn;
+      findMany: AnyMockFn;
+      update: AnyMockFn;
+    };
+  };
+};
 
 describe('FHIR Sync Integration', () => {
   beforeEach(() => {
@@ -62,8 +80,8 @@ describe('FHIR Sync Integration', () => {
         createdAt: new Date(),
       };
 
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-      (prisma.fHIRSyncEvent.create as jest.Mock).mockResolvedValue(mockSyncEvent);
+      prisma.patient.findUnique.mockResolvedValue(mockPatient);
+      prisma.fHIRSyncEvent.create.mockResolvedValue(mockSyncEvent);
 
       // Simulate the sync trigger
       const patient = await prisma.patient.findUnique({
@@ -93,19 +111,19 @@ describe('FHIR Sync Integration', () => {
       const syncEventId = 'sync-event-001';
 
       // Initial state: PENDING
-      (prisma.fHIRSyncEvent.findUnique as jest.Mock).mockResolvedValueOnce({
+      prisma.fHIRSyncEvent.findUnique.mockResolvedValueOnce({
         id: syncEventId,
         status: 'PENDING',
       });
 
       // Transition to IN_PROGRESS
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValueOnce({
+      prisma.fHIRSyncEvent.update.mockResolvedValueOnce({
         id: syncEventId,
         status: 'IN_PROGRESS',
       });
 
       // Transition to SYNCED
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValueOnce({
+      prisma.fHIRSyncEvent.update.mockResolvedValueOnce({
         id: syncEventId,
         status: 'SYNCED',
         syncedAt: new Date(),
@@ -149,7 +167,7 @@ describe('FHIR Sync Integration', () => {
         createdAt: new Date(),
       };
 
-      (prisma.fHIRSyncEvent.create as jest.Mock).mockResolvedValue(mockSyncEvent);
+      prisma.fHIRSyncEvent.create.mockResolvedValue(mockSyncEvent);
 
       const syncEvent = await prisma.fHIRSyncEvent.create({
         data: {
@@ -243,7 +261,7 @@ describe('FHIR Sync Integration', () => {
         resolvedAt: null,
       };
 
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValue(mockConflictEvent);
+      prisma.fHIRSyncEvent.update.mockResolvedValue(mockConflictEvent);
 
       const updated = await prisma.fHIRSyncEvent.update({
         where: { id: 'sync-event-003' },
@@ -270,7 +288,7 @@ describe('FHIR Sync Integration', () => {
         resolvedAt: new Date(),
       };
 
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValue(mockResolvedEvent);
+      prisma.fHIRSyncEvent.update.mockResolvedValue(mockResolvedEvent);
 
       const resolved = await prisma.fHIRSyncEvent.update({
         where: { id: 'sync-event-003' },
@@ -295,12 +313,12 @@ describe('FHIR Sync Integration', () => {
         email: 'john.smith@example.com',
       };
 
-      (prisma.patient.update as jest.Mock).mockResolvedValue({
+      prisma.patient.update.mockResolvedValue({
         id: 'patient-123',
         ...remoteData,
       });
 
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValue({
+      prisma.fHIRSyncEvent.update.mockResolvedValue({
         id: 'sync-event-003',
         status: 'SYNCED',
         resolution: 'KEEP_REMOTE',
@@ -337,12 +355,12 @@ describe('FHIR Sync Integration', () => {
         email: 'john.smith@example.com', // From remote
       };
 
-      (prisma.patient.update as jest.Mock).mockResolvedValue({
+      prisma.patient.update.mockResolvedValue({
         id: 'patient-123',
         ...mergedData,
       });
 
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValue({
+      prisma.fHIRSyncEvent.update.mockResolvedValue({
         id: 'sync-event-003',
         status: 'SYNCED',
         resolution: 'MANUAL_MERGE',
@@ -392,7 +410,7 @@ describe('FHIR Sync Integration', () => {
         },
       ];
 
-      (prisma.fHIRSyncEvent.findMany as jest.Mock).mockResolvedValue(mockConflicts);
+      prisma.fHIRSyncEvent.findMany.mockResolvedValue(mockConflicts);
 
       const conflicts = await prisma.fHIRSyncEvent.findMany({
         where: { status: 'CONFLICT' },
@@ -413,7 +431,7 @@ describe('FHIR Sync Integration', () => {
         },
       ];
 
-      (prisma.fHIRSyncEvent.findMany as jest.Mock).mockResolvedValue(mockPatientConflicts);
+      prisma.fHIRSyncEvent.findMany.mockResolvedValue(mockPatientConflicts);
 
       const conflicts = await prisma.fHIRSyncEvent.findMany({
         where: {
@@ -422,7 +440,7 @@ describe('FHIR Sync Integration', () => {
         },
       });
 
-      expect(conflicts.every((c) => c.resourceType === 'Patient')).toBe(true);
+      expect(conflicts.every((c: { resourceType: string }) => c.resourceType === 'Patient')).toBe(true);
     });
   });
 
@@ -436,7 +454,7 @@ describe('FHIR Sync Integration', () => {
         errorMessage: 'Medplum API timeout',
       };
 
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValue(mockFailedEvent);
+      prisma.fHIRSyncEvent.update.mockResolvedValue(mockFailedEvent);
 
       const updated = await prisma.fHIRSyncEvent.update({
         where: { id: 'sync-event-004' },
@@ -460,7 +478,7 @@ describe('FHIR Sync Integration', () => {
         errorMessage: 'Max retries exceeded',
       };
 
-      (prisma.fHIRSyncEvent.update as jest.Mock).mockResolvedValue(mockExhaustedEvent);
+      prisma.fHIRSyncEvent.update.mockResolvedValue(mockExhaustedEvent);
 
       const retryCount = 3;
       const maxRetries = 3;
@@ -560,7 +578,7 @@ describe('FHIR Sync Integration', () => {
         { id: 'sync-003', status: 'FAILED', errorMessage: 'Connection error' },
       ];
 
-      (prisma.fHIRSyncEvent.findMany as jest.Mock).mockResolvedValue(mockAuditTrail);
+      prisma.fHIRSyncEvent.findMany.mockResolvedValue(mockAuditTrail);
 
       const events = await prisma.fHIRSyncEvent.findMany({
         where: { resourceId: 'patient-123' },
@@ -568,7 +586,7 @@ describe('FHIR Sync Integration', () => {
       });
 
       // All statuses should be tracked
-      const statuses = events.map((e) => e.status);
+      const statuses = events.map((e: { status: string }) => e.status);
       expect(statuses).toContain('SYNCED');
       expect(statuses).toContain('CONFLICT');
       expect(statuses).toContain('FAILED');
@@ -587,7 +605,7 @@ describe('FHIR Sync Integration', () => {
         },
       };
 
-      (prisma.fHIRSyncEvent.findUnique as jest.Mock).mockResolvedValue(mockResolvedConflict);
+      prisma.fHIRSyncEvent.findUnique.mockResolvedValue(mockResolvedConflict);
 
       const event = await prisma.fHIRSyncEvent.findUnique({
         where: { id: 'sync-002' },

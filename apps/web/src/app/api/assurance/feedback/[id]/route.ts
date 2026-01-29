@@ -13,6 +13,7 @@ import { verifyInternalAgentToken } from '@/lib/hash';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,9 +134,18 @@ export async function PUT(
       return NextResponse.json({ error: 'Feedback not found' }, { status: 404 });
     }
 
+    // Cast feedbackValue to Prisma's JSON type
+    const updateData: Prisma.HumanFeedbackUpdateInput = {
+      ...(validation.data.feedbackType && { feedbackType: validation.data.feedbackType }),
+      ...(validation.data.feedbackSource && { feedbackSource: validation.data.feedbackSource }),
+      ...(validation.data.feedbackValue !== undefined && {
+        feedbackValue: validation.data.feedbackValue as Prisma.InputJsonValue,
+      }),
+    };
+
     const updated = await prisma.humanFeedback.update({
       where: { id },
-      data: validation.data,
+      data: updateData,
     });
 
     await createAuditLog(

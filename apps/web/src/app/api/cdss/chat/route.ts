@@ -33,7 +33,7 @@ const ChatRequestSchema = z.object({
   conversationHistory: z.array(z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string(),
-  })).default([]).max(50, 'Conversation history too long'),
+  })).max(50, 'Conversation history too long').default([]),
 });
 
 type ChatRequest = z.infer<typeof ChatRequestSchema>;
@@ -141,9 +141,10 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         dateOfBirth: true,
-        sex: true,
-        conditions: {
-          select: { name: true },
+        gender: true,
+        diagnoses: {
+          where: { status: 'ACTIVE' },
+          select: { description: true },
           take: 10,
         },
         medications: {
@@ -192,8 +193,8 @@ export async function POST(request: NextRequest) {
     // Build patient context (no PHI - just clinical context)
     const patientContext = {
       age,
-      sex: patient.sex,
-      conditions: patient.conditions.map(c => c.name),
+      gender: patient.gender,
+      conditions: patient.diagnoses.map(d => d.description),
       medications: patient.medications.map(m => m.name),
     };
 
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
 
 PATIENT CONTEXT (de-identified):
 - Age: ${patientContext.age}
-- Sex: ${patientContext.sex}
+- Gender: ${patientContext.gender}
 - Active Conditions: ${patientContext.conditions.join(', ') || 'None documented'}
 - Current Medications: ${patientContext.medications.join(', ') || 'None documented'}
 

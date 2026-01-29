@@ -215,16 +215,16 @@ describe('RBAC Security', () => {
 
   describe('Cross-Tenant Isolation', () => {
     it('should prevent access to other organization data', () => {
-      const userOrgId = 'org-hospital-a';
-      const requestedOrgId = 'org-hospital-b';
+      const userOrgId: string = 'org-hospital-a';
+      const requestedOrgId: string = 'org-hospital-b';
 
       const canAccessOtherOrg = userOrgId === requestedOrgId;
       expect(canAccessOtherOrg).toBe(false);
     });
 
     it('should allow access within same organization', () => {
-      const userOrgId = 'org-hospital-a';
-      const requestedOrgId = 'org-hospital-a';
+      const userOrgId: string = 'org-hospital-a';
+      const requestedOrgId: string = 'org-hospital-a';
 
       const canAccessSameOrg = userOrgId === requestedOrgId;
       expect(canAccessSameOrg).toBe(true);

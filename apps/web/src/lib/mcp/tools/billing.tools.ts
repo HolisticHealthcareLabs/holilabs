@@ -203,6 +203,7 @@ async function createPatientInsuranceHandler(
         return {
             success: false,
             error: `Patient not found: ${input.patientId}`,
+            data: null,
         };
     }
 
@@ -265,6 +266,7 @@ async function updatePatientInsuranceHandler(
         return {
             success: false,
             error: `Insurance record not found: ${insuranceId}`,
+            data: null,
         };
     }
 
@@ -315,6 +317,7 @@ async function submitClaimHandler(
         return {
             success: false,
             error: `Patient not found: ${input.patientId}`,
+            data: null,
         };
     }
 
@@ -342,7 +345,7 @@ async function submitClaimHandler(
             billedAmount: input.billedAmount,
             status: 'SUBMITTED',
             notes: input.notes,
-            createdBy: context.userId,
+            createdBy: context.clinicianId,
         },
     });
 
@@ -352,7 +355,7 @@ async function submitClaimHandler(
         claimNumber: claim.claimNumber,
         patientId: input.patientId,
         billedAmount: input.billedAmount,
-        userId: context.userId,
+        userId: context.clinicianId,
     });
 
     return {
@@ -415,6 +418,7 @@ async function getClaimHandler(
         return {
             success: false,
             error: `Claim not found: ${claimId}`,
+            data: null,
         };
     }
 
@@ -559,6 +563,7 @@ async function updateClaimStatusHandler(
         return {
             success: false,
             error: `Claim not found: ${claimId}`,
+            data: null,
         };
     }
 
@@ -587,7 +592,7 @@ async function updateClaimStatusHandler(
         claimNumber: claim.claimNumber,
         previousStatus: existing.status,
         newStatus: claim.status,
-        userId: context.userId,
+        userId: context.clinicianId,
     });
 
     return {
@@ -619,18 +624,24 @@ export const billingTools: MCPTool[] = [
     {
         name: 'get_patient_insurance',
         description: 'Get patient insurance records from database. Returns payer, plan, subscriber, benefits, copays, and verification status.',
+        category: 'billing',
+        requiredPermissions: ['billing:read'],
         inputSchema: GetPatientInsuranceSchema,
         handler: getPatientInsuranceHandler,
     },
     {
         name: 'create_patient_insurance',
         description: 'Add insurance coverage for a patient. Creates a new insurance record with payer, plan, and benefit details.',
+        category: 'billing',
+        requiredPermissions: ['billing:write'],
         inputSchema: CreatePatientInsuranceSchema,
         handler: createPatientInsuranceHandler,
     },
     {
         name: 'update_patient_insurance',
         description: 'Update patient insurance details including verification status, coverage dates, and benefit amounts.',
+        category: 'billing',
+        requiredPermissions: ['billing:write'],
         inputSchema: UpdatePatientInsuranceSchema,
         handler: updatePatientInsuranceHandler,
     },
@@ -639,24 +650,32 @@ export const billingTools: MCPTool[] = [
     {
         name: 'submit_claim',
         description: 'Submit an insurance claim for a patient encounter. Stores claim with diagnosis codes, procedure codes, and billed amount.',
+        category: 'billing',
+        requiredPermissions: ['billing:write', 'claims:submit'],
         inputSchema: SubmitClaimSchema,
         handler: submitClaimHandler,
     },
     {
         name: 'get_claim',
         description: 'Get a specific insurance claim by ID or claim number. Returns full claim details including financials and status.',
+        category: 'billing',
+        requiredPermissions: ['billing:read'],
         inputSchema: GetClaimSchema,
         handler: getClaimHandler,
     },
     {
         name: 'list_claims',
         description: 'List insurance claims with filtering by patient, status, and date range. Supports pagination.',
+        category: 'billing',
+        requiredPermissions: ['billing:read'],
         inputSchema: ListClaimsSchema,
         handler: listClaimsHandler,
     },
     {
         name: 'update_claim_status',
         description: 'Update claim status and financials (approved, paid, denied). Records allowed amount, paid amount, and denial information.',
+        category: 'billing',
+        requiredPermissions: ['billing:write', 'claims:update'],
         inputSchema: UpdateClaimStatusSchema,
         handler: updateClaimStatusHandler,
     },

@@ -7,6 +7,10 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
+// Type helper for jest mocks with @jest/globals
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = jest.Mock<any>;
+
 // Mock dependencies FIRST using CLAUDE.md pattern
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -36,6 +40,7 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 // Import mocks after jest.mock()
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { prisma } = require('@/lib/prisma');
 
 describe('GET /api/prevention/history/[patientId] - Unit Tests', () => {
@@ -122,11 +127,11 @@ describe('GET /api/prevention/history/[patientId] - Unit Tests', () => {
     jest.clearAllMocks();
 
     // Default mock responses
-    (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(mockPlan);
-    (prisma.preventionPlan.findFirst as jest.Mock).mockResolvedValue(mockPlan);
-    (prisma.preventionPlanVersion.findMany as jest.Mock).mockResolvedValue(mockVersions);
-    (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreenings);
-    (prisma.preventionEncounterLink.findMany as jest.Mock).mockResolvedValue(mockEncounterLinks);
+    (prisma.preventionPlan.findUnique as AnyMock).mockResolvedValue(mockPlan);
+    (prisma.preventionPlan.findFirst as AnyMock).mockResolvedValue(mockPlan);
+    (prisma.preventionPlanVersion.findMany as AnyMock).mockResolvedValue(mockVersions);
+    (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue(mockScreenings);
+    (prisma.preventionEncounterLink.findMany as AnyMock).mockResolvedValue(mockEncounterLinks);
   });
 
   describe('Data Fetching', () => {
@@ -299,7 +304,7 @@ describe('GET /api/prevention/history/[patientId] - Unit Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      (prisma.preventionPlanVersion.findMany as jest.Mock).mockRejectedValue(
+      (prisma.preventionPlanVersion.findMany as AnyMock).mockRejectedValue(
         new Error('Database timeout')
       );
 
@@ -309,7 +314,7 @@ describe('GET /api/prevention/history/[patientId] - Unit Tests', () => {
     });
 
     it('should return null for non-existent plan', async () => {
-      (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.preventionPlan.findUnique as AnyMock).mockResolvedValue(null);
 
       const plan = await prisma.preventionPlan.findUnique({
         where: { id: 'non-existent' },
@@ -319,7 +324,7 @@ describe('GET /api/prevention/history/[patientId] - Unit Tests', () => {
     });
 
     it('should handle empty version history', async () => {
-      (prisma.preventionPlanVersion.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.preventionPlanVersion.findMany as AnyMock).mockResolvedValue([]);
 
       const versions = await prisma.preventionPlanVersion.findMany({
         where: { planId: 'new-plan' },

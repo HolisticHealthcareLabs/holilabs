@@ -48,13 +48,11 @@ async function authenticateRequest(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const createFlagSchema = z.object({
-  flagKey: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/i, 'Flag key must be alphanumeric with underscores or hyphens'),
-  name: z.string().min(1).max(100),
+  name: z.string().min(1).max(100).regex(/^[a-z0-9_.-]+$/i, 'Flag name must be alphanumeric with dots, underscores, or hyphens'),
   description: z.string().max(500).optional(),
   enabled: z.boolean().default(false),
-  defaultValue: z.boolean().default(false),
-  clinicOverrides: z.record(z.boolean()).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  clinicId: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 const listFlagsSchema = z.object({
@@ -91,8 +89,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (enabled !== undefined) where.enabled = enabled;
     if (search) {
       where.OR = [
-        { flagKey: { contains: search, mode: 'insensitive' } },
         { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -147,15 +145,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check for duplicate flag key
-    const existing = await prisma.featureFlag.findUnique({
-      where: { flagKey: validation.data.flagKey },
+    // Check for duplicate flag name within scope
+    const existing = await prisma.featureFlag.findFirst({
+      where: {
+        name: validation.data.name,
+        clinicId: validation.data.clinicId ?? null,
+      },
       select: { id: true },
     });
 
     if (existing) {
       return NextResponse.json(
-        { error: 'Feature flag with this key already exists' },
+        { error: 'Feature flag with this name already exists in this scope' },
         { status: 409 }
       );
     }
@@ -170,7 +171,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         resource: 'FeatureFlag',
         resourceId: flag.id,
         details: {
-          flagKey: flag.flagKey,
+          name: flag.name,
           enabled: flag.enabled,
         },
         success: true,
@@ -181,7 +182,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     logger.info({
       event: 'feature_flag_created',
       flagId: flag.id,
-      flagKey: flag.flagKey,
+      name: flag.name,
     });
 
     return NextResponse.json(

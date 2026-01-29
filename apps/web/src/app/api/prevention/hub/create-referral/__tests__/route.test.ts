@@ -10,6 +10,12 @@
  * the actual route to avoid Jest ESM compatibility issues.
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
+// Type helper for jest mocks with @jest/globals
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = jest.Mock<any>;
+
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     patient: {
@@ -39,7 +45,7 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 jest.mock('@/lib/audit', () => ({
-  auditCreate: jest.fn().mockResolvedValue(undefined),
+  auditCreate: jest.fn(() => Promise.resolve(undefined)),
 }));
 
 const { prisma } = require('@/lib/prisma');
@@ -86,10 +92,10 @@ describe('POST /api/prevention/hub/create-referral - Unit Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (getServerSession as jest.Mock).mockResolvedValue(mockSession);
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.providerTask.create as jest.Mock).mockResolvedValue(mockReferralTask);
-    (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue({});
+    (getServerSession as AnyMock).mockResolvedValue(mockSession);
+    (prisma.patient.findUnique as AnyMock).mockResolvedValue(mockPatient);
+    (prisma.providerTask.create as AnyMock).mockResolvedValue(mockReferralTask);
+    (prisma.screeningOutcome.update as AnyMock).mockResolvedValue({});
   });
 
   describe('Authentication', () => {
@@ -100,7 +106,7 @@ describe('POST /api/prevention/hub/create-referral - Unit Tests', () => {
     });
 
     it('should reject when not authenticated', async () => {
-      (getServerSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as AnyMock).mockResolvedValue(null);
       const session = await getServerSession();
       expect(session).toBeNull();
     });
@@ -193,7 +199,7 @@ describe('POST /api/prevention/hub/create-referral - Unit Tests', () => {
     });
 
     it('should return error when patient not found', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.patient.findUnique as AnyMock).mockResolvedValue(null);
 
       const patient = await prisma.patient.findUnique({
         where: { id: 'non-existent' },
@@ -234,7 +240,7 @@ describe('POST /api/prevention/hub/create-referral - Unit Tests', () => {
         ...mockReferralTask,
         priority: 'URGENT',
       };
-      (prisma.providerTask.create as jest.Mock).mockResolvedValue(urgentTask);
+      (prisma.providerTask.create as AnyMock).mockResolvedValue(urgentTask);
 
       const created = await prisma.providerTask.create({
         data: {
@@ -295,7 +301,7 @@ describe('POST /api/prevention/hub/create-referral - Unit Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors', async () => {
-      (prisma.providerTask.create as jest.Mock).mockRejectedValue(
+      (prisma.providerTask.create as AnyMock).mockRejectedValue(
         new Error('Database connection failed')
       );
 

@@ -176,7 +176,8 @@ describe('Zod Schema Edge Cases', () => {
 
     describe('Action Validation', () => {
       it('should accept alert without action', () => {
-        const { action, ...alertWithoutAction } = validAlert;
+        // validAlert doesn't have 'action' field - it's an optional field we're testing
+        const alertWithoutAction = { ...validAlert };
         const result = PreventionAlertSchema.safeParse(alertWithoutAction);
         expect(result.success).toBe(true);
       });

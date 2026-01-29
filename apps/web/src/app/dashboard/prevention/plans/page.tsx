@@ -74,7 +74,7 @@ const DEMO_PATIENTS: PatientInfo[] = [
 
 export default function PreventionPlansPage() {
   const searchParams = useSearchParams();
-  const patientIdFromUrl = searchParams.get('patientId') || searchParams.get('patient');
+  const patientIdFromUrl = searchParams?.get('patientId') || searchParams?.get('patient');
 
   const [selectedPatientId, setSelectedPatientId] = useState(patientIdFromUrl || 'pt-001');
   const [plans, setPlans] = useState<PreventionPlan[]>([]);

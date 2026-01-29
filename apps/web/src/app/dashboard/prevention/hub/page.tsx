@@ -143,7 +143,7 @@ const HEALTH_DOMAINS = {
 
 export default function PreventionHub() {
   const searchParams = useSearchParams();
-  const patientId = searchParams.get('patient') || 'demo';
+  const patientId = searchParams?.get('patient') || 'demo';
 
   const [activeView, setActiveView] = useState<'timeline' | 'domains' | 'gaps'>('timeline');
   const [selectedDomain, setSelectedDomain] = useState<HealthDomain | null>(null);
@@ -175,7 +175,7 @@ export default function PreventionHub() {
         setRealtimeNotifications((prev) => [
           {
             id: `condition-${condition.id}`,
-            type: 'condition',
+            type: 'condition' as const,
             message: `Detected: ${condition.name} (${Math.round(condition.confidence * 100)}% confidence)`,
             timestamp: new Date(),
           },
@@ -188,7 +188,7 @@ export default function PreventionHub() {
         setRealtimeNotifications((prev) => [
           {
             id: `rec-${rec.id}`,
-            type: 'recommendation',
+            type: 'recommendation' as const,
             message: `New recommendation: ${rec.title}`,
             timestamp: new Date(),
           },

@@ -125,7 +125,7 @@ export async function DELETE(
     const notificationId = params.id;
 
     // Check if it's a clinician or patient request
-    const clinicianSession = await getServerSession(authOptions);
+    const clinicianSession = await auth();
     let userId: string;
     let userType: 'CLINICIAN' | 'PATIENT';
 

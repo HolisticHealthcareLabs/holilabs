@@ -352,7 +352,7 @@ describe('SymptomDiagnosisEngine', () => {
         hasHypertension: true,
         isSmoker: true,
         diagnoses: [
-          { icd10Code: 'I25.10', name: 'Coronary artery disease' },
+          { id: 'diag-1', icd10Code: 'I25.10', name: 'Coronary artery disease', clinicalStatus: 'ACTIVE' as const },
         ],
       };
 

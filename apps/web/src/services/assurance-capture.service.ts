@@ -169,8 +169,8 @@ export class AssuranceCaptureService {
           patientIdHash,
           encounterId: input.encounterId,
           eventType: input.eventType,
-          inputContextSnapshot: input.inputContextSnapshot,
-          aiRecommendation: input.aiRecommendation,
+          inputContextSnapshot: input.inputContextSnapshot as unknown as import('@prisma/client').Prisma.InputJsonValue,
+          aiRecommendation: input.aiRecommendation as unknown as import('@prisma/client').Prisma.InputJsonValue,
           aiConfidence: input.aiConfidence,
           aiProvider: input.aiProvider,
           aiLatencyMs: input.aiLatencyMs,
@@ -234,7 +234,7 @@ export class AssuranceCaptureService {
       await prisma.assuranceEvent.update({
         where: { id: eventId },
         data: {
-          humanDecision: decision.decision,
+          humanDecision: decision.decision as unknown as import('@prisma/client').Prisma.InputJsonValue,
           humanOverride: decision.override,
           overrideReason: decision.reason,
           decidedAt: new Date(),
@@ -290,7 +290,7 @@ export class AssuranceCaptureService {
         data: {
           assuranceEventId: eventId,
           outcomeType: outcome.type,
-          outcomeValue: outcome.value,
+          outcomeValue: outcome.value as unknown as import('@prisma/client').Prisma.InputJsonValue,
           outcomeDate: outcome.date,
           glosaCode: outcome.glosa?.code,
           glosaAmount: outcome.glosa?.amount,
@@ -349,7 +349,7 @@ export class AssuranceCaptureService {
         data: {
           assuranceEventId: eventId,
           feedbackType: feedback.type,
-          feedbackValue: feedback.value,
+          feedbackValue: feedback.value as unknown as import('@prisma/client').Prisma.InputJsonValue,
           feedbackSource: feedback.source,
         },
       });

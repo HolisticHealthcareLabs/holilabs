@@ -387,7 +387,17 @@ export function requireAuth() {
 // ROLE-BASED ACCESS CONTROL (RBAC)
 // ============================================================================
 
-export type UserRole = 'ADMIN' | 'CLINICIAN' | 'NURSE' | 'STAFF' | 'PATIENT';
+export type UserRole =
+  | 'ADMIN'
+  | 'PHYSICIAN'
+  | 'NURSE'
+  | 'RECEPTIONIST'
+  | 'LAB_TECH'
+  | 'PHARMACIST'
+  | 'CLINICIAN'
+  | 'STAFF'
+  | 'RESEARCHER'
+  | 'PATIENT';
 
 export function requireRole(...allowedRoles: UserRole[]) {
   return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {

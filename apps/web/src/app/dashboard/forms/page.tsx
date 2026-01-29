@@ -86,7 +86,7 @@ export default function FormsPage() {
 
   // Handle tab query parameter on mount
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
+    const tabParam = searchParams?.get('tab');
     if (tabParam === 'notifications') {
       setActiveTab('notifications');
     }

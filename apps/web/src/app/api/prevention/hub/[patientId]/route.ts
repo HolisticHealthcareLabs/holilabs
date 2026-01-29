@@ -337,9 +337,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       score: risk.score,
       level: mapCategoryToLevel(risk.category),
       lastCalculated: risk.calculatedAt,
-      nextDue:
-        risk.nextCalculationDue ||
-        new Date(risk.calculatedAt.getTime() + 365 * 24 * 60 * 60 * 1000),
+      nextDue: new Date(risk.calculatedAt.getTime() + 365 * 24 * 60 * 60 * 1000),
     }));
 
     // Build interventions from screenings and plan recommendations
@@ -389,7 +387,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       for (const goal of goals || []) {
         // Determine domain from plan type
         let domain: HealthDomain = 'cardiometabolic';
-        if (plan.planType === 'ONCOLOGY_SCREENING') domain = 'oncology';
+        if (plan.planType === 'CANCER_SCREENING') domain = 'oncology';
         if (plan.planType === 'DIABETES') domain = 'cardiometabolic';
         if (plan.planType === 'CARDIOVASCULAR') domain = 'cardiometabolic';
 

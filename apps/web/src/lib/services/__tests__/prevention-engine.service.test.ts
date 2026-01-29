@@ -130,15 +130,15 @@ describe('PreventionEngineService', () => {
     service = createPreventionEngineService();
 
     // Setup default mock responses
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.preventionPlan.findMany as jest.Mock).mockResolvedValue([]);
-    (prisma.preventionPlan.create as jest.Mock).mockImplementation((data: { data: { id?: string } }) =>
+    (prisma.patient.findUnique as jest.Mock<any>).mockResolvedValue(mockPatient);
+    (prisma.preventionPlan.findMany as jest.Mock<any>).mockResolvedValue([]);
+    (prisma.preventionPlan.create as jest.Mock<any>).mockImplementation((data: { data: { id?: string } }) =>
       Promise.resolve({ id: data.data.id || 'plan-new', ...data.data })
     );
-    (prisma.preventionEncounterLink.create as jest.Mock).mockImplementation((data: { data: { id?: string } }) =>
+    (prisma.preventionEncounterLink.create as jest.Mock<any>).mockImplementation((data: { data: { id?: string } }) =>
       Promise.resolve({ id: 'link-new', ...data.data })
     );
-    (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue({
+    (prisma.clinicalEncounter.findUnique as jest.Mock<any>).mockResolvedValue({
       id: mockEncounterId,
       patientId: mockPatientId,
       status: 'IN_PROGRESS',
@@ -249,7 +249,7 @@ describe('PreventionEngineService', () => {
 
   describe('Database Timeout Handling', () => {
     it('should handle database timeout gracefully', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockRejectedValue(
+      (prisma.patient.findUnique as jest.Mock<any>).mockRejectedValue(
         new Error('Database connection timeout')
       );
 
@@ -266,7 +266,7 @@ describe('PreventionEngineService', () => {
 
     it('should handle plan creation failure', async () => {
       // Patient fetch succeeds, but plan creation fails
-      (prisma.preventionPlan.create as jest.Mock).mockRejectedValue(
+      (prisma.preventionPlan.create as jest.Mock<any>).mockRejectedValue(
         new Error('Database write failed')
       );
 
@@ -284,7 +284,7 @@ describe('PreventionEngineService', () => {
 
     it('should continue processing when link creation fails', async () => {
       // Link creation fails, but other operations should continue
-      (prisma.preventionEncounterLink.create as jest.Mock).mockRejectedValue(
+      (prisma.preventionEncounterLink.create as jest.Mock<any>).mockRejectedValue(
         new Error('Link creation failed')
       );
 
@@ -444,7 +444,7 @@ describe('PreventionEngineService', () => {
 
   describe('Patient Not Found', () => {
     it('should handle patient not found gracefully', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.patient.findUnique as jest.Mock<any>).mockResolvedValue(null);
 
       const result = await service.processTranscriptFindings(
         'non-existent-patient',
@@ -478,7 +478,7 @@ describe('PreventionEngineService', () => {
     });
 
     it('should continue processing even if database write fails', async () => {
-      (prisma.preventionEncounterLink.create as jest.Mock).mockRejectedValue(
+      (prisma.preventionEncounterLink.create as jest.Mock<any>).mockRejectedValue(
         new Error('Database write failed')
       );
 
@@ -574,7 +574,7 @@ describe('PreventionEngineService', () => {
     });
 
     it('should not throw when database fails', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockRejectedValue(
+      (prisma.patient.findUnique as jest.Mock<any>).mockRejectedValue(
         new Error('Unexpected error')
       );
 
@@ -615,7 +615,7 @@ describe('PreventionEngineService', () => {
         status: 'ACTIVE',
       };
 
-      (prisma.preventionPlan.findMany as jest.Mock).mockResolvedValue([existingPlan]);
+      (prisma.preventionPlan.findMany as jest.Mock<any>).mockResolvedValue([existingPlan]);
 
       const result = await service.processTranscriptFindings(
         mockPatientId,
@@ -664,13 +664,13 @@ describe('Integration: Prevention Engine with Condition Detection', () => {
       medications: [],
     };
 
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.preventionPlan.findMany as jest.Mock).mockResolvedValue([]);
-    (prisma.preventionPlan.create as jest.Mock).mockImplementation((data: { data: unknown }) =>
-      Promise.resolve({ id: 'plan-new', ...data.data })
+    (prisma.patient.findUnique as jest.Mock<any>).mockResolvedValue(mockPatient);
+    (prisma.preventionPlan.findMany as jest.Mock<any>).mockResolvedValue([]);
+    (prisma.preventionPlan.create as jest.Mock<any>).mockImplementation((data: { data: unknown }) =>
+      Promise.resolve({ id: 'plan-new', ...(data.data as object) })
     );
-    (prisma.preventionEncounterLink.create as jest.Mock).mockResolvedValue({ id: 'link-new' });
-    (prisma.clinicalEncounter.findUnique as jest.Mock).mockResolvedValue({
+    (prisma.preventionEncounterLink.create as jest.Mock<any>).mockResolvedValue({ id: 'link-new' });
+    (prisma.clinicalEncounter.findUnique as jest.Mock<any>).mockResolvedValue({
       id: 'encounter-int',
       patientId: 'patient-int-test',
       status: 'IN_PROGRESS',

@@ -117,7 +117,7 @@ describe('FHIR Sync Security', () => {
         resolvedAt: null,
       };
 
-      (prisma.fHIRSyncEvent.findUnique as jest.Mock).mockResolvedValue(mockSyncEvent);
+      (prisma.fHIRSyncEvent.findUnique as jest.Mock<any>).mockResolvedValue(mockSyncEvent);
 
       const result = await prisma.fHIRSyncEvent.findUnique({
         where: { id: 'sync-123' },
@@ -152,8 +152,8 @@ describe('FHIR Sync Security', () => {
     });
 
     it('should detect version mismatch as potential conflict', () => {
-      const expectedRemoteVersion = '3';
-      const actualRemoteVersion = '4'; // Changed since last sync
+      const expectedRemoteVersion: string = '3';
+      const actualRemoteVersion: string = '4'; // Changed since last sync
 
       const versionMismatch = expectedRemoteVersion !== actualRemoteVersion;
       expect(versionMismatch).toBe(true);
@@ -212,7 +212,7 @@ describe('FHIR Sync Security', () => {
       const staleVersion = 3; // Outdated version from client
 
       // Mock the version check
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.patient.findUnique as jest.Mock<any>).mockResolvedValue({
         id: 'patient-123',
         version: currentDbVersion,
       });
@@ -266,7 +266,7 @@ describe('FHIR Sync Security', () => {
         resolution: 'KEEP_LOCAL',
       };
 
-      (prisma.fHIRSyncEvent.findUnique as jest.Mock).mockResolvedValue(resolvedConflict);
+      (prisma.fHIRSyncEvent.findUnique as jest.Mock<any>).mockResolvedValue(resolvedConflict);
 
       const result = await prisma.fHIRSyncEvent.findUnique({
         where: { id: 'sync-123' },

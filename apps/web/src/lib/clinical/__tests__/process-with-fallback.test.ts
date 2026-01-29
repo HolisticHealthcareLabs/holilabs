@@ -133,7 +133,7 @@ describe('processWithFallback', () => {
 
     it('should use pure fallback when hybrid is disabled and confidence is low', async () => {
       const aiResult = { result: 'ai-result', confidence: 0.5 };
-      const fallbackResult = { result: 'fallback-result' };
+      const fallbackResult = { result: 'fallback-result', confidence: 0.5 };
 
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.resolve(aiResult));
       fallbackFn.mockReturnValue(fallbackResult);
@@ -153,7 +153,7 @@ describe('processWithFallback', () => {
 
   describe('AI Failure - Fallback Path', () => {
     it('should use fallback when AI throws an error', async () => {
-      const fallbackResult = { result: 'fallback-result' };
+      const fallbackResult = { result: 'fallback-result', confidence: 0.5 };
 
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.reject(new Error('AI provider unavailable')));
       fallbackFn.mockReturnValue(fallbackResult);
@@ -177,7 +177,7 @@ describe('processWithFallback', () => {
     });
 
     it('should use fallback when AI returns malformed response', async () => {
-      const fallbackResult = { result: 'fallback-result' };
+      const fallbackResult = { result: 'fallback-result', confidence: 0.5 };
 
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.reject(new Error('Validation failed')));
       fallbackFn.mockReturnValue(fallbackResult);
@@ -203,7 +203,7 @@ describe('processWithFallback', () => {
     });
 
     it('should use fallback when AI times out', async () => {
-      const fallbackResult = { result: 'fallback-result' };
+      const fallbackResult = { result: 'fallback-result', confidence: 0.5 };
 
       // AI never resolves (simulates timeout)
       (aiToJSON as jest.Mock).mockImplementation(
@@ -299,10 +299,15 @@ describe('processWithFallback', () => {
       const aiResult = { result: 'test', probability: 0.85 };
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.resolve(aiResult));
 
+      const probabilityFallback = jest.fn(() => ({
+        result: 'fallback-result',
+        probability: 0.5,
+      }));
+
       const result = await processWithFallback(
         'test prompt',
         z.object({ result: z.string(), probability: z.number() }),
-        fallbackFn,
+        probabilityFallback,
         { confidenceThreshold: 0.7 }
       );
 
@@ -319,6 +324,10 @@ describe('processWithFallback', () => {
       };
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.resolve(aiResult));
 
+      const differentialsFallback = jest.fn(() => ({
+        differentials: [{ icd10Code: 'FALLBACK', probability: 0.5 }],
+      }));
+
       const result = await processWithFallback(
         'test prompt',
         z.object({
@@ -327,7 +336,7 @@ describe('processWithFallback', () => {
             probability: z.number()
           }))
         }),
-        fallbackFn,
+        differentialsFallback,
         { confidenceThreshold: 0.7 }
       );
 
@@ -355,10 +364,15 @@ describe('processWithFallback', () => {
       const aiResult = { result: 'test', extractionQuality: 'complete' };
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.resolve(aiResult));
 
+      const extractionFallback = jest.fn(() => ({
+        result: 'fallback-result',
+        extractionQuality: 'uncertain',
+      }));
+
       const result = await processWithFallback(
         'test prompt',
         z.object({ result: z.string(), extractionQuality: z.string() }),
-        fallbackFn,
+        extractionFallback,
         { confidenceThreshold: 0.7 }
       );
 
@@ -386,12 +400,13 @@ describe('processWithFallback', () => {
       };
 
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.resolve(aiResult));
-      fallbackFn.mockReturnValue(fallbackResult);
+
+      const itemsFallback = jest.fn(() => fallbackResult);
 
       const result = await processWithFallback(
         'test prompt',
         z.object({ items: z.array(z.any()), confidence: z.number() }),
-        fallbackFn,
+        itemsFallback,
         { confidenceThreshold: 0.7, enableHybrid: true }
       );
 
@@ -406,20 +421,26 @@ describe('processWithFallback', () => {
       const fallbackResult = { result: 'fallback-value', confidence: 0.8, fallbackOnly: true };
 
       (aiToJSON as jest.Mock).mockImplementation(() => Promise.resolve(aiResult));
-      fallbackFn.mockReturnValue(fallbackResult);
+
+      const mergeSchema = z.object({ result: z.string(), confidence: z.number() }).passthrough();
+      type MergeResult = z.infer<typeof mergeSchema> & { aiOnly?: boolean; fallbackOnly?: boolean };
+
+      const mergeFallback = jest.fn((): MergeResult => fallbackResult);
 
       const result = await processWithFallback(
         'test prompt',
-        z.object({ result: z.string(), confidence: z.number() }).passthrough(),
-        fallbackFn,
+        mergeSchema,
+        mergeFallback,
         { confidenceThreshold: 0.7, enableHybrid: true }
       );
 
       expect(result.method).toBe('hybrid');
       // AI fields override fallback (spread order: fallback first, then AI)
       expect(result.data.result).toBe('ai-value');
-      expect(result.data.aiOnly).toBe(true);
-      expect(result.data.fallbackOnly).toBe(true);
+      // Cast to access passthrough properties
+      const dataWithExtras = result.data as MergeResult;
+      expect(dataWithExtras.aiOnly).toBe(true);
+      expect(dataWithExtras.fallbackOnly).toBe(true);
     });
   });
 });

@@ -7,7 +7,7 @@ import ImagingStudyForm from '@/components/imaging/ImagingStudyForm';
 
 export default function PatientImagingPage() {
   const params = useParams();
-  const patientId = params.id as string;
+  const patientId = (params?.id as string) || '';
 
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);

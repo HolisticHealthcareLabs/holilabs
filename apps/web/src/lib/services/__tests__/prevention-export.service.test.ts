@@ -31,7 +31,8 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
-const { prisma } = require('@/lib/prisma');
+// Use scoped variable to avoid collision with other test files
+const mockPrismaClient = require('@/lib/prisma').prisma;
 
 describe('Prevention Export Service', () => {
   const mockPatientId = 'patient-123';
@@ -104,15 +105,15 @@ describe('Prevention Export Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.riskScore.findMany as jest.Mock).mockResolvedValue(mockRiskScores);
-    (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreenings);
-    (prisma.preventionPlan.findMany as jest.Mock).mockResolvedValue(mockPlans);
+    (mockPrismaClient.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
+    (mockPrismaClient.riskScore.findMany as jest.Mock).mockResolvedValue(mockRiskScores);
+    (mockPrismaClient.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreenings);
+    (mockPrismaClient.preventionPlan.findMany as jest.Mock).mockResolvedValue(mockPlans);
   });
 
   describe('Data Fetching', () => {
     it('should fetch patient data', async () => {
-      const patient = await prisma.patient.findUnique({
+      const patient = await mockPrismaClient.patient.findUnique({
         where: { id: mockPatientId },
       });
 
@@ -122,7 +123,7 @@ describe('Prevention Export Service', () => {
     });
 
     it('should fetch risk scores', async () => {
-      const scores = await prisma.riskScore.findMany({
+      const scores = await mockPrismaClient.riskScore.findMany({
         where: { patientId: mockPatientId },
       });
 
@@ -131,7 +132,7 @@ describe('Prevention Export Service', () => {
     });
 
     it('should fetch screenings', async () => {
-      const screenings = await prisma.screeningOutcome.findMany({
+      const screenings = await mockPrismaClient.screeningOutcome.findMany({
         where: { patientId: mockPatientId },
       });
 
@@ -140,7 +141,7 @@ describe('Prevention Export Service', () => {
     });
 
     it('should fetch prevention plans', async () => {
-      const plans = await prisma.preventionPlan.findMany({
+      const plans = await mockPrismaClient.preventionPlan.findMany({
         where: { patientId: mockPatientId },
       });
 
@@ -353,9 +354,9 @@ describe('Prevention Export Service', () => {
 
   describe('Error Handling', () => {
     it('should handle patient not found', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockPrismaClient.patient.findUnique as jest.Mock).mockResolvedValue(null);
 
-      const patient = await prisma.patient.findUnique({
+      const patient = await mockPrismaClient.patient.findUnique({
         where: { id: 'non-existent' },
       });
 
@@ -363,23 +364,23 @@ describe('Prevention Export Service', () => {
     });
 
     it('should handle database errors', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockRejectedValue(
+      (mockPrismaClient.patient.findUnique as jest.Mock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
       await expect(
-        prisma.patient.findUnique({ where: { id: mockPatientId } })
+        mockPrismaClient.patient.findUnique({ where: { id: mockPatientId } })
       ).rejects.toThrow('Database connection failed');
     });
 
     it('should handle empty data gracefully', async () => {
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.riskScore.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrismaClient.screeningOutcome.findMany as jest.Mock).mockResolvedValue([]);
+      (mockPrismaClient.riskScore.findMany as jest.Mock).mockResolvedValue([]);
 
-      const screenings = await prisma.screeningOutcome.findMany({
+      const screenings = await mockPrismaClient.screeningOutcome.findMany({
         where: { patientId: mockPatientId },
       });
-      const risks = await prisma.riskScore.findMany({
+      const risks = await mockPrismaClient.riskScore.findMany({
         where: { patientId: mockPatientId },
       });
 

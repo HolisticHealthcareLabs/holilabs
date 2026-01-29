@@ -791,3 +791,168 @@ export type MarkAllNotificationsReadInput = z.infer<typeof MarkAllNotificationsR
 export type CreateNotificationInput = z.infer<typeof CreateNotificationSchema>;
 export type GetPreferencesInput = z.infer<typeof GetPreferencesSchema>;
 export type UpdatePreferencesInput = z.infer<typeof UpdatePreferencesSchema>;
+
+// =============================================================================
+// PORTAL EXTENDED SCHEMAS (Patient Portal Actions)
+// =============================================================================
+
+export const GetPortalAppointmentsSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID'),
+    upcoming: z.boolean().default(true).describe('Only return upcoming appointments'),
+    status: z.enum(['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED']).optional().describe('Filter by status'),
+    ...PaginationSchema.shape,
+});
+
+export const RequestAppointmentChangeSchema = z.object({
+    appointmentId: UUIDSchema.describe('The appointment ID to request change for'),
+    patientId: UUIDSchema.describe('The patient ID (for verification)'),
+    requestType: z.enum(['RESCHEDULE', 'CANCEL']).describe('Type of change request'),
+    preferredNewTime: z.string().optional().describe('Preferred new time for reschedule (ISO format)'),
+    reason: z.string().min(5).describe('Reason for the change request'),
+});
+
+export const GetPortalMedicationsSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID'),
+    activeOnly: z.boolean().default(true).describe('Only return active medications'),
+    ...PaginationSchema.shape,
+});
+
+export const RequestMedicationRefillSchema = z.object({
+    medicationId: UUIDSchema.describe('The medication ID to request refill for'),
+    patientId: UUIDSchema.describe('The patient ID (for verification)'),
+    notes: z.string().optional().describe('Additional notes for the refill request'),
+    pharmacy: z.string().optional().describe('Preferred pharmacy'),
+});
+
+export const GetPortalLabResultsSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID'),
+    startDate: z.string().optional().describe('Filter results after this date (ISO format)'),
+    endDate: z.string().optional().describe('Filter results before this date (ISO format)'),
+    status: z.enum(['PRELIMINARY', 'FINAL', 'CORRECTED', 'CANCELLED']).optional().describe('Filter by status'),
+    ...PaginationSchema.shape,
+});
+
+export const GetPortalDocumentsSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID'),
+    documentType: DocumentTypeEnum.optional().describe('Filter by document type'),
+    ...PaginationSchema.shape,
+});
+
+export const ShareDocumentWithPatientSchema = z.object({
+    documentId: UUIDSchema.describe('The document ID to share'),
+    patientId: UUIDSchema.describe('The patient ID to share with'),
+    notifyPatient: z.boolean().default(true).describe('Send notification to patient'),
+    message: z.string().optional().describe('Optional message to include with the share'),
+});
+
+export const GetPortalMessagesSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID'),
+    unreadOnly: z.boolean().default(false).describe('Only return unread messages'),
+    ...PaginationSchema.shape,
+});
+
+export const SendPortalMessageSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID to send message to'),
+    subject: z.string().optional().describe('Message subject'),
+    body: z.string().min(1).describe('Message body'),
+    priority: NotificationPriorityEnum.default('NORMAL').describe('Message priority'),
+});
+
+export const PortalAccessRequestStatusEnum = z.enum(['PENDING', 'APPROVED', 'DENIED', 'EXPIRED']);
+
+export const GetAccessRequestsSchema = z.object({
+    patientId: UUIDSchema.optional().describe('Filter by patient ID'),
+    status: PortalAccessRequestStatusEnum.optional().describe('Filter by status'),
+    ...PaginationSchema.shape,
+});
+
+export const ApproveAccessRequestSchema = z.object({
+    requestId: UUIDSchema.describe('The access request ID to approve'),
+    expiresInDays: z.number().int().min(1).max(365).default(30).describe('Days until access expires'),
+    notes: z.string().optional().describe('Notes about the approval'),
+});
+
+export const DenyAccessRequestSchema = z.object({
+    requestId: UUIDSchema.describe('The access request ID to deny'),
+    reason: z.string().min(5).describe('Reason for denial'),
+});
+
+export const GetPortalHealthSummarySchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID'),
+    includeVitals: z.boolean().default(true).describe('Include recent vital signs'),
+    includeConditions: z.boolean().default(true).describe('Include active conditions'),
+    includeMedications: z.boolean().default(true).describe('Include active medications'),
+    includeAllergies: z.boolean().default(true).describe('Include allergies'),
+});
+
+export const UpdatePortalContactInfoSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID to update'),
+    email: z.string().email().optional().describe('New email address'),
+    phone: z.string().optional().describe('New phone number'),
+    address: z.string().optional().describe('New street address'),
+    city: z.string().optional().describe('New city'),
+    state: z.string().optional().describe('New state/province'),
+    postalCode: z.string().optional().describe('New postal code'),
+});
+
+export const RequestFamilyAccessSchema = z.object({
+    patientId: UUIDSchema.describe('The patient granting access'),
+    familyMemberName: z.string().describe('Name of the family member'),
+    relationship: z.string().describe('Relationship to patient (e.g., "Daughter", "Son", "Spouse")'),
+    email: z.string().email().describe('Email address for the family member'),
+    phone: z.string().optional().describe('Phone number (optional)'),
+    accessLevel: z.enum(['READ_ONLY', 'LIMITED_INTERACTION', 'FULL_ACCESS']).default('READ_ONLY').describe('Level of portal access'),
+    canViewClinicalNotes: z.boolean().default(true).describe('Can view clinical notes'),
+    canViewMedications: z.boolean().default(true).describe('Can view medications'),
+    canViewCarePlan: z.boolean().default(true).describe('Can view care plan'),
+    canViewPainAssessments: z.boolean().default(true).describe('Can view pain assessments'),
+    canReceiveDailyUpdates: z.boolean().default(true).describe('Receive daily email updates'),
+    canViewPhotos: z.boolean().default(false).describe('Can view patient photos'),
+    expiresAt: z.string().optional().describe('Access expiration date (ISO 8601)'),
+});
+
+export const GetFamilyMembersSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID to get family members for'),
+    includeExpired: z.boolean().default(false).describe('Include expired access grants'),
+    includeRevoked: z.boolean().default(false).describe('Include revoked access grants'),
+});
+
+export const UpdateInsuranceSchema = z.object({
+    patientId: UUIDSchema.describe('The patient ID'),
+    insuranceId: UUIDSchema.optional().describe('Insurance record ID to update (if updating existing)'),
+    insuranceType: z.enum(['PRIMARY', 'SECONDARY', 'TERTIARY']).optional().describe('Insurance type'),
+    payerId: z.string().optional().describe('Insurance payer ID'),
+    payerName: z.string().optional().describe('Insurance payer name'),
+    payerType: z.string().optional().describe('Payer type (COMMERCIAL, MEDICARE, MEDICAID, VA, OTHER)'),
+    planId: z.string().optional().describe('Plan ID'),
+    planName: z.string().optional().describe('Plan name'),
+    planType: z.string().optional().describe('Plan type (PPO, HMO, EPO, POS, HDHP)'),
+    memberId: z.string().optional().describe('Member ID'),
+    groupNumber: z.string().optional().describe('Group number'),
+    subscriberName: z.string().optional().describe('Subscriber name'),
+    relationshipToPatient: z.enum(['SELF', 'SPOUSE', 'CHILD', 'OTHER']).optional().describe('Relationship to patient'),
+    effectiveDate: z.string().optional().describe('Coverage effective date (ISO 8601)'),
+    terminationDate: z.string().optional().describe('Coverage termination date (ISO 8601)'),
+});
+
+// =============================================================================
+// PORTAL EXTENDED TYPE EXPORTS
+// =============================================================================
+
+export type GetPortalAppointmentsInput = z.infer<typeof GetPortalAppointmentsSchema>;
+export type RequestAppointmentChangeInput = z.infer<typeof RequestAppointmentChangeSchema>;
+export type GetPortalMedicationsInput = z.infer<typeof GetPortalMedicationsSchema>;
+export type RequestMedicationRefillInput = z.infer<typeof RequestMedicationRefillSchema>;
+export type GetPortalLabResultsInput = z.infer<typeof GetPortalLabResultsSchema>;
+export type GetPortalDocumentsInput = z.infer<typeof GetPortalDocumentsSchema>;
+export type ShareDocumentWithPatientInput = z.infer<typeof ShareDocumentWithPatientSchema>;
+export type GetPortalMessagesInput = z.infer<typeof GetPortalMessagesSchema>;
+export type SendPortalMessageInput = z.infer<typeof SendPortalMessageSchema>;
+export type GetAccessRequestsInput = z.infer<typeof GetAccessRequestsSchema>;
+export type ApproveAccessRequestInput = z.infer<typeof ApproveAccessRequestSchema>;
+export type DenyAccessRequestInput = z.infer<typeof DenyAccessRequestSchema>;
+export type GetPortalHealthSummaryInput = z.infer<typeof GetPortalHealthSummarySchema>;
+export type UpdatePortalContactInfoInput = z.infer<typeof UpdatePortalContactInfoSchema>;
+export type RequestFamilyAccessInput = z.infer<typeof RequestFamilyAccessSchema>;
+export type GetFamilyMembersInput = z.infer<typeof GetFamilyMembersSchema>;
+export type UpdateInsuranceInput = z.infer<typeof UpdateInsuranceSchema>;

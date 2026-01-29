@@ -76,7 +76,8 @@ jest.mock('@/lib/socket-server', () => ({
   }),
 }));
 
-const { prisma } = require('@/lib/prisma');
+// Use scoped variable to avoid collision with other test files
+const mockPrismaDb = require('@/lib/prisma').prisma;
 const { createAuditLog } = require('@/lib/audit');
 
 describe('PreventionNotificationService', () => {
@@ -125,11 +126,11 @@ describe('PreventionNotificationService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockClinician);
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
-    (prisma.patientUser.findFirst as jest.Mock).mockResolvedValue(mockPatientUser);
-    (prisma.preventionPlan.findUnique as jest.Mock).mockResolvedValue(mockPreventionPlan);
-    (prisma.notification.create as jest.Mock).mockResolvedValue({ id: 'notif-123' });
+    (mockPrismaDb.user.findUnique as jest.Mock).mockResolvedValue(mockClinician);
+    (mockPrismaDb.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
+    (mockPrismaDb.patientUser.findFirst as jest.Mock).mockResolvedValue(mockPatientUser);
+    (mockPrismaDb.preventionPlan.findUnique as jest.Mock).mockResolvedValue(mockPreventionPlan);
+    (mockPrismaDb.notification.create as jest.Mock).mockResolvedValue({ id: 'notif-123' });
   });
 
   describe('Notification Templates', () => {
@@ -220,7 +221,7 @@ describe('PreventionNotificationService', () => {
       };
 
       // Simulate service call
-      const notification = await prisma.notification.create({
+      const notification = await mockPrismaDb.notification.create({
         data: {
           userId: alertData.clinicianId,
           type: alertData.type,
@@ -232,7 +233,7 @@ describe('PreventionNotificationService', () => {
       });
 
       expect(notification).toBeDefined();
-      expect(prisma.notification.create).toHaveBeenCalledWith(
+      expect(mockPrismaDb.notification.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             type: 'CONDITION_DETECTED',
@@ -300,7 +301,7 @@ describe('PreventionNotificationService', () => {
     });
 
     it('should respect clinician notification preferences', async () => {
-      (prisma.clinicianPreferences.findUnique as jest.Mock).mockResolvedValue({
+      (mockPrismaDb.clinicianPreferences.findUnique as jest.Mock).mockResolvedValue({
         userId: 'clinician-123',
         notificationPreferences: {
           prevention: {
@@ -310,7 +311,7 @@ describe('PreventionNotificationService', () => {
         },
       });
 
-      const preferences = await prisma.clinicianPreferences.findUnique({
+      const preferences = await mockPrismaDb.clinicianPreferences.findUnique({
         where: { userId: 'clinician-123' },
       });
 
@@ -324,7 +325,7 @@ describe('PreventionNotificationService', () => {
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([
+      (mockPrismaDb.screeningOutcome.findMany as jest.Mock).mockResolvedValue([
         {
           ...mockScreeningOutcome,
           scheduledDate: sevenDaysFromNow,
@@ -332,7 +333,7 @@ describe('PreventionNotificationService', () => {
         },
       ]);
 
-      const upcomingScreenings = await prisma.screeningOutcome.findMany({
+      const upcomingScreenings = await mockPrismaDb.screeningOutcome.findMany({
         where: {
           scheduledDate: {
             gte: new Date(),
@@ -350,7 +351,7 @@ describe('PreventionNotificationService', () => {
       const overdueDate = new Date();
       overdueDate.setDate(overdueDate.getDate() - 14); // 14 days overdue
 
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([
+      (mockPrismaDb.screeningOutcome.findMany as jest.Mock).mockResolvedValue([
         {
           ...mockScreeningOutcome,
           scheduledDate: overdueDate,
@@ -359,7 +360,7 @@ describe('PreventionNotificationService', () => {
         },
       ]);
 
-      const overdueScreenings = await prisma.screeningOutcome.findMany({
+      const overdueScreenings = await mockPrismaDb.screeningOutcome.findMany({
         where: {
           scheduledDate: { lt: new Date() },
           completedDate: null,
@@ -395,7 +396,7 @@ describe('PreventionNotificationService', () => {
     });
 
     it('should respect patient communication preferences', async () => {
-      (prisma.patientPreferences.findUnique as jest.Mock).mockResolvedValue({
+      (mockPrismaDb.patientPreferences.findUnique as jest.Mock).mockResolvedValue({
         patientId: 'patient-123',
         communicationPreferences: {
           email: true,
@@ -406,7 +407,7 @@ describe('PreventionNotificationService', () => {
         },
       });
 
-      const preferences = await prisma.patientPreferences.findUnique({
+      const preferences = await mockPrismaDb.patientPreferences.findUnique({
         where: { patientId: 'patient-123' },
       });
 
@@ -566,7 +567,7 @@ describe('PreventionNotificationService', () => {
       const start = performance.now();
 
       // Simulate notification creation and Socket.IO emit
-      await prisma.notification.create({
+      await mockPrismaDb.notification.create({
         data: {
           userId: 'clinician-123',
           type: 'CONDITION_DETECTED',
@@ -580,13 +581,13 @@ describe('PreventionNotificationService', () => {
     });
 
     it('should batch process scheduled reminders efficiently', async () => {
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(
+      (mockPrismaDb.screeningOutcome.findMany as jest.Mock).mockResolvedValue(
         Array(100).fill(mockScreeningOutcome)
       );
 
       const start = performance.now();
 
-      await prisma.screeningOutcome.findMany({
+      await mockPrismaDb.screeningOutcome.findMany({
         where: { completedDate: null },
         include: { patient: true },
         take: 100,

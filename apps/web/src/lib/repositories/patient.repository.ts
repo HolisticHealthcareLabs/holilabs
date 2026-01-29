@@ -123,7 +123,7 @@ export class PatientRepository {
       firstName: patient.firstName,
       lastName: patient.lastName,
       dateOfBirth: patient.dateOfBirth,
-      sex: patient.sex || 'unknown',
+      sex: patient.gender || 'unknown',
       medications: patient.medications.map((m) => ({
         id: m.id,
         name: m.name,
@@ -217,7 +217,7 @@ export class PatientRepository {
     const count = await prisma.clinicalNote.count({
       where: {
         patientId,
-        type: 'Discharge',
+        type: 'DISCHARGE',
         createdAt: { gte: since },
       },
     });

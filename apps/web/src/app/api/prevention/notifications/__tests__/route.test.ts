@@ -5,6 +5,12 @@
  * Tests for notification API routes
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
+// Type helper for jest mocks with @jest/globals
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = jest.Mock<any>;
+
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
@@ -57,30 +63,30 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 jest.mock('@/lib/audit', () => ({
-  auditCreate: jest.fn().mockResolvedValue(undefined),
-  auditUpdate: jest.fn().mockResolvedValue(undefined),
-  auditView: jest.fn().mockResolvedValue(undefined),
+  auditCreate: jest.fn(() => Promise.resolve(undefined)),
+  auditUpdate: jest.fn(() => Promise.resolve(undefined)),
+  auditView: jest.fn(() => Promise.resolve(undefined)),
 }));
 
 jest.mock('@/lib/services/prevention-notification.service', () => ({
-  getPreventionNotificationService: jest.fn().mockReturnValue({
-    sendNotification: jest.fn().mockResolvedValue({
+  getPreventionNotificationService: jest.fn(() => ({
+    sendNotification: jest.fn(() => Promise.resolve({
       id: 'notif-123',
       success: true,
       deliveryResults: [{ channel: 'in_app', status: 'delivered' }],
-    }),
-    sendScreeningReminder: jest.fn().mockResolvedValue({
+    })),
+    sendScreeningReminder: jest.fn(() => Promise.resolve({
       id: 'notif-456',
       success: true,
       deliveryResults: [],
-    }),
-    sendScreeningOverdueAlert: jest.fn().mockResolvedValue({
+    })),
+    sendScreeningOverdueAlert: jest.fn(() => Promise.resolve({
       id: 'notif-789',
       success: true,
       deliveryResults: [],
-    }),
-    updateNotificationPreference: jest.fn().mockResolvedValue(true),
-  }),
+    })),
+    updateNotificationPreference: jest.fn(() => Promise.resolve(true)),
+  })),
   NOTIFICATION_TEMPLATES: {
     CONDITION_DETECTED: { id: 'condition-detected' },
     SCREENING_REMINDER: { id: 'screening-reminder' },
@@ -91,8 +97,11 @@ jest.mock('@/lib/services/prevention-notification.service', () => ({
   },
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { prisma } = require('@/lib/prisma');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { getServerSession } = require('@/lib/auth');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { auditView, auditCreate, auditUpdate } = require('@/lib/audit');
 
 describe('Prevention Notifications API', () => {
@@ -117,14 +126,14 @@ describe('Prevention Notifications API', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (getServerSession as jest.Mock).mockResolvedValue({ user: mockUser });
+    (getServerSession as AnyMock).mockResolvedValue({ user: mockUser });
   });
 
   describe('GET /api/prevention/notifications', () => {
     it('should return user notifications with pagination', async () => {
       const notifications = [mockNotification];
-      (prisma.notification.findMany as jest.Mock).mockResolvedValue(notifications);
-      (prisma.notification.count as jest.Mock)
+      (prisma.notification.findMany as AnyMock).mockResolvedValue(notifications);
+      (prisma.notification.count as AnyMock)
         .mockResolvedValueOnce(1) // total
         .mockResolvedValueOnce(1); // unread
 
@@ -140,7 +149,7 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should filter by type', async () => {
-      (prisma.notification.findMany as jest.Mock).mockResolvedValue([mockNotification]);
+      (prisma.notification.findMany as AnyMock).mockResolvedValue([mockNotification]);
 
       await prisma.notification.findMany({
         where: {
@@ -159,7 +168,7 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should filter unread only', async () => {
-      (prisma.notification.findMany as jest.Mock).mockResolvedValue([mockNotification]);
+      (prisma.notification.findMany as AnyMock).mockResolvedValue([mockNotification]);
 
       await prisma.notification.findMany({
         where: {
@@ -178,7 +187,7 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should return unread count', async () => {
-      (prisma.notification.count as jest.Mock).mockResolvedValue(5);
+      (prisma.notification.count as AnyMock).mockResolvedValue(5);
 
       const unreadCount = await prisma.notification.count({
         where: {
@@ -193,8 +202,8 @@ describe('Prevention Notifications API', () => {
 
   describe('POST /api/prevention/notifications', () => {
     it('should send notification to clinician', async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prisma.notification.create as jest.Mock).mockResolvedValue(mockNotification);
+      (prisma.user.findUnique as AnyMock).mockResolvedValue(mockUser);
+      (prisma.notification.create as AnyMock).mockResolvedValue(mockNotification);
 
       const notification = await prisma.notification.create({
         data: {
@@ -210,7 +219,7 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should validate recipient exists', async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.user.findUnique as AnyMock).mockResolvedValue(null);
 
       const user = await prisma.user.findUnique({
         where: { id: 'nonexistent' },
@@ -236,7 +245,7 @@ describe('Prevention Notifications API', () => {
 
   describe('GET /api/prevention/notifications/[id]', () => {
     it('should return notification details', async () => {
-      (prisma.notification.findUnique as jest.Mock).mockResolvedValue(mockNotification);
+      (prisma.notification.findUnique as AnyMock).mockResolvedValue(mockNotification);
 
       const notification = await prisma.notification.findUnique({
         where: { id: 'notif-123' },
@@ -247,7 +256,7 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should return null for non-existent notification', async () => {
-      (prisma.notification.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.notification.findUnique as AnyMock).mockResolvedValue(null);
 
       const notification = await prisma.notification.findUnique({
         where: { id: 'nonexistent' },
@@ -258,7 +267,7 @@ describe('Prevention Notifications API', () => {
 
     it('should verify ownership before returning', async () => {
       const otherUserNotification = { ...mockNotification, userId: 'other-user' };
-      (prisma.notification.findUnique as jest.Mock).mockResolvedValue(otherUserNotification);
+      (prisma.notification.findUnique as AnyMock).mockResolvedValue(otherUserNotification);
 
       const notification = await prisma.notification.findUnique({
         where: { id: 'notif-123' },
@@ -271,8 +280,8 @@ describe('Prevention Notifications API', () => {
   describe('PATCH /api/prevention/notifications/[id]', () => {
     it('should mark notification as read', async () => {
       const updatedNotification = { ...mockNotification, readAt: new Date() };
-      (prisma.notification.findUnique as jest.Mock).mockResolvedValue(mockNotification);
-      (prisma.notification.update as jest.Mock).mockResolvedValue(updatedNotification);
+      (prisma.notification.findUnique as AnyMock).mockResolvedValue(mockNotification);
+      (prisma.notification.update as AnyMock).mockResolvedValue(updatedNotification);
 
       const updated = await prisma.notification.update({
         where: { id: 'notif-123' },
@@ -284,8 +293,8 @@ describe('Prevention Notifications API', () => {
 
     it('should mark notification as unread', async () => {
       const readNotification = { ...mockNotification, readAt: new Date() };
-      (prisma.notification.findUnique as jest.Mock).mockResolvedValue(readNotification);
-      (prisma.notification.update as jest.Mock).mockResolvedValue({ ...readNotification, readAt: null });
+      (prisma.notification.findUnique as AnyMock).mockResolvedValue(readNotification);
+      (prisma.notification.update as AnyMock).mockResolvedValue({ ...readNotification, readAt: null });
 
       const updated = await prisma.notification.update({
         where: { id: 'notif-123' },
@@ -298,7 +307,7 @@ describe('Prevention Notifications API', () => {
 
   describe('POST /api/prevention/notifications/mark-all-read', () => {
     it('should mark all notifications as read', async () => {
-      (prisma.notification.updateMany as jest.Mock).mockResolvedValue({ count: 5 });
+      (prisma.notification.updateMany as AnyMock).mockResolvedValue({ count: 5 });
 
       const result = await prisma.notification.updateMany({
         where: {
@@ -314,8 +323,8 @@ describe('Prevention Notifications API', () => {
 
   describe('DELETE /api/prevention/notifications/[id]', () => {
     it('should delete notification', async () => {
-      (prisma.notification.findUnique as jest.Mock).mockResolvedValue(mockNotification);
-      (prisma.notification.delete as jest.Mock).mockResolvedValue(mockNotification);
+      (prisma.notification.findUnique as AnyMock).mockResolvedValue(mockNotification);
+      (prisma.notification.delete as AnyMock).mockResolvedValue(mockNotification);
 
       await prisma.notification.delete({
         where: { id: 'notif-123' },
@@ -328,7 +337,7 @@ describe('Prevention Notifications API', () => {
 
     it('should not delete other user notifications', async () => {
       const otherNotification = { ...mockNotification, userId: 'other-user' };
-      (prisma.notification.findUnique as jest.Mock).mockResolvedValue(otherNotification);
+      (prisma.notification.findUnique as AnyMock).mockResolvedValue(otherNotification);
 
       const notification = await prisma.notification.findUnique({
         where: { id: 'notif-123' },
@@ -349,7 +358,7 @@ describe('Prevention Notifications API', () => {
           },
         },
       };
-      (prisma.clinicianPreferences.findUnique as jest.Mock).mockResolvedValue(mockPrefs);
+      (prisma.clinicianPreferences.findUnique as AnyMock).mockResolvedValue(mockPrefs);
 
       const prefs = await prisma.clinicianPreferences.findUnique({
         where: { userId: 'user-123' },
@@ -359,11 +368,11 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should return patient preferences', async () => {
-      (prisma.clinicianPreferences.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.patientUser.findFirst as jest.Mock).mockResolvedValue({
+      (prisma.clinicianPreferences.findUnique as AnyMock).mockResolvedValue(null);
+      (prisma.patientUser.findFirst as AnyMock).mockResolvedValue({
         patientId: 'patient-123',
       });
-      (prisma.patientPreferences.findUnique as jest.Mock).mockResolvedValue({
+      (prisma.patientPreferences.findUnique as AnyMock).mockResolvedValue({
         patientId: 'patient-123',
         communicationPreferences: {
           screeningReminder: { enabled: true },
@@ -378,8 +387,8 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should return defaults when no preferences exist', async () => {
-      (prisma.clinicianPreferences.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.patientUser.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.clinicianPreferences.findUnique as AnyMock).mockResolvedValue(null);
+      (prisma.patientUser.findFirst as AnyMock).mockResolvedValue(null);
 
       const clinicianPrefs = await prisma.clinicianPreferences.findUnique({
         where: { userId: 'user-123' },
@@ -395,8 +404,8 @@ describe('Prevention Notifications API', () => {
         userId: 'user-123',
         notificationPreferences: { prevention: {} },
       };
-      (prisma.clinicianPreferences.findUnique as jest.Mock).mockResolvedValue(existingPrefs);
-      (prisma.clinicianPreferences.update as jest.Mock).mockResolvedValue({
+      (prisma.clinicianPreferences.findUnique as AnyMock).mockResolvedValue(existingPrefs);
+      (prisma.clinicianPreferences.update as AnyMock).mockResolvedValue({
         ...existingPrefs,
         notificationPreferences: {
           prevention: {
@@ -420,9 +429,9 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should create preferences if none exist', async () => {
-      (prisma.clinicianPreferences.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.patientUser.findFirst as jest.Mock).mockResolvedValue(null);
-      (prisma.clinicianPreferences.create as jest.Mock).mockResolvedValue({
+      (prisma.clinicianPreferences.findUnique as AnyMock).mockResolvedValue(null);
+      (prisma.patientUser.findFirst as AnyMock).mockResolvedValue(null);
+      (prisma.clinicianPreferences.create as AnyMock).mockResolvedValue({
         userId: 'user-123',
         notificationPreferences: {
           prevention: {
@@ -463,8 +472,8 @@ describe('Prevention Notifications API', () => {
     ];
 
     it('should process 7-day reminders', async () => {
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreenings);
-      (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue({
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue(mockScreenings);
+      (prisma.screeningOutcome.update as AnyMock).mockResolvedValue({
         ...mockScreenings[0],
         remindersSent: 1,
       });
@@ -485,7 +494,7 @@ describe('Prevention Notifications API', () => {
         ...mockScreenings[0],
         scheduledDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
       };
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([overdueScreening]);
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue([overdueScreening]);
 
       const screenings = await prisma.screeningOutcome.findMany({
         where: {
@@ -499,7 +508,7 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should update reminder count after sending', async () => {
-      (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue({
+      (prisma.screeningOutcome.update as AnyMock).mockResolvedValue({
         ...mockScreenings[0],
         remindersSent: 1,
         lastReminderAt: new Date(),
@@ -519,7 +528,7 @@ describe('Prevention Notifications API', () => {
 
     it('should batch process efficiently', async () => {
       const manyScreenings = Array(100).fill(mockScreenings[0]);
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(manyScreenings);
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue(manyScreenings);
 
       const start = performance.now();
       await prisma.screeningOutcome.findMany({ take: 100 });
@@ -573,8 +582,8 @@ describe('Prevention Notifications API', () => {
 
   describe('Latency Compliance', () => {
     it('should fetch notifications under 200ms', async () => {
-      (prisma.notification.findMany as jest.Mock).mockResolvedValue([mockNotification]);
-      (prisma.notification.count as jest.Mock).mockResolvedValue(1);
+      (prisma.notification.findMany as AnyMock).mockResolvedValue([mockNotification]);
+      (prisma.notification.count as AnyMock).mockResolvedValue(1);
 
       const start = performance.now();
       await Promise.all([
@@ -589,7 +598,7 @@ describe('Prevention Notifications API', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      (prisma.notification.findMany as jest.Mock).mockRejectedValue(
+      (prisma.notification.findMany as AnyMock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -599,7 +608,7 @@ describe('Prevention Notifications API', () => {
     });
 
     it('should handle unauthorized access', async () => {
-      (getServerSession as jest.Mock).mockResolvedValue(null);
+      (getServerSession as AnyMock).mockResolvedValue(null);
 
       const session = await getServerSession();
       expect(session).toBeNull();

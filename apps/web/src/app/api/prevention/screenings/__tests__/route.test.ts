@@ -5,6 +5,12 @@
  * Tests for recording and tracking screening outcomes
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
+// Type helper for jest mocks with @jest/globals
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMock = jest.Mock<any>;
+
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     patient: {
@@ -37,13 +43,16 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 jest.mock('@/lib/audit', () => ({
-  auditCreate: jest.fn().mockResolvedValue(undefined),
-  auditUpdate: jest.fn().mockResolvedValue(undefined),
-  auditView: jest.fn().mockResolvedValue(undefined),
+  auditCreate: jest.fn(() => Promise.resolve(undefined)),
+  auditUpdate: jest.fn(() => Promise.resolve(undefined)),
+  auditView: jest.fn(() => Promise.resolve(undefined)),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { prisma } = require('@/lib/prisma');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { getServerSession } = require('@/lib/auth');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { auditCreate, auditUpdate, auditView } = require('@/lib/audit');
 
 describe('Screening Outcome Tracking API', () => {
@@ -74,13 +83,13 @@ describe('Screening Outcome Tracking API', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (getServerSession as jest.Mock).mockResolvedValue({ user: mockUser });
-    (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
+    (getServerSession as AnyMock).mockResolvedValue({ user: mockUser });
+    (prisma.patient.findUnique as AnyMock).mockResolvedValue(mockPatient);
   });
 
   describe('POST /api/prevention/screenings - Schedule Screening', () => {
     it('schedules a new screening for a patient', async () => {
-      (prisma.screeningOutcome.create as jest.Mock).mockResolvedValue(mockScreeningOutcome);
+      (prisma.screeningOutcome.create as AnyMock).mockResolvedValue(mockScreeningOutcome);
 
       const requestBody = {
         patientId: 'patient-123',
@@ -126,7 +135,7 @@ describe('Screening Outcome Tracking API', () => {
     });
 
     it('validates patient exists', async () => {
-      (prisma.patient.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.patient.findUnique as AnyMock).mockResolvedValue(null);
 
       const patient = await prisma.patient.findUnique({
         where: { id: 'nonexistent' },
@@ -180,7 +189,7 @@ describe('Screening Outcome Tracking API', () => {
     ];
 
     it('returns all screenings for a patient', async () => {
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue(mockScreenings);
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue(mockScreenings);
 
       const screenings = await prisma.screeningOutcome.findMany({
         where: { patientId: 'patient-123' },
@@ -193,7 +202,7 @@ describe('Screening Outcome Tracking API', () => {
     });
 
     it('filters screenings by type', async () => {
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([mockScreenings[0]]);
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue([mockScreenings[0]]);
 
       const screenings = await prisma.screeningOutcome.findMany({
         where: {
@@ -208,7 +217,7 @@ describe('Screening Outcome Tracking API', () => {
 
     it('filters screenings by status', async () => {
       // Completed screenings
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([mockScreenings[0]]);
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue([mockScreenings[0]]);
 
       const completed = await prisma.screeningOutcome.findMany({
         where: {
@@ -226,7 +235,7 @@ describe('Screening Outcome Tracking API', () => {
         ...mockScreenings[1],
         scheduledDate: new Date('2024-01-01'), // Past date, not completed
       };
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([overdueScreening]);
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue([overdueScreening]);
 
       const overdue = await prisma.screeningOutcome.findMany({
         where: {
@@ -248,8 +257,8 @@ describe('Screening Outcome Tracking API', () => {
         completedDate: new Date('2024-03-16'),
         result: 'normal',
       };
-      (prisma.screeningOutcome.findUnique as jest.Mock).mockResolvedValue(mockScreeningOutcome);
-      (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue(completedScreening);
+      (prisma.screeningOutcome.findUnique as AnyMock).mockResolvedValue(mockScreeningOutcome);
+      (prisma.screeningOutcome.update as AnyMock).mockResolvedValue(completedScreening);
 
       const updated = await prisma.screeningOutcome.update({
         where: { id: 'screening-001' },
@@ -273,8 +282,8 @@ describe('Screening Outcome Tracking API', () => {
 
     it('can link screening to follow-up plan', async () => {
       const followUpPlan = { id: 'plan-456' };
-      (prisma.preventionPlan.findFirst as jest.Mock).mockResolvedValue(followUpPlan);
-      (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue({
+      (prisma.preventionPlan.findFirst as AnyMock).mockResolvedValue(followUpPlan);
+      (prisma.screeningOutcome.update as AnyMock).mockResolvedValue({
         ...mockScreeningOutcome,
         result: 'abnormal',
         followUpPlanId: 'plan-456',
@@ -293,7 +302,7 @@ describe('Screening Outcome Tracking API', () => {
 
     it('reschedules a screening', async () => {
       const newDate = new Date('2024-04-15');
-      (prisma.screeningOutcome.update as jest.Mock).mockResolvedValue({
+      (prisma.screeningOutcome.update as AnyMock).mockResolvedValue({
         ...mockScreeningOutcome,
         scheduledDate: newDate,
         notes: 'Rescheduled - patient request',
@@ -314,7 +323,7 @@ describe('Screening Outcome Tracking API', () => {
 
   describe('HIPAA Audit Logging', () => {
     it('logs screening creation for audit', async () => {
-      (prisma.screeningOutcome.create as jest.Mock).mockResolvedValue(mockScreeningOutcome);
+      (prisma.screeningOutcome.create as AnyMock).mockResolvedValue(mockScreeningOutcome);
 
       // Simulate audit call after creation
       await auditCreate('ScreeningOutcome', 'screening-001', {}, {
@@ -375,7 +384,7 @@ describe('Screening Outcome Tracking API', () => {
 
   describe('Latency Performance', () => {
     it('processes screening operations within latency budget', async () => {
-      (prisma.screeningOutcome.findMany as jest.Mock).mockResolvedValue([mockScreeningOutcome]);
+      (prisma.screeningOutcome.findMany as AnyMock).mockResolvedValue([mockScreeningOutcome]);
 
       const start = performance.now();
 
@@ -391,7 +400,7 @@ describe('Screening Outcome Tracking API', () => {
 
   describe('Error Handling', () => {
     it('handles database errors gracefully', async () => {
-      (prisma.screeningOutcome.create as jest.Mock).mockRejectedValue(
+      (prisma.screeningOutcome.create as AnyMock).mockRejectedValue(
         new Error('Database connection failed')
       );
 
@@ -403,7 +412,7 @@ describe('Screening Outcome Tracking API', () => {
     });
 
     it('handles screening not found', async () => {
-      (prisma.screeningOutcome.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.screeningOutcome.findUnique as AnyMock).mockResolvedValue(null);
 
       const screening = await prisma.screeningOutcome.findUnique({
         where: { id: 'nonexistent' },

@@ -39,7 +39,7 @@ interface FormResponse {
 export default function FormResponsesPage() {
   const params = useParams();
   const router = useRouter();
-  const formId = params.id as string;
+  const formId = (params?.id as string) || '';
 
   const [formData, setFormData] = useState<FormResponse | null>(null);
   const [loading, setLoading] = useState(true);

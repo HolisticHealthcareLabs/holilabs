@@ -357,7 +357,7 @@ describe('TreatmentProtocolEngine', () => {
 
         const result = await treatmentProtocolEngine.getRecommendations('I10', {
           ...basePatientContext,
-          diagnoses: [{ icd10Code: 'E11', name: 'Diabetes' }],
+          diagnoses: [{ id: 'diag-1', icd10Code: 'E11', name: 'Diabetes', clinicalStatus: 'ACTIVE' }],
         });
 
         // Non-required criteria don't block eligibility
@@ -397,7 +397,7 @@ describe('TreatmentProtocolEngine', () => {
         ...basePatientContext,
         hasHypertension: true,
         allergies: [
-          { allergen: 'ACE inhibitor', reaction: 'Angioedema', severity: 'severe' },
+          { id: 'allergy-1', allergen: 'ACE inhibitor', type: 'DRUG', reaction: 'Angioedema', severity: 'severe', status: 'ACTIVE' },
         ],
       };
 
@@ -420,7 +420,7 @@ describe('TreatmentProtocolEngine', () => {
         ...basePatientContext,
         hasHypertension: true,
         medications: [
-          { name: 'Lisinopril', dose: '10mg', frequency: 'daily', rxNormCode: '314076' },
+          { id: 'med-1', name: 'Lisinopril', dose: '10mg', frequency: 'daily', rxNormCode: '314076', status: 'ACTIVE' },
         ],
       };
 
@@ -461,7 +461,7 @@ describe('TreatmentProtocolEngine', () => {
       const patientContext: PatientContext = {
         ...basePatientContext,
         hasHypertension: true,
-        diagnoses: [{ icd10Code: 'K70.1', name: 'Chronic kidney disease' }],
+        diagnoses: [{ id: 'diag-1', icd10Code: 'K70.1', name: 'Chronic kidney disease', clinicalStatus: 'ACTIVE' }],
       };
 
       (prisma.treatmentProtocol.findFirst as jest.Mock).mockResolvedValue(
@@ -482,7 +482,7 @@ describe('TreatmentProtocolEngine', () => {
       const patientContext: PatientContext = {
         ...basePatientContext,
         hasHypertension: true,
-        allergies: [{ allergen: 'Penicillin', reaction: 'Rash', severity: 'mild' }],
+        allergies: [{ id: 'allergy-1', allergen: 'Penicillin', type: 'DRUG', reaction: 'Rash', severity: 'mild', status: 'ACTIVE' }],
       };
 
       (prisma.treatmentProtocol.findFirst as jest.Mock).mockResolvedValue(sampleProtocol);
@@ -546,7 +546,7 @@ describe('TreatmentProtocolEngine', () => {
     it('should filter AI recommendations for contraindications', async () => {
       const patientContext: PatientContext = {
         ...basePatientContext,
-        allergies: [{ allergen: 'Aspirin', reaction: 'GI bleed', severity: 'severe' }],
+        allergies: [{ id: 'allergy-1', allergen: 'Aspirin', type: 'DRUG', reaction: 'GI bleed', severity: 'severe', status: 'ACTIVE' }],
       };
 
       (prisma.treatmentProtocol.findFirst as jest.Mock).mockResolvedValue(null);
@@ -690,10 +690,10 @@ describe('TreatmentProtocolEngine', () => {
         ...basePatientContext,
         age: 65,
         sex: 'F',
-        diagnoses: [{ icd10Code: 'E11', name: 'Type 2 Diabetes' }],
-        medications: [{ name: 'Metformin', dose: '500mg', frequency: 'twice daily' }],
-        allergies: [{ allergen: 'Penicillin', reaction: 'Rash', severity: 'mild' }],
-        recentLabs: [{ name: 'HbA1c', value: '7.2', unit: '%' }],
+        diagnoses: [{ id: 'diag-1', icd10Code: 'E11', name: 'Type 2 Diabetes', clinicalStatus: 'ACTIVE' }],
+        medications: [{ id: 'med-1', name: 'Metformin', dose: '500mg', frequency: 'twice daily', status: 'ACTIVE' }],
+        allergies: [{ id: 'allergy-1', allergen: 'Penicillin', type: 'DRUG', reaction: 'Rash', severity: 'mild', status: 'ACTIVE' }],
+        recentLabs: [{ id: 'lab-1', name: 'HbA1c', value: '7.2', unit: '%', resultDate: '2024-01-15' }],
         hasDiabetes: true,
         hasHypertension: true,
       };

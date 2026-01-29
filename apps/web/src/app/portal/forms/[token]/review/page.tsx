@@ -24,7 +24,7 @@ interface FormData {
 export default function ReviewPage() {
   const params = useParams();
   const router = useRouter();
-  const token = params.token as string;
+  const token = (params?.token as string) || '';
   const signatureRef = useRef<SignatureCanvas>(null);
 
   const [formData, setFormData] = useState<FormData | null>(null);
