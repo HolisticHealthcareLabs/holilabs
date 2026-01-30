@@ -1,0 +1,71 @@
+name: Build and Release Sidecar
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build-sidecar:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Windows: Certificate Setup
+      - name: Decode Windows Certificate
+        if: matrix.os == 'windows-latest' && env.CSC_LINK != ''
+        run: |
+          echo "${{ secrets.CSC_LINK }}" > cert.p12
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+
+      # Build & Sign
+      - name: Build Enterprise Artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Windows Signing
+          WIN_CERT_SHA1: ${{ secrets.WIN_CERT_SHA1 }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # Mac Signing
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          pnpm --filter @holilabs/sidecar run build:enterprise
+
+      # Cleanup Certificate (Windows)
+      - name: Cleanup Certificate
+        if: matrix.os == 'windows-latest' && always()
+        run: |
+          if (Test-Path cert.p12) { Remove-Item cert.p12 }
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-${{ matrix.os }}
+          path: |
+            apps/sidecar/dist/installers/*.msi
+            apps/sidecar/dist/installers/*.exe
+            apps/sidecar/dist/installers/*.dmg
+            apps/sidecar/dist/installers/*.zip
+          if-no-files-found: warn

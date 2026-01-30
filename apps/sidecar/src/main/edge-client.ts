@@ -24,6 +24,12 @@ interface OverrideArgs {
   signals: Array<{ ruleId: string; color: string }>;
   justification: string;
   supervisorId?: string;
+  assuranceEventId?: string;
+}
+
+interface RulesResponse {
+  version: string;
+  timestamp: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -132,6 +138,7 @@ export class EdgeNodeClient {
     const response = await this.post('/sidecar/decision', {
       patientId: this.patientId || 'unknown',
       signals: args.signals,
+      assuranceEventId: args.assuranceEventId,
       overrideDecision: {
         proceed: true,
         justification: args.justification,
@@ -161,9 +168,13 @@ export class EdgeNodeClient {
   /**
    * Get current Traffic Light rules
    */
-  async getRules(): Promise<unknown> {
-    const response = await this.get('/sidecar/rules');
-    return response.data;
+  async getRules(): Promise<RulesResponse | null> {
+    try {
+      const response = await this.get('/sidecar/rules');
+      return response.data as RulesResponse;
+    } catch (e) {
+      return null;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

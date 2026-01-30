@@ -1,0 +1,115 @@
+{"level":"info","message":"Starting Holi Labs Edge Node...","service":"edge-node","timestamp":"2026-01-30 00:04:23.219"}
+{"level":"info","message":"Starting Holi Labs Edge Node...","service":"edge-node","timestamp":"2026-01-30 00:05:55.717"}
+{"level":"info","message":"Database connection established (SQLite)","service":"edge-node","timestamp":"2026-01-30 00:05:55.721"}
+{"clinicId":"demo-clinic","cloudUrl":"http://localhost:3000","level":"info","message":"Starting sync services","service":"edge-node","timestamp":"2026-01-30 00:05:55.724"}
+{"level":"info","message":"Edge node listening on port 3001","service":"edge-node","timestamp":"2026-01-30 00:05:55.725"}
+{"level":"info","message":"Cloud URL: http://localhost:3000","service":"edge-node","timestamp":"2026-01-30 00:05:55.725"}
+{"level":"info","message":"Clinic ID: demo-clinic","service":"edge-node","timestamp":"2026-01-30 00:05:55.725"}
+{"latencyMs":31,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-01-30 00:05:55.760"}
+{"checkIntervalMs":300000,"cloudUrl":"http://localhost:3000","level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-30 00:05:55.760"}
+{"level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-30 00:05:55.760"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 00:05:55.761"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 00:05:55.807"}
+{"cloudUrl":"http://localhost:3000","level":"info","message":"Rule updater started","pollIntervalMs":60000,"service":"edge-node","timestamp":"2026-01-30 00:05:55.808"}
+{"level":"info","message":"Rule updater started","service":"edge-node","timestamp":"2026-01-30 00:05:55.808"}
+{"intervalMs":30000,"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-30 00:05:55.809"}
+{"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-30 00:05:55.809"}
+{"level":"info","message":"All sync services started successfully","service":"edge-node","timestamp":"2026-01-30 00:05:55.809"}
+{"connectionStatus":"degraded","hoursSinceSync":0,"isCritical":false,"isRunning":true,"isStale":false,"lastSync":"2026-01-30T03:05:55.758Z","level":"info","message":"Initial sync status","pendingQueueItems":0,"ruleVersion":null,"service":"edge-node","timestamp":"2026-01-30 00:05:55.811"}
+{"level":"info","message":"Shutting down edge node...","service":"edge-node","timestamp":"2026-01-30 00:06:06.207"}
+{"level":"info","message":"Starting Holi Labs Edge Node...","service":"edge-node","timestamp":"2026-01-30 00:10:28.924"}
+{"level":"info","message":"Database connection established (SQLite)","service":"edge-node","timestamp":"2026-01-30 00:10:28.928"}
+{"clinicId":"demo-clinic","cloudUrl":"http://localhost:3000","level":"info","message":"Starting sync services","service":"edge-node","timestamp":"2026-01-30 00:10:28.931"}
+{"level":"info","message":"Edge node listening on port 3001","service":"edge-node","timestamp":"2026-01-30 00:10:28.932"}
+{"level":"info","message":"Cloud URL: http://localhost:3000","service":"edge-node","timestamp":"2026-01-30 00:10:28.932"}
+{"level":"info","message":"Clinic ID: demo-clinic","service":"edge-node","timestamp":"2026-01-30 00:10:28.933"}
+{"latencyMs":27,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-01-30 00:10:28.962"}
+{"checkIntervalMs":300000,"cloudUrl":"http://localhost:3000","level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-30 00:10:28.963"}
+{"level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-30 00:10:28.963"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 00:10:28.964"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 00:10:29.007"}
+{"cloudUrl":"http://localhost:3000","level":"info","message":"Rule updater started","pollIntervalMs":60000,"service":"edge-node","timestamp":"2026-01-30 00:10:29.008"}
+{"level":"info","message":"Rule updater started","service":"edge-node","timestamp":"2026-01-30 00:10:29.008"}
+{"intervalMs":30000,"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-30 00:10:29.009"}
+{"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-30 00:10:29.009"}
+{"level":"info","message":"All sync services started successfully","service":"edge-node","timestamp":"2026-01-30 00:10:29.009"}
+{"connectionStatus":"degraded","hoursSinceSync":0,"isCritical":false,"isRunning":true,"isStale":false,"lastSync":"2026-01-30T03:10:28.961Z","level":"info","message":"Initial sync status","pendingQueueItems":0,"ruleVersion":null,"service":"edge-node","timestamp":"2026-01-30 00:10:29.011"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 00:11:29.012"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 00:11:29.016"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 00:12:29.012"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 00:12:29.014"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 00:13:29.014"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 00:13:29.017"}
+{"level":"info","message":"Shutting down edge node...","service":"edge-node","timestamp":"2026-01-30 00:13:44.495"}
+{"level":"info","message":"Starting Holi Labs Edge Node...","service":"edge-node","timestamp":"2026-01-30 01:17:02.240"}
+{"level":"info","message":"Database connection established (SQLite)","service":"edge-node","timestamp":"2026-01-30 01:17:02.243"}
+{"clinicId":"demo-clinic","cloudUrl":"http://localhost:3000","level":"info","message":"Starting sync services","service":"edge-node","timestamp":"2026-01-30 01:17:02.246"}
+{"level":"info","message":"Edge node listening on port 3001","service":"edge-node","timestamp":"2026-01-30 01:17:02.247"}
+{"level":"info","message":"Cloud URL: http://localhost:3000","service":"edge-node","timestamp":"2026-01-30 01:17:02.247"}
+{"level":"info","message":"Clinic ID: demo-clinic","service":"edge-node","timestamp":"2026-01-30 01:17:02.248"}
+{"latencyMs":20,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-01-30 01:17:02.271"}
+{"checkIntervalMs":300000,"cloudUrl":"http://localhost:3000","level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-30 01:17:02.271"}
+{"level":"info","message":"Connectivity monitor started","service":"edge-node","timestamp":"2026-01-30 01:17:02.272"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:17:02.273"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:17:02.316"}
+{"cloudUrl":"http://localhost:3000","level":"info","message":"Rule updater started","pollIntervalMs":60000,"service":"edge-node","timestamp":"2026-01-30 01:17:02.318"}
+{"level":"info","message":"Rule updater started","service":"edge-node","timestamp":"2026-01-30 01:17:02.318"}
+{"intervalMs":30000,"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-30 01:17:02.319"}
+{"level":"info","message":"Queue processor started","service":"edge-node","timestamp":"2026-01-30 01:17:02.319"}
+{"level":"info","message":"All sync services started successfully","service":"edge-node","timestamp":"2026-01-30 01:17:02.319"}
+{"connectionStatus":"degraded","hoursSinceSync":0,"isCritical":false,"isRunning":true,"isStale":false,"lastSync":"2026-01-30T04:17:02.270Z","level":"info","message":"Initial sync status","pendingQueueItems":0,"ruleVersion":null,"service":"edge-node","timestamp":"2026-01-30 01:17:02.320"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:18:02.321"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:18:02.325"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:19:02.322"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:19:02.327"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:20:02.323"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:20:02.328"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:21:02.324"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:21:02.329"}
+{"consecutiveFailures":1,"error":"fetch failed","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-01-30 01:22:02.281"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:22:02.326"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:22:02.330"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:23:02.326"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:23:02.330"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:24:02.327"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:24:02.330"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:25:02.328"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:25:02.331"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:26:02.330"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:26:02.334"}
+{"consecutiveFailures":2,"error":"fetch failed","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-01-30 01:27:02.280"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:27:02.330"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:27:02.334"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:28:02.329"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:28:02.332"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:29:02.330"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:29:02.334"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:30:02.331"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:30:02.333"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:31:02.332"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:31:02.333"}
+{"consecutiveFailures":3,"error":"fetch failed","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-01-30 01:32:02.280"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:32:02.334"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:32:02.335"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:33:02.336"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:33:02.339"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:34:02.337"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:34:02.340"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:35:02.338"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:35:02.339"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:36:02.339"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:36:02.342"}
+{"consecutiveFailures":4,"error":"fetch failed","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-01-30 01:37:02.286"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:37:02.341"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:37:02.345"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:38:02.341"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:38:02.343"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:39:02.341"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:39:02.342"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:40:02.343"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:40:02.344"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:41:02.342"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:41:02.343"}
+{"consecutiveFailures":5,"error":"fetch failed","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-01-30 01:42:02.287"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:42:02.345"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:42:02.350"}

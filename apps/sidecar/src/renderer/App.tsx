@@ -144,6 +144,16 @@ const App: React.FC = () => {
     throw new Error(response.error || 'Chat failed');
   }, []);
 
+
+
+  const handleApplyCorrection = useCallback(async (text: string) => {
+    try {
+      await window.electronAPI.injectText(text);
+    } catch (error) {
+      console.error('Failed to inject text:', error);
+    }
+  }, []);
+
   const handleOverride = useCallback(
     async (signals: TrafficLightSignal[], justification: string): Promise<void> => {
       await window.electronAPI.submitOverride({
@@ -172,6 +182,14 @@ const App: React.FC = () => {
     }));
   }, []);
 
+  const handleMouseEnter = useCallback(() => {
+    window.electronAPI.setIgnoreMouseEvents(false);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+  }, []);
+
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
@@ -179,7 +197,12 @@ const App: React.FC = () => {
   // Minimized state - just show traffic light indicator
   if (state.minimized) {
     return (
-      <div className="minimized-container" onClick={handleMinimize}>
+      <div
+        className="minimized-container"
+        onClick={handleMinimize}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <TrafficLightIndicator
           color={state.trafficLightResult?.color || 'GREEN'}
           isEvaluating={state.isEvaluating}
@@ -188,8 +211,28 @@ const App: React.FC = () => {
     );
   }
 
+  // Dynamic positioning style
+  const containerStyle: React.CSSProperties = {};
+
+  if (state.ehr?.bounds && !state.minimized) {
+    // Magnetic Snap: Position relative to EHR window
+    // Default: Bottom-Right of the EHR window
+    // Bounds are screen coordinates.
+    // Since mainWindow is full screen (0,0), absolute positioning works directly.
+    containerStyle.position = 'absolute';
+    containerStyle.left = state.ehr.bounds.x + state.ehr.bounds.width - 380; // Align right edge (360 + 20 margin)
+    containerStyle.top = state.ehr.bounds.y + 100; // Offset from top
+    containerStyle.bottom = 'auto'; // Override css
+    containerStyle.right = 'auto'; // Override css
+  }
+
   return (
-    <div className="app-container">
+    <div
+      className="app-container"
+      style={containerStyle}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Header with Cortex Assurance branding */}
       <header className="app-header">
         <div className="header-brand">
@@ -238,6 +281,7 @@ const App: React.FC = () => {
         result={state.trafficLightResult}
         isEvaluating={state.isEvaluating}
         onEvaluate={handleEvaluate}
+        onApplyCorrection={handleApplyCorrection}
         language={state.language}
       />
 

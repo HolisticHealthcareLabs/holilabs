@@ -42,6 +42,14 @@ const electronAPI = {
   // Toggle minimize state
   toggleMinimize: (): void => ipcRenderer.send('toggle:minimize'),
 
+  // Mouse event management
+  setIgnoreMouseEvents: (ignore: boolean, options?: { forward: boolean }): void =>
+    ipcRenderer.send('window:set-ignore-mouse-events', ignore, options),
+
+  // Input Injection
+  injectText: (text: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('input:inject', text),
+
   // ═══════════════════════════════════════════════════════════════════════════
   // EVENT LISTENERS (Main → Renderer)
   // ═══════════════════════════════════════════════════════════════════════════

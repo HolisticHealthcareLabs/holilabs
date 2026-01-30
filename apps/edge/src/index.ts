@@ -626,6 +626,35 @@ async function main() {
     }
   });
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SMOKE TEST TELEMETRY ENDPOINT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Lazy load TelemetryService to avoid circular deps or init before DB
+  app.post('/telemetry', async (req, res) => {
+    try {
+      const { TelemetryService, LogLevel } = await import('./telemetry/telemetry-service.js');
+      const telemetryService = new TelemetryService(
+        process.env.EDGE_SECRET || 'smoke-test-secret',
+        CLOUD_URL
+      );
+
+      // Use CRITICAL level to trigger immediate flush (Priority Bypass)
+      telemetryService.log(
+        LogLevel.CRITICAL,
+        'SMOKE_TEST',
+        'Smoke Test Probe',
+        req.body
+      );
+
+      logger.info('Smoke test telemetry processed', { traceId: req.body.traceId });
+      res.json({ success: true, flushed: true });
+    } catch (error) {
+      logger.error('Telemetry ingest failed', { error });
+      res.status(500).json({ error: 'Telemetry failed' });
+    }
+  });
+
   // 404 handler
   app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });

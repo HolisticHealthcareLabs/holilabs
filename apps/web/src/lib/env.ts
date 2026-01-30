@@ -71,6 +71,10 @@ const serverSchema = z.object({
     message: 'OPENAI_API_KEY must start with "sk-"',
   }).optional(),
 
+  // GitHub - For Rule Promotion (Phase 8)
+  // Required for creating Pull Requests automatically
+  GITHUB_TOKEN: z.string().optional(),
+
   // AI Transcription Services
   DEEPGRAM_API_KEY: z.string().optional(),
 

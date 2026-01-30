@@ -19,6 +19,12 @@ export interface EHRFingerprint {
   processName: string;
   accessibilityMappingFile: string;
   detectedAt: Date;
+  bounds?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
 }
 
 export interface AccessibilityMapping {
@@ -227,6 +233,12 @@ export const IPC_CHANNELS = {
   SEND_CHAT: 'chat:send',
   GET_STATUS: 'get:status',
   TOGGLE_MINIMIZE: 'toggle:minimize',
+  SET_IGNORE_MOUSE_EVENTS: 'window:set-ignore-mouse-events',
+
+  // Ghost Overlay
+  GHOST_SHOW: 'ghost:show',
+  GHOST_HIDE: 'ghost:hide',
+  GHOST_UPDATE: 'ghost:update',
 
   // Bidirectional
   ERROR: 'error',
