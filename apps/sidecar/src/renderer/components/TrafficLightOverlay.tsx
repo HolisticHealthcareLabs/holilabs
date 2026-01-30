@@ -18,6 +18,7 @@ interface TrafficLightOverlayProps {
   result: TrafficLightResult | null;
   isEvaluating: boolean;
   onEvaluate: () => void;
+  onApplyCorrection: (text: string) => void;
   language: 'en' | 'pt';
 }
 
@@ -76,6 +77,7 @@ export const TrafficLightOverlay: React.FC<TrafficLightOverlayProps> = ({
   result,
   isEvaluating,
   onEvaluate,
+  onApplyCorrection,
   language,
 }) => {
   const t = translations[language];
@@ -112,7 +114,12 @@ export const TrafficLightOverlay: React.FC<TrafficLightOverlayProps> = ({
           <h3>{t.signals}</h3>
           <div className="signals-list">
             {result.signals.map((signal, idx) => (
-              <SignalCard key={`${signal.ruleId}-${idx}`} signal={signal} language={language} />
+              <SignalCard
+                key={`${signal.ruleId}-${idx}`}
+                signal={signal}
+                language={language}
+                onApplyCorrection={onApplyCorrection}
+              />
             ))}
           </div>
         </div>
@@ -180,9 +187,10 @@ const TrafficLightVisual: React.FC<TrafficLightVisualProps> = ({
 interface SignalCardProps {
   signal: TrafficLightSignal;
   language: 'en' | 'pt';
+  onApplyCorrection: (text: string) => void;
 }
 
-const SignalCard: React.FC<SignalCardProps> = ({ signal, language }) => {
+const SignalCard: React.FC<SignalCardProps> = ({ signal, language, onApplyCorrection }) => {
   const message = language === 'pt' ? signal.messagePortuguese : signal.message;
   const colorIcon = signal.color === 'RED' ? '🔴' : signal.color === 'YELLOW' ? '🟡' : '🟢';
   const categoryLabels = {
@@ -209,6 +217,13 @@ const SignalCard: React.FC<SignalCardProps> = ({ signal, language }) => {
         <div className="signal-correction">
           <span className="correction-icon">💡</span>
           <span>{signal.suggestedCorrection}</span>
+          <button
+            className="apply-fix-button"
+            onClick={() => onApplyCorrection(signal.suggestedCorrection!)}
+            title={language === 'pt' ? 'Aplicar correção' : 'Apply fix'}
+          >
+            {language === 'pt' ? 'Aplicar' : 'Apply'}
+          </button>
         </div>
       )}
       {signal.estimatedGlosaRisk && (
