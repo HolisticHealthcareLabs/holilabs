@@ -7,7 +7,7 @@
  * @module sidecar/main
  */
 
-import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut } from 'electron';
 import path from 'path';
 import { EHRDetector } from '../fingerprint/ehr-detector';
 import { VDIDetector } from '../detection/vdi-detector';
@@ -22,6 +22,11 @@ import type {
   IPC_CHANNELS,
   ChatMessage,
 } from '../types';
+import { initAutoUpdater } from './auto-updater';
+import { ResourceGuard, ResourceState } from './resource-guard';
+import { EphemeralAudioProcessor } from '../audio/ephemeral-processor';
+import { DeepgramService } from '../audio/deepgram-service';
+import { InputInjector } from './input-injector';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GLOBALS
@@ -37,6 +42,13 @@ const visionModule = new VisionModule();
 const edgeClient = new EdgeNodeClient();
 const apiServer = new SidecarAPIServer(3002);
 
+// Scribe Infrastructure (Phase 9)
+const resourceGuard = new ResourceGuard();
+const audioProcessor = new EphemeralAudioProcessor();
+// Note: Deepgram API Key should come from secure storage or env in real app.
+// For prototype, we check process.env or placeholder.
+const deepgramService = new DeepgramService(process.env.DEEPGRAM_API_KEY || '');
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // WINDOW CREATION
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -44,15 +56,15 @@ const apiServer = new SidecarAPIServer(3002);
 function createWindow(): void {
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
 
-  // Position as overlay on the right side of the screen
-  const windowWidth = 360;
-  const windowHeight = 600;
+  // Full screen transparent overlay
+  // const windowWidth = 360;
+  // const windowHeight = 600;
 
   mainWindow = new BrowserWindow({
-    width: windowWidth,
-    height: windowHeight,
-    x: screenWidth - windowWidth - 20,
-    y: screenHeight - windowHeight - 20,
+    width: screenWidth,
+    height: screenHeight,
+    x: 0,
+    y: 0,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -79,7 +91,9 @@ function createWindow(): void {
   });
 
   // Make window click-through when minimized
-  mainWindow.setIgnoreMouseEvents(false);
+  // Initial state: Click-through (ignore mouse events)
+  // Renderer will request capture when hovering over interactive elements
+  mainWindow.setIgnoreMouseEvents(true, { forward: true });
 }
 
 function createTray(): void {
@@ -266,6 +280,97 @@ function setupIPC(): void {
       }
     }
   });
+
+  // Mouse event management (Renderer controls this based on hover)
+  ipcMain.on('window:set-ignore-mouse-events', (event, ignore, options) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    win?.setIgnoreMouseEvents(ignore, options);
+  });
+
+  // Ghost Visibility
+  ipcMain.on('ghost:show', () => {
+    mainWindow?.show();
+  });
+
+  ipcMain.on('ghost:hide', () => {
+    mainWindow?.hide();
+  });
+
+  // Input Injection
+  const inputInjector = new InputInjector();
+  ipcMain.handle('input:inject', async (_event, text: string) => {
+    try {
+      // 1. Hide sidecar temporarily to ensure focus returns to EHR
+      // mainWindow?.hide(); 
+      // Actually, standard behavior for "alwaysOnTop" overlay is simpler:
+      // If we are "ignoring mouse events" (click-through), the focus *should* be on the EHR.
+      // But if the user clicked a button on the Sidecar, Sidecar has focus.
+
+      // So we need to:
+      // 1. Return focus to previous window (EHR)
+      // 2. Inject text
+
+      if (mainWindow) {
+        mainWindow.setIgnoreMouseEvents(true, { forward: true });
+        mainWindow.blur(); // Try to blur to restore focus
+
+        // On macOS, we might need to actively hide-show or use AppleScript to activate previous app
+        // For now, let's rely on the user clicking the specific "Apply" button which triggers this.
+      }
+
+      await inputInjector.injectText(text);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown injection error'
+      };
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SCRIBE IPC (PHASE 9)
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  ipcMain.handle('scribe:toggle', async (_event, action: 'start' | 'stop') => {
+    if (action === 'start') {
+      const mode = resourceGuard.shouldUseCloud() ? 'CLOUD' : 'LOCAL';
+      console.log(`[Scribe] Starting session. Mode: ${mode}`);
+
+      // If Cloud Mode, connect to Deepgram
+      if (mode === 'CLOUD') {
+        try {
+          await deepgramService.connect();
+        } catch (err) {
+          console.error('[Scribe] Failed to connect to Deepgram:', err);
+          return { success: false, error: 'Cloud connection failed' };
+        }
+      }
+      return { success: true, mode };
+    } else {
+      console.log('[Scribe] Stopping session. Initiating secure wipe.');
+      deepgramService.disconnect();
+      audioProcessor.wipe(); // Secure wipe of RAM
+      return { success: true };
+    }
+  });
+
+  // Receive audio chunks from Renderer (captured via Web Audio API)
+  ipcMain.on('scribe:audio-chunk', (_event, buffer: ArrayBuffer) => {
+    const nodeBuffer = Buffer.from(buffer);
+
+    // Always write to ephemeral buffer (for local fallback or replay if needed)
+    audioProcessor.write(nodeBuffer);
+
+    // If in Cloud Mode (or Red State), send to Deepgram
+    if (resourceGuard.shouldUseCloud()) {
+      deepgramService.sendAudio(nodeBuffer);
+    }
+  });
+
+  ipcMain.handle('scribe:get-resource-state', () => {
+    return resourceGuard.getLastState();
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -389,9 +494,38 @@ app.whenReady().then(async () => {
   // Start API server for local communication
   await setupAPIServer();
 
+  // Initialize auto-updater (silent)
+  initAutoUpdater();
+
+  // Initialize Resource Guard (Phase 9)
+  resourceGuard.startMonitoring();
+  resourceGuard.on('resource-update', (metrics) => {
+    mainWindow?.webContents.send('scribe:resource-update', metrics);
+  });
+  resourceGuard.on('state-change', (state) => {
+    // If state goes Red, we might technically want to switch active stream to cloud
+    // But for simplicity, we let the frontend or next 'start' call handle it.
+    mainWindow?.webContents.send('scribe:resource-state-change', state);
+  });
+
+  // Wire up Deepgram events to Renderer
+  deepgramService.on('transcript', (data) => {
+    mainWindow?.webContents.send('scribe:transcript', data);
+  });
+
   // Start watching for EHR focus changes
   ehrDetector.startWatching((fingerprint) => {
     mainWindow?.webContents.send('ehr:detected', fingerprint);
+  });
+
+  // Register Panic Button (Safety Valve)
+  globalShortcut.register('CommandOrControl+Shift+H', () => {
+    console.log('Safety Valve triggered!');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // Force click-through and hide
+      mainWindow.setIgnoreMouseEvents(true, { forward: true });
+      mainWindow.hide();
+    }
   });
 
   app.on('activate', () => {
@@ -410,6 +544,9 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async () => {
   edgeClient.disconnect();
   ehrDetector.stopWatching();
+  resourceGuard.stopMonitoring();
+  audioProcessor.wipe(); // Ensure clean exit
+  deepgramService.disconnect();
   await apiServer.stop();
 });
 

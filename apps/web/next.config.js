@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   transpilePackages: ['@holi/deid', '@holi/dp', '@holi/utils', '@holi/schemas'],
   experimental: {

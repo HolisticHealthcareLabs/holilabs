@@ -1,0 +1,51 @@
+# Enterprise deployment configuration
+appId: com.holilabs.sidecar
+productName: HoliLabs Clinical Assurance
+copyright: Copyright © 2026 HoliLabs
+directories:
+  output: dist/installers
+
+# Mac Configuration
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+# Windows Configuration (MSI for Group Policy deployment)
+win:
+  target:
+    - target: msi
+      arch: [x64]
+    - target: nsis
+      arch: [x64]
+
+  # Sign all executables
+  signAndEditExecutable: true
+
+msi:
+  # GPO-friendly options
+  oneClick: false
+  perMachine: true
+  createDesktopShortcut: false
+  createStartMenuShortcut: true
+
+  # Silent install support
+  # msiexec /i HoliLabs.msi /qn ALLUSERS=1
+  runAfterFinish: false
+
+nsis:
+  oneClick: false
+  perMachine: true
+  allowToChangeInstallationDirectory: true
+
+# Auto-update configuration (see 7.3)
+publish:
+  provider: generic
+  url: https://updates.holilabs.com/sidecar
+  channel: stable

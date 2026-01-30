@@ -18,12 +18,8 @@ export async function GET(request: NextRequest) {
                 events: true,
                 session: {
                     include: {
-                        scribeSession: {
-                            select: {
-                                transcript: true,
-                                clinicalNote: true
-                            }
-                        }
+                        user: true,
+                        patient: true
                     }
                 }
             },

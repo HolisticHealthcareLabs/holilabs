@@ -203,7 +203,7 @@ export class EHRDetector {
     const windowInfo = await this.getActiveWindowInfo();
 
     // Match against known EHR signatures
-    const fingerprint = this.matchEHR(windowInfo.title, windowInfo.processName);
+    const fingerprint = this.matchEHR(windowInfo.title, windowInfo.processName, windowInfo.bounds);
 
     // Cache for quick lookup
     this.currentFingerprint = fingerprint;
@@ -279,28 +279,46 @@ export class EHRDetector {
   // PRIVATE METHODS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  private async getActiveWindowInfo(): Promise<{ title: string; processName: string }> {
+  private async getActiveWindowInfo(): Promise<{
+    title: string;
+    processName: string;
+    bounds?: { x: number; y: number; width: number; height: number };
+  }> {
     // In a real implementation, this would use node-window-manager or native APIs
     // For now, return mock data for type safety
     try {
       // Dynamic import to avoid issues in non-Electron environments
       const windowManager = await import('node-window-manager');
       const activeWindow = windowManager.windowManager.getActiveWindow();
+      const bounds = activeWindow.getBounds();
 
       return {
         title: activeWindow?.getTitle() || '',
         processName: activeWindow?.path?.split(/[/\\]/).pop() || '',
+        bounds: bounds
+          ? {
+            x: bounds.x ?? 0,
+            y: bounds.y ?? 0,
+            width: bounds.width ?? 0,
+            height: bounds.height ?? 0,
+          }
+          : undefined,
       };
     } catch {
       // Fallback for development/testing
       return {
         title: process.env.MOCK_WINDOW_TITLE || '',
         processName: process.env.MOCK_PROCESS_NAME || '',
+        bounds: { x: 0, y: 0, width: 1920, height: 1080 }, // Mock bounds
       };
     }
   }
 
-  private matchEHR(windowTitle: string, processName: string): EHRFingerprint {
+  private matchEHR(
+    windowTitle: string,
+    processName: string,
+    bounds?: { x: number; y: number; width: number; height: number }
+  ): EHRFingerprint {
     for (const signature of EHR_SIGNATURES) {
       // Check window title patterns
       const titleMatch = signature.patterns.windowTitle?.some((pattern) =>
@@ -324,6 +342,7 @@ export class EHRDetector {
           processName,
           accessibilityMappingFile: mappingFile,
           detectedAt: new Date(),
+          bounds,
         };
       }
     }
@@ -342,6 +361,7 @@ export class EHRDetector {
       processName,
       accessibilityMappingFile: 'fallback-ocr',
       detectedAt: new Date(),
+      bounds,
     };
   }
 
