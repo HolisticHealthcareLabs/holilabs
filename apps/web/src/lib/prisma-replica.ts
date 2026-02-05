@@ -30,7 +30,6 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { readReplicas } from '@prisma/extension-read-replicas';
 import { logger } from '@/lib/logger';
 
 /**
@@ -128,13 +127,24 @@ export function createPrismaWithReplicas(basePrisma: PrismaClient): PrismaClient
 
   // Apply read replica extension
   // This automatically routes reads to replicas and writes to primary
-  const prismaWithReplica = basePrisma.$extends(
-    readReplicas({
-      replicas: replicaClients,
-    })
-  ) as unknown as PrismaClient;
+  try {
+    // Use eval('require') to hide this from Webpack's static analysis
+    // and prevent 'Module not found' errors during Next.js build
+    const dynamicRequire = eval('require');
+    const { readReplicas } = dynamicRequire('@prisma/extension-read-replicas');
 
-  return prismaWithReplica;
+    return basePrisma.$extends(
+      readReplicas({
+        replicas: replicaClients,
+      })
+    ) as unknown as PrismaClient;
+  } catch (error) {
+    logger.warn({
+      event: 'replica_extension_load_failed',
+      err: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Failed to load read replicas extension - falling back to primary-only');
+    return basePrisma;
+  }
 }
 
 /**
@@ -181,13 +191,23 @@ export function createAnalyticsPrisma(basePrisma: PrismaClient): PrismaClient | 
     },
   });
 
-  const analyticsPrisma = basePrisma.$extends(
-    readReplicas({
-      replicas: [analyticsReplicaClient],
-    })
-  ) as unknown as PrismaClient;
+  try {
+    // Use eval('require') to hide this from Webpack's static analysis
+    const dynamicRequire = eval('require');
+    const { readReplicas } = dynamicRequire('@prisma/extension-read-replicas');
 
-  return analyticsPrisma;
+    return basePrisma.$extends(
+      readReplicas({
+        replicas: [analyticsReplicaClient],
+      })
+    ) as unknown as PrismaClient;
+  } catch (error) {
+    logger.warn({
+      event: 'analytics_replica_extension_load_failed',
+      err: error instanceof Error ? error.message : 'Unknown error',
+    }, 'Failed to load read replicas extension for analytics');
+    return analyticsReplicaClient;
+  }
 }
 
 /**
