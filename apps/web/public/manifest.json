@@ -1,6 +1,6 @@
 {
-  "name": "Holi Labs - AI Medical Scribe",
-  "short_name": "Holi Labs",
+  "name": "Holi Labs | Cortex",
+  "short_name": "Cortex",
   "description": "Professional AI medical scribe with voice detection, SOAP templates, and billing export for LATAM doctors",
   "start_url": "/dashboard",
   "display": "standalone",
