@@ -32,32 +32,32 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      # Windows: Certificate Setup
-      - name: Decode Windows Certificate
-        if: matrix.os == 'windows-latest' && env.CSC_LINK != ''
+      # Windows: Install Azure Code Signing Tool
+      - name: Install Azure Code Signing Tool
+        if: matrix.os == 'windows-latest'
         run: |
-          echo "${{ secrets.CSC_LINK }}" > cert.p12
-        env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
+          dotnet tool install --global AzureSignTool
 
       # Build & Sign
       - name: Build Enterprise Artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Windows Signing
-          WIN_CERT_SHA1: ${{ secrets.WIN_CERT_SHA1 }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # Mac Signing
-          CSC_IDENTITY_AUTO_DISCOVERY: ${{ matrix.os == 'macos-latest' }}
+
+          # Windows Azure Trusted Signing
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_CERT_PROFILE: ${{ secrets.AZURE_SIGNING_CERT_PROFILE }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+          # macOS Code Signing & Notarization
+          CSC_LINK: ${{ matrix.os == 'macos-latest' && secrets.MACOS_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.os == 'macos-latest' && secrets.MACOS_CSC_KEY_PASSWORD || '' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           pnpm --filter @holilabs/sidecar run build:enterprise
-
-      # Cleanup Certificate (Windows)
-      - name: Cleanup Certificate
-        if: matrix.os == 'windows-latest' && always()
-        run: |
-          if (Test-Path cert.p12) { Remove-Item cert.p12 }
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -69,3 +69,18 @@ jobs:
             apps/sidecar/dist/installers/*.dmg
             apps/sidecar/dist/installers/*.zip
           if-no-files-found: warn
+
+      # Upload to GitHub Release (Draft for manual verification)
+      - name: Upload to GitHub Release (Draft)
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true  # CRITICAL: Prevents auto-updater from pulling until manually published
+          prerelease: false
+          files: |
+            apps/sidecar/dist/installers/*.dmg
+            apps/sidecar/dist/installers/*.zip
+            apps/sidecar/dist/installers/*.msi
+            apps/sidecar/dist/installers/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

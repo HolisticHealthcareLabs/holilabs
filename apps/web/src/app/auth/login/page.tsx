@@ -35,30 +35,33 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
+      // MVP: Call our custom API instead of NextAuth
+      const res = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
 
-      if (result?.error) {
-        // NextAuth can return other errors (CSRF/session/callback) that look like "bad password" in the UI.
-        // In development, surface the real code to make issues obvious.
-        const msg =
-          process.env.NODE_ENV === 'development'
-            ? `Sign-in failed: ${result.error}`
-            : 'Invalid email or password. Please try again.';
-        setError(msg);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Invalid credentials');
         setIsLoading(false);
         return;
       }
+
+      // Success: Store token
+      localStorage.setItem('auth_token', data.token);
+      document.cookie = `auth_token=${data.token}; path=/; max-age=86400`; // Cookie for middleware if needed
 
       // Redirect to dashboard
       const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
       router.push(callbackUrl);
       router.refresh();
+
     } catch (err) {
-      setError('Connection error. Please check your internet.');
+      console.error(err);
+      setError('Connection error. Is the backend running?');
       setIsLoading(false);
     }
   };

@@ -632,9 +632,31 @@ model HealthMetric {
 
   @@index([patientId])
   @@index([metricType])
-  @@index([recordedAt])
-  @@index([flaggedForReview])
   @@map("health_metrics")
+}
+
+// ============================================================================
+// INTELLIGENCE FLYWHEEL (Rule Proposals)
+// ============================================================================
+
+model ProposedRuleChange {
+  id          String         @id @default(cuid())
+  ruleId      String? // If modifying an existing rule (optional)
+  description String // e.g. "Disable Sepsis Alert for Post-Op Patients"
+  reasoning   String         @db.Text // "50 doctors overrode this ALERT with reason: 'Patient is post-op'"
+  confidence  Float // 0.0 - 1.0 (How sure are we?)
+  evidence    Json // Array of { logId, overrideNote }
+  status      ProposalStatus @default(PENDING)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("proposed_rule_changes")
+}
+
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum MetricType {
@@ -6642,13 +6664,30 @@ model GovernanceLog {
   
   // Analysis
   safetyScore      Int?     // 0-100
-  
+
+  // Validation (Human-in-the-Loop)
+  validationStatus ValidationStatus @default(PENDING)
+  validationNotes  String?          @db.Text
+  validatedAt      DateTime?
+  validatedBy      String?          // User ID
+
+  // Flywheel Data (Overrides)
+  overrideReason   String?          @db.Text
+  ruleId           String?
+  ruleDescription  String?
+
   events GovernanceEvent[]
 
   timestamp DateTime @default(now())
 
   @@index([sessionId])
   @@map("governance_logs")
+}
+
+enum ValidationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
 }
 
 model GovernanceEvent {

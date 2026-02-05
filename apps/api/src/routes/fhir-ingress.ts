@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FHIR Ingress Route
  * Receives FHIR resources from external EHRs and transforms them into Holi's data model

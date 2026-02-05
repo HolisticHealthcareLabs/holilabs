@@ -11,6 +11,7 @@ import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalSho
 import path from 'path';
 import { EHRDetector } from '../fingerprint/ehr-detector';
 import { VDIDetector } from '../detection/vdi-detector';
+import { PermissionGuard } from './permissions';
 import { AccessibilityReader } from '../accessibility/reader';
 import { VisionModule } from '../vision/ocr-module';
 import { EdgeNodeClient } from './edge-client';
@@ -24,8 +25,8 @@ import type {
 } from '../types';
 import { initAutoUpdater } from './auto-updater';
 import { ResourceGuard, ResourceState } from './resource-guard';
-import { EphemeralAudioProcessor } from '../audio/ephemeral-processor';
-import { DeepgramService } from '../audio/deepgram-service';
+// import { EphemeralAudioProcessor } from '../audio/ephemeral-processor';
+// import { DeepgramService } from '../audio/deepgram-service';
 import { InputInjector } from './input-injector';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -42,12 +43,10 @@ const visionModule = new VisionModule();
 const edgeClient = new EdgeNodeClient();
 const apiServer = new SidecarAPIServer(3002);
 
-// Scribe Infrastructure (Phase 9)
+// Scribe Infrastructure (DEPRECATED - STRATEGY PIVOT)
 const resourceGuard = new ResourceGuard();
-const audioProcessor = new EphemeralAudioProcessor();
-// Note: Deepgram API Key should come from secure storage or env in real app.
-// For prototype, we check process.env or placeholder.
-const deepgramService = new DeepgramService(process.env.DEEPGRAM_API_KEY || '');
+// const audioProcessor = new EphemeralAudioProcessor();
+// const deepgramService = new DeepgramService(process.env.DEEPGRAM_API_KEY || '');
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // WINDOW CREATION
@@ -258,12 +257,18 @@ function setupIPC(): void {
     const vdiResult = await vdiDetector.detect();
     const ehrFingerprint = await ehrDetector.fingerprint();
     const connectionStatus = edgeClient.getStatus();
+    const screenPermission = PermissionGuard.getScreenRecordingStatus();
+    const accessibilityPermission = PermissionGuard.getAccessibilityStatus();
 
     return {
       isVDI: vdiResult.isVDI,
       vdiEnvironment: vdiResult.environment,
       ehr: ehrFingerprint,
       connection: connectionStatus,
+      permissions: {
+        screen: screenPermission,
+        accessibility: accessibilityPermission
+      }
     };
   });
 
@@ -329,43 +334,17 @@ function setupIPC(): void {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════════
-  // SCRIBE IPC (PHASE 9)
+  // SCRIBE IPC (PHASE 9) - DEPRECATED
   // ═══════════════════════════════════════════════════════════════════════════════
 
   ipcMain.handle('scribe:toggle', async (_event, action: 'start' | 'stop') => {
-    if (action === 'start') {
-      const mode = resourceGuard.shouldUseCloud() ? 'CLOUD' : 'LOCAL';
-      console.log(`[Scribe] Starting session. Mode: ${mode}`);
-
-      // If Cloud Mode, connect to Deepgram
-      if (mode === 'CLOUD') {
-        try {
-          await deepgramService.connect();
-        } catch (err) {
-          console.error('[Scribe] Failed to connect to Deepgram:', err);
-          return { success: false, error: 'Cloud connection failed' };
-        }
-      }
-      return { success: true, mode };
-    } else {
-      console.log('[Scribe] Stopping session. Initiating secure wipe.');
-      deepgramService.disconnect();
-      audioProcessor.wipe(); // Secure wipe of RAM
-      return { success: true };
-    }
+    console.warn('[Scribe] Component deprecated. No-op.');
+    return { success: false, error: 'Audio Scribe Deprecated' };
   });
 
   // Receive audio chunks from Renderer (captured via Web Audio API)
   ipcMain.on('scribe:audio-chunk', (_event, buffer: ArrayBuffer) => {
-    const nodeBuffer = Buffer.from(buffer);
-
-    // Always write to ephemeral buffer (for local fallback or replay if needed)
-    audioProcessor.write(nodeBuffer);
-
-    // If in Cloud Mode (or Red State), send to Deepgram
-    if (resourceGuard.shouldUseCloud()) {
-      deepgramService.sendAudio(nodeBuffer);
-    }
+    // No-op - Audio ignored in Visual-Only architecture
   });
 
   ipcMain.handle('scribe:get-resource-state', () => {
@@ -509,9 +488,9 @@ app.whenReady().then(async () => {
   });
 
   // Wire up Deepgram events to Renderer
-  deepgramService.on('transcript', (data) => {
-    mainWindow?.webContents.send('scribe:transcript', data);
-  });
+  // deepgramService.on('transcript', (data) => {
+  //   mainWindow?.webContents.send('scribe:transcript', data);
+  // });
 
   // Start watching for EHR focus changes
   ehrDetector.startWatching((fingerprint) => {
@@ -545,8 +524,8 @@ app.on('before-quit', async () => {
   edgeClient.disconnect();
   ehrDetector.stopWatching();
   resourceGuard.stopMonitoring();
-  audioProcessor.wipe(); // Ensure clean exit
-  deepgramService.disconnect();
+  // audioProcessor.wipe(); // Ensure clean exit
+  // deepgramService.disconnect();
   await apiServer.stop();
 });
 

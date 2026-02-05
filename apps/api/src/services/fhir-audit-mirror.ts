@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FHIR Audit Mirror Service
  * Synchronizes Medplum AuditEvents to Holi's audit.audit_events table

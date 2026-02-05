@@ -8,11 +8,11 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 
-export default function AccessRequestPage() {
+function AccessRequestContent() {
   const sp = useSearchParams();
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -106,6 +106,14 @@ export default function AccessRequestPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AccessRequestPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <AccessRequestContent />
+    </Suspense>
   );
 }
 

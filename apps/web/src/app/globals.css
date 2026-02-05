@@ -18,8 +18,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 11% 15%;
 
-    /* Brand Green (Visible on white) */
-    --primary: 142 76% 39%;
+    /* Brand Blue (Apple style) */
+    --primary: 211 100% 50%;
     --primary-foreground: 0 0% 100%;
 
     /* Subtle Gray Backgrounds */
@@ -41,7 +41,7 @@
     /* Border System - Subtle dividers */
     --border: 240 6% 90%;
     --input: 240 6% 90%;
-    --ring: 142 76% 39%;
+    --ring: 211 100% 50%;
 
     /* Radius - Apple-style rounded corners */
     --radius: 12px;
@@ -87,14 +87,22 @@
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 
     /* Chart Colors - Light Mode */
-    --chart-1: 211 100% 50%; /* Blue */
-    --chart-2: 142 76% 39%;  /* Green */
-    --chart-3: 271 91% 65%;  /* Purple */
-    --chart-4: 38 92% 50%;   /* Orange */
-    --chart-5: 0 84% 60%;    /* Red */
-    --chart-6: 177 70% 41%;  /* Teal */
-    --chart-7: 280 67% 63%;  /* Pink */
-    --chart-8: 46 92% 47%;   /* Yellow */
+    --chart-1: 211 100% 50%;
+    /* Blue */
+    --chart-2: 142 76% 39%;
+    /* Green */
+    --chart-3: 271 91% 65%;
+    /* Purple */
+    --chart-4: 38 92% 50%;
+    /* Orange */
+    --chart-5: 0 84% 60%;
+    /* Red */
+    --chart-6: 177 70% 41%;
+    /* Teal */
+    --chart-7: 280 67% 63%;
+    /* Pink */
+    --chart-8: 46 92% 47%;
+    /* Yellow */
 
     /* Status Indicators */
     --status-online: 142 76% 39%;
@@ -129,9 +137,9 @@
     --popover: 240 10% 7%;
     --popover-foreground: 0 0% 98%;
 
-    /* Brand Green - Optimized for dark backgrounds */
+    /* Brand Blue - Optimized for dark backgrounds */
     /* Lighter and more vibrant to maintain visibility */
-    --primary: 142 76% 45%;
+    --primary: 213 97% 55%;
     --primary-foreground: 240 10% 3.9%;
 
     /* Secondary - Subtle background variation */
@@ -154,7 +162,7 @@
     /* Border System - Subtle separation */
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 142 76% 45%;
+    --ring: 213 97% 55%;
 
     /* Radius remains consistent */
     --radius: 12px;
@@ -163,11 +171,11 @@
        EXTENDED COLOR SYSTEM - DARK MODE
        ======================================== */
 
-    /* Success State - Brighter Medical Green for dark */
-    --success: 142 76% 50%;
+    /* Success State - Blue variants for clinical consistency */
+    --success: 211 100% 50%;
     --success-foreground: 240 10% 3.9%;
-    --success-light: 142 76% 15%;
-    --success-dark: 142 76% 60%;
+    --success-light: 211 100% 15%;
+    --success-dark: 211 100% 60%;
 
     /* Warning State - Brighter Amber for dark */
     --warning: 38 92% 60%;
@@ -200,14 +208,22 @@
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6);
 
     /* Chart Colors - Dark Mode (brighter, more vibrant) */
-    --chart-1: 213 97% 60%; /* Brighter Blue */
-    --chart-2: 142 76% 50%; /* Brighter Green */
-    --chart-3: 271 91% 70%; /* Brighter Purple */
-    --chart-4: 38 92% 60%;  /* Brighter Orange */
-    --chart-5: 0 72% 60%;   /* Brighter Red */
-    --chart-6: 177 70% 50%; /* Brighter Teal */
-    --chart-7: 280 67% 70%; /* Brighter Pink */
-    --chart-8: 46 92% 60%;  /* Brighter Yellow */
+    --chart-1: 213 97% 60%;
+    /* Brighter Blue */
+    --chart-2: 142 76% 50%;
+    /* Brighter Green */
+    --chart-3: 271 91% 70%;
+    /* Brighter Purple */
+    --chart-4: 38 92% 60%;
+    /* Brighter Orange */
+    --chart-5: 0 72% 60%;
+    /* Brighter Red */
+    --chart-6: 177 70% 50%;
+    /* Brighter Teal */
+    --chart-7: 280 67% 70%;
+    /* Brighter Pink */
+    --chart-8: 46 92% 60%;
+    /* Brighter Yellow */
 
     /* Status Indicators - Dark Mode */
     --status-online: 142 76% 50%;
@@ -243,8 +259,8 @@
     --popover: 240 10% 7%;
     --popover-foreground: 0 0% 98%;
 
-    /* Brand Green - Dark optimized */
-    --primary: 142 76% 45%;
+    /* Brand Blue - Dark optimized */
+    --primary: 213 97% 55%;
     --primary-foreground: 240 10% 3.9%;
 
     /* Secondary */
@@ -266,13 +282,14 @@
     /* Border System */
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 142 76% 45%;
+    --ring: 213 97% 55%;
 
     /* Extended Colors - System Dark Mode */
-    --success: 142 76% 50%;
+    /* Success state - dark optimized */
+    --success: 213 97% 55%;
     --success-foreground: 240 10% 3.9%;
-    --success-light: 142 76% 15%;
-    --success-dark: 142 76% 60%;
+    --success-light: 213 97% 15%;
+    --success-dark: 213 97% 65%;
 
     --warning: 38 92% 60%;
     --warning-foreground: 240 10% 3.9%;
@@ -336,7 +353,12 @@
   }
 
   /* Typography Hierarchy - Apple-style readability */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif;
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -363,13 +385,15 @@
     @apply text-muted-foreground leading-relaxed;
   }
 
-  code, pre {
+  code,
+  pre {
     font-family: 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace;
   }
 }
 
 /* APPLE-STYLE COMPONENT PATTERNS */
 @layer components {
+
   /* Frosted Glass Navigation - Adapts to theme */
   .nav-frosted {
     @apply bg-background/70 backdrop-blur-xl border-b border-border;
@@ -418,6 +442,7 @@
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -429,6 +454,7 @@
     opacity: 0;
     transform: translateY(-16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -440,6 +466,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -543,7 +570,25 @@ body {
   min-width: 0;
 }
 
-.flex > * {
+.flex>* {
   min-height: 0;
   min-width: 0;
+}
+
+/* Custom Scrollbar for Console View */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

@@ -90,7 +90,7 @@ export default function CommandCenterGrid({
       <div
         className={`
           h-full
-          bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30
+          bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950
           relative
           overflow-hidden
           ${className}
@@ -101,8 +101,8 @@ export default function CommandCenterGrid({
           className="absolute inset-0 opacity-[0.02] pointer-events-none"
           style={{
             backgroundImage: `
-              linear-gradient(to right, rgb(59, 130, 246) 1px, transparent 1px),
-              linear-gradient(to bottom, rgb(59, 130, 246) 1px, transparent 1px)
+              linear-gradient(to right, rgba(6,182,212,0.05) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(6,182,212,0.05) 1px, transparent 1px)
             `,
             backgroundSize: '40px 40px',
           }}
@@ -191,10 +191,9 @@ function DropZoneArea({ id, label, isActive, children }: DropZoneAreaProps) {
         border-dashed
         transition-all
         duration-300
-        ${
-          isActive
-            ? 'border-blue-500 bg-blue-50/50 shadow-2xl shadow-blue-500/20'
-            : 'border-gray-200 bg-white/50'
+        ${isActive
+          ? 'border-cyan-500/50 bg-cyan-900/10 shadow-[0_0_30px_rgba(6,182,212,0.15)]'
+          : 'border-white/5 bg-white/[0.02]'
         }
       `}
     >
@@ -207,7 +206,7 @@ function DropZoneArea({ id, label, isActive, children }: DropZoneAreaProps) {
             exit={{ opacity: 0, y: -10 }}
             className="absolute -top-3 left-6 z-10"
           >
-            <div className="px-4 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full shadow-lg">
+            <div className="px-4 py-1 bg-cyan-500/90 backdrop-blur text-slate-900 text-sm font-bold tracking-wide uppercase rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)]">
               {label}
             </div>
           </motion.div>
@@ -225,22 +224,22 @@ function DropZoneArea({ id, label, isActive, children }: DropZoneAreaProps) {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute top-2 left-2 w-3 h-3 bg-blue-500 rounded-full"
+            className="absolute top-2 left-2 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"
           />
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full"
+            className="absolute top-2 right-2 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"
           />
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute bottom-2 left-2 w-3 h-3 bg-blue-500 rounded-full"
+            className="absolute bottom-2 left-2 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"
           />
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute bottom-2 right-2 w-3 h-3 bg-blue-500 rounded-full"
+            className="absolute bottom-2 right-2 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.8)]"
           />
         </>
       )}

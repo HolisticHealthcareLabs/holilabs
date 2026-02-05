@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Clock, Shield, AlertTriangle, CheckCircle2, FileText, Activity, Minus, Plus } from 'lucide-react';
+import { X, Clock, Shield, AlertTriangle, CheckCircle2, FileText, Activity, Minus, Plus, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
+import { validateGovernanceLog, ValidationStatus } from '@/app/admin/governance/actions';
+import { toast } from 'react-hot-toast';
 
 // ============================================================================
 // TYPES
@@ -28,6 +30,9 @@ interface GovernanceLog {
         clinicalNote?: string;
     };
     events: GovernanceEvent[];
+    validationStatus?: ValidationStatus;
+    validationNotes?: string | null;
+    validatedBy?: string | null;
 }
 
 interface ReplayModalProps {
@@ -42,6 +47,34 @@ interface ReplayModalProps {
 
 export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
     const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['verdict']));
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [localStatus, setLocalStatus] = useState<ValidationStatus | null>(null);
+    const [showRejectForm, setShowRejectForm] = useState(false);
+    const [rejectNotes, setRejectNotes] = useState('');
+
+    // Reset local state when modal opens/closes or log changes
+    if (log?.id && localStatus === null && log.validationStatus) {
+        setLocalStatus(log.validationStatus);
+    }
+
+    const handleValidate = async (status: ValidationStatus, notes?: string) => {
+        if (!log) return;
+        setIsSubmitting(true);
+        try {
+            const result = await validateGovernanceLog(log.id, status, notes);
+            if (result.success) {
+                setLocalStatus(status);
+                toast.success(status === 'VERIFIED' ? 'Audit verified' : 'Audit flagged as incorrect');
+                if (status === 'REJECTED') setShowRejectForm(false);
+            } else {
+                toast.error('Failed to update validation status');
+            }
+        } catch (error) {
+            toast.error('An unexpected error occurred');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     if (!isOpen || !log) return null;
 
@@ -243,7 +276,42 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-white/10 flex items-center justify-end gap-3">
+                {/* Footer / Validation Section */}
+                <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        {localStatus === 'VERIFIED' ? (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
+                                <Check className="w-4 h-4" />
+                                <span className="text-sm font-medium">Verified by Human Expert</span>
+                            </div>
+                        ) : localStatus === 'REJECTED' ? (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400">
+                                <X className="w-4 h-4" />
+                                <span className="text-sm font-medium">Marked as Incorrect</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-400 mr-2">Was this decision correct?</span>
+                                <button
+                                    onClick={() => handleValidate('VERIFIED')}
+                                    disabled={isSubmitting}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-400 transition-all disabled:opacity-50"
+                                >
+                                    <ThumbsUp className="w-3.5 h-3.5" />
+                                    <span className="text-sm font-medium">Yes, Verify</span>
+                                </button>
+                                <button
+                                    onClick={() => setShowRejectForm(true)}
+                                    disabled={isSubmitting}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-400 transition-all disabled:opacity-50"
+                                >
+                                    <ThumbsDown className="w-3.5 h-3.5" />
+                                    <span className="text-sm font-medium">No, Flag Issue</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     <button
                         onClick={onClose}
                         className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium transition-all"
@@ -251,6 +319,36 @@ export function ReplayModal({ log, isOpen, onClose }: ReplayModalProps) {
                         Close
                     </button>
                 </div>
+
+                {/* Reject Form Overlay */}
+                {showRejectForm && (
+                    <div className="absolute inset-x-0 bottom-0 p-6 bg-slate-900 border-t border-white/10 animate-in slide-in-from-bottom-10">
+                        <h3 className="text-white font-semibold mb-2">Flag as Incorrect</h3>
+                        <p className="text-sm text-gray-400 mb-4">Why was this governance decision incorrect?</p>
+                        <textarea
+                            value={rejectNotes}
+                            onChange={(e) => setRejectNotes(e.target.value)}
+                            placeholder="e.g. False positive on PII, missed context..."
+                            className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white text-sm mb-4 focus:outline-none focus:border-white/30"
+                            rows={3}
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowRejectForm(false)}
+                                className="px-4 py-2 text-sm text-gray-400 hover:text-white"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleValidate('REJECTED', rejectNotes)}
+                                disabled={isSubmitting || !rejectNotes.trim()}
+                                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Submit Feedback
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

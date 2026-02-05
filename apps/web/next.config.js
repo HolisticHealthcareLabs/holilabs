@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  transpilePackages: ['@holi/deid', '@holi/dp', '@holi/utils', '@holi/schemas'],
+  transpilePackages: ['@holi/deid', '@holi/dp', '@holi/utils', '@holi/schemas', '@prisma/extension-read-replicas'],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

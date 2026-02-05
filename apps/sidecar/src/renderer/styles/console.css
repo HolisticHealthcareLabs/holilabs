@@ -1,0 +1,350 @@
+/* console.css - Universal Validation Console Styles */
+
+:root {
+    --bg-dark: #020617;
+    /* slate-950 */
+    --bg-panel: rgba(15, 23, 42, 0.5);
+    /* slate-900/50 */
+    --border-color: rgba(255, 255, 255, 0.1);
+    --text-primary: #e2e8f0;
+    /* slate-200 */
+    --text-secondary: #94a3b8;
+    /* slate-400 */
+    --accent-cyan: #06b6d4;
+    /* cyan-500 */
+    --accent-emerald: #10b981;
+    /* emerald-500 */
+    --accent-red: #ef4444;
+    /* red-500 */
+    --grid-gap: 24px;
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+}
+
+.console-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--bg-dark);
+}
+
+/* Header */
+.console-header {
+    height: 56px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background-color: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+}
+
+.brand-section,
+.status-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-box {
+    width: 24px;
+    height: 24px;
+    background-color: var(--accent-cyan);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000;
+    font-size: 12px;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+}
+
+.version-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: monospace;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid;
+}
+
+.status-badge.connected {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+}
+
+.ghost-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.ghost-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Main Grid */
+.console-main {
+    flex: 1;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 3fr 9fr;
+    gap: var(--grid-gap);
+    overflow: hidden;
+}
+
+/* Panels */
+.metric-panel,
+.log-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.trust-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 1) 0%, rgba(30, 41, 59, 1) 100%);
+}
+
+.trust-glow {
+    position: absolute;
+    top: -64px;
+    right: -64px;
+    width: 128px;
+    height: 128px;
+    background: rgba(6, 182, 212, 0.15);
+    filter: blur(40px);
+    border-radius: 50%;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.mini-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.mini-card label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.mini-card .value {
+    font-size: 20px;
+    font-weight: 300;
+    color: white;
+}
+
+.health-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.health-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.health-status {
+    font-family: monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.dot.green {
+    background: var(--accent-emerald);
+}
+
+.dot.yellow {
+    background: #eab308;
+}
+
+/* Logs Area */
+.log-container {
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.log-header {
+    height: 40px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: rgba(255, 255, 255, 0.02);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.log-scroll {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.log-entry {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.1s;
+}
+
+.log-entry:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.log-time {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    width: 60px;
+    opacity: 0.5;
+}
+
+.log-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.log-icon.red {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--accent-red);
+}
+
+.log-icon.green {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--accent-emerald);
+}
+
+.log-content h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.log-content p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.tags {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.empty-state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s infinite;
+}

@@ -4,6 +4,9 @@
 import { prisma } from '@/lib/prisma';
 import { unstable_noStore as noStore } from 'next/cache';
 
+// Re-export this enum so client components can use it without importing from Prisma
+export type ValidationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
 export async function getGovernanceLogs() {
     noStore(); // Disable caching for real-time feed
     try {
@@ -71,5 +74,28 @@ export async function getSafetyStats() {
             data: { sessionsAudited: 0, interventionsTriggered: 0, avgSafetyScore: 0 },
             error: 'Failed to fetch stats',
         };
+    }
+}
+
+export async function validateGovernanceLog(
+    logId: string,
+    status: ValidationStatus,
+    notes?: string
+) {
+    try {
+        await prisma.governanceLog.update({
+            where: { id: logId },
+            data: {
+                validationStatus: status,
+                validationNotes: notes,
+                validatedAt: new Date(),
+                // In a real app, we'd get the user ID from the session
+                validatedBy: 'Manual Auditor',
+            },
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to validate governance log:', error);
+        return { success: false, error: 'Failed to update validation status' };
     }
 }
