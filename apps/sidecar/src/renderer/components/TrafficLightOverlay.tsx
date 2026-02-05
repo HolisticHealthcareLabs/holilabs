@@ -1,242 +1,110 @@
-/**
- * Traffic Light Overlay Component
- *
- * Displays the current Traffic Light status with signals.
- * Part of the Cortex Assurance desktop overlay.
- *
- * @module sidecar/renderer/components/TrafficLightOverlay
- */
+import React, { useState } from 'react';
+import type { TrafficLightSignal } from '../../types';
 
-import React from 'react';
-import type { TrafficLightResult, TrafficLightSignal } from '../../types';
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════════
-
-interface TrafficLightOverlayProps {
-  result: TrafficLightResult | null;
-  isEvaluating: boolean;
-  onEvaluate: () => void;
-  onApplyCorrection: (text: string) => void;
-  language: 'en' | 'pt';
+interface TrafficLightProps {
+  status: 'valid' | 'caution' | 'danger';
+  confidence: number;
+  message?: string;
+  onExpand: () => void;
+  signals?: TrafficLightSignal[]; // Added signals to access category/evidence
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// TRANSLATIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const translations = {
-  en: {
-    evaluate: 'Evaluate Now',
-    evaluating: 'Evaluating...',
-    noEvaluation: 'No evaluation yet',
-    tapToEvaluate: 'Tap to evaluate current screen',
-    signals: 'Signals',
-    noSignals: 'All clear - no issues detected',
-    glosaRisk: 'Glosa Risk',
-    overrideRequired: 'Override Required',
-    overrideTypes: {
-      justification: 'Justification required',
-      supervisor: 'Supervisor approval required',
-      blocked: 'Cannot be overridden',
-    },
-    colors: {
-      RED: 'Blocked',
-      YELLOW: 'Warning',
-      GREEN: 'Clear',
-    },
-  },
-  pt: {
-    evaluate: 'Avaliar Agora',
-    evaluating: 'Avaliando...',
-    noEvaluation: 'Nenhuma avaliação ainda',
-    tapToEvaluate: 'Toque para avaliar a tela atual',
-    signals: 'Alertas',
-    noSignals: 'Tudo certo - nenhum problema detectado',
-    glosaRisk: 'Risco de Glosa',
-    overrideRequired: 'Sobreposição Necessária',
-    overrideTypes: {
-      justification: 'Justificativa necessária',
-      supervisor: 'Aprovação de supervisor necessária',
-      blocked: 'Não pode ser sobreposto',
-    },
-    colors: {
-      RED: 'Bloqueado',
-      YELLOW: 'Atenção',
-      GREEN: 'Liberado',
-    },
-  },
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const TrafficLightOverlay: React.FC<TrafficLightOverlayProps> = ({
-  result,
-  isEvaluating,
-  onEvaluate,
-  onApplyCorrection,
-  language,
+export const TrafficLightOverlay: React.FC<TrafficLightProps> = ({
+  status,
+  confidence,
+  message,
+  onExpand,
+  signals
 }) => {
-  const t = translations[language];
+  const [isHovered, setIsHovered] = useState(false);
 
-  return (
-    <div className="traffic-light-overlay">
-      {/* Traffic Light Display */}
-      <div className="traffic-light-display">
-        <TrafficLightVisual
-          color={result?.color || 'GREEN'}
-          isEvaluating={isEvaluating}
-          hasResult={result !== null}
-        />
-        <div className="traffic-light-info">
-          <h2 className={`status-text color-${(result?.color || 'GREEN').toLowerCase()}`}>
-            {result ? t.colors[result.color] : t.noEvaluation}
-          </h2>
-          {!result && <p className="hint-text">{t.tapToEvaluate}</p>}
-        </div>
-      </div>
-
-      {/* Evaluate Button */}
-      <button
-        className={`evaluate-button ${isEvaluating ? 'evaluating' : ''}`}
-        onClick={onEvaluate}
-        disabled={isEvaluating}
-      >
-        {isEvaluating ? t.evaluating : t.evaluate}
-      </button>
-
-      {/* Signals List */}
-      {result && result.signals.length > 0 && (
-        <div className="signals-section">
-          <h3>{t.signals}</h3>
-          <div className="signals-list">
-            {result.signals.map((signal, idx) => (
-              <SignalCard
-                key={`${signal.ruleId}-${idx}`}
-                signal={signal}
-                language={language}
-                onApplyCorrection={onApplyCorrection}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* No signals message */}
-      {result && result.signals.length === 0 && (
-        <div className="no-signals">
-          <span className="check-icon">✓</span>
-          <p>{t.noSignals}</p>
-        </div>
-      )}
-
-      {/* Glosa Risk */}
-      {result?.totalGlosaRisk && (
-        <div className="glosa-risk-card">
-          <h4>{t.glosaRisk}</h4>
-          <div className="glosa-amount">
-            R$ {result.totalGlosaRisk.totalAmountAtRisk.toLocaleString('pt-BR')}
-          </div>
-          <div className="glosa-probability">
-            {result.totalGlosaRisk.probability}%{' '}
-            {language === 'pt' ? 'probabilidade' : 'probability'}
-          </div>
-        </div>
-      )}
-
-      {/* Override Requirements */}
-      {result?.overrideRequires && result.overrideRequires !== 'blocked' && (
-        <div className={`override-info override-${result.overrideRequires}`}>
-          <span className="override-icon">⚠️</span>
-          <span>{t.overrideTypes[result.overrideRequires]}</span>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SUB-COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-interface TrafficLightVisualProps {
-  color: 'RED' | 'YELLOW' | 'GREEN';
-  isEvaluating: boolean;
-  hasResult: boolean;
-}
-
-const TrafficLightVisual: React.FC<TrafficLightVisualProps> = ({
-  color,
-  isEvaluating,
-  hasResult,
-}) => {
-  return (
-    <div className={`traffic-light-visual ${isEvaluating ? 'evaluating' : ''}`}>
-      <div className="light-housing">
-        <div className={`light red ${color === 'RED' && hasResult ? 'active' : ''}`} />
-        <div className={`light yellow ${color === 'YELLOW' && hasResult ? 'active' : ''}`} />
-        <div className={`light green ${color === 'GREEN' && hasResult ? 'active' : ''}`} />
-      </div>
-    </div>
-  );
-};
-
-interface SignalCardProps {
-  signal: TrafficLightSignal;
-  language: 'en' | 'pt';
-  onApplyCorrection: (text: string) => void;
-}
-
-const SignalCard: React.FC<SignalCardProps> = ({ signal, language, onApplyCorrection }) => {
-  const message = language === 'pt' ? signal.messagePortuguese : signal.message;
-  const colorIcon = signal.color === 'RED' ? '🔴' : signal.color === 'YELLOW' ? '🟡' : '🟢';
-  const categoryLabels = {
-    CLINICAL: language === 'pt' ? 'Clínico' : 'Clinical',
-    ADMINISTRATIVE: language === 'pt' ? 'Administrativo' : 'Administrative',
-    BILLING: language === 'pt' ? 'Faturamento' : 'Billing',
+  // Status mapping
+  const statusConfig = {
+    valid: { glow: 'glow-green', icon: '✓', label: 'ASSURED' },
+    caution: { glow: 'glow-yellow', icon: '!', label: 'CHECK' },
+    danger: { glow: 'glow-red', icon: '✕', label: 'BLOCKED' },
   };
 
+  // Deterministic Override: If the signal is CLINICAL (RxNorm/SNOMED), use a Shield
+  const primarySignal = signals?.[0];
+  const isClinical = primarySignal?.category === 'CLINICAL';
+  const displayIcon = isClinical && status === 'danger' ? '🛡️' : statusConfig[status].icon;
+  const displayLabel = isClinical && status === 'danger' ? 'PROTOCOL' : statusConfig[status].label;
+
+  const current = statusConfig[status];
+
   return (
-    <div className={`signal-card signal-${signal.color.toLowerCase()}`}>
-      <div className="signal-header">
-        <span className="signal-icon">{colorIcon}</span>
-        <span className="signal-name">{signal.ruleName}</span>
-        <span className="signal-category">{categoryLabels[signal.category]}</span>
+    <div
+      className={`fixed top-16 right-4 z-50 smooth-expand ${isHovered ? 'w-80' : 'w-14'}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+    >
+      <div
+        className={`
+          glass-panel rounded-full overflow-hidden flex items-center
+          ${isHovered ? 'p-2 pl-2' : 'p-1.5'}
+        `}
+      >
+        {/* The Glowing Core */}
+        <div
+          className={`
+            w-10 h-10 rounded-full flex items-center justify-center shrink-0
+            ${current.glow}
+            text-white font-bold text-lg cursor-pointer
+          `}
+          onClick={onExpand}
+        >
+          {displayIcon}
+        </div>
+
+        {/* Expanded Info Surface */}
+        <div
+          className={`
+            ml-3 flex-1 min-w-0 flex flex-col justify-center smooth-expand
+            ${isHovered ? 'opacity-100 max-w-[240px]' : 'opacity-0 max-w-0 pointer-events-none'}
+          `}
+        >
+          <div className="flex flex-col">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[9px] font-bold tracking-widest text-white/60 uppercase">
+                {isClinical ? 'DETERMINISTIC' : 'CONFIDENCE'}
+              </span>
+              <span className={`text-[10px] font-mono ${isClinical ? 'text-cyan-400' : 'text-white/90'}`}>
+                {isClinical ? '100% (RxNorm)' : `${confidence}%`}
+              </span>
+            </div>
+
+            <div className="text-sm font-bold text-white tracking-wide whitespace-nowrap">
+              {displayLabel}
+            </div>
+
+            {message && (
+              <div className="text-[10px] text-white/70 truncate mt-1 max-w-[220px]">
+                {message}
+              </div>
+            )}
+
+            {/* Show Source/Evidence if Clinical */}
+            {isClinical && primarySignal?.evidence && (
+              <div className="mt-2 pt-1 border-t border-white/10 flex gap-1 flex-wrap">
+                {primarySignal.evidence.map((ev, i) => (
+                  <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-200 border border-blue-500/30">
+                    {ev}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Collapse Icon (Visible only on hover) */}
+        {isHovered && (
+          <div className="text-gray-500 text-xs px-2 cursor-pointer" onClick={() => setIsHovered(false)}>
+            ›
+          </div>
+        )}
       </div>
-      <p className="signal-message">{message}</p>
-      {signal.regulatoryReference && (
-        <div className="signal-reference">
-          <span className="reference-icon">📋</span>
-          <span>{signal.regulatoryReference}</span>
-        </div>
-      )}
-      {signal.suggestedCorrection && (
-        <div className="signal-correction">
-          <span className="correction-icon">💡</span>
-          <span>{signal.suggestedCorrection}</span>
-          <button
-            className="apply-fix-button"
-            onClick={() => onApplyCorrection(signal.suggestedCorrection!)}
-            title={language === 'pt' ? 'Aplicar correção' : 'Apply fix'}
-          >
-            {language === 'pt' ? 'Aplicar' : 'Apply'}
-          </button>
-        </div>
-      )}
-      {signal.estimatedGlosaRisk && (
-        <div className="signal-glosa">
-          <span className="glosa-icon">💰</span>
-          <span>
-            R$ {signal.estimatedGlosaRisk.estimatedAmount.toLocaleString('pt-BR')}
-            {signal.estimatedGlosaRisk.denialCode && ` (${signal.estimatedGlosaRisk.denialCode})`}
-          </span>
-        </div>
-      )}
     </div>
   );
 };
-
-export default TrafficLightOverlay;

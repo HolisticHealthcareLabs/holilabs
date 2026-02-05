@@ -127,7 +127,7 @@ export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN';
 export interface TrafficLightSignal {
   ruleId: string;
   ruleName: string;
-  category: 'CLINICAL' | 'ADMINISTRATIVE' | 'BILLING';
+  category: 'CLINICAL' | 'ADMINISTRATIVE' | 'BILLING' | 'PROBABILISTIC';
   color: TrafficLightColor;
   message: string;
   messagePortuguese: string;

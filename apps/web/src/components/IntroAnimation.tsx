@@ -15,7 +15,7 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
   useEffect(() => {
     // Always show animation on first load of the session
     const hasSeenIntro = sessionStorage.getItem('hasSeenIntro');
-    
+
     if (hasSeenIntro) {
       setShow(false);
       onComplete?.();
@@ -57,7 +57,7 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
             className="relative w-32 h-32 md:w-40 md:h-40 z-10"
           >
             <Image
-              src="/logos/Logo 1_Dark.svg"
+              src="/logos/holilabs-helix-blue-dark.svg"
               alt="Holi Labs"
               fill
               className="object-contain"
@@ -65,7 +65,7 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
             />
           </motion.div>
 
-          {/* Animated Circles - Centered on the H logo (left side) */}
+          {/* Animated Circles - Centered on the logo */}
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 2, 2.5], opacity: [0, 0.4, 0] }}
@@ -75,12 +75,12 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
               repeatDelay: 0.25,
               ease: "easeOut",
             }}
-            className="absolute rounded-full border-4 border-[#014751]"
+            className="absolute rounded-full border-4 border-[#007AFF]"
             style={{
               width: '80px',
               height: '80px',
               top: '50%',
-              left: '30%',
+              left: '50%',
               transform: 'translate(-50%, -50%)'
             }}
           />
@@ -95,32 +95,12 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
               delay: 0.15,
               ease: "easeOut",
             }}
-            className="absolute rounded-full border-4 border-[#014751]"
+            className="absolute rounded-full border-4 border-[#3B82F6]"
             style={{
               width: '80px',
               height: '80px',
               top: '50%',
-              left: '30%',
-              transform: 'translate(-50%, -50%)'
-            }}
-          />
-
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [0, 3, 3.5], opacity: [0, 0.2, 0] }}
-            transition={{
-              duration: 0.75,
-              repeat: Infinity,
-              repeatDelay: 0.25,
-              delay: 0.3,
-              ease: "easeOut",
-            }}
-            className="absolute rounded-full border-4 border-[#014751]"
-            style={{
-              width: '80px',
-              height: '80px',
-              top: '50%',
-              left: '30%',
+              left: '50%',
               transform: 'translate(-50%, -50%)'
             }}
           />
@@ -131,11 +111,11 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.25 }}
-          className="absolute bottom-1/3"
+          className="absolute bottom-1/3 text-center"
         >
-          <h1 
+          <h1
             className="text-3xl md:text-4xl font-bold tracking-tight"
-            style={{ color: '#014751' }}
+            style={{ color: '#007AFF' }}
           >
             Holi Labs
           </h1>
@@ -143,9 +123,9 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.5 }}
-            className="text-center text-gray-600 mt-2 text-sm md:text-base"
+            className="text-gray-600 mt-2 text-sm md:text-base font-medium"
           >
-            Health 3.0 Platform
+            Clinical Infrastructure v2.0
           </motion.p>
         </motion.div>
 
@@ -154,7 +134,7 @@ export function IntroAnimation({ onComplete, duration = 750 }: IntroAnimationPro
           initial={{ width: 0 }}
           animate={{ width: '100%' }}
           transition={{ duration: duration / 1000, ease: 'linear' }}
-          className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-[#014751] to-emerald-500"
+          className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-500"
         />
       </motion.div>
     </AnimatePresence>

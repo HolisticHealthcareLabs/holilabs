@@ -79,3 +79,4 @@ prisma/migrations/
 # Synthea test data (large JAR file and generated data)
 synthea/
 synthea-output/
+apps/web/public/downloads/*.dmg

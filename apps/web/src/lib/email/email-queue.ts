@@ -158,7 +158,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<EmailJobResult> 
         attemptNumber,
       });
 
-      success = await sendViaResend({
+      const result = await sendViaResend({
         to,
         subject,
         html,
@@ -167,6 +167,7 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<EmailJobResult> 
         cc,
         bcc,
       });
+      success = result.success;
     } else {
       logger.info({
         event: 'email_sending_via_sendgrid_fallback',

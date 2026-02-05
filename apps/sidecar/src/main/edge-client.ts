@@ -8,6 +8,8 @@
  */
 
 import type { InputContext, TrafficLightResult, ChatMessage } from '../types';
+import { DeterministicValidator } from './ontology/DeterministicValidator';
+import { ProbabilisticValidator, ClinicalContext } from './llm/probabilistic-validator';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -43,6 +45,8 @@ export class EdgeNodeClient {
   private patientId: string | null = null;
   private sessionId: string;
   private lastSyncTime: Date | null = null;
+  private validator = new DeterministicValidator();
+  private probabilisticValidator = new ProbabilisticValidator();
 
   constructor(baseUrl = 'http://localhost:3001') {
     this.baseUrl = baseUrl;
@@ -60,6 +64,7 @@ export class EdgeNodeClient {
    */
   connect(): void {
     this.startHeartbeat();
+    this.probabilisticValidator.initialize(); // Initialize LLM (non-blocking)
     console.info('Edge client connecting to:', this.baseUrl);
   }
 
@@ -108,6 +113,80 @@ export class EdgeNodeClient {
    * Evaluate input context through Traffic Light
    */
   async evaluate(context: InputContext): Promise<TrafficLightResult> {
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 1. DETERMINISTIC PROTOCOL (Local Ontology Check)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // Check Prescription Context
+    if (context.medication) {
+      const rxCheck = this.validator.validatePrescription(
+        context.medication.name,
+        context.text || '' // use full text as context for diagnosis
+      );
+
+      if (!rxCheck.isValid && rxCheck.issues) {
+        console.warn('[Deterministic] Violation detected:', rxCheck.issues[0]);
+        return {
+          color: 'RED',
+          signals: [{
+            ruleId: 'ONTOLOGY-RX-001',
+            ruleName: 'Protocolo de Prescrição (RxNorm)',
+            category: 'CLINICAL',
+            color: 'RED',
+            message: rxCheck.issues[0],
+            messagePortuguese: `Violação de Protocolo: ${rxCheck.issues[0]}`,
+            evidence: ['Validado via RxNorm e SNOMED CT'],
+            regulatoryReference: 'Protocolo Clínico Determinístico'
+          }],
+          canOverride: true,
+          overrideRequires: 'justification',
+          needsChatAssistance: true,
+          totalGlosaRisk: { probability: 1, totalAmountAtRisk: 0, highestRiskCode: 'RX-FAIL' }
+        };
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 2. PROBABILISTIC PROTOCOL (Local LLM via Ollama)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    if (context.medication) {
+      const clinicalContext: ClinicalContext = {
+        medication: context.medication,
+        diagnosis: context.diagnosis?.description,
+      };
+
+      const llmResult = await this.probabilisticValidator.assess(clinicalContext);
+
+      if (llmResult && llmResult.riskLevel !== 'low') {
+        const signal = this.probabilisticValidator.toTrafficLightSignal(llmResult);
+        console.info('[Probabilistic] LLM flagged risk:', llmResult.riskLevel, llmResult.reasoning);
+
+        return {
+          color: llmResult.riskLevel === 'high' ? 'RED' : 'YELLOW',
+          signals: [{
+            ruleId: 'LLM-PROB-001',
+            ruleName: 'Validação Probabilística (Llama 3.1)',
+            category: 'PROBABILISTIC',
+            color: signal.color.toUpperCase() as 'RED' | 'YELLOW' | 'GREEN',
+            message: llmResult.reasoning,
+            messagePortuguese: llmResult.reasoning,
+            evidence: llmResult.citations,
+            regulatoryReference: 'Análise LLM Local'
+          }],
+          canOverride: true,
+          overrideRequires: llmResult.riskLevel === 'high' ? 'supervisor' : 'justification',
+          needsChatAssistance: llmResult.riskLevel === 'high',
+          totalGlosaRisk: { probability: (100 - llmResult.confidence) / 100, totalAmountAtRisk: 0, highestRiskCode: 'LLM-FLAG' }
+        };
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 3. CLOUD FALLBACK (Deep Edge / Cloud LLM for complex cases)
+    // ═══════════════════════════════════════════════════════════════════════════
+
     const response = await this.post('/sidecar/evaluate', {
       patientId: this.patientId || 'unknown',
       context: {

@@ -219,24 +219,9 @@ export class VisionModule {
     // 3. Apply threshold
     // 4. Denoise
 
-    // In a real implementation, use sharp or jimp for image processing
-    // For now, return as-is
+    // TODO: Implement using 'jimp' or 'sharp' for production performance.
+    // For prototype, we strictly return the raw image to avoid adding heavy dependencies.
     return base64Image;
-
-    // Example with sharp (would need to add to dependencies):
-    /*
-    const sharp = require('sharp');
-    const buffer = Buffer.from(base64Image.split(',')[1], 'base64');
-
-    const processed = await sharp(buffer)
-      .greyscale()
-      .normalize()
-      .threshold(128)
-      .png()
-      .toBuffer();
-
-    return 'data:image/png;base64,' + processed.toString('base64');
-    */
   }
 
   private async performOCR(image: string): Promise<{ text: string; confidence: number }> {

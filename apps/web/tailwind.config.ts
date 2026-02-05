@@ -13,7 +13,6 @@ const config: Config = {
       colors: {
         // Apple-inspired color palette
         brand: {
-          green: '#00C853', // Holi Labs brand green (visible on white)
           blue: '#007AFF',  // Apple blue
         },
         gray: {

@@ -11,6 +11,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { TrafficLightResult, EHRFingerprint, ChatMessage, TrafficLightSignal } from '../types';
 import { TrafficLightOverlay } from './components/TrafficLightOverlay';
 import { BreakGlassChat } from '../components/BreakGlassChat';
+import { OnboardingOverlay } from './components/OnboardingOverlay';
+import { ConsoleView } from './components/ConsoleView'; // [NEW] Command Center
+import './styles/futuristic.css';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -28,6 +31,7 @@ interface AppState {
   chatExpanded: boolean;
   language: Language;
   minimized: boolean;
+  showOnboarding: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -44,14 +48,26 @@ const App: React.FC = () => {
     chatExpanded: false,
     language: 'pt', // Default to Portuguese for Brazilian market
     minimized: false,
+    showOnboarding: false,
   });
+
+  // Dual Mode: 'console' (Default) or 'ghost' (Overlay)
+  const [viewMode, setViewMode] = useState<'console' | 'ghost'>('console');
+  // Log history for the console view
+  const [signalsLog, setSignalsLog] = useState<TrafficLightResult[]>([]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // EFFECTS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Fetch initial status
+  // Check Onboarding Status & Fetch initial status
   useEffect(() => {
+    // Check local storage for onboarding
+    const hasOnboarded = localStorage.getItem('cortex_onboarding_completed');
+    if (!hasOnboarded) {
+      setState(prev => ({ ...prev, showOnboarding: true }));
+    }
+
     const fetchStatus = async () => {
       try {
         const status = await window.electronAPI.getStatus();
@@ -80,9 +96,12 @@ const App: React.FC = () => {
         ...prev,
         trafficLightResult: result,
         isEvaluating: false,
-        // Auto-expand chat if we hit a blockage
-        chatExpanded: result.needsChatAssistance || prev.chatExpanded,
+        // Auto-expand chat if we hit a blockage AND we are in ghost mode
+        chatExpanded: viewMode === 'ghost' && (result.needsChatAssistance || prev.chatExpanded),
       }));
+
+      // Update Log
+      setSignalsLog(prev => [result, ...prev].slice(0, 50));
     });
 
     const unsubscribeEHR = window.electronAPI.onEHRDetected((fingerprint) => {
@@ -104,7 +123,7 @@ const App: React.FC = () => {
       unsubscribeEHR();
       unsubscribeConnection();
     };
-  }, []);
+  }, [viewMode]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HANDLERS
@@ -144,16 +163,6 @@ const App: React.FC = () => {
     throw new Error(response.error || 'Chat failed');
   }, []);
 
-
-
-  const handleApplyCorrection = useCallback(async (text: string) => {
-    try {
-      await window.electronAPI.injectText(text);
-    } catch (error) {
-      console.error('Failed to inject text:', error);
-    }
-  }, []);
-
   const handleOverride = useCallback(
     async (signals: TrafficLightSignal[], justification: string): Promise<void> => {
       await window.electronAPI.submitOverride({
@@ -171,15 +180,23 @@ const App: React.FC = () => {
   );
 
   const handleMinimize = useCallback(() => {
-    window.electronAPI.toggleMinimize();
-    setState((prev) => ({ ...prev, minimized: !prev.minimized }));
-  }, []);
+    // Toggling minimize in Console Mode switches to Ghost Mode (Overlay)
+    if (viewMode === 'console') {
+      setViewMode('ghost');
+      // Logic to make window transparent/click-through usually handled by Electron Main
+      // We might need to message Main process to change window mode
+      // For prototype: We assume the user manually positioned the window or we trigger minimized style
+    } else {
+      // In Ghost Mode, minimize collapses the pill
+      window.electronAPI.toggleMinimize();
+      setState((prev) => ({ ...prev, minimized: !prev.minimized }));
+    }
+  }, [viewMode]);
 
-  const handleLanguageToggle = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      language: prev.language === 'en' ? 'pt' : 'en',
-    }));
+  const handleReturnToConsole = useCallback(() => {
+    setViewMode('console');
+    setState(prev => ({ ...prev, minimized: false, chatExpanded: false }));
+    // Signal main process to restore focus/opacity if needed
   }, []);
 
   const handleMouseEnter = useCallback(() => {
@@ -187,15 +204,18 @@ const App: React.FC = () => {
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
-  }, []);
+    // Only pass clicks through if in Ghost Mode and NOT overlapping interactive elements
+    if (viewMode === 'ghost') {
+      window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+    }
+  }, [viewMode]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Minimized state - just show traffic light indicator
-  if (state.minimized) {
+  // 1. Minimized State (Ghost Mode Only)
+  if (state.minimized && viewMode === 'ghost') {
     return (
       <div
         className="minimized-container"
@@ -207,23 +227,47 @@ const App: React.FC = () => {
           color={state.trafficLightResult?.color || 'GREEN'}
           isEvaluating={state.isEvaluating}
         />
+        {/* Hidden trigger to go back to console */}
+        <div
+          className="absolute -left-4 top-0 w-4 h-full cursor-pointer opacity-0 hover:opacity-100 bg-black/50 text-white text-[8px] flex items-center justify-center rounded-l"
+          onClick={(e) => { e.stopPropagation(); handleReturnToConsole(); }}
+          title="Return to Console"
+        >
+          CLI
+        </div>
       </div>
     );
   }
 
-  // Dynamic positioning style
+  // 2. Console Mode (Command Center)
+  if (viewMode === 'console') {
+    return (
+      <ConsoleView
+        onMinimize={() => setViewMode('ghost')}
+        signalsLog={signalsLog}
+        connectionStatus={state.connection}
+        ruleVersion="1.0.4-rc (Golden Master)"
+      />
+    );
+  }
+
+  // 3. Ghost Mode (Overlay)
+  // Dynamic positioning style for overlay
   const containerStyle: React.CSSProperties = {};
 
-  if (state.ehr?.bounds && !state.minimized) {
-    // Magnetic Snap: Position relative to EHR window
-    // Default: Bottom-Right of the EHR window
-    // Bounds are screen coordinates.
-    // Since mainWindow is full screen (0,0), absolute positioning works directly.
+  if (state.showOnboarding) {
     containerStyle.position = 'absolute';
-    containerStyle.left = state.ehr.bounds.x + state.ehr.bounds.width - 380; // Align right edge (360 + 20 margin)
-    containerStyle.top = state.ehr.bounds.y + 100; // Offset from top
-    containerStyle.bottom = 'auto'; // Override css
-    containerStyle.right = 'auto'; // Override css
+    containerStyle.left = '50%';
+    containerStyle.top = '50%';
+    containerStyle.transform = 'translate(-50%, -50%)';
+    containerStyle.bottom = 'auto';
+    containerStyle.right = 'auto';
+  } else if (state.ehr?.bounds && !state.minimized) {
+    containerStyle.position = 'absolute';
+    containerStyle.left = state.ehr.bounds.x + state.ehr.bounds.width - 380;
+    containerStyle.top = state.ehr.bounds.y + 100;
+    containerStyle.bottom = 'auto';
+    containerStyle.right = 'auto';
   }
 
   return (
@@ -233,32 +277,7 @@ const App: React.FC = () => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Header with Cortex Assurance branding */}
-      <header className="app-header">
-        <div className="header-brand">
-          <div className="brand-logo">
-            <CortexLogo />
-          </div>
-          <div className="brand-text">
-            <h1>Cortex Assurance</h1>
-            <span className="tagline">
-              {state.language === 'pt' ? 'Garantia Clínica' : 'Clinical Assurance'}
-            </span>
-          </div>
-        </div>
-        <div className="header-controls">
-          <button
-            className="control-button"
-            onClick={handleLanguageToggle}
-            title="Toggle language"
-          >
-            {state.language.toUpperCase()}
-          </button>
-          <button className="control-button" onClick={handleMinimize} title="Minimize">
-            −
-          </button>
-        </div>
-      </header>
+
 
       {/* Connection Status */}
       <div className={`connection-status status-${state.connection}`}>
@@ -268,21 +287,30 @@ const App: React.FC = () => {
           {state.connection === 'degraded' && (state.language === 'pt' ? 'Degradado' : 'Degraded')}
           {state.connection === 'offline' && (state.language === 'pt' ? 'Offline' : 'Offline')}
         </span>
-        {state.ehr && state.ehr.ehrName !== 'unknown' && (
-          <span className="ehr-badge">
-            {state.ehr.ehrName.toUpperCase()} {state.ehr.version && `v${state.ehr.version}`}
-          </span>
-        )}
-        {state.isVDI && <span className="vdi-badge">VDI</span>}
+
+        {/* Quick Switch to Console */}
+        <button
+          className="ml-2 px-1.5 py-0.5 bg-white/10 hover:bg-white/20 rounded text-[9px] uppercase tracking-wider text-white/50 hover:text-white transition-colors"
+          onClick={handleReturnToConsole}
+        >
+          HQ
+        </button>
       </div>
 
       {/* Traffic Light Overlay */}
       <TrafficLightOverlay
-        result={state.trafficLightResult}
-        isEvaluating={state.isEvaluating}
-        onEvaluate={handleEvaluate}
-        onApplyCorrection={handleApplyCorrection}
-        language={state.language}
+        status={
+          state.trafficLightResult?.color === 'RED' ? 'danger' :
+            state.trafficLightResult?.color === 'YELLOW' ? 'caution' :
+              'valid'
+        }
+        confidence={state.trafficLightResult?.totalGlosaRisk ? (100 - (state.trafficLightResult.totalGlosaRisk.probability * 100)) : 100}
+        message={
+          state.isEvaluating ? 'Evaluating...' :
+            state.trafficLightResult?.signals[0]?.message || (state.trafficLightResult?.color === 'GREEN' ? 'No issues detected' : '')
+        }
+        onExpand={handleChatToggle}
+        signals={state.trafficLightResult?.signals}
       />
 
       {/* Break-Glass Chat */}
@@ -296,6 +324,17 @@ const App: React.FC = () => {
           language={state.language}
         />
       </div>
+
+      {/* Onboarding Overlay */}
+      {state.showOnboarding && (
+        <OnboardingOverlay
+          language={state.language}
+          onComplete={() => {
+            localStorage.setItem('cortex_onboarding_completed', 'true');
+            setState(prev => ({ ...prev, showOnboarding: false }));
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -304,18 +343,7 @@ const App: React.FC = () => {
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CortexLogo: React.FC = () => (
-  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="logo-svg">
-    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M20 8 L20 32 M12 14 L28 14 M12 20 L28 20 M12 26 L28 26"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <circle cx="20" cy="20" r="4" fill="currentColor" />
-  </svg>
-);
+
 
 interface TrafficLightIndicatorProps {
   color: 'RED' | 'YELLOW' | 'GREEN';

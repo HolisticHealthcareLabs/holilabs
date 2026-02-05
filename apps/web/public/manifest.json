@@ -5,7 +5,7 @@
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "theme_color": "#007AFF",
   "orientation": "portrait",
   "icons": [
     {
@@ -33,28 +33,47 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["medical", "productivity", "health"],
+  "categories": [
+    "medical",
+    "productivity",
+    "health"
+  ],
   "shortcuts": [
     {
       "name": "New Recording",
       "short_name": "Record",
       "description": "Start a new AI scribe recording",
       "url": "/dashboard/scribe",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Patients",
       "short_name": "Patients",
       "description": "View patient list",
       "url": "/dashboard/patients",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Export Billing",
       "short_name": "Export",
       "description": "Export billing data",
       "url": "/dashboard?export=true",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "related_applications": [],

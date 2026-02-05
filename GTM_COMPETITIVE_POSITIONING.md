@@ -24,7 +24,7 @@
 | Feature | Nuance DAX | Suki | Abridge | Ambience | **HoliLabs** | Moat Analysis |
 |---------|-----------|------|---------|----------|-------------|---------------|
 | **AI Scribe (SOAP Notes)** | ✅ Best-in-class (10+ years R&D) | ✅ Good (specialty-tuned) | ✅ Good (ambient) | ✅ Good (mobile-first) | ✅ Good (Claude 3.5) | ❌ **COMMODITY** - Everyone has this, race to $0 |
-| **Real-Time Transcription** | ❌ Batch (5-10 min delay) | ✅ Real-time (Deepgram) | ❌ Batch | ✅ Real-time | ✅ **Real-time (Deepgram)** | ⚠️ **WEAK MOAT** - Table stakes for 2025 |
+| **Visual-Only Context** | ❌ None (Audio only) | ❌ None (Audio only) | ❌ None (Audio only) | ❌ None (Audio only) | ✅ **Sentinel (Local Vision)** | ✅ **STRONG MOAT** - Privacy First, No BAA required |
 | **USPSTF-Grade-A Prevention** | ❌ None | ❌ None | ❌ None | ❌ None | ⚠️ **Partial (42/100)** → ✅ **Full (85/100) in 90 days** | ✅ **STRONG MOAT** - Zero competitors in this space |
 | **Differential Privacy (ε/δ)** | ❌ None | ❌ None | ❌ None | ❌ None | ✅ **Production-ready** | ✅ **STRONG MOAT** - Rare in healthtech (<12% adoption) |
 | **EHR Integration** | ✅ Epic, Cerner (enterprise) | ✅ Epic (certified) | ⚠️ Limited (API only) | ✅ Epic | ❌ **None (standalone)** | 🔴 **KILLER GAP** - 80% adoption blocker |
@@ -116,7 +116,7 @@
 - ❌ No differential privacy (HIPAA basic compliance only)
 
 **How HoliLabs Wins**:
-> "$149/month (50% cheaper) + Differential privacy (regulatory moat) + Prevention (clinical differentiation)"
+> "$149/month (50% cheaper) + Visual Privacy (No recording) + Prevention (clinical differentiation)"
 
 ---
 
@@ -128,7 +128,7 @@
 #### Primary Message:
 > **"The fastest AI Scribe for physicians"**
 >
-> "Generate SOAP notes in 30 seconds, not 10 minutes. Real-time transcription with Claude 3.5 Sonnet accuracy. Try free for 14 days."
+> "Generate SOAP notes in 30 seconds, not 10 minutes. Real-time visual context analysis with 0ms latency. Try free for 14 days."
 
 #### Target Audience:
 - Solo practitioners (1-5 doctors)
@@ -138,7 +138,7 @@
 #### Key Talking Points:
 1. **Speed**: "30-second SOAP notes vs. 10-minute manual documentation"
 2. **Accuracy**: "Claude 3.5 Sonnet - best medical reasoning model (JAMA AI 2024)"
-3. **Compliance**: "Differential privacy - rare in healthtech, required for research"
+3. **Compliance**: "Visual-Only Analysis - No audio recording, no BAA required"
 4. **Value**: "$149/month vs. Suki $199/month (25% savings)"
 
 #### Sales Objection Handling:
@@ -273,8 +273,8 @@
 **Features**:
 - ✅ AI Scribe (SOAP notes)
 - ✅ 50 notes/month limit
-- ✅ Real-time transcription (Deepgram)
-- ✅ Differential privacy (de-identification)
+- ✅ Real-time visual analysis (Sentinel)
+- ✅ Visual Privacy (No audio stored)
 - ❌ No prevention alerts
 - ❌ No outcome tracking
 - ❌ Email support only
@@ -428,7 +428,15 @@
 
 ## 🛡️ DEFENSIBILITY & MOATS
 
+### Moat #0: The "Last Mile" Defense (Why Google/OpenAI Can't Kill Us)
+**Mechanism**: Access to the "Air Gapped" Desktop
+**Why Competitors Can't Copy**:
+1.  **The "Air Gap":** Cloud giants (Google/OpenAI) are trapped in the cloud. They cannot "reach" into the secure, VDI-encapsulated hospital desktop to see the screen pixels.
+2.  **The "Dirty Work":** Building a native desktop agent (`.exe`) that handles OS-level accessibility and OCR is "messy" engineering that API-first companies avoid.
+3.  **The Symbiosis:** We are not their competitor; we are their **eyes**. We provide the context (Screen Data) that their models need to function in healthcare.
+
 ### Moat #1: Prevention Data Flywheel (STRONGEST)
+
 **Mechanism**: More doctors → more prevention data → better predictions → more value → more doctors
 
 **Example**:

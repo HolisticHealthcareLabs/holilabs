@@ -107,7 +107,7 @@ cd /root/holilabs
 
 # Restart using PM2 or Docker Compose
 if command -v pm2 &> /dev/null; then
-    pm2 restart holilabs || pm2 start apps/web/package.json --name holilabs
+    pm2 restart holilabs || (cd apps/web && pm2 start npm --name holilabs -- start)
 elif [ -f "docker-compose.yml" ]; then
     docker-compose down
     docker-compose up -d --build
