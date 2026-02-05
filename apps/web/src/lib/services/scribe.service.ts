@@ -15,7 +15,8 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
 import { MedicalAudioStreamer, type MedicalSegment } from '@/lib/transcription/MedicalAudioStreamer';
-import { governance, type GovernanceVerdict } from '@/lib/governance/governance.service';
+import { governance } from '@/lib/governance/governance.service';
+import type { GovernanceVerdict } from '@/lib/governance/shared-types';
 
 export type ScribeLanguage = 'en' | 'es' | 'pt';
 

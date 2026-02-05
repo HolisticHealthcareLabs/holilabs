@@ -113,3 +113,9 @@
 {"consecutiveFailures":5,"error":"fetch failed","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-01-30 01:42:02.287"}
 {"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:42:02.345"}
 {"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:42:02.350"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:43:02.345"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:43:02.346"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:44:02.346"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:44:02.347"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-01-30 01:45:02.349"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 01:45:02.352"}

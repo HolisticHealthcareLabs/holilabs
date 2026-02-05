@@ -37,12 +37,12 @@ const sizeClasses: Record<TileSize, string> = {
 };
 
 const variantClasses: Record<TileVariant, string> = {
-  default: 'bg-white border-gray-200 hover:border-gray-300',
-  primary: 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:border-blue-300',
-  success: 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-300',
-  warning: 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 hover:border-amber-300',
-  danger: 'bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:border-red-300',
-  glass: 'bg-white/40 backdrop-blur-xl border-white/20 hover:border-white/30 shadow-xl',
+  default: 'bg-slate-900/80 border-white/5 hover:border-white/10 text-slate-200 shadow-xl',
+  primary: 'bg-gradient-to-br from-blue-900/50 to-indigo-900/50 border-blue-500/20 hover:border-blue-400/30 text-blue-100',
+  success: 'bg-gradient-to-br from-emerald-900/50 to-green-900/50 border-emerald-500/20 hover:border-emerald-400/30 text-emerald-100',
+  warning: 'bg-gradient-to-br from-amber-900/50 to-orange-900/50 border-amber-500/20 hover:border-amber-400/30 text-amber-100',
+  danger: 'bg-gradient-to-br from-red-900/50 to-pink-900/50 border-red-500/20 hover:border-red-400/30 text-red-100',
+  glass: 'bg-slate-950/40 backdrop-blur-xl border-white/10 hover:border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] text-white',
 };
 
 export default function CommandCenterTile({
@@ -67,8 +67,8 @@ export default function CommandCenterTile({
 
   const style = transform
     ? {
-        transform: CSS.Translate.toString(transform),
-      }
+      transform: CSS.Translate.toString(transform),
+    }
     : undefined;
 
   return (
@@ -89,14 +89,14 @@ export default function CommandCenterTile({
         overflow-hidden
         transition-all
         duration-300
-        ${isDragging ? 'opacity-50 shadow-2xl z-50' : 'shadow-lg'}
-        ${isActive ? 'ring-4 ring-blue-500 ring-opacity-50' : ''}
+        ${isDragging ? 'opacity-50 shadow-[0_0_50px_rgba(59,130,246,0.5)] z-50' : 'shadow-lg'}
+        ${isActive ? 'ring-2 ring-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.4)]' : ''}
         ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}
         ${className}
       `}
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-white/80 to-transparent backdrop-blur-md px-6 py-4 border-b border-gray-100/50">
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-md px-6 py-4 border-b border-white/5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {/* Drag Handle */}
@@ -112,18 +112,18 @@ export default function CommandCenterTile({
 
             {/* Icon */}
             {icon && (
-              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/80 shadow-sm flex items-center justify-center">
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/5 border border-white/10 shadow-inner flex items-center justify-center">
                 {icon}
               </div>
             )}
 
             {/* Title & Subtitle */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-gray-900 truncate">
+              <h3 className="text-lg font-semibold text-white/90 truncate tracking-wide">
                 {title}
               </h3>
               {subtitle && (
-                <p className="text-sm text-gray-600 truncate">
+                <p className="text-xs text-cyan-400/80 font-mono uppercase tracking-wider truncate">
                   {subtitle}
                 </p>
               )}

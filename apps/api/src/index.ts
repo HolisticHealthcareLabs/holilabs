@@ -19,10 +19,11 @@ import patientRoutes from './routes/patients';
 import aiRoutes from './routes/ai';
 import exportRoutes from './routes/exports';
 import adminRoutes from './routes/admin';
-import fhirIngressRoutes from './routes/fhir-ingress';
+// import fhirIngressRoutes from './routes/fhir-ingress';
 import fhirAdminRoutes from './routes/fhir-admin';
-import fhirExportRoutes from './routes/fhir-export';
+// import fhirExportRoutes from './routes/fhir-export';
 import monitoringRoutes from './routes/monitoring';
+import telemetryRoutes from './routes/telemetry';
 
 // Monitoring
 import metricsMiddleware from './plugins/metrics-middleware';
@@ -131,11 +132,15 @@ async function start() {
     await server.register(exportRoutes, { prefix: '/exports' });
     await server.register(adminRoutes, { prefix: '/admin' });
 
+    // Telemetry (Sidecar -> Dashboard)
+    await server.register(telemetryRoutes, { prefix: '/telemetry' });
+
     // FHIR routes (conditionally register if FHIR enabled)
     if (env.ENABLE_MEDPLUM === 'true') {
-      await server.register(fhirIngressRoutes, { prefix: '/fhir/inbound' });
       await server.register(fhirAdminRoutes, { prefix: '/fhir/admin' });
-      await server.register(fhirExportRoutes, { prefix: '/fhir/export' });
+      // Legacy FHIR Routes - Disabled for Visual-Only MVP
+      // await server.register(fhirIngressRoutes, { prefix: '/fhir/inbound' });
+      // await server.register(fhirExportRoutes, { prefix: '/fhir/export' });
     }
 
     // Start server

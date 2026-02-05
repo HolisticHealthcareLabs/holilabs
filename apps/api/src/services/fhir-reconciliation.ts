@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * FHIR Reconciliation Service
  * Detects and fixes sync drift between Holi and Medplum

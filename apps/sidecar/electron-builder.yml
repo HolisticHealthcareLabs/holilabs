@@ -9,13 +9,15 @@ directories:
 mac:
   target:
     - target: dmg
-      arch: [x64, arm64]
+      arch: [arm64, x64]  # Support both Apple Silicon and Intel
     - target: zip
-      arch: [x64, arm64]
-  hardenedRuntime: true
+      arch: [arm64, x64]
+  hardenedRuntime: true  # Required for notarization
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  notarize:
+    teamId: ${APPLE_TEAM_ID}  # Uses notarytool (electron-builder 24.0+)
 
 # Windows Configuration (MSI for Group Policy deployment)
 win:
@@ -25,8 +27,9 @@ win:
     - target: nsis
       arch: [x64]
 
-  # Sign all executables
-  signAndEditExecutable: true
+  # Azure Trusted Signing (cloud HSM for EV certificate)
+  sign: "./scripts/azure-sign.js"
+  signingHashAlgorithms: ['sha256']
 
 msi:
   # GPO-friendly options
@@ -44,8 +47,9 @@ nsis:
   perMachine: true
   allowToChangeInstallationDirectory: true
 
-# Auto-update configuration (see 7.3)
+# Auto-update configuration - GitHub Releases
 publish:
-  provider: generic
-  url: https://updates.holilabs.com/sidecar
-  channel: stable
+  provider: github
+  owner: holilabs
+  repo: holilabsv2
+  private: false

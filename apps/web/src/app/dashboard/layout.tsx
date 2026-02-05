@@ -16,7 +16,6 @@ import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import ThemeToggle from '@/components/ThemeToggle';
-import { HoverMenu } from '@/components/dashboard/HoverMenu';
 import { useToolUsageTracker } from '@/hooks/useToolUsageTracker';
 import { ChevronRight, User, Clock, MessageSquare, Shield, Activity, Search, Plus, RefreshCw, XCircle, X, CheckCircle2 } from 'lucide-react';
 
@@ -47,6 +46,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { locale, t } = useLanguage();
   const { usageStats, bumpUsage, getMostUsed } = useToolUsageTracker();
   const [hoveredTool, setHoveredTool] = useState<string | null>(null);
+  const [hoveredRect, setHoveredRect] = useState<{ top: number; height: number } | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Session timeout (15 min idle for HIPAA compliance)
@@ -94,7 +94,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       setShowLoadingScreen(false);
       setIsInitialLoad(false);
     }
-  }, [router]);
+
+    // MVP Auth Protection: Check for token
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token && pathname !== '/auth/login') {
+      // Allow demo user bypass if specifically set (e.g. for dev)
+      // But for "Consolidated Login Strategy", force redirect
+      console.warn("No auth token found, redirecting to login");
+      router.push('/auth/login');
+    }
+
+  }, [router, pathname]);
 
   const handleLoadingComplete = () => {
     setShowLoadingScreen(false);
@@ -112,53 +122,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       hoverGradient: 'from-blue-600 to-indigo-700',
       shadowColor: 'blue-500/50'
     },
-    {
-      name: 'Patients',
-      href: '/dashboard/patients',
-      icon: '/icons/people (1).svg',
-      emoji: '👥',
-      gradient: 'from-violet-500 to-purple-600',
-      hoverGradient: 'from-violet-600 to-purple-700',
-      shadowColor: 'violet-500/50'
-    },
-    {
-      name: 'Calendar',
-      href: '/dashboard/appointments',
-      icon: '/icons/calendar.svg',
-      emoji: '📅',
-      gradient: 'from-green-500 to-emerald-600',
-      hoverGradient: 'from-green-600 to-emerald-700',
-      shadowColor: 'green-500/50'
-    },
-    {
-      name: 'Messages',
-      href: '/dashboard/messages',
-      icon: '/icons/communication.svg',
-      emoji: '💬',
-      gradient: 'from-sky-500 to-cyan-600',
-      hoverGradient: 'from-sky-600 to-cyan-700',
-      shadowColor: 'sky-500/50'
-    },
-    {
-      name: 'Clinical Suite',
-      href: '/dashboard/co-pilot',
-      icon: '/icons/crisis-response_center_person.svg',
-      emoji: '⚡',
-      gradient: 'from-yellow-500 to-amber-600',
-      hoverGradient: 'from-yellow-600 to-amber-700',
-      shadowColor: 'yellow-500/50',
-      subItems: [
-        { name: 'Co-Pilot', href: '/dashboard/co-pilot', icon: '/icons/artificial-intelligence (1).svg', emoji: '⚡', gradient: 'from-yellow-500 to-amber-600' },
-        { name: 'Prevention', href: '/dashboard/prevention', icon: '/icons/health (1).svg', emoji: '🛡️', gradient: 'from-emerald-500 to-teal-600' },
-        { name: 'Prescriptions', href: '/dashboard/prescriptions', icon: '/icons/rx (1).svg', emoji: '💊', gradient: 'from-orange-500 to-red-600' },
-        { name: 'Forms', href: '/dashboard/forms', icon: '/icons/clinical-f.svg', emoji: '📋', gradient: 'from-indigo-500 to-purple-600' },
-        { name: 'Governance', href: '/dashboard/governance', icon: '/icons/shield.svg', emoji: '🔐', gradient: 'from-red-500 to-orange-600' },
-        { name: 'Revenue Auditor', href: '/dashboard/auditor', icon: '/icons/diagnostics (1).svg', emoji: '💰', gradient: 'from-emerald-500 to-green-600' },
-        { name: 'Analytics', href: '/dashboard/analytics', icon: '/icons/diagnostics (1).svg', emoji: '📈', gradient: 'from-blue-500 to-cyan-600' },
-        { name: 'Share Profile', href: '/dashboard/share-profile', icon: '/icons/telemedicine (1).svg', emoji: '🔗', gradient: 'from-teal-500 to-green-600' },
-        { name: 'Credentials', href: '/dashboard/credentials', icon: '/icons/doctor (1).svg', emoji: '🏅', gradient: 'from-yellow-500 to-amber-600' },
-      ]
-    },
   ];
 
   const handleSignOut = async () => {
@@ -167,46 +130,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const hasMultipleOptions = (item: NavItem) => (item.subItems?.length || 0) > 1;
 
-  const HoverTooltip = ({ item }: { item: NavItem }) => {
-    // Only show hover tooltips when collapsed (expanded sidebar already has labels)
-    if (!sidebarCollapsed) return null;
-
-    const showSubtitlesOnly = hasMultipleOptions(item);
-
-    return (
-      <div className="absolute left-20 top-1/2 -translate-y-1/2 z-50">
-        <div className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 ease-out bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 px-4 py-2 rounded-xl shadow-2xl whitespace-nowrap pointer-events-auto">
-          {showSubtitlesOnly ? (
-            <div className="flex flex-col gap-1">
-              {(item.subItems || []).map((sub) => (
-                <Link
-                  key={sub.href}
-                  href={sub.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className="text-sm font-semibold text-gray-900 dark:text-white hover:underline"
-                >
-                  {sub.name}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="font-semibold text-sm text-gray-900 dark:text-white">{item.name}</p>
-          )}
-
-          {item.badge && !showSubtitlesOnly ? (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-              {item.badge}
-            </span>
-          ) : null}
-
-          {/* Arrow pointer */}
-          <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1">
-            <div className="w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200/80 dark:border-gray-700/80 transform rotate-[-45deg]" />
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // HoverTooltip moved to main render logic for portal-like behavior
 
   return (
     <>
@@ -309,38 +233,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 const currentPath = pathname || '';
                 const isActive = currentPath === item.href || (item.href !== '/dashboard' && currentPath.startsWith(item.href));
 
-                const handleMouseEnter = () => {
+                const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
                   if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                  const rect = e.currentTarget.getBoundingClientRect();
                   setHoveredTool(item.name);
+                  setHoveredRect({ top: rect.top, height: rect.height });
                 };
 
                 const handleMouseLeave = () => {
                   hoverTimeoutRef.current = setTimeout(() => {
                     setHoveredTool(null);
+                    setHoveredRect(null);
                   }, 200);
-                };
-
-                const getSubItems = () => {
-                  if (item.name === 'Clinical Suite' || item.name === 'Dashboard') {
-                    return [
-                      { label: 'Scribe Co-Pilot', href: '/dashboard/co-pilot', icon: <MessageSquare className="w-4 h-4" /> },
-                      { label: 'Safety Governance', href: '/dashboard/governance', icon: <Shield className="w-4 h-4" /> },
-                      { label: 'System Analytics', href: '/dashboard', icon: <Activity className="w-4 h-4" /> },
-                    ];
-                  }
-                  if (item.name === 'Patients') {
-                    return [
-                      { label: 'Patient Directory', href: '/dashboard/patients', icon: <User className="w-4 h-4" /> },
-                      { label: 'Add New Patient', href: '/dashboard/patients', icon: <Plus className="w-4 h-4" /> },
-                    ];
-                  }
-                  if (item.name === 'Calendar') {
-                    return [
-                      { label: 'Schedule View', href: '/dashboard/calendar', icon: <Clock className="w-4 h-4" /> },
-                      { label: 'List Appointments', href: '/dashboard/calendar', icon: <Activity className="w-4 h-4" /> },
-                    ];
-                  }
-                  return [];
                 };
 
                 return (
@@ -350,15 +254,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                   >
-                    {/* Hover Menu (Cascading) */}
-                    <HoverMenu
-                      toolId={item.name}
-                      isOpen={hoveredTool === item.name}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                      items={getSubItems()}
-                    />
-
                     {/* Circular Gradient Tile */}
                     <Link
                       href={item.href}
@@ -388,13 +283,67 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         />
                       </div>
                     </Link>
-
-                    <HoverTooltip item={item} />
                   </div>
                 );
               })}
 
             </nav>
+
+            {/* Portal-like Hover Menu/Tooltip */}
+            {hoveredTool && hoveredRect && sidebarCollapsed && (
+              <div
+                className="fixed left-20 z-[60]"
+                style={{ top: hoveredRect.top + (hoveredRect.height / 2) }}
+                onMouseEnter={() => {
+                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                }}
+                onMouseLeave={() => {
+                  hoverTimeoutRef.current = setTimeout(() => {
+                    setHoveredTool(null);
+                    setHoveredRect(null);
+                  }, 200);
+                }}
+              >
+                <div className="bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-2xl pointer-events-auto -translate-y-1/2 ml-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                  {(() => {
+                    const item = navItems.find(i => i.name === hoveredTool);
+                    if (!item) return null;
+                    const showSubtitlesOnly = hasMultipleOptions(item);
+
+                    return (
+                      <div className="p-2 min-w-[180px]">
+                        {showSubtitlesOnly ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 border-b border-gray-100 dark:border-gray-700 pb-1">
+                              {item.name}
+                            </div>
+                            {(item.subItems || []).map((sub) => (
+                              <Link
+                                key={sub.href}
+                                href={sub.href}
+                                onClick={() => setSidebarOpen(false)}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                              >
+                                <span>{sub.emoji}</span>
+                                <span>{sub.name}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="px-3 py-1.5 font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                            <span>{item.emoji}</span>
+                            <span>{item.name}</span>
+                          </div>
+                        )}
+
+                        {/* Arrow pointer */}
+                        <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 w-2 h-2 bg-white dark:bg-gray-800 border-l border-b border-gray-200/80 dark:border-gray-700/80 transform rotate-45" />
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
 
             {/* Enhanced animations */}
             <style jsx>{`

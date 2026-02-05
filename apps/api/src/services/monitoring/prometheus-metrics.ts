@@ -301,13 +301,13 @@ export async function collectFhirSyncMetrics(prisma: PrismaClient): Promise<void
   try {
     // Count encounters never synced
     const encountersNotSynced = await prisma.encounter.count({
-      where: { lastSyncedToFhir: null },
+      where: { lastSyncedAt: null },
     });
     fhirSyncNotSynced.set({ resource_type: 'Encounter' }, encountersNotSynced);
 
     // Count observations never synced
     const observationsNotSynced = await prisma.observation.count({
-      where: { lastSyncedToFhir: null },
+      where: { lastSyncedAt: null },
     });
     fhirSyncNotSynced.set({ resource_type: 'Observation' }, observationsNotSynced);
 
@@ -315,7 +315,7 @@ export async function collectFhirSyncMetrics(prisma: PrismaClient): Promise<void
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const encountersStale = await prisma.encounter.count({
       where: {
-        lastSyncedToFhir: { lt: oneHourAgo },
+        lastSyncedAt: { lt: oneHourAgo },
         updatedAt: { gt: oneHourAgo },
       },
     });
@@ -324,7 +324,7 @@ export async function collectFhirSyncMetrics(prisma: PrismaClient): Promise<void
     // Count observations with stale sync
     const observationsStale = await prisma.observation.count({
       where: {
-        lastSyncedToFhir: { lt: oneHourAgo },
+        lastSyncedAt: { lt: oneHourAgo },
         updatedAt: { gt: oneHourAgo },
       },
     });

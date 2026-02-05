@@ -1,532 +1,374 @@
 'use client';
-export const dynamic = 'force-dynamic';
+
+import React, { useState, useEffect } from 'react';
 
 /**
- * Dashboard Home - Command Center for Physicians
- *
- * REDESIGNED Phase 1: 100x Improvement
- * - Hospital-grade UI with Apple polish
- * - Epic/Cerner institutional trust
- * - Command palette (Cmd+K)
- * - Enhanced stat cards with trend charts
- * - Smart notifications with live updates
- * - Rich activity timeline
- * - AI-powered clinical insights
- * - Responsive command center layout
+ * Universal Validation Console (Control Plane)
+ * 
+ * The "God View" for C-Suite and Admins.
+ * Visualizes the "Shadow Mode" validations from the Sidecar agents.
  */
-
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { useLanguage } from '@/contexts/LanguageContext';
-import ImprovedWelcomeModal from '@/components/onboarding/ImprovedWelcomeModal';
-import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist';
-import DemoModeToggle from '@/components/demo/DemoModeToggle';
-
-// Demo data
-import {
-  generateDemoPatients,
-  generateDemoAppointments,
-  getDemoStats,
-  isDemoModeEnabled,
-  type DemoPatient
-} from '@/lib/demo/demo-data-generator';
-import { logger } from '@/lib/logger';
-
-// Phase 1 Components
-import {
-  EnhancedStatCard,
-  EnhancedStatCardGrid,
-  EnhancedStatCardSkeleton,
-} from '@/components/dashboard/EnhancedStatCard';
-import { CommandPalette, useCommandPalette } from '@/components/dashboard/CommandPalette';
-import { SmartNotifications, NotificationBadge } from '@/components/dashboard/SmartNotifications';
-import { ActivityTimeline, Activity } from '@/components/dashboard/ActivityTimeline';
-import { AIInsights } from '@/components/dashboard/AIInsights';
-import TaskManagementPanel from '@/components/tasks/TaskManagementPanel';
-import { FloatingActionButton } from '@/components/dashboard/FloatingActionButton';
-import { WidgetStore, type WidgetConfig } from '@/components/dashboard/WidgetStore';
-import { CommandKPatientSelector } from '@/components/dashboard/CommandKPatientSelector';
-import { FocusTimer } from '@/components/dashboard/FocusTimer';
-import { QuickActionsMenu } from '@/components/dashboard/QuickActionsMenu';
-import {
-  AITimeReclaimedWidgetRadial,
-  PendingResultsWidget,
-  AdherenceScoreWidget,
-  BillableValueWidget,
-} from '@/components/dashboard/KPIWidgets';
-import CorrectionMetricsWidget from '@/components/dashboard/CorrectionMetricsWidget';
-import { ReviewQueueWidget } from '@/components/dashboard/ReviewQueueWidget';
-
-export default function DashboardCommandCenter() {
-  const router = useRouter();
-  const { t } = useLanguage();
-  const { isOpen: isCommandPaletteOpen, close: closeCommandPalette } = useCommandPalette();
-  const [clinicianId, setClinicianId] = useState<string | null>(null);
-
-  // State
-  const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState('Good morning'); // Default to avoid hydration mismatch
-  const [currentDate, setCurrentDate] = useState('');
-  const [showNotificationsPanel, setShowNotificationsPanel] = useState(false);
-
-  // Stats data
-  const [stats, setStats] = useState({
-    totalPatients: 0,
-    activePatients: 0,
-    todayAppointments: 0,
-    prescriptionsToday: 0,
+export default function DashboardPage() {
+  const [metrics, setMetrics] = useState({
+    trustScore: 98.4,
+    interventions: 142,
+    hardBrakes: 12,
+    uptime: '99.99%',
+    protocolsActive: 8530
   });
 
-  // Trend data for sparklines (last 7 days)
-  const [trendData] = useState({
-    patients: [120, 125, 128, 132, 135, 140, 145],
-    appointments: [8, 12, 10, 15, 14, 18, 16],
-    prescriptions: [5, 7, 6, 8, 10, 9, 12],
-  });
+  const [logs, setLogs] = useState<any[]>([]);
 
-  // Recent activities
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  // TOUR STATE
+  const [tourStep, setTourStep] = useState<number | null>(null);
 
-  // Notifications count
-  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(5);
-  const [hasCriticalNotifications, setHasCriticalNotifications] = useState(true);
-  const [showWidgetStore, setShowWidgetStore] = useState(false);
+  const TOUR_STEPS = [
+    {
+      target: 'trust-score',
+      title: 'Global Trust Score',
+      description: 'primary metric of your clinical network health. It aggregates real-time adherence to protocols across all workstations.',
+      position: 'right'
+    },
+    {
+      target: 'stats-grid',
+      title: 'Safety Interventions',
+      description: 'Live counters of "Hard Brakes" (blocked orders) and passive nudges. Each number represents a potential error prevented.',
+      position: 'bottom'
+    },
+    {
+      target: 'infra-health',
+      title: 'Infrastructure Status',
+      description: 'Monitor the "Ghost Layer" agents. Green indicates the Sidecar is active and scanning pixels on the local machines.',
+      position: 'right'
+    },
+    {
+      target: 'live-stream',
+      title: 'Live Validation Stream',
+      description: 'The heartbeat of the system. Watch real-time validation events tailored to your specific clinical SOPs as they happen.',
+      position: 'left'
+    }
+  ];
 
-  // Widget configuration
-  const [widgets, setWidgets] = useState<WidgetConfig[]>([
-    { id: 'ai-time', name: 'AI Time Reclaimed', description: 'Track time saved with AI', enabled: true, category: 'kpi' },
-    { id: 'pending-results', name: 'Pending Results', description: 'Lab results awaiting review', enabled: true, category: 'clinical' },
-    { id: 'adherence', name: 'Adherence Score', description: 'Patient medication adherence', enabled: true, category: 'kpi' },
-    { id: 'billable', name: 'Billable Value', description: 'Monthly billable amount', enabled: true, category: 'kpi' },
-    { id: 'rlhf-metrics', name: 'AI Training Metrics', description: 'RLHF correction analytics', enabled: true, category: 'kpi' },
-    { id: 'focus-timer', name: 'Flow State Timer', description: 'Focus timer with completion sounds', enabled: true, category: 'productivity' },
-  ]);
+  // PREVENTS HYDRATION MISMATCH
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
-  const toggleWidget = (widgetId: string) => {
-    setWidgets((prev) =>
-      prev.map((w) => (w.id === widgetId ? { ...w, enabled: !w.enabled } : w))
-    );
-  };
+  // Ruleset Version State
+  const [rulesVersion, setRulesVersion] = useState<string>('Loading...');
 
+  // Poll the real API
   useEffect(() => {
-    // Set time-based greeting and current date
-    const now = new Date();
-    const hour = now.getHours();
-    if (hour < 12) setGreeting('Good morning');
-    else if (hour < 18) setGreeting('Good afternoon');
-    else setGreeting('Good evening');
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/telemetry/stream');
+        if (res.ok) {
+          const data = await res.json();
+          setLogs(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch telemetry stream", e);
+      }
+    };
 
-    // Set formatted date
-    setCurrentDate(now.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }));
+    const fetchVersion = async () => {
+      try {
+        const res = await fetch('/api/governance/manifest');
+        if (res.ok) {
+          const data = await res.json();
+          setRulesVersion(data.version);
+        }
+      } catch (e) {
+        console.error("Failed to fetch rules manifest", e);
+        setRulesVersion('OFFLINE');
+      }
+    }
 
-    // Fetch dashboard data
-    fetchDashboardData();
-
-    // Fetch clinician identity for widgets that require it (tasks).
-    fetch('/api/auth/whoami', { cache: 'no-store' })
-      .then((r) => r.json().catch(() => ({})))
-      .then((d) => {
-        const id = d?.user?.id || d?.data?.user?.id || d?.id;
-        if (typeof id === 'string') setClinicianId(id);
-      })
-      .catch(() => {});
+    fetchLogs();
+    fetchVersion();
+    const timer = setInterval(fetchLogs, 2000);
+    return () => clearInterval(timer);
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      // Check if demo mode is enabled
-      const demoMode = isDemoModeEnabled();
-      let patients: any[];
-
-      if (demoMode) {
-        // Use demo data
-        const demoPatients = generateDemoPatients(10);
-        const demoStats = getDemoStats(demoPatients);
-
-        setStats({
-          totalPatients: demoStats.totalPatients,
-          activePatients: demoStats.activePatients,
-          todayAppointments: demoStats.patientsWithUpcomingAppointments,
-          prescriptionsToday: demoPatients.reduce((acc, p) => acc + p.medications.length, 0),
-        });
-
-        patients = demoPatients;
-      } else {
-        // Fetch real patients from API
-        const patientsRes = await fetch('/api/patients');
-        const patientsData = await patientsRes.json();
-
-        if (patientsData.success) {
-          patients = patientsData.data;
-          setStats({
-            totalPatients: patients.length,
-            activePatients: patients.filter((p: any) => p.isActive).length,
-            todayAppointments: patients.filter((p: any) => p.appointments?.length > 0).length,
-            prescriptionsToday: patients.reduce((acc: number, p: any) => acc + (p.medications?.length || 0), 0),
-          });
-        } else {
-          patients = [];
-        }
-      }
-
-      // Generate recent activity from patients (works for both demo and real data)
-      const activities: Activity[] = patients.slice(0, 8).map((p: any, index: number) => ({
-        id: `activity-${p.id}`,
-        type: index % 4 === 0 ? 'appointment' : index % 4 === 1 ? 'prescription' : index % 4 === 2 ? 'note' : 'lab_result',
-        action:
-          index % 4 === 0
-            ? 'Appointment completed'
-            : index % 4 === 1
-              ? 'Prescription signed'
-              : index % 4 === 2
-              ? 'Clinical note added'
-              : 'Lab results reviewed',
-          description:
-            index % 4 === 0
-              ? 'Follow-up consultation completed successfully'
-              : index % 4 === 1
-              ? 'Amoxicillin 500mg prescribed for 7 days'
-              : index % 4 === 2
-              ? 'SOAP note documented with AI Scribe'
-              : 'Complete blood count - all values normal',
-          timestamp: new Date(Date.now() - index * 30 * 60 * 1000),
-          patientId: p.id,
-          patientName: `${p.firstName} ${p.lastName}`,
-          actionUrl: `/dashboard/patients/${p.id}`,
-          metadata:
-            index % 4 === 3
-              ? {
-                  value: 'Normal',
-                  status: 'normal' as const,
-                }
-              : undefined,
-        }));
-
-      setRecentActivities(activities);
-    } catch (error) {
-      logger.error({
-        event: 'dashboard_data_fetch_error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    } finally {
-      setLoading(false);
+  const nextStep = () => {
+    if (tourStep === null) return;
+    if (tourStep < TOUR_STEPS.length - 1) {
+      setTourStep(tourStep + 1);
+    } else {
+      setTourStep(null); // End tour
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mb-4" />
-          <h3 className="text-xl font-bold text-foreground">
-            Loading...
-          </h3>
-        </div>
-      </div>
-    );
-  }
+  if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Onboarding */}
-      <ImprovedWelcomeModal />
-      <OnboardingChecklist />
+    <div className="dark min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 relative">
 
-      {/* Command Palette */}
-      <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} />
+      {/* TOUR BACKDROP */}
+      {tourStep !== null && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 transition-opacity duration-500 animate-in fade-in" onClick={() => setTourStep(null)} />
+      )}
 
-      {/* Widget Store */}
-      <WidgetStore
-        widgets={widgets}
-        onToggle={toggleWidget}
-        isOpen={showWidgetStore}
-        onClose={() => setShowWidgetStore(false)}
-      />
-
-      {/* FAB */}
-      <FloatingActionButton onClick={() => setShowWidgetStore(true)} />
-
-      {/* Top Header - Redesigned */}
-      <header className="bg-background/80 backdrop-blur-xl border-b border-border sticky top-0 z-20 shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground" suppressHydrationWarning>
-                {greeting}, Dr.
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1" suppressHydrationWarning>
-                {currentDate || 'Loading...'}
-              </p>
+      {/* TOUR CONTROLS (IF ACTIVE) */}
+      {tourStep !== null && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex gap-4">
+          <div className="bg-slate-900 border border-white/10 p-6 rounded-2xl shadow-2xl max-w-sm animate-in slide-in-from-bottom-4 zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest">
+                Tour Step {tourStep + 1} / {TOUR_STEPS.length}
+              </span>
+              <button onClick={() => setTourStep(null)} className="text-slate-500 hover:text-white transition-colors">✕</button>
             </div>
+            <h3 className="text-xl font-bold text-white mb-2">{TOUR_STEPS[tourStep].title}</h3>
+            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+              {TOUR_STEPS[tourStep].description}
+            </p>
+            <button
+              onClick={(e) => { e.stopPropagation(); nextStep(); }}
+              className="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-lg transition-all"
+            >
+              {tourStep === TOUR_STEPS.length - 1 ? 'Finish Tour' : 'Next Step →'}
+            </button>
+          </div>
+        </div>
+      )}
 
-            {/* Header actions */}
-            <div className="flex items-center gap-3">
-              {/* Demo Mode Toggle */}
-              <DemoModeToggle />
-
-              {/* Command K Patient Selector */}
-              <CommandKPatientSelector />
-
-              {/* Notifications */}
-              <NotificationBadge
-                count={unreadNotificationsCount}
-                onClick={() => setShowNotificationsPanel(!showNotificationsPanel)}
-                hasCritical={hasCriticalNotifications}
-              />
-
-              {/* View patients button */}
-              <button
-                onClick={() => router.push('/dashboard/patients')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium shadow-sm hover:shadow-md"
-              >
-                View Patients
-              </button>
+      {/* HEADER */}
+      <header className={`h-16 border-b border-white/10 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur-md sticky top-0 ${tourStep !== null ? 'z-30' : 'z-50'}`}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-cyan-500 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+            <span className="font-bold text-slate-950 text-lg">C</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-semibold tracking-wide text-sm text-slate-100">
+              CORTEX <span className="text-white/40 font-light">ASSURANCE LAYER</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-cyan-400 font-mono tracking-wider">
+                CONTROL PLANE
+              </span>
+              <span className="text-[9px] font-mono text-slate-500 border border-white/10 px-1 rounded hover:text-white cursor-help" title="Active Ruleset Version">
+                {rulesVersion}
+              </span>
             </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <button
+            onClick={() => setTourStep(0)}
+            className="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors uppercase tracking-wider flex items-center gap-2"
+          >
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            Start Interactive Tour
+          </button>
+
+          <a
+            href="/download"
+            className="hidden md:flex items-center gap-2 px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded-lg transition-colors border border-cyan-500/20"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            DOWNLOAD AGENT
+          </a>
+
+          <div className="flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]" />
+            SYSTEM OPTIMAL
+          </div>
+
+          <div className="h-8 w-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-xs text-white/50">
+            AD
           </div>
         </div>
       </header>
 
-      {/* Main Content - Command Center Layout */}
-      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* KPI Widgets (responsive bento row) */}
-        <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-6 mb-8">
-          {widgets.find((w) => w.id === 'ai-time')?.enabled && (
-            <div className="min-w-0 md:col-span-3 xl:col-span-3">
-              <AITimeReclaimedWidgetRadial />
-            </div>
-          )}
-          {widgets.find((w) => w.id === 'pending-results')?.enabled && (
-            <div className="min-w-0 md:col-span-3 xl:col-span-3">
-              <PendingResultsWidget />
-            </div>
-          )}
-          {widgets.find((w) => w.id === 'adherence')?.enabled && (
-            <div className="min-w-0 md:col-span-3 xl:col-span-3">
-              <AdherenceScoreWidget />
-            </div>
-          )}
-          {widgets.find((w) => w.id === 'billable')?.enabled && (
-            <div className="min-w-0 md:col-span-3 xl:col-span-3">
-              <BillableValueWidget />
-            </div>
-          )}
-          {widgets.find((w) => w.id === 'rlhf-metrics')?.enabled && (
-            <div className="min-w-0 md:col-span-6 xl:col-span-6">
-              <CorrectionMetricsWidget
-                dateRange={{
-                  startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-                  endDate: new Date(),
-                }}
-              />
-            </div>
-          )}
-        </div>
+      {/* MAIN GRID */}
+      <main className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto">
 
-        {/* Key Metrics (responsive, no overflow/overlap) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8 dashboard-stats">
-          <div className="min-w-0">
-            <EnhancedStatCard
-              label="Total Active Patients"
-              value={stats.totalPatients}
-              change={{ value: 8.2, trend: 'up', period: 'vs last week' }}
-              trendData={trendData.patients}
-              icon={
-                <div className="relative w-8 h-8">
-                  <Image src="/icons/people (1).svg" alt="Patients" width={32} height={32} className="dark:invert" />
-                </div>
-              }
-              variant="primary"
-              onClick={() => router.push('/dashboard/patients')}
-              tooltip={{
-                title: 'Patient Statistics',
-                details: [
-                  { label: 'Active patients', value: stats.activePatients },
-                  { label: 'New this week', value: 12 },
-                  { label: 'Total appointments', value: 145 },
-                ],
-              }}
-              badge={{ text: 'Growing', variant: 'success' }}
-            />
+        {/* LEFT COLUMN: METRICS (4 cols) */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+
+          {/* TRUST SCORE CARD (HERO) */}
+          <div className={`
+             p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border border-white/5 relative overflow-hidden group shadow-2xl transition-all duration-500
+             ${tourStep === 0 ? 'scale-105 z-50 ring-2 ring-cyan-500 shadow-[0_0_50px_rgba(6,182,212,0.3)]' : ''}
+          `}>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-cyan-500/20 transition-all duration-1000"></div>
+
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-white/50 text-xs font-bold uppercase tracking-[0.2em]">Global Trust Score</h3>
+              <span className="text-emerald-400 text-xs font-mono bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">▲ 0.2% vs Last Week</span>
+            </div>
+
+            <div className="flex items-end gap-4 mb-6">
+              <span className="text-7xl font-light text-white tracking-tighter shadow-cyan-500/50 drop-shadow-lg">{metrics.trustScore}</span>
+              <span className="text-2xl text-white/30 font-light mb-2">/ 100</span>
+            </div>
+
+            <div className="h-2 w-full bg-slate-700/50 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-600 w-[98.4%] shadow-[0_0_15px_rgba(6,182,212,0.8)]"></div>
+            </div>
+            <p className="mt-4 text-xs text-slate-400 leading-relaxed">
+              The network is actively preventing <strong className="text-white">99.8%</strong> of potential adverse events.
+            </p>
           </div>
 
-          <div className="min-w-0">
-            <EnhancedStatCard
-              label="Scheduled Appointments"
-              value={stats.todayAppointments}
-              change={{ value: 12.5, trend: 'up', period: 'vs yesterday' }}
-              trendData={trendData.appointments}
-              icon={
-                <div className="relative w-8 h-8">
-                  <Image src="/icons/calendar.svg" alt="Appointments" width={32} height={32} className="dark:invert" />
-                </div>
-              }
-              variant="success"
-              onClick={() => router.push('/dashboard/appointments')}
-              tooltip={{
-                title: "Today's Schedule",
-                details: [
-                  { label: 'Completed', value: 3 },
-                  { label: 'Upcoming', value: 5 },
-                  { label: 'Cancelled', value: 0 },
-                ],
-              }}
-              badge={{ text: 'Today', variant: 'info' }}
-            />
+          {/* SECONDARY STATS */}
+          <div className={`
+             grid grid-cols-2 gap-4 transition-all duration-500
+             ${tourStep === 1 ? 'relative z-50 scale-105 ring-2 ring-cyan-500 rounded-xl bg-slate-900/80 p-2 -m-2' : ''}
+          `}>
+            <StatCard title="Interventions" value={metrics.interventions} color="text-white" sub="Lives Protected" />
+            <StatCard title="Hard Brakes" value={metrics.hardBrakes} color="text-red-400" sub="Critical Stops" isDanger />
+            <StatCard title="Uptime" value={metrics.uptime} color="text-emerald-400" sub="System Status" />
+            <StatCard title="Protocols" value={metrics.protocolsActive.toLocaleString()} color="text-blue-400" sub="Active Rules" />
           </div>
 
-          <div className="min-w-0">
-            <EnhancedStatCard
-              label="Signed Prescriptions"
-              value={stats.prescriptionsToday}
-              change={{ value: 5.3, trend: 'up', period: 'vs last week' }}
-              trendData={trendData.prescriptions}
-              icon={
-                <div className="relative w-8 h-8">
-                  <Image src="/icons/rx.svg" alt="Prescriptions" width={32} height={32} className="dark:invert" />
-                </div>
-              }
-              variant="warning"
-              onClick={() => router.push('/dashboard/prescriptions')}
-              tooltip={{
-                title: 'Prescription Activity',
-                details: [
-                  { label: 'Signed today', value: stats.prescriptionsToday },
-                  { label: 'Pending signature', value: 0 },
-                  { label: 'This month', value: 87 },
-                ],
-              }}
-            />
-          </div>
-
-          <div className="min-w-0">
-            <EnhancedStatCard
-              label="Clinical Notes"
-              value={24}
-              change={{ value: 18.7, trend: 'up', period: 'vs last week' }}
-              trendData={[18, 20, 19, 22, 21, 23, 24]}
-              icon={
-                <div className="relative w-8 h-8">
-                  <Image
-                    src="/icons/i-note_action.svg"
-                    alt="Clinical Notes"
-                    width={32}
-                    height={32}
-                    className="dark:invert"
-                  />
-                </div>
-              }
-              variant="default"
-              onClick={() => router.push('/dashboard/notes')}
-              tooltip={{
-                title: 'Documentation',
-                details: [
-                  { label: 'Notes this week', value: 24 },
-                  { label: 'AI Scribe sessions', value: 18 },
-                  { label: 'Avg time saved', value: '8 min' },
-                ],
-              }}
-              badge={{ text: 'This week', variant: 'info' }}
-            />
+          {/* SYSTEM HEALTH LIST */}
+          <div className={`
+             bg-slate-900/50 border border-white/5 rounded-2xl p-6 flex flex-col gap-4 transition-all duration-500
+             ${tourStep === 2 ? 'relative z-50 scale-105 ring-2 ring-cyan-500 bg-slate-900' : ''}
+          `}>
+            <h3 className="text-white/50 text-xs font-bold uppercase tracking-[0.2em] mb-2">Infrastructure Health</h3>
+            <HealthRow label="Ontology Core (RxNorm)" status="healthy" latency="12ms" />
+            <HealthRow label="Deep Edge Inference" status="healthy" latency="45ms" />
+            <HealthRow label="Privacy Vault (Zero-Knowledge)" status="healthy" latency="OK" />
+            <HealthRow label="Sidecar Fleet (Desktop)" status="warning" latency="92% Online" />
           </div>
         </div>
 
-        {/* Command Center Grid (bento columns; prevents overlap at odd widths) */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          {/* Left Column - Activity & AI Insights */}
-          <div className="min-w-0 xl:col-span-8 space-y-6">
-            {/* Activity Timeline */}
-            <ActivityTimeline
-              activities={recentActivities}
-              maxHeight="500px"
-              onActivityClick={(activity) => {
-                if (activity.actionUrl) {
-                  router.push(activity.actionUrl);
-                }
-              }}
-              showPatientInfo={true}
-              groupByDate={true}
-            />
-
-            {/* AI Insights */}
-            <AIInsights
-              maxHeight="600px"
-              onInsightAction={(id, action) => {
-                logger.info({
-                  event: 'dashboard_insight_action',
-                  insightId: id,
-                  action: action
-                });
-              }}
-              showConfidence={true}
-              showEvidence={true}
-            />
+        {/* RIGHT COLUMN: LIVE STREAM (8 cols) */}
+        <div className={`
+           lg:col-span-8 flex flex-col bg-slate-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm h-[calc(100vh-8rem)] transition-all duration-500
+           ${tourStep === 3 ? 'relative z-50 scale-[1.02] ring-2 ring-cyan-500 bg-slate-900' : ''}
+        `}>
+          <div className="h-12 border-b border-white/5 px-6 flex items-center justify-between bg-white/5">
+            <span className="text-xs font-bold uppercase tracking-widest text-white/70">Live Validation Stream</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              <span className="text-[10px] font-mono text-white/50">LIVE • ENCRYPTED</span>
+            </div>
           </div>
 
-          {/* Right Column - Notifications & Quick Actions */}
-          <div className="min-w-0 xl:col-span-4 space-y-6">
-            {/* Review Queue Widget */}
-            <ReviewQueueWidget />
-
-            {/* Smart Notifications */}
-            {showNotificationsPanel && (
-              <SmartNotifications
-                maxHeight="500px"
-                onNotificationClick={(notification) => {
-                  logger.info({
-                    event: 'dashboard_notification_clicked',
-                    notificationId: notification.id,
-                    notificationType: notification.type
-                  });
-                }}
-                onDismiss={(id) => {
-                  setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
-                }}
-                onMarkAsRead={(id) => {
-                  setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
-                }}
-                realTimeEnabled={false}
-              />
-            )}
-
-            {/* Quick Actions Card with Expandable Menu */}
-            <QuickActionsMenu />
-
-            {/* Focus Timer */}
-            {widgets.find((w) => w.id === 'focus-timer')?.enabled && (
-              <FocusTimer
-                onComplete={() => {
-                  logger.info({
-                    event: 'dashboard_focus_session_complete',
-                    timestamp: new Date().toISOString()
-                  });
-                }}
-              />
-            )}
-
-            {/* Task Management Widget */}
-            <div className="bg-card/40 border border-border rounded-xl shadow-sm p-6 backdrop-blur">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-foreground">
-                  My Tasks
-                </h2>
-                <button
-                  onClick={() => router.push('/dashboard/tasks')}
-                  className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center transition-colors"
-                >
-                  View All →
-                </button>
+          <div className="flex-1 overflow-y-auto p-0 custom-scrollbar">
+            {logs.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-white/20 gap-4">
+                <div className="w-16 h-16 rounded-full border-2 border-dashed border-white/20 animate-spin-slow"></div>
+                <span className="text-sm font-mono tracking-widest">WAITING FOR SIGNALS...</span>
               </div>
-              <TaskManagementPanel userId={clinicianId || undefined} compact={true} />
-            </div>
+            ) : (
+              <div className="flex flex-col animate-in fade-in duration-500">
+                {logs.map((log) => (
+                  <LogEntry key={log.id} log={log} />
+                ))}
+              </div>
+            )}
           </div>
+        </div>
+
+      </main>
+    </div>
+  );
+}
+
+// --- SUBCOMPONENTS ---
+
+function StatCard({ title, value, color, sub, isDanger }: any) {
+  return (
+    <div className={`
+      bg-slate-900/50 border p-5 rounded-xl transition-all duration-300 hover:scale-[1.02] cursor-default
+      ${isDanger ? 'border-red-500/20 bg-red-500/5 hover:bg-red-500/10' : 'border-white/5 hover:border-white/10'}
+    `}>
+      <div className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-2">{title}</div>
+      <div className={`text-3xl font-light ${color} tracking-tight mb-1`}>{value}</div>
+      <div className={`text-[10px] ${isDanger ? 'text-red-400/70' : 'text-slate-500'}`}>{sub}</div>
+    </div>
+  );
+}
+
+function HealthRow({ label, status, latency }: any) {
+  const isHealthy = status === 'healthy';
+  const color = isHealthy ? 'bg-emerald-500' : 'bg-amber-500';
+  const textColor = isHealthy ? 'text-emerald-500' : 'text-amber-500';
+
+  return (
+    <div className="flex items-center justify-between text-xs py-2 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] px-2 rounded -mx-2 transition-colors">
+      <span className="text-slate-400 font-medium">{label}</span>
+      <div className="flex items-center gap-3">
+        <span className="font-mono text-[10px] text-slate-600">{latency}</span>
+        <div className="flex items-center gap-2 bg-slate-950 px-2 py-1 rounded border border-white/5">
+          <span className={`w-1.5 h-1.5 rounded-full ${color}`} />
+          <span className={`font-bold tracking-wider text-[9px] ${textColor}`}>
+            {status.toUpperCase()}
+          </span>
         </div>
       </div>
     </div>
   );
 }
+
+function LogEntry({ log }: any) {
+  const isRed = log.level === 'CRITICAL';
+
+  return (
+    <div className={`
+      flex items-start gap-4 p-5 border-b border-white/5 hover:bg-white/[0.02] transition-all duration-200 group
+      ${isRed ? 'bg-red-500/[0.02]' : ''}
+    `}>
+      <div className="w-16 pt-0.5 flex flex-col items-end gap-1">
+        <span className="font-mono text-[10px] text-slate-500 group-hover:text-slate-300 transition-colors">
+          {log.time}
+        </span>
+        <span className="font-mono text-[9px] text-slate-700 bg-slate-900 px-1 rounded">
+          {log.id}
+        </span>
+      </div>
+
+      <div className={`
+         w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0 shadow-lg border
+         ${isRed
+          ? 'bg-red-500/10 text-red-500 border-red-500/20 shadow-red-500/10'
+          : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-emerald-500/10'}
+       `}>
+        {isRed ? '🛡️' : '✓'}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-3 mb-1.5">
+          <span className={`text-sm font-bold tracking-wide ${isRed ? 'text-red-400' : 'text-slate-200'}`}>
+            {log.title}
+          </span>
+          {log.isDeterminstic && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 uppercase tracking-widest">
+              Deterministic
+            </span>
+          )}
+        </div>
+
+        <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
+          {log.message}
+        </p>
+
+        <div className="mt-3 flex gap-2">
+          {log.tags.map((tag: string, i: number) => (
+            <span key={i} className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 border border-white/5 rounded-md hover:border-white/20 hover:text-slate-300 transition-colors cursor-default">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="w-24 text-right pt-1 hidden sm:block">
+        <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
+          User ID
+        </div>
+        <div className="text-xs font-mono text-slate-400">
+          {log.userId}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- MOCK DATA GENERATOR ---
+
+// Mock generator removed in favor of real API polling

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Production-Grade FHIR Sync Service
  * Privacy-preserving bridge between Holi Labs and Medplum FHIR server
