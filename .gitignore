@@ -14,6 +14,10 @@ test-results/
 .next/
 out/
 
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
 # Production build
 dist/
 build/
@@ -68,6 +72,17 @@ cosign-*.key
 
 # Prisma
 prisma/migrations/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Application logs
+logs/
+*.log
+!*debug.log*
+combined.log
+error.log
 
 # IDE
 .vscode/
