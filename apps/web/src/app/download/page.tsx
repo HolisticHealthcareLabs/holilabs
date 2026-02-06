@@ -22,7 +22,7 @@ export default async function DownloadPage() {
                     <DownloadGated />
                 </div>
             ) : (
-                <DownloadClient user={session.user} />
+                <DownloadClient />
             )}
 
             <Footer />

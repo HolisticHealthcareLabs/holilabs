@@ -60,7 +60,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const res = await fetch('http://localhost:3001/telemetry/stream');
+        const res = await fetch('http://localhost:4000/telemetry/stream');
         if (res.ok) {
           const data = await res.json();
           setLogs(data);
