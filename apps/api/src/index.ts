@@ -93,35 +93,16 @@ async function start() {
       },
     });
 
-    await server.register(rateLimit, {
-      max: 100,
-      timeWindow: '15 minutes',
-      redis: env.REDIS_URL,
-    });
+    // Rate limiting temporarily disabled for local development
+    // TODO: Implement proper Redis client with ioredis
+    // await server.register(rateLimit, {
+    //   max: 100,
+    //   timeWindow: '15 minutes',
+    //   redis: env.REDIS_URL,
+    // });
 
-    // Health check
-    server.get('/health', async () => {
-      const health: any = {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        environment: env.NODE_ENV,
-        fhir: {
-          enabled: env.ENABLE_MEDPLUM === 'true',
-        },
-      };
-
-      // Add queue stats if FHIR enabled
-      if (env.ENABLE_MEDPLUM === 'true') {
-        try {
-          const queueStats = await getQueueStats();
-          health.fhir.queue = queueStats;
-        } catch (error) {
-          health.fhir.queue = { error: 'Queue not available' };
-        }
-      }
-
-      return health;
-    });
+    // Health check removed - now handled by monitoring routes
+    // (More comprehensive health checks in src/routes/monitoring.ts)
 
     // Register routes
     await server.register(monitoringRoutes); // Monitoring routes (no prefix, /metrics, /health, etc.)
