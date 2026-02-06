@@ -5546,3 +5546,718 @@
 {"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:18:36.051"}
 {"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:19:35.995"}
 {"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:19:36.040"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:20:35.997"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:20:36.039"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:21:35.998"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:21:36.059"}
+{"latencyMs":90,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-02-05 20:22:35.947"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:22:35.998"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:22:36.015"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:23:35.999"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:23:36.021"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:24:36.001"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:24:36.034"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:25:36.002"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:25:36.038"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:26:36.002"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:26:36.039"}
+{"latencyMs":71,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-02-05 20:27:35.928"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:27:36.000"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:27:36.014"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:28:36.003"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:28:36.027"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:29:36.004"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:29:36.034"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:30:36.005"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:30:36.033"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:31:36.007"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:31:36.053"}
+{"latencyMs":93,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-02-05 20:32:35.952"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:32:36.007"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:32:36.025"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:33:36.010"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:33:36.055"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:34:36.010"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:34:36.061"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:35:36.010"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:35:36.059"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:36:36.011"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:36:36.058"}
+{"latencyMs":85,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-02-05 20:37:35.948"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:37:36.011"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:37:36.028"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:38:36.014"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:38:36.062"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:39:36.016"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:39:36.064"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:40:36.019"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:40:36.073"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:41:36.021"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:41:36.071"}
+{"latencyMs":144,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-02-05 20:42:36.009"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:42:36.020"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:42:36.039"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:43:36.024"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:43:36.069"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:44:36.025"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:44:36.075"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:45:36.025"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:45:36.075"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:46:36.028"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:46:36.081"}
+{"latencyMs":63,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-02-05 20:47:35.931"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:47:36.028"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:47:36.047"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:48:36.029"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:48:36.050"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:49:36.033"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:49:36.142"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:50:36.034"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:50:36.094"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:51:36.036"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:51:36.088"}
+{"latencyMs":40,"level":"debug","message":"Connectivity check passed","service":"edge-node","timestamp":"2026-02-05 20:52:35.910"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:52:36.036"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:52:36.053"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:53:36.038"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:53:36.655"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:54:36.038"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:54:36.153"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:55:36.038"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":500,"timestamp":"2026-02-05 20:55:36.683"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:56:36.040"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:56:36.197"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:57:36.040"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:57:36.434"}
+{"consecutiveFailures":1,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 20:57:37.011"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:58:36.043"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:58:36.153"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 20:59:36.051"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 20:59:36.098"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:00:36.044"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:00:36.069"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:01:36.047"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:01:36.107"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:02:36.047"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:02:36.547"}
+{"consecutiveFailures":2,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:02:36.909"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:03:36.048"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:03:36.091"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:04:36.047"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:04:36.109"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:05:36.047"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:05:36.086"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:06:36.050"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:06:36.100"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:07:36.050"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:07:36.071"}
+{"consecutiveFailures":3,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:07:36.380"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:08:36.052"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:08:36.103"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:09:36.052"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:09:36.100"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:10:36.055"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:10:36.095"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:11:36.055"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:11:36.098"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:12:36.055"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:12:36.081"}
+{"consecutiveFailures":4,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:12:36.366"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:13:36.057"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:13:36.101"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:14:36.058"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:14:36.094"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:15:36.059"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:15:36.093"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:16:36.061"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:16:36.102"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:17:36.061"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:17:36.081"}
+{"consecutiveFailures":5,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:17:36.380"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:18:06.272"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:18:36.064"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:18:36.114"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:19:36.065"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:19:36.114"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:20:36.070"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:20:36.119"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:21:36.070"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:21:36.113"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:22:36.072"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:22:36.090"}
+{"consecutiveFailures":6,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:22:36.381"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:23:06.288"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:23:36.072"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:23:36.115"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:24:36.075"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:24:36.111"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:25:36.077"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:25:36.126"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:26:36.079"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:26:36.131"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:27:36.079"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:27:36.100"}
+{"consecutiveFailures":7,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:27:36.387"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:28:06.306"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:28:36.083"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:28:36.133"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:29:36.086"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:29:36.126"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:30:36.087"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:30:36.141"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:31:36.089"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:31:36.129"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:32:36.088"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:32:36.105"}
+{"consecutiveFailures":8,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:32:36.447"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:33:06.324"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:33:36.092"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:33:36.129"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:34:36.092"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:34:36.141"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:35:36.094"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:35:36.136"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:36:36.097"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:36:36.155"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:37:36.096"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:37:36.118"}
+{"consecutiveFailures":9,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:37:36.373"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:38:06.336"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:38:36.099"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:38:36.154"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:39:36.100"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:39:36.143"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:40:36.105"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:40:36.155"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:41:36.105"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:41:36.161"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:42:36.104"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:42:36.130"}
+{"consecutiveFailures":10,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:42:36.384"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:43:06.355"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:43:36.106"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:43:36.153"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:44:36.109"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:44:36.159"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:45:36.111"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:45:36.167"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:46:36.113"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:46:36.166"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:47:36.114"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:47:36.142"}
+{"consecutiveFailures":11,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:47:36.399"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:48:06.370"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:48:36.117"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:48:36.170"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:49:36.119"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:49:36.170"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:50:36.120"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:50:36.176"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:51:36.120"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:51:36.169"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:52:36.120"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:52:36.147"}
+{"consecutiveFailures":12,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:52:36.387"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:53:06.387"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:53:36.123"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:53:36.167"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:54:36.126"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:54:36.179"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:55:36.126"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:55:36.174"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:56:36.129"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:56:36.186"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:57:36.131"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:57:36.163"}
+{"consecutiveFailures":13,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 21:57:36.382"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:57:36.402"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 21:58:06.404"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:58:36.132"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:58:36.184"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 21:59:36.133"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 21:59:36.192"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:00:36.133"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:00:36.177"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:01:36.134"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:01:36.167"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:02:36.136"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:02:36.152"}
+{"consecutiveFailures":14,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:02:36.433"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:03:06.415"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:03:36.138"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:03:36.176"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:04:36.140"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:04:36.180"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:05:36.142"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:05:36.163"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:06:36.146"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:06:36.201"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:07:36.147"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:07:36.168"}
+{"consecutiveFailures":15,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:07:36.381"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:07:36.430"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:08:06.432"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:08:36.150"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:08:36.202"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:09:36.151"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:09:36.192"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:10:36.153"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:10:36.188"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:11:36.155"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:11:36.176"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:12:36.155"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:12:36.182"}
+{"consecutiveFailures":16,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:12:36.391"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:12:36.448"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:13:06.450"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:13:36.156"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:13:36.207"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:14:36.157"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:14:36.213"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:15:36.157"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:15:36.194"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:16:36.160"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:16:36.202"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:17:36.160"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:17:36.196"}
+{"consecutiveFailures":17,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:17:36.391"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:17:36.465"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:18:06.467"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:18:36.161"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:18:36.211"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:19:36.162"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:19:36.201"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:20:36.165"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:20:36.215"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:21:36.165"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:21:36.207"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:22:36.166"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:22:36.195"}
+{"consecutiveFailures":18,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:22:36.405"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:22:36.481"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:23:06.482"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:23:36.167"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:23:36.205"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:24:36.170"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:24:36.220"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:25:36.171"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:25:36.209"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:26:36.178"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:26:36.225"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:27:36.178"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:27:36.203"}
+{"consecutiveFailures":19,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:27:36.385"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:27:36.498"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:28:06.500"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:28:36.180"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:28:36.235"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:29:36.180"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:29:36.220"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:30:36.181"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:30:36.233"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:31:36.182"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:31:36.219"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:32:36.184"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:32:36.205"}
+{"consecutiveFailures":20,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:32:36.471"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:32:36.512"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:33:06.514"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:33:36.187"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:33:36.229"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:34:36.188"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:34:36.225"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:35:36.192"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:35:36.247"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:36:36.193"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:36:36.247"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:37:36.195"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:37:36.227"}
+{"consecutiveFailures":21,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:37:36.420"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:37:36.530"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:38:06.530"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:38:36.196"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:38:36.249"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:39:36.198"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:39:36.247"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:40:36.198"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:40:36.251"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:41:36.201"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:41:36.249"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:42:36.202"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:42:36.229"}
+{"consecutiveFailures":22,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:42:36.426"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:42:36.540"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:43:06.543"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:43:36.203"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:43:36.256"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:44:36.205"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:44:36.241"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:45:36.206"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:45:36.259"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:46:36.206"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:46:36.257"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:47:36.208"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:47:36.238"}
+{"consecutiveFailures":23,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:47:36.428"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:47:36.557"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:48:06.557"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:48:36.210"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:48:36.262"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:49:36.212"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:49:36.248"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:50:36.215"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:50:36.267"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:51:36.215"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:51:36.260"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:52:36.215"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:52:36.245"}
+{"consecutiveFailures":24,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:52:36.429"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:52:36.568"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:53:06.569"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:53:36.217"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:53:36.271"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:54:36.213"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:54:36.258"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:55:36.215"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:55:36.262"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:56:36.217"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:56:36.250"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:57:36.219"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:57:36.251"}
+{"consecutiveFailures":25,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 22:57:36.434"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:57:36.577"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 22:58:06.577"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:58:36.221"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:58:36.275"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 22:59:36.223"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 22:59:36.276"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:00:36.225"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:00:36.272"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:01:36.226"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:01:36.281"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:02:36.227"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:02:36.250"}
+{"consecutiveFailures":26,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:02:36.471"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:02:36.587"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:03:06.588"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:03:36.228"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:03:36.269"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:04:36.231"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:04:36.279"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:05:36.234"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:05:36.283"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:06:36.236"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:06:36.287"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:07:36.237"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:07:36.273"}
+{"consecutiveFailures":27,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:07:36.434"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:07:36.602"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:08:06.605"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:08:36.240"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:08:36.292"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:09:36.242"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:09:36.292"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:10:36.242"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:10:36.282"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:11:36.245"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:11:36.297"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:12:36.245"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:12:36.281"}
+{"consecutiveFailures":28,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:12:36.415"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:12:36.619"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:13:06.622"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:13:36.248"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:13:36.300"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:14:36.248"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:14:36.288"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:15:36.252"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:15:36.301"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:16:36.252"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:16:36.292"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:17:36.255"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:17:36.284"}
+{"consecutiveFailures":29,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:17:36.441"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:17:36.635"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:18:06.636"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:18:36.254"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:18:36.306"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:19:36.256"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:19:36.306"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:20:36.257"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:20:36.306"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:21:36.254"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:21:36.289"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:22:36.254"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:22:36.289"}
+{"consecutiveFailures":30,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:22:36.417"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:22:36.642"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:23:06.644"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:23:36.258"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:23:36.312"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:24:36.258"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:24:36.282"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:25:36.262"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:25:36.312"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:26:36.262"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:26:36.311"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:27:36.262"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:27:36.296"}
+{"consecutiveFailures":31,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:27:36.441"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:27:36.658"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:28:06.659"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:28:36.264"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:28:36.315"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:29:36.265"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:29:36.317"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:30:36.268"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:30:36.320"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:31:36.269"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:31:36.321"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:32:36.270"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:32:36.292"}
+{"consecutiveFailures":32,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:32:36.481"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:32:36.673"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:33:06.674"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:33:36.273"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:33:36.325"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:34:36.275"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:34:36.325"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:35:36.276"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:35:36.326"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:36:36.276"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:36:36.317"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:37:36.278"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:37:36.306"}
+{"consecutiveFailures":33,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:37:36.448"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:37:36.684"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:38:06.686"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:38:36.281"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:38:36.321"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:39:36.285"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:39:36.344"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:40:36.284"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:40:36.324"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:41:36.287"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:41:36.329"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:42:36.288"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:42:36.319"}
+{"consecutiveFailures":34,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:42:36.427"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:42:36.698"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:43:06.700"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:43:36.291"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:43:36.348"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:44:36.290"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:44:36.327"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:45:36.294"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:45:36.342"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:46:36.294"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:46:36.349"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:47:36.295"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:47:36.320"}
+{"consecutiveFailures":35,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:47:36.453"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:47:36.711"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:48:06.713"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:48:36.298"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:48:36.335"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:49:36.301"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:49:36.357"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:50:36.302"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:50:36.361"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:51:36.304"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:51:36.355"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:52:36.304"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:52:36.341"}
+{"consecutiveFailures":36,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:52:36.434"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:52:36.724"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:53:06.727"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:53:36.307"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:53:36.356"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:54:36.308"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:54:36.364"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:55:36.310"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:55:36.363"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:56:36.311"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:56:36.354"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:57:36.314"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:57:36.350"}
+{"consecutiveFailures":37,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-05 23:57:36.463"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:57:36.743"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-05 23:58:06.744"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:58:36.314"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:58:36.347"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-05 23:59:36.316"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-05 23:59:36.371"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:00:36.316"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:00:36.368"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:01:36.319"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:01:36.373"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:02:36.319"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:02:36.349"}
+{"consecutiveFailures":38,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:02:36.516"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:02:36.756"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:03:06.756"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:03:36.322"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:03:36.370"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:04:36.325"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:04:36.380"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:05:36.326"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:05:36.381"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:06:36.327"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:06:36.380"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:07:36.329"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:07:36.367"}
+{"consecutiveFailures":39,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:07:36.458"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:07:36.770"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:08:06.769"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:08:36.331"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:08:36.384"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:09:36.330"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:09:36.373"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:10:36.332"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:10:36.385"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:11:36.332"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:11:36.387"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:12:36.333"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:12:36.362"}
+{"consecutiveFailures":40,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:12:36.465"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:12:36.782"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:13:06.783"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:13:36.336"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:13:36.390"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:14:36.338"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:14:36.381"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:15:36.339"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:15:36.387"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:16:36.341"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:16:36.387"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:17:36.342"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:17:36.387"}
+{"consecutiveFailures":41,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:17:36.470"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:17:36.796"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:18:06.797"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:18:36.344"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:18:36.394"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:19:36.344"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:19:36.395"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:20:36.344"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:20:36.393"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:21:36.345"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:21:36.391"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:22:36.347"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:22:36.392"}
+{"consecutiveFailures":42,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:22:36.464"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:22:36.810"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:23:06.811"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:23:36.350"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:23:36.390"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:24:36.351"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:24:36.406"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:25:36.353"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:25:36.388"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:26:36.355"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:26:36.405"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:27:36.357"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:27:36.404"}
+{"consecutiveFailures":43,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:27:36.469"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:27:36.822"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:28:06.824"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:28:36.358"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:28:36.412"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:29:36.358"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:29:36.406"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:30:36.359"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:30:36.397"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:31:36.361"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:31:36.412"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:32:36.361"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:32:36.382"}
+{"consecutiveFailures":44,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:32:36.525"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:32:36.835"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:33:06.836"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:33:36.363"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:33:36.415"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 00:43:55.499"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 00:43:55.677"}
+{"consecutiveFailures":45,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 00:43:56.031"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 00:44:25.472"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 01:16:55.038"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 01:16:55.040"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 01:16:55.138"}
+{"consecutiveFailures":46,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 01:16:55.558"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 01:17:25.042"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 01:33:52.550"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 01:33:52.551"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 01:33:52.636"}
+{"consecutiveFailures":47,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 01:33:53.054"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 01:34:22.551"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 01:59:09.012"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 01:59:09.013"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 01:59:09.342"}
+{"consecutiveFailures":48,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 01:59:09.783"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 02:15:20.084"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 02:15:20.085"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 02:15:20.278"}
+{"consecutiveFailures":49,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 02:15:20.607"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 02:27:58.717"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 02:27:58.719"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 02:27:58.825"}
+{"consecutiveFailures":50,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 02:27:59.248"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 02:34:37.539"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 02:34:37.541"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 02:34:37.638"}
+{"consecutiveFailures":51,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 02:34:38.054"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 02:35:07.539"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 02:43:06.294"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 02:43:06.296"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 02:43:06.378"}
+{"consecutiveFailures":52,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 02:43:06.797"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 02:55:25.191"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 02:55:25.193"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 02:55:25.298"}
+{"consecutiveFailures":53,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 02:55:25.718"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 02:55:55.192"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 03:09:22.615"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 03:09:22.616"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 03:09:22.716"}
+{"consecutiveFailures":54,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 03:09:23.137"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 03:09:52.615"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 03:17:32.810"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 03:17:32.811"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 03:17:32.909"}
+{"consecutiveFailures":55,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 03:17:33.318"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 03:29:15.130"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 03:29:15.132"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 03:29:15.264"}
+{"consecutiveFailures":56,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 03:29:15.693"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 03:29:45.132"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 04:07:30.159"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:07:30.160"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:07:30.232"}
+{"consecutiveFailures":57,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 04:07:30.637"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 04:08:00.160"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 04:08:30.161"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:08:30.161"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:08:30.205"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:09:30.163"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:09:30.210"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:10:30.163"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:10:30.197"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:11:30.165"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:11:30.203"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:12:30.166"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:12:30.254"}
+{"consecutiveFailures":58,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 04:12:30.671"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 04:13:00.167"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:13:30.167"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 04:13:30.168"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:13:30.205"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:14:30.167"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:14:30.210"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:15:30.169"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:15:30.217"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:16:30.170"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:16:30.211"}
+{"currentVersion":"none","level":"debug","message":"Checking for rule updates","service":"edge-node","timestamp":"2026-02-06 04:17:30.172"}
+{"level":"warn","message":"Unexpected response from rule poll","service":"edge-node","status":404,"timestamp":"2026-02-06 04:17:30.269"}
+{"consecutiveFailures":59,"error":"Health check returned 500","level":"warn","message":"Connectivity check failed","service":"edge-node","timestamp":"2026-02-06 04:17:30.682"}
+{"level":"debug","message":"Skipping queue processing - offline","service":"edge-node","timestamp":"2026-02-06 04:18:00.174"}
