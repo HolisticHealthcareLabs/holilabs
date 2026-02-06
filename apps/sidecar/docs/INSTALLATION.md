@@ -24,22 +24,77 @@ Welcome to HoliLabs Cortex Clinical Assurance, the intelligent clinical validati
 
 ## Downloading the Installer
 
-### Option 1: GitHub Releases (Recommended)
+> ⚠️ **Pre-Release Note**: Public releases are not yet available. See [Development Build](#development-build-pre-release) below to build from source.
 
-1. Visit: https://github.com/holilabs/holilabsv2/releases/latest
-2. Download the appropriate installer for your platform:
+### Option 1: GitHub Releases (Coming Soon)
 
-   **macOS**:
-   - Apple Silicon (M1/M2/M3): `HoliLabs-Cortex-{VERSION}-arm64.dmg`
-   - Intel Processor: `HoliLabs-Cortex-{VERSION}-x64.dmg`
+Once the first release is published, you'll be able to download installers from:
 
-   **Windows**:
-   - Standard Installation: `HoliLabs-Cortex-Setup-{VERSION}.exe`
-   - Enterprise (MSI): `HoliLabs-Cortex-{VERSION}.msi`
+**URL**: https://github.com/holilabs/holilabsv2/releases/latest
+
+**Installers**:
+- **macOS Apple Silicon**: `HoliLabs-Cortex-{VERSION}-arm64.dmg`
+- **macOS Intel**: `HoliLabs-Cortex-{VERSION}-x64.dmg`
+- **Windows**: `HoliLabs-Cortex-Setup-{VERSION}.exe`
+- **Windows MSI**: `HoliLabs-Cortex-{VERSION}.msi`
 
 ### Option 2: Direct Download (Coming Soon)
 
 Visit: https://holilabs.com/downloads/cortex
+
+---
+
+## Development Build (Pre-Release)
+
+**For developers and early testing before the first public release:**
+
+### Prerequisites
+
+- **Node.js**: 20.x or later
+- **pnpm**: 8.x or later
+- **Git**: Latest version
+
+### Build from Source
+
+1. **Clone the repository** (if you haven't already):
+   ```bash
+   git clone https://github.com/holilabs/holilabsv2.git
+   cd holilabsv2
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+
+3. **Build the Sidecar app**:
+   ```bash
+   cd apps/sidecar
+   pnpm run build
+   ```
+
+   This creates installers in: `apps/sidecar/dist/installers/`
+
+4. **Install the development build**:
+
+   **macOS**:
+   ```bash
+   # Open the DMG
+   open dist/installers/*.dmg
+
+   # Or install directly
+   cp -R "dist/installers/mac-arm64/HoliLabs Clinical Assurance.app" /Applications/
+   ```
+
+   **Windows** (PowerShell as Administrator):
+   ```powershell
+   # Run the installer
+   Start-Process "dist\installers\HoliLabs-Cortex-Setup-*.exe"
+   ```
+
+5. **Launch the app** and grant permissions as described below
+
+> **Note**: Development builds are **unsigned**, so you'll see security warnings (Gatekeeper on macOS, SmartScreen on Windows). This is expected for local builds.
 
 ---
 
