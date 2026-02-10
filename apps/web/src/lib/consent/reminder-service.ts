@@ -7,6 +7,12 @@
 import { prisma } from '@/lib/prisma';
 import { queueEmail } from '@/lib/email/email-service';
 import { consentExpirationTemplate } from '@/lib/email/templates';
+import logger from '@/lib/logger';
+import {
+  buildReminderLifecycleEvent,
+  buildReminderRetryState,
+  DEFAULT_REMINDER_RETRY_POLICY,
+} from '@/lib/notifications/reminder-policy';
 
 export interface ConsentNeedingReminder {
   id: string;
@@ -80,19 +86,50 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
     });
 
     if (!consent) {
-      console.error(`[Consent Reminder] Consent ${consentId} not found`);
+      logger.error(
+        buildReminderLifecycleEvent({
+          stage: 'fail',
+          patientId: 'unknown',
+          channel: 'EMAIL',
+          templateName: 'Consent Expiration Reminder',
+          category: 'consent',
+          reminderId: consentId,
+          error: `Consent ${consentId} not found`,
+          retryState: buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY),
+        })
+      );
       return false;
     }
 
     if (!consent.expiresAt) {
-      console.warn(`[Consent Reminder] Consent ${consentId} has no expiration date`);
+      logger.warn(
+        buildReminderLifecycleEvent({
+          stage: 'fail',
+          patientId: consent.patientId,
+          channel: 'EMAIL',
+          templateName: 'Consent Expiration Reminder',
+          category: 'consent',
+          reminderId: consentId,
+          error: `Consent ${consentId} has no expiration date`,
+          retryState: buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY),
+        })
+      );
       return false;
     }
 
     // Check if patient has email
     if (!consent.patient.email) {
-      console.warn(
-        `[Consent Reminder] Patient ${consent.patientId} has no email, skipping reminder`
+      logger.warn(
+        buildReminderLifecycleEvent({
+          stage: 'fail',
+          patientId: consent.patientId,
+          channel: 'EMAIL',
+          templateName: 'Consent Expiration Reminder',
+          category: 'consent',
+          reminderId: consentId,
+          error: `Patient ${consent.patientId} has no email, skipping reminder`,
+          retryState: buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY),
+        })
       );
       // Mark as sent to avoid repeated attempts
       await prisma.consent.update({
@@ -120,6 +157,17 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
       expiresAt: consent.expiresAt,
       renewUrl,
     });
+
+    logger.info(
+      buildReminderLifecycleEvent({
+        stage: 'sent',
+        patientId: consent.patientId,
+        channel: 'EMAIL',
+        templateName: 'Consent Expiration Reminder',
+        category: 'consent',
+        reminderId: consentId,
+      })
+    );
 
     // Queue email
     const emailId = await queueEmail({
@@ -157,13 +205,48 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
       },
     });
 
-    console.log(
-      `[Consent Reminder] Queued reminder for consent ${consentId}, Email ID: ${emailId}`
+    logger.info(
+      buildReminderLifecycleEvent({
+        stage: 'success',
+        patientId: consent.patientId,
+        channel: 'EMAIL',
+        templateName: 'Consent Expiration Reminder',
+        category: 'consent',
+        reminderId: consentId,
+      })
     );
 
     return true;
   } catch (error) {
-    console.error(`[Consent Reminder] Failed to send reminder for consent ${consentId}:`, error);
+    const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(
+      buildReminderLifecycleEvent({
+        stage: 'fail',
+        patientId: 'unknown',
+        channel: 'EMAIL',
+        templateName: 'Consent Expiration Reminder',
+        category: 'consent',
+        reminderId: consentId,
+        error: errorMessage,
+        retryState,
+      })
+    );
+
+    if (retryState.escalationReady) {
+      logger.error(
+        buildReminderLifecycleEvent({
+          stage: 'escalation',
+          patientId: 'unknown',
+          channel: 'EMAIL',
+          templateName: 'Consent Expiration Reminder',
+          category: 'consent',
+          reminderId: consentId,
+          error: retryState.escalationReason || errorMessage,
+          retryState,
+        })
+      );
+    }
     return false;
   }
 }
@@ -175,11 +258,15 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
 export async function processConsentReminders(
   daysBeforeExpiration = 7
 ): Promise<{ processed: number; failed: number; skipped: number }> {
-  console.log('[Consent Reminder] Starting consent reminder processing...');
+  logger.info({ event: 'consent_reminder_processing_started', daysBeforeExpiration });
 
   const consents = await findConsentsNeedingReminders(daysBeforeExpiration);
 
-  console.log(`[Consent Reminder] Found ${consents.length} consents needing reminders`);
+  logger.info({
+    event: 'consent_reminder_candidates_loaded',
+    count: consents.length,
+    daysBeforeExpiration,
+  });
 
   let processed = 0;
   let failed = 0;
@@ -194,14 +281,21 @@ export async function processConsentReminders(
         skipped++;
       }
     } catch (error) {
-      console.error(`[Consent Reminder] Error processing consent ${consent.id}:`, error);
+      logger.error({
+        event: 'consent_reminder_processing_error',
+        consentId: consent.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       failed++;
     }
   }
 
-  console.log(
-    `[Consent Reminder] Completed: ${processed} sent, ${skipped} skipped, ${failed} failed`
-  );
+  logger.info({
+    event: 'consent_reminder_processing_completed',
+    processed,
+    skipped,
+    failed,
+  });
 
   return { processed, failed, skipped };
 }
@@ -245,7 +339,11 @@ export async function sendImmediateConsentReminder(consentId: string): Promise<{
       return { success: false, message: 'Failed to send reminder (no email or error)' };
     }
   } catch (error) {
-    console.error('[Consent Reminder] Error sending immediate reminder:', error);
+    logger.error({
+      event: 'consent_immediate_reminder_error',
+      consentId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',

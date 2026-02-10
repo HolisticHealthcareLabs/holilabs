@@ -14,6 +14,8 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
+import { assessRenalDataQuality } from '@/lib/clinical/lab-decision-rules';
+import { DOAC_MEDICATION_ALIASES, DOAC_RENAL_POLICY } from '@/config/clinical-rules';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +30,17 @@ const requestSchema = z.object({
   renalFunction: z.object({
     creatinineClearance: z.number().min(0).max(200).optional(), // mL/min
     eGFR: z.number().min(0).max(200).optional(),
+    measuredAt: z.string().datetime().optional(),
   }).optional(),
   hepaticFunction: z.enum(['normal', 'mild', 'moderate', 'severe']).optional(),
   indication: z.string().optional(),
+  decisionContextTime: z.string().datetime().optional(),
+  attestation: z.object({
+    renalDataReviewed: z.boolean().optional(),
+    reason: z.string().min(1).max(500).optional(),
+    attestedBy: z.string().min(1).max(200).optional(),
+    attestedAt: z.string().datetime().optional(),
+  }).optional(),
 });
 
 // Common medication dose ranges (simplified - production would use full drug database)
@@ -94,6 +104,58 @@ const DOSE_GUIDELINES: Record<string, DoseGuideline> = {
     maxDailyDose: 10,
     frequencyOptions: ['once daily'],
   },
+  'apixaban': {
+    medication: 'apixaban',
+    minDose: 2.5,
+    maxDose: 10,
+    unit: 'mg',
+    maxDailyDose: 10,
+    frequencyOptions: ['once daily', 'twice daily'],
+    renalAdjustment: {
+      15: 0,
+      30: 0.5,
+      45: 1,
+    },
+  },
+  'rivaroxaban': {
+    medication: 'rivaroxaban',
+    minDose: 2.5,
+    maxDose: 20,
+    unit: 'mg',
+    maxDailyDose: 20,
+    frequencyOptions: ['once daily', 'twice daily'],
+    renalAdjustment: {
+      15: 0,
+      30: 0.75,
+      50: 1,
+    },
+  },
+  'dabigatran': {
+    medication: 'dabigatran',
+    minDose: 75,
+    maxDose: 150,
+    unit: 'mg',
+    maxDailyDose: 300,
+    frequencyOptions: ['twice daily'],
+    renalAdjustment: {
+      15: 0,
+      30: 0.5,
+      50: 1,
+    },
+  },
+  'edoxaban': {
+    medication: 'edoxaban',
+    minDose: 15,
+    maxDose: 60,
+    unit: 'mg',
+    maxDailyDose: 60,
+    frequencyOptions: ['once daily'],
+    renalAdjustment: {
+      15: 0,
+      50: 0.5,
+      95: 1,
+    },
+  },
 };
 
 interface DoseGuideline {
@@ -108,19 +170,54 @@ interface DoseGuideline {
   pediatricDose?: { perKg: number; maxPerKg: number; unit: string };
 }
 
+export type ValidateDoseStatus =
+  | 'safe'
+  | 'warning'
+  | 'dangerous'
+  | 'unknown'
+  | 'attestation_required';
+
 interface ValidationResult {
   isValid: boolean;
-  status: 'safe' | 'warning' | 'dangerous' | 'unknown';
+  status: ValidateDoseStatus;
   issues: ValidationIssue[];
   recommendation: string;
   adjustedDose?: number;
   guidelines?: string;
+  completionState: {
+    canComplete: boolean;
+    requiresAttestation: boolean;
+    reason?: 'missing_renal_data' | 'stale_renal_data';
+  };
+  rationale: string[];
+  deterministicContext: {
+    rulesetVersion: string;
+    medicationMatch: string | null;
+    isDoacMedication: boolean;
+    evaluationReferenceTime: string | null;
+  };
 }
 
 interface ValidationIssue {
-  type: 'dose_too_high' | 'dose_too_low' | 'renal_adjustment' | 'hepatic_adjustment' | 'frequency_mismatch' | 'unknown_medication';
+  type: 'dose_too_high' | 'dose_too_low' | 'renal_adjustment' | 'hepatic_adjustment' | 'frequency_mismatch' | 'unknown_medication' | 'attestation_required';
   severity: 'critical' | 'warning' | 'info';
   message: string;
+}
+
+export interface ValidateDoseApiResponse {
+  success: true;
+  data: ValidationResult;
+  metadata: {
+    method: 'deterministic';
+    confidence: 'low' | 'high';
+    latencyMs: number;
+    deterministic: {
+      rulesetVersion: string;
+      medicationMatch: string | null;
+      evaluationReferenceTime: string | null;
+      reproducible: true;
+    };
+  };
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -203,15 +300,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       latencyMs,
     });
 
-    return NextResponse.json({
+    const payload: ValidateDoseApiResponse = {
       success: true,
       data: result,
       metadata: {
         method: 'deterministic',
-        confidence: result.status === 'unknown' ? 'low' : 'high',
+        confidence: getConfidenceForDoseStatus(result.status),
         latencyMs,
+        deterministic: {
+          rulesetVersion: result.deterministicContext.rulesetVersion,
+          medicationMatch: result.deterministicContext.medicationMatch,
+          evaluationReferenceTime: result.deterministicContext.evaluationReferenceTime,
+          reproducible: true,
+        },
       },
-    });
+    };
+    return NextResponse.json(payload);
   } catch (error) {
     logger.error({
       event: 'primitive_validate_dose_error',
@@ -227,14 +331,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
 function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
   const issues: ValidationIssue[] = [];
+  const rationale: string[] = [];
   const medLower = input.medication.toLowerCase();
+  const medicationCanonical = getCanonicalMedication(medLower);
+  const isDoacMedication = Boolean(medicationCanonical && medicationCanonical in DOAC_MEDICATION_ALIASES);
+  const rulesetVersion = `${DOAC_RENAL_POLICY.rulesetVersion}+validate-dose-v1`;
 
   // Find matching guideline
-  const guideline = Object.values(DOSE_GUIDELINES).find(
-    g => medLower.includes(g.medication) || g.medication.includes(medLower)
-  );
+  const guideline = findGuideline(medLower, medicationCanonical);
 
   if (!guideline) {
+    rationale.push('No deterministic guideline found for medication, returning unknown.');
     return {
       isValid: true, // Don't block unknown medications
       status: 'unknown',
@@ -244,8 +351,20 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
         message: `No dosing guidelines found for ${input.medication}. Please verify with clinical pharmacist.`,
       }],
       recommendation: 'Manual verification recommended. No automated guidelines available.',
+      completionState: {
+        canComplete: true,
+        requiresAttestation: false,
+      },
+      rationale,
+      deterministicContext: {
+        rulesetVersion,
+        medicationMatch: null,
+        isDoacMedication: false,
+        evaluationReferenceTime: input.decisionContextTime || null,
+      },
     };
   }
+  rationale.push(`Guideline matched for ${guideline.medication}.`);
 
   // Check unit matches
   if (guideline.unit !== input.unit) {
@@ -254,6 +373,58 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
       severity: 'warning',
       message: `Expected unit: ${guideline.unit}, received: ${input.unit}`,
     });
+    rationale.push('Input unit does not match guideline unit.');
+  }
+
+  if (isDoacMedication) {
+    const renalAssessment = assessRenalDataQuality(input.renalFunction, {
+      maxAgeHours: DOAC_RENAL_POLICY.maxAgeHours,
+      referenceTimeIso: input.decisionContextTime,
+    });
+    rationale.push(...renalAssessment.rationale);
+
+    const isAttested = Boolean(input.attestation?.renalDataReviewed);
+    if ((renalAssessment.isMissingCriticalInput || renalAssessment.isStale) && !isAttested) {
+      const reason: 'missing_renal_data' | 'stale_renal_data' = renalAssessment.isMissingCriticalInput
+        ? 'missing_renal_data'
+        : 'stale_renal_data';
+
+      issues.push({
+        type: 'attestation_required',
+        severity: 'critical',
+        message: reason === 'missing_renal_data'
+          ? 'DOAC completion blocked: renal input missing (provide eGFR or creatinine clearance) or attest review.'
+          : 'DOAC completion blocked: renal input stale/undated for deterministic safety checks. Attestation required.',
+      });
+      rationale.push(`Completion blocked until attestation due to ${reason}.`);
+      return {
+        isValid: false,
+        status: 'attestation_required',
+        issues,
+        recommendation: 'Provide fresh renal data or complete renal data attestation before finalizing DOAC dosing.',
+        completionState: {
+          canComplete: false,
+          requiresAttestation: true,
+          reason,
+        },
+        rationale,
+        deterministicContext: {
+          rulesetVersion,
+          medicationMatch: guideline.medication,
+          isDoacMedication: true,
+          evaluationReferenceTime: input.decisionContextTime || null,
+        },
+      };
+    }
+
+    if (isAttested && (renalAssessment.isMissingCriticalInput || renalAssessment.isStale)) {
+      issues.push({
+        type: 'attestation_required',
+        severity: 'warning',
+        message: 'Renal data attestation accepted; proceed with caution and ensure manual verification is documented.',
+      });
+      rationale.push('Attestation present; gating requirement satisfied.');
+    }
   }
 
   // Calculate adjusted max dose based on renal function
@@ -277,6 +448,7 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
       }
 
       if (multiplier === 0) {
+        rationale.push('Renal threshold triggered contraindication.');
         issues.push({
           type: 'renal_adjustment',
           severity: 'critical',
@@ -287,12 +459,24 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
           status: 'dangerous',
           issues,
           recommendation: `Do not use ${input.medication}. Consider alternative therapy.`,
+          completionState: {
+            canComplete: false,
+            requiresAttestation: false,
+          },
+          rationale,
+          deterministicContext: {
+            rulesetVersion,
+            medicationMatch: guideline.medication,
+            isDoacMedication,
+            evaluationReferenceTime: input.decisionContextTime || null,
+          },
         };
       }
 
       if (multiplier < 1) {
         adjustedMaxDose = guideline.maxDose * multiplier;
         adjustedMaxDaily = guideline.maxDailyDose * multiplier;
+        rationale.push(`Renal multiplier ${multiplier} applied.`);
         issues.push({
           type: 'renal_adjustment',
           severity: 'warning',
@@ -304,6 +488,7 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
 
   // Check dose range
   if (input.dose > adjustedMaxDose) {
+    rationale.push('Dose exceeds adjusted maximum.');
     issues.push({
       type: 'dose_too_high',
       severity: 'critical',
@@ -312,6 +497,7 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
   }
 
   if (input.dose < guideline.minDose) {
+    rationale.push('Dose below minimum therapeutic range.');
     issues.push({
       type: 'dose_too_low',
       severity: 'warning',
@@ -326,6 +512,7 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
   );
 
   if (!validFrequency) {
+    rationale.push('Frequency is outside standard guideline options.');
     issues.push({
       type: 'frequency_mismatch',
       severity: 'info',
@@ -343,12 +530,15 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
   if (hasCritical) {
     status = 'dangerous';
     recommendation = 'Do not prescribe. Consult clinical pharmacist for dose adjustment.';
+    rationale.push('Overall status set to dangerous due to critical issue.');
   } else if (hasWarning) {
     status = 'warning';
     recommendation = 'Review dose. Consider adjustments based on patient factors.';
+    rationale.push('Overall status set to warning due to warning-level issue.');
   } else {
     status = 'safe';
     recommendation = 'Dose appears appropriate. Proceed with clinical judgement.';
+    rationale.push('Overall status set to safe.');
   }
 
   return {
@@ -358,5 +548,61 @@ function validateDose(input: z.infer<typeof requestSchema>): ValidationResult {
     recommendation,
     adjustedDose: hasCritical ? adjustedMaxDose : undefined,
     guidelines: `Standard range: ${guideline.minDose}-${guideline.maxDose}${guideline.unit}. Max daily: ${guideline.maxDailyDose}${guideline.unit}.`,
+    completionState: {
+      canComplete: !hasCritical,
+      requiresAttestation: false,
+    },
+    rationale,
+    deterministicContext: {
+      rulesetVersion,
+      medicationMatch: guideline.medication,
+      isDoacMedication,
+      evaluationReferenceTime: input.decisionContextTime || null,
+    },
   };
+}
+
+function getConfidenceForDoseStatus(status: string): 'low' | 'high' {
+  switch (status) {
+    case 'unknown':
+      return 'low';
+    case 'safe':
+    case 'warning':
+    case 'dangerous':
+    case 'attestation_required':
+      return 'high';
+    default:
+      return 'low';
+  }
+}
+
+function normalizeMedicationName(name: string): string {
+  return name.toLowerCase().trim();
+}
+
+function getCanonicalMedication(medication: string): string | null {
+  const normalized = normalizeMedicationName(medication);
+  const aliasEntries = Object.entries(DOAC_MEDICATION_ALIASES).sort(([a], [b]) => a.localeCompare(b));
+
+  for (const [canonical, aliases] of aliasEntries) {
+    const isMatch = aliases.some(alias => normalized === alias || normalized.includes(alias));
+    if (isMatch) {
+      return canonical;
+    }
+  }
+
+  return null;
+}
+
+function findGuideline(medicationLower: string, canonicalMedication: string | null): DoseGuideline | undefined {
+  if (canonicalMedication && DOSE_GUIDELINES[canonicalMedication]) {
+    return DOSE_GUIDELINES[canonicalMedication];
+  }
+
+  const sortedGuidelines = Object.values(DOSE_GUIDELINES)
+    .slice()
+    .sort((a, b) => a.medication.localeCompare(b.medication));
+  return sortedGuidelines.find(
+    guideline => medicationLower === guideline.medication || medicationLower.includes(guideline.medication)
+  );
 }

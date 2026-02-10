@@ -8,6 +8,26 @@
 export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN';
 export type RuleCategory = 'clinical' | 'administrative' | 'billing';
 
+export const OVERRIDE_REASON_CODES = [
+    'BENEFIT_OUTWEIGHS_RISK',
+    'PATIENT_TOLERANT',
+    'PALLIATIVE_CARE',
+    'GUIDELINE_MISMATCH',
+    'OTHER',
+] as const;
+
+export type OverrideReasonCode = (typeof OVERRIDE_REASON_CODES)[number];
+
+export function isOverrideReasonCode(value: unknown): value is OverrideReasonCode {
+    return typeof value === 'string' && OVERRIDE_REASON_CODES.includes(value as OverrideReasonCode);
+}
+
+export interface GovernanceEventContext {
+    protocolVersion?: string;
+    country?: string;
+    siteId?: string;
+}
+
 // The Database Schema (Simulated for Web)
 export interface RuleCache {
     id: string; // Prisma internal ID

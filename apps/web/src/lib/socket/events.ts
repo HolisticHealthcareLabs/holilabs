@@ -228,6 +228,9 @@ export interface GovernanceLogEvent {
   clinicId?: string;
   userId?: string;
   userName?: string;
+  protocolVersion?: string;
+  country?: string;
+  siteId?: string;
   timestamp: Date;
 }
 
@@ -238,6 +241,23 @@ export interface GovernanceOverrideEvent {
   userId?: string;
   userName?: string;
   clinicId?: string;
+  protocolVersion?: string;
+  country?: string;
+  siteId?: string;
+  timestamp: Date;
+}
+
+export interface GovernanceBlockedEvent {
+  sessionId: string;
+  ruleId?: string;
+  ruleName?: string;
+  severity: 'SOFT_NUDGE' | 'HARD_BLOCK';
+  description?: string;
+  clinicId?: string;
+  userId?: string;
+  protocolVersion?: string;
+  country?: string;
+  siteId?: string;
   timestamp: Date;
 }
 
