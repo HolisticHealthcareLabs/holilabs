@@ -64,10 +64,12 @@ const monitoringRoutes: FastifyPluginAsync = async (server) => {
    * GET /health
    * General health check
    *
-   * Returns 200 if all critical dependencies are healthy:
-   * - Database connection
-   * - Redis connection (queue)
-   * - Medplum connectivity
+   * Returns 200 if all CRITICAL dependencies are healthy:
+   * - Database connection (REQUIRED)
+   *
+   * Optional checks (don't fail health status if disabled):
+   * - Redis connection (only if FHIR is enabled)
+   * - Medplum connectivity (only if FHIR is enabled)
    */
   server.get('/health', async (request, reply) => {
     const health = {
@@ -80,34 +82,46 @@ const monitoringRoutes: FastifyPluginAsync = async (server) => {
       },
     };
 
+    // CRITICAL CHECK: Database (required for all operations)
     try {
-      // Check database
       await prisma.$queryRaw`SELECT 1`;
       health.checks.database = 'healthy';
     } catch (error) {
       console.error('Database health check failed:', error);
       health.checks.database = 'unhealthy';
-      health.status = 'unhealthy';
+      health.status = 'unhealthy'; // This DOES fail the health check
     }
 
+    // OPTIONAL CHECK: Redis (only needed if FHIR is enabled)
+    const fhirEnabled = process.env.ENABLE_MEDPLUM === 'true';
     try {
-      // Check Redis (via BullMQ queue)
-      if (server.fhirQueue) {
+      if (server.fhirQueue && fhirEnabled) {
         await server.fhirQueue.client.ping();
         health.checks.redis = 'healthy';
-      } else {
+      } else if (fhirEnabled) {
+        // FHIR enabled but queue not initialized - this is a real failure
         health.checks.redis = 'not_initialized';
+        health.status = 'unhealthy';
+      } else {
+        // FHIR disabled - redis is optional
+        health.checks.redis = 'not_required';
       }
     } catch (error) {
       console.error('Redis health check failed:', error);
       health.checks.redis = 'unhealthy';
-      health.status = 'unhealthy';
+      if (fhirEnabled) {
+        health.status = 'unhealthy'; // Only fail if FHIR is enabled
+      }
     }
 
+    // OPTIONAL CHECK: Medplum (only if enabled)
     try {
-      // Check Medplum connectivity (simple GET to /healthcheck)
+      const medplumEnabled = process.env.ENABLE_MEDPLUM === 'true';
       const medplumBaseUrl = process.env.MEDPLUM_BASE_URL;
-      if (medplumBaseUrl) {
+
+      if (!medplumEnabled) {
+        health.checks.medplum = 'not_required';
+      } else if (medplumBaseUrl) {
         const response = await fetch(`${medplumBaseUrl}/healthcheck`, {
           method: 'GET',
           signal: AbortSignal.timeout(5000), // 5s timeout
@@ -117,15 +131,19 @@ const monitoringRoutes: FastifyPluginAsync = async (server) => {
           health.checks.medplum = 'healthy';
         } else {
           health.checks.medplum = 'unhealthy';
-          health.status = 'unhealthy';
+          health.status = 'unhealthy'; // Only fail if enabled
         }
       } else {
         health.checks.medplum = 'not_configured';
       }
     } catch (error) {
       console.error('Medplum health check failed:', error);
-      health.checks.medplum = 'unhealthy';
-      health.status = 'unhealthy';
+      if (process.env.ENABLE_MEDPLUM === 'true') {
+        health.checks.medplum = 'unhealthy';
+        health.status = 'unhealthy'; // Only fail if enabled
+      } else {
+        health.checks.medplum = 'not_required';
+      }
     }
 
     const statusCode = health.status === 'healthy' ? 200 : 503;

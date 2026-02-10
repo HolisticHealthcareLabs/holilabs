@@ -11,3 +11,4 @@
 {"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-28 21:48:05.852"}
 {"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-28 21:49:05.857"}
 {"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-01-30 00:04:20.397"}
+{"error":"fetch failed","level":"error","message":"Failed to check for rule updates","service":"edge-node","timestamp":"2026-02-06 04:32:46.937"}
