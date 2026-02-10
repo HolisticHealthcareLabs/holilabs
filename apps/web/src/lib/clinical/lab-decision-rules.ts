@@ -29,6 +29,107 @@ export interface TreatmentRecommendation {
   evidenceLevel: 'A' | 'B' | 'C'; // A = Strong evidence, B = Moderate, C = Limited
 }
 
+export interface RenalFunctionInput {
+  eGFR?: number;
+  creatinineClearance?: number;
+  measuredAt?: string;
+}
+
+export interface RenalDataAssessment {
+  hasAnyRenalValue: boolean;
+  isMissingCriticalInput: boolean;
+  isStale: boolean;
+  ageHours: number | null;
+  referenceTimeUsed: string | null;
+  rationale: string[];
+}
+
+/**
+ * Deterministic renal data quality assessment for medication safety checks.
+ * If no reference time is provided, freshness cannot be proven and the data is treated as stale.
+ */
+export function assessRenalDataQuality(
+  renal: RenalFunctionInput | undefined,
+  opts: {
+    maxAgeHours: number;
+    referenceTimeIso?: string;
+  }
+): RenalDataAssessment {
+  const rationale: string[] = [];
+  const hasAnyRenalValue = Boolean(
+    renal && (typeof renal.eGFR === 'number' || typeof renal.creatinineClearance === 'number')
+  );
+
+  if (!hasAnyRenalValue) {
+    rationale.push('Missing renal value: provide eGFR or creatinine clearance.');
+    return {
+      hasAnyRenalValue: false,
+      isMissingCriticalInput: true,
+      isStale: true,
+      ageHours: null,
+      referenceTimeUsed: opts.referenceTimeIso || null,
+      rationale,
+    };
+  }
+
+  const measuredAt = renal?.measuredAt;
+  const referenceTimeIso = opts.referenceTimeIso;
+  if (!measuredAt) {
+    rationale.push('Renal value timestamp missing; freshness cannot be determined.');
+    return {
+      hasAnyRenalValue: true,
+      isMissingCriticalInput: false,
+      isStale: true,
+      ageHours: null,
+      referenceTimeUsed: referenceTimeIso || null,
+      rationale,
+    };
+  }
+
+  if (!referenceTimeIso) {
+    rationale.push('Reference time missing; renal freshness cannot be deterministically verified.');
+    return {
+      hasAnyRenalValue: true,
+      isMissingCriticalInput: false,
+      isStale: true,
+      ageHours: null,
+      referenceTimeUsed: null,
+      rationale,
+    };
+  }
+
+  const measuredMs = Date.parse(measuredAt);
+  const referenceMs = Date.parse(referenceTimeIso);
+  if (Number.isNaN(measuredMs) || Number.isNaN(referenceMs)) {
+    rationale.push('Invalid timestamp format for renal data freshness check.');
+    return {
+      hasAnyRenalValue: true,
+      isMissingCriticalInput: false,
+      isStale: true,
+      ageHours: null,
+      referenceTimeUsed: referenceTimeIso,
+      rationale,
+    };
+  }
+
+  const ageHours = Math.max(0, (referenceMs - measuredMs) / (1000 * 60 * 60));
+  const isStale = ageHours > opts.maxAgeHours;
+  rationale.push(
+    isStale
+      ? `Renal data is stale (${ageHours.toFixed(1)}h old; max ${opts.maxAgeHours}h).`
+      : `Renal data is fresh (${ageHours.toFixed(1)}h old; max ${opts.maxAgeHours}h).`
+  );
+
+  return {
+    hasAnyRenalValue: true,
+    isMissingCriticalInput: false,
+    isStale,
+    ageHours,
+    referenceTimeUsed: referenceTimeIso,
+    rationale,
+  };
+}
+
 /**
  * Generate clinical alerts for critical lab values
  */

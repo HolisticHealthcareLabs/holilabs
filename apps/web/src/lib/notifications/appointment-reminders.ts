@@ -11,6 +11,13 @@ import { sendPushNotification } from '../notifications/send-push';
 import { sendAppointmentConfirmationWhatsApp } from './whatsapp';
 import { prisma } from '../prisma';
 import logger from '../logger';
+import {
+  buildReminderLifecycleEvent,
+  buildReminderRetryState,
+  DEFAULT_REMINDER_RETRY_POLICY,
+  evaluateReminderConsent,
+  type ReminderDispatchChannel,
+} from './reminder-policy';
 
 interface ReminderResult {
   success: boolean;
@@ -21,6 +28,43 @@ interface ReminderResult {
     email?: boolean;
   };
   error?: string;
+}
+
+function logReminderFailureEvent(input: {
+  appointmentId: string;
+  patientId: string;
+  channel: ReminderDispatchChannel;
+  templateName: string;
+  error: string;
+}) {
+  const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
+  logger.error(
+    buildReminderLifecycleEvent({
+      stage: 'fail',
+      patientId: input.patientId,
+      channel: input.channel,
+      templateName: input.templateName,
+      category: 'appointment',
+      reminderId: input.appointmentId,
+      error: input.error,
+      retryState,
+    })
+  );
+
+  if (retryState.escalationReady) {
+    logger.error(
+      buildReminderLifecycleEvent({
+        stage: 'escalation',
+        patientId: input.patientId,
+        channel: input.channel,
+        templateName: input.templateName,
+        category: 'appointment',
+        reminderId: input.appointmentId,
+        error: retryState.escalationReason || input.error,
+        retryState,
+      })
+    );
+  }
 }
 
 /**
@@ -74,6 +118,16 @@ export async function sendAppointmentReminder(
           include: {
             patientUser: true,
             preferences: true, // Include preferences
+            consents: {
+              where: {
+                isActive: true,
+                revokedAt: null,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+              select: {
+                type: true,
+              },
+            },
           },
         },
         clinician: {
@@ -108,6 +162,14 @@ export async function sendAppointmentReminder(
     // Check if we're in quiet hours (skip for emergency override)
     const isQuietHours = checkQuietHours(preferences);
     if (isQuietHours && !preferences.allowEmergencyOverride) {
+      logReminderFailureEvent({
+        appointmentId,
+        patientId: appointment.patientId,
+        channel: 'PUSH',
+        templateName: 'Appointment Reminder',
+        error: 'Skipped: quiet hours active',
+      });
+
       logger.info({
         event: 'reminder_skipped_quiet_hours',
         appointmentId,
@@ -128,13 +190,38 @@ export async function sendAppointmentReminder(
     const details = formatAppointmentDetails(appointment);
 
     const channels: ReminderResult['channels'] = {};
+    const activeConsentTypes = appointment.patient.consents.map((consent) => consent.type);
 
     // 1. Try WhatsApp FIRST (98% open rate, 97% of LATAM has it, $0.005/msg)
-    if (
-      appointment.patient.phone &&
-      preferences.whatsappEnabled &&
-      preferences.whatsappConsented
-    ) {
+    if (appointment.patient.phone) {
+      const whatsappConsent = evaluateReminderConsent({
+        channel: 'WHATSAPP',
+        category: 'appointment',
+        preferences,
+        activeConsentTypes,
+      });
+
+      if (!whatsappConsent.allowed) {
+        channels.whatsapp = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'WHATSAPP',
+          templateName: 'Appointment Reminder',
+          error: whatsappConsent.reason || 'Consent denied for WhatsApp reminder',
+        });
+      } else {
+        logger.info(
+          buildReminderLifecycleEvent({
+            stage: 'sent',
+            patientId: appointment.patientId,
+            channel: 'WHATSAPP',
+            templateName: 'Appointment Reminder',
+            category: 'appointment',
+            reminderId: appointmentId,
+          })
+        );
+
       try {
         const whatsappSuccess = await sendAppointmentConfirmationWhatsApp(
           appointment.patient.phone,
@@ -147,37 +234,79 @@ export async function sendAppointmentReminder(
 
         channels.whatsapp = whatsappSuccess;
 
-        // Update confirmation method if WhatsApp succeeded
         if (whatsappSuccess) {
           await prisma.appointment.update({
             where: { id: appointmentId },
             data: { confirmationMethod: 'whatsapp' },
           });
 
-          logger.info({
-            event: 'whatsapp_confirmation_sent',
+          logger.info(
+            buildReminderLifecycleEvent({
+              stage: 'success',
+              patientId: appointment.patientId,
+              channel: 'WHATSAPP',
+              templateName: 'Appointment Reminder',
+              category: 'appointment',
+              reminderId: appointmentId,
+            })
+          );
+        } else {
+          logReminderFailureEvent({
             appointmentId,
-            patientPhone: appointment.patient.phone,
+            patientId: appointment.patientId,
+            channel: 'WHATSAPP',
+            templateName: 'Appointment Reminder',
+            error: 'WhatsApp dispatch returned false',
           });
         }
       } catch (error) {
-        console.error('WhatsApp error:', error);
         channels.whatsapp = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'WHATSAPP',
+          templateName: 'Appointment Reminder',
+          error: error instanceof Error ? error.message : 'Unknown WhatsApp error',
+        });
+      }
       }
     }
 
     // 2. Try Push Notification (FREE, instant, but requires app installed)
-    if (
-      !channels.whatsapp &&
-      appointment.patient.patientUser &&
-      preferences.pushEnabled &&
-      preferences.pushAppointments
-    ) {
+    if (!channels.whatsapp && appointment.patient.patientUser) {
+      const pushConsent = evaluateReminderConsent({
+        channel: 'PUSH',
+        category: 'appointment',
+        preferences,
+        activeConsentTypes,
+      });
+
+      if (!pushConsent.allowed) {
+        channels.push = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'PUSH',
+          templateName: 'Appointment Reminder',
+          error: pushConsent.reason || 'Consent denied for push reminder',
+        });
+      } else {
+        logger.info(
+          buildReminderLifecycleEvent({
+            stage: 'sent',
+            patientId: appointment.patientId,
+            channel: 'PUSH',
+            templateName: 'Appointment Reminder',
+            category: 'appointment',
+            reminderId: appointmentId,
+          })
+        );
+
       try {
         const pushResult = await sendPushNotification({
           userId: appointment.patient.patientUser.id,
           payload: {
-            title: 'Confirma tu cita médica',
+            title: 'Confirma tu cita medica',
             body: `Cita con ${details.clinicianName} el ${details.dateTime}`,
             icon: '/icon-192x192.png',
             badge: '/icon-192x192.png',
@@ -208,21 +337,69 @@ export async function sendAppointmentReminder(
             where: { id: appointmentId },
             data: { confirmationMethod: 'push' },
           });
+
+          logger.info(
+            buildReminderLifecycleEvent({
+              stage: 'success',
+              patientId: appointment.patientId,
+              channel: 'PUSH',
+              templateName: 'Appointment Reminder',
+              category: 'appointment',
+              reminderId: appointmentId,
+            })
+          );
+        } else {
+          logReminderFailureEvent({
+            appointmentId,
+            patientId: appointment.patientId,
+            channel: 'PUSH',
+            templateName: 'Appointment Reminder',
+            error: pushResult.errors.join(', ') || 'Push dispatch returned no successful sends',
+          });
         }
       } catch (error) {
-        console.error('Push notification error:', error);
         channels.push = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'PUSH',
+          templateName: 'Appointment Reminder',
+          error: error instanceof Error ? error.message : 'Unknown push error',
+        });
+      }
       }
     }
 
     // 3. Fallback to Email (FREE, reliable, 20% open rate)
-    if (
-      !channels.whatsapp &&
-      !channels.push &&
-      appointment.patient.email &&
-      preferences.emailEnabled &&
-      preferences.emailAppointments
-    ) {
+    if (!channels.whatsapp && !channels.push && appointment.patient.email) {
+      const emailConsent = evaluateReminderConsent({
+        channel: 'EMAIL',
+        category: 'appointment',
+        preferences,
+        activeConsentTypes,
+      });
+
+      if (!emailConsent.allowed) {
+        channels.email = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'EMAIL',
+          templateName: 'Appointment Reminder',
+          error: emailConsent.reason || 'Consent denied for email reminder',
+        });
+      } else {
+        logger.info(
+          buildReminderLifecycleEvent({
+            stage: 'sent',
+            patientId: appointment.patientId,
+            channel: 'EMAIL',
+            templateName: 'Appointment Reminder',
+            category: 'appointment',
+            reminderId: appointmentId,
+          })
+        );
+
       try {
         const emailSuccess = await sendAppointmentConfirmationEmail(
           appointment.patient.email,
@@ -241,22 +418,69 @@ export async function sendAppointmentReminder(
             where: { id: appointmentId },
             data: { confirmationMethod: 'email' },
           });
+
+          logger.info(
+            buildReminderLifecycleEvent({
+              stage: 'success',
+              patientId: appointment.patientId,
+              channel: 'EMAIL',
+              templateName: 'Appointment Reminder',
+              category: 'appointment',
+              reminderId: appointmentId,
+            })
+          );
+        } else {
+          logReminderFailureEvent({
+            appointmentId,
+            patientId: appointment.patientId,
+            channel: 'EMAIL',
+            templateName: 'Appointment Reminder',
+            error: 'Email dispatch returned false',
+          });
         }
       } catch (error) {
-        console.error('Email error:', error);
         channels.email = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'EMAIL',
+          templateName: 'Appointment Reminder',
+          error: error instanceof Error ? error.message : 'Unknown email error',
+        });
+      }
       }
     }
 
     // 4. Last resort: SMS (more expensive at $0.02/msg vs $0.005 for WhatsApp)
-    if (
-      !channels.whatsapp &&
-      !channels.push &&
-      !channels.email &&
-      appointment.patient.phone &&
-      preferences.smsEnabled &&
-      preferences.smsAppointments
-    ) {
+    if (!channels.whatsapp && !channels.push && !channels.email && appointment.patient.phone) {
+      const smsConsent = evaluateReminderConsent({
+        channel: 'SMS',
+        category: 'appointment',
+        preferences,
+        activeConsentTypes,
+      });
+
+      if (!smsConsent.allowed) {
+        channels.sms = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'SMS',
+          templateName: 'Appointment Reminder',
+          error: smsConsent.reason || 'Consent denied for SMS reminder',
+        });
+      } else {
+        logger.info(
+          buildReminderLifecycleEvent({
+            stage: 'sent',
+            patientId: appointment.patientId,
+            channel: 'SMS',
+            templateName: 'Appointment Reminder',
+            category: 'appointment',
+            reminderId: appointmentId,
+          })
+        );
+
       try {
         const smsSuccess = await sendAppointmentConfirmationSMS(
           appointment.patient.phone,
@@ -274,15 +498,68 @@ export async function sendAppointmentReminder(
             where: { id: appointmentId },
             data: { confirmationMethod: 'sms' },
           });
+
+          logger.info(
+            buildReminderLifecycleEvent({
+              stage: 'success',
+              patientId: appointment.patientId,
+              channel: 'SMS',
+              templateName: 'Appointment Reminder',
+              category: 'appointment',
+              reminderId: appointmentId,
+            })
+          );
+        } else {
+          logReminderFailureEvent({
+            appointmentId,
+            patientId: appointment.patientId,
+            channel: 'SMS',
+            templateName: 'Appointment Reminder',
+            error: 'SMS dispatch returned false',
+          });
         }
       } catch (error) {
-        console.error('SMS error:', error);
         channels.sms = false;
+        logReminderFailureEvent({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'SMS',
+          templateName: 'Appointment Reminder',
+          error: error instanceof Error ? error.message : 'Unknown SMS error',
+        });
+      }
       }
     }
 
     // Determine overall success (at least one channel worked)
     const success = Object.values(channels).some((result) => result === true);
+
+    if (!success) {
+      const escalationChannel: ReminderDispatchChannel =
+        channels.whatsapp === false
+          ? 'WHATSAPP'
+          : channels.push === false
+            ? 'PUSH'
+            : channels.email === false
+              ? 'EMAIL'
+              : 'SMS';
+
+      logger.error(
+        buildReminderLifecycleEvent({
+          stage: 'escalation',
+          patientId: appointment.patientId,
+          channel: escalationChannel,
+          templateName: 'Appointment Reminder',
+          category: 'appointment',
+          reminderId: appointmentId,
+          error: 'No reminder channel succeeded',
+          retryState: buildReminderRetryState(
+            DEFAULT_REMINDER_RETRY_POLICY.maxAttempts,
+            DEFAULT_REMINDER_RETRY_POLICY
+          ),
+        })
+      );
+    }
 
     // Log result
     logger.info({

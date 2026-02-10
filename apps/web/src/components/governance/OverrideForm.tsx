@@ -3,15 +3,20 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import {
+    OVERRIDE_REASON_CODES,
+    isOverrideReasonCode,
+    type OverrideReasonCode,
+} from '@/lib/governance/shared-types';
 
 // Clinical justification reasons for overriding a safety block
-const OVERRIDE_REASONS = [
-    { id: 'BENEFIT_OUTWEIGHS_RISK', label: 'Benefit outweighs risk (Clinical Judgment)' },
-    { id: 'PATIENT_TOLERANT', label: 'Patient has tolerated this before' },
-    { id: 'PALLIATIVE_CARE', label: 'Palliative / Comfort Care context' },
-    { id: 'GUIDELINE_MISMATCH', label: 'Guideline not applicable to this case' },
-    { id: 'OTHER', label: 'Other (See Note)' },
-];
+const OVERRIDE_REASON_LABELS: Record<OverrideReasonCode, string> = {
+    BENEFIT_OUTWEIGHS_RISK: 'Benefit outweighs risk (Clinical Judgment)',
+    PATIENT_TOLERANT: 'Patient has tolerated this before',
+    PALLIATIVE_CARE: 'Palliative / Comfort Care context',
+    GUIDELINE_MISMATCH: 'Guideline not applicable to this case',
+    OTHER: 'Other (See Note)',
+};
 
 interface OverrideFormProps {
     onOverride: (reason: string) => void;
@@ -20,7 +25,7 @@ interface OverrideFormProps {
 }
 
 export default function OverrideForm({ onOverride, onCancel, isSubmitting = false }: OverrideFormProps) {
-    const [selectedReason, setSelectedReason] = useState<string>('');
+    const [selectedReason, setSelectedReason] = useState<OverrideReasonCode | ''>('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,10 +40,10 @@ export default function OverrideForm({ onOverride, onCancel, isSubmitting = fals
                     Clinical Justification for Override
                 </label>
                 <div className="grid gap-2">
-                    {OVERRIDE_REASONS.map((reason) => (
+                    {OVERRIDE_REASON_CODES.map((reason) => (
                         <label
-                            key={reason.id}
-                            className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${selectedReason === reason.id
+                            key={reason}
+                            className={`flex items-center p-3 border rounded-md cursor-pointer transition-colors ${selectedReason === reason
                                     ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500'
                                     : 'bg-white hover:bg-slate-50 border-slate-200'
                                 }`}
@@ -46,12 +51,15 @@ export default function OverrideForm({ onOverride, onCancel, isSubmitting = fals
                             <input
                                 type="radio"
                                 name="overrideReason"
-                                value={reason.id}
-                                checked={selectedReason === reason.id}
-                                onChange={(e) => setSelectedReason(e.target.value)}
+                                value={reason}
+                                checked={selectedReason === reason}
+                                onChange={(e) => {
+                                    const next = e.target.value;
+                                    setSelectedReason(isOverrideReasonCode(next) ? next : '');
+                                }}
                                 className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                             />
-                            <span className="ml-2 text-sm text-slate-900">{reason.label}</span>
+                            <span className="ml-2 text-sm text-slate-900">{OVERRIDE_REASON_LABELS[reason]}</span>
                         </label>
                     ))}
                 </div>

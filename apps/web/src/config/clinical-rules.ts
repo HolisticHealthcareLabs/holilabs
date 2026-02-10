@@ -28,6 +28,22 @@ export interface ClinicalRule {
     category: 'CONTRAINDICATION' | 'INTERACTION' | 'DOSING' | 'ALLERGY' | 'CONDITION';
 }
 
+export const DOAC_RENAL_RULESET_VERSION = 'doac-renal-v1';
+
+export const DOAC_MEDICATION_ALIASES = {
+    apixaban: ['apixaban', 'eliquis'],
+    rivaroxaban: ['rivaroxaban', 'xarelto'],
+    dabigatran: ['dabigatran', 'pradaxa'],
+    edoxaban: ['edoxaban', 'savaysa', 'lixiana'],
+} as const;
+
+export const DOAC_RENAL_POLICY = {
+    requiredInputs: ['eGFR', 'creatinineClearance'] as const,
+    maxAgeHours: 48,
+    attestationField: 'renalDataReviewed',
+    rulesetVersion: DOAC_RENAL_RULESET_VERSION,
+} as const;
+
 // ============================================================================
 // RULE LIBRARY
 // ============================================================================
