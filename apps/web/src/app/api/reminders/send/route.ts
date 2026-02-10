@@ -10,6 +10,13 @@ import { prisma } from '@/lib/prisma';
 import { sendSMS, sendWhatsApp } from '@/lib/sms/twilio';
 import { sendEmail } from '@/lib/email';
 import logger from '@/lib/logger';
+import {
+  buildReminderLifecycleEvent,
+  buildReminderRetryState,
+  DEFAULT_REMINDER_RETRY_POLICY,
+  evaluateReminderConsent,
+  type ReminderDispatchChannel,
+} from '@/lib/notifications/reminder-policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +32,24 @@ interface SendReminderRequest {
   channel: 'SMS' | 'EMAIL' | 'WHATSAPP';
   sendImmediately?: boolean;
   scheduledFor?: string; // ISO datetime for future sending
+}
+
+type ReminderNotificationType = 'APPOINTMENT_REMINDER' | 'NEW_PRESCRIPTION' | 'NEW_DOCUMENT';
+
+function mapCategoryToNotificationType(category: string): ReminderNotificationType {
+  if (category === 'appointment') {
+    return 'APPOINTMENT_REMINDER';
+  }
+
+  if (category === 'medication' || category === 'prescription') {
+    return 'NEW_PRESCRIPTION';
+  }
+
+  return 'NEW_DOCUMENT';
+}
+
+function toJsonMetadata(value: unknown) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 /**
@@ -64,6 +89,36 @@ async function getPatientVariables(patientId: string) {
       },
       medications: {
         take: 1,
+      },
+      preferences: {
+        select: {
+          smsEnabled: true,
+          smsReminders: true,
+          smsAppointments: true,
+          smsOptedOutAt: true,
+          smsConsentedAt: true,
+          emailEnabled: true,
+          emailReminders: true,
+          emailAppointments: true,
+          emailOptedOutAt: true,
+          emailConsentedAt: true,
+          whatsappEnabled: true,
+          whatsappConsented: true,
+          whatsappConsentedAt: true,
+          pushEnabled: true,
+          pushAppointments: true,
+          pushMessages: true,
+        },
+      },
+      consents: {
+        where: {
+          isActive: true,
+          revokedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        select: {
+          type: true,
+        },
       },
     },
   });
@@ -241,13 +296,94 @@ export async function POST(request: NextRequest) {
           const personalizedSubject = template.subject
             ? replaceVariables(template.subject, variables)
             : 'Reminder from Holi Labs';
+          const notificationType = mapCategoryToNotificationType(template.category);
+          const consentDecision = evaluateReminderConsent({
+            channel,
+            category: template.category,
+            preferences: patient.preferences,
+            activeConsentTypes: patient.consents.map((consent) => consent.type),
+          });
+
+          if (!consentDecision.allowed) {
+            const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
+            const consentBlockedEvent = buildReminderLifecycleEvent({
+              stage: 'fail',
+              patientId,
+              channel: channel as ReminderDispatchChannel,
+              templateName: template.name,
+              category: template.category,
+              error: consentDecision.reason,
+              retryState,
+              consent: {
+                requiredConsentTypes: consentDecision.requiredConsentTypes,
+                explicitConsentGranted: consentDecision.explicitConsentGranted,
+                channelConsentGranted: consentDecision.channelConsentGranted,
+                reason: consentDecision.reason,
+              },
+            });
+
+            logger.warn(consentBlockedEvent);
+
+            if (retryState.escalationReady) {
+              logger.error(
+                buildReminderLifecycleEvent({
+                  stage: 'escalation',
+                  patientId,
+                  channel: channel as ReminderDispatchChannel,
+                  templateName: template.name,
+                  category: template.category,
+                  error: retryState.escalationReason || consentDecision.reason,
+                  retryState,
+                  consent: {
+                    requiredConsentTypes: consentDecision.requiredConsentTypes,
+                    explicitConsentGranted: consentDecision.explicitConsentGranted,
+                    channelConsentGranted: consentDecision.channelConsentGranted,
+                    reason: consentDecision.reason,
+                  },
+                })
+              );
+            }
+
+            const blockedNotification = await prisma.notification.create({
+              data: {
+                recipientId: patientId,
+                recipientType: 'PATIENT',
+                type: notificationType,
+                title: `${template.name} (blocked)`,
+                message: consentDecision.reason || 'Reminder blocked due to missing consent',
+                actionUrl: '/portal/dashboard/settings',
+                priority: retryState.escalationReady ? 'HIGH' : 'NORMAL',
+                deliveredInApp: false,
+                deliveredEmail: false,
+                deliveredSMS: false,
+                metadata: toJsonMetadata({
+                  reminderLifecycle: consentBlockedEvent,
+                  retryState,
+                  policyHooks: retryState.hooks,
+                }),
+              },
+            });
+
+            return {
+              patientId,
+              success: false,
+              notificationId: blockedNotification.id,
+              error: consentDecision.reason || 'Reminder blocked due to missing consent',
+              retry: retryState,
+            };
+          }
 
           // Send via selected channel
           let success = false;
-          let deliveryData: any = {
-            channel,
-            sentAt: new Date(),
-          };
+          logger.info(
+            buildReminderLifecycleEvent({
+              stage: 'sent',
+              patientId,
+              channel: channel as ReminderDispatchChannel,
+              templateName: template.name,
+              category: template.category,
+            })
+          );
 
           switch (channel) {
             case 'SMS':
@@ -270,13 +406,13 @@ export async function POST(request: NextRequest) {
           }
 
           // Create notification record
-          // Map reminder categories to NotificationType enum values
-          let notificationType: 'APPOINTMENT_REMINDER' | 'NEW_PRESCRIPTION' | 'NEW_DOCUMENT' = 'NEW_DOCUMENT';
-          if (template.category === 'appointment') {
-            notificationType = 'APPOINTMENT_REMINDER';
-          } else if (template.category === 'medication' || template.category === 'prescription') {
-            notificationType = 'NEW_PRESCRIPTION';
-          }
+          const successLifecycleEvent = buildReminderLifecycleEvent({
+            stage: 'success',
+            patientId,
+            channel: channel as ReminderDispatchChannel,
+            templateName: template.name,
+            category: template.category,
+          });
 
           const notification = await prisma.notification.create({
             data: {
@@ -292,16 +428,22 @@ export async function POST(request: NextRequest) {
               deliveredSMS: channel === 'SMS',
               emailSentAt: channel === 'EMAIL' ? new Date() : null,
               smsSentAt: channel === 'SMS' || channel === 'WHATSAPP' ? new Date() : null,
+              metadata: toJsonMetadata({
+                reminderLifecycle: successLifecycleEvent,
+              }),
             },
           });
 
-          logger.info({
-            event: 'reminder_sent',
-            patientId,
-            channel,
-            templateName: template.name,
-            notificationId: notification.id,
-          });
+          logger.info(
+            buildReminderLifecycleEvent({
+              stage: 'success',
+              patientId,
+              channel: channel as ReminderDispatchChannel,
+              templateName: template.name,
+              category: template.category,
+              notificationId: notification.id,
+            })
+          );
 
           return {
             patientId,
@@ -309,17 +451,73 @@ export async function POST(request: NextRequest) {
             notificationId: notification.id,
           };
         } catch (error) {
-          logger.error({
-            event: 'reminder_send_error',
+          const errorMessage = error instanceof Error ? error.message : 'Failed to send reminder';
+          const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
+          const failedLifecycleEvent = buildReminderLifecycleEvent({
+            stage: 'fail',
             patientId,
-            channel,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            channel: channel as ReminderDispatchChannel,
+            templateName: template.name,
+            category: template.category,
+            error: errorMessage,
+            retryState,
           });
+
+          logger.error(failedLifecycleEvent);
+
+          if (retryState.escalationReady) {
+            logger.error(
+              buildReminderLifecycleEvent({
+                stage: 'escalation',
+                patientId,
+                channel: channel as ReminderDispatchChannel,
+                templateName: template.name,
+                category: template.category,
+                error: retryState.escalationReason || errorMessage,
+                retryState,
+              })
+            );
+          }
+
+          const notificationType = mapCategoryToNotificationType(template.category);
+          let failedNotificationId: string | undefined;
+          try {
+            const failedNotification = await prisma.notification.create({
+              data: {
+                recipientId: patientId,
+                recipientType: 'PATIENT',
+                type: notificationType,
+                title: `${template.name} (failed)`,
+                message: errorMessage,
+                actionUrl: '/portal/dashboard',
+                priority: retryState.escalationReady ? 'HIGH' : 'NORMAL',
+                deliveredInApp: false,
+                deliveredEmail: false,
+                deliveredSMS: false,
+                metadata: toJsonMetadata({
+                  reminderLifecycle: failedLifecycleEvent,
+                  retryState,
+                  policyHooks: retryState.hooks,
+                }),
+              },
+            });
+            failedNotificationId = failedNotification.id;
+          } catch (recordError) {
+            logger.error({
+              event: 'reminder_failure_record_error',
+              patientId,
+              channel,
+              error:
+                recordError instanceof Error ? recordError.message : 'Failed to record reminder failure',
+            });
+          }
 
           return {
             patientId,
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to send reminder',
+            notificationId: failedNotificationId,
+            error: errorMessage,
+            retry: retryState,
           };
         }
       })
