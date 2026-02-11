@@ -6,7 +6,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
-    "dev": "NODE_ENV=development next dev",
+    "dev": "NODE_ENV=development next dev --port 3000",
     "build": "pnpm run validate:env && next build",
     "start": "next start",
     "lint": "next lint",
@@ -167,9 +167,13 @@
     "@types/react-dom": "^18.2.18",
     "@types/uuid": "^11.0.0",
     "@types/web-push": "^3.6.4",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "autoprefixer": "^10.0.1",
     "axe-core": "^4.11.0",
     "babel-plugin-transform-remove-console": "^6.9.4",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.35",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "29.7.0",
     "postcss": "^8",

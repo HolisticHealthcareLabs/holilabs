@@ -5,6 +5,8 @@ import { InviteEmail } from '@/components/email/InviteEmail';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://holilabs.xyz';
+
 const inviteRequestSchema = z.object({
     email: z.string().email(),
     fullName: z.string().min(2),
@@ -55,10 +57,11 @@ export async function POST(req: NextRequest) {
             to: email,
             subject: 'Holi Labs - Access Request Received',
             react: InviteEmail({
-                recipientName: fullName,
-                inviteLink: 'https://holilabs.xyz' // Placeholder until approved
+                // Intentionally omit name in the greeting for a more universal/neutral tone.
+                recipientName: undefined,
+                inviteLink: `${baseUrl}/access?callbackUrl=${encodeURIComponent('/download')}`,
             }),
-            text: `Hello ${fullName}, we have received your request for Holi Labs access. We'll be in touch soon!`,
+            text: `Hello, we have received your request for Holi Labs access. We'll be in touch soon!`,
         });
 
         logger.info({ email, signupId: signup.id }, 'Beta access request received');

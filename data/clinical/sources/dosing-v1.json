@@ -1,0 +1,28 @@
+[
+  {
+    "ruleId": "MED_DOSING_001",
+    "name": "Warfarin with Supratherapeutic INR",
+    "domain": "DOSING",
+    "severity": "BLOCK",
+    "provenance": {
+      "sourceAuthority": "CHEST/ACCP",
+      "sourceDocument": "CHEST Antithrombotic Therapy Guidelines 2022",
+      "sourceVersion": "10th-edition",
+      "effectiveDate": "2022-01-01",
+      "jurisdiction": "INTL",
+      "citationUrl": "https://journal.chestnet.org/",
+      "licenseType": "proprietary"
+    },
+    "logic": {
+      "and": [
+        { ">": [{ "var": "patient_inr" }, 4.0] },
+        { "!": { "in": ["Hold Warfarin", { "var": "proposed_action" }] } }
+      ]
+    },
+    "intervention": {
+      "message": "INR is supratherapeutic (> 4.0). Continuing warfarin increases bleeding risk.",
+      "recommendation": "Hold warfarin. Consider Vitamin K if INR > 10 or bleeding present. Recheck INR in 24-48 hours."
+    },
+    "tags": ["anticoagulation", "warfarin", "inr"]
+  }
+]

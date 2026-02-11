@@ -11,23 +11,23 @@ export function Footer() {
 
                     {/* Column 1 */}
                     <div>
-                        <h4 className="font-semibold text-foreground mb-4 text-sm">Producto</h4>
+                        <h4 className="font-semibold text-foreground mb-4 text-sm">Product</h4>
                         <ul className="space-y-2.5 text-sm text-muted-foreground">
-                            <li><a href="#plataforma" className="hover:text-primary transition-colors">Plataforma</a></li>
-                            <li><a href="#precios" className="hover:text-primary transition-colors">Precios</a></li>
-                            <li><a href="#casos" className="hover:text-primary transition-colors">Casos de Uso</a></li>
-                            <li><a href="#demo" className="hover:text-primary transition-colors">Demo</a></li>
+                            <li><a href="#how-it-works" className="hover:text-primary transition-colors">How it works</a></li>
+                            <li><a href="#modules" className="hover:text-primary transition-colors">Modules</a></li>
+                            <li><a href="#audit" className="hover:text-primary transition-colors">Audit</a></li>
+                            <li><a href="#demo" className="hover:text-primary transition-colors">Request access</a></li>
                         </ul>
                     </div>
 
                     {/* Column 2 */}
                     <div>
-                        <h4 className="font-semibold text-foreground mb-4 text-sm">Empresa</h4>
+                        <h4 className="font-semibold text-foreground mb-4 text-sm">Company</h4>
                         <ul className="space-y-2.5 text-sm text-muted-foreground">
-                            <li><a href="/about" className="hover:text-primary transition-colors">Sobre Nosotros</a></li>
+                            <li><a href="/about" className="hover:text-primary transition-colors">About</a></li>
                             <li><a href="/blog" className="hover:text-primary transition-colors">Blog</a></li>
-                            <li><a href="/careers" className="hover:text-primary transition-colors">Carreras</a></li>
-                            <li><a href="/contact" className="hover:text-primary transition-colors">Contacto</a></li>
+                            <li><a href="/careers" className="hover:text-primary transition-colors">Careers</a></li>
+                            <li><a href="/contact" className="hover:text-primary transition-colors">Contact</a></li>
                         </ul>
                     </div>
 
@@ -45,10 +45,10 @@ export function Footer() {
 
                     {/* Column 4 */}
                     <div>
-                        <h4 className="font-semibold text-foreground mb-4 text-sm">Contacto</h4>
+                        <h4 className="font-semibold text-foreground mb-4 text-sm">Contact</h4>
                         <ul className="space-y-2.5 text-sm text-muted-foreground">
                             <li><a href="mailto:admin@holilabs.xyz" className="hover:text-primary transition-colors">admin@holilabs.xyz</a></li>
-                            <li><a href="https://wa.me/525555555555" className="hover:text-primary transition-colors">WhatsApp</a></li>
+                            <li><a href="#demo" className="hover:text-primary transition-colors">Join pilot</a></li>
                         </ul>
                     </div>
 
@@ -56,11 +56,11 @@ export function Footer() {
 
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="text-sm text-muted-foreground">© 2026 Holi Labs. Todos los derechos reservados.</div>
+                    <div className="text-sm text-muted-foreground">© 2026 Holi Labs. All rights reserved.</div>
                     <div className="flex items-center gap-3">
-                        <span className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium text-muted-foreground">HIPAA</span>
-                        <span className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium text-muted-foreground">LGPD</span>
-                        <span className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium text-muted-foreground">ISO 27269</span>
+                        <span className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium text-muted-foreground">Encryption</span>
+                        <span className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium text-muted-foreground">Audit trails</span>
+                        <span className="px-3 py-1.5 bg-background border border-border rounded-md text-xs font-medium text-muted-foreground">Access controls</span>
                     </div>
                 </div>
 

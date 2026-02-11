@@ -160,6 +160,130 @@ export class GovernanceService {
      * Async Logging (Fire and Forget)
      * Implements "Black Box" Recorder [BACK-03]
      */
+    private validatePersistenceParams(params: {
+        sessionId: string;
+        inputPrompt: string;
+        action: 'BLOCKED' | 'FLAGGED' | 'PASSED' | 'SHADOW_BLOCK';
+        severity: 'INFO' | 'SOFT_NUDGE' | 'HARD_BLOCK';
+    }) {
+        if (!params.sessionId || !params.sessionId.trim()) {
+            throw new Error('Governance persistence requires non-empty sessionId');
+        }
+        if (!params.inputPrompt || !params.inputPrompt.trim()) {
+            throw new Error('Governance persistence requires non-empty inputPrompt');
+        }
+        if (!params.action) {
+            throw new Error('Governance persistence requires action');
+        }
+        if (!params.severity) {
+            throw new Error('Governance persistence requires severity');
+        }
+    }
+
+    private logPersistenceFailure(params: {
+        phase: string;
+        sessionId: string;
+        ruleId?: string;
+        userId?: string;
+        transactionId?: string;
+        error: unknown;
+    }) {
+        logger.error({
+            event: 'governance_persistence_failed',
+            phase: params.phase,
+            sessionId: params.sessionId,
+            ruleId: params.ruleId ?? null,
+            userId: params.userId ?? null,
+            transactionId: params.transactionId ?? null,
+            timestamp: new Date().toISOString(),
+            error: params.error instanceof Error ? params.error.message : String(params.error),
+        });
+    }
+
+    private async ensureInteractionSession(params: { sessionId: string; userId?: string }) {
+        const normalizedSessionId = params.sessionId.trim();
+        let interaction = await db.interactionSession.findFirst({
+            where: { scribeSessionId: normalizedSessionId },
+        });
+
+        if (interaction) {
+            return interaction;
+        }
+
+        const scribe = await prisma.scribeSession.findUnique({
+            where: { id: normalizedSessionId },
+            select: { clinicianId: true, patientId: true }
+        });
+
+        if (!scribe) {
+            throw new Error(`No interaction context found for scribe session ${normalizedSessionId}`);
+        }
+
+        const resolvedUserId = params.userId?.trim() || scribe.clinicianId;
+        if (!resolvedUserId) {
+            throw new Error(`Cannot resolve userId for governance session ${normalizedSessionId}`);
+        }
+
+        interaction = await db.interactionSession.create({
+            data: {
+                scribeSessionId: normalizedSessionId,
+                userId: resolvedUserId,
+                patientId: scribe.patientId,
+                startedAt: new Date(),
+            }
+        });
+
+        return interaction;
+    }
+
+    private async persistGovernanceWrite(params: {
+        sessionId: string;
+        transactionId?: string;
+        inputPrompt: string;
+        action: 'BLOCKED' | 'FLAGGED' | 'PASSED' | 'SHADOW_BLOCK';
+        ruleId?: string;
+        description?: string;
+        severity: 'INFO' | 'SOFT_NUDGE' | 'HARD_BLOCK';
+        provider?: string;
+        userId?: string;
+        overrideByUser?: boolean;
+        overrideReason?: string;
+    }) {
+        this.validatePersistenceParams(params);
+
+        const interaction = await this.ensureInteractionSession({
+            sessionId: params.sessionId,
+            userId: params.userId,
+        });
+
+        const log = await db.governanceLog.create({
+            data: {
+                sessionId: interaction.id,
+                inputPrompt: params.inputPrompt.trim(),
+                timestamp: new Date(),
+                provider: params.provider || 'unified-engine-v1',
+            }
+        });
+
+        await db.governanceEvent.create({
+            data: {
+                logId: log.id,
+                ruleId: params.ruleId,
+                ruleName: params.ruleId ? `Rule ${params.ruleId}` : 'Fast Lane Check',
+                severity: params.severity,
+                actionTaken: params.action,
+                description: params.description,
+                overrideByUser: Boolean(params.overrideByUser),
+                overrideReason: params.overrideReason?.trim() || null,
+            }
+        });
+
+        return {
+            interactionId: interaction.id as string,
+            logId: log.id as string,
+        };
+    }
+
     private async logEventAsync(params: {
         sessionId: string; // Scribe Session ID
         transactionId: string;
@@ -169,96 +293,167 @@ export class GovernanceService {
         description?: string;
         severity: 'INFO' | 'SOFT_NUDGE' | 'HARD_BLOCK';
         provider?: string;
+        userId?: string;
     }) {
         try {
-            // "Fail-Open" Logic: Errors here must NOT crash the request.
-            // We use the Scribe Session ID to link context.
-
-            // 1. Find or Create InteractionSession
-            // Optimization: In a high-volume real app, we'd cache this session ID mapping in Redis.
-            let interaction = await db.interactionSession.findFirst({
-                where: { scribeSessionId: params.sessionId },
+            await this.persistGovernanceWrite({
+                sessionId: params.sessionId,
+                transactionId: params.transactionId,
+                inputPrompt: params.inputPrompt,
+                action: params.action,
+                ruleId: params.ruleId,
+                description: params.description,
+                severity: params.severity,
+                provider: params.provider,
+                userId: params.userId,
             });
-
-            if (!interaction) {
-                // ScribeSession should exist, fetch it to get user/patient links
-                const scribe = await prisma.scribeSession.findUnique({
-                    where: { id: params.sessionId },
-                    select: { clinicianId: true, patientId: true }
-                });
-
-                if (scribe) {
-                    interaction = await db.interactionSession.create({
-                        data: {
-                            scribeSessionId: params.sessionId,
-                            userId: scribe.clinicianId,
-                            patientId: scribe.patientId,
-                            startedAt: new Date(),
-                        }
-                    });
-                } else {
-                    // Fallback for orphaned logs (shouldnt happen in normal flow)
-                    // logger.warn({ event: 'governance_orphan_log', sessionId: params.sessionId });
-                    // SILENT FAIL for demo if session not found (avoid clutter)
-                    return;
-                }
-            }
-
-            // 2. Create the Log Entry (Flight Recorder)
-            const log = await db.governanceLog.create({
-                data: {
-                    sessionId: interaction.id,
-                    inputPrompt: params.inputPrompt,
-                    // rawModelOutput: null, // We don't have output yet in pre-check
-                    timestamp: new Date(),
-                    provider: params.provider || 'unified-engine-v1', // [EDIT 1] Chain of Custody
-                }
-            });
-
-            // 3. Create the Event (The Verdict)
-            await db.governanceEvent.create({
-                data: {
-                    logId: log.id,
-                    ruleId: params.ruleId,
-                    ruleName: params.ruleId ? `Rule ${params.ruleId}` : 'Fast Lane Check',
-                    severity: params.severity,
-                    actionTaken: params.action,
-                    description: params.description,
-                }
-            });
-
         } catch (e) {
-            // FAIL-OPEN: Swallow error but log locally so we know the Black Box is broken
-            logger.error({
-                event: 'governance_logging_failed',
-                error: (e as Error).message,
-                sessionId: params.sessionId
+            // Fail-open for pre-check path: preserve clinician flow but emit structured failure.
+            this.logPersistenceFailure({
+                phase: 'logEventAsync',
+                sessionId: params.sessionId,
+                ruleId: params.ruleId,
+                userId: params.userId,
+                transactionId: params.transactionId,
+                error: e,
             });
         }
     }
+
     async logOverride(params: {
         sessionId: string;
         ruleId?: string;
         reason: string;
         userId?: string;
     }) {
-        // Log the override action
-        // In a real app, this would link to the previous Block event.
-        // For MVP, we log a new event with action_taken='OVERRIDDEN'
+        const normalizedSessionId = params.sessionId?.trim();
+        const normalizedReason = params.reason?.trim();
 
-        await this.logEventAsync({
-            sessionId: params.sessionId,
-            transactionId: `override-${Date.now()}`,
-            inputPrompt: '[CLIENT_OVERRIDE_EVENT]',
-            action: 'PASSED', // It passes now
-            ruleId: params.ruleId,
-            description: `Clinician Override: ${params.reason}`,
-            severity: 'INFO',
-            provider: 'clinician-override'
-        });
+        if (!normalizedSessionId) {
+            throw new Error('logOverride requires sessionId');
+        }
+        if (!normalizedReason) {
+            throw new Error('logOverride requires a non-empty override reason');
+        }
 
-        // Also explicitly log to console for demo verification
-        console.log('[GovernanceService] Override Logged:', params);
+        const transactionId = `override-${Date.now()}`;
+
+        try {
+            await this.persistGovernanceWrite({
+                sessionId: normalizedSessionId,
+                transactionId,
+                inputPrompt: '[CLIENT_OVERRIDE_EVENT]',
+                action: 'PASSED',
+                ruleId: params.ruleId,
+                description: `Clinician Override: ${normalizedReason}`,
+                severity: 'INFO',
+                provider: 'clinician-override',
+                userId: params.userId,
+                overrideByUser: true,
+                overrideReason: normalizedReason,
+            });
+        } catch (error) {
+            this.logPersistenceFailure({
+                phase: 'logOverride',
+                sessionId: normalizedSessionId,
+                ruleId: params.ruleId,
+                userId: params.userId,
+                transactionId,
+                error,
+            });
+            throw error;
+        }
+    }
+
+    async logBlock(params: {
+        sessionId: string;
+        ruleId?: string;
+        reason: string;
+        severity?: 'SOFT_NUDGE' | 'HARD_BLOCK';
+        userId?: string;
+        inputPrompt?: string;
+        provider?: string;
+    }) {
+        const normalizedSessionId = params.sessionId?.trim();
+        const normalizedReason = params.reason?.trim();
+
+        if (!normalizedSessionId) {
+            throw new Error('logBlock requires sessionId');
+        }
+        if (!normalizedReason) {
+            throw new Error('logBlock requires a non-empty reason');
+        }
+
+        const transactionId = `block-${Date.now()}`;
+
+        try {
+            await this.persistGovernanceWrite({
+                sessionId: normalizedSessionId,
+                transactionId,
+                inputPrompt: params.inputPrompt?.trim() || '[CLIENT_BLOCK_EVENT]',
+                action: 'BLOCKED',
+                ruleId: params.ruleId,
+                description: normalizedReason,
+                severity: params.severity || 'HARD_BLOCK',
+                provider: params.provider || 'governance-service',
+                userId: params.userId,
+            });
+        } catch (error) {
+            this.logPersistenceFailure({
+                phase: 'logBlock',
+                sessionId: normalizedSessionId,
+                ruleId: params.ruleId,
+                userId: params.userId,
+                transactionId,
+                error,
+            });
+            throw error;
+        }
+    }
+
+    async logFlag(params: {
+        sessionId: string;
+        ruleId?: string;
+        reason: string;
+        userId?: string;
+        inputPrompt?: string;
+        provider?: string;
+    }) {
+        const normalizedSessionId = params.sessionId?.trim();
+        const normalizedReason = params.reason?.trim();
+
+        if (!normalizedSessionId) {
+            throw new Error('logFlag requires sessionId');
+        }
+        if (!normalizedReason) {
+            throw new Error('logFlag requires a non-empty reason');
+        }
+
+        const transactionId = `flag-${Date.now()}`;
+
+        try {
+            await this.persistGovernanceWrite({
+                sessionId: normalizedSessionId,
+                transactionId,
+                inputPrompt: params.inputPrompt?.trim() || '[CLIENT_FLAG_EVENT]',
+                action: 'FLAGGED',
+                ruleId: params.ruleId,
+                description: normalizedReason,
+                severity: 'SOFT_NUDGE',
+                provider: params.provider || 'governance-service',
+                userId: params.userId,
+            });
+        } catch (error) {
+            this.logPersistenceFailure({
+                phase: 'logFlag',
+                sessionId: normalizedSessionId,
+                ruleId: params.ruleId,
+                userId: params.userId,
+                transactionId,
+                error,
+            });
+            throw error;
+        }
     }
 
     /**

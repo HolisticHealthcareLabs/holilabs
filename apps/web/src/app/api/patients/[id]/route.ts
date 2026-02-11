@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { onPatientUpdated } from '@/lib/cache/patient-context-cache';
 import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
+import { getSyntheticPatients, isDemoClinician } from '@/lib/demo/synthetic';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,38 @@ export const GET = createProtectedRoute(
       return NextResponse.json(
         { error: 'Patient ID required' },
         { status: 400 }
+      );
+    }
+
+    // ================================================================
+    // DEMO MODE (DB-FREE): Return synthetic patient, no HIPAA prompts
+    // ================================================================
+    if (isDemoClinician(context.user!.id, context.user!.email)) {
+      const p = getSyntheticPatients().find((x) => x.id === patientId);
+      if (!p) {
+        return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      }
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            ...p,
+            assignedClinicianId: context.user!.id,
+            assignedClinician: {
+              id: context.user!.id,
+              firstName: 'Demo',
+              lastName: 'Clinician',
+              email: context.user!.email,
+              specialty: 'General Practice',
+              licenseNumber: null,
+            },
+            medications: [],
+            allergies: [],
+            diagnoses: [],
+            appointments: [],
+          },
+        },
+        { status: 200 }
       );
     }
 

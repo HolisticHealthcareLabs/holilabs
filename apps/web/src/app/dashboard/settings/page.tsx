@@ -10,8 +10,29 @@ export const dynamic = 'force-dynamic';
  */
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+
+type OnboardingProfile = import('@/app/api/onboarding/profile/route').OnboardingProfile;
+type ProtocolMode = NonNullable<OnboardingProfile['protocolMode']>;
+type ComplianceCountry = NonNullable<OnboardingProfile['complianceCountry']>;
+
+function normalizeProtocolMode(value: unknown): ProtocolMode {
+  if (typeof value !== 'string') return 'HYBRID_70_30';
+  const normalized = value.trim().toUpperCase();
+  if (normalized === 'DETERMINISTIC_100' || normalized === 'DETERMINISTIC-FIRST') {
+    return 'DETERMINISTIC_100';
+  }
+  if (normalized === 'UNKNOWN') {
+    return 'UNKNOWN';
+  }
+  return 'HYBRID_70_30';
+}
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
+  const userRole = String((session?.user as { role?: string } | undefined)?.role ?? '').toUpperCase();
+  const canEditRolloutContext = ['OWNER', 'ADMIN', 'DOCTOR', 'PHYSICIAN'].includes(userRole);
+
   const [activeTab, setActiveTab] = useState<'ai' | 'communications' | 'preferences'>('ai');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -20,30 +41,57 @@ export default function SettingsPage() {
   const [aiConfig, setAiConfig] = useState({
     provider: 'gemini', // Default: Gemini (per user request)
     useCustomApiKey: false, // BYOK toggle
+    protocolMode: 'HYBRID_70_30' as ProtocolMode,
     geminiApiKey: '',
     anthropicKey: '',
     openaiKey: '',
     deepgramApiKey: '', // Transcription
   });
+  const [rolloutContext, setRolloutContext] = useState<{
+    complianceCountry: ComplianceCountry;
+    insurerFocus: string;
+    protocolMode: ProtocolMode;
+  }>({
+    complianceCountry: 'UNKNOWN',
+    insurerFocus: '',
+    protocolMode: 'HYBRID_70_30',
+  });
 
   // Communications Settings
   const [commsConfig, setCommsConfig] = useState({
-    twilioAccountSid: '',
-    twilioAuthToken: '',
-    twilioPhoneNumber: '',
-    twilioWhatsAppNumber: '',
-    resendApiKey: '',
-    emailFrom: '',
+    contactPhone: '',
+    contactEmail: '',
+    preferredChannel: 'whatsapp',
+    remindersEnabled: true,
   });
 
   // Load current settings
   useEffect(() => {
-    fetch('/api/settings')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setAiConfig(data.data.ai || aiConfig);
-          setCommsConfig(data.data.communications || commsConfig);
+    Promise.all([
+      fetch('/api/settings').then((res) => res.json()).catch(() => null),
+      fetch('/api/onboarding/profile', { cache: 'no-store' }).then((res) => res.json()).catch(() => null),
+    ])
+      .then(([settingsData, profileData]) => {
+        if (settingsData?.success) {
+          const loadedAi = settingsData?.data?.ai ?? {};
+          const loadedComms = settingsData?.data?.communications ?? {};
+          setAiConfig((prev) => ({
+            ...prev,
+            ...loadedAi,
+            protocolMode: normalizeProtocolMode(loadedAi.protocolMode ?? prev.protocolMode),
+          }));
+          setCommsConfig((prev) => ({ ...prev, ...loadedComms }));
+        }
+
+        const profile = profileData?.data as OnboardingProfile | null | undefined;
+        if (profile) {
+          const protocolMode = normalizeProtocolMode(profile.protocolMode);
+          setRolloutContext((prev) => ({
+            complianceCountry: (profile.complianceCountry ?? prev.complianceCountry) as ComplianceCountry,
+            insurerFocus: typeof profile.insurerFocus === 'string' ? profile.insurerFocus : prev.insurerFocus,
+            protocolMode,
+          }));
+          setAiConfig((prev) => ({ ...prev, protocolMode }));
         }
       })
       .catch((err) => console.error('Failed to load settings:', err));
@@ -54,23 +102,43 @@ export default function SettingsPage() {
     setSaveMessage('');
 
     try {
+      const profilePayload: OnboardingProfile = {
+        complianceCountry: rolloutContext.complianceCountry,
+        insurerFocus: rolloutContext.insurerFocus.trim(),
+        protocolMode: rolloutContext.protocolMode,
+      };
+
+      const profileResponse = await fetch('/api/onboarding/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: profilePayload }),
+      }).catch(() => null);
+      const profileSaved = Boolean(profileResponse?.ok);
+
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ai: aiConfig,
+          ai: {
+            ...aiConfig,
+            protocolMode: rolloutContext.protocolMode,
+            deterministicFirst: rolloutContext.protocolMode === 'DETERMINISTIC_100',
+          },
           communications: commsConfig,
         }),
-      });
+      }).catch(() => null);
 
-      const data = await response.json();
+      const data = response ? await response.json().catch(() => null) : null;
+      const settingsSaved = Boolean(response?.ok && data?.success);
 
-      if (data.success) {
+      if (profileSaved && settingsSaved) {
         setSaveMessage('✅ Configuración guardada');
-        setTimeout(() => setSaveMessage(''), 3000);
+      } else if (profileSaved) {
+        setSaveMessage('✅ Contexto de rollout guardado (otras preferencias pendientes)');
       } else {
         setSaveMessage('❌ Error al guardar');
       }
+      setTimeout(() => setSaveMessage(''), 4000);
     } catch (error) {
       setSaveMessage('❌ Error de conexión');
     } finally {
@@ -103,7 +171,7 @@ export default function SettingsPage() {
                     : 'hover:bg-gray-50 text-gray-700'
                 }`}
               >
-                🤖 Inteligencia Artificial
+                Inteligencia Artificial
               </button>
               <button
                 onClick={() => setActiveTab('communications')}
@@ -113,7 +181,7 @@ export default function SettingsPage() {
                     : 'hover:bg-gray-50 text-gray-700'
                 }`}
               >
-                📱 Comunicaciones
+                Comunicaciones
               </button>
               <button
                 onClick={() => setActiveTab('preferences')}
@@ -123,7 +191,7 @@ export default function SettingsPage() {
                     : 'hover:bg-gray-50 text-gray-700'
                 }`}
               >
-                ⚙️ Preferencias
+                Preferencias
               </button>
             </div>
           </div>
@@ -143,15 +211,62 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">
+                          Modo de protocolo clínico (determinístico primero)
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Se comparte con onboarding y contexto operativo para mantener reglas consistentes en toda la plataforma.
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          rolloutContext.protocolMode === 'DETERMINISTIC_100'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {rolloutContext.protocolMode === 'DETERMINISTIC_100'
+                          ? 'Determinístico'
+                          : rolloutContext.protocolMode === 'HYBRID_70_30'
+                            ? 'Híbrido'
+                            : 'No definido'}
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <select
+                        value={rolloutContext.protocolMode}
+                        disabled={!canEditRolloutContext}
+                        onChange={(e) => {
+                          const nextProtocolMode = normalizeProtocolMode(e.target.value);
+                          setRolloutContext((prev) => ({ ...prev, protocolMode: nextProtocolMode }));
+                          setAiConfig((prev) => ({ ...prev, protocolMode: nextProtocolMode }));
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+                      >
+                        <option value="DETERMINISTIC_100">Determinístico estricto (100% reglas)</option>
+                        <option value="HYBRID_70_30">Híbrido recomendado (70% determinístico / 30% probabilístico)</option>
+                        <option value="UNKNOWN">No definido</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {canEditRolloutContext
+                          ? 'Visible para operaciones y analítica usando la misma clave protocolMode.'
+                          : `Solo OWNER/ADMIN/DOCTOR pueden editar (rol actual: ${userRole || 'UNKNOWN'}).`}
+                      </p>
+                    </div>
+                  </div>
+
                   {/* BYOK Toggle */}
                   <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-1">
-                          🔑 Bring Your Own Key (BYOK)
+                          Bring Your Own Key (BYOK)
                         </h3>
                         <p className="text-sm text-gray-600">
-                          Usa tus propias claves API para control total y costos optimizados
+                          Opción avanzada para organizaciones que requieren control de claves. Recomendado: modo compartido de Holi Labs durante piloto.
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -315,7 +430,7 @@ export default function SettingsPage() {
                   {/* Info Box - Security & De-identification */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h3 className="font-semibold text-blue-900 mb-3">
-                      🔒 Seguridad y Privacidad Médica (BYOK)
+                      Seguridad y Privacidad Médica (BYOK)
                     </h3>
                     <p className="text-sm text-blue-800 mb-3">
                       Las claves API te permiten usar IA de manera segura y privada:
@@ -347,7 +462,7 @@ export default function SettingsPage() {
                         <strong>Seguridad de Claves:</strong> API keys nunca se almacenan en texto plano. Se encriptan usando el encryption master key de tu organización antes de guardarlas en la base de datos. Solo usuarios autorizados pueden acceder a ellas, y cada acceso se registra para auditoría.
                       </p>
                       <p className="text-xs text-blue-700 mt-2">
-                        💡 <strong>Basado en:</strong> GitHub Models BYOK, Auth0 Tenant Key Management, OpenAI Best Practices
+                        <strong>Basado en:</strong> GitHub Models BYOK, Auth0 Tenant Key Management, OpenAI Best Practices
                       </p>
                     </div>
                   </div>
@@ -362,143 +477,75 @@ export default function SettingsPage() {
                       Configuración de Comunicaciones
                     </h2>
                     <p className="text-sm text-gray-600 mb-6">
-                      Envía recordatorios automáticos por WhatsApp, SMS y Email
+                      Define el canal de contacto del usuario. La infraestructura de envío (WhatsApp/Email) se gestiona por Holi Labs.
                     </p>
                   </div>
 
-                  {/* Twilio WhatsApp */}
                   <div className="border-b border-gray-200 pb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">📱 WhatsApp & SMS (Twilio)</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">Canal de contacto</h3>
 
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Account SID
+                          Teléfono en archivo
                         </label>
                         <input
-                          type="text"
-                          value={commsConfig.twilioAccountSid}
+                          type="tel"
+                          value={commsConfig.contactPhone}
                           onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, twilioAccountSid: e.target.value })
+                            setCommsConfig({ ...commsConfig, contactPhone: e.target.value })
                           }
-                          placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                          placeholder="+59170000000"
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Auth Token
+                          Email en archivo (login)
                         </label>
                         <input
-                          type="password"
-                          value={commsConfig.twilioAuthToken}
-                          onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, twilioAuthToken: e.target.value })
-                          }
-                          placeholder="********************************"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Número de Teléfono
-                        </label>
-                        <input
-                          type="text"
-                          value={commsConfig.twilioPhoneNumber}
-                          onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, twilioPhoneNumber: e.target.value })
-                          }
-                          placeholder="+1234567890"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          WhatsApp Number
-                        </label>
-                        <input
-                          type="text"
-                          value={commsConfig.twilioWhatsAppNumber}
+                          type="email"
+                          value={commsConfig.contactEmail}
                           onChange={(e) =>
                             setCommsConfig({
                               ...commsConfig,
-                              twilioWhatsAppNumber: e.target.value,
+                              contactEmail: e.target.value,
                             })
                           }
-                          placeholder="whatsapp:+14155238886"
+                          placeholder="doctor@clinic.com"
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Usa el sandbox de Twilio para pruebas
-                        </p>
                       </div>
-                    </div>
-
-                    <p className="text-xs text-gray-500 mt-4">
-                      Configura Twilio en{' '}
-                      <a
-                        href="https://console.twilio.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        console.twilio.com
-                      </a>
-                    </p>
-                  </div>
-
-                  {/* Resend Email */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">📧 Email (Resend)</h3>
-
-                    <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Resend API Key
+                          Canal preferido
                         </label>
-                        <input
-                          type="password"
-                          value={commsConfig.resendApiKey}
+                        <select
+                          value={commsConfig.preferredChannel}
                           onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, resendApiKey: e.target.value })
+                            setCommsConfig({ ...commsConfig, preferredChannel: e.target.value })
                           }
-                          placeholder="re_..."
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
+                        >
+                          <option value="whatsapp">WhatsApp</option>
+                          <option value="email">Email</option>
+                        </select>
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email From
-                        </label>
+                      <label className="flex items-center gap-3">
                         <input
-                          type="text"
-                          value={commsConfig.emailFrom}
+                          type="checkbox"
+                          checked={commsConfig.remindersEnabled}
                           onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, emailFrom: e.target.value })
+                            setCommsConfig({ ...commsConfig, remindersEnabled: e.target.checked })
                           }
-                          placeholder="Holi Labs <notifications@holilabs.com>"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
                         />
-                      </div>
+                        <span className="text-sm text-gray-700">Permitir recordatorios automáticos</span>
+                      </label>
                     </div>
-
-                    <p className="text-xs text-gray-500 mt-4">
-                      Configura Resend en{' '}
-                      <a
-                        href="https://resend.com/api-keys"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        resend.com
-                      </a>{' '}
-                      (HIPAA compliant)
-                    </p>
+                    <p className="text-xs text-gray-500 mt-4">No pedimos credenciales de Twilio o Resend al usuario final. Esa configuración vive en la infraestructura de Holi Labs.</p>
                   </div>
                 </div>
               )}
@@ -513,10 +560,86 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
+                  <div className="rounded-lg border border-gray-200 p-4 space-y-4">
+                    <h3 className="font-semibold text-gray-900">Contexto operativo de rollout</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Compliance country
+                        </label>
+                        <select
+                          value={rolloutContext.complianceCountry}
+                          disabled={!canEditRolloutContext}
+                          onChange={(e) =>
+                            setRolloutContext((prev) => ({
+                              ...prev,
+                              complianceCountry: e.target.value as ComplianceCountry,
+                            }))
+                          }
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+                        >
+                          <option value="BOLIVIA">Bolivia</option>
+                          <option value="BRAZIL">Brazil</option>
+                          <option value="ARGENTINA">Argentina</option>
+                          <option value="MEXICO">Mexico</option>
+                          <option value="COLOMBIA">Colombia</option>
+                          <option value="CHILE">Chile</option>
+                          <option value="PERU">Peru</option>
+                          <option value="OTHER">Other</option>
+                          <option value="UNKNOWN">Not sure</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Protocol mode
+                        </label>
+                        <select
+                          value={rolloutContext.protocolMode}
+                          disabled={!canEditRolloutContext}
+                          onChange={(e) => {
+                            const nextProtocolMode = normalizeProtocolMode(e.target.value);
+                            setRolloutContext((prev) => ({
+                              ...prev,
+                              protocolMode: nextProtocolMode,
+                            }));
+                            setAiConfig((prev) => ({ ...prev, protocolMode: nextProtocolMode }));
+                          }}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+                        >
+                          <option value="DETERMINISTIC_100">Deterministic-first (100%)</option>
+                          <option value="HYBRID_70_30">Hybrid (70/30)</option>
+                          <option value="UNKNOWN">Unknown</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Insurance / payer focus
+                      </label>
+                      <input
+                        type="text"
+                        value={rolloutContext.insurerFocus}
+                        disabled={!canEditRolloutContext}
+                        onChange={(e) =>
+                          setRolloutContext((prev) => ({ ...prev, insurerFocus: e.target.value }))
+                        }
+                        placeholder="e.g., CNS, SUS, private payer list"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      These values are synced with onboarding profile and reused by downstream operational context.
+                    </p>
+                    {!canEditRolloutContext && (
+                      <p className="text-xs font-medium text-amber-700">
+                        Read-only access for role {userRole || 'UNKNOWN'}.
+                      </p>
+                    )}
+                  </div>
+
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                      🚧 Más opciones de preferencias próximamente (idioma, zona horaria,
-                      notificaciones, etc.)
+                      🚧 Más opciones de preferencias próximamente (idioma, zona horaria, notificaciones, etc.)
                     </p>
                   </div>
                 </div>

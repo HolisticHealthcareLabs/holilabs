@@ -5,6 +5,7 @@
  */
 
 import { createConfirmationLink, formatAppointmentDetails } from '../appointments/confirmation';
+import { randomUUID } from 'node:crypto';
 import { sendAppointmentConfirmationSMS } from './sms';
 import { sendAppointmentConfirmationEmail } from './email';
 import { sendPushNotification } from '../notifications/send-push';
@@ -16,7 +17,9 @@ import {
   buildReminderRetryState,
   DEFAULT_REMINDER_RETRY_POLICY,
   evaluateReminderConsent,
+  executeReminderWithRetry,
   type ReminderDispatchChannel,
+  type ReminderRetryState,
 } from './reminder-policy';
 
 interface ReminderResult {
@@ -30,14 +33,75 @@ interface ReminderResult {
   error?: string;
 }
 
-function logReminderFailureEvent(input: {
+async function persistReminderFailureRecord(input: {
   appointmentId: string;
   patientId: string;
   channel: ReminderDispatchChannel;
   templateName: string;
   error: string;
+  correlationId: string;
+  retryState: ReminderRetryState;
 }) {
-  const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: 'system',
+        userEmail: 'system@holilabs.com',
+        action: 'NOTIFY',
+        resource: 'AppointmentReminder',
+        resourceId: input.appointmentId,
+        ipAddress: 'system',
+        details: {
+          patientId: input.patientId,
+          channel: input.channel,
+          templateName: input.templateName,
+          correlationId: input.correlationId,
+          reason: input.error,
+          policyState: {
+            attempt: input.retryState.attempt,
+            maxAttempts: input.retryState.maxAttempts,
+            remainingAttempts: input.retryState.remainingAttempts,
+            nextAttempt: input.retryState.nextAttempt,
+            nextRetryAt: input.retryState.nextRetryAt,
+            escalationReady: input.retryState.escalationReady,
+            escalationReason: input.retryState.escalationReason ?? null,
+            state: input.retryState.state,
+            terminal: input.retryState.terminal,
+          },
+        },
+        success: false,
+        errorMessage: input.error,
+      },
+    });
+  } catch (persistError) {
+    logger.error({
+      event: 'appointment_reminder_failure_persist_error',
+      appointmentId: input.appointmentId,
+      patientId: input.patientId,
+      channel: input.channel,
+      correlationId: input.correlationId,
+      error:
+        persistError instanceof Error
+          ? persistError.message
+          : 'Failed to persist appointment reminder failure metadata',
+    });
+  }
+}
+
+async function logReminderFailureEvent(input: {
+  appointmentId: string;
+  patientId: string;
+  channel: ReminderDispatchChannel;
+  templateName: string;
+  error: string;
+  correlationId: string;
+  attempt?: number;
+  retryState?: ReminderRetryState;
+  logEscalation?: boolean;
+}) {
+  const attempt = input.attempt ?? 1;
+  const retryState =
+    input.retryState ?? buildReminderRetryState(attempt, DEFAULT_REMINDER_RETRY_POLICY);
   logger.error(
     buildReminderLifecycleEvent({
       stage: 'fail',
@@ -45,26 +109,128 @@ function logReminderFailureEvent(input: {
       channel: input.channel,
       templateName: input.templateName,
       category: 'appointment',
+      attempt,
       reminderId: input.appointmentId,
       error: input.error,
+      correlationId: input.correlationId,
       retryState,
     })
   );
 
-  if (retryState.escalationReady) {
+  await persistReminderFailureRecord({
+    appointmentId: input.appointmentId,
+    patientId: input.patientId,
+    channel: input.channel,
+    templateName: input.templateName,
+    error: input.error,
+    correlationId: input.correlationId,
+    retryState,
+  });
+
+  if (retryState.escalationReady && (input.logEscalation ?? true)) {
     logger.error(
       buildReminderLifecycleEvent({
-        stage: 'escalation',
+        stage: 'escalation_open',
         patientId: input.patientId,
         channel: input.channel,
         templateName: input.templateName,
         category: 'appointment',
+        attempt,
         reminderId: input.appointmentId,
         error: retryState.escalationReason || input.error,
+        correlationId: input.correlationId,
         retryState,
       })
     );
   }
+}
+
+async function executeChannelWithRetry(input: {
+  appointmentId: string;
+  patientId: string;
+  channel: ReminderDispatchChannel;
+  templateName: string;
+  correlationId: string;
+  executeAttempt: (attempt: number) => Promise<boolean>;
+}) {
+  const execution = await executeReminderWithRetry({
+    policy: DEFAULT_REMINDER_RETRY_POLICY,
+    executeAttempt: async (attempt) => {
+      logger.info(
+        buildReminderLifecycleEvent({
+          stage: 'send',
+          patientId: input.patientId,
+          channel: input.channel,
+          templateName: input.templateName,
+          category: 'appointment',
+          reminderId: input.appointmentId,
+          attempt,
+          correlationId: input.correlationId,
+        })
+      );
+
+      return input.executeAttempt(attempt);
+    },
+    onAttemptFailure: async ({ attempt, retryState, error }) => {
+      await logReminderFailureEvent({
+        appointmentId: input.appointmentId,
+        patientId: input.patientId,
+        channel: input.channel,
+        templateName: input.templateName,
+        error: error || `Failed to send reminder via ${input.channel}`,
+        correlationId: input.correlationId,
+        attempt,
+        retryState,
+        logEscalation: false,
+      });
+    },
+    onRetryScheduled: ({ attempt, retryState, error }) => {
+      logger.warn({
+        event: retryState.hooks.retryScheduledEvent,
+        appointmentId: input.appointmentId,
+        correlationId: input.correlationId,
+        patientId: input.patientId,
+        channel: input.channel,
+        templateName: input.templateName,
+        attempt,
+        nextRetryAt: retryState.nextRetryAt,
+        reason: error,
+      });
+    },
+    onEscalationOpen: ({ attempt, retryState, error }) => {
+      logger.error(
+        buildReminderLifecycleEvent({
+          stage: 'escalation_open',
+          patientId: input.patientId,
+          channel: input.channel,
+          templateName: input.templateName,
+          category: 'appointment',
+          attempt,
+          reminderId: input.appointmentId,
+          error: retryState.escalationReason || error || 'Escalation threshold reached',
+          correlationId: input.correlationId,
+          retryState,
+        })
+      );
+    },
+    onEscalationClosed: ({ attempt, retryState }) => {
+      logger.info(
+        buildReminderLifecycleEvent({
+          stage: 'escalation_closed',
+          patientId: input.patientId,
+          channel: input.channel,
+          templateName: input.templateName,
+          category: 'appointment',
+          reminderId: input.appointmentId,
+          attempt,
+          correlationId: input.correlationId,
+          retryState,
+        })
+      );
+    },
+  });
+
+  return execution;
 }
 
 /**
@@ -149,6 +315,8 @@ export async function sendAppointmentReminder(
       };
     }
 
+    const baseCorrelationId = `appointment-reminder:${appointmentId}:${randomUUID()}`;
+
     // Get or create default preferences
     let preferences = appointment.patient.preferences;
     if (!preferences) {
@@ -162,12 +330,13 @@ export async function sendAppointmentReminder(
     // Check if we're in quiet hours (skip for emergency override)
     const isQuietHours = checkQuietHours(preferences);
     if (isQuietHours && !preferences.allowEmergencyOverride) {
-      logReminderFailureEvent({
+      await logReminderFailureEvent({
         appointmentId,
         patientId: appointment.patientId,
         channel: 'PUSH',
         templateName: 'Appointment Reminder',
         error: 'Skipped: quiet hours active',
+        correlationId: `${baseCorrelationId}:quiet-hours`,
       });
 
       logger.info({
@@ -203,38 +372,40 @@ export async function sendAppointmentReminder(
 
       if (!whatsappConsent.allowed) {
         channels.whatsapp = false;
-        logReminderFailureEvent({
+        await logReminderFailureEvent({
           appointmentId,
           patientId: appointment.patientId,
           channel: 'WHATSAPP',
           templateName: 'Appointment Reminder',
           error: whatsappConsent.reason || 'Consent denied for WhatsApp reminder',
+          correlationId: `${baseCorrelationId}:whatsapp`,
         });
       } else {
-        logger.info(
-          buildReminderLifecycleEvent({
-            stage: 'sent',
-            patientId: appointment.patientId,
-            channel: 'WHATSAPP',
-            templateName: 'Appointment Reminder',
-            category: 'appointment',
-            reminderId: appointmentId,
-          })
-        );
+        const whatsappExecution = await executeChannelWithRetry({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'WHATSAPP',
+          templateName: 'Appointment Reminder',
+          correlationId: `${baseCorrelationId}:whatsapp`,
+          executeAttempt: async () => {
+            const whatsappSuccess = await sendAppointmentConfirmationWhatsApp(
+              appointment.patient.phone!,
+              details.patientName,
+              details.dateTime,
+              details.clinicianName,
+              confirmationUrl,
+              'es'
+            );
+            if (!whatsappSuccess) {
+              throw new Error('WhatsApp dispatch returned false');
+            }
+            return true;
+          },
+        });
 
-      try {
-        const whatsappSuccess = await sendAppointmentConfirmationWhatsApp(
-          appointment.patient.phone,
-          details.patientName,
-          details.dateTime,
-          details.clinicianName,
-          confirmationUrl,
-          'es' // Spanish for LATAM
-        );
+        channels.whatsapp = whatsappExecution.success;
 
-        channels.whatsapp = whatsappSuccess;
-
-        if (whatsappSuccess) {
+        if (whatsappExecution.success) {
           await prisma.appointment.update({
             where: { id: appointmentId },
             data: { confirmationMethod: 'whatsapp' },
@@ -248,26 +419,10 @@ export async function sendAppointmentReminder(
               templateName: 'Appointment Reminder',
               category: 'appointment',
               reminderId: appointmentId,
+              attempt: whatsappExecution.attemptsUsed,
+              correlationId: `${baseCorrelationId}:whatsapp`,
             })
           );
-        } else {
-          logReminderFailureEvent({
-            appointmentId,
-            patientId: appointment.patientId,
-            channel: 'WHATSAPP',
-            templateName: 'Appointment Reminder',
-            error: 'WhatsApp dispatch returned false',
-          });
-        }
-      } catch (error) {
-        channels.whatsapp = false;
-        logReminderFailureEvent({
-          appointmentId,
-          patientId: appointment.patientId,
-          channel: 'WHATSAPP',
-          templateName: 'Appointment Reminder',
-          error: error instanceof Error ? error.message : 'Unknown WhatsApp error',
-        });
       }
       }
     }
@@ -283,56 +438,60 @@ export async function sendAppointmentReminder(
 
       if (!pushConsent.allowed) {
         channels.push = false;
-        logReminderFailureEvent({
+        await logReminderFailureEvent({
           appointmentId,
           patientId: appointment.patientId,
           channel: 'PUSH',
           templateName: 'Appointment Reminder',
           error: pushConsent.reason || 'Consent denied for push reminder',
+          correlationId: `${baseCorrelationId}:push`,
         });
       } else {
-        logger.info(
-          buildReminderLifecycleEvent({
-            stage: 'sent',
-            patientId: appointment.patientId,
-            channel: 'PUSH',
-            templateName: 'Appointment Reminder',
-            category: 'appointment',
-            reminderId: appointmentId,
-          })
-        );
+        const pushExecution = await executeChannelWithRetry({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'PUSH',
+          templateName: 'Appointment Reminder',
+          correlationId: `${baseCorrelationId}:push`,
+          executeAttempt: async () => {
+            const pushResult = await sendPushNotification({
+              userId: appointment.patient.patientUser!.id,
+              payload: {
+                title: 'Confirma tu cita medica',
+                body: `Cita con ${details.clinicianName} el ${details.dateTime}`,
+                icon: '/icon-192x192.png',
+                badge: '/icon-192x192.png',
+                data: {
+                  type: 'appointment_confirmation',
+                  url: confirmationUrl,
+                  appointmentId: appointment.id,
+                },
+                actions: [
+                  {
+                    action: 'confirm',
+                    title: 'Confirmar',
+                  },
+                  {
+                    action: 'view',
+                    title: 'Ver Detalles',
+                  },
+                ],
+              },
+              urgency: 'high',
+            });
 
-      try {
-        const pushResult = await sendPushNotification({
-          userId: appointment.patient.patientUser.id,
-          payload: {
-            title: 'Confirma tu cita medica',
-            body: `Cita con ${details.clinicianName} el ${details.dateTime}`,
-            icon: '/icon-192x192.png',
-            badge: '/icon-192x192.png',
-            data: {
-              type: 'appointment_confirmation',
-              url: confirmationUrl,
-              appointmentId: appointment.id,
-            },
-            actions: [
-              {
-                action: 'confirm',
-                title: 'Confirmar',
-              },
-              {
-                action: 'view',
-                title: 'Ver Detalles',
-              },
-            ],
+            if (!pushResult.success || pushResult.sentCount <= 0) {
+              throw new Error(
+                pushResult.errors.join(', ') || 'Push dispatch returned no successful sends'
+              );
+            }
+            return true;
           },
-          urgency: 'high',
         });
 
-        channels.push = pushResult.success;
+        channels.push = pushExecution.success;
 
-        // Update confirmation method if push succeeded
-        if (pushResult.success && pushResult.sentCount > 0) {
+        if (pushExecution.success) {
           await prisma.appointment.update({
             where: { id: appointmentId },
             data: { confirmationMethod: 'push' },
@@ -346,26 +505,10 @@ export async function sendAppointmentReminder(
               templateName: 'Appointment Reminder',
               category: 'appointment',
               reminderId: appointmentId,
+              attempt: pushExecution.attemptsUsed,
+              correlationId: `${baseCorrelationId}:push`,
             })
           );
-        } else {
-          logReminderFailureEvent({
-            appointmentId,
-            patientId: appointment.patientId,
-            channel: 'PUSH',
-            templateName: 'Appointment Reminder',
-            error: pushResult.errors.join(', ') || 'Push dispatch returned no successful sends',
-          });
-        }
-      } catch (error) {
-        channels.push = false;
-        logReminderFailureEvent({
-          appointmentId,
-          patientId: appointment.patientId,
-          channel: 'PUSH',
-          templateName: 'Appointment Reminder',
-          error: error instanceof Error ? error.message : 'Unknown push error',
-        });
       }
       }
     }
@@ -381,39 +524,40 @@ export async function sendAppointmentReminder(
 
       if (!emailConsent.allowed) {
         channels.email = false;
-        logReminderFailureEvent({
+        await logReminderFailureEvent({
           appointmentId,
           patientId: appointment.patientId,
           channel: 'EMAIL',
           templateName: 'Appointment Reminder',
           error: emailConsent.reason || 'Consent denied for email reminder',
+          correlationId: `${baseCorrelationId}:email`,
         });
       } else {
-        logger.info(
-          buildReminderLifecycleEvent({
-            stage: 'sent',
-            patientId: appointment.patientId,
-            channel: 'EMAIL',
-            templateName: 'Appointment Reminder',
-            category: 'appointment',
-            reminderId: appointmentId,
-          })
-        );
+        const emailExecution = await executeChannelWithRetry({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'EMAIL',
+          templateName: 'Appointment Reminder',
+          correlationId: `${baseCorrelationId}:email`,
+          executeAttempt: async () => {
+            const emailSuccess = await sendAppointmentConfirmationEmail(
+              appointment.patient.email!,
+              details.patientName,
+              details.dateTime,
+              details.clinicianName,
+              appointment.type,
+              confirmationUrl
+            );
+            if (!emailSuccess) {
+              throw new Error('Email dispatch returned false');
+            }
+            return true;
+          },
+        });
 
-      try {
-        const emailSuccess = await sendAppointmentConfirmationEmail(
-          appointment.patient.email,
-          details.patientName,
-          details.dateTime,
-          details.clinicianName,
-          appointment.type,
-          confirmationUrl
-        );
+        channels.email = emailExecution.success;
 
-        channels.email = emailSuccess;
-
-        // Update confirmation method if email succeeded
-        if (emailSuccess) {
+        if (emailExecution.success) {
           await prisma.appointment.update({
             where: { id: appointmentId },
             data: { confirmationMethod: 'email' },
@@ -427,26 +571,10 @@ export async function sendAppointmentReminder(
               templateName: 'Appointment Reminder',
               category: 'appointment',
               reminderId: appointmentId,
+              attempt: emailExecution.attemptsUsed,
+              correlationId: `${baseCorrelationId}:email`,
             })
           );
-        } else {
-          logReminderFailureEvent({
-            appointmentId,
-            patientId: appointment.patientId,
-            channel: 'EMAIL',
-            templateName: 'Appointment Reminder',
-            error: 'Email dispatch returned false',
-          });
-        }
-      } catch (error) {
-        channels.email = false;
-        logReminderFailureEvent({
-          appointmentId,
-          patientId: appointment.patientId,
-          channel: 'EMAIL',
-          templateName: 'Appointment Reminder',
-          error: error instanceof Error ? error.message : 'Unknown email error',
-        });
       }
       }
     }
@@ -462,38 +590,39 @@ export async function sendAppointmentReminder(
 
       if (!smsConsent.allowed) {
         channels.sms = false;
-        logReminderFailureEvent({
+        await logReminderFailureEvent({
           appointmentId,
           patientId: appointment.patientId,
           channel: 'SMS',
           templateName: 'Appointment Reminder',
           error: smsConsent.reason || 'Consent denied for SMS reminder',
+          correlationId: `${baseCorrelationId}:sms`,
         });
       } else {
-        logger.info(
-          buildReminderLifecycleEvent({
-            stage: 'sent',
-            patientId: appointment.patientId,
-            channel: 'SMS',
-            templateName: 'Appointment Reminder',
-            category: 'appointment',
-            reminderId: appointmentId,
-          })
-        );
+        const smsExecution = await executeChannelWithRetry({
+          appointmentId,
+          patientId: appointment.patientId,
+          channel: 'SMS',
+          templateName: 'Appointment Reminder',
+          correlationId: `${baseCorrelationId}:sms`,
+          executeAttempt: async () => {
+            const smsSuccess = await sendAppointmentConfirmationSMS(
+              appointment.patient.phone!,
+              details.patientName,
+              details.dateTime,
+              details.clinicianName,
+              confirmationUrl
+            );
+            if (!smsSuccess) {
+              throw new Error('SMS dispatch returned false');
+            }
+            return true;
+          },
+        });
 
-      try {
-        const smsSuccess = await sendAppointmentConfirmationSMS(
-          appointment.patient.phone,
-          details.patientName,
-          details.dateTime,
-          details.clinicianName,
-          confirmationUrl
-        );
+        channels.sms = smsExecution.success;
 
-        channels.sms = smsSuccess;
-
-        // Update confirmation method if SMS succeeded
-        if (smsSuccess) {
+        if (smsExecution.success) {
           await prisma.appointment.update({
             where: { id: appointmentId },
             data: { confirmationMethod: 'sms' },
@@ -507,26 +636,10 @@ export async function sendAppointmentReminder(
               templateName: 'Appointment Reminder',
               category: 'appointment',
               reminderId: appointmentId,
+              attempt: smsExecution.attemptsUsed,
+              correlationId: `${baseCorrelationId}:sms`,
             })
           );
-        } else {
-          logReminderFailureEvent({
-            appointmentId,
-            patientId: appointment.patientId,
-            channel: 'SMS',
-            templateName: 'Appointment Reminder',
-            error: 'SMS dispatch returned false',
-          });
-        }
-      } catch (error) {
-        channels.sms = false;
-        logReminderFailureEvent({
-          appointmentId,
-          patientId: appointment.patientId,
-          channel: 'SMS',
-          templateName: 'Appointment Reminder',
-          error: error instanceof Error ? error.message : 'Unknown SMS error',
-        });
       }
       }
     }
@@ -546,13 +659,14 @@ export async function sendAppointmentReminder(
 
       logger.error(
         buildReminderLifecycleEvent({
-          stage: 'escalation',
+          stage: 'escalation_open',
           patientId: appointment.patientId,
           channel: escalationChannel,
           templateName: 'Appointment Reminder',
           category: 'appointment',
           reminderId: appointmentId,
           error: 'No reminder channel succeeded',
+          correlationId: `${baseCorrelationId}:aggregate`,
           retryState: buildReminderRetryState(
             DEFAULT_REMINDER_RETRY_POLICY.maxAttempts,
             DEFAULT_REMINDER_RETRY_POLICY
@@ -565,6 +679,7 @@ export async function sendAppointmentReminder(
     logger.info({
       event: 'appointment_reminder_sent',
       appointmentId,
+      correlationId: `${baseCorrelationId}:aggregate`,
       patientId: appointment.patientId,
       channels,
       success,
@@ -575,16 +690,33 @@ export async function sendAppointmentReminder(
       channels,
     };
   } catch (error) {
+    const correlationId = `appointment-reminder:${appointmentId}:${randomUUID()}:fatal`;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(
+      buildReminderLifecycleEvent({
+        stage: 'fail',
+        patientId: 'unknown',
+        channel: 'PUSH',
+        templateName: 'Appointment Reminder',
+        category: 'appointment',
+        reminderId: appointmentId,
+        correlationId,
+        error: errorMessage,
+        retryState: buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY),
+      })
+    );
+
     logger.error({
       event: 'appointment_reminder_error',
       appointmentId,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      correlationId,
+      error: errorMessage,
     });
 
     return {
       success: false,
       channels: {},
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
     };
   }
 }

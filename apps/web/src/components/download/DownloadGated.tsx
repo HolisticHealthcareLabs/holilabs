@@ -55,7 +55,7 @@ export function DownloadGated() {
 
                     <h2 className="text-4xl font-bold mb-4 tracking-tight">Access Restricted</h2>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed">
-                        The Interceptor Sidecar is an enterprise-grade agent.
+                        The Desktop Companion Sidecar is an enterprise-grade agent.
                         Downloads are reserved for verified <strong>Holi Labs</strong> clinical partners.
                     </p>
 

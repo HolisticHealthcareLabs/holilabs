@@ -284,8 +284,6 @@ export class EHRDetector {
     processName: string;
     bounds?: { x: number; y: number; width: number; height: number };
   }> {
-    // In a real implementation, this would use node-window-manager or native APIs
-    // For now, return mock data for type safety
     try {
       // Dynamic import to avoid issues in non-Electron environments
       const windowManager = await import('node-window-manager');
@@ -305,12 +303,27 @@ export class EHRDetector {
           : undefined,
       };
     } catch {
-      // Fallback for development/testing
-      return {
-        title: process.env.MOCK_WINDOW_TITLE || '',
-        processName: process.env.MOCK_PROCESS_NAME || '',
-        bounds: { x: 0, y: 0, width: 1920, height: 1080 }, // Mock bounds
-      };
+      // Optional fallback: active-win (may not be installed/available in all environments)
+      try {
+        const mod: any = await import('active-win');
+        const activeWinFn = mod?.default || mod;
+        const info = await activeWinFn();
+        const b = info?.bounds;
+        return {
+          title: info?.title || '',
+          processName: info?.owner?.name || info?.owner?.processId?.toString?.() || '',
+          bounds: b
+            ? { x: b.x ?? 0, y: b.y ?? 0, width: b.width ?? 0, height: b.height ?? 0 }
+            : undefined,
+        };
+      } catch {
+        // Final fallback for development/testing
+        return {
+          title: process.env.MOCK_WINDOW_TITLE || '',
+          processName: process.env.MOCK_PROCESS_NAME || '',
+          bounds: { x: 0, y: 0, width: 1920, height: 1080 }, // Mock bounds
+        };
+      }
     }
   }
 

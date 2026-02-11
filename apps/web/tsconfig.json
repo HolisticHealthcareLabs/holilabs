@@ -55,6 +55,7 @@
   "exclude": [
     "node_modules",
     "scripts/**/*",
-    "prisma/seed*.ts"
+    "prisma/seed*.ts",
+    "tests/e2e/**/*"
   ]
 }

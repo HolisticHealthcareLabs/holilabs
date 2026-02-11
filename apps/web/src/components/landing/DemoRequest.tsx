@@ -45,13 +45,28 @@ export function DemoRequest() {
                     transition={{ duration: 0.6 }}
                 >
                     <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8 tracking-tight">
-                        Ready to secure your <br /> clinical network?
+                        Choose your path: <br /> clinic or enterprise.
                     </h2>
                     <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-                        Join the beta. Download the Interceptor Sidecar and verify your clinical decisions in real-time.
+                        Private practice teams can start the web app beta now. Hospital leaders can request a Cortex pilot for governance, safety checks, and follow-up workflows.
                     </p>
 
-                    <form onSubmit={handleSubmit} className="max-w-md mx-auto relative group">
+                    <div className="mb-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <a
+                            href="/auth/register"
+                            className="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all"
+                        >
+                            For Private Practice: Start Free Beta
+                        </a>
+                        <a
+                            href="#demo-form"
+                            className="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold text-foreground bg-secondary border border-border hover:bg-muted transition-all"
+                        >
+                            For Enterprise: Request Cortex Pilot
+                        </a>
+                    </div>
+
+                    <form id="demo-form" onSubmit={handleSubmit} className="max-w-md mx-auto relative group">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <input
                                 type="email"
@@ -66,7 +81,7 @@ export function DemoRequest() {
                                 disabled={isSubmitting}
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-blue-500/10 active:scale-95"
                             >
-                                {isSubmitting ? 'Sending...' : 'Request Access'}
+                                {isSubmitting ? 'Sending...' : 'Request Cortex Pilot'}
                             </button>
                         </div>
 
@@ -82,11 +97,11 @@ export function DemoRequest() {
                     </form>
 
                     <div className="mt-12 flex items-center justify-center gap-8 text-sm font-medium text-muted-foreground/60">
-                        <span className="flex items-center gap-2">Example: Children&apos;s Hospital</span>
+                        <span className="flex items-center gap-2">Invite-only pilot</span>
                         <span className="w-1 h-1 rounded-full bg-border"></span>
-                        <span className="flex items-center gap-2">10ms Latency</span>
+                        <span className="flex items-center gap-2">No deep integration to start</span>
                         <span className="w-1 h-1 rounded-full bg-border"></span>
-                        <span className="flex items-center gap-2">SOC2 Type II</span>
+                        <span className="flex items-center gap-2">macOS + Windows</span>
                     </div>
                 </motion.div>
 

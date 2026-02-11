@@ -15,10 +15,83 @@
 
 import { useEffect, useState } from 'react';
 import { pushNotifications } from '@/lib/push-notifications';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+type PromptCopy = {
+  title: string;
+  description: string;
+  benefitAppointmentsTitle: string;
+  benefitAppointmentsDesc: string;
+  benefitTranscriptionsTitle: string;
+  benefitTranscriptionsDesc: string;
+  benefitSyncTitle: string;
+  benefitSyncDesc: string;
+  ctaEnable: string;
+  ctaLater: string;
+  ctaNoThanks: string;
+  privacyNote: string;
+  successTitle: string;
+  successBody: string;
+};
+
+type PromptLocale = 'en' | 'es' | 'pt';
+
+const COPY: Record<PromptLocale, PromptCopy> = {
+  en: {
+    title: 'Enable Notifications?',
+    description: 'Get important reminders about appointments, completed transcriptions, and sync updates.',
+    benefitAppointmentsTitle: 'Appointment reminders',
+    benefitAppointmentsDesc: 'Never miss a scheduled consult',
+    benefitTranscriptionsTitle: 'Ready transcriptions',
+    benefitTranscriptionsDesc: 'We notify you when your SOAP note is ready',
+    benefitSyncTitle: 'Sync completed',
+    benefitSyncDesc: 'Confirm when your offline changes are uploaded',
+    ctaEnable: 'Enable Notifications',
+    ctaLater: 'Later',
+    ctaNoThanks: 'No, thanks',
+    privacyNote: 'You can disable notifications anytime from settings',
+    successTitle: 'Notifications Enabled!',
+    successBody: 'You will receive appointment reminders and key updates',
+  },
+  es: {
+    title: '¿Activar Notificaciones?',
+    description: 'Recibe recordatorios importantes sobre tus citas, transcripciones listas y actualizaciones sincronizadas.',
+    benefitAppointmentsTitle: 'Recordatorios de citas',
+    benefitAppointmentsDesc: 'Nunca olvides una consulta programada',
+    benefitTranscriptionsTitle: 'Transcripciones listas',
+    benefitTranscriptionsDesc: 'Te avisamos cuando tu nota SOAP esté lista',
+    benefitSyncTitle: 'Sincronización completa',
+    benefitSyncDesc: 'Confirma cuando tus cambios offline se suban',
+    ctaEnable: 'Activar Notificaciones',
+    ctaLater: 'Más Tarde',
+    ctaNoThanks: 'No, Gracias',
+    privacyNote: 'Puedes desactivar las notificaciones en cualquier momento desde la configuración',
+    successTitle: '¡Notificaciones Activadas!',
+    successBody: 'Recibirás recordatorios de citas y actualizaciones importantes',
+  },
+  pt: {
+    title: 'Ativar Notificacoes?',
+    description: 'Receba lembretes importantes sobre consultas, transcricoes prontas e atualizacoes sincronizadas.',
+    benefitAppointmentsTitle: 'Lembretes de consultas',
+    benefitAppointmentsDesc: 'Nao perca nenhuma consulta agendada',
+    benefitTranscriptionsTitle: 'Transcricoes prontas',
+    benefitTranscriptionsDesc: 'Avisamos quando sua nota SOAP estiver pronta',
+    benefitSyncTitle: 'Sincronizacao completa',
+    benefitSyncDesc: 'Confirme quando suas alteracoes offline forem enviadas',
+    ctaEnable: 'Ativar Notificacoes',
+    ctaLater: 'Mais tarde',
+    ctaNoThanks: 'Nao, obrigado',
+    privacyNote: 'Voce pode desativar notificacoes a qualquer momento nas configuracoes',
+    successTitle: 'Notificacoes ativadas!',
+    successBody: 'Voce recebera lembretes de consulta e atualizacoes importantes',
+  },
+};
 
 export default function NotificationPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const { locale } = useLanguage();
+  const copy = COPY[(locale in COPY ? locale : 'en') as PromptLocale];
 
   useEffect(() => {
     // Check if notifications are supported
@@ -50,8 +123,8 @@ export default function NotificationPrompt() {
 
       // Show success notification
       await pushNotifications.showNotification({
-        title: '¡Notificaciones Activadas!',
-        body: 'Recibirás recordatorios de citas y actualizaciones importantes',
+        title: copy.successTitle,
+        body: copy.successBody,
         type: 'SYNC_COMPLETE',
       });
     }
@@ -90,12 +163,12 @@ export default function NotificationPrompt() {
 
         {/* Title */}
         <h3 className="text-2xl font-bold text-gray-900 text-center mb-2">
-          ¿Activar Notificaciones?
+          {copy.title}
         </h3>
 
         {/* Description */}
         <p className="text-gray-600 text-center mb-6">
-          Recibe recordatorios importantes sobre tus citas, transcripciones listas y actualizaciones sincronizadas.
+          {copy.description}
         </p>
 
         {/* Benefits */}
@@ -111,9 +184,9 @@ export default function NotificationPrompt() {
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Recordatorios de citas</p>
+              <p className="text-sm font-medium text-gray-900">{copy.benefitAppointmentsTitle}</p>
               {/* Decorative - low contrast intentional for helper text */}
-              <p className="text-xs text-gray-500 dark:text-gray-400">Nunca olvides una consulta programada</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{copy.benefitAppointmentsDesc}</p>
             </div>
           </div>
 
@@ -128,9 +201,9 @@ export default function NotificationPrompt() {
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Transcripciones listas</p>
+              <p className="text-sm font-medium text-gray-900">{copy.benefitTranscriptionsTitle}</p>
               {/* Decorative - low contrast intentional for helper text */}
-              <p className="text-xs text-gray-500 dark:text-gray-400">Te avisamos cuando tu nota SOAP esté lista</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{copy.benefitTranscriptionsDesc}</p>
             </div>
           </div>
 
@@ -145,9 +218,9 @@ export default function NotificationPrompt() {
               </svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">Sincronización completa</p>
+              <p className="text-sm font-medium text-gray-900">{copy.benefitSyncTitle}</p>
               {/* Decorative - low contrast intentional for helper text */}
-              <p className="text-xs text-gray-500 dark:text-gray-400">Confirma cuando tus cambios offline se suban</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{copy.benefitSyncDesc}</p>
             </div>
           </div>
         </div>
@@ -158,7 +231,7 @@ export default function NotificationPrompt() {
             onClick={handleEnable}
             className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg"
           >
-            Activar Notificaciones
+            {copy.ctaEnable}
           </button>
 
           <div className="flex space-x-2">
@@ -166,13 +239,13 @@ export default function NotificationPrompt() {
               onClick={handleRemindLater}
               className="flex-1 px-4 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm transition"
             >
-              Más Tarde
+              {copy.ctaLater}
             </button>
             <button
               onClick={handleDismiss}
               className="flex-1 px-4 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm transition"
             >
-              No, Gracias
+              {copy.ctaNoThanks}
             </button>
           </div>
         </div>
@@ -180,7 +253,7 @@ export default function NotificationPrompt() {
         {/* Privacy note */}
         {/* Decorative - low contrast intentional for helper text */}
         <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
-          Puedes desactivar las notificaciones en cualquier momento desde la configuración
+          {copy.privacyNote}
         </p>
       </div>
     </div>

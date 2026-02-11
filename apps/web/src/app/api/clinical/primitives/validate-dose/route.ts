@@ -16,6 +16,12 @@ import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { assessRenalDataQuality } from '@/lib/clinical/lab-decision-rules';
 import { DOAC_MEDICATION_ALIASES, DOAC_RENAL_POLICY } from '@/config/clinical-rules';
+import {
+  getActiveContentBundle,
+  getRuntimeContentStatus,
+  type ContentBundleMetadata,
+  type RuntimeContentStatus,
+} from '@/lib/clinical/governance-policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -204,6 +210,14 @@ interface ValidationIssue {
   message: string;
 }
 
+export interface ContentProvenanceMetadata {
+  contentBundleVersion: string;
+  contentChecksum: string;
+  protocolVersion: string;
+  signoffStatus: string;
+  runtimeContentStatus: RuntimeContentStatus;
+}
+
 export interface ValidateDoseApiResponse {
   success: true;
   data: ValidationResult;
@@ -217,6 +231,7 @@ export interface ValidateDoseApiResponse {
       evaluationReferenceTime: string | null;
       reproducible: true;
     };
+    contentProvenance: ContentProvenanceMetadata;
   };
 }
 
@@ -269,6 +284,65 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       unit: input.unit,
     });
 
+    // Resolve active content bundle provenance
+    const activeBundle: ContentBundleMetadata = getActiveContentBundle();
+    const runtimeContentStatus: RuntimeContentStatus = getRuntimeContentStatus(activeBundle);
+    const contentProvenance: ContentProvenanceMetadata = {
+      contentBundleVersion: activeBundle.contentBundleVersion,
+      contentChecksum: activeBundle.contentChecksum,
+      protocolVersion: activeBundle.protocolVersion,
+      signoffStatus: activeBundle.signoffStatus,
+      runtimeContentStatus,
+    };
+
+    // If bundle is not runtime-active, return safe degraded status (never silent success)
+    if (runtimeContentStatus !== 'ACTIVE_SIGNED_OFF') {
+      const latencyMs = Date.now() - startTime;
+      logger.warn({
+        event: 'primitive_validate_dose_degraded',
+        runtimeContentStatus,
+        signoffStatus: activeBundle.signoffStatus,
+        lifecycleState: activeBundle.lifecycleState,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          isValid: false,
+          status: 'unknown' as ValidateDoseStatus,
+          issues: [{
+            type: 'unknown_medication' as const,
+            severity: 'critical' as const,
+            message: `Content bundle is in degraded state (${runtimeContentStatus}). Clinical validation cannot proceed safely.`,
+          }],
+          recommendation: 'Content bundle requires clinical sign-off before deterministic validation can proceed. Contact governance board.',
+          completionState: {
+            canComplete: false,
+            requiresAttestation: false,
+          },
+          rationale: [`Runtime content status: ${runtimeContentStatus}`, `Signoff: ${activeBundle.signoffStatus}`, `Lifecycle: ${activeBundle.lifecycleState}`],
+          deterministicContext: {
+            rulesetVersion: 'DEGRADED',
+            medicationMatch: null,
+            isDoacMedication: false,
+            evaluationReferenceTime: null,
+          },
+        },
+        metadata: {
+          method: 'deterministic' as const,
+          confidence: 'low' as const,
+          latencyMs,
+          deterministic: {
+            rulesetVersion: 'DEGRADED',
+            medicationMatch: null,
+            evaluationReferenceTime: null,
+            reproducible: true as const,
+          },
+          contentProvenance,
+        },
+      } satisfies ValidateDoseApiResponse);
+    }
+
     // Validate the dose
     const result = validateDose(input);
 
@@ -287,6 +361,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           status: result.status,
           issueCount: result.issues.length,
           latencyMs,
+          contentBundleVersion: activeBundle.contentBundleVersion,
+          runtimeContentStatus,
         },
         success: true,
       },
@@ -298,6 +374,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       status: result.status,
       isValid: result.isValid,
       latencyMs,
+      runtimeContentStatus,
     });
 
     const payload: ValidateDoseApiResponse = {
@@ -313,6 +390,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           evaluationReferenceTime: result.deterministicContext.evaluationReferenceTime,
           reproducible: true,
         },
+        contentProvenance,
       },
     };
     return NextResponse.json(payload);

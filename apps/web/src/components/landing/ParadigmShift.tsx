@@ -20,10 +20,10 @@ export function ParadigmShift() {
                         Retrospective Audits are <span className="text-red-500 line-through decoration-4 decoration-red-200 dark:decoration-red-900">Too Late.</span>
                     </h2>
                     <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-                        Existing healthcare tools only see data after the fact. We intercept risk <span className="text-blue-600 dark:text-blue-400 font-bold">at the point of decision</span>.
+                        Most preventable medication risk happens at the moment of ordering and discharge. Cortex adds a <span className="text-blue-600 dark:text-blue-400 font-bold">verification step</span> before the chart is finalized.
                     </p>
                     <p className="mt-8 text-lg text-muted-foreground/80 max-w-4xl mx-auto leading-relaxed">
-                        While incumbent solutions operate as post-discharge recorders—analyzing failures after they&apos;ve occurred—Cortex is fundamentally preventive. By launching intelligent safety checklists the moment a clinician engages with the EHR, we ensure that doctors visit mandated data points and verify critical safety markers before a single order is finalized.
+                        Instead of relying on retrospective chart review or ad-hoc AI chats, Cortex provides deterministic checks (starting with DOAC safety), required attestations (e.g., renal function verified), and a structured audit trail for clinical governance.
                     </p>
                 </motion.div>
 
@@ -41,15 +41,15 @@ export function ParadigmShift() {
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 text-muted-foreground">
                                 <span className="text-red-400">✕</span>
-                                <span>Post-discharge analysis (Days late)</span>
+                                <span>Post-event analysis (too late)</span>
                             </div>
                             <div className="flex items-center gap-3 text-muted-foreground">
                                 <span className="text-red-400">✕</span>
-                                <span>Requires deep EHR Integration (18mo+)</span>
+                                <span>Hard to deploy across fragmented EHRs</span>
                             </div>
                             <div className="flex items-center gap-3 text-muted-foreground">
                                 <span className="text-red-400">✕</span>
-                                <span>Blind to &quot;Last Mile&quot; clinical context</span>
+                                <span>No standardized override reasons or audit trail</span>
                             </div>
                         </div>
                     </motion.div>
@@ -68,15 +68,15 @@ export function ParadigmShift() {
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 text-foreground font-medium">
                                 <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs">✓</div>
-                                <span>Pre-signature intervention (&lt;10ms)</span>
+                                <span>Pre-signature verification (web-first)</span>
                             </div>
                             <div className="flex items-center gap-3 text-foreground font-medium">
                                 <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs">✓</div>
-                                <span>Over-the-Top visual analysis (Zero Install)</span>
+                                <span>Works alongside any EHR (copy/paste + checklist)</span>
                             </div>
                             <div className="flex items-center gap-3 text-foreground font-medium">
                                 <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs">✓</div>
-                                <span>Deterministic &quot;Hard Brakes&quot; for critical safety</span>
+                                <span>Deterministic rules + attestations + audit trail</span>
                             </div>
                         </div>
                     </motion.div>

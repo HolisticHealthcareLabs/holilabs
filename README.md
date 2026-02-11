@@ -1,10 +1,14 @@
-# 🏥 Holi Protocol - Open-Source Healthcare Infrastructure
+# 🏥 Holi Labs / Holi Protocol — Healthcare Infrastructure (Closed Alpha)
 
 **Version:** 0.1.0 (Alpha)  
 **Status:** Closed Alpha  
-**License:** MIT (Open Source)
+**License:** Not yet published (closed alpha)
 
-Holi Protocol is a proactive, prevention-first healthcare infrastructure built on open-source principles. We're fixing the broken healthcare system through AI automation, FHIR interoperability, and Web3 verifiable workflows.
+## Start here (always read first)
+Before making product, architecture, or deployment decisions, read:
+- `docs/ANTIGRAVITY_HANDOFF.md` (canonical architecture + ports + run commands + integration assumptions)
+
+This repo is a closed-alpha monorepo for Holi Labs, spanning a web app (`apps/web`), an API service (`apps/api`), and a desktop Sidecar (`apps/sidecar`). It focuses on prevention-first clinical workflows, interoperability (FHIR/HL7/DICOM), and clinician-in-the-loop AI assistance.
 
 ---
 
@@ -62,7 +66,7 @@ pnpm db:migrate
 # 6. Generate Prisma client
 pnpm db:generate
 
-# 7. Start development server
+# 7. Start website (Next.js)
 cd ../..
 pnpm dev
 
@@ -73,7 +77,7 @@ pnpm dev
 
 ```bash
 # Open the static landing page in your browser
-open apps/web/public/landing.html
+open public/landing.html
 ```
 
 ---
@@ -221,7 +225,7 @@ We're in closed alpha. To request access:
 2. **Engineers**: Submit a PR or issue
 3. **Patients**: Join our community Discord
 
-**Priority access** for open-source contributors.
+**Priority access** for early contributors.
 
 ---
 
@@ -236,17 +240,7 @@ We're in closed alpha. To request access:
 
 ## 📄 License
 
-MIT License - Open Source
-
-```
-Copyright (c) 2025 Holi Protocol
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
-```
-
-See [LICENSE](LICENSE) for full text.
+No open-source license is published for this repository at this time.
 
 ---
 
@@ -267,5 +261,4 @@ See [LICENSE](LICENSE) for full text.
 
 ---
 
-**Built with ❤️ for healthcare providers, patients, and engineers.**  
-**Open-source. Community-governed. Built for permanence.**
+**Built for healthcare providers, patients, and engineers.**

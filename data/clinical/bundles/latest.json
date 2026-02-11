@@ -1,0 +1,555 @@
+{
+  "manifest": {
+    "bundleVersion": "1.0.0",
+    "generatedAt": "2026-02-11T14:18:56.025Z",
+    "checksum": "d9a68b46598f0cf5361dec8a9eedca327ad73d6bdc84dc95873e5c0457fdd696",
+    "ruleCount": 7,
+    "domainCounts": {
+      "CONTRAINDICATION": 3,
+      "ALLERGY": 1,
+      "DOSING": 1,
+      "INTERACTION": 2
+    }
+  },
+  "rules": [
+    {
+      "ruleId": "MED_CONTRA_001",
+      "name": "Non-Selective Beta-Blocker in Asthma",
+      "domain": "CONTRAINDICATION",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "GINA Guidelines",
+        "sourceDocument": "Global Initiative for Asthma – GINA 2024 Report",
+        "sourceVersion": "2024-rev1",
+        "effectiveDate": "2024-01-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://ginasthma.org/reports/",
+        "licenseType": "CC-BY-4.0"
+      },
+      "logic": {
+        "and": [
+          {
+            "in": [
+              "Asthma",
+              {
+                "var": "patient_conditions"
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Non-selective Beta-blocker",
+                    "Beta-blocker"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "propranolol",
+                    "nadolol",
+                    "timolol",
+                    "sotalol",
+                    "carvedilol"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Beta-blockers may precipitate bronchospasm in asthmatic patients.",
+        "recommendation": "Consider cardioselective beta-blocker (e.g., metoprolol, bisoprolol) or alternative antihypertensive."
+      },
+      "tags": [
+        "respiratory",
+        "beta-blocker",
+        "asthma"
+      ],
+      "contentHash": "38809e1f5d1be5908af3f2748a36ef76b69eb28e89d913b0432befe493f6d1a5"
+    },
+    {
+      "ruleId": "MED_CONTRA_002",
+      "name": "Penicillin-Class Antibiotic in Penicillin Allergy",
+      "domain": "ALLERGY",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "CDC Guidelines",
+        "sourceDocument": "CDC Antibiotic Use Guidelines 2023",
+        "sourceVersion": "2023-v1",
+        "effectiveDate": "2023-06-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.cdc.gov/antibiotic-use/",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "in": [
+                  "Penicillin Allergy",
+                  {
+                    "var": "patient_allergies"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "penicillin",
+                  {
+                    "var": "patient_allergies"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "PCN Allergy",
+                  {
+                    "var": "patient_allergies"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Penicillin",
+                    "Aminopenicillin"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "amoxicillin",
+                    "ampicillin",
+                    "penicillin",
+                    "piperacillin",
+                    "augmentin"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient has documented penicillin allergy. Risk of anaphylaxis.",
+        "recommendation": "Consider azithromycin, fluoroquinolone, or confirm allergy status before proceeding."
+      },
+      "tags": [
+        "allergy",
+        "antibiotic",
+        "penicillin"
+      ],
+      "contentHash": "d1595c35df7ace3295746136e28dc65586e97f1fa4e28eb96619d4d60b2b8a33"
+    },
+    {
+      "ruleId": "MED_CONTRA_003",
+      "name": "Methotrexate in Pregnancy",
+      "domain": "CONTRAINDICATION",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "FDA Pregnancy Category X Label – Methotrexate",
+        "sourceVersion": "2023-label",
+        "effectiveDate": "2023-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "patient_pregnant"
+                  },
+                  true
+                ]
+              },
+              {
+                "in": [
+                  "Pregnant",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "Pregnancy",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "methotrexate",
+                    "mtx",
+                    "trexall",
+                    "rasuvo",
+                    "otrexup"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Antimetabolite",
+                    "DMARD"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "PREGNANCY CATEGORY X: Methotrexate is contraindicated in pregnancy. Known to cause fetal death and teratogenic effects.",
+        "recommendation": "Discontinue methotrexate. Confirm pregnancy status. Consider alternative therapy (e.g., sulfasalazine if indicated)."
+      },
+      "tags": [
+        "pregnancy",
+        "teratogen",
+        "category-x"
+      ],
+      "contentHash": "629294551f2b4e47d5ca771b598a98411ea6160320d6cd79cf939b5ecf4162dc"
+    },
+    {
+      "ruleId": "MED_CONTRA_004",
+      "name": "NSAID in Chronic Kidney Disease (Stage 3-5)",
+      "domain": "CONTRAINDICATION",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "KDIGO",
+        "sourceDocument": "KDIGO CKD Guidelines 2024",
+        "sourceVersion": "2024-v1",
+        "effectiveDate": "2024-03-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://kdigo.org/guidelines/",
+        "licenseType": "CC-BY-NC-4.0"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "in": [
+                  "CKD",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "Chronic Kidney Disease",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              },
+              {
+                "<": [
+                  {
+                    "var": "patient_egfr"
+                  },
+                  60
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "NSAID",
+                    "Non-steroidal anti-inflammatory"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "ibuprofen",
+                    "naproxen",
+                    "meloxicam",
+                    "diclofenac",
+                    "indomethacin",
+                    "ketorolac"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "NSAIDs may worsen renal function in patients with CKD (eGFR < 60). Use with caution.",
+        "recommendation": "Consider acetaminophen for pain. If NSAID required, use lowest dose for shortest duration. Monitor renal function closely."
+      },
+      "tags": [
+        "renal",
+        "ckd",
+        "nsaid"
+      ],
+      "contentHash": "61f15f4ae2f602945fc354c63a0c8a7910fc7290768361c07b1f62732f74ac5c"
+    },
+    {
+      "ruleId": "MED_DOSING_001",
+      "name": "Warfarin with Supratherapeutic INR",
+      "domain": "DOSING",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "CHEST/ACCP",
+        "sourceDocument": "CHEST Antithrombotic Therapy Guidelines 2022",
+        "sourceVersion": "10th-edition",
+        "effectiveDate": "2022-01-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://journal.chestnet.org/",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            ">": [
+              {
+                "var": "patient_inr"
+              },
+              4
+            ]
+          },
+          {
+            "!": {
+              "in": [
+                "Hold Warfarin",
+                {
+                  "var": "proposed_action"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "intervention": {
+        "message": "INR is supratherapeutic (> 4.0). Continuing warfarin increases bleeding risk.",
+        "recommendation": "Hold warfarin. Consider Vitamin K if INR > 10 or bleeding present. Recheck INR in 24-48 hours."
+      },
+      "tags": [
+        "anticoagulation",
+        "warfarin",
+        "inr"
+      ],
+      "contentHash": "9649e9b2aad4190f35c84ef9c075e76875bd4e6cc678f68027f7dfb00b443920"
+    },
+    {
+      "ruleId": "MED_INTER_001",
+      "name": "Opioid + Benzodiazepine Concurrent Use",
+      "domain": "INTERACTION",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "FDA Drug Safety Communication – Opioid + Benzodiazepine",
+        "sourceVersion": "2016-boxed-warning",
+        "effectiveDate": "2016-08-31",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-warns-about-serious-risks-and-death-when-combining-opioid-pain-or",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "in": [
+                  "Opioid",
+                  {
+                    "var": "current_medications_class"
+                  }
+                ]
+              },
+              {
+                "some": [
+                  {
+                    "var": "current_medications"
+                  },
+                  {
+                    "in": [
+                      {
+                        "var": ""
+                      },
+                      [
+                        "oxycodone",
+                        "hydrocodone",
+                        "morphine",
+                        "fentanyl",
+                        "codeine",
+                        "tramadol",
+                        "methadone"
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Benzodiazepine"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "alprazolam",
+                    "lorazepam",
+                    "diazepam",
+                    "clonazepam"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "FDA BLACK BOX WARNING: Concurrent use of opioids and benzodiazepines may result in profound sedation, respiratory depression, coma, and death.",
+        "recommendation": "Avoid concurrent prescribing. If clinically necessary, prescribe lowest effective dosages and shortest duration. Monitor closely."
+      },
+      "tags": [
+        "opioid",
+        "benzodiazepine",
+        "black-box"
+      ],
+      "contentHash": "ce5e3f788039d005996437a17f6cbb030b749bad8bdbc1d61105cb827d361bef"
+    },
+    {
+      "ruleId": "MED_INTER_002",
+      "name": "Multiple QT-Prolonging Medications",
+      "domain": "INTERACTION",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "CredibleMeds",
+        "sourceDocument": "CredibleMeds QTDrugs List 2024",
+        "sourceVersion": "2024-Q1",
+        "effectiveDate": "2024-01-15",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://crediblemeds.org/",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            "some": [
+              {
+                "var": "current_medications"
+              },
+              {
+                "in": [
+                  {
+                    "var": ""
+                  },
+                  [
+                    "amiodarone",
+                    "sotalol",
+                    "haloperidol",
+                    "methadone",
+                    "ondansetron",
+                    "azithromycin",
+                    "levofloxacin",
+                    "moxifloxacin"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "amiodarone",
+                    "sotalol",
+                    "haloperidol",
+                    "methadone",
+                    "ondansetron",
+                    "azithromycin",
+                    "levofloxacin",
+                    "moxifloxacin",
+                    "citalopram",
+                    "escitalopram"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient is on a QT-prolonging medication. Adding another may increase risk of Torsades de Pointes.",
+        "recommendation": "Check baseline QTc. Consider alternative agent. If proceeding, monitor ECG."
+      },
+      "tags": [
+        "qt-prolongation",
+        "cardiac",
+        "ecg"
+      ],
+      "contentHash": "119a1385815ed805395d978f91cfdb6b61051804d32757555f6e334e3e952a84"
+    }
+  ]
+}

@@ -39,6 +39,18 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Never run auth/compliance/security middleware on Next internals or static assets.
+  // If these requests are intercepted, CSS/JS can 404 in dev and the UI renders unstyled.
+  const isStaticOrInternalRequest =
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/public/') ||
+    pathname === '/favicon.ico' ||
+    /\.[^/]+$/.test(pathname);
+
+  if (isStaticOrInternalRequest) {
+    return NextResponse.next();
+  }
+
   // ===== LOCALE PREFIX SELF-HEAL =====
   // We do NOT use locale-prefixed routes in this app. However, older/stale builds
   // (or cached links) may still point to `/en/...`, `/es/...`, `/pt/...`.
@@ -137,6 +149,6 @@ export const config = {
      * - public folder
      * - Files with extensions (images, etc.)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\..*|public).*)',
+    '/:path*',
   ],
 };

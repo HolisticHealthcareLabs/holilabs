@@ -390,8 +390,8 @@ export default function DataProcessingAgreementPage() {
               Holi Labs will provide:
             </p>
             <ul className="list-disc pl-6 text-gray-700 mb-4">
-              <li>SOC 2 Type II audit reports</li>
-              <li>HIPAA compliance attestations</li>
+              <li>Security documentation and reports (when available)</li>
+              <li>Compliance-related documentation (when available)</li>
               <li>Security policy documentation</li>
               <li>Cooperation with third-party auditors (at Controller's expense)</li>
             </ul>

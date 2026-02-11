@@ -7,151 +7,177 @@ import {
     emitGovernanceBlockedEvent,
 } from '@/lib/socket-server';
 import { v4 as uuidv4 } from 'uuid';
-import { OVERRIDE_REASON_CODES, isOverrideReasonCode } from '@/lib/governance/shared-types';
-
-function getString(value: unknown): string | undefined {
-    return typeof value === 'string' ? value : undefined;
-}
-
-function getSeverity(value: unknown, fallback: 'INFO' | 'SOFT_NUDGE' | 'HARD_BLOCK'): 'INFO' | 'SOFT_NUDGE' | 'HARD_BLOCK' {
-    return value === 'INFO' || value === 'SOFT_NUDGE' || value === 'HARD_BLOCK' ? value : fallback;
-}
-
-function getBlockingSeverity(value: unknown, fallback: 'SOFT_NUDGE' | 'HARD_BLOCK'): 'SOFT_NUDGE' | 'HARD_BLOCK' {
-    return value === 'SOFT_NUDGE' || value === 'HARD_BLOCK' ? value : fallback;
-}
+import {
+    validateGovernanceEventRequest,
+} from '@/lib/governance/shared-types';
+import type {
+    GovernanceBlockedEvent,
+    GovernanceLogEvent,
+    GovernanceOverrideEvent,
+} from '@/lib/socket/events';
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json() as Record<string, unknown>;
-        const { type, ...payload } = body;
-        const governanceContext = {
-            protocolVersion: getString(payload.protocolVersion),
-            country: getString(payload.country),
-            siteId: getString(payload.siteId),
-        };
+        const body = await req.json() as unknown;
+        const validation = validateGovernanceEventRequest(body);
+        if (!validation.success) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'Invalid governance event payload',
+                    details: validation.errors,
+                },
+                { status: 400 }
+            );
+        }
+
+        const event = validation.data;
 
         // Phase 0: Setup / Telemetry Check
-        console.log(`[Governance] API Event Received:`, type, payload);
+        console.log('[Governance] API Event Received:', event.type, event);
 
-        if (type === 'OVERRIDE') {
-            const normalizedReason =
-                typeof payload.reason === 'string' ? payload.reason.trim() : '';
-            if (!isOverrideReasonCode(normalizedReason)) {
-                return NextResponse.json(
-                    {
-                        success: false,
-                        error: 'Override requires a valid reason code',
-                        allowedReasons: OVERRIDE_REASON_CODES,
-                    },
-                    { status: 400 }
-                );
-            }
-
+        if (event.type === 'OVERRIDE') {
             // Phase 1: Liability Check
-            await governance.logOverride({
-                sessionId: getString(payload.sessionId) || 'demo-session',
-                ruleId: getString(payload.ruleId),
-                reason: normalizedReason,
-                userId: getString(payload.userId),
-            });
+            let persistenceWarning: string | null = null;
+            try {
+                await governance.logOverride({
+                    sessionId: event.sessionId,
+                    ruleId: event.ruleId,
+                    reason: event.reason,
+                    userId: event.userId,
+                });
+            } catch (persistenceError) {
+                // Demo-safe degradation: keep governance event broadcast path alive
+                // when local DB schemas are incomplete.
+                console.error('[Governance] Override persistence degraded:', persistenceError);
+                persistenceWarning = 'override_persistence_degraded';
+            }
 
             // Real-time Socket.IO broadcast for governance override
             // Safety-critical: Immediate push to monitoring dashboards
             const overrideEventPayload = {
-                sessionId: getString(payload.sessionId) || 'demo-session',
-                ruleId: getString(payload.ruleId),
-                reason: normalizedReason,
-                userId: getString(payload.userId),
-                userName: getString(payload.userName),
-                clinicId: getString(payload.clinicId),
-                ...governanceContext,
-            };
+                sessionId: event.sessionId,
+                ruleId: event.ruleId,
+                reason: event.reason,
+                userId: event.userId,
+                userName: event.userName,
+                clinicId: event.clinicId,
+                protocolVersion: event.protocolVersion,
+                country: event.country,
+                siteId: event.siteId,
+                unit: event.unit,
+                protocolMode: event.protocolMode,
+                actorRole: event.actorRole,
+            } satisfies Omit<GovernanceOverrideEvent, 'timestamp'>;
             emitGovernanceOverrideEvent(overrideEventPayload);
 
             // Also emit a log event for the override action
             const overrideLogPayload = {
                 id: uuidv4(),
-                sessionId: getString(payload.sessionId) || 'demo-session',
+                sessionId: event.sessionId,
                 eventType: 'OVERRIDE' as const,
-                ruleId: getString(payload.ruleId),
-                ruleName: getString(payload.ruleId) ? `Rule ${payload.ruleId}` : undefined,
+                ruleId: event.ruleId,
+                ruleName: event.ruleId ? `Rule ${event.ruleId}` : undefined,
                 severity: 'INFO' as const,
-                description: `Clinician Override: ${normalizedReason}`,
+                description: `Clinician Override: ${event.reason}`,
                 provider: 'clinician-override',
-                clinicId: getString(payload.clinicId),
-                userId: getString(payload.userId),
-                userName: getString(payload.userName),
-                ...governanceContext,
-            };
+                clinicId: event.clinicId,
+                userId: event.userId,
+                userName: event.userName,
+                protocolVersion: event.protocolVersion,
+                country: event.country,
+                siteId: event.siteId,
+                unit: event.unit,
+                protocolMode: event.protocolMode,
+                actorRole: event.actorRole,
+            } satisfies Omit<GovernanceLogEvent, 'timestamp'>;
             emitGovernanceLogEvent(overrideLogPayload);
 
-            return NextResponse.json({ success: true, message: 'Override Logged' });
+            return NextResponse.json({
+                success: true,
+                message: 'Override Logged',
+                ...(persistenceWarning ? { warning: persistenceWarning } : {}),
+            });
         }
 
-        if (type === 'BLOCKED') {
+        if (event.type === 'BLOCKED') {
             // Real-time Socket.IO broadcast for governance block
             // Safety-critical: Immediate push when content is blocked
             const blockedEventPayload = {
-                sessionId: getString(payload.sessionId) || 'demo-session',
-                ruleId: getString(payload.ruleId),
-                ruleName: getString(payload.ruleName),
-                severity: getBlockingSeverity(payload.severity, 'HARD_BLOCK'),
-                description: getString(payload.description),
-                clinicId: getString(payload.clinicId),
-                userId: getString(payload.userId),
-                ...governanceContext,
-            };
+                sessionId: event.sessionId,
+                ruleId: event.ruleId,
+                ruleName: event.ruleName,
+                severity: event.severity,
+                description: event.description,
+                clinicId: event.clinicId,
+                userId: event.userId,
+                protocolVersion: event.protocolVersion,
+                country: event.country,
+                siteId: event.siteId,
+                unit: event.unit,
+                protocolMode: event.protocolMode,
+                actorRole: event.actorRole,
+            } satisfies Omit<GovernanceBlockedEvent, 'timestamp'>;
             emitGovernanceBlockedEvent(blockedEventPayload);
 
             // Emit log event for the block
             const blockedLogPayload = {
                 id: uuidv4(),
-                sessionId: getString(payload.sessionId) || 'demo-session',
+                sessionId: event.sessionId,
                 eventType: 'BLOCKED' as const,
-                ruleId: getString(payload.ruleId),
-                ruleName: getString(payload.ruleName),
-                severity: getSeverity(payload.severity, 'HARD_BLOCK'),
-                description: getString(payload.description),
-                provider: getString(payload.provider) || 'rule-engine-v1',
-                clinicId: getString(payload.clinicId),
-                userId: getString(payload.userId),
-                userName: getString(payload.userName),
-                ...governanceContext,
-            };
+                ruleId: event.ruleId,
+                ruleName: event.ruleName,
+                severity: event.severity,
+                description: event.description,
+                provider: event.provider || 'rule-engine-v1',
+                clinicId: event.clinicId,
+                userId: event.userId,
+                userName: event.userName,
+                protocolVersion: event.protocolVersion,
+                country: event.country,
+                siteId: event.siteId,
+                unit: event.unit,
+                protocolMode: event.protocolMode,
+                actorRole: event.actorRole,
+            } satisfies Omit<GovernanceLogEvent, 'timestamp'>;
             emitGovernanceLogEvent(blockedLogPayload);
 
             return NextResponse.json({ success: true, message: 'Block event broadcast' });
         }
 
-        if (type === 'FLAGGED') {
+        if (event.type === 'FLAGGED') {
             // Real-time Socket.IO broadcast for governance flag (warning)
             const flaggedLogPayload = {
                 id: uuidv4(),
-                sessionId: getString(payload.sessionId) || 'demo-session',
+                sessionId: event.sessionId,
                 eventType: 'FLAGGED' as const,
-                ruleId: getString(payload.ruleId),
-                ruleName: getString(payload.ruleName),
-                severity: getSeverity(payload.severity, 'SOFT_NUDGE'),
-                description: getString(payload.description),
-                provider: getString(payload.provider) || 'rule-engine-v1',
-                clinicId: getString(payload.clinicId),
-                userId: getString(payload.userId),
-                userName: getString(payload.userName),
-                ...governanceContext,
-            };
+                ruleId: event.ruleId,
+                ruleName: event.ruleName,
+                severity: event.severity,
+                description: event.description,
+                provider: event.provider || 'rule-engine-v1',
+                clinicId: event.clinicId,
+                userId: event.userId,
+                userName: event.userName,
+                protocolVersion: event.protocolVersion,
+                country: event.country,
+                siteId: event.siteId,
+                unit: event.unit,
+                protocolMode: event.protocolMode,
+                actorRole: event.actorRole,
+            } satisfies Omit<GovernanceLogEvent, 'timestamp'>;
             emitGovernanceLogEvent(flaggedLogPayload);
 
             return NextResponse.json({ success: true, message: 'Flag event broadcast' });
         }
 
-        if (type === 'IMPRESSION') {
+        if (event.type === 'IMPRESSION') {
             // Phase 1 & 2: Telemetry Check
             // In a real app, this would send to PostHog/Mixpanel
             return NextResponse.json({ success: true, tracked: true });
         }
 
-        if (type === 'LATENCY') {
+        if (event.type === 'LATENCY') {
             // Phase 2: Latency Check
             return NextResponse.json({ success: true, latency_metric_recorded: true });
         }

@@ -15,8 +15,8 @@ import '@/lib/env';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: 'Holi Labs - Clinical Co-Pilot',
-  description: 'Clinical co-pilot for modern care teams: AI scribe, decision support, prevention workflows, and interoperable data.',
+  title: 'Holi Labs - Cardiology Verification',
+  description: 'Web-first DOAC safety checks and discharge verification with audit trails and follow-up workflows.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -29,13 +29,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Holi Labs',
-    title: 'Holi Labs - Clinical Co-Pilot',
-    description: 'Clinical co-pilot for modern care teams.',
+    title: 'Holi Labs - Cardiology Verification',
+    description: 'Web-first DOAC safety checks and discharge verification with audit trails and follow-up workflows.',
   },
   twitter: {
     card: 'summary',
-    title: 'Holi Labs - Clinical Co-Pilot',
-    description: 'Clinical co-pilot for modern care teams.',
+    title: 'Holi Labs - Cardiology Verification',
+    description: 'Web-first DOAC safety checks and discharge verification with audit trails and follow-up workflows.',
   },
 };
 
@@ -73,6 +73,9 @@ export default async function RootLayout({
   function showCrash(label, err) {
     try {
       var msg = (err && (err.message || err.reason && err.reason.message)) || String(err || 'Unknown error');
+      // Next.js uses thrown errors for control-flow (redirects, not-found).
+      // These should NOT display the crash overlay.
+      if (msg && (msg.indexOf('NEXT_REDIRECT') !== -1 || msg.indexOf('NEXT_NOT_FOUND') !== -1)) return;
       var stack = (err && (err.stack || err.reason && err.reason.stack)) || '';
       var el = document.getElementById('__holilabs_crash__');
       if (!el) {
@@ -121,7 +124,10 @@ export default async function RootLayout({
             <OfflineIndicator />
             <IOSInstallPrompt />
             <CookieConsentBanner />
-            <main id="main-content">
+            <main
+              id="main-content"
+              className="min-h-[100dvh] pb-[var(--holi-cookie-banner-h,0px)] transition-[padding] duration-200"
+            >
               {children}
             </main>
           </Providers>

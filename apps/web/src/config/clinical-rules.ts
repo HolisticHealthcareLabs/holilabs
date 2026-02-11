@@ -326,3 +326,40 @@ export function getRuleCountByCategory(): Record<string, number> {
     }
     return counts;
 }
+
+// ============================================================================
+// CONTENT REGISTRY MIGRATION BRIDGE
+// ============================================================================
+//
+// The functions below allow validate-dose and other consumers to switch to
+// the provenance-aware content registry without breaking existing code paths.
+// Import them at integration time to gradually shift from the legacy array.
+//
+
+import type { ClinicalRuleRecord } from '@/lib/clinical/content-types';
+import {
+    isRegistryReady,
+    getRegistryRuleById,
+    getAllRegistryRules,
+} from '@/lib/clinical/content-registry';
+
+/**
+ * Get a clinical rule by ID, preferring the provenance-aware registry if loaded.
+ * Falls back to the legacy CLINICAL_RULES array.
+ */
+export function getHybridRuleById(ruleId: string): ClinicalRule | ClinicalRuleRecord | undefined {
+    if (isRegistryReady()) {
+        return getRegistryRuleById(ruleId);
+    }
+    return getRuleById(ruleId);
+}
+
+/**
+ * Get all rule IDs from whichever source is active.
+ */
+export function getHybridAllRuleIds(): string[] {
+    if (isRegistryReady()) {
+        return getAllRegistryRules().map(r => r.ruleId);
+    }
+    return getAllRuleIds();
+}

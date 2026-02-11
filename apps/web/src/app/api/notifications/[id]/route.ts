@@ -15,6 +15,7 @@ import { markNotificationAsRead, deleteNotification } from '@/lib/notifications'
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
 export async function PUT(
   request: NextRequest,
@@ -31,6 +32,22 @@ export async function PUT(
     if (clinicianSession?.user?.id) {
       userId = clinicianSession.user.id;
       userType = 'CLINICIAN';
+
+      // Demo mode (DB-FREE): accept mark-as-read without DB
+      if (isDemoClinician(userId, clinicianSession.user.email ?? null)) {
+        const existing = getSyntheticNotifications().find((n) => n.id === notificationId);
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Notificación no encontrada' }, { status: 404 });
+        }
+        return NextResponse.json(
+          {
+            success: true,
+            message: 'Notificación marcada como leída',
+            data: { ...existing, isRead: true },
+          },
+          { status: 200 }
+        );
+      }
     } else {
       try {
         const patientSession = await requirePatientSession();
@@ -132,6 +149,18 @@ export async function DELETE(
     if (clinicianSession?.user?.id) {
       userId = clinicianSession.user.id;
       userType = 'CLINICIAN';
+
+      // Demo mode (DB-FREE): accept delete without DB
+      if (isDemoClinician(userId, clinicianSession.user.email ?? null)) {
+        const existing = getSyntheticNotifications().find((n) => n.id === notificationId);
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Notificación no encontrada' }, { status: 404 });
+        }
+        return NextResponse.json(
+          { success: true, message: 'Notificación eliminada' },
+          { status: 200 }
+        );
+      }
     } else {
       try {
         const patientSession = await requirePatientSession();

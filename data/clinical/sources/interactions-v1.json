@@ -1,0 +1,78 @@
+[
+  {
+    "ruleId": "MED_INTER_001",
+    "name": "Opioid + Benzodiazepine Concurrent Use",
+    "domain": "INTERACTION",
+    "severity": "BLOCK",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "FDA Drug Safety Communication – Opioid + Benzodiazepine",
+      "sourceVersion": "2016-boxed-warning",
+      "effectiveDate": "2016-08-31",
+      "jurisdiction": "US",
+      "citationUrl": "https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-warns-about-serious-risks-and-death-when-combining-opioid-pain-or",
+      "licenseType": "public-domain"
+    },
+    "logic": {
+      "and": [
+        {
+          "or": [
+            { "in": ["Opioid", { "var": "current_medications_class" }] },
+            {
+              "some": [
+                { "var": "current_medications" },
+                { "in": [{ "var": "" }, ["oxycodone", "hydrocodone", "morphine", "fentanyl", "codeine", "tramadol", "methadone"]] }
+              ]
+            }
+          ]
+        },
+        {
+          "or": [
+            { "in": [{ "var": "proposed_medication_class" }, ["Benzodiazepine"]] },
+            { "in": [{ "var": "proposed_medication" }, ["alprazolam", "lorazepam", "diazepam", "clonazepam"]] }
+          ]
+        }
+      ]
+    },
+    "intervention": {
+      "message": "FDA BLACK BOX WARNING: Concurrent use of opioids and benzodiazepines may result in profound sedation, respiratory depression, coma, and death.",
+      "recommendation": "Avoid concurrent prescribing. If clinically necessary, prescribe lowest effective dosages and shortest duration. Monitor closely."
+    },
+    "tags": ["opioid", "benzodiazepine", "black-box"]
+  },
+  {
+    "ruleId": "MED_INTER_002",
+    "name": "Multiple QT-Prolonging Medications",
+    "domain": "INTERACTION",
+    "severity": "FLAG",
+    "provenance": {
+      "sourceAuthority": "CredibleMeds",
+      "sourceDocument": "CredibleMeds QTDrugs List 2024",
+      "sourceVersion": "2024-Q1",
+      "effectiveDate": "2024-01-15",
+      "jurisdiction": "INTL",
+      "citationUrl": "https://crediblemeds.org/",
+      "licenseType": "proprietary"
+    },
+    "logic": {
+      "and": [
+        {
+          "some": [
+            { "var": "current_medications" },
+            { "in": [{ "var": "" }, ["amiodarone", "sotalol", "haloperidol", "methadone", "ondansetron", "azithromycin", "levofloxacin", "moxifloxacin"]] }
+          ]
+        },
+        {
+          "or": [
+            { "in": [{ "var": "proposed_medication" }, ["amiodarone", "sotalol", "haloperidol", "methadone", "ondansetron", "azithromycin", "levofloxacin", "moxifloxacin", "citalopram", "escitalopram"]] }
+          ]
+        }
+      ]
+    },
+    "intervention": {
+      "message": "Patient is on a QT-prolonging medication. Adding another may increase risk of Torsades de Pointes.",
+      "recommendation": "Check baseline QTc. Consider alternative agent. If proceeding, monitor ECG."
+    },
+    "tags": ["qt-prolongation", "cardiac", "ecg"]
+  }
+]

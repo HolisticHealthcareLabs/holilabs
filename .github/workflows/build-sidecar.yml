@@ -59,6 +59,16 @@ jobs:
         run: |
           pnpm --filter @holilabs/sidecar run build:enterprise
 
+      - name: Verify macOS notarization (DMG)
+        if: matrix.os == 'macos-latest'
+        run: |
+          chmod +x apps/sidecar/scripts/verify-artifact-mac.sh
+          # Verify all produced DMGs (arm64/x64)
+          for dmg in apps/sidecar/dist/installers/*.dmg; do
+            echo "Verifying $dmg"
+            apps/sidecar/scripts/verify-artifact-mac.sh "$dmg"
+          done
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:

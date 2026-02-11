@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -9,14 +9,17 @@ interface OnboardingOverlayProps {
     language: 'en' | 'pt';
 }
 
-type Step = 'WELCOME' | 'EHR_DETECT' | 'SIGNALS' | 'SAFETY_VALVE';
+type Step = 'WELCOME' | 'PERMISSIONS' | 'EHR_DETECT' | 'SIGNALS' | 'SAFETY_VALVE';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete, language }) => {
-    const [step, setStep] = useState<Step>('WELCOME');
+    const [stepIndex, setStepIndex] = useState(0);
+    const [platform, setPlatform] = useState<string>('unknown');
+    const [screen, setScreen] = useState<'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown'>('unknown');
+    const [accessibility, setAccessibility] = useState<boolean>(true);
 
     // Translations
     const t = {
@@ -24,11 +27,18 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
             next: 'Next',
             finish: 'Start Assurance',
             skip: 'Skip Tour',
+            grant: 'Grant permissions',
+            openSettings: 'Open settings',
             steps: {
                 WELCOME: {
                     title: 'Welcome to Cortex Assurance',
                     desc: 'Your silent clinical partner for safer, faster decision making.',
                     icon: '👋',
+                },
+                PERMISSIONS: {
+                    title: 'macOS Permissions',
+                    desc: 'To attach to the EHR and validate safely, Cortex needs Screen Recording + Accessibility.',
+                    icon: '🔐',
                 },
                 EHR_DETECT: {
                     title: 'EHR Synchronization',
@@ -51,11 +61,18 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
             next: 'Próximo',
             finish: 'Iniciar Segurança',
             skip: 'Pular Tour',
+            grant: 'Conceder permissões',
+            openSettings: 'Abrir ajustes',
             steps: {
                 WELCOME: {
                     title: 'Bem-vindo ao Cortex',
                     desc: 'Seu parceiro clínico silencioso para decisões mais seguras e rápidas.',
                     icon: '👋',
+                },
+                PERMISSIONS: {
+                    title: 'Permissões do macOS',
+                    desc: 'Para acoplar ao prontuário e validar com segurança, o Cortex precisa de Gravação de Tela + Acessibilidade.',
+                    icon: '🔐',
                 },
                 EHR_DETECT: {
                     title: 'Sincronização Prontuário',
@@ -76,20 +93,41 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
         },
     }[language];
 
+    const steps: Step[] = useMemo(() => {
+        // Only show the permissions step when it matters.
+        const needsPermissions =
+            platform === 'darwin' && (screen !== 'granted' || accessibility !== true);
+
+        const base: Step[] = ['WELCOME'];
+        if (needsPermissions) base.push('PERMISSIONS');
+        base.push('EHR_DETECT', 'SIGNALS', 'SAFETY_VALVE');
+        return base;
+    }, [platform, screen, accessibility]);
+
+    const step = steps[Math.min(stepIndex, steps.length - 1)] || 'WELCOME';
+
+    const refreshPermissions = async () => {
+        if (!window?.electronAPI?.getPermissions) return;
+        const p = await window.electronAPI.getPermissions().catch(() => null);
+        if (!p) return;
+        setPlatform(p.platform);
+        setScreen(p.screen);
+        setAccessibility(p.accessibility);
+    };
+
+    useEffect(() => {
+        refreshPermissions();
+        const t = setInterval(refreshPermissions, 1500);
+        return () => clearInterval(t);
+    }, []);
+
     const handleNext = () => {
-        if (step === 'WELCOME') setStep('EHR_DETECT');
-        else if (step === 'EHR_DETECT') setStep('SIGNALS');
-        else if (step === 'SIGNALS') setStep('SAFETY_VALVE');
-        else onComplete();
+        if (stepIndex >= steps.length - 1) onComplete();
+        else setStepIndex((i) => i + 1);
     };
 
     const getProgress = () => {
-        switch (step) {
-            case 'WELCOME': return 1;
-            case 'EHR_DETECT': return 2;
-            case 'SIGNALS': return 3;
-            case 'SAFETY_VALVE': return 4;
-        }
+        return Math.max(1, Math.min(steps.length, stepIndex + 1));
     };
 
     return (
@@ -101,9 +139,49 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
                     <p>{t.steps[step].desc}</p>
                 </div>
 
+                {step === 'PERMISSIONS' && (
+                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ fontSize: 12, opacity: 0.85, lineHeight: 1.4 }}>
+                            <div>
+                                <strong>Screen Recording</strong>: {screen === 'granted' ? '✅' : '⚠️'} {screen}
+                            </div>
+                            <div>
+                                <strong>Accessibility</strong>: {accessibility ? '✅ granted' : '⚠️ not granted'}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            <button
+                                className="btn-primary"
+                                onClick={async () => {
+                                    await window.electronAPI.requestScreenRecording();
+                                    await window.electronAPI.openScreenRecordingSettings();
+                                    await refreshPermissions();
+                                }}
+                            >
+                                {t.openSettings}: Screen Recording
+                            </button>
+                            <button
+                                className="btn-primary"
+                                onClick={async () => {
+                                    await window.electronAPI.requestAccessibility();
+                                    await window.electronAPI.openAccessibilitySettings();
+                                    await refreshPermissions();
+                                }}
+                            >
+                                {t.openSettings}: Accessibility
+                            </button>
+                        </div>
+
+                        <div style={{ fontSize: 12, opacity: 0.7, lineHeight: 1.35 }}>
+                            After enabling permissions in System Settings, return here—this screen will update automatically.
+                        </div>
+                    </div>
+                )}
+
                 {/* Progress Indicators */}
                 <div className="onboarding-progress">
-                    {[1, 2, 3, 4].map((i) => (
+                    {Array.from({ length: steps.length }, (_, idx) => idx + 1).map((i) => (
                         <div
                             key={i}
                             className={`progress-dot ${i <= getProgress() ? 'active' : ''}`}
@@ -117,7 +195,7 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
                         {t.skip}
                     </button>
                     <button className="btn-primary" onClick={handleNext}>
-                        {step === 'SAFETY_VALVE' ? t.finish : t.next}
+                        {stepIndex >= steps.length - 1 ? t.finish : t.next}
                     </button>
                 </div>
             </div>

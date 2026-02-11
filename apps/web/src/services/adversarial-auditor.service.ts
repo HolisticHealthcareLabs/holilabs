@@ -96,6 +96,28 @@ export class AdversarialAuditorService {
         return AdversarialAuditorService.instance;
     }
 
+    private assertNonEmpty(value: unknown, field: string): string {
+        if (typeof value !== 'string' || !value.trim()) {
+            throw new Error(`Missing required ${field}`);
+        }
+        return value.trim();
+    }
+
+    private normalizeExecutionMetadata(verdict: AuditorVerdict) {
+        return {
+            model_id: this.assertNonEmpty(verdict.execution_metadata?.model_id, 'execution_metadata.model_id'),
+            latency_ms: Number.isFinite(verdict.execution_metadata?.latency_ms)
+                ? verdict.execution_metadata.latency_ms
+                : 0,
+            input_tokens: Number.isFinite(verdict.execution_metadata?.input_tokens)
+                ? verdict.execution_metadata.input_tokens
+                : 0,
+            output_tokens: Number.isFinite(verdict.execution_metadata?.output_tokens)
+                ? verdict.execution_metadata.output_tokens
+                : 0,
+        };
+    }
+
     async auditSession(
         sessionId: string,
         transcript: string,
@@ -159,8 +181,23 @@ export class AdversarialAuditorService {
                 );
             }
 
-            // Async Persistence
-            await this.persistVerdict(sessionId, verdict);
+            try {
+                const persisted = await this.persistVerdict(sessionId, verdict);
+                if (!persisted) {
+                    logger.warn({
+                        event: 'auditor_persistence_skipped',
+                        sessionId,
+                        reason: 'interaction_session_not_found',
+                    });
+                }
+            } catch (persistError) {
+                logger.error({
+                    event: 'auditor_persistence_degraded',
+                    sessionId,
+                    timestamp: new Date().toISOString(),
+                    error: persistError instanceof Error ? persistError.message : String(persistError),
+                });
+            }
 
             return verdict;
 
@@ -184,35 +221,52 @@ export class AdversarialAuditorService {
         }
     }
 
-    private async persistVerdict(sessionId: string, verdict: AuditorVerdict) {
-        try {
-            // Find InteractionSession first using ScribeSessionId link?
-            // Wait, the sessionId passed here is likely the Scribe Session ID based on usage context.
-            // Let's assume it is.
-            let interaction = await prisma.interactionSession.findFirst({
-                where: { scribeSessionId: sessionId }
+    private async getOrCreateInteractionSession(sessionId: string) {
+        const normalizedSessionId = this.assertNonEmpty(sessionId, 'sessionId');
+
+        let interaction = await prisma.interactionSession.findFirst({
+            where: { scribeSessionId: normalizedSessionId }
+        });
+
+        if (interaction) {
+            return interaction;
+        }
+
+        const scribe = await prisma.scribeSession.findUnique({
+            where: { id: normalizedSessionId },
+            select: { clinicianId: true, patientId: true }
+        });
+
+        if (!scribe?.clinicianId) {
+            logger.warn({
+                event: 'auditor_missing_interaction_context',
+                sessionId: normalizedSessionId,
+                reason: 'scribe_session_not_found',
+                timestamp: new Date().toISOString(),
             });
+            return null;
+        }
 
+        interaction = await prisma.interactionSession.create({
+            data: {
+                scribeSessionId: normalizedSessionId,
+                userId: scribe.clinicianId,
+                patientId: scribe.patientId,
+                startedAt: new Date(),
+            }
+        });
+
+        return interaction;
+    }
+
+    private async persistVerdict(sessionId: string, verdict: AuditorVerdict): Promise<boolean> {
+        const normalizedSessionId = this.assertNonEmpty(sessionId, 'sessionId');
+        const metadata = this.normalizeExecutionMetadata(verdict);
+
+        try {
+            const interaction = await this.getOrCreateInteractionSession(normalizedSessionId);
             if (!interaction) {
-                // Try to look up scribe session to create interaction
-                const scribe = await prisma.scribeSession.findUnique({
-                    where: { id: sessionId },
-                    select: { clinicianId: true, patientId: true }
-                });
-
-                if (scribe) {
-                    interaction = await prisma.interactionSession.create({
-                        data: {
-                            scribeSessionId: sessionId,
-                            userId: scribe.clinicianId,
-                            patientId: scribe.patientId,
-                            startedAt: new Date(),
-                        }
-                    });
-                } else {
-                    console.warn(`[Auditor] Could not find session ${sessionId}, skipping persistence.`);
-                    return;
-                }
+                return false;
             }
 
             // Create Log
@@ -221,9 +275,10 @@ export class AdversarialAuditorService {
                     sessionId: interaction.id,
                     inputPrompt: "Adversarial Audit", // Simplified for log
                     rawModelOutput: JSON.stringify(verdict),
-                    provider: verdict.execution_metadata.model_id,
+                    provider: metadata.model_id,
                     safetyScore: verdict.safety_score,
-                    latencyMs: verdict.execution_metadata.latency_ms,
+                    latencyMs: metadata.latency_ms,
+                    tokenCount: metadata.input_tokens + metadata.output_tokens,
                 }
             });
 
@@ -240,8 +295,15 @@ export class AdversarialAuditorService {
                 });
             }
 
+            return true;
         } catch (e) {
-            logger.error({ event: 'auditor_persist_failed', error: (e as Error).message });
+            logger.error({
+                event: 'auditor_persist_failed',
+                sessionId: normalizedSessionId,
+                timestamp: new Date().toISOString(),
+                error: (e as Error).message,
+            });
+            throw e;
         }
     }
 }
