@@ -1,0 +1,177 @@
+name: Cortex Docs Automation
+
+on:
+  schedule:
+    # Monday planning update (UTC)
+    - cron: '0 13 * * 1'
+    # Friday closeout update (UTC)
+    - cron: '0 22 * * 5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - daily
+          - weekly
+          - monday
+          - friday
+      config_profile:
+        description: "Config subset profile"
+        required: true
+        default: "full"
+        type: choice
+        options:
+          - full
+          - core
+          - examples
+          - tracker-only
+      append_log:
+        description: "Append weekly auto log entries"
+        required: false
+        default: true
+        type: boolean
+      all:
+        description: "Update all configured docs regardless of cadence"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-cortex-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Resolve run mode
+        id: mode
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            MODE="${{ inputs.mode }}"
+            PROFILE="${{ inputs.config_profile }}"
+            APPEND_LOG="${{ inputs.append_log }}"
+            ALL="${{ inputs.all }}"
+          else
+            case "${{ github.event.schedule }}" in
+              "0 13 * * 1")
+                MODE="monday"
+                APPEND_LOG="true"
+                ;;
+              "0 22 * * 5")
+                MODE="friday"
+                APPEND_LOG="true"
+                ;;
+              *)
+                MODE="auto"
+                APPEND_LOG="false"
+                ;;
+            esac
+            PROFILE="full"
+            ALL="false"
+          fi
+
+          case "$PROFILE" in
+            full)
+              CONFIG_PATH="configs/cortex-doc-automation.config.json"
+              ;;
+            core)
+              CONFIG_PATH="configs/cortex-doc-automation.core.config.json"
+              ;;
+            examples)
+              CONFIG_PATH="configs/cortex-doc-automation.examples.config.json"
+              ;;
+            tracker-only)
+              CONFIG_PATH="configs/cortex-doc-automation.tracker-only.config.json"
+              ;;
+            *)
+              CONFIG_PATH="configs/cortex-doc-automation.config.json"
+              ;;
+          esac
+
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "profile=$PROFILE" >> "$GITHUB_OUTPUT"
+          echo "config_path=$CONFIG_PATH" >> "$GITHUB_OUTPUT"
+          echo "append_log=$APPEND_LOG" >> "$GITHUB_OUTPUT"
+          echo "all=$ALL" >> "$GITHUB_OUTPUT"
+          echo "Resolved mode=$MODE profile=$PROFILE config=$CONFIG_PATH append_log=$APPEND_LOG all=$ALL"
+
+      - name: Update Cortex docs metadata
+        shell: bash
+        run: |
+          ARGS=(--mode "${{ steps.mode.outputs.mode }}" --config "${{ steps.mode.outputs.config_path }}")
+          if [[ "${{ steps.mode.outputs.append_log }}" == "true" ]]; then
+            ARGS+=(--append-log)
+          fi
+          if [[ "${{ steps.mode.outputs.all }}" == "true" ]]; then
+            ARGS+=(--all)
+          fi
+
+          node scripts/update-cortex-docs-metadata.js "${ARGS[@]}"
+
+      - name: Detect changed files
+        id: changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No documentation changes detected."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Documentation changes detected."
+          fi
+
+      - name: Create pull request
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: automation/cortex-doc-metadata
+          commit-message: "docs(cortex): automated metadata update"
+          title: "docs(cortex): automated metadata update"
+          body: |
+            Automated Cortex docs metadata refresh.
+
+            - Run mode: `${{ steps.mode.outputs.mode }}`
+            - Append auto log: `${{ steps.mode.outputs.append_log }}`
+            - All docs mode: `${{ steps.mode.outputs.all }}`
+
+            This PR was created by `.github/workflows/cortex-doc-automation.yml`.
+          labels: |
+            automation
+            documentation
+          delete-branch: false
+
+      - name: Workflow summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Cortex Docs Automation"
+            echo ""
+            echo "- Mode: \`${{ steps.mode.outputs.mode }}\`"
+            echo "- Config profile: \`${{ steps.mode.outputs.profile }}\`"
+            echo "- Config path: \`${{ steps.mode.outputs.config_path }}\`"
+            echo "- Append log: \`${{ steps.mode.outputs.append_log }}\`"
+            echo "- All docs: \`${{ steps.mode.outputs.all }}\`"
+            echo "- Changes detected: \`${{ steps.changes.outputs.has_changes || 'false' }}\`"
+            if [[ "${{ steps.changes.outputs.has_changes }}" == "true" ]]; then
+              echo "- PR action: attempted (create/update)"
+            else
+              echo "- PR action: skipped (no file changes)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+

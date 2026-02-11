@@ -109,10 +109,15 @@ const App: React.FC = () => {
       }));
     });
 
+    const unsubscribePerms = window.electronAPI.onPermissionsRequired(() => {
+      setState((prev) => ({ ...prev, showOnboarding: true }));
+    });
+
     return () => {
       unsubscribeTrafficLight();
       unsubscribeEHR();
       unsubscribeConnection();
+      unsubscribePerms();
     };
   }, []);
 
@@ -134,7 +139,11 @@ const App: React.FC = () => {
         }));
       } else {
         console.error('Evaluation failed:', response.error);
-        setState((prev) => ({ ...prev, isEvaluating: false }));
+        setState((prev) => ({
+          ...prev,
+          isEvaluating: false,
+          showOnboarding: prev.showOnboarding || response.error === 'PERMISSIONS_REQUIRED',
+        }));
       }
     } catch (error) {
       console.error('Evaluation error:', error);

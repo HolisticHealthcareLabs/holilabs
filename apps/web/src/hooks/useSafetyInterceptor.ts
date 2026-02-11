@@ -13,6 +13,25 @@ interface SafetyInterceptor {
     pendingNudges: GovernanceVerdict[];
 }
 
+const GOVERNANCE_EVENT_CONTEXT = {
+    protocolVersion: 'v1',
+    country: 'ZZ',
+    siteId: 'web-demo',
+} as const;
+
+async function getGovernanceApiErrorMessage(response: Response): Promise<string> {
+    try {
+        const data = (await response.json()) as { error?: string };
+        if (typeof data.error === 'string' && data.error.trim().length > 0) {
+            return data.error;
+        }
+    } catch {
+        // Ignore parse errors and fall through to status-based message.
+    }
+
+    return `Failed to log override (${response.status})`;
+}
+
 export function useSafetyInterceptor(toast: any): SafetyInterceptor {
     const [activeBlock, setActiveBlock] = useState<GovernanceVerdict | null>(null);
     const [pendingNudges, setPendingNudges] = useState<GovernanceVerdict[]>([]);
@@ -107,29 +126,57 @@ export function useSafetyInterceptor(toast: any): SafetyInterceptor {
     }, []);
 
     const handleOverride = useCallback(async (reason: string) => {
+        if (!activeBlock?.ruleId) {
+            toast({
+                variant: 'destructive',
+                title: 'Override Not Logged',
+                description: 'No active safety block is available to override.',
+                duration: 4000,
+            });
+            return;
+        }
+
         console.log('Logging Override:', {
             ruleId: activeBlock?.ruleId,
             reason,
             timestamp: new Date().toISOString()
         });
 
-        // Phase 1: Liability Check (Network Call)
-        await fetch('/api/governance/event', {
-            method: 'POST',
-            body: JSON.stringify({
-                type: 'OVERRIDE',
-                ruleId: activeBlock?.ruleId,
-                reason: reason,
-                sessionId: 'demo-session' // simplified
-            })
-        });
+        try {
+            // Phase 1: Liability Check (Network Call)
+            const response = await fetch('/api/governance/event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    type: 'OVERRIDE',
+                    ruleId: activeBlock.ruleId,
+                    reason: reason,
+                    sessionId: 'demo-session', // simplified
+                    ...GOVERNANCE_EVENT_CONTEXT,
+                })
+            });
 
-        setActiveBlock(null);
-        toast({
-            title: 'Override Logged',
-            description: 'The safety block has been overridden. This event has been audited.',
-            duration: 3000,
-        });
+            if (!response.ok) {
+                throw new Error(await getGovernanceApiErrorMessage(response));
+            }
+
+            setActiveBlock(null);
+            toast({
+                title: 'Override Logged',
+                description: 'The safety block has been overridden. This event has been audited.',
+                duration: 3000,
+            });
+        } catch (error) {
+            console.error('Override logging failed:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Override Not Logged',
+                description: error instanceof Error ? error.message : 'Unable to log override event.',
+                duration: 4000,
+            });
+        }
     }, [activeBlock, toast]);
 
     return {

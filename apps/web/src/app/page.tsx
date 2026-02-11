@@ -6,9 +6,8 @@ import { IntroAnimation } from '@/components/IntroAnimation';
 import { useTheme } from '@/hooks/useTheme';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { Hero } from '@/components/landing/Hero';
-import { ParadigmShift } from '@/components/landing/ParadigmShift';
+import { HowItWorks } from '@/components/landing/HowItWorks';
 import { Architecture } from '@/components/landing/Architecture';
-import { CoPilot } from '@/components/landing/CoPilot';
 import { Governance } from '@/components/landing/Governance';
 import { HighStakes } from '@/components/landing/HighStakes';
 import { DemoRequest } from '@/components/landing/DemoRequest';
@@ -38,9 +37,8 @@ export default function Home() {
 
         <main className="relative z-10">
           <Hero />
-          <ParadigmShift />
+          <HowItWorks />
           <Architecture />
-          <CoPilot />
           <Governance />
           <HighStakes />
           <DemoRequest />

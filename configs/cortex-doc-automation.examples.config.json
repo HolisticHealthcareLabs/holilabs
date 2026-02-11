@@ -1,0 +1,21 @@
+{
+  "defaultOwner": "OIL",
+  "documents": [
+    {
+      "path": "docs/CORTEX_WEEK1_BOARD_SCORECARD_EXAMPLE_BOLIVIA.md",
+      "owner": "OIL",
+      "cadence": "monfri"
+    },
+    {
+      "path": "docs/CORTEX_WEEK1_PILOT_TRACKER_EXAMPLE_BOLIVIA_SITE_A.md",
+      "owner": "OIL",
+      "cadence": "monfri"
+    },
+    {
+      "path": "docs/CORTEX_WEEK1_PILOT_TRACKER_EXAMPLE_BRAZIL_SITE_A.md",
+      "owner": "OIL",
+      "cadence": "monfri"
+    }
+  ]
+}
+

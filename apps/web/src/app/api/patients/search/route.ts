@@ -15,6 +15,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { searchPatients, initializeMeilisearch } from '@/lib/search/meilisearch';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { getSyntheticPatients, isDemoClinician } from '@/lib/demo/synthetic';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,36 @@ export const GET = createProtectedRoute(
           { error: 'Limit cannot exceed 100' },
           { status: 400 }
         );
+      }
+
+      // ================================================================
+      // DEMO MODE (DB-FREE): Search synthetic patients
+      // ================================================================
+      if (isDemoClinician(context.user.id, context.user.email)) {
+        const all = getSyntheticPatients();
+        const q = query.trim().toLowerCase();
+        const hits = all
+          .filter((p) => {
+            if (isActive !== null && p.isActive !== (isActive === 'true')) return false;
+            if (isPalliativeCare !== null && p.isPalliativeCare !== (isPalliativeCare === 'true')) return false;
+            if (gender && p.gender !== gender) return false;
+            if (!q) return true;
+            const hay = `${p.firstName} ${p.lastName} ${p.mrn}`.toLowerCase();
+            return hay.includes(q);
+          })
+          .slice(offset, offset + limit);
+
+        return NextResponse.json({
+          success: true,
+          data: hits,
+          meta: {
+            query,
+            estimatedTotalHits: hits.length,
+            limit,
+            offset,
+            processingTimeMs: 1,
+          },
+        });
       }
 
       // Initialize Meilisearch if not already done

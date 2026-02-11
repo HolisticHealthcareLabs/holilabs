@@ -114,7 +114,9 @@ const serverSchema = z.object({
   // EMAIL SERVICES
   // ========================================
   EMAIL_PROVIDER: z.enum(['resend', 'sendgrid', 'ses', 'smtp']).default('resend'),
-  FROM_EMAIL: z.string().email().default('noreply@holilabs.com'),
+  // IMPORTANT: This must match a verified sender domain in your email provider (e.g., Resend Domains).
+  // Resend will reject unverified domains (403).
+  FROM_EMAIL: z.string().email().default('noreply@holilabs.xyz'),
   FROM_NAME: z.string().default('Holi Labs'),
 
   // Resend (Recommended)
@@ -216,6 +218,10 @@ const serverSchema = z.object({
   // ========================================
   // SECURITY & CONFIGURATION
   // ========================================
+  // Optional separate backend base URL (standalone API service).
+  // If unset, browser flows should prefer same-origin Next.js API routes.
+  API_BASE_URL: z.string().url().optional(),
+
   ALLOWED_ORIGINS: z.string().optional(), // Comma-separated list
   CRON_SECRET: z.string().min(32, {
     message: 'CRON_SECRET must be at least 32 characters. Generate with: openssl rand -hex 32',
@@ -253,6 +259,19 @@ const clientSchema = z.object({
 
   // Web Push Notifications
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
+
+  // Public API base URL for browser-originated requests that must hit a separate backend
+  // (e.g., the optional standalone API service or Edge node).
+  // Prefer leaving this unset and using same-origin API routes when possible.
+  NEXT_PUBLIC_API_BASE_URL: z.preprocess(
+    (value) => {
+      if (typeof value === 'string' && value.trim().length === 0) {
+        return undefined;
+      }
+      return value;
+    },
+    z.string().url().optional()
+  ),
 
   // Stripe
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().regex(/^pk_(test|live)_/).optional(),

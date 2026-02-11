@@ -1,0 +1,144 @@
+[
+  {
+    "ruleId": "MED_CONTRA_001",
+    "name": "Non-Selective Beta-Blocker in Asthma",
+    "domain": "CONTRAINDICATION",
+    "severity": "BLOCK",
+    "provenance": {
+      "sourceAuthority": "GINA Guidelines",
+      "sourceDocument": "Global Initiative for Asthma – GINA 2024 Report",
+      "sourceVersion": "2024-rev1",
+      "effectiveDate": "2024-01-01",
+      "jurisdiction": "INTL",
+      "citationUrl": "https://ginasthma.org/reports/",
+      "licenseType": "CC-BY-4.0"
+    },
+    "logic": {
+      "and": [
+        { "in": ["Asthma", { "var": "patient_conditions" }] },
+        {
+          "or": [
+            { "in": [{ "var": "proposed_medication_class" }, ["Non-selective Beta-blocker", "Beta-blocker"]] },
+            { "in": [{ "var": "proposed_medication" }, ["propranolol", "nadolol", "timolol", "sotalol", "carvedilol"]] }
+          ]
+        }
+      ]
+    },
+    "intervention": {
+      "message": "Beta-blockers may precipitate bronchospasm in asthmatic patients.",
+      "recommendation": "Consider cardioselective beta-blocker (e.g., metoprolol, bisoprolol) or alternative antihypertensive."
+    },
+    "tags": ["respiratory", "beta-blocker", "asthma"]
+  },
+  {
+    "ruleId": "MED_CONTRA_002",
+    "name": "Penicillin-Class Antibiotic in Penicillin Allergy",
+    "domain": "ALLERGY",
+    "severity": "BLOCK",
+    "provenance": {
+      "sourceAuthority": "CDC Guidelines",
+      "sourceDocument": "CDC Antibiotic Use Guidelines 2023",
+      "sourceVersion": "2023-v1",
+      "effectiveDate": "2023-06-01",
+      "jurisdiction": "US",
+      "citationUrl": "https://www.cdc.gov/antibiotic-use/",
+      "licenseType": "public-domain"
+    },
+    "logic": {
+      "and": [
+        {
+          "or": [
+            { "in": ["Penicillin Allergy", { "var": "patient_allergies" }] },
+            { "in": ["penicillin", { "var": "patient_allergies" }] },
+            { "in": ["PCN Allergy", { "var": "patient_allergies" }] }
+          ]
+        },
+        {
+          "or": [
+            { "in": [{ "var": "proposed_medication_class" }, ["Penicillin", "Aminopenicillin"]] },
+            { "in": [{ "var": "proposed_medication" }, ["amoxicillin", "ampicillin", "penicillin", "piperacillin", "augmentin"]] }
+          ]
+        }
+      ]
+    },
+    "intervention": {
+      "message": "Patient has documented penicillin allergy. Risk of anaphylaxis.",
+      "recommendation": "Consider azithromycin, fluoroquinolone, or confirm allergy status before proceeding."
+    },
+    "tags": ["allergy", "antibiotic", "penicillin"]
+  },
+  {
+    "ruleId": "MED_CONTRA_003",
+    "name": "Methotrexate in Pregnancy",
+    "domain": "CONTRAINDICATION",
+    "severity": "BLOCK",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "FDA Pregnancy Category X Label – Methotrexate",
+      "sourceVersion": "2023-label",
+      "effectiveDate": "2023-01-01",
+      "jurisdiction": "US",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/",
+      "licenseType": "public-domain"
+    },
+    "logic": {
+      "and": [
+        {
+          "or": [
+            { "==": [{ "var": "patient_pregnant" }, true] },
+            { "in": ["Pregnant", { "var": "patient_conditions" }] },
+            { "in": ["Pregnancy", { "var": "patient_conditions" }] }
+          ]
+        },
+        {
+          "or": [
+            { "in": [{ "var": "proposed_medication" }, ["methotrexate", "mtx", "trexall", "rasuvo", "otrexup"]] },
+            { "in": [{ "var": "proposed_medication_class" }, ["Antimetabolite", "DMARD"]] }
+          ]
+        }
+      ]
+    },
+    "intervention": {
+      "message": "PREGNANCY CATEGORY X: Methotrexate is contraindicated in pregnancy. Known to cause fetal death and teratogenic effects.",
+      "recommendation": "Discontinue methotrexate. Confirm pregnancy status. Consider alternative therapy (e.g., sulfasalazine if indicated)."
+    },
+    "tags": ["pregnancy", "teratogen", "category-x"]
+  },
+  {
+    "ruleId": "MED_CONTRA_004",
+    "name": "NSAID in Chronic Kidney Disease (Stage 3-5)",
+    "domain": "CONTRAINDICATION",
+    "severity": "FLAG",
+    "provenance": {
+      "sourceAuthority": "KDIGO",
+      "sourceDocument": "KDIGO CKD Guidelines 2024",
+      "sourceVersion": "2024-v1",
+      "effectiveDate": "2024-03-01",
+      "jurisdiction": "INTL",
+      "citationUrl": "https://kdigo.org/guidelines/",
+      "licenseType": "CC-BY-NC-4.0"
+    },
+    "logic": {
+      "and": [
+        {
+          "or": [
+            { "in": ["CKD", { "var": "patient_conditions" }] },
+            { "in": ["Chronic Kidney Disease", { "var": "patient_conditions" }] },
+            { "<": [{ "var": "patient_egfr" }, 60] }
+          ]
+        },
+        {
+          "or": [
+            { "in": [{ "var": "proposed_medication_class" }, ["NSAID", "Non-steroidal anti-inflammatory"]] },
+            { "in": [{ "var": "proposed_medication" }, ["ibuprofen", "naproxen", "meloxicam", "diclofenac", "indomethacin", "ketorolac"]] }
+          ]
+        }
+      ]
+    },
+    "intervention": {
+      "message": "NSAIDs may worsen renal function in patients with CKD (eGFR < 60). Use with caution.",
+      "recommendation": "Consider acetaminophen for pain. If NSAID required, use lowest dose for shortest duration. Monitor renal function closely."
+    },
+    "tags": ["renal", "ckd", "nsaid"]
+  }
+]

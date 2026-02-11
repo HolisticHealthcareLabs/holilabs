@@ -17,6 +17,7 @@ import { logDeIDOperation } from '@/lib/audit/deid-audit';
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
 import { emitPatientEvent } from '@/lib/socket-server';
+import { getSyntheticPatients, isDemoClinician } from '@/lib/demo/synthetic';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -67,6 +68,38 @@ export const GET = createProtectedRoute(
       const where: any = {
         assignedClinicianId: clinicianId, // CRITICAL: Always filter by clinician
       };
+
+      // ================================================================
+      // DEMO MODE (DB-FREE): Return synthetic patients
+      // ================================================================
+      if (isDemoClinician(context.user.id, context.user.email)) {
+        const all = getSyntheticPatients();
+        const filtered = all.filter((p) => {
+          if (search) {
+            const q = search.toLowerCase();
+            const hay = `${p.firstName} ${p.lastName} ${p.mrn}`.toLowerCase();
+            if (!hay.includes(q)) return false;
+          }
+          if (isActive !== null) {
+            if (p.isActive !== (isActive === 'true')) return false;
+          }
+          return true;
+        });
+
+        const total = filtered.length;
+        const pageItems = filtered.slice(skip, skip + limit);
+
+        return NextResponse.json({
+          success: true,
+          data: pageItems,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
+      }
 
     if (search) {
       where.OR = [

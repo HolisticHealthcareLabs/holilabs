@@ -124,7 +124,7 @@ const pricingTiers: PricingTier[] = [
       {
         category: 'Seguridad & Soporte',
         items: [
-          { name: 'HIPAA/LGPD compliant', included: true },
+          { name: 'HIPAA/LGPD-ready deployment', included: true },
           { name: 'Encriptación E2E', included: true },
           { name: 'Soporte por email (48h)', included: true },
           { name: 'Integraciones EHR (Epic/Cerner)', included: false },
@@ -178,7 +178,7 @@ const pricingTiers: PricingTier[] = [
       {
         category: 'Seguridad & Soporte',
         items: [
-          { name: 'HIPAA/LGPD/GDPR compliant', included: true },
+          { name: 'HIPAA/LGPD/GDPR-ready deployment', included: true },
           { name: 'Encriptación E2E + Differential Privacy', included: true },
           { name: 'Soporte prioritario (12h)', included: true },
           { name: 'Integraciones EHR (Epic/Cerner)', included: false },
@@ -257,9 +257,9 @@ const faqs = [
       'Sí, upgrade o downgrade en cualquier momento. El cambio se aplica inmediatamente. Sin contratos anuales forzosos. Sin cláusulas de permanencia.',
   },
   {
-    question: '¿Es HoliLabs HIPAA/LGPD compliant?',
+    question: '¿Holi Labs soporta despliegues HIPAA/LGPD?',
     answer:
-      'Sí, 100%. Encriptación E2E, auditorías SOC 2 Type II en progreso, differential privacy (ε/δ accounting), y BAA disponible para clientes Enterprise. Tu data es tuya, siempre.',
+      'Tenemos prácticas de seguridad diseñadas para entornos clínicos (encriptación, controles de acceso, y auditoría). La evaluación de cumplimiento depende del despliegue y del acuerdo con cada organización; BAA disponible para clientes Enterprise.',
   },
   {
     question: '¿Qué son las "Alertas de Prevención" en Professional?',
@@ -400,7 +400,7 @@ export default function PricingPage() {
                 />
               </svg>
               <span className="text-gray-600 dark:text-white/70">
-                <span className="font-bold text-gray-900 dark:text-white">100% HIPAA/LGPD</span> compliant
+                <span className="font-bold text-gray-900 dark:text-white">HIPAA/LGPD-ready</span> deployments
               </span>
             </div>
             <div className="flex items-center gap-2">

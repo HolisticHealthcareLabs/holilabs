@@ -4,6 +4,15 @@
  * Defines all real-time events for the Prevention Hub
  */
 
+import type {
+  GovernanceActorRole,
+  GovernanceBlockingSeverity,
+  GovernanceEventLogType,
+  GovernanceProtocolMode,
+  GovernanceSeverity,
+  OverrideReasonCode,
+} from '@/lib/governance/shared-types';
+
 // Event payloads
 export interface PreventionPlanEvent {
   id: string;
@@ -219,31 +228,37 @@ export interface ClinicalAppointmentEvent {
 export interface GovernanceLogEvent {
   id: string;
   sessionId: string;
-  eventType: 'BLOCKED' | 'FLAGGED' | 'PASSED' | 'OVERRIDE' | 'SHADOW_BLOCK';
+  eventType: GovernanceEventLogType;
   ruleId?: string;
   ruleName?: string;
-  severity: 'INFO' | 'SOFT_NUDGE' | 'HARD_BLOCK';
+  severity: GovernanceSeverity;
   description?: string;
   provider?: string;
   clinicId?: string;
   userId?: string;
   userName?: string;
-  protocolVersion?: string;
-  country?: string;
-  siteId?: string;
+  protocolVersion: string;
+  country: string;
+  siteId: string;
+  unit: string;
+  protocolMode: GovernanceProtocolMode;
+  actorRole: GovernanceActorRole;
   timestamp: Date;
 }
 
 export interface GovernanceOverrideEvent {
   sessionId: string;
   ruleId?: string;
-  reason: string;
+  reason: OverrideReasonCode;
   userId?: string;
   userName?: string;
   clinicId?: string;
-  protocolVersion?: string;
-  country?: string;
-  siteId?: string;
+  protocolVersion: string;
+  country: string;
+  siteId: string;
+  unit: string;
+  protocolMode: GovernanceProtocolMode;
+  actorRole: GovernanceActorRole;
   timestamp: Date;
 }
 
@@ -251,13 +266,16 @@ export interface GovernanceBlockedEvent {
   sessionId: string;
   ruleId?: string;
   ruleName?: string;
-  severity: 'SOFT_NUDGE' | 'HARD_BLOCK';
+  severity: GovernanceBlockingSeverity;
   description?: string;
   clinicId?: string;
   userId?: string;
-  protocolVersion?: string;
-  country?: string;
-  siteId?: string;
+  protocolVersion: string;
+  country: string;
+  siteId: string;
+  unit: string;
+  protocolMode: GovernanceProtocolMode;
+  actorRole: GovernanceActorRole;
   timestamp: Date;
 }
 

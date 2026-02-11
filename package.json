@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "pnpm dev:web",
     "dev:all": "concurrently --names 'web,edge,sidecar' --prefix-colors 'blue,green,magenta' 'pnpm --filter @holi/web dev' 'pnpm --filter @holilabs/edge dev' 'sleep 3 && pnpm --filter @holilabs/sidecar dev'",
     "dev:web": "pnpm --filter @holi/web dev",
     "dev:edge": "pnpm --filter @holilabs/edge dev",
@@ -21,7 +21,14 @@
     "docker:up": "cd infra/docker && docker-compose up -d",
     "docker:down": "cd infra/docker && docker-compose down",
     "db:migrate": "cd apps/api && pnpm prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "docs:cortex:update": "node scripts/update-cortex-docs-metadata.js --mode auto",
+    "docs:cortex:update:daily": "node scripts/update-cortex-docs-metadata.js --mode daily",
+    "docs:cortex:update:monday": "node scripts/update-cortex-docs-metadata.js --mode monday --append-log",
+    "docs:cortex:update:friday": "node scripts/update-cortex-docs-metadata.js --mode friday --append-log",
+    "docs:cortex:update:weekly": "node scripts/update-cortex-docs-metadata.js --mode weekly --append-log",
+    "docs:cortex:update:tracker": "node scripts/update-cortex-docs-metadata.js --mode friday --append-log --config configs/cortex-doc-automation.tracker-only.config.json",
+    "docs:cortex:export:plan": "node scripts/cortex-export-helper.js --mode weekly --dry-run"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

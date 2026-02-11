@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { sendSMS, sendWhatsApp } from '@/lib/sms/twilio';
 import { sendEmail } from '@/lib/email';
@@ -15,6 +16,7 @@ import {
   buildReminderRetryState,
   DEFAULT_REMINDER_RETRY_POLICY,
   evaluateReminderConsent,
+  executeReminderWithRetry,
   type ReminderDispatchChannel,
 } from '@/lib/notifications/reminder-policy';
 
@@ -35,6 +37,11 @@ interface SendReminderRequest {
 }
 
 type ReminderNotificationType = 'APPOINTMENT_REMINDER' | 'NEW_PRESCRIPTION' | 'NEW_DOCUMENT';
+type ReminderDispatchResult = {
+  success: boolean;
+  providerCorrelationId?: string;
+  error?: string;
+};
 
 function mapCategoryToNotificationType(category: string): ReminderNotificationType {
   if (category === 'appointment') {
@@ -50,6 +57,45 @@ function mapCategoryToNotificationType(category: string): ReminderNotificationTy
 
 function toJsonMetadata(value: unknown) {
   return JSON.parse(JSON.stringify(value));
+}
+
+function buildOperationalFailureMetadata(input: {
+  stage: 'fail' | 'escalation_open';
+  reason: string;
+  correlationId: string;
+  channel: ReminderDispatchChannel;
+  templateName: string;
+  category: string;
+  retryState: ReturnType<typeof buildReminderRetryState>;
+  patientId: string;
+  consent?: {
+    requiredConsentTypes: string[];
+    explicitConsentGranted: boolean;
+    channelConsentGranted: boolean;
+    reason?: string;
+  };
+}) {
+  return {
+    reason: input.reason,
+    correlationId: input.correlationId,
+    stage: input.stage,
+    patientId: input.patientId,
+    channel: input.channel,
+    templateName: input.templateName,
+    category: input.category,
+    policyState: {
+      attempt: input.retryState.attempt,
+      maxAttempts: input.retryState.maxAttempts,
+      remainingAttempts: input.retryState.remainingAttempts,
+      nextAttempt: input.retryState.nextAttempt,
+      nextRetryAt: input.retryState.nextRetryAt,
+      escalationReady: input.retryState.escalationReady,
+      escalationReason: input.retryState.escalationReason ?? null,
+      state: input.retryState.state,
+      terminal: input.retryState.terminal,
+    },
+    consent: input.consent ?? null,
+  };
 }
 
 /**
@@ -170,7 +216,10 @@ async function sendViaSMS(phone: string, message: string) {
   }
 
   const success = await sendSMS({ to: phone, message });
-  return success;
+  return {
+    success,
+    error: success ? undefined : 'Failed to send via SMS',
+  } as ReminderDispatchResult;
 }
 
 /**
@@ -219,7 +268,21 @@ async function sendViaEmail(email: string, subject: string, message: string) {
     ],
   });
 
-  return result.success;
+  return {
+    success: result.success,
+    providerCorrelationId:
+      typeof result.data === 'object' &&
+      result.data !== null &&
+      'id' in result.data &&
+      typeof (result.data as { id?: unknown }).id === 'string'
+        ? (result.data as { id: string }).id
+        : undefined,
+    error: result.success
+      ? undefined
+      : result.error instanceof Error
+        ? result.error.message
+        : 'Failed to send via email',
+  } as ReminderDispatchResult;
 }
 
 /**
@@ -231,7 +294,10 @@ async function sendViaWhatsApp(phone: string, message: string) {
   }
 
   const success = await sendWhatsApp({ to: phone, message });
-  return success;
+  return {
+    success,
+    error: success ? undefined : 'Failed to send via WhatsApp',
+  } as ReminderDispatchResult;
 }
 
 /**
@@ -243,6 +309,10 @@ export async function POST(request: NextRequest) {
     const body: SendReminderRequest = await request.json();
 
     const { patientIds, template, channel, sendImmediately = true, scheduledFor } = body;
+    const requestCorrelationId =
+      request.headers.get('x-correlation-id') ||
+      request.headers.get('x-request-id') ||
+      randomUUID();
 
     // Validate input
     if (!patientIds || patientIds.length === 0) {
@@ -289,6 +359,7 @@ export async function POST(request: NextRequest) {
     // Send immediately
     const results = await Promise.allSettled(
       patientIds.map(async (patientId) => {
+        const correlationId = `${requestCorrelationId}:${patientId}:${channel}`;
         try {
           // Get patient data and replace variables
           const { patient, variables } = await getPatientVariables(patientId);
@@ -313,6 +384,7 @@ export async function POST(request: NextRequest) {
               templateName: template.name,
               category: template.category,
               error: consentDecision.reason,
+              correlationId,
               retryState,
               consent: {
                 requiredConsentTypes: consentDecision.requiredConsentTypes,
@@ -327,12 +399,13 @@ export async function POST(request: NextRequest) {
             if (retryState.escalationReady) {
               logger.error(
                 buildReminderLifecycleEvent({
-                  stage: 'escalation',
+                  stage: 'escalation_open',
                   patientId,
                   channel: channel as ReminderDispatchChannel,
                   templateName: template.name,
                   category: template.category,
                   error: retryState.escalationReason || consentDecision.reason,
+                  correlationId,
                   retryState,
                   consent: {
                     requiredConsentTypes: consentDecision.requiredConsentTypes,
@@ -360,6 +433,22 @@ export async function POST(request: NextRequest) {
                   reminderLifecycle: consentBlockedEvent,
                   retryState,
                   policyHooks: retryState.hooks,
+                  operationalFailure: buildOperationalFailureMetadata({
+                    stage: 'fail',
+                    reason: consentDecision.reason || 'Reminder blocked due to missing consent',
+                    correlationId,
+                    patientId,
+                    channel: channel as ReminderDispatchChannel,
+                    templateName: template.name,
+                    category: template.category,
+                    retryState,
+                    consent: {
+                      requiredConsentTypes: consentDecision.requiredConsentTypes,
+                      explicitConsentGranted: consentDecision.explicitConsentGranted,
+                      channelConsentGranted: consentDecision.channelConsentGranted,
+                      reason: consentDecision.reason,
+                    },
+                  }),
                 }),
               },
             });
@@ -368,41 +457,184 @@ export async function POST(request: NextRequest) {
               patientId,
               success: false,
               notificationId: blockedNotification.id,
+              correlationId,
               error: consentDecision.reason || 'Reminder blocked due to missing consent',
               retry: retryState,
             };
           }
 
-          // Send via selected channel
-          let success = false;
-          logger.info(
-            buildReminderLifecycleEvent({
-              stage: 'sent',
-              patientId,
-              channel: channel as ReminderDispatchChannel,
-              templateName: template.name,
-              category: template.category,
-            })
-          );
-
-          switch (channel) {
-            case 'SMS':
-              success = await sendViaSMS(patient.phone || '', personalizedMessage);
-              break;
-            case 'EMAIL':
-              success = await sendViaEmail(
-                patient.email || '',
-                personalizedSubject,
-                personalizedMessage
+          let providerCorrelationId: string | undefined;
+          const retryExecution = await executeReminderWithRetry({
+            policy: DEFAULT_REMINDER_RETRY_POLICY,
+            executeAttempt: async (attempt) => {
+              logger.info(
+                buildReminderLifecycleEvent({
+                  stage: 'send',
+                  patientId,
+                  channel: channel as ReminderDispatchChannel,
+                  templateName: template.name,
+                  category: template.category,
+                  attempt,
+                  correlationId,
+                })
               );
-              break;
-            case 'WHATSAPP':
-              success = await sendViaWhatsApp(patient.phone || '', personalizedMessage);
-              break;
-          }
 
-          if (!success) {
-            throw new Error(`Failed to send via ${channel}`);
+              let dispatchResult: ReminderDispatchResult = { success: false };
+              switch (channel) {
+                case 'SMS':
+                  dispatchResult = await sendViaSMS(patient.phone || '', personalizedMessage);
+                  break;
+                case 'EMAIL':
+                  dispatchResult = await sendViaEmail(
+                    patient.email || '',
+                    personalizedSubject,
+                    personalizedMessage
+                  );
+                  break;
+                case 'WHATSAPP':
+                  dispatchResult = await sendViaWhatsApp(patient.phone || '', personalizedMessage);
+                  break;
+              }
+
+              if (dispatchResult.providerCorrelationId) {
+                providerCorrelationId = dispatchResult.providerCorrelationId;
+              }
+
+              if (!dispatchResult.success) {
+                throw new Error(dispatchResult.error || `Failed to send via ${channel}`);
+              }
+
+              return true;
+            },
+            onAttemptFailure: ({ attempt, retryState, error }) => {
+              logger.error(
+                buildReminderLifecycleEvent({
+                  stage: 'fail',
+                  patientId,
+                  channel: channel as ReminderDispatchChannel,
+                  templateName: template.name,
+                  category: template.category,
+                  attempt,
+                  error: error || 'Failed to send reminder',
+                  correlationId,
+                  retryState,
+                })
+              );
+            },
+            onRetryScheduled: ({ attempt, retryState, error }) => {
+              logger.warn({
+                event: retryState.hooks.retryScheduledEvent,
+                correlationId,
+                patientId,
+                channel,
+                templateName: template.name,
+                category: template.category,
+                attempt,
+                nextRetryAt: retryState.nextRetryAt,
+                reason: error,
+              });
+            },
+            onEscalationOpen: ({ attempt, retryState, error }) => {
+              logger.error(
+                buildReminderLifecycleEvent({
+                  stage: 'escalation_open',
+                  patientId,
+                  channel: channel as ReminderDispatchChannel,
+                  templateName: template.name,
+                  category: template.category,
+                  attempt,
+                  error: retryState.escalationReason || error || 'Escalation threshold reached',
+                  correlationId,
+                  retryState,
+                })
+              );
+            },
+            onEscalationClosed: ({ attempt, retryState }) => {
+              logger.info(
+                buildReminderLifecycleEvent({
+                  stage: 'escalation_closed',
+                  patientId,
+                  channel: channel as ReminderDispatchChannel,
+                  templateName: template.name,
+                  category: template.category,
+                  attempt,
+                  correlationId,
+                  retryState,
+                })
+              );
+            },
+          });
+
+          if (!retryExecution.success) {
+            const finalRetryState =
+              retryExecution.finalRetryState ||
+              buildReminderRetryState(DEFAULT_REMINDER_RETRY_POLICY.maxAttempts, DEFAULT_REMINDER_RETRY_POLICY);
+            let failedNotificationId: string | undefined;
+            try {
+              const failedLifecycleEvent = buildReminderLifecycleEvent({
+                stage: 'fail',
+                patientId,
+                channel: channel as ReminderDispatchChannel,
+                templateName: template.name,
+                category: template.category,
+                attempt: retryExecution.attemptsUsed,
+                error: retryExecution.error || 'Failed to send reminder',
+                correlationId,
+                retryState: finalRetryState,
+              });
+
+              const failedNotification = await prisma.notification.create({
+                data: {
+                  recipientId: patientId,
+                  recipientType: 'PATIENT',
+                  type: mapCategoryToNotificationType(template.category),
+                  title: `${template.name} (failed)`,
+                  message: retryExecution.error || 'Failed to send reminder',
+                  actionUrl: '/portal/dashboard',
+                  priority:
+                    finalRetryState.escalationReady || retryExecution.escalationOpened ? 'HIGH' : 'NORMAL',
+                  deliveredInApp: false,
+                  deliveredEmail: false,
+                  deliveredSMS: false,
+                  metadata: toJsonMetadata({
+                    reminderLifecycle: failedLifecycleEvent,
+                    retryState: finalRetryState,
+                    policyHooks: finalRetryState.hooks,
+                    providerCorrelationId: providerCorrelationId ?? null,
+                    operationalFailure: buildOperationalFailureMetadata({
+                      stage: 'fail',
+                      reason: retryExecution.error || 'Failed to send reminder',
+                      correlationId,
+                      patientId,
+                      channel: channel as ReminderDispatchChannel,
+                      templateName: template.name,
+                      category: template.category,
+                      retryState: finalRetryState,
+                    }),
+                  }),
+                },
+              });
+              failedNotificationId = failedNotification.id;
+            } catch (recordError) {
+              logger.error({
+                event: 'reminder_failure_record_error',
+                patientId,
+                channel,
+                error:
+                  recordError instanceof Error
+                    ? recordError.message
+                    : 'Failed to record reminder failure',
+              });
+            }
+
+            return {
+              patientId,
+              success: false,
+              notificationId: failedNotificationId,
+              correlationId,
+              error: retryExecution.error || 'Failed to send reminder',
+              retry: finalRetryState,
+            };
           }
 
           // Create notification record
@@ -412,6 +644,8 @@ export async function POST(request: NextRequest) {
             channel: channel as ReminderDispatchChannel,
             templateName: template.name,
             category: template.category,
+            attempt: retryExecution.attemptsUsed,
+            correlationId,
           });
 
           const notification = await prisma.notification.create({
@@ -430,6 +664,8 @@ export async function POST(request: NextRequest) {
               smsSentAt: channel === 'SMS' || channel === 'WHATSAPP' ? new Date() : null,
               metadata: toJsonMetadata({
                 reminderLifecycle: successLifecycleEvent,
+                providerCorrelationId: providerCorrelationId ?? null,
+                requestCorrelationId,
               }),
             },
           });
@@ -442,6 +678,8 @@ export async function POST(request: NextRequest) {
               templateName: template.name,
               category: template.category,
               notificationId: notification.id,
+              attempt: retryExecution.attemptsUsed,
+              correlationId,
             })
           );
 
@@ -449,6 +687,7 @@ export async function POST(request: NextRequest) {
             patientId,
             success: true,
             notificationId: notification.id,
+            correlationId,
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Failed to send reminder';
@@ -460,6 +699,7 @@ export async function POST(request: NextRequest) {
             templateName: template.name,
             category: template.category,
             error: errorMessage,
+            correlationId,
             retryState,
           });
 
@@ -468,12 +708,13 @@ export async function POST(request: NextRequest) {
           if (retryState.escalationReady) {
             logger.error(
               buildReminderLifecycleEvent({
-                stage: 'escalation',
+                stage: 'escalation_open',
                 patientId,
                 channel: channel as ReminderDispatchChannel,
                 templateName: template.name,
                 category: template.category,
                 error: retryState.escalationReason || errorMessage,
+                correlationId,
                 retryState,
               })
             );
@@ -498,6 +739,16 @@ export async function POST(request: NextRequest) {
                   reminderLifecycle: failedLifecycleEvent,
                   retryState,
                   policyHooks: retryState.hooks,
+                  operationalFailure: buildOperationalFailureMetadata({
+                    stage: 'fail',
+                    reason: errorMessage,
+                    correlationId,
+                    patientId,
+                    channel: channel as ReminderDispatchChannel,
+                    templateName: template.name,
+                    category: template.category,
+                    retryState,
+                  }),
                 }),
               },
             });
@@ -516,6 +767,7 @@ export async function POST(request: NextRequest) {
             patientId,
             success: false,
             notificationId: failedNotificationId,
+            correlationId,
             error: errorMessage,
             retry: retryState,
           };
@@ -526,9 +778,11 @@ export async function POST(request: NextRequest) {
     // Count successes and failures
     const sent = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
     const failed = results.length - sent;
+    const partial = sent > 0 && failed > 0;
 
     return NextResponse.json({
-      success: true,
+      success: sent > 0,
+      partial,
       message: `Sent ${sent} reminder(s) successfully${failed > 0 ? `, ${failed} failed` : ''}`,
       sent,
       failed,

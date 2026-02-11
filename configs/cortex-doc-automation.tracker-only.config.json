@@ -1,0 +1,17 @@
+{
+  "defaultOwner": "PL",
+  "documents": [
+    {
+      "path": "docs/CORTEX_ROADMAP_STATUS_TRACKER.md",
+      "owner": "PL",
+      "cadence": "friday",
+      "appendAutoLog": true
+    },
+    {
+      "path": "docs/CORTEX_WEEKLY_BOARD_SCORECARD_TEMPLATE.md",
+      "owner": "OIL",
+      "cadence": "weekly"
+    }
+  ]
+}
+

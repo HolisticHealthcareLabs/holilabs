@@ -16,6 +16,7 @@ import { AccessibilityReader } from '../accessibility/reader';
 import { VisionModule } from '../vision/ocr-module';
 import { EdgeNodeClient } from './edge-client';
 import { SidecarAPIServer } from '../api/server';
+import { ControlPlaneClient } from './control-plane';
 import type {
   InputContext,
   TrafficLightResult,
@@ -42,6 +43,25 @@ const accessibilityReader = new AccessibilityReader();
 const visionModule = new VisionModule();
 const edgeClient = new EdgeNodeClient();
 const apiServer = new SidecarAPIServer(3002);
+const controlPlane = new ControlPlaneClient();
+
+async function ensureRequiredMacPermissions(): Promise<void> {
+  if (process.platform !== 'darwin') return;
+  const screenPermission = await PermissionGuard.getScreenRecordingStatus();
+  const accessibilityPermission = await PermissionGuard.getAccessibilityStatus();
+
+  const ok = screenPermission === 'granted' && accessibilityPermission === true;
+  if (!ok) {
+    mainWindow?.webContents.send('permissions:required', {
+      screen: screenPermission,
+      accessibility: accessibilityPermission,
+    });
+    const err = new Error('PERMISSIONS_REQUIRED');
+    (err as any).code = 'PERMISSIONS_REQUIRED';
+    (err as any).permissions = { screen: screenPermission, accessibility: accessibilityPermission };
+    throw err;
+  }
+}
 
 // Scribe Infrastructure (DEPRECATED - STRATEGY PIVOT)
 const resourceGuard = new ResourceGuard();
@@ -150,6 +170,9 @@ function createTray(): void {
 async function captureInputContext(): Promise<InputContext> {
   const startTime = Date.now();
 
+  // Gate: on macOS we require Screen Recording + Accessibility before capture.
+  await ensureRequiredMacPermissions();
+
   // Step 1: Check for VDI environment FIRST
   const vdiResult = await vdiDetector.detect();
 
@@ -215,6 +238,9 @@ function setupIPC(): void {
       return { success: true, result };
     } catch (error) {
       console.error('Evaluation failed:', error);
+      if ((error as any)?.code === 'PERMISSIONS_REQUIRED' || (error as any)?.message === 'PERMISSIONS_REQUIRED') {
+        return { success: false, error: 'PERMISSIONS_REQUIRED' };
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -257,8 +283,8 @@ function setupIPC(): void {
     const vdiResult = await vdiDetector.detect();
     const ehrFingerprint = await ehrDetector.fingerprint();
     const connectionStatus = edgeClient.getStatus();
-    const screenPermission = PermissionGuard.getScreenRecordingStatus();
-    const accessibilityPermission = PermissionGuard.getAccessibilityStatus();
+    const screenPermission = await PermissionGuard.getScreenRecordingStatus();
+    const accessibilityPermission = await PermissionGuard.getAccessibilityStatus();
 
     return {
       isVDI: vdiResult.isVDI,
@@ -270,6 +296,35 @@ function setupIPC(): void {
         accessibility: accessibilityPermission
       }
     };
+  });
+
+  // Permissions helpers (macOS)
+  ipcMain.handle('permissions:get', async () => {
+    return {
+      platform: process.platform,
+      screen: await PermissionGuard.getScreenRecordingStatus(),
+      accessibility: await PermissionGuard.getAccessibilityStatus(),
+    };
+  });
+
+  ipcMain.handle('permissions:requestAccessibility', async () => {
+    const ok = await PermissionGuard.requestAccessibility();
+    return { ok, accessibility: await PermissionGuard.getAccessibilityStatus() };
+  });
+
+  ipcMain.handle('permissions:requestScreenRecording', async () => {
+    const ok = await PermissionGuard.requestScreenRecording();
+    return { ok, screen: await PermissionGuard.getScreenRecordingStatus() };
+  });
+
+  ipcMain.handle('permissions:openAccessibilitySettings', async () => {
+    await PermissionGuard.openAccessibilitySettings();
+    return { ok: true };
+  });
+
+  ipcMain.handle('permissions:openScreenRecordingSettings', async () => {
+    await PermissionGuard.openScreenRecordingSettings();
+    return { ok: true };
   });
 
   // Toggle minimize
@@ -476,6 +531,9 @@ app.whenReady().then(async () => {
   // Initialize auto-updater (silent)
   initAutoUpdater();
 
+  // Control Plane heartbeats (org/workspace telemetry)
+  await controlPlane.start();
+
   // Initialize Resource Guard (Phase 9)
   resourceGuard.startMonitoring();
   resourceGuard.on('resource-update', (metrics) => {
@@ -524,6 +582,7 @@ app.on('before-quit', async () => {
   edgeClient.disconnect();
   ehrDetector.stopWatching();
   resourceGuard.stopMonitoring();
+  controlPlane.stop();
   // audioProcessor.wipe(); // Ensure clean exit
   // deepgramService.disconnect();
   await apiServer.stop();

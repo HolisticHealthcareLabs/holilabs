@@ -27,8 +27,14 @@ export async function sendEmail(options: SendEmailOptions) {
   const { to, subject, react, html, text, from = env.FROM_EMAIL, replyTo, cc, bcc } = options;
 
   try {
+    // Prefer a branded "Name <email>" sender format for deliverability and consistent UX.
+    const brandedFrom =
+      typeof from === 'string' && from.includes('<')
+        ? from
+        : `${env.FROM_NAME} <${from || env.FROM_EMAIL}>`;
+
     const { data, error } = await resend.emails.send({
-      from: from || 'Holi Labs <invites@holilabs.xyz>',
+      from: brandedFrom || 'Holi Labs <noreply@holilabs.xyz>',
       to,
       subject,
       react,
