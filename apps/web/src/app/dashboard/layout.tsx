@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -23,7 +24,6 @@ interface NavItem {
   name: string;
   href: string;
   icon: string;
-  emoji: string;
   badge?: number;
   gradient?: string;
   hoverGradient?: string;
@@ -34,10 +34,11 @@ interface NavItem {
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<any>(null);
   const [fatalError, setFatalError] = useState<{ message: string; stack?: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarPeekOpen, setSidebarPeekOpen] = useState(false);
   const sidebarPeekCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -53,6 +54,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { showWarning, timeRemaining, extendSession, logout } = useSessionTimeout({
     timeoutMs: 15 * 60 * 1000, // 15 minutes
     warningMs: 2 * 60 * 1000,  // 2 minute warning
+    redirectTo: '/auth/login',
   });
 
   useEffect(() => {
@@ -85,26 +87,41 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Demo mode - no authentication required
-    setUser({ email: 'demo@holilabs.com', name: 'Demo User' });
-
     // Check if this is the initial load (after sign in)
     const hasSeenLoading = sessionStorage.getItem('hasSeenLoadingScreen');
     if (hasSeenLoading) {
       setShowLoadingScreen(false);
       setIsInitialLoad(false);
     }
+  }, []);
 
-    // MVP Auth Protection: Check for token
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token && pathname !== '/auth/login') {
-      // Allow demo user bypass if specifically set (e.g. for dev)
-      // But for "Consolidated Login Strategy", force redirect
-      console.warn("No auth token found, redirecting to login");
-      router.push('/auth/login');
+  useEffect(() => {
+    // Make the menu discoverable on mobile the first time.
+    // (The dashboard has a lot of sections; hiding nav by default is confusing.)
+    try {
+      const key = 'holilabs:sidebar:mobileHinted';
+      const hinted = sessionStorage.getItem(key) === 'true';
+      if (!hinted && typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setSidebarOpen(true);
+        sessionStorage.setItem(key, 'true');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (status === 'authenticated') {
+      setUser(session.user);
+      return;
     }
 
-  }, [router, pathname]);
+    // Unauthenticated: send to login, preserving where they were going.
+    const callbackUrl = pathname || '/dashboard';
+    router.push(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+  }, [status, session, router, pathname]);
 
   const handleLoadingComplete = () => {
     setShowLoadingScreen(false);
@@ -112,20 +129,45 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   };
 
   // Streamlined Navigation - Minimal & Elegant
+  // Keep the Command Center/Console icon mapping as requested for demo week.
   const navItems: NavItem[] = [
     {
-      name: 'Dashboard',
-      href: '/dashboard',
+      name: 'Command Center',
+      href: '/dashboard/command-center',
       icon: '/icons/chart-cured-increasing.svg',
-      emoji: '📊',
-      gradient: 'from-blue-500 to-indigo-600',
-      hoverGradient: 'from-blue-600 to-indigo-700',
-      shadowColor: 'blue-500/50'
+      gradient: 'from-slate-600 to-slate-800',
+      hoverGradient: 'from-slate-700 to-slate-900',
+      shadowColor: 'slate-500/40',
+    },
+    {
+      name: 'Downloads',
+      href: '/dashboard/downloads',
+      icon: '/icons/download.svg',
+      gradient: 'from-cyan-500 to-blue-600',
+      hoverGradient: 'from-cyan-600 to-blue-700',
+      shadowColor: 'cyan-500/40',
+    },
+    {
+      name: 'Billing',
+      href: '/dashboard/billing',
+      icon: '/icons/credit-card.svg',
+      gradient: 'from-emerald-500 to-teal-600',
+      hoverGradient: 'from-emerald-600 to-teal-700',
+      shadowColor: 'emerald-500/40',
+    },
+    {
+      name: 'Console',
+      href: '/dashboard/console',
+      icon: '/icons/crisis-response_center_person.svg',
+      gradient: 'from-indigo-500 to-purple-600',
+      hoverGradient: 'from-indigo-600 to-purple-700',
+      shadowColor: 'indigo-500/40',
     },
   ];
 
   const handleSignOut = async () => {
-    router.push('/auth/login');
+    // Clear NextAuth session and return to login
+    await signOut({ redirect: true, callbackUrl: '/auth/login' });
   };
 
   const hasMultipleOptions = (item: NavItem) => (item.subItems?.length || 0) > 1;
@@ -164,7 +206,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <LoadingScreen onComplete={handleLoadingComplete} />
       )}
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
         {/* Mobile Sidebar Backdrop */}
         {sidebarOpen && (
           <div
@@ -250,11 +292,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 return (
                   <div
                     key={item.href}
-                    className="group relative flex items-center gap-0 hover:gap-3 transition-all duration-300"
+                    className="group relative flex items-center transition-all duration-300"
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                   >
-                    {/* Circular Gradient Tile */}
                     <Link
                       href={item.href}
                       onClick={() => {
@@ -262,26 +303,45 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         setSidebarPeekOpen(false);
                         bumpUsage(item.name);
                       }}
-                      className={`flex items-center justify-center w-14 h-14 rounded-full transition-all duration-300 backdrop-blur-sm
-                      ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
-                      ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
-                      ${item.name === 'Calendar' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}
-                      ${item.name === 'Messages' ? 'bg-gradient-to-br from-sky-400/70 to-cyan-500/70 hover:from-sky-500 hover:to-cyan-600 hover:shadow-2xl hover:shadow-sky-400/50' : ''}
-                      ${item.name === 'Clinical Suite' ? 'bg-gradient-to-br from-fuchsia-400/70 to-pink-500/70 hover:from-fuchsia-500 hover:to-pink-600 hover:shadow-2xl hover:shadow-fuchsia-400/50' : ''}
-                      ${item.name === 'Clinical Toolkit' ? 'bg-gradient-to-br from-orange-400/70 to-amber-500/70 hover:from-orange-500 hover:to-amber-600 hover:shadow-2xl hover:shadow-orange-400/50' : ''}
-                      ${!['Dashboard', 'Patients', 'Calendar', 'Messages', 'Clinical Suite', 'Clinical Toolkit'].includes(item.name) ? 'bg-gradient-to-br from-gray-300/70 to-gray-400/70' : ''}
-                      ${isActive ? 'scale-110 ring-4 ring-white/60 shadow-2xl' : 'shadow-md'}
-                      hover:scale-110 hover:ring-4 hover:ring-white/40`}
+                      className={`w-full flex items-center gap-3 px-2 py-1.5 rounded-2xl transition-all duration-300
+                      ${isActive ? 'bg-gray-100 dark:bg-gray-700/40' : 'hover:bg-gray-100/70 dark:hover:bg-gray-700/25'}`}
                     >
-                      <div className="relative w-7 h-7 transition-transform duration-300 group-hover:scale-125">
-                        <Image
-                          src={item.icon}
-                          alt={item.name}
-                          width={28}
-                          height={28}
-                          className="dark:invert brightness-0 invert"
-                        />
+                      {/* Circular Gradient Tile */}
+                      <div
+                        className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 backdrop-blur-sm shrink-0
+                        ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
+                        ${item.name === 'Command Center' ? 'bg-gradient-to-br from-slate-500/70 to-slate-700/70 hover:from-slate-600 hover:to-slate-800 hover:shadow-2xl hover:shadow-slate-400/30' : ''}
+                        ${item.name === 'Downloads' ? 'bg-gradient-to-br from-cyan-400/70 to-blue-500/70 hover:from-cyan-500 hover:to-blue-600 hover:shadow-2xl hover:shadow-cyan-400/40' : ''}
+                        ${item.name === 'Billing' ? 'bg-gradient-to-br from-emerald-400/70 to-teal-500/70 hover:from-emerald-500 hover:to-teal-600 hover:shadow-2xl hover:shadow-emerald-400/40' : ''}
+                        ${item.name === 'Console' ? 'bg-gradient-to-br from-indigo-400/70 to-purple-500/70 hover:from-indigo-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-indigo-400/40' : ''}
+                        ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
+                        ${item.name === 'Agenda' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}
+                        ${item.name === 'Co-Pilot' ? 'bg-gradient-to-br from-sky-400/70 to-cyan-500/70 hover:from-sky-500 hover:to-cyan-600 hover:shadow-2xl hover:shadow-sky-400/50' : ''}
+                        ${item.name === 'Clinical Support' ? 'bg-gradient-to-br from-fuchsia-400/70 to-pink-500/70 hover:from-fuchsia-500 hover:to-pink-600 hover:shadow-2xl hover:shadow-fuchsia-400/50' : ''}
+                        ${item.name === 'Prevention' ? 'bg-gradient-to-br from-orange-400/70 to-amber-500/70 hover:from-orange-500 hover:to-amber-600 hover:shadow-2xl hover:shadow-orange-400/50' : ''}
+                        ${item.name === 'Forms' ? 'bg-gradient-to-br from-indigo-400/70 to-blue-500/70 hover:from-indigo-500 hover:to-blue-600 hover:shadow-2xl hover:shadow-indigo-400/50' : ''}
+                        ${item.name === 'Governance' ? 'bg-gradient-to-br from-slate-500/70 to-slate-700/70 hover:from-slate-600 hover:to-slate-800 hover:shadow-2xl hover:shadow-slate-400/30' : ''}
+                        ${item.name === 'Analytics' ? 'bg-gradient-to-br from-teal-400/70 to-emerald-500/70 hover:from-teal-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-teal-400/50' : ''}
+                        ${item.name === 'Settings' ? 'bg-gradient-to-br from-gray-300/70 to-gray-500/70 hover:from-gray-400 hover:to-gray-600 hover:shadow-2xl hover:shadow-gray-400/40' : ''}
+                        ${isActive ? 'scale-105 ring-4 ring-white/50 shadow-2xl' : 'shadow-md'}
+                        hover:scale-105 hover:ring-4 hover:ring-white/30`}
+                      >
+                        <div className="relative w-6 h-6 transition-transform duration-300 group-hover:scale-125">
+                          <Image
+                            src={item.icon}
+                            alt={item.name}
+                            width={24}
+                            height={24}
+                            className="dark:invert brightness-0 invert"
+                          />
+                        </div>
                       </div>
+
+                      {!sidebarCollapsed && (
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</div>
+                        </div>
+                      )}
                     </Link>
                   </div>
                 );
@@ -324,16 +384,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                 onClick={() => setSidebarOpen(false)}
                                 className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                               >
-                                <span>{sub.emoji}</span>
                                 <span>{sub.name}</span>
                               </Link>
                             ))}
                           </div>
                         ) : (
-                          <div className="px-3 py-1.5 font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                            <span>{item.emoji}</span>
-                            <span>{item.name}</span>
-                          </div>
+                          <div className="px-3 py-1.5 font-semibold text-sm text-gray-900 dark:text-white">{item.name}</div>
                         )}
 
                         {/* Arrow pointer */}
@@ -562,7 +618,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <div className={sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}>
+        <div className={(sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64') + ' min-h-[100dvh] flex flex-col'}>
           {/* Top Mobile Header */}
           <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center justify-between h-16 px-4">
@@ -611,7 +667,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Page Content */}
-          <main className="min-h-screen">
+          <main className="flex-1 min-h-0">
             {children}
           </main>
         </div>

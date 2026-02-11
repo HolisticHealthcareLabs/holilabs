@@ -117,6 +117,10 @@ model User {
   // Device Pairing (QR Code System)
   devicePairings DevicePairing[]
 
+  // Workspaces (Org boundary)
+  workspaceMembers  WorkspaceMember[]
+  createdWorkspaces Workspace[]       @relation("WorkspaceCreatedBy")
+
   // BYOK API Keys
   apiKeys UserAPIKey[]
 
@@ -828,8 +832,8 @@ model Patient {
   advanceDirectivesDate   DateTime?
 
   // Clinical Governance
-  interactionSessions InteractionSession[]
-  advanceDirectivesNotes  String?                  @db.Text
+  interactionSessions    InteractionSession[]
+  advanceDirectivesNotes String?              @db.Text
 
   // DNR/DNI (Do Not Resuscitate / Do Not Intubate)
   dnrStatus  Boolean     @default(false)
@@ -2871,7 +2875,7 @@ model FormInstance {
   // Review tracking
   reviewedBy String?
   reviewedAt DateTime?
-  notes      String?  @db.Text
+  notes      String?   @db.Text
 
   // Audit trail
   dataHash  String? // SHA-256 of final submission
@@ -3472,10 +3476,10 @@ model PatientInsurance {
   planType String @default("PPO") // PPO, HMO, EPO, POS, HDHP
 
   // Subscriber information
-  memberId               String // Member ID on insurance card
-  groupNumber            String? // Group number
-  subscriberName         String? // Name of policy holder
-  relationshipToPatient  String  @default("SELF") // SELF, SPOUSE, CHILD, OTHER
+  memberId              String // Member ID on insurance card
+  groupNumber           String? // Group number
+  subscriberName        String? // Name of policy holder
+  relationshipToPatient String  @default("SELF") // SELF, SPOUSE, CHILD, OTHER
 
   // Coverage dates
   effectiveDate   DateTime
@@ -3543,18 +3547,18 @@ model InsuranceClaim {
   encounterId String?
 
   // Claim identification
-  claimNumber   String  @unique // Auto-generated: CLM-2026-00001
+  claimNumber     String  @unique // Auto-generated: CLM-2026-00001
   externalClaimId String? // Payer's claim reference
 
   // Claim details
-  status          InsuranceClaimStatus @default(SUBMITTED)
-  claimType       String               @default("PROFESSIONAL") // PROFESSIONAL, INSTITUTIONAL
-  placeOfService  String               @default("11") // CMS place of service code
+  status         InsuranceClaimStatus @default(SUBMITTED)
+  claimType      String               @default("PROFESSIONAL") // PROFESSIONAL, INSTITUTIONAL
+  placeOfService String               @default("11") // CMS place of service code
 
   // Service information
-  serviceDate     DateTime
-  admissionDate   DateTime?
-  dischargeDate   DateTime?
+  serviceDate   DateTime
+  admissionDate DateTime?
+  dischargeDate DateTime?
 
   // Diagnosis codes (ICD-10)
   diagnosisCodes Json // Array of ICD-10 codes
@@ -3563,14 +3567,14 @@ model InsuranceClaim {
   procedureCodes Json // Array of procedure codes with modifiers
 
   // Financial amounts (in cents)
-  billedAmount           Int // Total amount billed
-  allowedAmount          Int? // Amount allowed by payer
-  paidAmount             Int? // Amount paid by insurance
-  adjustmentAmount       Int? // Contractual adjustments
-  patientResponsibility  Int? // Patient's share (copay + coinsurance + deductible)
-  deductibleApplied      Int? // Amount applied to deductible
-  coinsuranceAmount      Int? // Patient coinsurance amount
-  copayAmount            Int? // Patient copay amount
+  billedAmount          Int // Total amount billed
+  allowedAmount         Int? // Amount allowed by payer
+  paidAmount            Int? // Amount paid by insurance
+  adjustmentAmount      Int? // Contractual adjustments
+  patientResponsibility Int? // Patient's share (copay + coinsurance + deductible)
+  deductibleApplied     Int? // Amount applied to deductible
+  coinsuranceAmount     Int? // Patient coinsurance amount
+  copayAmount           Int? // Patient copay amount
 
   // Denial information
   denialCode   String? // Payer denial code
@@ -3591,7 +3595,7 @@ model InsuranceClaim {
   billingProviderId   String? // Provider responsible for billing
 
   // Metadata
-  notes     String? @db.Text
+  notes     String?  @db.Text
   createdBy String? // User who submitted claim
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -3605,15 +3609,15 @@ model InsuranceClaim {
 }
 
 enum InsuranceClaimStatus {
-  DRAFT       // Claim created but not submitted
-  SUBMITTED   // Claim submitted to payer
-  PENDING     // Claim received, pending processing
-  IN_REVIEW   // Claim under review
-  APPROVED    // Claim approved for payment
-  PAID        // Claim paid
-  DENIED      // Claim denied
-  APPEALED    // Claim under appeal
-  VOIDED      // Claim voided
+  DRAFT // Claim created but not submitted
+  SUBMITTED // Claim submitted to payer
+  PENDING // Claim received, pending processing
+  IN_REVIEW // Claim under review
+  APPROVED // Claim approved for payment
+  PAID // Claim paid
+  DENIED // Claim denied
+  APPEALED // Claim under appeal
+  VOIDED // Claim voided
 }
 
 // ============================================================================
@@ -3637,7 +3641,7 @@ model FeatureFlag {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String? // User who created/modified
-  reason    String? @db.Text // Why this flag was toggled
+  reason    String?  @db.Text // Why this flag was toggled
 
   // Unique constraint: one flag per name per scope
   @@unique([name, clinicId])
@@ -3663,17 +3667,17 @@ model ClinicalRule {
   logic Json // JSON-Logic expression
 
   // Configuration
-  priority   Int     @default(0) // Higher priority = evaluated first
-  isActive   Boolean @default(true)
-  version    Int     @default(1)
+  priority Int     @default(0) // Higher priority = evaluated first
+  isActive Boolean @default(true)
+  version  Int     @default(1)
 
   // Scope (optional - for clinic-specific rules)
   clinicId String?
 
   // Metadata
-  description   String?  @db.Text
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  description   String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   createdBy     String? // User who created/modified
   lastEvaluated DateTime? // Last time this rule was evaluated
 
@@ -6077,9 +6081,9 @@ model AIInteractionEvaluation {
   taskType String // "diagnosis-support", "clinical-notes", "treatment-protocol", etc.
 
   // Quality scores (0-1)
-  hallucinationScore     Float? // 0 = no hallucination, 1 = complete hallucination
-  completenessScore      Float? // 0 = nothing relevant, 1 = fully complete
-  clinicalAccuracyScore  Float? // 0 = clinically wrong, 1 = clinically accurate
+  hallucinationScore    Float? // 0 = no hallucination, 1 = complete hallucination
+  completenessScore     Float? // 0 = nothing relevant, 1 = fully complete
+  clinicalAccuracyScore Float? // 0 = clinically wrong, 1 = clinically accurate
 
   // Issues found (JSON array)
   flaggedIssues Json? // Array of {type, description, severity}
@@ -6513,6 +6517,182 @@ enum PermissionScope {
 }
 
 // ============================================================================
+// WORKSPACES (Org / License Boundary) + CORTEX FLEET (Sidecar/Edge)
+// ============================================================================
+
+/**
+ * Workspace is the organization boundary for licensing + fleet management.
+ * This is the unit hospital IT and clinic owners manage.
+ */
+model Workspace {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  // Non-PHI configuration (onboarding profile, rollout preferences, tags, etc.)
+  metadata Json?
+
+  createdByUserId String?
+  createdByUser   User?   @relation("WorkspaceCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members    WorkspaceMember[]
+  apiKeys    WorkspaceAPIKey[]
+  devices    AgentDevice[]
+  heartbeats AgentHeartbeat[]
+  events     FleetEvent[]
+
+  @@index([createdAt])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+/**
+ * WorkspaceAPIKey is used by installed agents to authenticate to the Control Plane.
+ * Store only a SHA-256 hash (never store plaintext).
+ */
+model WorkspaceAPIKey {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  tokenHash   String    @unique
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([revokedAt])
+  @@map("workspace_api_keys")
+}
+
+enum AgentDeviceType {
+  DESKTOP_MAC
+  DESKTOP_WINDOWS
+  EDGE_NODE
+  UNKNOWN
+}
+
+/**
+ * AgentDevice is one enrolled workstation/server running Cortex components.
+ * Non-PHI by design.
+ */
+model AgentDevice {
+  id          String          @id @default(cuid())
+  workspaceId String
+  deviceId    String
+  deviceType  AgentDeviceType @default(UNKNOWN)
+
+  os       String?
+  hostname String?
+  labels   String[] @default([])
+
+  firstSeenAt     DateTime @default(now())
+  lastHeartbeatAt DateTime @default(now())
+  lastSeenIp      String?
+
+  sidecarVersion String?
+  edgeVersion    String?
+  rulesetVersion String?
+
+  permissions Json?
+  health      Json?
+
+  isActive Boolean @default(true)
+
+  workspace  Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  heartbeats AgentHeartbeat[]
+  events     FleetEvent[]
+
+  @@unique([workspaceId, deviceId])
+  @@index([workspaceId, lastHeartbeatAt])
+  @@index([workspaceId, deviceType])
+  @@map("agent_devices")
+}
+
+model AgentHeartbeat {
+  id            String @id @default(cuid())
+  workspaceId   String
+  agentDeviceId String
+
+  receivedAt DateTime @default(now())
+
+  sidecarVersion String?
+  edgeVersion    String?
+  rulesetVersion String?
+  latencyMs      Int?
+
+  permissions Json?
+  health      Json?
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  device    AgentDevice @relation(fields: [agentDeviceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, receivedAt])
+  @@index([agentDeviceId, receivedAt])
+  @@map("agent_heartbeats")
+}
+
+enum FleetEventType {
+  HARD_BRAKE
+  NUDGE
+  INFO
+  OVERRIDE
+}
+
+/**
+ * FleetEvent is a de-identified outcome emitted by the agent (no PHI).
+ */
+model FleetEvent {
+  id            String  @id @default(cuid())
+  workspaceId   String
+  agentDeviceId String?
+
+  eventType  FleetEventType
+  ruleId     String?
+  color      String?
+  latencyMs  Int?
+  occurredAt DateTime       @default(now())
+
+  meta Json?
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  device    AgentDevice? @relation(fields: [agentDeviceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, occurredAt])
+  @@index([workspaceId, eventType, occurredAt])
+  @@index([agentDeviceId, occurredAt])
+  @@map("fleet_events")
+}
+
+// ============================================================================
 // SECURITY MONITORING & REPORTING
 // ============================================================================
 
@@ -6622,14 +6802,14 @@ model OAuthState {
 // ============================================================================
 
 model InteractionSession {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
   // Context
   patientId String?
   patient   Patient? @relation(fields: [patientId], references: [id])
-  
+
   encounterId String?
   encounter   ClinicalEncounter? @relation(fields: [encounterId], references: [id])
 
@@ -6639,7 +6819,7 @@ model InteractionSession {
 
   logs GovernanceLog[]
 
-  startedAt DateTime @default(now())
+  startedAt DateTime  @default(now())
   endedAt   DateTime?
 
   @@index([userId])
@@ -6648,33 +6828,33 @@ model InteractionSession {
 }
 
 model GovernanceLog {
-  id        String   @id @default(cuid())
+  id        String             @id @default(cuid())
   sessionId String
   session   InteractionSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   // The "Flight Recorder" Data
-  inputPrompt      String   @db.Text // The exact prompt sent to the LLM
-  rawModelOutput   String?  @db.Text // What the LLM said (potentially unsafe)
-  sanitizedOutput  String?  @db.Text // What the user saw (after governance)
-  
+  inputPrompt     String  @db.Text // The exact prompt sent to the LLM
+  rawModelOutput  String? @db.Text // What the LLM said (potentially unsafe)
+  sanitizedOutput String? @db.Text // What the user saw (after governance)
+
   // Metadata
-  provider         String   @default("unknown") // "claude-3-5", "gemini-flash"
-  latencyMs        Int      @default(0)
-  tokenCount       Int      @default(0)
-  
+  provider   String @default("unknown") // "claude-3-5", "gemini-flash"
+  latencyMs  Int    @default(0)
+  tokenCount Int    @default(0)
+
   // Analysis
-  safetyScore      Int?     // 0-100
+  safetyScore Int? // 0-100
 
   // Validation (Human-in-the-Loop)
   validationStatus ValidationStatus @default(PENDING)
   validationNotes  String?          @db.Text
   validatedAt      DateTime?
-  validatedBy      String?          // User ID
+  validatedBy      String? // User ID
 
   // Flywheel Data (Overrides)
-  overrideReason   String?          @db.Text
-  ruleId           String?
-  ruleDescription  String?
+  overrideReason  String? @db.Text
+  ruleId          String?
+  ruleDescription String?
 
   events GovernanceEvent[]
 
@@ -6691,21 +6871,21 @@ enum ValidationStatus {
 }
 
 model GovernanceEvent {
-  id        String   @id @default(cuid())
-  logId     String
-  log       GovernanceLog @relation(fields: [logId], references: [id], onDelete: Cascade)
+  id    String        @id @default(cuid())
+  logId String
+  log   GovernanceLog @relation(fields: [logId], references: [id], onDelete: Cascade)
 
   // Rule Details
-  ruleId          String? // If we have a rule table later
-  ruleName        String  // e.g., "BSTH-001: Asthma/Beta-Blocker"
-  severity        GovernanceSeverity // HARD_BLOCK, SOFT_NUDGE, INFO
-  
-  description     String?
-  
+  ruleId   String? // If we have a rule table later
+  ruleName String // e.g., "BSTH-001: Asthma/Beta-Blocker"
+  severity GovernanceSeverity // HARD_BLOCK, SOFT_NUDGE, INFO
+
+  description String?
+
   // Outcome
-  actionTaken     GovernanceAction // BLOCKED, FLAGGED, PASSED
-  overrideByUser  Boolean @default(false)
-  overrideReason  String?
+  actionTaken    GovernanceAction // BLOCKED, FLAGGED, PASSED
+  overrideByUser Boolean          @default(false)
+  overrideReason String?
 
   timestamp DateTime @default(now())
 
@@ -6751,10 +6931,10 @@ enum GovernanceAction {
 /// Captures AI/Rules recommendations and human decisions for RLHF training
 /// Each event represents a point where AI made a recommendation that may differ from human action
 model AssuranceEvent {
-  id              String   @id @default(cuid())
-  patientIdHash   String   // SHA256(patient_id + SALT_KEY) - LGPD compliant
-  encounterId     String?
-  eventType       AssuranceEventType
+  id            String             @id @default(cuid())
+  patientIdHash String // SHA256(patient_id + SALT_KEY) - LGPD compliant
+  encounterId   String?
+  eventType     AssuranceEventType
 
   // CRITICAL: Raw input for model training replay
   // Contains the state BEFORE AI evaluation ran
@@ -6762,34 +6942,34 @@ model AssuranceEvent {
   inputContextSnapshot Json
 
   // AI/Rules Output - What the system recommended
-  aiRecommendation Json     // Structured recommendation from AI/rules engine
-  aiConfidence     Float?   // Confidence score 0.0-1.0
-  aiProvider       String?  // claude | gemini | ollama | rules-engine
-  aiLatencyMs      Int?     // Processing time in milliseconds
+  aiRecommendation Json // Structured recommendation from AI/rules engine
+  aiConfidence     Float? // Confidence score 0.0-1.0
+  aiProvider       String? // claude | gemini | ollama | rules-engine
+  aiLatencyMs      Int? // Processing time in milliseconds
 
   // Human Decision - What the clinician actually did
-  humanDecision    Json?    // The action taken by the human
-  humanOverride    Boolean  @default(false)  // True if human disagreed with AI
-  overrideReason   String?  @db.Text         // LGPD Article 20: explanation for override
+  humanDecision  Json? // The action taken by the human
+  humanOverride  Boolean @default(false) // True if human disagreed with AI
+  overrideReason String? @db.Text // LGPD Article 20: explanation for override
 
   // Rule Versioning for regression tracking
-  ruleVersionId    String?
-  ruleVersion      RuleVersion? @relation(fields: [ruleVersionId], references: [id])
+  ruleVersionId String?
+  ruleVersion   RuleVersion? @relation(fields: [ruleVersionId], references: [id])
 
   // Clinic context
-  clinicId         String
+  clinicId String
 
   // Timestamps
-  createdAt        DateTime @default(now())
-  decidedAt        DateTime? // When human made decision (null if pending)
+  createdAt DateTime  @default(now())
+  decidedAt DateTime? // When human made decision (null if pending)
 
   // Relations
-  feedback         HumanFeedback[]
-  outcome          OutcomeGroundTruth?
+  feedback HumanFeedback[]
+  outcome  OutcomeGroundTruth?
 
   // Clustering (Phase 8)
-  clusterId        String?
-  cluster          OverrideCluster? @relation(fields: [clusterId], references: [id])
+  clusterId String?
+  cluster   OverrideCluster? @relation(fields: [clusterId], references: [id])
 
   @@index([patientIdHash])
   @@index([clinicId, createdAt])
@@ -6801,25 +6981,25 @@ model AssuranceEvent {
 
 /// Types of assurance events captured for RLHF
 enum AssuranceEventType {
-  DIAGNOSIS       // AI suggested diagnosis vs human diagnosis
-  TREATMENT       // AI suggested treatment vs human prescription
-  ORDER           // AI suggested orders (labs, imaging) vs human orders
-  ALERT           // Clinical alert (drug interaction, allergy) vs human response
-  BILLING         // Billing validation (TISS code, coverage) vs human submission
+  DIAGNOSIS // AI suggested diagnosis vs human diagnosis
+  TREATMENT // AI suggested treatment vs human prescription
+  ORDER // AI suggested orders (labs, imaging) vs human orders
+  ALERT // Clinical alert (drug interaction, allergy) vs human response
+  BILLING // Billing validation (TISS code, coverage) vs human submission
 }
 
 /// Human feedback on AI recommendations for RLHF fine-tuning
 /// Captures explicit feedback beyond just override decisions
 model HumanFeedback {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   assuranceEventId String
   assuranceEvent   AssuranceEvent @relation(fields: [assuranceEventId], references: [id], onDelete: Cascade)
 
-  feedbackType     FeedbackType
-  feedbackValue    Json        // Structured feedback data
-  feedbackSource   FeedbackSource
+  feedbackType   FeedbackType
+  feedbackValue  Json // Structured feedback data
+  feedbackSource FeedbackSource
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([assuranceEventId])
   @@index([feedbackType])
@@ -6828,45 +7008,45 @@ model HumanFeedback {
 
 /// Types of feedback that can be provided
 enum FeedbackType {
-  THUMBS_UP      // Quick positive signal
-  THUMBS_DOWN    // Quick negative signal
-  CORRECTION     // Specific correction with details
-  COMMENT        // Free-form text feedback
+  THUMBS_UP // Quick positive signal
+  THUMBS_DOWN // Quick negative signal
+  CORRECTION // Specific correction with details
+  COMMENT // Free-form text feedback
 }
 
 /// Source of feedback for weighting in RLHF
 enum FeedbackSource {
-  PHYSICIAN      // Highest weight - medical decision maker
-  NURSE          // Clinical feedback
-  PHARMACIST     // Medication expertise
-  ADMIN          // Administrative perspective
-  BILLING        // Revenue integrity perspective
+  PHYSICIAN // Highest weight - medical decision maker
+  NURSE // Clinical feedback
+  PHARMACIST // Medication expertise
+  ADMIN // Administrative perspective
+  BILLING // Revenue integrity perspective
 }
 
 /// Ground truth outcomes for retrospective analysis
 /// Links assurance events to actual patient outcomes or billing results
 model OutcomeGroundTruth {
-  id               String   @id @default(cuid())
-  assuranceEventId String   @unique
+  id               String         @id @default(cuid())
+  assuranceEventId String         @unique
   assuranceEvent   AssuranceEvent @relation(fields: [assuranceEventId], references: [id], onDelete: Cascade)
 
-  outcomeType      OutcomeType
-  outcomeValue     Json         // Structured outcome data
-  outcomeDate      DateTime
+  outcomeType  OutcomeType
+  outcomeValue Json // Structured outcome data
+  outcomeDate  DateTime
 
   // Glosa-specific fields (Brazilian billing denials)
-  glosaCode        String?      // Brazilian denial code (e.g., "001.01")
-  glosaAmount      Float?       // R$ value denied
-  glosaRecovered   Boolean?     // Was appeal successful?
-  appealStrategy   String?  @db.Text // What worked to recover (for learning)
+  glosaCode      String? // Brazilian denial code (e.g., "001.01")
+  glosaAmount    Float? // R$ value denied
+  glosaRecovered Boolean? // Was appeal successful?
+  appealStrategy String?  @db.Text // What worked to recover (for learning)
 
   // TISS Reconciliation Fields
   // Used for matching insurer XML returns to our AssuranceEvents
-  matchScore       Float?       // Confidence of the match (0-1)
-  matchMethod      MatchMethod? // How the match was determined
-  insurerProtocol  String?      // The insurer's protocol number from XML
+  matchScore      Float? // Confidence of the match (0-1)
+  matchMethod     MatchMethod? // How the match was determined
+  insurerProtocol String? // The insurer's protocol number from XML
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([outcomeType])
   @@index([glosaCode])
@@ -6876,41 +7056,41 @@ model OutcomeGroundTruth {
 
 /// Types of outcomes that can be linked to assurance events
 enum OutcomeType {
-  READMISSION    // Patient was readmitted within X days
-  COMPLICATION   // Clinical complication occurred
-  GLOSA          // Billing denial (Brazilian healthcare)
-  SUCCESS        // Positive outcome confirmed
-  APPEAL_WON     // Initially denied, but appeal succeeded
-  APPEAL_LOST    // Appeal was unsuccessful
+  READMISSION // Patient was readmitted within X days
+  COMPLICATION // Clinical complication occurred
+  GLOSA // Billing denial (Brazilian healthcare)
+  SUCCESS // Positive outcome confirmed
+  APPEAL_WON // Initially denied, but appeal succeeded
+  APPEAL_LOST // Appeal was unsuccessful
 }
 
 /// Methods used to match insurer data to our events
 enum MatchMethod {
-  EXACT          // All fields matched exactly
-  FUZZY          // High-confidence fuzzy match
-  MANUAL         // Human reviewed and linked
+  EXACT // All fields matched exactly
+  FUZZY // High-confidence fuzzy match
+  MANUAL // Human reviewed and linked
 }
 
 /// Version tracking for rules to enable regression analysis
 /// When a rule is updated, we can track which version was active for each event
 model RuleVersion {
-  id          String   @id @default(cuid())
-  ruleId      String   // Logical rule identifier (e.g., "DRUG_INTERACTION_001")
-  version     Int      // Incrementing version number
-  ruleType    RuleType
+  id       String   @id @default(cuid())
+  ruleId   String // Logical rule identifier (e.g., "DRUG_INTERACTION_001")
+  version  Int // Incrementing version number
+  ruleType RuleType
 
   // The actual rule definition
   // For clinical: {"condition": {...}, "action": "BLOCK", "severity": "HIGH"}
   // For billing: {"tissCode": "10101012", "planExclusions": [...]}
-  ruleLogic   Json     @db.JsonB
+  ruleLogic Json @db.JsonB
 
   // Metadata
-  description String?  @db.Text
-  active      Boolean  @default(true)
+  description String? @db.Text
+  active      Boolean @default(true)
 
   // Audit trail
-  createdBy   String?
-  createdAt   DateTime @default(now())
+  createdBy String?
+  createdAt DateTime @default(now())
 
   // Relations
   assuranceEvents AssuranceEvent[]
@@ -6923,9 +7103,9 @@ model RuleVersion {
 
 /// Categories of rules in the system
 enum RuleType {
-  CLINICAL       // Drug interactions, allergies, clinical guidelines
+  CLINICAL // Drug interactions, allergies, clinical guidelines
   ADMINISTRATIVE // Documentation requirements, prior auth
-  BILLING        // TISS codes, plan coverage, glosa prevention
+  BILLING // TISS codes, plan coverage, glosa prevention
 }
 
 // =============================================================================
@@ -6934,7 +7114,7 @@ enum RuleType {
 // =============================================================================
 
 model ClinicalReferral {
-  id        String @id @default(cuid())
+  id String @id @default(cuid())
 
   // Patient being referred
   patientId String
@@ -6942,18 +7122,18 @@ model ClinicalReferral {
 
   // Referring clinician
   referringClinicianId String
-  referringClinician   User @relation("ReferringClinician", fields: [referringClinicianId], references: [id])
+  referringClinician   User   @relation("ReferringClinician", fields: [referringClinicianId], references: [id])
 
   // Specialist details
-  specialty         String          // e.g., "Cardiology", "Endocrinology"
-  preferredProvider String?         // Preferred specialist name/ID
-  receivingProvider String?         // Actual specialist who accepts
+  specialty         String // e.g., "Cardiology", "Endocrinology"
+  preferredProvider String? // Preferred specialist name/ID
+  receivingProvider String? // Actual specialist who accepts
 
   // Referral details
-  priority       ClinicalReferralPriority @default(ROUTINE)
-  status         ClinicalReferralStatus   @default(PENDING)
-  reason         String   @db.Text        // Clinical reason for referral
-  clinicalNotes  String?  @db.Text        // Notes for the specialist
+  priority      ClinicalReferralPriority @default(ROUTINE)
+  status        ClinicalReferralStatus   @default(PENDING)
+  reason        String                   @db.Text // Clinical reason for referral
+  clinicalNotes String?                  @db.Text // Notes for the specialist
 
   // Attachments flags
   includeDiagnoses   Boolean @default(true)
@@ -6965,8 +7145,8 @@ model ClinicalReferral {
   appointmentDate    DateTime?
 
   // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   acceptedAt  DateTime?
   scheduledAt DateTime?
   completedAt DateTime?
@@ -6984,18 +7164,18 @@ model ClinicalReferral {
 }
 
 enum ClinicalReferralPriority {
-  ROUTINE   // Standard referral, no urgency
-  URGENT    // Needs to be seen within days
-  EMERGENT  // Immediate specialist consultation needed
+  ROUTINE // Standard referral, no urgency
+  URGENT // Needs to be seen within days
+  EMERGENT // Immediate specialist consultation needed
 }
 
 enum ClinicalReferralStatus {
-  PENDING    // Referral created, awaiting acceptance
-  ACCEPTED   // Specialist accepted the referral
-  SCHEDULED  // Appointment scheduled with specialist
-  COMPLETED  // Referral completed, patient seen
-  CANCELLED  // Referral cancelled
-  REJECTED   // Specialist rejected the referral
+  PENDING // Referral created, awaiting acceptance
+  ACCEPTED // Specialist accepted the referral
+  SCHEDULED // Appointment scheduled with specialist
+  COMPLETED // Referral completed, patient seen
+  CANCELLED // Referral cancelled
+  REJECTED // Specialist rejected the referral
 }
 
 // ============================================================================
@@ -7005,27 +7185,27 @@ enum ClinicalReferralStatus {
 /// Groups similar override events to identify patterns
 /// Generated by clustering job using embeddings
 model OverrideCluster {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Cluster properties
-  centroid        Float[]  // Vector centroid (stored as array)
-  events          AssuranceEvent[]
+  centroid Float[] // Vector centroid (stored as array)
+  events   AssuranceEvent[]
 
   // Analysis
-  commonRuleId         String?  // If a specific rule is frequently overridden
-  commonOverrideReason String?  @db.Text
-  frequency            Int      // Number of events in cluster at time of creation
+  commonRuleId         String? // If a specific rule is frequently overridden
+  commonOverrideReason String? @db.Text
+  frequency            Int // Number of events in cluster at time of creation
 
   // Confidence Metrics
-  silhouetteScore      Float    // Cohesion score (0-1)
-  actionRate           Float    // % of users who took specific different action
+  silhouetteScore Float // Cohesion score (0-1)
+  actionRate      Float // % of users who took specific different action
 
   // Rule Promotion
-  ruleProposal    RuleProposal?
+  ruleProposal RuleProposal?
 
   // Metadata
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([frequency])
   @@index([createdAt])
@@ -7035,31 +7215,31 @@ model OverrideCluster {
 /// Proposed rule change derived from an override cluster
 /// Managed via GitHub Pull Requests
 model RuleProposal {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Trigger
-  clusterId       String   @unique
-  cluster         OverrideCluster @relation(fields: [clusterId], references: [id])
+  clusterId String          @unique
+  cluster   OverrideCluster @relation(fields: [clusterId], references: [id])
 
   // Git/Process Info
-  prNumber        Int?     // GitHub PR Number
-  prUrl           String?  // GitHub PR URL
-  branchName      String?  // "promotion/cluster-123"
+  prNumber   Int? // GitHub PR Number
+  prUrl      String? // GitHub PR URL
+  branchName String? // "promotion/cluster-123"
 
   // Proposed Content (JSON Logic)
-  proposedRule    Json     // The complete rule JSON to be merged
+  proposedRule Json // The complete rule JSON to be merged
 
   // Status Flow
-  status          RuleProposalStatus @default(PENDING_REVIEW)
+  status RuleProposalStatus @default(PENDING_REVIEW)
 
   // Governance
-  reviewedBy      String?  // Clinician ID
+  reviewedBy      String? // Clinician ID
   reviewedAt      DateTime?
-  rejectionReason String?  @db.Text
+  rejectionReason String?   @db.Text
 
   // Metadata
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([reviewedBy])
@@ -7067,8 +7247,8 @@ model RuleProposal {
 }
 
 enum RuleProposalStatus {
-  PENDING_REVIEW  // PR created, waiting for clinician
-  APPROVED        // Merged / Approved
-  REJECTED        // Closed / Rejected
-  DEPLOYED        // Live in production
+  PENDING_REVIEW // PR created, waiting for clinician
+  APPROVED // Merged / Approved
+  REJECTED // Closed / Rejected
+  DEPLOYED // Live in production
 }

@@ -6,11 +6,11 @@
  */
 
 import { NextRequest } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     async start(controller) {
       try {
         // Get user session
-        const clinicianSession = await getServerSession(authOptions);
+        const clinicianSession = await auth();
         let userId: string;
         let userType: 'CLINICIAN' | 'PATIENT';
 
@@ -52,6 +52,28 @@ export async function GET(request: NextRequest) {
         // Send initial connection message
         const connectionMsg = `data: ${JSON.stringify({ type: 'connected', timestamp: new Date().toISOString() })}\n\n`;
         controller.enqueue(encoder.encode(connectionMsg));
+
+        // Demo mode: stream a tiny synthetic feed without DB.
+        if (userType === 'CLINICIAN' && isDemoClinician(userId, clinicianSession?.user?.email ?? null)) {
+          const demoNotifs = getSyntheticNotifications();
+          // Send one "notification" event shortly after connect so UI looks alive.
+          setTimeout(() => {
+            const n = demoNotifs.find((x) => !x.isRead) ?? demoNotifs[0];
+            const data = `data: ${JSON.stringify({ type: 'notification', notification: n })}\n\n`;
+            controller.enqueue(encoder.encode(data));
+          }, 800);
+
+          const interval = setInterval(() => {
+            const heartbeat = `data: ${JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() })}\n\n`;
+            controller.enqueue(encoder.encode(heartbeat));
+          }, 5000);
+
+          request.signal.addEventListener('abort', () => {
+            clearInterval(interval);
+            controller.close();
+          });
+          return;
+        }
 
         // Keep track of last notification timestamp
         let lastCheck = new Date();

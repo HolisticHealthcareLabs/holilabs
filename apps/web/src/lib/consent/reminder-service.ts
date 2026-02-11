@@ -4,6 +4,7 @@
  * @compliance HIPAA §164.508 - Informed consent
  */
 
+import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { queueEmail } from '@/lib/email/email-service';
 import { consentExpirationTemplate } from '@/lib/email/templates';
@@ -12,6 +13,7 @@ import {
   buildReminderLifecycleEvent,
   buildReminderRetryState,
   DEFAULT_REMINDER_RETRY_POLICY,
+  executeReminderWithRetry,
 } from '@/lib/notifications/reminder-policy';
 
 export interface ConsentNeedingReminder {
@@ -26,6 +28,56 @@ export interface ConsentNeedingReminder {
     lastName: string;
     preferredName: string | null;
   };
+}
+
+async function persistConsentReminderFailureRecord(input: {
+  consentId: string;
+  patientId: string;
+  correlationId: string;
+  reason: string;
+  retryState: ReturnType<typeof buildReminderRetryState>;
+}) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: 'system',
+        userEmail: 'system@holilabs.com',
+        action: 'SEND_CONSENT_REMINDER',
+        resource: 'Consent',
+        resourceId: input.consentId,
+        ipAddress: 'system',
+        details: {
+          patientId: input.patientId,
+          correlationId: input.correlationId,
+          reason: input.reason,
+          policyState: {
+            attempt: input.retryState.attempt,
+            maxAttempts: input.retryState.maxAttempts,
+            remainingAttempts: input.retryState.remainingAttempts,
+            nextAttempt: input.retryState.nextAttempt,
+            nextRetryAt: input.retryState.nextRetryAt,
+            escalationReady: input.retryState.escalationReady,
+            escalationReason: input.retryState.escalationReason ?? null,
+            state: input.retryState.state,
+            terminal: input.retryState.terminal,
+          },
+        },
+        success: false,
+        errorMessage: input.reason,
+      },
+    });
+  } catch (persistError) {
+    logger.error({
+      event: 'consent_reminder_failure_persist_error',
+      consentId: input.consentId,
+      patientId: input.patientId,
+      correlationId: input.correlationId,
+      error:
+        persistError instanceof Error
+          ? persistError.message
+          : 'Failed to persist consent reminder failure metadata',
+    });
+  }
 }
 
 /**
@@ -69,6 +121,7 @@ export async function findConsentsNeedingReminders(
  * Send consent expiration reminder email
  */
 export async function sendConsentExpirationReminder(consentId: string): Promise<boolean> {
+  const correlationId = `consent-reminder:${consentId}:${randomUUID()}`;
   try {
     const consent = await prisma.consent.findUnique({
       where: { id: consentId },
@@ -86,6 +139,7 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
     });
 
     if (!consent) {
+      const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
       logger.error(
         buildReminderLifecycleEvent({
           stage: 'fail',
@@ -95,13 +149,22 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
           category: 'consent',
           reminderId: consentId,
           error: `Consent ${consentId} not found`,
-          retryState: buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY),
+          correlationId,
+          retryState,
         })
       );
+      await persistConsentReminderFailureRecord({
+        consentId,
+        patientId: 'unknown',
+        correlationId,
+        reason: `Consent ${consentId} not found`,
+        retryState,
+      });
       return false;
     }
 
     if (!consent.expiresAt) {
+      const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
       logger.warn(
         buildReminderLifecycleEvent({
           stage: 'fail',
@@ -111,14 +174,23 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
           category: 'consent',
           reminderId: consentId,
           error: `Consent ${consentId} has no expiration date`,
-          retryState: buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY),
+          correlationId,
+          retryState,
         })
       );
+      await persistConsentReminderFailureRecord({
+        consentId,
+        patientId: consent.patientId,
+        correlationId,
+        reason: `Consent ${consentId} has no expiration date`,
+        retryState,
+      });
       return false;
     }
 
     // Check if patient has email
     if (!consent.patient.email) {
+      const retryState = buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY);
       logger.warn(
         buildReminderLifecycleEvent({
           stage: 'fail',
@@ -128,9 +200,17 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
           category: 'consent',
           reminderId: consentId,
           error: `Patient ${consent.patientId} has no email, skipping reminder`,
-          retryState: buildReminderRetryState(1, DEFAULT_REMINDER_RETRY_POLICY),
+          correlationId,
+          retryState,
         })
       );
+      await persistConsentReminderFailureRecord({
+        consentId,
+        patientId: consent.patientId,
+        correlationId,
+        reason: `Patient ${consent.patientId} has no email, skipping reminder`,
+        retryState,
+      });
       // Mark as sent to avoid repeated attempts
       await prisma.consent.update({
         where: { id: consentId },
@@ -158,24 +238,107 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
       renewUrl,
     });
 
-    logger.info(
-      buildReminderLifecycleEvent({
-        stage: 'sent',
-        patientId: consent.patientId,
-        channel: 'EMAIL',
-        templateName: 'Consent Expiration Reminder',
-        category: 'consent',
-        reminderId: consentId,
-      })
-    );
+    let emailId: string | null = null;
+    const retryExecution = await executeReminderWithRetry({
+      policy: DEFAULT_REMINDER_RETRY_POLICY,
+      executeAttempt: async (attempt) => {
+        logger.info(
+          buildReminderLifecycleEvent({
+            stage: 'send',
+            patientId: consent.patientId,
+            channel: 'EMAIL',
+            templateName: 'Consent Expiration Reminder',
+            category: 'consent',
+            reminderId: consentId,
+            attempt,
+            correlationId,
+          })
+        );
 
-    // Queue email
-    const emailId = await queueEmail({
-      to: consent.patient.email,
-      subject,
-      html,
-      text,
+        emailId = await queueEmail({
+          to: consent.patient.email!,
+          subject,
+          html,
+          text,
+        });
+        return Boolean(emailId);
+      },
+      onAttemptFailure: ({ attempt, retryState, error }) => {
+        logger.error(
+          buildReminderLifecycleEvent({
+            stage: 'fail',
+            patientId: consent.patientId,
+            channel: 'EMAIL',
+            templateName: 'Consent Expiration Reminder',
+            category: 'consent',
+            reminderId: consentId,
+            attempt,
+            error: error || 'Failed to queue consent reminder email',
+          correlationId,
+            retryState,
+          })
+        );
+      },
+      onRetryScheduled: ({ attempt, retryState, error }) => {
+        logger.warn({
+          event: retryState.hooks.retryScheduledEvent,
+          correlationId,
+          patientId: consent.patientId,
+          channel: 'EMAIL',
+          templateName: 'Consent Expiration Reminder',
+          category: 'consent',
+          reminderId: consentId,
+          attempt,
+          nextRetryAt: retryState.nextRetryAt,
+          reason: error,
+        });
+      },
+      onEscalationOpen: ({ attempt, retryState, error }) => {
+        logger.error(
+          buildReminderLifecycleEvent({
+            stage: 'escalation_open',
+            patientId: consent.patientId,
+            channel: 'EMAIL',
+            templateName: 'Consent Expiration Reminder',
+            category: 'consent',
+            reminderId: consentId,
+            attempt,
+            error: retryState.escalationReason || error || 'Escalation threshold reached',
+            correlationId,
+            retryState,
+          })
+        );
+      },
+      onEscalationClosed: ({ attempt, retryState }) => {
+        logger.info(
+          buildReminderLifecycleEvent({
+            stage: 'escalation_closed',
+            patientId: consent.patientId,
+            channel: 'EMAIL',
+            templateName: 'Consent Expiration Reminder',
+            category: 'consent',
+            reminderId: consentId,
+            attempt,
+            correlationId,
+            retryState,
+          })
+        );
+      },
     });
+
+    if (!retryExecution.success) {
+      const finalRetryState =
+        retryExecution.finalRetryState ||
+        buildReminderRetryState(DEFAULT_REMINDER_RETRY_POLICY.maxAttempts, DEFAULT_REMINDER_RETRY_POLICY);
+      await persistConsentReminderFailureRecord({
+        consentId,
+        patientId: consent.patientId,
+        correlationId,
+        reason: retryExecution.error || 'Failed to queue consent reminder email',
+        retryState: finalRetryState,
+      });
+      return false;
+    }
 
     // Mark reminder as sent
     await prisma.consent.update({
@@ -198,7 +361,7 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
         details: {
           consentType: consent.type,
           patientId: consent.patientId,
-          emailId,
+          emailId: emailId || 'unknown',
           expiresAt: consent.expiresAt,
         },
         success: true,
@@ -213,6 +376,8 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
         templateName: 'Consent Expiration Reminder',
         category: 'consent',
         reminderId: consentId,
+        attempt: retryExecution.attemptsUsed,
+        correlationId,
       })
     );
 
@@ -229,6 +394,7 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
         category: 'consent',
         reminderId: consentId,
         error: errorMessage,
+        correlationId,
         retryState,
       })
     );
@@ -236,17 +402,25 @@ export async function sendConsentExpirationReminder(consentId: string): Promise<
     if (retryState.escalationReady) {
       logger.error(
         buildReminderLifecycleEvent({
-          stage: 'escalation',
+          stage: 'escalation_open',
           patientId: 'unknown',
           channel: 'EMAIL',
           templateName: 'Consent Expiration Reminder',
           category: 'consent',
           reminderId: consentId,
           error: retryState.escalationReason || errorMessage,
+          correlationId,
           retryState,
         })
       );
     }
+    await persistConsentReminderFailureRecord({
+      consentId,
+      patientId: 'unknown',
+      correlationId,
+      reason: errorMessage,
+      retryState,
+    });
     return false;
   }
 }

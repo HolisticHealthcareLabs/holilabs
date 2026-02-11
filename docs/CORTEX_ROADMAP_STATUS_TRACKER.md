@@ -160,6 +160,24 @@ Status key:
 - Recommended pre-export metadata sync:
   - `pnpm docs:cortex:update:tracker`
 
+### Evidence export checklist (operator-ready)
+
+Run this sequence for every weekly/monthly export:
+
+1. Validate `raw_data` append-only integrity (no overwritten historical rows).
+2. Set target period in `weekly_rollup!B1` and refresh `weekly_rollup -> country_rollup -> board_export`.
+3. Confirm metric IDs/query refs in notes match:
+   - `METRIC-TRUST-SCORE-V1` (`qry.governance.trust_score.v1`)
+   - `METRIC-INTERVENTIONS-V1` (`qry.governance.interventions.count.v1`)
+   - `METRIC-HARD-BRAKES-V1` (`qry.governance.interventions.hard_brakes_ratio.v1`)
+   - `METRIC-UPTIME-V1` (`qry.governance.runtime.uptime.v1`)
+   - `METRIC-PROTOCOLS-ACTIVE-V1` (`qry.governance.protocols.active_ratio.v1`)
+4. Generate deterministic artifact names:
+   - Weekly: `cortex-board-packet-weekly-YYYY-MM-DD.pdf`, `cortex-board-raw-data-weekly-YYYY-MM-DD.csv`, `cortex-board-notes-weekly-YYYY-MM-DD.md`
+   - Monthly: `cortex-board-packet-monthly-YYYY-MM.pdf`, `cortex-board-raw-data-monthly-YYYY-MM.csv`, `cortex-board-notes-monthly-YYYY-MM.md`
+5. Run helper plan check (dry mode):
+   - `node scripts/cortex-export-helper.js --mode weekly --week-ending YYYY-MM-DD --dry-run`
+
 ---
 
 ## 7) Weekly Update Template (copy/paste)

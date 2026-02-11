@@ -37,7 +37,32 @@ const electronAPI = {
     vdiEnvironment: string | null;
     ehr: EHRFingerprint;
     connection: 'connected' | 'degraded' | 'offline';
+    permissions: {
+      screen: 'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown';
+      accessibility: boolean;
+    };
   }> => ipcRenderer.invoke('get:status'),
+
+  // Permissions (macOS)
+  getPermissions: (): Promise<{
+    platform: string;
+    screen: 'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown';
+    accessibility: boolean;
+  }> => ipcRenderer.invoke('permissions:get'),
+
+  requestAccessibility: (): Promise<{ ok: boolean; accessibility: boolean }> =>
+    ipcRenderer.invoke('permissions:requestAccessibility'),
+
+  requestScreenRecording: (): Promise<{
+    ok: boolean;
+    screen: 'not-determined' | 'granted' | 'denied' | 'restricted' | 'unknown';
+  }> => ipcRenderer.invoke('permissions:requestScreenRecording'),
+
+  openAccessibilitySettings: (): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('permissions:openAccessibilitySettings'),
+
+  openScreenRecordingSettings: (): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('permissions:openScreenRecordingSettings'),
 
   // Toggle minimize state
   toggleMinimize: (): void => ipcRenderer.send('toggle:minimize'),
@@ -83,6 +108,15 @@ const electronAPI = {
       callback(data);
     ipcRenderer.on('decision:recorded', listener);
     return () => ipcRenderer.removeListener('decision:recorded', listener);
+  },
+
+  onPermissionsRequired: (
+    callback: (data: { screen: string; accessibility: boolean }) => void
+  ): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, data: { screen: string; accessibility: boolean }) =>
+      callback(data);
+    ipcRenderer.on('permissions:required', listener);
+    return () => ipcRenderer.removeListener('permissions:required', listener);
   },
 };
 

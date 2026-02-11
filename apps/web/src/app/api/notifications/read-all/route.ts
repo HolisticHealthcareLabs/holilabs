@@ -10,6 +10,7 @@ import { auth } from '@/lib/auth/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { markAllNotificationsAsRead } from '@/lib/notifications';
 import logger from '@/lib/logger';
+import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -17,6 +18,19 @@ export async function PUT(request: NextRequest) {
     const clinicianSession = await auth();
 
     if (clinicianSession?.user?.id) {
+      // Demo mode (DB-FREE)
+      if (isDemoClinician(clinicianSession.user.id, clinicianSession.user.email ?? null)) {
+        const count = getSyntheticNotifications().filter((n) => !n.isRead).length;
+        return NextResponse.json(
+          {
+            success: true,
+            message: 'Todas las notificaciones marcadas como leídas',
+            data: { count },
+          },
+          { status: 200 }
+        );
+      }
+
       // Mark all clinician notifications as read
       const result = await markAllNotificationsAsRead(
         clinicianSession.user.id,

@@ -3,11 +3,11 @@
 /**
  * Language Context Provider
  * Manages language selection with localStorage persistence
- * Priority: User preference → Browser language → Spanish default
+ * Priority: User preference → English default
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { type Locale, defaultLocale } from '@/i18n/shared';
+import { type Locale } from '@/i18n/shared';
 import { logger } from '@/lib/logger';
 
 interface LanguageContextType {
@@ -17,48 +17,55 @@ interface LanguageContextType {
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const DEFAULT_LOCALE: Locale = 'en';
+const LOCALE_STORAGE_KEY = 'locale';
+const SUPPORTED_LOCALES: Locale[] = ['en', 'es', 'pt'];
+
+const isLocale = (value: string | null): value is Locale => {
+  return value !== null && SUPPORTED_LOCALES.includes(value as Locale);
+};
 
 /**
  * Detect user's preferred language
  * Priority order:
  * 1. User's saved preference (localStorage)
- * 2. Browser language
- * 3. Default (Spanish for Mexican market)
+ * 2. Default (English)
  */
 const detectUserLanguage = (): Locale => {
-  // 1. Check localStorage first
-  if (typeof window !== 'undefined') {
-    const savedLocale = localStorage.getItem('locale') as Locale;
-    if (savedLocale && ['es', 'en', 'pt'].includes(savedLocale)) {
+  // 1. Check localStorage first (explicit user preference)
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (isLocale(savedLocale)) {
       return savedLocale;
-    }
-
-    // 2. Check browser language
-    const browserLang =
-      typeof navigator !== 'undefined' && typeof navigator.language === 'string'
-        ? navigator.language.split('-')[0]
-        : '';
-    if (['es', 'en', 'pt'].includes(browserLang)) {
-      return browserLang as Locale;
     }
   }
 
-  // 3. Default to English
-  return 'en';
+  // 2. Default to English (no browser auto-override)
+  return DEFAULT_LOCALE;
 };
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(defaultLocale);
+  const parentContext = useContext(LanguageContext);
+  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
   const [translations, setTranslations] = useState<Record<string, any>>({});
 
   // Detect and set initial locale on mount
   useEffect(() => {
+    if (parentContext) {
+      return;
+    }
     const detectedLocale = detectUserLanguage();
     setLocaleState(detectedLocale);
-  }, []);
+    if (typeof window !== 'undefined' && window.localStorage && !window.localStorage.getItem(LOCALE_STORAGE_KEY)) {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, DEFAULT_LOCALE);
+    }
+  }, [parentContext]);
 
   // Load translations when locale changes
   useEffect(() => {
+    if (parentContext) {
+      return;
+    }
     const loadTranslations = async () => {
       try {
         const messages = await import(`../../messages/${locale}.json`);
@@ -72,11 +79,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }
     };
     loadTranslations();
-  }, [locale]);
+  }, [locale, parentContext]);
 
   const setLocale = (newLocale: Locale) => {
+    if (parentContext) {
+      parentContext.setLocale(newLocale);
+      return;
+    }
     setLocaleState(newLocale);
-    localStorage.setItem('locale', newLocale);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+    }
   };
 
   // Translation function with dot notation support
@@ -98,6 +111,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     return typeof value === 'string' ? value : key;
   };
+
+  if (parentContext) {
+    return <>{children}</>;
+  }
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, t }}>

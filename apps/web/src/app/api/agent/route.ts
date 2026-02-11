@@ -261,6 +261,52 @@ const TOOL_ROUTES: Record<string, { method: string; path: string }> = {
   'get-storage-status': { method: 'GET', path: '/api/health/storage' },
 };
 
+const KNOWN_VALIDATE_DOSE_STATUSES = new Set([
+  'safe',
+  'warning',
+  'dangerous',
+  'unknown',
+  'attestation_required',
+]);
+
+function normalizeValidateDoseToolResponse(data: unknown): unknown {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  const record = data as Record<string, unknown>;
+  const nested = record.data;
+  if (!nested || typeof nested !== 'object') {
+    return data;
+  }
+
+  const clinical = nested as Record<string, unknown>;
+  const rawStatus = clinical.status;
+  if (typeof rawStatus !== 'string') {
+    return data;
+  }
+
+  if (KNOWN_VALIDATE_DOSE_STATUSES.has(rawStatus)) {
+    return data;
+  }
+
+  return {
+    ...record,
+    data: {
+      ...clinical,
+      status: 'unknown',
+      recommendation:
+        typeof clinical.recommendation === 'string'
+          ? `${clinical.recommendation} (Unrecognized status received; treated as unknown for safety.)`
+          : 'Unrecognized status received from validate-dose; treated as unknown for safety.',
+    },
+    metadata: {
+      ...(record.metadata && typeof record.metadata === 'object' ? (record.metadata as Record<string, unknown>) : {}),
+      warning: 'Unrecognized validate-dose status normalized to unknown.',
+    },
+  };
+}
+
 export async function POST(request: NextRequest) {
   // 1. Verify session (agents must have valid session)
   const session = await auth();
@@ -338,7 +384,8 @@ export async function POST(request: NextRequest) {
   });
 
   // 8. Return response with tool metadata
-  const data = await response.json();
+  const rawData = await response.json();
+  const data = tool === 'validate-dose' ? normalizeValidateDoseToolResponse(rawData) : rawData;
 
   return NextResponse.json(
     {

@@ -11,6 +11,7 @@ import { requirePatientSession } from '@/lib/auth/patient-session';
 import { getNotifications } from '@/lib/notifications';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,6 +24,14 @@ export async function GET(request: NextRequest) {
     const clinicianSession = await auth();
 
     if (clinicianSession?.user?.id) {
+      // Demo mode (DB-FREE)
+      if (isDemoClinician(clinicianSession.user.id, clinicianSession.user.email ?? null)) {
+        const all = getSyntheticNotifications();
+        const filtered = unreadOnly ? all.filter((n) => !n.isRead) : all;
+        const page = filtered.slice(offset, offset + limit);
+        return NextResponse.json({ success: true, data: page }, { status: 200 });
+      }
+
       // Clinician notifications
       const notifications = await getNotifications(
         clinicianSession.user.id,

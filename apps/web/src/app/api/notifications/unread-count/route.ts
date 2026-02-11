@@ -10,6 +10,7 @@ import { auth } from '@/lib/auth/auth';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { getUnreadCount } from '@/lib/notifications';
 import logger from '@/lib/logger';
+import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,6 +18,12 @@ export async function GET(request: NextRequest) {
     const clinicianSession = await auth();
 
     if (clinicianSession?.user?.id) {
+      // Demo mode (DB-FREE)
+      if (isDemoClinician(clinicianSession.user.id, clinicianSession.user.email ?? null)) {
+        const count = getSyntheticNotifications().filter((n) => !n.isRead).length;
+        return NextResponse.json({ success: true, data: { count } }, { status: 200 });
+      }
+
       // Clinician unread count
       const count = await getUnreadCount(clinicianSession.user.id, 'CLINICIAN');
 

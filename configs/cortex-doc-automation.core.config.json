@@ -1,0 +1,42 @@
+{
+  "defaultOwner": "PL",
+  "documents": [
+    {
+      "path": "docs/CORTEX_LATAM_EXECUTION_ROADMAP_2026.md",
+      "owner": "PL",
+      "cadence": "weekly"
+    },
+    {
+      "path": "docs/CORTEX_ROADMAP_STATUS_TRACKER.md",
+      "owner": "PL",
+      "cadence": "friday",
+      "appendAutoLog": true
+    },
+    {
+      "path": "docs/CORTEX_WEEKLY_BOARD_SCORECARD_TEMPLATE.md",
+      "owner": "OIL",
+      "cadence": "weekly"
+    },
+    {
+      "path": "docs/CORTEX_PILOT_TRACKER_TEMPLATE.md",
+      "owner": "OIL",
+      "cadence": "weekly"
+    },
+    {
+      "path": "docs/CORTEX_SHEETS_ROLLUP_GUIDE.md",
+      "owner": "DAL",
+      "cadence": "monday"
+    },
+    {
+      "path": "docs/CORTEX_BOARD_EXPORT_LAYOUT.md",
+      "owner": "DAL",
+      "cadence": "monday"
+    },
+    {
+      "path": "docs/CORTEX_DOC_AUTOMATION_SETUP.md",
+      "owner": "PL",
+      "cadence": "weekly"
+    }
+  ]
+}
+

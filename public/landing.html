@@ -57,8 +57,8 @@ FastAPI (Python 3.11+)
 
 AI/ML LAYER
 ───────────
-Primary: Whisper (OpenAI open-source) + Llama 3.1 (via Ollama)
-- Whisper: State-of-art open-source STT, multilingual, medical terminology support
+Primary: Whisper (speech-to-text) + Llama 3.1 (via Ollama)
+- Whisper: State-of-art STT, multilingual, medical terminology support
 - Llama 3.1 70B: Self-hosted LLM for SOAP note generation, clinical reasoning
 - Transformers.js: In-browser ML for client-side de-identification (optional)
 - Backup: Anthropic Claude API (for production reliability during transition)
@@ -66,7 +66,7 @@ Primary: Whisper (OpenAI open-source) + Llama 3.1 (via Ollama)
 INTEROPERABILITY (FHIR)
 ───────────────────────
 Medplum (TypeScript/Node.js)
-- Rationale: Modern, open-source (Apache 2.0), HIPAA/SOC2 compliant out-of-box,
+- Rationale: Modern FHIR R4 server with SMART support and active development.
   native FHIR R4 support, built-in auth (SMART-on-FHIR), and active development.
 - Alternative: HAPI FHIR (Java) if enterprise Java infrastructure exists
 - Integration: FHIR.js client libraries for frontend consumption
@@ -121,7 +121,7 @@ Docker Compose (dev) → Kubernetes (prod)
             <div class="text-center space-y-8">
                 <div class="inline-block">
                     <span class="px-4 py-1.5 bg-gray-800 text-primary text-sm font-medium rounded-full border border-gray-700">
-                        Open-Source Healthcare Infrastructure
+                        Standards-based Healthcare Infrastructure (Concept)
                     </span>
                 </div>
                 <h1 class="text-5xl md:text-7xl font-bold leading-tight">
@@ -189,8 +189,8 @@ Docker Compose (dev) → Kubernetes (prod)
                     </div>
                     <h3 class="text-2xl font-bold mb-4">AI-Powered Scribe</h3>
                     <p class="text-gray-400 leading-relaxed mb-4">
-                        Real-time medical transcription using Whisper (open-source STT) + Llama 3.1.
-                        Generates SOAP notes automatically. Eliminates 6+ hours of daily documentation burden.
+                        Real-time medical transcription using Whisper + Llama 3.1.
+                        Generates draft SOAP notes with clinician review to reduce documentation burden.
                     </p>
                     <div class="flex flex-wrap gap-2">
                         <span class="px-3 py-1 bg-gray-800 text-xs rounded-full text-gray-300">Whisper</span>
@@ -208,7 +208,7 @@ Docker Compose (dev) → Kubernetes (prod)
                     </div>
                     <h3 class="text-2xl font-bold mb-4">Interoperable HIMS</h3>
                     <p class="text-gray-400 leading-relaxed mb-4">
-                        FHIR R4-native health information system. Built on Medplum (open-source).
+                        FHIR R4-native health information system. Built on Medplum.
                         Data flows between providers instantly. No more fax machines or PDF hell.
                     </p>
                     <div class="flex flex-wrap gap-2">
@@ -298,7 +298,7 @@ Docker Compose (dev) → Kubernetes (prod)
                 <div class="space-y-4">
                     <h3 class="text-2xl font-bold text-white">Holi Protocol is the Infrastructure</h3>
                     <p>
-                        We're building the missing layer: an open-source, proactive, prevention-first protocol.
+                        We're building the missing layer: a proactive, prevention-first, standards-based protocol.
                         It restores clinician time through AI automation. It unifies patient data through FHIR compliance.
                         It empowers patients with verifiable, portable records. It shifts incentives from managing
                         sickness to cultivating health.
@@ -307,7 +307,7 @@ Docker Compose (dev) → Kubernetes (prod)
 
                 <div class="pt-8 border-t border-gray-800">
                     <p class="text-xl font-semibold text-primary">
-                        This is not a product. This is a protocol. Open-source. Community-governed. Built for permanence.
+                        This is not a product. This is a protocol — built on open standards and designed for interoperability.
                     </p>
                 </div>
             </div>
@@ -405,7 +405,7 @@ Docker Compose (dev) → Kubernetes (prod)
                 </button>
             </div>
             <p class="text-sm text-gray-500">
-                Open-source contributors get priority access.
+                Early contributors get priority access.
                 <a href="https://github.com" class="text-primary hover:underline">View GitHub →</a>
             </p>
         </div>
@@ -421,7 +421,7 @@ Docker Compose (dev) → Kubernetes (prod)
                         <span class="text-xl font-bold">Holi Protocol</span>
                     </div>
                     <p class="text-gray-400 text-sm">
-                        Open-source healthcare infrastructure for a proactive, prevention-first future.
+                        Healthcare infrastructure for a proactive, prevention-first future.
                     </p>
                 </div>
 
@@ -451,14 +451,14 @@ Docker Compose (dev) → Kubernetes (prod)
                         <li><a href="#" class="hover:text-primary transition-colors">Privacy Policy</a></li>
                         <li><a href="#" class="hover:text-primary transition-colors">Terms of Service</a></li>
                         <li><a href="#" class="hover:text-primary transition-colors">HIPAA Notice</a></li>
-                        <li><a href="#" class="hover:text-primary transition-colors">License (MIT)</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Security Overview</a></li>
                     </ul>
                 </div>
             </div>
 
             <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <p class="text-gray-500 text-sm">
-                    © 2025 Holi Protocol. Open-source under MIT License.
+                    © 2025 Holi Protocol. All rights reserved.
                 </p>
                 <div class="flex items-center space-x-6">
                     <a href="#" class="text-gray-400 hover:text-primary transition-colors">

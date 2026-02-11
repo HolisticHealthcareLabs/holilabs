@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export function Hero() {
     return (
-        <section className="relative h-screen min-h-[800px] flex items-center overflow-hidden pt-24 bg-background transition-colors duration-300">
+        <section className="relative min-h-screen flex items-center overflow-hidden pt-20 sm:pt-24 pb-12 bg-background transition-colors duration-300">
 
             {/* Abstract Hero Background */}
             <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -24,7 +24,7 @@ export function Hero() {
                 />
             </div>
 
-            <div className="container mx-auto px-6 relative z-10 max-w-7xl">
+            <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-7xl">
                 <div className="max-w-4xl">
 
                     {/* Status Pill */}
@@ -32,10 +32,10 @@ export function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.1 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border shadow-sm mb-8"
+                        className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-card border border-border shadow-sm mb-6 sm:mb-8"
                     >
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground text-blue-600 dark:text-blue-400">Clinical Labs v2.0 Beta</span>
+                        <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-muted-foreground text-blue-600 dark:text-blue-400">Inpatient Cardiology Pilot</span>
                     </motion.div>
 
                     {/* Headline */}
@@ -43,11 +43,11 @@ export function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight mb-8 text-foreground"
+                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] sm:leading-[1.05] tracking-tight mb-6 sm:mb-8 text-foreground"
                     >
-                        Medical Intelligence <br />
+                        Cortex by Holi Labs. <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-500">
-                            Redefined.
+                            Safeguard every decision.
                         </span>
                     </motion.h1>
 
@@ -56,10 +56,10 @@ export function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.3 }}
-                        className="text-xl md:text-2xl text-muted-foreground leading-relaxed font-light mb-12 max-w-2xl"
+                        className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground leading-relaxed font-light mb-8 sm:mb-12 max-w-2xl"
                     >
-                        Ensuring safety and accuracy across the clinical workflow. Holi Labs provides the underlying infrastructure for the next generation of healthcare products.
-                        <span className="block mt-4 font-medium text-foreground text-blue-600 dark:text-blue-400">Umbrella for Clinical Assurance.</span>
+                        Real-time clinical safety support that works alongside your EHR. Generative AI helps with documentation; deterministic clinical logic protects high-risk decisions with clear rationale and auditability.
+                        <span className="block mt-3 sm:mt-4 font-medium text-foreground text-blue-600 dark:text-blue-400">Web-first for LATAM workflows, with an optional lightweight desktop companion.</span>
                     </motion.p>
 
                     {/* CTAs */}
@@ -67,20 +67,22 @@ export function Hero() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.4 }}
-                        className="flex flex-col sm:flex-row items-start gap-4"
+                        className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4"
                     >
                         <Link
-                            href="/dashboard"
-                            className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-lg font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-all hover:scale-105 shadow-xl shadow-primary/20"
+                            href="/auth/register"
+                            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-all hover:scale-105 shadow-xl shadow-primary/20 text-center"
                         >
-                            Access Command Center
+                            <span className="hidden sm:inline">For Private Practice: Start Free Beta</span>
+                            <span className="sm:hidden">Start Free Beta</span>
                         </Link>
-                        <a
-                            href="#platform"
-                            className="inline-flex items-center justify-center px-8 py-4 rounded-xl text-lg font-semibold text-foreground bg-card border border-border hover:bg-muted transition-all hover:border-muted-foreground/20"
+                        <Link
+                            href="#demo"
+                            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold text-foreground bg-card border border-border hover:bg-muted transition-all hover:border-muted-foreground/20 text-center"
                         >
-                            View Architecture
-                        </a>
+                            <span className="hidden sm:inline">For Enterprise: Request Cortex Pilot</span>
+                            <span className="sm:hidden">Request Pilot</span>
+                        </Link>
                     </motion.div>
 
                 </div>

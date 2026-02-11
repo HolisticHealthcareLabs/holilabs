@@ -7,6 +7,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,41 +36,36 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      // MVP: Call our custom API instead of NextAuth
-      const res = await fetch('http://localhost:3001/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+      // Use NextAuth Credentials provider (same-origin).
+      // Supports demo login without requiring any separate backend service.
+      const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+        callbackUrl,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || 'Invalid credentials');
+      if (!result || result.error) {
+        setError('Invalid credentials');
         setIsLoading(false);
         return;
       }
 
-      // Success: Store token
-      localStorage.setItem('auth_token', data.token);
-      document.cookie = `auth_token=${data.token}; path=/; max-age=86400`; // Cookie for middleware if needed
-
-      // Redirect to dashboard
-      const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
       router.push(callbackUrl);
       router.refresh();
 
     } catch (err) {
       console.error(err);
-      setError('Connection error. Is the backend running?');
+      setError('Sign-in failed. Please try again.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-3 sm:p-4 relative overflow-hidden">
       {/* Theme Toggle & Language Switcher - Top Right */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+      <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-20 flex items-center gap-2">
         <LanguageSwitch />
         <ThemeToggleIcon />
       </div>
@@ -83,45 +79,52 @@ function LoginContent() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-6 sm:mb-8"
         >
-          <div className="inline-flex items-center justify-center mb-4">
-            <img
-              src="/logos/Logo 1_Dark.svg"
-              alt="Holi Labs"
-              className="h-16 w-auto"
-            />
+          <div className="inline-flex items-center justify-center mb-3 sm:mb-4">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16">
+              <Image
+                src="/logos/Logo 1_Dark.svg"
+                alt="Holi Labs"
+                width={64}
+                height={64}
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
             Holi Labs
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Clinician Portal</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs sm:text-sm">Clinician Portal</p>
         </motion.div>
 
-        {/* Demo Access Banner */}
+        {/* Demo Access Banner - enforced dark text for light mode */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-xl p-5"
+          className="mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 sm:p-5"
+          style={{
+            background: 'linear-gradient(to bottom right, rgb(239 246 255), rgb(238 242 255))',
+            borderColor: 'rgb(191 219 254)',
+          }}
         >
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-              {/* Removed "eye" icon per request */}
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+            <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11l.75 2.25L22 14l-2.25.75L19 17l-.75-2.25L16 14l2.25-.75L19 11z" />
               </svg>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-1">Try the Demo</p>
-              <p className="text-xs text-blue-800 dark:text-blue-200 mb-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold mb-1" style={{ color: 'rgb(30 58 138)' }}>Try the Demo</p>
+              <p className="text-xs mb-3" style={{ color: 'rgb(30 64 175)' }}>
                 Explore HoliLabs with a demo clinician account pre-loaded with patient data.
               </p>
               <button
                 type="button"
                 onClick={fillDemoCredentials}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-sm"
               >
                 Load Demo Credentials
               </button>
@@ -134,12 +137,12 @@ function LoginContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8"
+          className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 sm:p-8"
         >
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Welcome back
           </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">
             Sign in to access your clinician dashboard
           </p>
 
@@ -153,9 +156,9 @@ function LoginContent() {
                 transition={{ duration: 0.2 }}
                 className="mb-4"
               >
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3">
                   <svg
-                    className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                    className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -167,16 +170,16 @@ function LoginContent() {
                       d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="login-form space-y-4">
+          <form onSubmit={handleSubmit} className="login-form space-y-3 sm:space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 Email address
               </label>
               <input
@@ -188,12 +191,12 @@ function LoginContent() {
                 required
                 autoFocus
                 disabled={isLoading}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 sm:mb-2">
                 Password
               </label>
               <div className="relative">
@@ -205,12 +208,13 @@ function LoginContent() {
                   placeholder="••••••••"
                   required
                   disabled={isLoading}
-                  className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-11 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,10 +317,10 @@ function LoginContent() {
           */}
 
           {/* Create Profile Link */}
-          <div className="create-account-link mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Don't have an account?{' '}
-              <a href="/auth/register" className="text-blue-600 hover:text-blue-700 font-semibold transition-colors">
+          <div className="create-account-link mt-4 sm:mt-6 text-center">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+              Don&apos;t have an account?{' '}
+              <a href="/auth/register" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-semibold transition-colors">
                 Create new profile
               </a>
             </p>
@@ -328,15 +332,15 @@ function LoginContent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-center mt-8"
+          className="text-center mt-6 sm:mt-8"
         >
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
             Need help?{' '}
             <a href="/contact" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
               Contact Support
             </a>
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 sm:mt-4">
             Protected by industry-standard authentication
           </p>
         </motion.div>
