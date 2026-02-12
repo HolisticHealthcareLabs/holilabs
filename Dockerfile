@@ -70,8 +70,10 @@ RUN pnpm build
 WORKDIR /app/apps/web
 RUN pnpm prisma generate
 
-# Build the web app
+# Build the web app (increase heap for TypeScript checker on memory-constrained CI)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm build
+ENV NODE_OPTIONS=""
 
 FROM base AS runner
 WORKDIR /app

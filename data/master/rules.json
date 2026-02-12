@@ -1,0 +1,935 @@
+{
+  "$schema": "data/master/schemas/rule.schema.json",
+  "version": "1.0.0",
+  "generatedAt": "2026-02-12T18:31:12.962Z",
+  "generatedBy": "scripts/extract-master-data.ts",
+  "piiScanResult": "CLEAN",
+  "rules": [
+    {
+      "ruleId": "DOAC-CrCl-Rivaroxaban-001",
+      "medication": "rivaroxaban",
+      "condition": "creatinineClearance < 15",
+      "severity": "BLOCK",
+      "rationale": "Rivaroxaban is contraindicated when CrCl < 15 ml/min due to increased bleeding risk.",
+      "provenance": {
+        "sourceAuthority": "European Society of Cardiology",
+        "sourceDocument": "2024 ESC Guidelines on Chronic Coronary Syndromes",
+        "sourceVersion": "2024.1",
+        "effectiveDate": "2024-08-30",
+        "citationUrl": "https://doi.org/10.1093/eurheartj/ehae177",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-CrCl-Apixaban-001",
+      "medication": "apixaban",
+      "condition": "creatinineClearance < 15",
+      "severity": "BLOCK",
+      "rationale": "Apixaban is not recommended when CrCl < 15 ml/min (no clinical data).",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Eliquis (apixaban) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2016/202155s012lbl.pdf",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-CrCl-Edoxaban-001",
+      "medication": "edoxaban",
+      "condition": "creatinineClearance < 15",
+      "severity": "BLOCK",
+      "rationale": "Edoxaban is contraindicated when CrCl < 15 ml/min.",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+        "sourceVersion": "2021.1",
+        "effectiveDate": "2021-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-CrCl-Edoxaban-002",
+      "medication": "edoxaban",
+      "condition": "creatinineClearance > 95",
+      "severity": "BLOCK",
+      "rationale": "Edoxaban should not be used in patients with CrCl > 95 ml/min due to reduced efficacy (increased clearance).",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+        "sourceVersion": "2021.1",
+        "effectiveDate": "2021-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-CrCl-Dabigatran-001",
+      "medication": "dabigatran",
+      "condition": "creatinineClearance < 15",
+      "severity": "BLOCK",
+      "rationale": "Dabigatran is contraindicated when CrCl < 15 ml/min.",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Pradaxa (dabigatran) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2018/022512s035lbl.pdf",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Age-Apixaban-001",
+      "medication": "apixaban",
+      "condition": "age >= 80 AND weight <= 60",
+      "severity": "FLAG",
+      "rationale": "Dose reduction to 2.5mg BID recommended for patients with 2 of 3 criteria: Age ≥ 80, Weight ≤ 60kg, Creatinine ≥ 1.5mg/dL.",
+      "provenance": {
+        "sourceAuthority": "European Heart Rhythm Association",
+        "sourceDocument": "EHRA Practical Guide on the use of NOACs",
+        "sourceVersion": "2021.1",
+        "effectiveDate": "2021-04-25",
+        "citationUrl": "https://doi.org/10.1093/europace/euab065",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Interaction-Rivaroxaban-Ketoconazole",
+      "medication": "rivaroxaban",
+      "condition": "interactingMedication == 'ketoconazole'",
+      "severity": "BLOCK",
+      "rationale": "Concomitant use of Rivaroxaban with strong CYP3A4/P-gp inhibitors (like Ketoconazole) is contraindicated.",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Xarelto (rivaroxaban) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2011/202439s001lbl.pdf",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Interaction-Apixaban-Carbamazepine",
+      "medication": "apixaban",
+      "condition": "interactingMedication == 'carbamazepine'",
+      "severity": "FLAG",
+      "rationale": "Strong CYP3A4 inducers (like Carbamazepine) decrease Apixaban exposure. Avoid co-administration.",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Eliquis (apixaban) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2016/202155s012lbl.pdf",
+        "evidenceGrade": "B",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Weight-Edoxaban-001",
+      "medication": "edoxaban",
+      "condition": "weight <= 60",
+      "severity": "FLAG",
+      "rationale": "Dose reduction to 30mg QD recommended for weight ≤ 60kg.",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+        "sourceVersion": "2021.1",
+        "effectiveDate": "2021-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Interaction-Dabigatran-Dronedarone",
+      "medication": "dabigatran",
+      "condition": "interactingMedication == 'dronedarone' AND creatinineClearance < 30",
+      "severity": "BLOCK",
+      "rationale": "Dabigatran is contraindicated with P-gp inhibitors like Dronedarone in patients with CrCl < 30 ml/min.",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Pradaxa (dabigatran) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2018/022512s035lbl.pdf",
+        "evidenceGrade": "A",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Stale-Renal-001",
+      "medication": "rivaroxaban",
+      "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Stale Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Stale-Renal-002",
+      "medication": "apixaban",
+      "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Stale Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Stale-Renal-003",
+      "medication": "edoxaban",
+      "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Stale Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Stale-Renal-004",
+      "medication": "dabigatran",
+      "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Stale Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Missing-Weight-001",
+      "medication": "apixaban",
+      "condition": "weight == null",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Patient weight is missing. Weight is required for Apixaban dosing criteria.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Missing Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Missing-Age-001",
+      "medication": "apixaban",
+      "condition": "age == null",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Patient age is missing. Age is required for Apixaban dosing criteria.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Missing Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Missing-CrCl-001",
+      "medication": "rivaroxaban",
+      "condition": "creatinineClearance == null",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Creatinine Clearance is missing. Renal function is required for Rivaroxaban safety check.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Missing Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Missing-CrCl-002",
+      "medication": "edoxaban",
+      "condition": "creatinineClearance == null",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Creatinine Clearance is missing. Renal function is required for Edoxaban safety check.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Missing Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Missing-CrCl-003",
+      "medication": "dabigatran",
+      "condition": "creatinineClearance == null",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Creatinine Clearance is missing. Renal function is required for Dabigatran safety check.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Missing Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "DOAC-Missing-CrCl-004",
+      "medication": "apixaban",
+      "condition": "creatinineClearance == null",
+      "severity": "ATTESTATION_REQUIRED",
+      "rationale": "Creatinine Clearance is missing. Renal function is required for Apixaban dosing check.",
+      "provenance": {
+        "sourceAuthority": "Holi Labs Clinical Governance",
+        "sourceDocument": "Missing Data Policy v1.0",
+        "sourceVersion": "1.0",
+        "effectiveDate": "2026-02-11",
+        "citationUrl": "internal-policy",
+        "evidenceGrade": "Expert Consensus",
+        "reviewedBy": "Elena (CMO)",
+        "lastReviewDate": "2026-02-11"
+      },
+      "_sourceFile": "doac-rules.json",
+      "_sourceCategory": "DOAC_SAFETY"
+    },
+    {
+      "ruleId": "MED_CONTRA_001",
+      "name": "Non-Selective Beta-Blocker in Asthma",
+      "domain": "CONTRAINDICATION",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "GINA Guidelines",
+        "sourceDocument": "Global Initiative for Asthma – GINA 2024 Report",
+        "sourceVersion": "2024-rev1",
+        "effectiveDate": "2024-01-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://ginasthma.org/reports/",
+        "licenseType": "CC-BY-4.0"
+      },
+      "logic": {
+        "and": [
+          {
+            "in": [
+              "Asthma",
+              {
+                "var": "patient_conditions"
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Non-selective Beta-blocker",
+                    "Beta-blocker"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "propranolol",
+                    "nadolol",
+                    "timolol",
+                    "sotalol",
+                    "carvedilol"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Beta-blockers may precipitate bronchospasm in asthmatic patients.",
+        "recommendation": "Consider cardioselective beta-blocker (e.g., metoprolol, bisoprolol) or alternative antihypertensive."
+      },
+      "tags": [
+        "respiratory",
+        "beta-blocker",
+        "asthma"
+      ],
+      "_sourceFile": "contraindications-v1.json",
+      "_sourceCategory": "CONTRAINDICATION"
+    },
+    {
+      "ruleId": "MED_CONTRA_002",
+      "name": "Penicillin-Class Antibiotic in Penicillin Allergy",
+      "domain": "ALLERGY",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "CDC Guidelines",
+        "sourceDocument": "CDC Antibiotic Use Guidelines 2023",
+        "sourceVersion": "2023-v1",
+        "effectiveDate": "2023-06-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.cdc.gov/antibiotic-use/",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "in": [
+                  "Penicillin Allergy",
+                  {
+                    "var": "patient_allergies"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "penicillin",
+                  {
+                    "var": "patient_allergies"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "PCN Allergy",
+                  {
+                    "var": "patient_allergies"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Penicillin",
+                    "Aminopenicillin"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "amoxicillin",
+                    "ampicillin",
+                    "penicillin",
+                    "piperacillin",
+                    "augmentin"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient has documented penicillin allergy. Risk of anaphylaxis.",
+        "recommendation": "Consider azithromycin, fluoroquinolone, or confirm allergy status before proceeding."
+      },
+      "tags": [
+        "allergy",
+        "antibiotic",
+        "penicillin"
+      ],
+      "_sourceFile": "contraindications-v1.json",
+      "_sourceCategory": "CONTRAINDICATION"
+    },
+    {
+      "ruleId": "MED_CONTRA_003",
+      "name": "Methotrexate in Pregnancy",
+      "domain": "CONTRAINDICATION",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "FDA Pregnancy Category X Label – Methotrexate",
+        "sourceVersion": "2023-label",
+        "effectiveDate": "2023-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "patient_pregnant"
+                  },
+                  true
+                ]
+              },
+              {
+                "in": [
+                  "Pregnant",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "Pregnancy",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "methotrexate",
+                    "mtx",
+                    "trexall",
+                    "rasuvo",
+                    "otrexup"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Antimetabolite",
+                    "DMARD"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "PREGNANCY CATEGORY X: Methotrexate is contraindicated in pregnancy. Known to cause fetal death and teratogenic effects.",
+        "recommendation": "Discontinue methotrexate. Confirm pregnancy status. Consider alternative therapy (e.g., sulfasalazine if indicated)."
+      },
+      "tags": [
+        "pregnancy",
+        "teratogen",
+        "category-x"
+      ],
+      "_sourceFile": "contraindications-v1.json",
+      "_sourceCategory": "CONTRAINDICATION"
+    },
+    {
+      "ruleId": "MED_CONTRA_004",
+      "name": "NSAID in Chronic Kidney Disease (Stage 3-5)",
+      "domain": "CONTRAINDICATION",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "KDIGO",
+        "sourceDocument": "KDIGO CKD Guidelines 2024",
+        "sourceVersion": "2024-v1",
+        "effectiveDate": "2024-03-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://kdigo.org/guidelines/",
+        "licenseType": "CC-BY-NC-4.0"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "in": [
+                  "CKD",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              },
+              {
+                "in": [
+                  "Chronic Kidney Disease",
+                  {
+                    "var": "patient_conditions"
+                  }
+                ]
+              },
+              {
+                "<": [
+                  {
+                    "var": "patient_egfr"
+                  },
+                  60
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "NSAID",
+                    "Non-steroidal anti-inflammatory"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "ibuprofen",
+                    "naproxen",
+                    "meloxicam",
+                    "diclofenac",
+                    "indomethacin",
+                    "ketorolac"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "NSAIDs may worsen renal function in patients with CKD (eGFR < 60). Use with caution.",
+        "recommendation": "Consider acetaminophen for pain. If NSAID required, use lowest dose for shortest duration. Monitor renal function closely."
+      },
+      "tags": [
+        "renal",
+        "ckd",
+        "nsaid"
+      ],
+      "_sourceFile": "contraindications-v1.json",
+      "_sourceCategory": "CONTRAINDICATION"
+    },
+    {
+      "ruleId": "MED_INTER_001",
+      "name": "Opioid + Benzodiazepine Concurrent Use",
+      "domain": "INTERACTION",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "FDA Drug Safety Communication – Opioid + Benzodiazepine",
+        "sourceVersion": "2016-boxed-warning",
+        "effectiveDate": "2016-08-31",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-warns-about-serious-risks-and-death-when-combining-opioid-pain-or",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "in": [
+                  "Opioid",
+                  {
+                    "var": "current_medications_class"
+                  }
+                ]
+              },
+              {
+                "some": [
+                  {
+                    "var": "current_medications"
+                  },
+                  {
+                    "in": [
+                      {
+                        "var": ""
+                      },
+                      [
+                        "oxycodone",
+                        "hydrocodone",
+                        "morphine",
+                        "fentanyl",
+                        "codeine",
+                        "tramadol",
+                        "methadone"
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication_class"
+                  },
+                  [
+                    "Benzodiazepine"
+                  ]
+                ]
+              },
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "alprazolam",
+                    "lorazepam",
+                    "diazepam",
+                    "clonazepam"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "FDA BLACK BOX WARNING: Concurrent use of opioids and benzodiazepines may result in profound sedation, respiratory depression, coma, and death.",
+        "recommendation": "Avoid concurrent prescribing. If clinically necessary, prescribe lowest effective dosages and shortest duration. Monitor closely."
+      },
+      "tags": [
+        "opioid",
+        "benzodiazepine",
+        "black-box"
+      ],
+      "_sourceFile": "interactions-v1.json",
+      "_sourceCategory": "INTERACTION"
+    },
+    {
+      "ruleId": "MED_INTER_002",
+      "name": "Multiple QT-Prolonging Medications",
+      "domain": "INTERACTION",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "CredibleMeds",
+        "sourceDocument": "CredibleMeds QTDrugs List 2024",
+        "sourceVersion": "2024-Q1",
+        "effectiveDate": "2024-01-15",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://crediblemeds.org/",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            "some": [
+              {
+                "var": "current_medications"
+              },
+              {
+                "in": [
+                  {
+                    "var": ""
+                  },
+                  [
+                    "amiodarone",
+                    "sotalol",
+                    "haloperidol",
+                    "methadone",
+                    "ondansetron",
+                    "azithromycin",
+                    "levofloxacin",
+                    "moxifloxacin"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "or": [
+              {
+                "in": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  [
+                    "amiodarone",
+                    "sotalol",
+                    "haloperidol",
+                    "methadone",
+                    "ondansetron",
+                    "azithromycin",
+                    "levofloxacin",
+                    "moxifloxacin",
+                    "citalopram",
+                    "escitalopram"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient is on a QT-prolonging medication. Adding another may increase risk of Torsades de Pointes.",
+        "recommendation": "Check baseline QTc. Consider alternative agent. If proceeding, monitor ECG."
+      },
+      "tags": [
+        "qt-prolongation",
+        "cardiac",
+        "ecg"
+      ],
+      "_sourceFile": "interactions-v1.json",
+      "_sourceCategory": "INTERACTION"
+    },
+    {
+      "ruleId": "MED_DOSING_001",
+      "name": "Warfarin with Supratherapeutic INR",
+      "domain": "DOSING",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "CHEST/ACCP",
+        "sourceDocument": "CHEST Antithrombotic Therapy Guidelines 2022",
+        "sourceVersion": "10th-edition",
+        "effectiveDate": "2022-01-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://journal.chestnet.org/",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            ">": [
+              {
+                "var": "patient_inr"
+              },
+              4
+            ]
+          },
+          {
+            "!": {
+              "in": [
+                "Hold Warfarin",
+                {
+                  "var": "proposed_action"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "intervention": {
+        "message": "INR is supratherapeutic (> 4.0). Continuing warfarin increases bleeding risk.",
+        "recommendation": "Hold warfarin. Consider Vitamin K if INR > 10 or bleeding present. Recheck INR in 24-48 hours."
+      },
+      "tags": [
+        "anticoagulation",
+        "warfarin",
+        "inr"
+      ],
+      "_sourceFile": "dosing-v1.json",
+      "_sourceCategory": "DOSING"
+    }
+  ]
+}

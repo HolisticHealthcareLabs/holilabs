@@ -1,0 +1,128 @@
+%% CORTEX DUAL-TRACK ARCHITECTURE MAP
+%% Last Updated: 2026-02-11
+%% Owner: CTO / Principal Architect
+%% Rule: apps/* → packages/* (one-way). packages/* NEVER imports apps/*.
+
+graph TB
+    subgraph CLIENTS["🖥️ Clients"]
+        CLINIC_WEB["Clinic Web App<br/>(Next.js / React)"]
+        PATIENT_APP["Patient Portal<br/>(WhatsApp + PWA)"]
+        ENT_DASH["Enterprise Dashboard<br/>(Next.js / React)"]
+        ENT_API_CLIENT["Insurer API Consumer<br/>(REST / Webhook)"]
+    end
+
+    subgraph APPS["apps/ — Deployable Units"]
+        direction TB
+
+        subgraph CLINIC["apps/clinic (Track A — The Bridge)"]
+            direction LR
+            C_PAGES["Pages & Routes<br/>Dashboard, Patients,<br/>Appointments, Scribe"]
+            C_COMPONENTS["UI Components<br/>286 TSX files<br/>Landing, Onboarding,<br/>Chat, Calendar"]
+            C_API["Clinic API Routes<br/>appointments/, notifications/,<br/>forms/, invoices/, email/,<br/>reminders/, onboarding/"]
+            C_HOOKS["Clinic Hooks<br/>useNotifications,<br/>usePatientFilters,<br/>useDebounce"]
+        end
+
+        subgraph ENTERPRISE["apps/enterprise (Track B — The Bet)"]
+            direction LR
+            E_INGEST["TISS/TUSS Ingestion<br/>Pipeline (Python/FastAPI)"]
+            E_ML["ML Models<br/>Risk Scoring,<br/>Hospitalization Prediction,<br/>Sinistralidade Forecast"]
+            E_API["Enterprise API Routes<br/>telemetry/, analytics/,<br/>ai/, hl7/, agent/,<br/>risk-scores/"]
+            E_DASH["Enterprise Dashboard<br/>KPIs, Cohort Analysis,<br/>Insurer Reports"]
+        end
+
+        subgraph SIDECAR["apps/sidecar (Desktop Companion)"]
+            SC["Electron App<br/>(Existing — Maintenance Only)"]
+        end
+
+        subgraph API_GW["apps/api (Fastify Gateway)"]
+            GW["Rate Limiting,<br/>Auth Proxy,<br/>WebSocket Hub"]
+        end
+    end
+
+    subgraph PACKAGES["packages/ — Shared Kernel (The Jewel)"]
+        direction TB
+
+        subgraph KERNEL["packages/shared-kernel"]
+            direction LR
+            K_CLINICAL["Clinical Protocol Engine<br/>rules/, engines/,<br/>content-registry,<br/>governance-policy"]
+            K_AUTH["Auth & RBAC<br/>NextAuth, Casbin,<br/>MFA, Sessions"]
+            K_GOVERNANCE["Governance Service<br/>rules-manifest,<br/>auto-promoter,<br/>shared-types"]
+            K_CONSENT["Consent & LGPD<br/>consent-guard,<br/>recording-consent,<br/>version-manager"]
+            K_TYPES["Core Types<br/>PatientProfile,<br/>ProtocolOutput,<br/>AuditEvent"]
+        end
+
+        subgraph EXISTING_PKG["Existing Packages"]
+            P_DEID["packages/deid<br/>De-identification"]
+            P_SCHEMAS["packages/schemas<br/>Zod Validators"]
+            P_TYPES["packages/shared-types<br/>TS Interfaces"]
+            P_UTILS["packages/utils<br/>Logger, Crypto"]
+            P_DP["packages/dp<br/>Differential Privacy"]
+            P_POLICY["packages/policy<br/>OPA/Rego Rules"]
+        end
+
+        subgraph DATA["data/ — Clinical Content"]
+            D_SOURCES["data/clinical/sources/<br/>contraindications-v1.json<br/>dosing-v1.json<br/>interactions-v1.json"]
+            D_BUNDLES["data/clinical/bundles/<br/>latest.json<br/>(checksummed)"]
+        end
+    end
+
+    subgraph INFRA["Infrastructure"]
+        DB[(PostgreSQL<br/>+ pgvector)]
+        REDIS[(Redis<br/>Cache + Queue)]
+        S3["Object Storage<br/>(DO Spaces / S3)"]
+        WHATSAPP["WhatsApp<br/>Business API"]
+        LLM["LLM Gateway<br/>DeepSeek / Claude"]
+    end
+
+    %% Client connections
+    CLINIC_WEB --> C_PAGES
+    PATIENT_APP --> C_API
+    PATIENT_APP --> WHATSAPP
+    ENT_DASH --> E_DASH
+    ENT_API_CLIENT --> E_API
+
+    %% App → Package dependencies (ONE WAY)
+    C_PAGES --> K_CLINICAL
+    C_API --> K_AUTH
+    C_API --> K_CONSENT
+    C_API --> K_GOVERNANCE
+    C_COMPONENTS --> K_TYPES
+
+    E_INGEST --> K_CLINICAL
+    E_ML --> K_CLINICAL
+    E_API --> K_AUTH
+    E_API --> K_GOVERNANCE
+    E_API --> K_TYPES
+    E_DASH --> K_TYPES
+
+    %% Package → Infrastructure
+    K_AUTH --> DB
+    K_GOVERNANCE --> DB
+    K_CONSENT --> DB
+    K_CLINICAL --> D_BUNDLES
+    D_SOURCES --> D_BUNDLES
+
+    %% App → Infrastructure
+    C_API --> DB
+    C_API --> REDIS
+    C_API --> WHATSAPP
+    C_API --> LLM
+    E_INGEST --> DB
+    E_ML --> DB
+    E_API --> REDIS
+    E_ML --> LLM
+    GW --> REDIS
+
+    %% Styling
+    classDef clinic fill:#3b82f6,stroke:#1d4ed8,color:#fff
+    classDef enterprise fill:#8b5cf6,stroke:#6d28d9,color:#fff
+    classDef shared fill:#f59e0b,stroke:#d97706,color:#000
+    classDef infra fill:#6b7280,stroke:#4b5563,color:#fff
+    classDef data fill:#10b981,stroke:#059669,color:#fff
+
+    class C_PAGES,C_COMPONENTS,C_API,C_HOOKS clinic
+    class E_INGEST,E_ML,E_API,E_DASH enterprise
+    class K_CLINICAL,K_AUTH,K_GOVERNANCE,K_CONSENT,K_TYPES shared
+    class P_DEID,P_SCHEMAS,P_TYPES,P_UTILS,P_DP,P_POLICY shared
+    class DB,REDIS,S3,WHATSAPP,LLM infra
+    class D_SOURCES,D_BUNDLES data
