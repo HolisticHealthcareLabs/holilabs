@@ -1,0 +1,58 @@
+## Cortex — Minimal Dev Environment
+##
+## Start:  docker compose -f docker-compose.dev.yml up -d
+## Stop:   docker compose -f docker-compose.dev.yml down
+## Reset:  docker compose -f docker-compose.dev.yml down -v
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: holi-dev-postgres
+    environment:
+      POSTGRES_USER: holi
+      POSTGRES_PASSWORD: holi_dev_password
+      POSTGRES_DB: holi_labs
+    ports:
+      - "5432:5432"
+    volumes:
+      - holi_dev_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U holi -d holi_labs"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: holi-dev-redis
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - holi_dev_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: holi-dev-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8025"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  holi_dev_postgres:
+    driver: local
+  holi_dev_redis:
+    driver: local

@@ -15,6 +15,9 @@ import { authOptions } from '@/lib/auth';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext, CDSHookType } from '@/lib/cds/types';
 import { v4 as uuidv4 } from 'uuid';
+import { evaluateDoacSafety } from '@/lib/clinical/doac-safety-engine';
+import { logSafetyEvent } from '@/lib/clinical/safety-audit-logger';
+import { GovernanceAction, GovernanceSeverity } from '@prisma/client';
 
 /**
  * Request body schema
@@ -153,9 +156,71 @@ export async function POST(request: NextRequest) {
       `🔍 [CDS API] Evaluating ${body.hookType} for patient ${body.patientId} (user: ${session.user.email})`
     );
 
-    // Evaluate CDS rules
+    // Evaluate CDS rules (Existing Engine)
     const startTime = Date.now();
     const result = await cdsEngine.evaluate(cdsContext);
+    
+    // --- DOAC SAFETY CHECK INJECTION ---
+    if (body.hookType === 'medication-prescribe' && body.context.medications) {
+      for (const med of body.context.medications) {
+        // Find CrCl
+        const crClLab = body.context.labResults?.find(l => 
+          l.testName.toLowerCase().includes('creatinine clearance') || 
+          l.testName.toLowerCase().includes('crcl')
+        );
+        const crCl = crClLab ? parseFloat(String(crClLab.value)) : undefined;
+
+        // Find Weight
+        const weight = body.context.vitalSigns?.weight;
+
+        // Find Age
+        const age = body.context.demographics?.age;
+
+        // Find Interacting Meds (simplified: check active meds list)
+        const interactingMeds = body.context.medications
+          .filter(m => m.status === 'active' && m.id !== med.id)
+          .map(m => m.genericName?.toLowerCase() || m.name.toLowerCase());
+
+        const doacResult = evaluateDoacSafety({
+          currentMedication: med.genericName || med.name,
+          creatinineClearance: crCl,
+          weight,
+          age,
+          interactingMedications: interactingMeds,
+          labTimestamp: crClLab ? new Date(crClLab.effectiveDate) : undefined
+        });
+
+        if (doacResult.severity !== 'PASS') {
+          // Log Governance Event
+          await logSafetyEvent({
+            userId: session.user.id,
+            patientId: body.patientId,
+            ruleId: doacResult.ruleId || 'DOAC-Safety-Check',
+            ruleName: 'DOAC Safety Check',
+            severity: doacResult.severity === 'BLOCK' ? GovernanceSeverity.HARD_BLOCK : GovernanceSeverity.SOFT_NUDGE,
+            action: doacResult.severity === 'BLOCK' ? GovernanceAction.BLOCKED : GovernanceAction.FLAGGED,
+            rationale: doacResult.rationale || 'Safety check triggered',
+          });
+
+          // Add to result alerts
+          result.alerts.push({
+            uuid: uuidv4(),
+            source: {
+              label: 'Cortex DOAC Safety',
+              url: doacResult.citationUrl
+            },
+            indicator: doacResult.severity === 'BLOCK' ? 'critical' : 'warning',
+            summary: doacResult.severity === 'ATTESTATION_REQUIRED' ? 'Attestation Required' : 'Safety Warning',
+            detail: doacResult.rationale || '',
+            links: doacResult.citationUrl ? [{ label: 'Evidence', url: doacResult.citationUrl, type: 'absolute' }] : [],
+            suggestions: []
+          });
+          result.rulesFired++;
+        }
+      }
+    }
+    // -----------------------------------
+
     const evaluationTime = Date.now() - startTime;
 
     console.log(
