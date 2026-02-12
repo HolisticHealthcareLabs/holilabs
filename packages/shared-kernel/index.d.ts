@@ -490,3 +490,9 @@ export {
   type OverrideReason,
   type GovernanceContext,
 } from './src/governance/shared-types';
+
+export {
+  // From clinical-ui types (Sprint 01 — Safety Signal contract)
+  type SafetyAlertProps,
+  type SafetyAlertVariant,
+} from './src/types/clinical-ui';

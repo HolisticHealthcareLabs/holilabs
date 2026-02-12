@@ -235,6 +235,14 @@ const serverSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   MICROSOFT_CLIENT_ID: z.string().optional(),
   MICROSOFT_CLIENT_SECRET: z.string().optional(),
+
+  // ========================================
+  // AUTH & PARTNER INTEGRATIONS
+  // ========================================
+  AUTH_STRATEGY: z.enum(['credentials', 'oauth', 'magic-link']).default('credentials'),
+  PHARMA_PARTNER_KEY: z.string().min(16, {
+    message: 'PHARMA_PARTNER_KEY must be at least 16 characters',
+  }).optional(),
 });
 
 // ============================================================================
@@ -428,6 +436,11 @@ function validateEnv(): Env {
       // CORS
       if (!env.ALLOWED_ORIGINS) {
         warnings.push('ALLOWED_ORIGINS not set - CORS may block legitimate requests');
+      }
+
+      // Pharma Partner
+      if (!env.PHARMA_PARTNER_KEY) {
+        warnings.push('PHARMA_PARTNER_KEY not set - pharma partner integrations will not work');
       }
 
       // Print critical errors and exit
