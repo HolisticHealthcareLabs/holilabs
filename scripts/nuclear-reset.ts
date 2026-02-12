@@ -18,6 +18,36 @@
 import { execSync } from 'child_process';
 import * as readline from 'readline';
 import * as path from 'path';
+import * as fs from 'fs';
+
+// ---------------------------------------------------------------------------
+// Load .env files from apps/web (tsx doesn't auto-load them)
+// ---------------------------------------------------------------------------
+
+function loadEnvFile(filePath: string) {
+  if (!fs.existsSync(filePath)) return;
+  const content = fs.readFileSync(filePath, 'utf-8');
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    let value = trimmed.slice(eqIdx + 1).trim();
+    // Strip surrounding quotes
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    // Don't override existing env vars
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
+
+const webDir = path.resolve(__dirname, '../apps/web');
+loadEnvFile(path.join(webDir, '.env'));
+loadEnvFile(path.join(webDir, '.env.local'));
 
 // ---------------------------------------------------------------------------
 // Safety Gates
@@ -125,13 +155,11 @@ async function main() {
   // Gate 4
   await confirmDestruction();
 
-  const webDir = path.resolve(__dirname, '../apps/web');
-
   // Step 1: prisma migrate reset --force
   console.log(`\n${BOLD}--- Step 1: Prisma Migrate Reset ---${RESET}`);
   console.log('  Dropping all tables, re-running all migrations...');
   try {
-    execSync('pnpm exec prisma migrate reset --force', {
+    execSync('pnpm exec prisma migrate reset --force --skip-seed', {
       cwd: webDir,
       stdio: 'inherit',
       env: { ...process.env },
@@ -155,22 +183,25 @@ async function main() {
   // Step 3: Verify
   console.log(`\n${BOLD}--- Step 3: Verification ---${RESET}`);
   try {
-    const verifyScript = `
-      const { PrismaClient } = require('@prisma/client');
-      const p = new PrismaClient();
-      (async () => {
-        const patients = await p.patient.count();
-        const rules = await p.clinicalRule.count();
-        const flags = await p.featureFlag.count();
-        console.log(JSON.stringify({ patients, rules, flags }));
-        await p.$disconnect();
-      })();
-    `;
-    const result = execSync(`node -e "${verifyScript.replace(/\n/g, ' ')}"`, {
+    const verifyScript = [
+      'const { PrismaClient } = require("@prisma/client");',
+      'const p = new PrismaClient();',
+      '(async () => {',
+      '  const patients = await p.patient.count();',
+      '  const rules = await p.clinicalRule.count();',
+      '  const flags = await p.featureFlag.count();',
+      '  console.log(JSON.stringify({ patients, rules, flags }));',
+      '  await p["$disconnect"]();',
+      '})();',
+    ].join('\n');
+    const tmpFile = path.join(webDir, '.verify-reset.cjs');
+    fs.writeFileSync(tmpFile, verifyScript);
+    const result = execSync(`node ${tmpFile}`, {
       cwd: webDir,
       encoding: 'utf-8',
       env: { ...process.env },
     });
+    fs.unlinkSync(tmpFile);
 
     const counts = JSON.parse(result.trim());
 
