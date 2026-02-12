@@ -1,0 +1,70 @@
+{
+  "$schema": "data/master/schemas/tuss.schema.json",
+  "version": "1.0.0",
+  "generatedAt": "2026-02-12T18:31:12.962Z",
+  "generatedBy": "scripts/extract-master-data.ts",
+  "piiScanResult": "CLEAN",
+  "codes": [
+    {
+      "code": "4.01.01.01",
+      "description": "Specialized Consultation — High Complexity",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 4500,
+      "baseRateBRL": null,
+      "applicableSeverities": [
+        "BLOCK"
+      ]
+    },
+    {
+      "code": "4.01.01.02",
+      "description": "Specialized Drug Interaction Review",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 3750,
+      "baseRateBRL": null,
+      "applicableSeverities": [
+        "FLAG"
+      ]
+    },
+    {
+      "code": "4.01.01.03",
+      "description": "Specialized Consultation — Data Completion",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 3000,
+      "baseRateBRL": null,
+      "applicableSeverities": [
+        "ATTESTATION_REQUIRED"
+      ]
+    },
+    {
+      "code": "1.01.01.01",
+      "description": "Standard Visit — Low Complexity",
+      "category": "STANDARD",
+      "baseRateBOB": 1250,
+      "baseRateBRL": null,
+      "applicableSeverities": [
+        "PASS"
+      ]
+    },
+    {
+      "code": "1.01.01.09-6",
+      "description": "Consulta em Consultório — Clínico Geral",
+      "category": "STANDARD",
+      "baseRateBOB": 0,
+      "baseRateBRL": 189,
+      "applicableSeverities": [
+        "PASS"
+      ]
+    },
+    {
+      "code": "1.01.01.15-0",
+      "description": "Consulta em Consultório — Especialista",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 0,
+      "baseRateBRL": 315,
+      "applicableSeverities": [
+        "BLOCK",
+        "FLAG"
+      ]
+    }
+  ]
+}

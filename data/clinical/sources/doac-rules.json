@@ -1,0 +1,342 @@
+[
+  {
+    "ruleId": "DOAC-CrCl-Rivaroxaban-001",
+    "medication": "rivaroxaban",
+    "condition": "creatinineClearance < 15",
+    "severity": "BLOCK",
+    "rationale": "Rivaroxaban is contraindicated when CrCl < 15 ml/min due to increased bleeding risk.",
+    "provenance": {
+      "sourceAuthority": "European Society of Cardiology",
+      "sourceDocument": "2024 ESC Guidelines on Chronic Coronary Syndromes",
+      "sourceVersion": "2024.1",
+      "effectiveDate": "2024-08-30",
+      "citationUrl": "https://doi.org/10.1093/eurheartj/ehae177",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-CrCl-Apixaban-001",
+    "medication": "apixaban",
+    "condition": "creatinineClearance < 15",
+    "severity": "BLOCK",
+    "rationale": "Apixaban is not recommended when CrCl < 15 ml/min (no clinical data).",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Eliquis (apixaban) Prescribing Information",
+      "sourceVersion": "2023.1",
+      "effectiveDate": "2023-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2016/202155s012lbl.pdf",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-CrCl-Edoxaban-001",
+    "medication": "edoxaban",
+    "condition": "creatinineClearance < 15",
+    "severity": "BLOCK",
+    "rationale": "Edoxaban is contraindicated when CrCl < 15 ml/min.",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+      "sourceVersion": "2021.1",
+      "effectiveDate": "2021-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-CrCl-Edoxaban-002",
+    "medication": "edoxaban",
+    "condition": "creatinineClearance > 95",
+    "severity": "BLOCK",
+    "rationale": "Edoxaban should not be used in patients with CrCl > 95 ml/min due to reduced efficacy (increased clearance).",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+      "sourceVersion": "2021.1",
+      "effectiveDate": "2021-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-CrCl-Dabigatran-001",
+    "medication": "dabigatran",
+    "condition": "creatinineClearance < 15",
+    "severity": "BLOCK",
+    "rationale": "Dabigatran is contraindicated when CrCl < 15 ml/min.",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Pradaxa (dabigatran) Prescribing Information",
+      "sourceVersion": "2023.1",
+      "effectiveDate": "2023-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2018/022512s035lbl.pdf",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Age-Apixaban-001",
+    "medication": "apixaban",
+    "condition": "age >= 80 AND weight <= 60",
+    "severity": "FLAG",
+    "rationale": "Dose reduction to 2.5mg BID recommended for patients with 2 of 3 criteria: Age ≥ 80, Weight ≤ 60kg, Creatinine ≥ 1.5mg/dL.",
+    "provenance": {
+      "sourceAuthority": "European Heart Rhythm Association",
+      "sourceDocument": "EHRA Practical Guide on the use of NOACs",
+      "sourceVersion": "2021.1",
+      "effectiveDate": "2021-04-25",
+      "citationUrl": "https://doi.org/10.1093/europace/euab065",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Interaction-Rivaroxaban-Ketoconazole",
+    "medication": "rivaroxaban",
+    "condition": "interactingMedication == 'ketoconazole'",
+    "severity": "BLOCK",
+    "rationale": "Concomitant use of Rivaroxaban with strong CYP3A4/P-gp inhibitors (like Ketoconazole) is contraindicated.",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Xarelto (rivaroxaban) Prescribing Information",
+      "sourceVersion": "2023.1",
+      "effectiveDate": "2023-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2011/202439s001lbl.pdf",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Interaction-Apixaban-Carbamazepine",
+    "medication": "apixaban",
+    "condition": "interactingMedication == 'carbamazepine'",
+    "severity": "FLAG",
+    "rationale": "Strong CYP3A4 inducers (like Carbamazepine) decrease Apixaban exposure. Avoid co-administration.",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Eliquis (apixaban) Prescribing Information",
+      "sourceVersion": "2023.1",
+      "effectiveDate": "2023-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2016/202155s012lbl.pdf",
+      "evidenceGrade": "B",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Weight-Edoxaban-001",
+    "medication": "edoxaban",
+    "condition": "weight <= 60",
+    "severity": "FLAG",
+    "rationale": "Dose reduction to 30mg QD recommended for weight ≤ 60kg.",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+      "sourceVersion": "2021.1",
+      "effectiveDate": "2021-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Interaction-Dabigatran-Dronedarone",
+    "medication": "dabigatran",
+    "condition": "interactingMedication == 'dronedarone' AND creatinineClearance < 30",
+    "severity": "BLOCK",
+    "rationale": "Dabigatran is contraindicated with P-gp inhibitors like Dronedarone in patients with CrCl < 30 ml/min.",
+    "provenance": {
+      "sourceAuthority": "FDA",
+      "sourceDocument": "Pradaxa (dabigatran) Prescribing Information",
+      "sourceVersion": "2023.1",
+      "effectiveDate": "2023-01-01",
+      "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2018/022512s035lbl.pdf",
+      "evidenceGrade": "A",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Stale-Renal-001",
+    "medication": "rivaroxaban",
+    "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Stale Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Stale-Renal-002",
+    "medication": "apixaban",
+    "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Stale Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Stale-Renal-003",
+    "medication": "edoxaban",
+    "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Stale Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Stale-Renal-004",
+    "medication": "dabigatran",
+    "condition": "labAgeHours > 72 AND labType == 'creatinine'",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Renal function data (Creatinine) is older than 72 hours. Please attest that you have reviewed recent labs.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Stale Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Missing-Weight-001",
+    "medication": "apixaban",
+    "condition": "weight == null",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Patient weight is missing. Weight is required for Apixaban dosing criteria.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Missing Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Missing-Age-001",
+    "medication": "apixaban",
+    "condition": "age == null",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Patient age is missing. Age is required for Apixaban dosing criteria.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Missing Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Missing-CrCl-001",
+    "medication": "rivaroxaban",
+    "condition": "creatinineClearance == null",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Creatinine Clearance is missing. Renal function is required for Rivaroxaban safety check.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Missing Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Missing-CrCl-002",
+    "medication": "edoxaban",
+    "condition": "creatinineClearance == null",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Creatinine Clearance is missing. Renal function is required for Edoxaban safety check.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Missing Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Missing-CrCl-003",
+    "medication": "dabigatran",
+    "condition": "creatinineClearance == null",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Creatinine Clearance is missing. Renal function is required for Dabigatran safety check.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Missing Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  },
+  {
+    "ruleId": "DOAC-Missing-CrCl-004",
+    "medication": "apixaban",
+    "condition": "creatinineClearance == null",
+    "severity": "ATTESTATION_REQUIRED",
+    "rationale": "Creatinine Clearance is missing. Renal function is required for Apixaban dosing check.",
+    "provenance": {
+      "sourceAuthority": "Holi Labs Clinical Governance",
+      "sourceDocument": "Missing Data Policy v1.0",
+      "sourceVersion": "1.0",
+      "effectiveDate": "2026-02-11",
+      "citationUrl": "internal-policy",
+      "evidenceGrade": "Expert Consensus",
+      "reviewedBy": "Elena (CMO)",
+      "lastReviewDate": "2026-02-11"
+    }
+  }
+]

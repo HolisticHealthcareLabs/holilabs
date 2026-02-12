@@ -28,15 +28,18 @@
     "docs:cortex:update:friday": "node scripts/update-cortex-docs-metadata.js --mode friday --append-log",
     "docs:cortex:update:weekly": "node scripts/update-cortex-docs-metadata.js --mode weekly --append-log",
     "docs:cortex:update:tracker": "node scripts/update-cortex-docs-metadata.js --mode friday --append-log --config configs/cortex-doc-automation.tracker-only.config.json",
-    "docs:cortex:export:plan": "node scripts/cortex-export-helper.js --mode weekly --dry-run"
+    "docs:cortex:export:plan": "node scripts/cortex-export-helper.js --mode weekly --dry-run",
+    "update-map": "node scripts/generate-project-map.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@jest/test-sequencer": "^29.7.0",
+    "@prisma/client": "6.7.0",
     "@types/node": "^20.11.0",
     "concurrently": "^8.2.0",
+    "prisma": "6.7.0",
     "tsx": "^4.7.0",
     "turbo": "^2.0.0",
     "typescript": "^5.3.3"
