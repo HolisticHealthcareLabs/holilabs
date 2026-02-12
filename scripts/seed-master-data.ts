@@ -27,6 +27,12 @@ import * as path from 'path';
 
 const prisma = new PrismaClient();
 
+// Sentinel value for global (non-clinic-scoped) records.
+// Prisma can't match NULL in composite unique constraints (SQL NULL != NULL),
+// so we use a non-null string to satisfy @@unique([ruleId, clinicId]) and
+// @@unique([name, clinicId]) on ClinicalRule and FeatureFlag respectively.
+const GLOBAL_CLINIC_ID = 'GLOBAL';
+
 // ---------------------------------------------------------------------------
 // 1. CLINICAL RULES
 // ---------------------------------------------------------------------------
@@ -55,7 +61,7 @@ async function seedClinicalRules() {
     const category = rule._sourceCategory || rule.domain || 'GENERAL';
 
     await prisma.clinicalRule.upsert({
-      where: { ruleId_clinicId: { ruleId, clinicId: null } },
+      where: { ruleId_clinicId: { ruleId, clinicId: GLOBAL_CLINIC_ID } },
       update: {
         name: rule.name || ruleId,
         category,
@@ -83,7 +89,7 @@ async function seedClinicalRules() {
         priority: rule.severity === 'BLOCK' ? 100 : rule.severity === 'FLAG' ? 50 : 10,
         isActive: true,
         version: 1,
-        clinicId: null,
+        clinicId: GLOBAL_CLINIC_ID,
       },
     });
     totalRules++;
@@ -119,7 +125,7 @@ async function seedClinicalRulesFromSources() {
       const ruleId = rule.ruleId;
 
       await prisma.clinicalRule.upsert({
-        where: { ruleId_clinicId: { ruleId, clinicId: null } },
+        where: { ruleId_clinicId: { ruleId, clinicId: GLOBAL_CLINIC_ID } },
         update: {
           name: rule.name || ruleId,
           category,
@@ -147,7 +153,7 @@ async function seedClinicalRulesFromSources() {
           priority: rule.severity === 'BLOCK' ? 100 : rule.severity === 'FLAG' ? 50 : 10,
           isActive: true,
           version: 1,
-          clinicId: null,
+          clinicId: GLOBAL_CLINIC_ID,
         },
       });
       totalRules++;
@@ -236,7 +242,7 @@ async function seedBillingCodes() {
       where: {
         name_clinicId: {
           name: `billing.code.${code.code}`,
-          clinicId: null,
+          clinicId: GLOBAL_CLINIC_ID,
         },
       },
       update: {
@@ -247,7 +253,7 @@ async function seedBillingCodes() {
         name: `billing.code.${code.code}`,
         description: JSON.stringify(code),
         enabled: true,
-        clinicId: null,
+        clinicId: GLOBAL_CLINIC_ID,
         reason: 'Master data seed — billing code registry',
       },
     });
@@ -297,10 +303,16 @@ const ICD10_CORE_CODES = [
 async function seedICD10Codes() {
   console.log('\n--- Seeding ICD-10 Reference Codes ---');
 
+  // ICD10Code model may not exist in the Prisma schema
+  if (!(prisma as any).iCD10Code) {
+    console.warn('  SKIP: ICD10Code model not available in Prisma client');
+    return 0;
+  }
+
   let count = 0;
   for (const icd of ICD10_CORE_CODES) {
     try {
-      await prisma.iCD10Code.upsert({
+      await (prisma as any).iCD10Code.upsert({
         where: { code: icd.code },
         update: {
           description: icd.description,
@@ -313,7 +325,6 @@ async function seedICD10Codes() {
       count++;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      // Table may not exist in all environments
       if (msg.includes('does not exist') || msg.includes('relation')) {
         console.warn('  SKIP: ICD10Code table not available in this database');
         return 0;
@@ -410,7 +421,7 @@ async function seedMedicationConcepts() {
       where: {
         name_clinicId: {
           name: `med.registry.${med.genericName}`,
-          clinicId: null,
+          clinicId: GLOBAL_CLINIC_ID,
         },
       },
       update: {
@@ -421,7 +432,7 @@ async function seedMedicationConcepts() {
         name: `med.registry.${med.genericName}`,
         description: JSON.stringify(med),
         enabled: true,
-        clinicId: null,
+        clinicId: GLOBAL_CLINIC_ID,
         reason: 'Master data seed — DOAC medication registry',
       },
     });
@@ -471,7 +482,7 @@ async function seedFeatureFlags() {
       where: {
         name_clinicId: {
           name: flag.name,
-          clinicId: null,
+          clinicId: GLOBAL_CLINIC_ID,
         },
       },
       update: {
@@ -482,7 +493,7 @@ async function seedFeatureFlags() {
         name: flag.name,
         enabled: flag.enabled,
         reason: flag.reason,
-        clinicId: null,
+        clinicId: GLOBAL_CLINIC_ID,
       },
     });
   }
@@ -499,7 +510,7 @@ const APPOINTMENT_TYPES = [
   {
     name: 'DOAC Safety Review',
     code: 'DOAC_SAFETY_REVIEW',
-    appointmentType: 'FOLLOW_UP' as const,
+    appointmentType: 'IN_PERSON' as const,
     defaultDuration: 30,
     bufferAfter: 10,
     color: '#ef4444',
@@ -510,7 +521,7 @@ const APPOINTMENT_TYPES = [
   {
     name: 'Standard DOAC Verification',
     code: 'DOAC_VERIFICATION',
-    appointmentType: 'FOLLOW_UP' as const,
+    appointmentType: 'IN_PERSON' as const,
     defaultDuration: 15,
     bufferAfter: 5,
     color: '#22c55e',
@@ -521,7 +532,7 @@ const APPOINTMENT_TYPES = [
   {
     name: 'Renal Function Recheck',
     code: 'RENAL_RECHECK',
-    appointmentType: 'FOLLOW_UP' as const,
+    appointmentType: 'TELEHEALTH' as const,
     defaultDuration: 20,
     bufferAfter: 5,
     color: '#f59e0b',
@@ -532,7 +543,7 @@ const APPOINTMENT_TYPES = [
   {
     name: 'New Patient Intake',
     code: 'NEW_PATIENT_INTAKE',
-    appointmentType: 'INITIAL_CONSULTATION' as const,
+    appointmentType: 'IN_PERSON' as const,
     defaultDuration: 45,
     bufferAfter: 15,
     color: '#3b82f6',
@@ -548,33 +559,44 @@ async function seedAppointmentTypes() {
   let count = 0;
   for (const apt of APPOINTMENT_TYPES) {
     try {
-      await prisma.appointmentTypeConfig.upsert({
+      // Use find + create/update instead of upsert because the unique
+      // index on `code` may not exist in the DB (schema drift).
+      const existing = await prisma.appointmentTypeConfig.findFirst({
         where: { code: apt.code },
-        update: {
-          name: apt.name,
-          defaultDuration: apt.defaultDuration,
-          bufferAfter: apt.bufferAfter,
-          color: apt.color,
-          description: apt.description,
-          basePrice: apt.basePrice,
-          currency: apt.currency,
-          isActive: true,
-        },
-        create: {
-          name: apt.name,
-          code: apt.code,
-          appointmentType: apt.appointmentType,
-          defaultDuration: apt.defaultDuration,
-          bufferAfter: apt.bufferAfter,
-          color: apt.color,
-          description: apt.description,
-          basePrice: apt.basePrice,
-          currency: apt.currency,
-          allowOnline: false,
-          requireConfirmation: true,
-          isActive: true,
-        },
       });
+
+      if (existing) {
+        await prisma.appointmentTypeConfig.update({
+          where: { id: existing.id },
+          data: {
+            name: apt.name,
+            defaultDuration: apt.defaultDuration,
+            bufferAfter: apt.bufferAfter,
+            color: apt.color,
+            description: apt.description,
+            basePrice: apt.basePrice,
+            currency: apt.currency,
+            isActive: true,
+          },
+        });
+      } else {
+        await prisma.appointmentTypeConfig.create({
+          data: {
+            name: apt.name,
+            code: apt.code,
+            appointmentType: apt.appointmentType,
+            defaultDuration: apt.defaultDuration,
+            bufferAfter: apt.bufferAfter,
+            color: apt.color,
+            description: apt.description,
+            basePrice: apt.basePrice,
+            currency: apt.currency,
+            allowOnline: false,
+            requireConfirmation: true,
+            isActive: true,
+          },
+        });
+      }
       count++;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
