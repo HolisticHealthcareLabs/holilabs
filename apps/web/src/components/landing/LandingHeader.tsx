@@ -59,7 +59,7 @@ function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTh
 
 export function LandingHeader() {
     const { theme, toggleTheme } = useTheme();
-    const { locale } = useLanguage();
+    const { locale, t } = useLanguage();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
@@ -115,8 +115,8 @@ export function LandingHeader() {
                             href="/auth/login"
                             className="hidden lg:flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors px-2 py-2"
                         >
-                            <span className="hidden xl:inline">Partner Login</span>
-                            <span className="xl:hidden">Login</span>
+                            <span className="hidden xl:inline">{t('navigation.login')}</span>
+                            <span className="xl:hidden">{t('navigation.login')}</span>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                         </Link>
 
@@ -139,7 +139,7 @@ export function LandingHeader() {
                     <a href="#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How it works</a>
                     <a href="#audit" className="text-muted-foreground hover:text-primary transition-colors">Audit</a>
                     <Link href="/auth/login" className="text-muted-foreground hover:text-primary transition-colors lg:hidden">
-                        Login
+                        {t('navigation.login')}
                     </Link>
                 </div>
             </nav>
