@@ -1,6 +1,6 @@
 {
   "$schema": "data/master/schemas/tuss.schema.json",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "generatedAt": "2026-02-12T18:31:12.962Z",
   "generatedBy": "scripts/extract-master-data.ts",
   "piiScanResult": "CLEAN",
@@ -11,9 +11,8 @@
       "category": "SPECIALIZED",
       "baseRateBOB": 4500,
       "baseRateBRL": null,
-      "applicableSeverities": [
-        "BLOCK"
-      ]
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.95
     },
     {
       "code": "4.01.01.02",
@@ -21,9 +20,8 @@
       "category": "SPECIALIZED",
       "baseRateBOB": 3750,
       "baseRateBRL": null,
-      "applicableSeverities": [
-        "FLAG"
-      ]
+      "applicableSeverities": ["FLAG"],
+      "actuarialWeight": 0.70
     },
     {
       "code": "4.01.01.03",
@@ -31,9 +29,8 @@
       "category": "SPECIALIZED",
       "baseRateBOB": 3000,
       "baseRateBRL": null,
-      "applicableSeverities": [
-        "ATTESTATION_REQUIRED"
-      ]
+      "applicableSeverities": ["ATTESTATION_REQUIRED"],
+      "actuarialWeight": 0.50
     },
     {
       "code": "1.01.01.01",
@@ -41,9 +38,8 @@
       "category": "STANDARD",
       "baseRateBOB": 1250,
       "baseRateBRL": null,
-      "applicableSeverities": [
-        "PASS"
-      ]
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
     },
     {
       "code": "1.01.01.09-6",
@@ -51,9 +47,8 @@
       "category": "STANDARD",
       "baseRateBOB": 0,
       "baseRateBRL": 189,
-      "applicableSeverities": [
-        "PASS"
-      ]
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
     },
     {
       "code": "1.01.01.15-0",
@@ -61,10 +56,8 @@
       "category": "SPECIALIZED",
       "baseRateBOB": 0,
       "baseRateBRL": 315,
-      "applicableSeverities": [
-        "BLOCK",
-        "FLAG"
-      ]
+      "applicableSeverities": ["BLOCK", "FLAG"],
+      "actuarialWeight": 0.80
     }
   ]
 }
