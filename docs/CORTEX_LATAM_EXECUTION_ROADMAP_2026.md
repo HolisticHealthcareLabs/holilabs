@@ -3,11 +3,11 @@
 <!-- CORTEX_AUTOMATION:START -->
 ## Update Metadata
 
-- Last Updated: 2026-02-10
+- Last Updated: 2026-02-13
 - Owner: PL
 - Cadence: weekly
-- Last Run Mode: monday
-- Next Recommended Update: 2026-02-17
+- Last Run Mode: friday
+- Next Recommended Update: 2026-02-20
 <!-- CORTEX_AUTOMATION:END -->
 
 **Scope:** Bolivia, Brazil, Argentina pilots  
@@ -316,6 +316,13 @@ A site is expansion-ready when all of the following hold for 4 consecutive weeks
 ---
 
 ## Weekly Auto Log
+
+### 2026-02-13 (FRIDAY)
+- Progress this week:
+- KPI highlights:
+- Blockers encountered:
+- Next week commitments:
+
 
 ### 2026-02-10 (MONDAY)
 - Focus this week:

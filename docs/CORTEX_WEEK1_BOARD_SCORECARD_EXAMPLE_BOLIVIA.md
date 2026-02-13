@@ -3,11 +3,11 @@
 <!-- CORTEX_AUTOMATION:START -->
 ## Update Metadata
 
-- Last Updated: 2026-02-10
+- Last Updated: 2026-02-13
 - Owner: OIL
 - Cadence: monfri
-- Last Run Mode: monday
-- Next Recommended Update: 2026-02-13
+- Last Run Mode: friday
+- Next Recommended Update: 2026-02-16
 <!-- CORTEX_AUTOMATION:END -->
 
 **Week Ending:** 2026-02-13  
@@ -122,6 +122,13 @@
 ---
 
 ## Weekly Auto Log
+
+### 2026-02-13 (FRIDAY)
+- Progress this week:
+- KPI highlights:
+- Blockers encountered:
+- Next week commitments:
+
 
 ### 2026-02-10 (MONDAY)
 - Focus this week:
