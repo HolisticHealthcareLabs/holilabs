@@ -88,6 +88,7 @@ describe('TUSS Lookup Utility', () => {
       baseRateBOB: 4500,
       baseRateBRL: null,
       applicableSeverities: ['BLOCK'],
+      actuarialWeight: 0.95,
     };
     const result = formatRate(code);
     expect(result).toMatch(/Bs\./);
@@ -102,6 +103,7 @@ describe('TUSS Lookup Utility', () => {
       baseRateBOB: 0,
       baseRateBRL: 315,
       applicableSeverities: ['BLOCK'],
+      actuarialWeight: 0.80,
     };
     const result = formatRate(code);
     expect(result).toMatch(/R\$/);
@@ -116,6 +118,7 @@ describe('TUSS Lookup Utility', () => {
       baseRateBOB: 0,
       baseRateBRL: null,
       applicableSeverities: ['PASS'],
+      actuarialWeight: 0.10,
     };
     expect(formatRate(code)).toBe('—');
   });
