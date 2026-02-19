@@ -701,14 +701,14 @@ export default function ValidationConsolePage() {
             <p className="mt-4 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
               Filtered by {filters.country}/{filters.site}/{filters.unit}/{filters.date}. The network is actively preventing high-risk deviations.
             </p>
-            <p className="mt-2 text-[10px] text-blue-700 dark:text-blue-300">
+            <p className="mt-3 text-xs text-blue-700 dark:text-blue-300 break-words leading-relaxed">
               Definition: {metricDefinitionByKey.trustScore.id}
             </p>
-            <p className="mt-1 text-[10px] text-gray-600 dark:text-gray-300">
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300 break-words leading-relaxed">
               Formula: {metricDefinitionByKey.trustScore.numerator} /{' '}
               {metricDefinitionByKey.trustScore.denominator}
             </p>
-            <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono break-all leading-relaxed">
               Query: {metricDefinitionByKey.trustScore.queryRef}
             </p>
           </div>
@@ -987,22 +987,22 @@ function StatCard({
   return (
     <div
       className={[
-        'border p-5 rounded-2xl transition-colors duration-200 cursor-default',
+        'border p-5 rounded-2xl transition-colors duration-200 cursor-default overflow-hidden',
         isDanger
           ? 'border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/30'
           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50',
       ].join(' ')}
     >
-      <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-2">{title}</div>
-      <div className={`text-3xl font-light ${color} tracking-tight mb-1`}>{value}</div>
-      <div className={`text-[10px] ${isDanger ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300'}`}>{sub}</div>
-      <div className="mt-2 text-[10px] text-blue-700 dark:text-blue-300">
+      <div className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider mb-2">{title}</div>
+      <div className={`text-4xl font-light ${color} tracking-tight mb-1`}>{value}</div>
+      <div className={`text-sm ${isDanger ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300'}`}>{sub}</div>
+      <div className="mt-3 text-xs text-blue-700 dark:text-blue-300 break-words leading-relaxed">
         Definition: {definition?.id ?? 'METRIC-PLACEHOLDER'}
       </div>
-      <div className="mt-1 text-[10px] text-gray-600 dark:text-gray-300">
+      <div className="mt-1 text-xs text-gray-600 dark:text-gray-300 break-words leading-relaxed">
         Formula: {definition?.numerator ?? 'N/A'} / {definition?.denominator ?? 'N/A'}
       </div>
-      <div className="mt-1 text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono break-all leading-relaxed">
         Query: {definition?.queryRef ?? 'N/A'}
       </div>
     </div>

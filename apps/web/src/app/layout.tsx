@@ -118,9 +118,9 @@ export default async function RootLayout({
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover" />
       </head>
       <body className="font-sans antialiased">
-        <SkipLink />
         <ErrorBoundary>
           <Providers>
+            <SkipLink />
             <OfflineIndicator />
             <IOSInstallPrompt />
             <CookieConsentBanner />

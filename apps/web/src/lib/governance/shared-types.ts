@@ -5,7 +5,7 @@
  * MIRRORS: apps/edge/src/traffic-light/engine.ts (TrafficLight types)
  */
 
-export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN';
+export type TrafficLightColor = 'RED' | 'ORANGE' | 'YELLOW' | 'GREEN';
 export type RuleCategory = 'clinical' | 'administrative' | 'billing';
 
 export const OVERRIDE_REASON_CODES = [

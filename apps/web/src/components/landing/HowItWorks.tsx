@@ -3,64 +3,78 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { VerificationWorkflow } from '@/components/landing/VerificationWorkflow';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getLandingCopy } from '@/components/landing/copy';
 
 export function HowItWorks() {
+  const { locale } = useLanguage();
+  const copy = getLandingCopy(locale);
+
   return (
-    <section id="how-it-works" className="py-24 px-6 bg-card border-t border-border">
-      <div className="container mx-auto max-w-7xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+    <section id="how-it-works" className="bg-background">
+      {/* Header */}
+      <div className="max-w-[980px] mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-16 text-center">
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-blue-600 dark:text-blue-400 text-sm font-semibold uppercase tracking-widest mb-4"
         >
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400 mb-4 block">
-            How it works
-          </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            The AI pre-fills the safety check. You just sign off.
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-            Cortex analyzes the chart and drafts the logic. You verify the reasoning in seconds, not minutes.
-          </p>
-        </motion.div>
+          {copy.howItWorks.kicker}
+        </motion.p>
+        <motion.h2
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground leading-tight mb-6"
+        >
+          {copy.howItWorks.title}
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto"
+        >
+          {copy.howItWorks.subtitle}
+        </motion.p>
+      </div>
 
+      {/* Interactive workflow demo */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-16">
         <VerificationWorkflow />
+      </div>
 
-        <div className="mt-14 rounded-[2rem] bg-secondary border border-border p-10">
-          <div className="grid md:grid-cols-3 gap-8 items-start">
-            <div>
-              <div className="text-sm font-semibold text-muted-foreground mb-2">Built for</div>
-              <div className="text-2xl font-bold text-foreground">Clinicians</div>
-              <p className="mt-2 text-muted-foreground">
-                A fast, predictable workflow that reduces risk without turning into alert fatigue.
-              </p>
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-muted-foreground mb-2">Built for</div>
-              <div className="text-2xl font-bold text-foreground">Quality & leadership</div>
-              <p className="mt-2 text-muted-foreground">
-                Evidence of what was verified, what was overridden, and where protocols drift in real practice.
-              </p>
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-muted-foreground mb-2">Built for</div>
-              <div className="text-2xl font-bold text-foreground">LATAM workflows</div>
-              <p className="mt-2 text-muted-foreground">
-                Works alongside basic EHRs and messaging-first care coordination without waiting for perfect integration.
-                Optional lightweight desktop companion for workstation-level rollout.
-              </p>
-            </div>
+      {/* Cards: Built For */}
+      <div className="bg-secondary/50 dark:bg-white/[0.02]">
+        <div className="max-w-[980px] mx-auto px-4 sm:px-6 py-20">
+          <div className="grid md:grid-cols-3 gap-px bg-border/50 rounded-2xl overflow-hidden">
+            {copy.howItWorks.cards.map((card, index) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.08 * index }}
+                className="bg-background p-8 sm:p-10"
+              >
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                  {copy.howItWorks.builtFor}
+                </p>
+                <h3 className="text-2xl font-bold text-foreground mb-3">{card.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{card.body}</p>
+              </motion.div>
+            ))}
           </div>
-        </div>
 
-        <p className="mt-10 text-sm text-muted-foreground/80 max-w-4xl">
-          Note: Cortex is a verification and documentation layer. Clinicians remain responsible for clinical decisions.
-          Patient messaging is opt-in and should be configured to minimize sensitive content.
-        </p>
+          <p className="mt-10 text-sm text-muted-foreground/70 max-w-3xl">
+            {copy.howItWorks.note}
+          </p>
+        </div>
       </div>
     </section>
   );
 }
-

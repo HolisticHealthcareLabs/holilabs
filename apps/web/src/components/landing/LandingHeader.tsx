@@ -1,25 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from '@/hooks/useTheme';
 import LanguageSelector from '@/components/LanguageSelector';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getLandingCopy } from '@/components/landing/copy';
 
 function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTheme: () => void }) {
     return (
         <button
             onClick={toggleTheme}
-            className="ml-0 flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ease-out border focus:outline-none relative overflow-hidden"
+            className="flex items-center justify-center w-9 h-9 rounded-full transition-all text-muted-foreground hover:text-foreground"
             aria-label="Toggle Theme"
-            style={{
-                background: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                boxShadow: theme === 'dark' ? '0 0 15px rgba(0,122,255,0.1)' : 'none',
-            }}
         >
-            <div className="relative w-5 h-5">
+            <div className="relative w-4 h-4">
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -27,8 +23,7 @@ function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTh
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`absolute inset-0 transform transition-transform duration-500 ${theme === 'dark' ? 'rotate-0 opacity-100 text-[#007AFF]' : 'rotate-90 opacity-0'
-                        }`}
+                    className={`absolute inset-0 transform transition-all duration-300 ${theme === 'dark' ? 'rotate-0 opacity-100' : 'rotate-90 opacity-0'}`}
                 >
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                 </svg>
@@ -39,8 +34,7 @@ function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTh
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className={`absolute inset-0 transform transition-transform duration-500 ${theme === 'dark' ? '-rotate-90 opacity-0' : 'rotate-0 opacity-100 text-gray-700'
-                        }`}
+                    className={`absolute inset-0 transform transition-all duration-300 ${theme === 'dark' ? '-rotate-90 opacity-0' : 'rotate-0 opacity-100'}`}
                 >
                     <circle cx="12" cy="12" r="5" />
                     <line x1="12" y1="1" x2="12" y2="3" />
@@ -59,90 +53,70 @@ function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTh
 
 export function LandingHeader() {
     const { theme, toggleTheme } = useTheme();
-    const { locale, t } = useLanguage();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const { locale } = useLanguage();
+    const copy = getLandingCopy(locale);
 
     return (
-        <header className="fixed top-2 sm:top-4 left-0 right-0 z-50 px-2 sm:px-3 md:px-4">
-            <nav className="container mx-auto max-w-[1400px] bg-background/90 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg border border-border">
-                <div className="flex items-center justify-between px-2 sm:px-3 lg:px-6 py-2 sm:py-2.5">
-                    {/* LOGO */}
-                    <Link href="/" className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink-0">
-                        <div className="relative w-8 h-8 sm:w-10 sm:h-10 shrink-0">
-                            <Image
-                                src="/logos/holilabs-helix-blue-dark.svg"
-                                alt="Holi Labs"
-                                width={40}
-                                height={40}
-                                className="hidden dark:block"
-                            />
-                            <Image
-                                src="/logos/holilabs-helix-blue-light.svg"
-                                alt="Holi Labs"
-                                width={40}
-                                height={40}
-                                className="dark:hidden"
-                            />
-                        </div>
-                        <span className="text-sm sm:text-base lg:text-lg xl:text-xl font-semibold tracking-tight text-foreground whitespace-nowrap">
-                            Holi Labs
-                        </span>
-                        <span className="hidden 2xl:inline-flex text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                            Cortex Pilot
-                        </span>
-                    </Link>
-
-                    {/* DESKTOP LINKS */}
-                    <div className="hidden lg:flex items-center gap-4 xl:gap-6 text-sm font-medium">
-                        <a href="#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How it works</a>
-                        <a href="#audit" className="text-muted-foreground hover:text-primary transition-colors">Audit</a>
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+            <nav className="max-w-[980px] mx-auto flex items-center justify-between h-11 px-4 sm:px-6 text-xs">
+                {/* Logo */}
+                <Link href="/" className="flex items-center gap-2 shrink-0">
+                    <div className="relative w-7 h-7 shrink-0">
+                        <Image
+                            src="/logos/holilabs-helix-blue-dark.svg"
+                            alt="Holi Labs"
+                            width={28}
+                            height={28}
+                            className="hidden dark:block"
+                        />
+                        <Image
+                            src="/logos/holilabs-helix-blue-light.svg"
+                            alt="Holi Labs"
+                            width={28}
+                            height={28}
+                            className="dark:hidden"
+                        />
                     </div>
+                    <span className="font-semibold text-sm text-foreground">Holi Labs</span>
+                </Link>
 
-                    {/* RIGHT ACTIONS */}
-                    <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0">
-                        {/* Language Selector - Desktop */}
-                        <div className="hidden md:block">
-                            <LanguageSelector currentLocale={locale} />
-                        </div>
-
-                        {/* Language Selector - Mobile (icon-only) */}
-                        <div className="md:hidden">
-                            <LanguageSelector currentLocale={locale} compact />
-                        </div>
-
-                        {/* Desktop Login Link */}
-                        <Link
-                            href="/auth/login"
-                            className="hidden lg:flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors px-2 py-2"
-                        >
-                            <span className="hidden xl:inline">{t('navigation.login')}</span>
-                            <span className="xl:hidden">{t('navigation.login')}</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
-                        </Link>
-
-                        {/* CTA Button */}
-                        <Link
-                            href="/auth/register"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3 md:px-4 lg:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
-                        >
-                            <span className="hidden sm:inline">Start Free Beta</span>
-                            <span className="sm:hidden">Beta</span>
-                        </Link>
-
-                        {/* Theme Toggle */}
-                        <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
-                    </div>
+                {/* Center links */}
+                <div className="hidden md:flex items-center gap-6 text-muted-foreground">
+                    <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
+                    <a href="#modules" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
+                    <a href="#security" className="hover:text-foreground transition-colors">Safety</a>
+                    <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
                 </div>
 
-                {/* MOBILE NAV LINKS (below main bar on md-) */}
-                <div className="flex lg:hidden items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium border-t border-border/60 px-2 sm:px-3 py-2">
-                    <a href="#how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How it works</a>
-                    <a href="#audit" className="text-muted-foreground hover:text-primary transition-colors">Audit</a>
-                    <Link href="/auth/login" className="text-muted-foreground hover:text-primary transition-colors lg:hidden">
-                        {t('navigation.login')}
+                {/* Right actions */}
+                <div className="flex items-center gap-1.5">
+                    <div className="hidden sm:block">
+                        <LanguageSelector currentLocale={locale} compact />
+                    </div>
+                    <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+                    <Link
+                        href="/auth/login"
+                        className="hidden sm:inline-flex text-muted-foreground hover:text-foreground transition-colors px-2"
+                    >
+                        {copy.header.login}
+                    </Link>
+                    <Link
+                        href="/auth/register"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3.5 py-1.5 rounded-full transition-colors"
+                    >
+                        <span className="hidden sm:inline">{copy.header.betaCta}</span>
+                        <span className="sm:hidden">{copy.header.betaShort}</span>
                     </Link>
                 </div>
             </nav>
+
+            {/* Mobile nav */}
+            <div className="flex md:hidden items-center justify-center gap-5 text-xs text-muted-foreground border-t border-border/30 h-9 px-4">
+                <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
+                <a href="#modules" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
+                <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
+                <Link href="/auth/login" className="hover:text-foreground transition-colors">{copy.header.login}</Link>
+            </div>
         </header>
     );
 }

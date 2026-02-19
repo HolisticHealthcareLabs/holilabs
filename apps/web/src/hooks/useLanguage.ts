@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Language, translations } from '@/lib/translations';
 
-const LANGUAGE_KEY = 'holilabs_language';
+// Aligned with LanguageContext (contexts/LanguageContext.tsx) so landing,
+// login, and dashboard all read/write the same localStorage key.
+const LANGUAGE_KEY = 'locale';
 
 export function useLanguage() {
   // Default to English (landing page default). We still hydrate from localStorage after mount.

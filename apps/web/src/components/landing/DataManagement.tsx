@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useLanguage } from '@/hooks/useLanguage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export function DataManagement() {
-    const { language } = useLanguage();
-    const isEn = language === 'en';
-    const isPt = language === 'pt';
+    const { locale } = useLanguage();
+    const isEn = locale === 'en';
+    const isPt = locale === 'pt';
     const tr = (en: string, es: string, pt: string = es) => (isEn ? en : isPt ? pt : es);
 
     return (

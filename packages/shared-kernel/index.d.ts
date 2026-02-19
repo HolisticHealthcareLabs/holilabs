@@ -496,3 +496,54 @@ export {
   type SafetyAlertProps,
   type SafetyAlertVariant,
 } from './src/types/clinical-ui';
+
+// ============================================================================
+// BLUE OCEAN — Actuarial Types (Phase 3)
+// ============================================================================
+
+/** Composite risk score produced by the RiskCalculatorService. */
+export interface CompositeRiskScore {
+  /** Overall risk score 0-100 (higher = riskier). */
+  compositeScore: number;
+  /** Tier classification. */
+  riskTier: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  /** Individual domain scores for transparency. */
+  domainBreakdown: {
+    cardiovascular: number;
+    metabolic: number;
+    screeningCompliance: number;
+    lifestyle: number;
+    overrideRisk: number;
+  };
+  /** Confidence level 0-1 (penalized by missing data). */
+  confidence: number;
+  /** Fields that were null/missing. */
+  missingFields: string[];
+  /** Computed at (ISO-8601). */
+  computedAt: string;
+}
+
+/** De-identified actuarial payload for insurer consumption. */
+export interface ActuarialPayload {
+  readonly __format: 'enterprise_risk_export';
+  /** Pseudonymized patient token. */
+  anonymizedPatientId: AnonymizedPatientId;
+  /** Composite risk score (0-100). */
+  compositeRiskScore: number;
+  /** Risk tier classification. */
+  riskTier: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  /** Domain breakdown (no PII). */
+  domainBreakdown: CompositeRiskScore['domainBreakdown'];
+  /** Confidence level (0-1). */
+  confidence: number;
+  /** TUSS procedure codes context. */
+  tussCodes: string[];
+  /** Protocol compliance rate. */
+  protocolCompliance: number;
+  /** Source organization (hashed for benchmarking). */
+  sourceOrgHash: string;
+  /** Timestamp of export (ISO-8601). */
+  exportedAt: string;
+  /** Data freshness — when the risk was computed (ISO-8601). */
+  riskComputedAt: string;
+}

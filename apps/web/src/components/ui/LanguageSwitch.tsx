@@ -21,7 +21,9 @@ export function LanguageSwitch({ onChange, className = '' }: LanguageSwitchProps
   const [language, setLanguage] = useState<'en' | 'es' | 'pt'>('en');
   const [mounted, setMounted] = useState(false);
 
-  const STORAGE_KEY = 'holilabs_language';
+  // Use the same localStorage key as LanguageContext so the choice carries
+  // seamlessly from landing → login → dashboard without any gap.
+  const STORAGE_KEY = 'locale';
 
   useEffect(() => {
     setMounted(true);
@@ -41,7 +43,8 @@ export function LanguageSwitch({ onChange, className = '' }: LanguageSwitchProps
     if (onChange) {
       onChange(newLanguage);
     }
-    // Reload page to apply new language
+    // Reload so standalone pages (login) that don't use LanguageProvider
+    // pick up the new value on next render.
     window.location.reload();
   };
 
