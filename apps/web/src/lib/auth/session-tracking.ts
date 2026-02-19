@@ -48,6 +48,18 @@ const DEFAULT_LIMITS: SessionLimits = {
 };
 
 /**
+ * Demo account session limits — allows many concurrent users to share the
+ * same demo credentials for workshops, sales demos, and onboarding.
+ */
+const DEMO_USER_ID = 'demo-clinician-id';
+
+const DEMO_LIMITS: SessionLimits = {
+  maxConcurrentSessions: 50,
+  maxIdleMinutes: 30,
+  maxAbsoluteHours: 8,
+};
+
+/**
  * Session Tracking Manager
  */
 export class SessionTrackingService {
@@ -81,15 +93,18 @@ export class SessionTrackingService {
     ipAddress: string,
     userAgent: string,
     token: string,
-    limits: SessionLimits = DEFAULT_LIMITS
+    limits?: SessionLimits
   ): Promise<SessionMetadata> {
+    // Auto-select generous limits for the shared demo account so many
+    // people can log in concurrently during demos and workshops.
+    const effectiveLimits = limits ?? (userId === DEMO_USER_ID ? DEMO_LIMITS : DEFAULT_LIMITS);
     const now = new Date();
     const sessionId = this.generateSessionId(userId, now.getTime());
     const deviceFingerprint = this.generateDeviceFingerprint(ipAddress, userAgent);
 
     // Calculate expiration times
-    const idleExpiresAt = new Date(now.getTime() + limits.maxIdleMinutes * 60 * 1000);
-    const absoluteExpiresAt = new Date(now.getTime() + limits.maxAbsoluteHours * 60 * 60 * 1000);
+    const idleExpiresAt = new Date(now.getTime() + effectiveLimits.maxIdleMinutes * 60 * 1000);
+    const absoluteExpiresAt = new Date(now.getTime() + effectiveLimits.maxAbsoluteHours * 60 * 60 * 1000);
     const expiresAt = new Date(Math.min(idleExpiresAt.getTime(), absoluteExpiresAt.getTime()));
 
     const session: SessionMetadata = {
@@ -110,7 +125,7 @@ export class SessionTrackingService {
     await this.redis.set(sessionKey, session, ttlSeconds);
 
     // Track session for user
-    await this.addUserSession(userId, sessionId, limits);
+    await this.addUserSession(userId, sessionId, effectiveLimits);
 
     // Track token for revocation
     await this.revocationService.trackUserToken(userId, token, ttlSeconds);
@@ -268,25 +283,29 @@ export class SessionTrackingService {
       };
     }
 
-    // Check device fingerprint for session hijacking
-    const currentFingerprint = this.generateDeviceFingerprint(ipAddress, userAgent);
+    // Check device fingerprint for session hijacking.
+    // Skip fingerprint validation for the shared demo account since many
+    // different browsers/devices intentionally share the same credentials.
+    if (session.userId !== DEMO_USER_ID) {
+      const currentFingerprint = this.generateDeviceFingerprint(ipAddress, userAgent);
 
-    if (currentFingerprint !== session.deviceFingerprint) {
-      logger.warn({
-        event: 'session_hijacking_detected',
-        sessionId,
-        userId: session.userId,
-        originalFingerprint: session.deviceFingerprint,
-        currentFingerprint,
-        originalIp: session.ipAddress,
-        currentIp: ipAddress,
-      });
+      if (currentFingerprint !== session.deviceFingerprint) {
+        logger.warn({
+          event: 'session_hijacking_detected',
+          sessionId,
+          userId: session.userId,
+          originalFingerprint: session.deviceFingerprint,
+          currentFingerprint,
+          originalIp: session.ipAddress,
+          currentIp: ipAddress,
+        });
 
-      return {
-        valid: false,
-        session,
-        reason: 'Device fingerprint mismatch - possible session hijacking',
-      };
+        return {
+          valid: false,
+          session,
+          reason: 'Device fingerprint mismatch - possible session hijacking',
+        };
+      }
     }
 
     return {

@@ -1,43 +1,16 @@
 {
   "$schema": "data/master/schemas/tuss.schema.json",
-  "version": "1.1.0",
-  "generatedAt": "2026-02-12T18:31:12.962Z",
+  "version": "2.0.0",
+  "generatedAt": "2026-02-12T22:00:00.000Z",
   "generatedBy": "scripts/extract-master-data.ts",
   "piiScanResult": "CLEAN",
   "codes": [
-    {
-      "code": "4.01.01.01",
-      "description": "Specialized Consultation — High Complexity",
-      "category": "SPECIALIZED",
-      "baseRateBOB": 4500,
-      "baseRateBRL": null,
-      "applicableSeverities": ["BLOCK"],
-      "actuarialWeight": 0.95
-    },
-    {
-      "code": "4.01.01.02",
-      "description": "Specialized Drug Interaction Review",
-      "category": "SPECIALIZED",
-      "baseRateBOB": 3750,
-      "baseRateBRL": null,
-      "applicableSeverities": ["FLAG"],
-      "actuarialWeight": 0.70
-    },
-    {
-      "code": "4.01.01.03",
-      "description": "Specialized Consultation — Data Completion",
-      "category": "SPECIALIZED",
-      "baseRateBOB": 3000,
-      "baseRateBRL": null,
-      "applicableSeverities": ["ATTESTATION_REQUIRED"],
-      "actuarialWeight": 0.50
-    },
     {
       "code": "1.01.01.01",
       "description": "Standard Visit — Low Complexity",
       "category": "STANDARD",
       "baseRateBOB": 1250,
-      "baseRateBRL": null,
+      "baseRateBRL": 150,
       "applicableSeverities": ["PASS"],
       "actuarialWeight": 0.10
     },
@@ -45,7 +18,7 @@
       "code": "1.01.01.09-6",
       "description": "Consulta em Consultório — Clínico Geral",
       "category": "STANDARD",
-      "baseRateBOB": 0,
+      "baseRateBOB": 1100,
       "baseRateBRL": 189,
       "applicableSeverities": ["PASS"],
       "actuarialWeight": 0.10
@@ -54,10 +27,433 @@
       "code": "1.01.01.15-0",
       "description": "Consulta em Consultório — Especialista",
       "category": "SPECIALIZED",
-      "baseRateBOB": 0,
+      "baseRateBOB": 2200,
       "baseRateBRL": 315,
       "applicableSeverities": ["BLOCK", "FLAG"],
       "actuarialWeight": 0.80
+    },
+    {
+      "code": "1.01.01.16-8",
+      "description": "Consulta em Pronto-Socorro",
+      "category": "STANDARD",
+      "baseRateBOB": 1800,
+      "baseRateBRL": 210,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.25
+    },
+    {
+      "code": "1.01.01.17-6",
+      "description": "Consulta Pré-Natal",
+      "category": "STANDARD",
+      "baseRateBOB": 1400,
+      "baseRateBRL": 175,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.15
+    },
+    {
+      "code": "1.01.02.01-0",
+      "description": "Consulta Odontológica Inicial",
+      "category": "STANDARD",
+      "baseRateBOB": 900,
+      "baseRateBRL": 120,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.08
+    },
+    {
+      "code": "2.01.01.01-2",
+      "description": "Hemograma Completo",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 350,
+      "baseRateBRL": 45,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.05
+    },
+    {
+      "code": "2.01.01.05-5",
+      "description": "Glicemia de Jejum",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 280,
+      "baseRateBRL": 35,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "2.01.01.12-8",
+      "description": "HbA1c — Hemoglobina Glicada",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 480,
+      "baseRateBRL": 65,
+      "applicableSeverities": ["PASS", "FLAG", "BLOCK"],
+      "actuarialWeight": 0.45
+    },
+    {
+      "code": "2.01.01.15-2",
+      "description": "Colesterol Total + Frações",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 420,
+      "baseRateBRL": 55,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.20
+    },
+    {
+      "code": "2.01.01.18-7",
+      "description": "Creatinina Sérica",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 300,
+      "baseRateBRL": 38,
+      "applicableSeverities": ["PASS", "FLAG", "BLOCK"],
+      "actuarialWeight": 0.40
+    },
+    {
+      "code": "2.01.01.20-9",
+      "description": "TSH — Hormônio Tireoestimulante",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 520,
+      "baseRateBRL": 70,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.18
+    },
+    {
+      "code": "2.01.01.22-5",
+      "description": "INR — Tempo de Protrombina",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 380,
+      "baseRateBRL": 48,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.65
+    },
+    {
+      "code": "2.01.01.25-0",
+      "description": "Ureia Sérica",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 280,
+      "baseRateBRL": 32,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.15
+    },
+    {
+      "code": "2.01.01.28-4",
+      "description": "TGO/TGP — Transaminases Hepáticas",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 350,
+      "baseRateBRL": 42,
+      "applicableSeverities": ["PASS", "FLAG", "BLOCK"],
+      "actuarialWeight": 0.35
+    },
+    {
+      "code": "2.01.01.30-6",
+      "description": "Ácido Úrico Sérico",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 300,
+      "baseRateBRL": 35,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "2.01.01.35-7",
+      "description": "PSA — Antígeno Prostático Específico",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 600,
+      "baseRateBRL": 80,
+      "applicableSeverities": ["PASS", "FLAG", "BLOCK"],
+      "actuarialWeight": 0.55
+    },
+    {
+      "code": "2.01.02.01-9",
+      "description": "Eletrocardiograma (ECG) 12 Derivações",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 650,
+      "baseRateBRL": 95,
+      "applicableSeverities": ["PASS", "FLAG", "BLOCK"],
+      "actuarialWeight": 0.50
+    },
+    {
+      "code": "2.01.02.05-1",
+      "description": "Ecocardiograma Transtorácico",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 1800,
+      "baseRateBRL": 280,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.72
+    },
+    {
+      "code": "2.01.02.10-8",
+      "description": "Teste Ergométrico (Esteira)",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 1200,
+      "baseRateBRL": 200,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.38
+    },
+    {
+      "code": "2.01.02.15-9",
+      "description": "Holter 24 Horas",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 1400,
+      "baseRateBRL": 240,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.60
+    },
+    {
+      "code": "2.01.03.01-5",
+      "description": "Radiografia de Tórax PA + Perfil",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 500,
+      "baseRateBRL": 75,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "2.01.03.05-8",
+      "description": "Tomografia Computadorizada de Crânio",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 3500,
+      "baseRateBRL": 580,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.78
+    },
+    {
+      "code": "2.01.03.10-4",
+      "description": "Ressonância Magnética de Coluna",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 4200,
+      "baseRateBRL": 750,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.82
+    },
+    {
+      "code": "2.01.03.15-5",
+      "description": "Ultrassonografia Abdominal Total",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 800,
+      "baseRateBRL": 130,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.22
+    },
+    {
+      "code": "2.01.03.20-1",
+      "description": "Mamografia Bilateral",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 700,
+      "baseRateBRL": 110,
+      "applicableSeverities": ["PASS", "FLAG", "BLOCK"],
+      "actuarialWeight": 0.48
+    },
+    {
+      "code": "2.01.03.25-2",
+      "description": "Densitometria Óssea",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 850,
+      "baseRateBRL": 140,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.28
+    },
+    {
+      "code": "2.01.04.01-1",
+      "description": "Endoscopia Digestiva Alta",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 2200,
+      "baseRateBRL": 380,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.62
+    },
+    {
+      "code": "2.01.04.05-4",
+      "description": "Colonoscopia",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 3000,
+      "baseRateBRL": 520,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.68
+    },
+    {
+      "code": "3.01.01.01-3",
+      "description": "Fisioterapia — Sessão Individual",
+      "category": "STANDARD",
+      "baseRateBOB": 600,
+      "baseRateBRL": 85,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.08
+    },
+    {
+      "code": "3.01.01.05-6",
+      "description": "Psicoterapia — Sessão Individual",
+      "category": "STANDARD",
+      "baseRateBOB": 1000,
+      "baseRateBRL": 160,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "3.01.01.10-2",
+      "description": "Quimioterapia — Ciclo Ambulatorial",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 8500,
+      "baseRateBRL": 2800,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.95
+    },
+    {
+      "code": "3.01.01.15-3",
+      "description": "Radioterapia — Sessão",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 5500,
+      "baseRateBRL": 1800,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.92
+    },
+    {
+      "code": "3.01.01.20-0",
+      "description": "Hemodiálise — Sessão",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 3800,
+      "baseRateBRL": 950,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.90
+    },
+    {
+      "code": "4.01.01.01",
+      "description": "Specialized Consultation — High Complexity",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 4500,
+      "baseRateBRL": 850,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.95
+    },
+    {
+      "code": "4.01.01.02",
+      "description": "Specialized Drug Interaction Review",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 3750,
+      "baseRateBRL": 720,
+      "applicableSeverities": ["FLAG"],
+      "actuarialWeight": 0.70
+    },
+    {
+      "code": "4.01.01.03",
+      "description": "Specialized Consultation — Data Completion",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 3000,
+      "baseRateBRL": 580,
+      "applicableSeverities": ["ATTESTATION_REQUIRED"],
+      "actuarialWeight": 0.50
+    },
+    {
+      "code": "4.01.02.01-7",
+      "description": "Internação Hospitalar — Enfermaria",
+      "category": "SURGICAL",
+      "baseRateBOB": 6000,
+      "baseRateBRL": 1200,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.88
+    },
+    {
+      "code": "4.01.02.05-0",
+      "description": "Internação em UTI — Diária",
+      "category": "SURGICAL",
+      "baseRateBOB": 15000,
+      "baseRateBRL": 4500,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.98
+    },
+    {
+      "code": "4.01.03.01-3",
+      "description": "Cirurgia Cardíaca — Revascularização do Miocárdio",
+      "category": "SURGICAL",
+      "baseRateBOB": 45000,
+      "baseRateBRL": 18000,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.99
+    },
+    {
+      "code": "4.01.03.05-6",
+      "description": "Artroplastia Total de Quadril",
+      "category": "SURGICAL",
+      "baseRateBOB": 28000,
+      "baseRateBRL": 12000,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.92
+    },
+    {
+      "code": "4.01.03.10-2",
+      "description": "Colecistectomia Videolaparoscópica",
+      "category": "SURGICAL",
+      "baseRateBOB": 8000,
+      "baseRateBRL": 3500,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.75
+    },
+    {
+      "code": "4.01.03.15-3",
+      "description": "Apendicectomia",
+      "category": "SURGICAL",
+      "baseRateBOB": 6500,
+      "baseRateBRL": 2800,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.70
+    },
+    {
+      "code": "4.01.03.20-0",
+      "description": "Hernioplastia Inguinal",
+      "category": "SURGICAL",
+      "baseRateBOB": 5500,
+      "baseRateBRL": 2200,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.55
+    },
+    {
+      "code": "4.01.03.25-0",
+      "description": "Cesariana",
+      "category": "SURGICAL",
+      "baseRateBOB": 7000,
+      "baseRateBRL": 3200,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.65
+    },
+    {
+      "code": "4.01.03.30-7",
+      "description": "Parto Normal com Assistência",
+      "category": "SURGICAL",
+      "baseRateBOB": 4000,
+      "baseRateBRL": 1800,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.40
+    },
+    {
+      "code": "4.01.04.01-9",
+      "description": "Cateterismo Cardíaco Diagnóstico",
+      "category": "SPECIALIZED",
+      "baseRateBOB": 12000,
+      "baseRateBRL": 5500,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.93
+    },
+    {
+      "code": "4.01.04.05-1",
+      "description": "Angioplastia Coronária com Stent",
+      "category": "SURGICAL",
+      "baseRateBOB": 35000,
+      "baseRateBRL": 15000,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.97
+    },
+    {
+      "code": "4.01.05.01-5",
+      "description": "Transplante Renal",
+      "category": "SURGICAL",
+      "baseRateBOB": 80000,
+      "baseRateBRL": 45000,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.99
+    },
+    {
+      "code": "4.01.05.05-8",
+      "description": "Transplante de Medula Óssea",
+      "category": "SURGICAL",
+      "baseRateBOB": 120000,
+      "baseRateBRL": 85000,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.99
     }
   ]
 }

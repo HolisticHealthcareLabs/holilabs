@@ -22,6 +22,7 @@
     "docker:down": "cd infra/docker && docker-compose down",
     "db:migrate": "cd apps/api && pnpm prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:drugs": "tsx prisma/seed-drugs.ts",
     "docs:cortex:update": "node scripts/update-cortex-docs-metadata.js --mode auto",
     "docs:cortex:update:daily": "node scripts/update-cortex-docs-metadata.js --mode daily",
     "docs:cortex:update:monday": "node scripts/update-cortex-docs-metadata.js --mode monday --append-log",

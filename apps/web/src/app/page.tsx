@@ -15,27 +15,16 @@ import { Footer } from '@/components/landing/Footer';
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(false);
-  // Theme hook is used for side-effects (applying class to document)
   useTheme();
 
   return (
     <>
       {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} duration={1500} />}
 
-      {/* Background & Theme Wrapper */}
-      <div className="min-h-screen font-sans tracking-tight text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-blue-500/30 bg-background">
-
-        {/* Subtle grid pattern */}
-        <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
-            backgroundSize: '40px 40px'
-          }} />
-        </div>
-
+      <div className="min-h-screen font-sans tracking-tight text-foreground transition-colors duration-300 overflow-x-hidden selection:bg-blue-500/30">
         <LandingHeader />
 
-        <main className="relative z-10">
+        <main>
           <Hero />
           <HowItWorks />
           <Architecture />

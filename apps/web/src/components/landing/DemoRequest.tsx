@@ -2,8 +2,12 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getLandingCopy } from '@/components/landing/copy';
 
 export function DemoRequest() {
+    const { locale } = useLanguage();
+    const copy = getLandingCopy(locale);
     const [email, setEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -17,94 +21,96 @@ export function DemoRequest() {
             const response = await fetch('/api/auth/invite/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, fullName: 'Landing Page Guest' }), // We only have email field here, we could add name later
+                body: JSON.stringify({ email, fullName: 'Landing Page Guest' }),
             });
 
             if (response.ok) {
-                setMessage({ type: 'success', text: "Access request received. We'll be in touch with your invitation soon." });
+                setMessage({ type: 'success', text: copy.demo.success });
                 setEmail('');
             } else {
                 const data = await response.json();
-                setMessage({ type: 'error', text: data.error || "Failed to process request." });
+                setMessage({ type: 'error', text: data.error || copy.demo.requestError });
             }
-        } catch (error) {
-            setMessage({ type: 'error', text: "Connection error. Please try again later." });
+        } catch {
+            setMessage({ type: 'error', text: copy.demo.networkError });
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <section id="demo" className="py-32 px-6 bg-background">
-            <div className="container mx-auto max-w-4xl text-center">
-
+        <section id="demo" className="bg-secondary/30 dark:bg-white/[0.02]">
+            <div className="max-w-[680px] mx-auto px-4 sm:px-6 py-24 sm:py-32 text-center">
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.5 }}
                 >
-                    <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8 tracking-tight">
-                        Choose your path: <br /> clinic or enterprise.
+                    <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6 tracking-tight">
+                        {copy.demo.title}
                     </h2>
-                    <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-                        Private practice teams can start the web app beta now. Hospital leaders can request a Cortex pilot for governance, safety checks, and follow-up workflows.
+                    <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
+                        {copy.demo.subtitle}
                     </p>
 
-                    <div className="mb-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    {/* Two path CTAs */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
                         <a
                             href="/auth/register"
-                            className="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-all"
+                            className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors"
                         >
-                            For Private Practice: Start Free Beta
+                            {copy.demo.ctaClinic}
+                            <svg className="ml-1.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </a>
                         <a
                             href="#demo-form"
-                            className="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-semibold text-foreground bg-secondary border border-border hover:bg-muted transition-all"
+                            className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium text-foreground bg-background border border-border hover:bg-muted transition-colors"
                         >
-                            For Enterprise: Request Cortex Pilot
+                            {copy.demo.ctaEnterprise}
                         </a>
                     </div>
 
-                    <form id="demo-form" onSubmit={handleSubmit} className="max-w-md mx-auto relative group">
+                    {/* Email form */}
+                    <form id="demo-form" onSubmit={handleSubmit} className="relative">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Enter work email..."
-                                className="flex-1 bg-secondary border border-border rounded-xl px-6 py-4 text-foreground outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-muted-foreground"
+                                placeholder={copy.demo.emailPlaceholder}
+                                className="flex-1 bg-background border border-border rounded-full px-5 py-3 text-foreground text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-muted-foreground"
                                 required
                             />
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-blue-500/10 active:scale-95"
+                                className="bg-foreground text-background font-medium text-sm px-6 py-3 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
                             >
-                                {isSubmitting ? 'Sending...' : 'Request Cortex Pilot'}
+                                {isSubmitting ? copy.demo.sending : copy.demo.requestCta}
                             </button>
                         </div>
 
                         {message && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className={`absolute top-full left-0 right-0 mt-6 p-4 rounded-xl text-sm font-semibold border ${message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-600'}`}
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className={`mt-4 text-sm font-medium ${message.type === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
                             >
                                 {message.text}
-                            </motion.div>
+                            </motion.p>
                         )}
                     </form>
 
-                    <div className="mt-12 flex items-center justify-center gap-8 text-sm font-medium text-muted-foreground/60">
-                        <span className="flex items-center gap-2">Invite-only pilot</span>
-                        <span className="w-1 h-1 rounded-full bg-border"></span>
-                        <span className="flex items-center gap-2">No deep integration to start</span>
-                        <span className="w-1 h-1 rounded-full bg-border"></span>
-                        <span className="flex items-center gap-2">macOS + Windows</span>
+                    {/* Trust signals */}
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground/60">
+                        <span>{copy.demo.inviteOnly}</span>
+                        <span className="hidden sm:inline">·</span>
+                        <span>{copy.demo.noIntegration}</span>
+                        <span className="hidden sm:inline">·</span>
+                        <span>{copy.demo.desktop}</span>
                     </div>
                 </motion.div>
-
             </div>
         </section>
     );

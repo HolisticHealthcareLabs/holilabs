@@ -4248,6 +4248,7 @@ model Organization {
   insuranceAuthorizations InsuranceAuthorization[]
   rndsExchangeLogs        RNDSExchangeLog[]
   dicomSeries             DicomSeries[]
+  formularyRules          FormularyRule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -5651,3 +5652,79 @@ model AuditLogHashChain {
   @@index([chainSequence])
   @@map("audit_log_hash_chain")
 }
+
+// ============================================================================
+// FORMULARY & PROTOCOL MANAGEMENT
+// ============================================================================
+
+model DrugProduct {
+  id               String   @id @default(cuid())
+  name             String
+  genericName      String?
+  rxNormCode       String?  @unique // RxNorm Concept ID (US)
+  dcbCode          String?  // Denominação Comum Brasileira (Anvisa)
+  therapeuticClass String?
+  marketPrice      Decimal? @db.Decimal(10, 2)
+  manufacturer     String?
+  isActive         Boolean  @default(true)
+
+  // Relations
+  formularyRulesTarget    FormularyRule[] @relation("TargetDrug")
+  formularyRulesPreferred FormularyRule[] @relation("PreferredDrug")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("drug_products")
+}
+
+model FormularyRule {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // The drug being restricted/checked
+  drugProductId String
+  targetDrug    DrugProduct @relation("TargetDrug", fields: [drugProductId], references: [id])
+
+  // The preferred alternative (optional)
+  preferredDrugId String?
+  preferredDrug   DrugProduct? @relation("PreferredDrug", fields: [preferredDrugId], references: [id])
+
+  ruleType           FormularyRuleType
+  costSavingEstimate Decimal?          @db.Decimal(10, 2)
+  clinicalRationale  String?           @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  overrides FormularyOverride[]
+
+  @@unique([organizationId, drugProductId])
+  @@map("formulary_rules")
+}
+
+enum FormularyRuleType {
+  PREFERRED
+  RESTRICTED
+  EXCLUDED
+  PRIOR_AUTH_REQUIRED
+}
+
+model FormularyOverride {
+  id             String   @id @default(cuid())
+  
+  // Link to the rule that was overridden
+  ruleId         String
+  rule           FormularyRule @relation(fields: [ruleId], references: [id])
+
+  // Context
+  prescriptionId String? // Optional link to prescription if it exists
+  clinicianId    String  // ID of the user who overrode
+  
+  overrideReason String  @db.Text
+  timestamp      DateTime @default(now())
+
+  @@map("formulary_overrides")
+}
+

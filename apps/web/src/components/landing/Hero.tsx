@@ -3,89 +3,91 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getLandingCopy } from '@/components/landing/copy';
 
 export function Hero() {
+    const { locale } = useLanguage();
+    const copy = getLandingCopy(locale);
+
     return (
-        <section className="relative min-h-screen flex items-center overflow-hidden pt-20 sm:pt-24 pb-12 bg-background transition-colors duration-300">
+        <section className="relative bg-black text-white overflow-hidden">
+            {/* Subtle radial glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center_top,rgba(59,130,246,0.15),transparent_70%)]" />
 
-            {/* Abstract Hero Background */}
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <div className="relative max-w-[980px] mx-auto px-4 sm:px-6 pt-36 sm:pt-44 pb-20 sm:pb-28 text-center">
+                {/* Kicker */}
+                <motion.p
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-blue-400 text-sm sm:text-base font-medium tracking-wide mb-6"
+                >
+                    {copy.hero.badge}
+                </motion.p>
+
+                {/* Headline */}
+                <motion.h1
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="text-5xl sm:text-6xl md:text-7xl lg:text-[80px] font-bold leading-[1.05] tracking-tight mb-4"
+                >
+                    {copy.hero.title}
+                </motion.h1>
+
+                <motion.p
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.15 }}
+                    className="text-4xl sm:text-5xl md:text-6xl lg:text-[64px] font-bold leading-[1.05] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-8"
+                >
+                    {copy.hero.highlight}
+                </motion.p>
+
+                {/* Description */}
+                <motion.p
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.25 }}
+                    className="text-lg sm:text-xl text-white/70 leading-relaxed max-w-2xl mx-auto mb-4"
+                >
+                    {copy.hero.description}
+                </motion.p>
+
+                <motion.p
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    className="text-base sm:text-lg text-blue-300/80 font-medium mb-10"
+                >
+                    {copy.hero.supportLine}
+                </motion.p>
+
+                {/* CTAs */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                    className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-gradient-to-br from-blue-400/10 to-indigo-500/10 rounded-full blur-3xl -mr-32 -mt-32 dark:from-blue-900/20 dark:to-indigo-900/20"
-                />
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-                    className="absolute bottom-0 left-0 w-[40vw] h-[40vw] bg-gradient-to-tr from-blue-400/10 to-blue-500/10 rounded-full blur-3xl -ml-20 -mb-20 dark:from-blue-900/20 dark:to-blue-900/20"
-                />
-            </div>
-
-            <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-7xl">
-                <div className="max-w-4xl">
-
-                    {/* Status Pill */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-card border border-border shadow-sm mb-6 sm:mb-8"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.35 }}
+                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                >
+                    <Link
+                        href="/auth/register"
+                        className="inline-flex items-center justify-center px-7 py-3 rounded-full text-base font-medium bg-blue-600 hover:bg-blue-500 text-white transition-colors"
                     >
-                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase text-muted-foreground text-blue-600 dark:text-blue-400">Inpatient Cardiology Pilot</span>
-                    </motion.div>
-
-                    {/* Headline */}
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] sm:leading-[1.05] tracking-tight mb-6 sm:mb-8 text-foreground"
+                        <span className="hidden sm:inline">{copy.hero.primaryCta}</span>
+                        <span className="sm:hidden">{copy.hero.primaryShort}</span>
+                        <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </Link>
+                    <Link
+                        href="#demo"
+                        className="inline-flex items-center justify-center text-base font-medium text-blue-400 hover:text-blue-300 transition-colors"
                     >
-                        Cortex by Holi Labs. <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-500">
-                            Safeguard every decision.
-                        </span>
-                    </motion.h1>
-
-                    {/* Subheadline */}
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                        className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground leading-relaxed font-light mb-8 sm:mb-12 max-w-2xl"
-                    >
-                        Real-time clinical safety support that works alongside your EHR. Generative AI helps with documentation; deterministic clinical logic protects high-risk decisions with clear rationale and auditability.
-                        <span className="block mt-3 sm:mt-4 font-medium text-foreground text-blue-600 dark:text-blue-400">Web-first for LATAM workflows, with an optional lightweight desktop companion.</span>
-                    </motion.p>
-
-                    {/* CTAs */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                        className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4"
-                    >
-                        <Link
-                            href="/auth/register"
-                            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold text-primary-foreground bg-primary hover:bg-primary/90 transition-all hover:scale-105 shadow-xl shadow-primary/20 text-center"
-                        >
-                            <span className="hidden sm:inline">For Private Practice: Start Free Beta</span>
-                            <span className="sm:hidden">Start Free Beta</span>
-                        </Link>
-                        <Link
-                            href="#demo"
-                            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold text-foreground bg-card border border-border hover:bg-muted transition-all hover:border-muted-foreground/20 text-center"
-                        >
-                            <span className="hidden sm:inline">For Enterprise: Request Cortex Pilot</span>
-                            <span className="sm:hidden">Request Pilot</span>
-                        </Link>
-                    </motion.div>
-
-                </div>
+                        <span className="hidden sm:inline">{copy.hero.secondaryCta}</span>
+                        <span className="sm:hidden">{copy.hero.secondaryShort}</span>
+                        <svg className="ml-1.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </Link>
+                </motion.div>
             </div>
         </section>
     );

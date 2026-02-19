@@ -2,92 +2,88 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Activity } from 'lucide-react';
+import { Shield, BarChart3, Activity } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getLandingCopy } from '@/components/landing/copy';
+
+const icons = [Shield, BarChart3, Activity];
 
 export function Architecture() {
-    return (
-        <section id="modules" className="py-24 px-6 bg-secondary">
-            <div className="container mx-auto max-w-7xl">
+  const { locale } = useLanguage();
+  const copy = getLandingCopy(locale);
 
-                {/* Section Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    className="text-center mb-20"
-                >
-                    <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block text-blue-600 dark:text-blue-400">
-                        CORE ARCHITECTURE
+  return (
+    <section id="modules" className="bg-black text-white">
+      {/* Section header */}
+      <div className="max-w-[980px] mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-16 text-center">
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-blue-400 text-sm font-semibold uppercase tracking-widest mb-4"
+        >
+          {copy.architecture.kicker}
+        </motion.p>
+        <motion.h2
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-6"
+        >
+          {copy.architecture.title}
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="text-lg sm:text-xl text-white/60 leading-relaxed max-w-3xl mx-auto"
+        >
+          {copy.architecture.subtitle}
+        </motion.p>
+      </div>
+
+      {/* Three module cards */}
+      <div className="max-w-[980px] mx-auto px-4 sm:px-6 pb-24 sm:pb-32">
+        <div className="grid md:grid-cols-3 gap-6">
+          {copy.architecture.cards.map((card, index) => {
+            const Icon = icons[index] ?? Activity;
+
+            return (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 * index }}
+                className="group"
+              >
+                <div className="rounded-2xl bg-white/[0.04] border border-white/[0.08] p-8 h-full hover:bg-white/[0.07] transition-colors duration-300">
+                  {/* Icon */}
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-6">
+                    <Icon className="w-7 h-7 text-white" strokeWidth={1.5} />
+                  </div>
+
+                  <h3 className="text-xl font-bold mb-3">{card.title}</h3>
+                  <p className="text-white/50 leading-relaxed mb-6 text-[15px]">{card.body}</p>
+
+                  {/* Chips */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex rounded-full bg-blue-500/10 border border-blue-500/20 px-3 py-1 text-xs font-medium text-blue-300">
+                      {card.chipA}
                     </span>
-                    <h2 className="text-5xl md:text-6xl font-bold text-foreground mb-8 leading-tight">
-                        Three pillars for <br /> safer DOAC decisions.
-                    </h2>
-                </motion.div>
-
-                {/* Three Feature Pillars */}
-                <div className="grid md:grid-cols-3 gap-8">
-
-                    {/* Pillar 1: The Checklist */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className="rounded-[2rem] bg-card p-8 border border-border hover:shadow-2xl transition-all group"
-                    >
-                        <div className="mb-8 aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-blue-500 to-indigo-600 p-8 flex items-center justify-center shadow-lg relative overflow-hidden text-white">
-                            <div className="absolute inset-0 bg-[url('/img/grid.svg')] opacity-20"></div>
-                            <Shield className="w-24 h-24 animate-pulse" strokeWidth={1.5} />
-                        </div>
-                        <h3 className="text-2xl font-bold text-foreground mb-4">The Checklist</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            A 30-second verification flow for DOAC safety and discharge. If key data is missing (e.g., renal function), Cortex requires an attestation or manual entry—no guessing.
-                        </p>
-                    </motion.div>
-
-                    {/* Pillar 2: The Audit Console */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="rounded-[2rem] bg-card p-8 border border-border hover:shadow-2xl transition-all group"
-                    >
-                        <div className="mb-8 aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-slate-800 to-slate-900 p-8 flex items-center justify-center shadow-lg relative overflow-hidden">
-                            <div className="w-full h-full bg-slate-800/50 rounded-xl border border-white/10 flex flex-col p-3 gap-2">
-                                <div className="h-2 w-1/3 bg-slate-600 rounded"></div>
-                                <div className="flex-1 bg-slate-950/50 rounded border border-blue-500/30 flex items-center justify-center">
-                                    <span className="text-blue-400 font-mono text-xs">QUALITY DASHBOARD</span>
-                                </div>
-                            </div>
-                        </div>
-                        <h3 className="text-2xl font-bold text-foreground mb-4">The Audit Console</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            A governance view for quality and leadership. Track what was verified, what was overridden, and why—without waiting for retrospective chart audits.
-                        </p>
-                    </motion.div>
-
-                    {/* Pillar 3: The Follow-up */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                        className="rounded-[2rem] bg-card p-8 border border-border hover:shadow-2xl transition-all group"
-                    >
-                        <div className="mb-8 aspect-[4/3] rounded-[1.5rem] bg-gradient-to-br from-blue-700 to-indigo-800 p-8 flex items-center justify-center shadow-lg relative overflow-hidden text-white">
-                            <div className="absolute inset-0 bg-[url('/img/grid.svg')] opacity-20"></div>
-                            <Activity className="w-24 h-24" strokeWidth={1.5} />
-                        </div>
-                        <h3 className="text-2xl font-bold text-foreground mb-4">The Follow-up</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            Close the loop after discharge with structured reminders and adherence workflows (including WhatsApp where appropriate), so protocols don’t end at the hospital door.
-                        </p>
-                    </motion.div>
-
+                    <span className="inline-flex rounded-full bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 text-xs font-medium text-indigo-300">
+                      {card.chipB}
+                    </span>
+                  </div>
                 </div>
-            </div>
-        </section>
-    );
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
 }

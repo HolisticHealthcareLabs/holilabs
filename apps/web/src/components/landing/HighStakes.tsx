@@ -2,84 +2,68 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getLandingCopy } from '@/components/landing/copy';
 
 export function HighStakes() {
-    return (
-        <section id="security" className="py-24 px-6 bg-slate-900 border-t border-slate-800">
-            <div className="container mx-auto max-w-7xl">
+  const { locale } = useLanguage();
+  const copy = getLandingCopy(locale);
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    className="mb-20 text-center md:text-left"
-                >
-                    <span className="text-xs font-bold uppercase tracking-[0.3em] mb-6 block text-blue-400">
-                        CLINICAL SAFETY INFRASTRUCTURE
-                    </span>
-                    <h2 className="text-5xl md:text-6xl font-bold mb-8 leading-tight text-white">
-                        Built to protect care <br /> in high-risk moments.
-                    </h2>
-                </motion.div>
+  return (
+    <section id="security" className="relative overflow-hidden">
+      {/* Gradient background like Apple Developer Program section */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-600 via-purple-600 to-fuchsia-600" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center_bottom,rgba(255,255,255,0.1),transparent_70%)]" />
 
-                <div className="grid md:grid-cols-3 gap-8">
-                    {/* Use Case 1 */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                    >
-                        <h3 className="text-2xl font-bold mb-4 text-white">Revenue Integrity at the Source</h3>
-                        <p className="text-slate-400 leading-relaxed mb-6">
-                            Catch missing modifiers, safety documentation gaps, and protocol misses before chart close to reduce downstream denials.
-                        </p>
-                        <ul className="space-y-3 text-sm text-slate-300">
-                            <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> Deterministic checks + clear rationale</li>
-                            <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> Pre-close documentation safeguards</li>
-                        </ul>
-                    </motion.div>
+      <div className="relative max-w-[980px] mx-auto px-4 sm:px-6 py-24 sm:py-32">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <p className="text-white/60 text-sm font-semibold uppercase tracking-widest mb-4">
+            {copy.safety.kicker}
+          </p>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-4xl mx-auto">
+            {copy.safety.title}
+          </h2>
+        </motion.div>
 
-                    {/* Use Case 2 */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                    >
-                        <h3 className="text-2xl font-bold mb-4 text-white">Audit & Governance</h3>
-                        <p className="text-slate-400 leading-relaxed mb-6">
-                            Capture override reasons and protocol drift. Help quality teams improve workflows with evidence—not anecdotes.
-                        </p>
-                        <ul className="space-y-3 text-sm text-slate-300">
-                            <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> Structured override reasons</li>
-                            <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> Exportable audit summaries</li>
-                        </ul>
-                    </motion.div>
+        {/* Three feature columns */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {copy.safety.cards.map((card, index) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 * index }}
+              className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-8 hover:bg-white/[0.14] transition-colors duration-300"
+            >
+              <h3 className="text-xl font-bold text-white mb-3">{card.title}</h3>
+              <p className="text-white/60 leading-relaxed mb-6 text-[15px]">{card.body}</p>
 
-                    {/* Use Case 3 */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                        className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                    >
-                        <h3 className="text-2xl font-bold mb-4 text-white">Follow-up & Adherence</h3>
-                        <p className="text-slate-400 leading-relaxed mb-6">
-                            Close the loop after discharge with reminders and structured follow-up workflows—where your patients actually are.
-                        </p>
-                        <ul className="space-y-3 text-sm text-slate-300">
-                            <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> WhatsApp-compatible reminders</li>
-                            <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> Escalate to staff when needed</li>
-                        </ul>
-                    </motion.div>
-                </div>
-
-            </div>
-        </section>
-    );
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2.5 text-sm text-white/80">
+                  <svg className="w-4 h-4 mt-0.5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{card.bulletA}</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-white/80">
+                  <svg className="w-4 h-4 mt-0.5 text-white/50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>{card.bulletB}</span>
+                </li>
+              </ul>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }

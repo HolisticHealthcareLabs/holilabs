@@ -25,12 +25,11 @@ describe('RevenueImpactBadge', () => {
     expect(screen.getByText('4.01.01.01')).toBeInTheDocument();
   });
 
-  it('shows rate when showRate is true for BOB currency', () => {
+  it('shows rate when showRate is true for specialized code', () => {
     render(<RevenueImpactBadge tussCode="4.01.01.01" showRate />);
-    // Bs. 4,500 (or locale variant)
     expect(screen.getByText('4.01.01.01')).toBeInTheDocument();
-    // Rate should be visible
-    const rateEl = screen.getByText(/Bs\./);
+    // Code has both BRL and BOB; formatRate returns BRL when available
+    const rateEl = screen.getByText(/R\$/);
     expect(rateEl).toBeInTheDocument();
   });
 

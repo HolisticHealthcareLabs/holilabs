@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { checkFormulary } from '@/lib/traffic-light/rules/formulary';
+import { TrafficLightSignal } from '@/lib/governance/shared-types';
+import { logFormularyOverride, logNudgeImpression } from '@/lib/audit/formulary-logger';
 
 /**
  * MedicationPrescription Component
@@ -114,6 +117,9 @@ export function MedicationPrescription({
   const [searchResults, setSearchResults] = useState(COMMON_MEDICATIONS);
   const [selectedMedication, setSelectedMedication] = useState<typeof COMMON_MEDICATIONS[0] | null>(null);
   const [interactions, setInteractions] = useState<DrugInteraction[]>([]);
+  const [formularySignal, setFormularySignal] = useState<TrafficLightSignal | null>(null);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
   const [formData, setFormData] = useState<Partial<Medication>>({
     route: 'Oral',
     frequency: 'BID',
@@ -160,6 +166,24 @@ export function MedicationPrescription({
     setInteractions(foundInteractions);
   }, [selectedMedication, currentMedications]);
 
+  // Check formulary status
+  useEffect(() => {
+    if (!selectedMedication) {
+      setFormularySignal(null);
+      return;
+    }
+
+    const check = async () => {
+      const drugName = selectedMedication.genericName || selectedMedication.brandName || '';
+      const signal = await checkFormulary(drugName, 'default-org');
+      setFormularySignal(signal);
+      if (signal) {
+        logNudgeImpression('current-user-id', signal.ruleId, 'VIEWED');
+      }
+    };
+    check();
+  }, [selectedMedication]);
+
   const handleSelectMedication = (med: typeof COMMON_MEDICATIONS[0]) => {
     setSelectedMedication(med);
     setFormData((prev) => ({
@@ -177,6 +201,21 @@ export function MedicationPrescription({
       return;
     }
 
+    // Block if Restricted (Orange) and no override
+    if (formularySignal?.color === 'ORANGE' && !showOverrideModal) {
+      setShowOverrideModal(true);
+      return;
+    }
+
+    // Log override if applicable
+    if (formularySignal?.color === 'ORANGE' && showOverrideModal && overrideReason) {
+      logFormularyOverride('current-user-id', formularySignal.ruleId, overrideReason, formData);
+    } else if (formularySignal?.color === 'GREEN') {
+       // If they proceeded despite a green nudge (didn't switch), we log it as dismissed/ignored implicitly
+       // or if they switched, we'd log that separately. For now, assuming "proceed with original" = ignored.
+       logNudgeImpression('current-user-id', formularySignal.ruleId, 'DISMISSED');
+    }
+
     if (onPrescribe) {
       onPrescribe(formData as Medication);
     }
@@ -190,6 +229,9 @@ export function MedicationPrescription({
     });
     setSelectedMedication(null);
     setSearchQuery('');
+    setFormularySignal(null);
+    setShowOverrideModal(false);
+    setOverrideReason('');
     setShowPrescriptionForm(false);
   };
 
@@ -202,6 +244,9 @@ export function MedicationPrescription({
     });
     setSelectedMedication(null);
     setSearchQuery('');
+    setFormularySignal(null);
+    setShowOverrideModal(false);
+    setOverrideReason('');
     setShowPrescriptionForm(false);
   };
 
@@ -313,6 +358,87 @@ export function MedicationPrescription({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Formulary Nudge */}
+              <AnimatePresence>
+                {formularySignal && !showOverrideModal && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className={`p-4 rounded-lg border-l-4 ${
+                      formularySignal.color === 'ORANGE' 
+                        ? 'bg-orange-50 border-orange-500 text-orange-800' 
+                        : 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-sm">{formularySignal.message}</div>
+                        <div className="text-sm mt-1">{formularySignal.suggestedCorrection}</div>
+                        {formularySignal.evidence?.length ? (
+                          <div className="text-xs mt-2 opacity-75">
+                            Source: {formularySignal.evidence[0]}
+                          </div>
+                        ) : null}
+                      </div>
+                      {formularySignal.color === 'GREEN' && (
+                        <button 
+                          onClick={() => setFormularySignal(null)}
+                          className="text-xs hover:underline opacity-60 hover:opacity-100"
+                        >
+                          Dismiss
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Override Modal */}
+              {showOverrideModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-xl max-w-md w-full mx-4 border border-zinc-200 dark:border-zinc-800">
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-2">
+                      Formulary Override Required
+                    </h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                      {formularySignal?.message} This medication is restricted. Please provide a clinical justification to proceed.
+                    </p>
+                    
+                    <label className="block text-xs font-medium text-zinc-500 mb-1">
+                      Reason for Override
+                    </label>
+                    <select 
+                      className="w-full p-2 mb-4 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm"
+                      value={overrideReason}
+                      onChange={(e) => setOverrideReason(e.target.value)}
+                    >
+                      <option value="">Select a reason...</option>
+                      <option value="INTOLERANCE">Patient Intolerance / Allergy</option>
+                      <option value="CLINICAL_NECESSITY">Clinical Necessity (Failed First-Line)</option>
+                      <option value="CONTRAINDICATION">Contraindication to Preferred Agent</option>
+                      <option value="STABILITY">Patient Stable on Current Therapy</option>
+                    </select>
+
+                    <div className="flex justify-end gap-3">
+                      <button 
+                        onClick={() => setShowOverrideModal(false)}
+                        className="px-4 py-2 text-sm text-zinc-600 hover:text-zinc-900"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handlePrescribe}
+                        disabled={!overrideReason}
+                        className="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Confirm Override
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
