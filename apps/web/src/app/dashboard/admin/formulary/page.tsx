@@ -14,8 +14,8 @@ import {
   getFormularyRules,
   type DrugProductSearchResult,
   type FormularyRuleWithDrugs,
+  type FormularyRuleType,
 } from './actions';
-import type { FormularyRuleType } from '@prisma/client';
 
 const ORG_ID = 'default-org';
 

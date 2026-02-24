@@ -9,6 +9,8 @@ const NAV_ITEMS = [
   { label: 'Dashboard', href: '/enterprise/dashboard', icon: 'grid' },
   { label: 'Assessments', href: '/enterprise/assessments', icon: 'search' },
   { label: 'Analytics', href: '/enterprise/analytics', icon: 'chart' },
+  { label: 'Flywheel', href: '/enterprise/flywheel', icon: 'refresh' },
+  { label: 'Outcomes', href: '/enterprise/outcomes', icon: 'link' },
 ] as const;
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -25,6 +27,16 @@ const ICONS: Record<string, React.ReactNode> = {
   chart: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+    </svg>
+  ),
+  refresh: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M20.015 4.356v4.992" />
+    </svg>
+  ),
+  link: (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.813a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L5.25 9.879" />
     </svg>
   ),
 };
@@ -83,7 +95,7 @@ export default function EnterpriseLayout({ children }: { children: React.ReactNo
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
             <span className="text-[10px] text-neutral-400 font-medium">API Connected</span>
           </div>
-          <div className="text-[10px] text-neutral-300 dark:text-neutral-600 mt-1">v1.0.0 — Phase 4</div>
+          <div className="text-[10px] text-neutral-300 dark:text-neutral-600 mt-1">v2.0.0 — Phase 5</div>
         </div>
       </aside>
 

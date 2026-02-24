@@ -28,6 +28,7 @@ import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { emitTrafficLightEvent } from '@/lib/socket-server';
 import type { EvaluationAction } from '@/lib/traffic-light/types';
+import { dataFlywheelService } from '@/services/data-flywheel.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -222,6 +223,33 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       clinicId: clinicId || authResult.clinicId,
       userId: authResult.userId,
     });
+
+    // Non-blocking flywheel ingest — never blocks clinical response
+    dataFlywheelService.ingest({
+      trafficLightResult: {
+        color: result.color,
+        signals: result.signals,
+        metadata: result.metadata,
+      },
+      patientRiskInput: {
+        cvdRiskScore: null,
+        diabetesRiskScore: null,
+        lastBloodPressureCheck: null,
+        lastCholesterolTest: null,
+        lastHbA1c: null,
+        lastPhysicalExam: null,
+        tobaccoUse: false,
+        tobaccoPackYears: null,
+        alcoholUse: false,
+        alcoholDrinksPerWeek: null,
+        physicalActivityMinutesWeek: null,
+        bmi: null,
+        ageYears: 0,
+      },
+      overrideHistory: { totalOverrides: 0, hardBlockOverrides: 0, totalRulesEvaluated: 0 },
+      patientId: patientId,
+      organizationId: clinicId || 'unknown',
+    }).catch(() => {});
 
     // Add response headers for RLHF tracking
     const response = NextResponse.json({

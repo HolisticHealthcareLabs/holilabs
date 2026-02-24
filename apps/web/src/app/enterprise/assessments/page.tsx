@@ -14,7 +14,7 @@ import { estimateClaimCost, getTUSSByCode } from '@/lib/finance/tuss-lookup';
 import { RevenueImpactBadge } from '@/components/ui/finance/RevenueImpactBadge';
 
 // =============================================================================
-// MOCK PATIENT DATABASE (simulates Prisma lookup)
+// MOCK PATIENT DATABASE (fallback when flywheel is empty)
 // =============================================================================
 
 interface MockPatientRecord {
@@ -122,6 +122,44 @@ const MOCK_DATABASE: MockPatientRecord[] = [
 ];
 
 // =============================================================================
+// TYPES
+// =============================================================================
+
+interface FlywheelAssessmentEntry {
+  id: string;
+  anonymizedPatientId: string;
+  compositeRiskScore: number;
+  riskTier: RiskTier;
+  trafficLightColor: string;
+  createdAt: string;
+}
+
+// =============================================================================
+// DATA FETCHING HOOK
+// =============================================================================
+
+function useAssessmentsData() {
+  const [liveAssessments, setLiveAssessments] = React.useState<FlywheelAssessmentEntry[] | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const headers = { 'x-pharma-partner-key': process.env.NEXT_PUBLIC_ENTERPRISE_API_KEY ?? '' };
+
+    fetch('/api/enterprise/flywheel/assessments?limit=100', { headers })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.assessments?.length > 0) {
+          setLiveAssessments(data.assessments);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { liveAssessments, loading };
+}
+
+// =============================================================================
 // ANIMATIONS
 // =============================================================================
 
@@ -158,38 +196,70 @@ function TierBadge({ tier }: { tier: RiskTier }) {
 // =============================================================================
 
 export default function AssessmentsPage() {
+  const { liveAssessments, loading } = useAssessmentsData();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
-  // Filter patients by search query
-  const filtered = React.useMemo(() => {
+  const isLive = liveAssessments !== null && liveAssessments.length > 0;
+
+  // When live data is available, show flywheel entries as a simplified list.
+  // When no live data, use mock database for full detail view.
+
+  // Filter patients by search query — mock database
+  const filteredMock = React.useMemo(() => {
     if (!searchQuery.trim()) return MOCK_DATABASE;
     const q = searchQuery.toLowerCase();
     return MOCK_DATABASE.filter((p) => p.id.toLowerCase().includes(q));
   }, [searchQuery]);
 
-  // Compute risk for selected patient
+  // Filter live assessments
+  const filteredLive = React.useMemo(() => {
+    if (!liveAssessments) return [];
+    if (!searchQuery.trim()) return liveAssessments;
+    const q = searchQuery.toLowerCase();
+    return liveAssessments.filter((a) => a.anonymizedPatientId.toLowerCase().includes(q));
+  }, [liveAssessments, searchQuery]);
+
+  // Compute risk for selected mock patient
   const selectedDetail = React.useMemo(() => {
     if (!selectedId) return null;
+
+    // Check mock database first
     const record = MOCK_DATABASE.find((p) => p.id === selectedId);
-    if (!record) return null;
+    if (record) {
+      const riskResult = calculateCompositeRisk(record.patient, record.overrides);
+      const exportPayload = exportForEnterprise({
+        patientId: record.id,
+        riskResult,
+        recentTussCodes: record.tussCodes,
+        protocolCompliance: riskResult.confidence,
+        organizationId: record.orgId,
+      });
+      const costEstimate = record.tussCodes.length > 0
+        ? estimateClaimCost(record.tussCodes, riskResult.riskTier === 'CRITICAL' ? 'BLOCK' : 'PASS')
+        : null;
+      return { record, riskResult, exportPayload, costEstimate, isLiveEntry: false };
+    }
 
-    const riskResult = calculateCompositeRisk(record.patient, record.overrides);
-    const exportPayload = exportForEnterprise({
-      patientId: record.id,
-      riskResult,
-      recentTussCodes: record.tussCodes,
-      protocolCompliance: riskResult.confidence,
-      organizationId: record.orgId,
-    });
-    const costEstimate = record.tussCodes.length > 0
-      ? estimateClaimCost(record.tussCodes, riskResult.riskTier === 'CRITICAL' ? 'BLOCK' : 'PASS')
-      : null;
+    // Check live assessments
+    if (liveAssessments) {
+      const liveEntry = liveAssessments.find((a) => a.anonymizedPatientId === selectedId);
+      if (liveEntry) {
+        return {
+          record: null,
+          riskResult: null,
+          exportPayload: null,
+          costEstimate: null,
+          isLiveEntry: true,
+          liveEntry,
+        };
+      }
+    }
 
-    return { record, riskResult, exportPayload, costEstimate };
-  }, [selectedId]);
+    return null;
+  }, [selectedId, liveAssessments]);
 
-  // Quick stats from all records
+  // Quick stats from all mock records
   const allResults = React.useMemo(
     () => MOCK_DATABASE.map((r) => ({
       id: r.id,
@@ -197,6 +267,9 @@ export default function AssessmentsPage() {
     })),
     [],
   );
+
+  // Determine which list to display
+  const displayList = isLive ? filteredLive : filteredMock;
 
   return (
     <div className="relative overflow-hidden">
@@ -209,9 +282,9 @@ export default function AssessmentsPage() {
         {/* Header */}
         <motion.header {...fadeUp} className="mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-white/5 border border-indigo-200/50 dark:border-indigo-800/30 backdrop-blur-sm mb-4">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500' : isLive ? 'bg-indigo-500' : 'bg-neutral-400'} animate-pulse`} />
             <span className="text-[10px] font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400">
-              Individual Lookup
+              {loading ? 'Loading...' : isLive ? 'Live Data' : 'Demo Mode'}
             </span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
@@ -242,178 +315,262 @@ export default function AssessmentsPage() {
           {/* Patient List */}
           <motion.div {...fadeUp} className="lg:col-span-1 space-y-2">
             <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-2">
-              {filtered.length} patient{filtered.length !== 1 ? 's' : ''}
+              {displayList.length} {isLive ? 'assessment' : 'patient'}{displayList.length !== 1 ? 's' : ''}
+              {isLive && <span className="ml-1 text-indigo-500">(live)</span>}
             </div>
-            {filtered.map((record) => {
-              const r = allResults.find((a) => a.id === record.id)!;
-              const isSelected = selectedId === record.id;
-              return (
-                <motion.button
-                  key={record.id}
-                  onClick={() => setSelectedId(isSelected ? null : record.id)}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className={`w-full text-left p-3.5 rounded-xl border transition-all ${
-                    isSelected
-                      ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/15 ring-1 ring-indigo-400/30'
-                      : 'border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] hover:border-neutral-300/60 dark:hover:border-white/10'
-                  } backdrop-blur-md`}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-mono text-xs text-neutral-600 dark:text-neutral-300">{record.id}</span>
-                    <TierBadge tier={r.result.riskTier} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">{r.result.compositeScore}</span>
-                    <span className="text-[10px] text-neutral-400">{Math.round(r.result.confidence * 100)}% conf.</span>
-                  </div>
-                  <div className="mt-1.5 flex gap-1">
-                    {record.tussCodes.slice(0, 3).map((c) => (
-                      <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 font-mono">
-                        {c}
+            {isLive ? (
+              // Live flywheel entries
+              filteredLive.map((entry) => {
+                const isSelected = selectedId === entry.anonymizedPatientId;
+                return (
+                  <motion.button
+                    key={entry.id}
+                    onClick={() => setSelectedId(isSelected ? null : entry.anonymizedPatientId)}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className={`w-full text-left p-3.5 rounded-xl border transition-all ${
+                      isSelected
+                        ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/15 ring-1 ring-indigo-400/30'
+                        : 'border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] hover:border-neutral-300/60 dark:hover:border-white/10'
+                    } backdrop-blur-md`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-mono text-xs text-neutral-600 dark:text-neutral-300">{entry.anonymizedPatientId}</span>
+                      <TierBadge tier={entry.riskTier} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">{entry.compositeRiskScore}</span>
+                      <span className="text-[10px] text-neutral-400">
+                        {new Date(entry.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
-                    ))}
-                    {record.tussCodes.length > 3 && (
-                      <span className="text-[9px] text-neutral-400">+{record.tussCodes.length - 3}</span>
-                    )}
-                  </div>
-                </motion.button>
-              );
-            })}
+                    </div>
+                  </motion.button>
+                );
+              })
+            ) : (
+              // Mock database entries with full detail
+              filteredMock.map((record) => {
+                const r = allResults.find((a) => a.id === record.id)!;
+                const isSelected = selectedId === record.id;
+                return (
+                  <motion.button
+                    key={record.id}
+                    onClick={() => setSelectedId(isSelected ? null : record.id)}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className={`w-full text-left p-3.5 rounded-xl border transition-all ${
+                      isSelected
+                        ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/15 ring-1 ring-indigo-400/30'
+                        : 'border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] hover:border-neutral-300/60 dark:hover:border-white/10'
+                    } backdrop-blur-md`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-mono text-xs text-neutral-600 dark:text-neutral-300">{record.id}</span>
+                      <TierBadge tier={r.result.riskTier} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">{r.result.compositeScore}</span>
+                      <span className="text-[10px] text-neutral-400">{Math.round(r.result.confidence * 100)}% conf.</span>
+                    </div>
+                    <div className="mt-1.5 flex gap-1">
+                      {record.tussCodes.slice(0, 3).map((c) => (
+                        <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-white/5 text-neutral-500 dark:text-neutral-400 font-mono">
+                          {c}
+                        </span>
+                      ))}
+                      {record.tussCodes.length > 3 && (
+                        <span className="text-[9px] text-neutral-400">+{record.tussCodes.length - 3}</span>
+                      )}
+                    </div>
+                  </motion.button>
+                );
+              })
+            )}
           </motion.div>
 
           {/* Detail Panel */}
           <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
               {selectedDetail ? (
-                <motion.div
-                  key={selectedDetail.record.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-4"
-                >
-                  {/* Header Card */}
-                  <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Assessment Detail</div>
-                        <div className="font-mono text-sm text-neutral-700 dark:text-neutral-200 mt-0.5">{selectedDetail.record.id}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-3xl font-bold tabular-nums" style={{ color: TIER_COLORS[selectedDetail.riskResult.riskTier] }}>
-                          {selectedDetail.riskResult.compositeScore}
+                selectedDetail.isLiveEntry && selectedDetail.liveEntry ? (
+                  // Live entry detail — simplified view
+                  <motion.div
+                    key={selectedDetail.liveEntry.anonymizedPatientId}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Live Assessment</div>
+                          <div className="font-mono text-sm text-neutral-700 dark:text-neutral-200 mt-0.5">{selectedDetail.liveEntry.anonymizedPatientId}</div>
                         </div>
-                        <TierBadge tier={selectedDetail.riskResult.riskTier} />
+                        <div className="text-right">
+                          <div className="text-3xl font-bold tabular-nums" style={{ color: TIER_COLORS[selectedDetail.liveEntry.riskTier] }}>
+                            {selectedDetail.liveEntry.compositeRiskScore}
+                          </div>
+                          <TierBadge tier={selectedDetail.liveEntry.riskTier} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <div className="text-[10px] text-neutral-400">Traffic Light</div>
+                          <span className={`mt-1 inline-flex items-center gap-1.5 text-sm font-medium ${
+                            selectedDetail.liveEntry.trafficLightColor === 'RED' ? 'text-red-500' :
+                            selectedDetail.liveEntry.trafficLightColor === 'YELLOW' ? 'text-yellow-500' : 'text-green-500'
+                          }`}>
+                            <span className={`w-3 h-3 rounded-full ${
+                              selectedDetail.liveEntry.trafficLightColor === 'RED' ? 'bg-red-500' :
+                              selectedDetail.liveEntry.trafficLightColor === 'YELLOW' ? 'bg-yellow-500' : 'bg-green-500'
+                            }`} />
+                            {selectedDetail.liveEntry.trafficLightColor}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-neutral-400">Assessed At</div>
+                          <div className="text-sm text-neutral-700 dark:text-neutral-200 mt-1">
+                            {new Date(selectedDetail.liveEntry.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : selectedDetail.record && selectedDetail.riskResult ? (
+                  // Mock entry detail — full view
+                  <motion.div
+                    key={selectedDetail.record.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    {/* Header Card */}
+                    <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Assessment Detail</div>
+                          <div className="font-mono text-sm text-neutral-700 dark:text-neutral-200 mt-0.5">{selectedDetail.record.id}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-bold tabular-nums" style={{ color: TIER_COLORS[selectedDetail.riskResult.riskTier] }}>
+                            {selectedDetail.riskResult.compositeScore}
+                          </div>
+                          <TierBadge tier={selectedDetail.riskResult.riskTier} />
+                        </div>
+                      </div>
+
+                      {/* Domain Breakdown Bars */}
+                      <div className="space-y-2.5">
+                        {Object.entries(selectedDetail.riskResult.domainBreakdown).map(([domain, rawScore]) => {
+                          const score = rawScore as number;
+                          const maxWeights: Record<string, number> = {
+                            cardiovascular: 30, metabolic: 20, screeningCompliance: 15,
+                            lifestyle: 20, overrideRisk: 15,
+                          };
+                          const max = maxWeights[domain] || 20;
+                          const pct = Math.round((score / max) * 100);
+                          const label = domain.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+                          return (
+                            <div key={domain}>
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-neutral-600 dark:text-neutral-300">{label}</span>
+                                <span className="tabular-nums text-neutral-400">{score}/{max}</span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden">
+                                <motion.div
+                                  className={`h-full rounded-full ${
+                                    pct > 66 ? 'bg-red-500' : pct > 33 ? 'bg-yellow-500' : 'bg-indigo-500'
+                                  }`}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${pct}%` }}
+                                  transition={{ duration: 0.6, delay: 0.1 }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    {/* Domain Breakdown Bars */}
-                    <div className="space-y-2.5">
-                      {Object.entries(selectedDetail.riskResult.domainBreakdown).map(([domain, rawScore]) => {
-                        const score = rawScore as number;
-                        const maxWeights: Record<string, number> = {
-                          cardiovascular: 30, metabolic: 20, screeningCompliance: 15,
-                          lifestyle: 20, overrideRisk: 15,
-                        };
-                        const max = maxWeights[domain] || 20;
-                        const pct = Math.round((score / max) * 100);
-                        const label = domain.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
-                        return (
-                          <div key={domain}>
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-neutral-600 dark:text-neutral-300">{label}</span>
-                              <span className="tabular-nums text-neutral-400">{score}/{max}</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden">
-                              <motion.div
-                                className={`h-full rounded-full ${
-                                  pct > 66 ? 'bg-red-500' : pct > 33 ? 'bg-yellow-500' : 'bg-indigo-500'
-                                }`}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${pct}%` }}
-                                transition={{ duration: 0.6, delay: 0.1 }}
-                              />
+                    {/* Confidence + Missing Fields */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-4">
+                        <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-1.5">Confidence</div>
+                        <div className="text-2xl font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
+                          {Math.round(selectedDetail.riskResult.confidence * 100)}%
+                        </div>
+                        <div className="mt-2 h-1.5 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-indigo-500"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${selectedDetail.riskResult.confidence * 100}%` }}
+                            transition={{ duration: 0.6 }}
+                          />
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-4">
+                        <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-1.5">Missing Fields</div>
+                        {selectedDetail.riskResult.missingFields.length === 0 ? (
+                          <div className="text-sm text-green-600 dark:text-green-400 font-medium">All data present</div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {selectedDetail.riskResult.missingFields.map((f) => (
+                              <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-mono">
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* TUSS Cost Estimate */}
+                    {selectedDetail.costEstimate && (
+                      <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
+                        <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-3">Procedure Cost Estimate</div>
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div>
+                            <div className="text-[10px] text-neutral-400">Est. Cost (BRL)</div>
+                            <div className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
+                              R$ {selectedDetail.costEstimate.estimatedCostBRL.toLocaleString('pt-BR')}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Confidence + Missing Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-4">
-                      <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-1.5">Confidence</div>
-                      <div className="text-2xl font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
-                        {Math.round(selectedDetail.riskResult.confidence * 100)}%
-                      </div>
-                      <div className="mt-2 h-1.5 rounded-full bg-neutral-100 dark:bg-white/5 overflow-hidden">
-                        <motion.div
-                          className="h-full rounded-full bg-indigo-500"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${selectedDetail.riskResult.confidence * 100}%` }}
-                          transition={{ duration: 0.6 }}
-                        />
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-4">
-                      <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-1.5">Missing Fields</div>
-                      {selectedDetail.riskResult.missingFields.length === 0 ? (
-                        <div className="text-sm text-green-600 dark:text-green-400 font-medium">All data present</div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {selectedDetail.riskResult.missingFields.map((f) => (
-                            <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 font-mono">
-                              {f}
-                            </span>
+                          <div>
+                            <div className="text-[10px] text-neutral-400">Est. Cost (BOB)</div>
+                            <div className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
+                              Bs. {selectedDetail.costEstimate.estimatedCostBOB.toLocaleString('es-BO')}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-neutral-400">Weighted Risk</div>
+                            <div className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
+                              {selectedDetail.costEstimate.totalWeightedRisk}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedDetail.record.tussCodes.map((code) => (
+                            <RevenueImpactBadge key={code} tussCode={code} showRate size="sm" />
                           ))}
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* TUSS Cost Estimate */}
-                  {selectedDetail.costEstimate && (
-                    <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
-                      <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-3">Procedure Cost Estimate</div>
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <div className="text-[10px] text-neutral-400">Est. Cost (BRL)</div>
-                          <div className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
-                            R$ {selectedDetail.costEstimate.estimatedCostBRL.toLocaleString('pt-BR')}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] text-neutral-400">Est. Cost (BOB)</div>
-                          <div className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
-                            Bs. {selectedDetail.costEstimate.estimatedCostBOB.toLocaleString('es-BO')}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[10px] text-neutral-400">Weighted Risk</div>
-                          <div className="text-lg font-bold tabular-nums text-neutral-800 dark:text-neutral-100">
-                            {selectedDetail.costEstimate.totalWeightedRisk}
-                          </div>
-                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedDetail.record.tussCodes.map((code) => (
-                          <RevenueImpactBadge key={code} tussCode={code} showRate size="sm" />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Export Payload Preview */}
-                  <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
-                    <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-3">De-Identified Export Payload</div>
-                    <pre className="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-white/[0.02] rounded-xl p-4 overflow-x-auto leading-relaxed">
-                      {JSON.stringify(selectedDetail.exportPayload, null, 2)}
-                    </pre>
-                  </div>
-                </motion.div>
+                    {/* Export Payload Preview */}
+                    {selectedDetail.exportPayload && (
+                      <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
+                        <div className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider mb-3">De-Identified Export Payload</div>
+                        <pre className="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-white/[0.02] rounded-xl p-4 overflow-x-auto leading-relaxed">
+                          {JSON.stringify(selectedDetail.exportPayload, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </motion.div>
+                ) : null
               ) : (
                 <motion.div
                   key="empty"

@@ -12,19 +12,19 @@ export function Hero() {
 
     return (
         <section className="relative bg-black text-white overflow-hidden">
-            {/* Subtle radial glow */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center_top,rgba(59,130,246,0.15),transparent_70%)]" />
 
             <div className="relative max-w-[980px] mx-auto px-4 sm:px-6 pt-36 sm:pt-44 pb-20 sm:pb-28 text-center">
-                {/* Kicker */}
-                <motion.p
+                {/* Status pill - credibility signal */}
+                <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="text-blue-400 text-sm sm:text-base font-medium tracking-wide mb-6"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] border border-white/10 mb-8"
                 >
-                    {copy.hero.badge}
-                </motion.p>
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                    <span className="text-xs sm:text-sm font-medium tracking-wide text-blue-300">{copy.hero.badge}</span>
+                </motion.div>
 
                 {/* Headline */}
                 <motion.h1

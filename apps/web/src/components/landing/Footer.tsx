@@ -48,15 +48,38 @@ export function Footer() {
                             <li><a href="/legal/terms-of-service" className="hover:text-foreground transition-colors">{copy.footer.terms}</a></li>
                             <li><a href="/legal/privacy-policy" className="hover:text-foreground transition-colors">{copy.footer.privacy}</a></li>
                             <li><a href="/legal/hipaa-notice" className="hover:text-foreground transition-colors">{copy.footer.hipaa}</a></li>
+                            <li><a href="/legal/baa" className="hover:text-foreground transition-colors">{copy.footer.baa}</a></li>
                             <li><a href="/legal/consent" className="hover:text-foreground transition-colors">{copy.footer.consent}</a></li>
                         </ul>
                     </div>
                 </div>
 
-                {/* Bottom bar */}
-                <div className="py-5 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <p className="text-xs text-muted-foreground">{copy.footer.rights}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground/60">
+                {/* Research partner + bottom bar */}
+                <div className="py-6 border-t border-border/50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                        <div className="flex items-center gap-4">
+                            <p className="text-xs text-muted-foreground">{copy.footer.rights}</p>
+                        </div>
+
+                        {/* Johns Hopkins research partner credibility signal */}
+                        <div className="flex items-center gap-4 opacity-60 hover:opacity-100 transition-opacity duration-300">
+                            <span className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">Research Partner</span>
+                            <img
+                                src="/logos/johns-hopkins-university.svg"
+                                alt="Johns Hopkins University"
+                                className="h-8 w-auto mix-blend-multiply dark:mix-blend-screen"
+                                onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fallback = document.createElement('span');
+                                    fallback.className = 'text-[10px] font-serif font-bold tracking-wider text-muted-foreground';
+                                    fallback.textContent = 'JOHNS HOPKINS UNIVERSITY';
+                                    e.currentTarget.parentElement?.appendChild(fallback);
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground/50">
                         <span>{copy.footer.encryption}</span>
                         <span>·</span>
                         <span>{copy.footer.auditTrails}</span>

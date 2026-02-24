@@ -1,6 +1,6 @@
 {
   "$schema": "data/master/schemas/tuss.schema.json",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "generatedAt": "2026-02-12T22:00:00.000Z",
   "generatedBy": "scripts/extract-master-data.ts",
   "piiScanResult": "CLEAN",
@@ -454,6 +454,496 @@
       "baseRateBRL": 85000,
       "applicableSeverities": ["BLOCK"],
       "actuarialWeight": 0.99
+    },
+
+    {
+      "code": "5.01.01.01",
+      "description": "Vacinação — Influenza Sazonal",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 180,
+      "baseRateBRL": 25,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.05
+    },
+    {
+      "code": "5.01.01.02",
+      "description": "Vacinação — HPV Quadrivalente",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 350,
+      "baseRateBRL": 45,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.08
+    },
+    {
+      "code": "5.01.01.03",
+      "description": "Vacinação — COVID-19 Bivalente",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 200,
+      "baseRateBRL": 30,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.06
+    },
+    {
+      "code": "5.01.01.04",
+      "description": "Vacinação — Hepatite B",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 160,
+      "baseRateBRL": 22,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.05
+    },
+    {
+      "code": "5.01.01.05",
+      "description": "Vacinação — Pneumocócica 23-Valente",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 280,
+      "baseRateBRL": 40,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.07
+    },
+    {
+      "code": "5.01.02.01",
+      "description": "Check-up Adulto — Avaliação Global",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 800,
+      "baseRateBRL": 120,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
+    },
+    {
+      "code": "5.01.02.02",
+      "description": "Check-up Geriátrico — Avaliação Multidimensional",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 1200,
+      "baseRateBRL": 180,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.15
+    },
+    {
+      "code": "5.01.03.01",
+      "description": "Rastreamento — Papanicolau (Pap Smear)",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 250,
+      "baseRateBRL": 35,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "5.01.03.02",
+      "description": "Rastreamento — Sangue Oculto Fecal",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 180,
+      "baseRateBRL": 28,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.10
+    },
+    {
+      "code": "5.01.03.03",
+      "description": "Rastreamento — Acuidade Visual",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 200,
+      "baseRateBRL": 30,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.06
+    },
+    {
+      "code": "5.01.03.04",
+      "description": "Rastreamento — Audiometria",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 300,
+      "baseRateBRL": 45,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.07
+    },
+    {
+      "code": "5.01.03.05",
+      "description": "Rastreamento — Diabetes (TOTG)",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 320,
+      "baseRateBRL": 42,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.14
+    },
+    {
+      "code": "5.01.03.06",
+      "description": "Rastreamento — Risco Cardiovascular Global",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 450,
+      "baseRateBRL": 65,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.16
+    },
+    {
+      "code": "5.01.03.07",
+      "description": "Rastreamento — Câncer de Pele (Dermatoscopia)",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 380,
+      "baseRateBRL": 55,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.13
+    },
+    {
+      "code": "5.01.03.08",
+      "description": "Rastreamento — Osteoporose (FRAX Score)",
+      "category": "PREVENTIVE",
+      "baseRateBOB": 350,
+      "baseRateBRL": 50,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.11
+    },
+
+    {
+      "code": "6.01.01.01",
+      "description": "Fisioterapia — Reabilitação Pós-Cirúrgica",
+      "category": "REHABILITATION",
+      "baseRateBOB": 650,
+      "baseRateBRL": 95,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "6.01.01.02",
+      "description": "Fisioterapia — Reabilitação Neurológica",
+      "category": "REHABILITATION",
+      "baseRateBOB": 800,
+      "baseRateBRL": 120,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.18
+    },
+    {
+      "code": "6.01.01.03",
+      "description": "Fisioterapia — Reabilitação Respiratória",
+      "category": "REHABILITATION",
+      "baseRateBOB": 700,
+      "baseRateBRL": 105,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.15
+    },
+    {
+      "code": "6.01.01.04",
+      "description": "Fisioterapia — Reabilitação Cardíaca",
+      "category": "REHABILITATION",
+      "baseRateBOB": 750,
+      "baseRateBRL": 110,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.20
+    },
+    {
+      "code": "6.01.01.05",
+      "description": "Fisioterapia — Reabilitação Ortopédica",
+      "category": "REHABILITATION",
+      "baseRateBOB": 620,
+      "baseRateBRL": 90,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
+    },
+    {
+      "code": "6.01.02.01",
+      "description": "Terapia Ocupacional — Reabilitação Motora",
+      "category": "REHABILITATION",
+      "baseRateBOB": 580,
+      "baseRateBRL": 85,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
+    },
+    {
+      "code": "6.01.02.02",
+      "description": "Terapia Ocupacional — Reabilitação Cognitiva",
+      "category": "REHABILITATION",
+      "baseRateBOB": 620,
+      "baseRateBRL": 92,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "6.01.02.03",
+      "description": "Terapia Ocupacional — AVDs (Atividades da Vida Diária)",
+      "category": "REHABILITATION",
+      "baseRateBOB": 550,
+      "baseRateBRL": 80,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.08
+    },
+    {
+      "code": "6.01.03.01",
+      "description": "Fonoaudiologia — Terapia de Fala",
+      "category": "REHABILITATION",
+      "baseRateBOB": 500,
+      "baseRateBRL": 75,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.08
+    },
+    {
+      "code": "6.01.03.02",
+      "description": "Hidroterapia — Sessão Individual",
+      "category": "REHABILITATION",
+      "baseRateBOB": 680,
+      "baseRateBRL": 100,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
+    },
+    {
+      "code": "6.01.03.03",
+      "description": "Manejo da Dor Crônica — Sessão Multidisciplinar",
+      "category": "REHABILITATION",
+      "baseRateBOB": 900,
+      "baseRateBRL": 140,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.22
+    },
+    {
+      "code": "6.01.03.04",
+      "description": "Fisioterapia — Reabilitação Pélvica",
+      "category": "REHABILITATION",
+      "baseRateBOB": 600,
+      "baseRateBRL": 88,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.09
+    },
+
+    {
+      "code": "7.01.01.01",
+      "description": "Psiquiatria — Consulta Inicial",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 1400,
+      "baseRateBRL": 220,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.18
+    },
+    {
+      "code": "7.01.01.02",
+      "description": "Psiquiatria — Consulta de Seguimento",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 1000,
+      "baseRateBRL": 160,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "7.01.01.03",
+      "description": "Psiquiatria — Revisão de Medicação",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 800,
+      "baseRateBRL": 130,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.15
+    },
+    {
+      "code": "7.01.01.04",
+      "description": "Psiquiatria — Emergência (Crise Aguda)",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 2200,
+      "baseRateBRL": 350,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.55
+    },
+    {
+      "code": "7.01.02.01",
+      "description": "Psicoterapia — Terapia Cognitivo-Comportamental (TCC)",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 900,
+      "baseRateBRL": 150,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
+    },
+    {
+      "code": "7.01.02.02",
+      "description": "Psicoterapia — Sessão em Grupo",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 400,
+      "baseRateBRL": 65,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.06
+    },
+    {
+      "code": "7.01.02.03",
+      "description": "Psicoterapia — Terapia Familiar",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 1100,
+      "baseRateBRL": 180,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.12
+    },
+    {
+      "code": "7.01.02.04",
+      "description": "Psicoterapia — EMDR (Dessensibilização e Reprocessamento)",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 1200,
+      "baseRateBRL": 200,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.14
+    },
+    {
+      "code": "7.01.03.01",
+      "description": "Avaliação Neuropsicológica Completa",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 2500,
+      "baseRateBRL": 400,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.28
+    },
+    {
+      "code": "7.01.03.02",
+      "description": "Abuso de Substâncias — Avaliação Inicial",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 1500,
+      "baseRateBRL": 240,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.35
+    },
+    {
+      "code": "7.01.03.03",
+      "description": "Abuso de Substâncias — Desintoxicação Ambulatorial",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 3500,
+      "baseRateBRL": 580,
+      "applicableSeverities": ["BLOCK"],
+      "actuarialWeight": 0.65
+    },
+    {
+      "code": "7.01.03.04",
+      "description": "Psicoterapia — Infantojuvenil",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 950,
+      "baseRateBRL": 155,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.11
+    },
+    {
+      "code": "7.01.03.05",
+      "description": "Telepsiquiatria — Consulta Remota",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 800,
+      "baseRateBRL": 130,
+      "applicableSeverities": ["PASS"],
+      "actuarialWeight": 0.10
+    },
+    {
+      "code": "7.01.03.06",
+      "description": "Intervenção em Crise — Atendimento de Urgência",
+      "category": "MENTAL_HEALTH",
+      "baseRateBOB": 2000,
+      "baseRateBRL": 320,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.48
+    },
+
+    {
+      "code": "2.02.01.01",
+      "description": "Teste Genético — BRCA1/BRCA2",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 5500,
+      "baseRateBRL": 1200,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.75
+    },
+    {
+      "code": "2.02.01.02",
+      "description": "Teste Farmacogenômico — Painel Completo",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 4800,
+      "baseRateBRL": 980,
+      "applicableSeverities": ["FLAG"],
+      "actuarialWeight": 0.60
+    },
+    {
+      "code": "2.02.01.03",
+      "description": "Teste Genético — Painel de Portador",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 3800,
+      "baseRateBRL": 780,
+      "applicableSeverities": ["FLAG"],
+      "actuarialWeight": 0.55
+    },
+    {
+      "code": "2.02.01.04",
+      "description": "Teste Genético — Câncer Hereditário (Painel Expandido)",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 6200,
+      "baseRateBRL": 1400,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.78
+    },
+    {
+      "code": "2.02.02.01",
+      "description": "Painel de Alergia — Respiratória (IgE Específica)",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 800,
+      "baseRateBRL": 130,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.15
+    },
+    {
+      "code": "2.02.02.02",
+      "description": "Painel de Alergia — Alimentar",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 900,
+      "baseRateBRL": 150,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.18
+    },
+    {
+      "code": "2.02.02.03",
+      "description": "Painel de Alergia — Medicamentosa",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 1100,
+      "baseRateBRL": 180,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.30
+    },
+    {
+      "code": "2.02.03.01",
+      "description": "PET-CT — Corpo Inteiro",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 8500,
+      "baseRateBRL": 3200,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.88
+    },
+    {
+      "code": "2.02.03.02",
+      "description": "Ressonância Magnética Cardíaca",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 5200,
+      "baseRateBRL": 1800,
+      "applicableSeverities": ["FLAG", "BLOCK"],
+      "actuarialWeight": 0.82
+    },
+    {
+      "code": "2.02.03.03",
+      "description": "Ressonância Magnética Funcional (fMRI)",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 6000,
+      "baseRateBRL": 2200,
+      "applicableSeverities": ["FLAG"],
+      "actuarialWeight": 0.72
+    },
+    {
+      "code": "2.02.04.01",
+      "description": "Espirometria — Prova de Função Pulmonar",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 450,
+      "baseRateBRL": 70,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.18
+    },
+    {
+      "code": "2.02.04.02",
+      "description": "Polissonografia — Estudo do Sono",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 1800,
+      "baseRateBRL": 350,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.25
+    },
+    {
+      "code": "2.02.04.03",
+      "description": "Eletroencefalograma (EEG) Digital",
+      "category": "DIAGNOSTIC",
+      "baseRateBOB": 700,
+      "baseRateBRL": 120,
+      "applicableSeverities": ["PASS", "FLAG"],
+      "actuarialWeight": 0.22
     }
   ]
 }

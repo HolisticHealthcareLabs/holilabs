@@ -547,3 +547,76 @@ export interface ActuarialPayload {
   /** Data freshness — when the risk was computed (ISO-8601). */
   riskComputedAt: string;
 }
+
+// ============================================================================
+// BLUE OCEAN — Phase 5: Flywheel Types
+// ============================================================================
+
+/** Persisted enterprise assessment log entry — the flywheel data asset. */
+export interface FlywheelAssessmentEntry {
+  id: string;
+  anonymizedPatientId: string;
+  assessmentPayload: ActuarialPayload;
+  trafficLightColor: 'RED' | 'YELLOW' | 'GREEN';
+  signalCount: number;
+  compositeRiskScore: number;
+  riskTier: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  organizationId: string;
+  createdAt: string;
+}
+
+/** Enterprise API usage log entry for billing/metering. */
+export interface EnterpriseUsageLogEntry {
+  id: string;
+  endpoint: string;
+  apiKeyHash: string;
+  timestamp: string;
+  responseTimeMs: number;
+  patientCount: number;
+  statusCode: number;
+  method: string;
+}
+
+/** Webhook event types dispatched by the flywheel. */
+export type WebhookEventType = 'RISK_THRESHOLD_CROSSED' | 'ASSESSMENT_COMPLETED' | 'BULK_ASSESSMENT_COMPLETED';
+
+/** Webhook subscription configuration. */
+export interface WebhookSubscriptionConfig {
+  id: string;
+  apiKeyHash: string;
+  url: string;
+  events: WebhookEventType[];
+  secret: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/** Patient outcome types for actuarial correlation. */
+export type PatientOutcomeType = 'READMISSION' | 'ADVERSE_EVENT' | 'COMPLICATION' | 'RESOLVED';
+
+/** Recorded patient outcome linked to override decisions. */
+export interface PatientOutcomeRecord {
+  id: string;
+  anonymizedPatientId: string;
+  outcomeType: PatientOutcomeType;
+  linkedOverrideIds: string[];
+  metadata: Record<string, unknown>;
+  recordedAt: string;
+  recordedBy: string;
+}
+
+/** Aggregate stats correlating overrides with patient outcomes. */
+export interface OverrideOutcomeCorrelationStats {
+  totalOverrides: number;
+  totalOutcomes: number;
+  overridesWithAdverseOutcome: number;
+  adverseEventRate: number;
+  readmissionRate: number;
+  complicationRate: number;
+  resolvedRate: number;
+  byOutcomeType: Record<string, number>;
+  correlationConfidence: number;
+}
+
+/** Extended TUSS category including Phase 5 additions. */
+export type TUSSCategory = 'STANDARD' | 'DIAGNOSTIC' | 'SPECIALIZED' | 'SURGICAL' | 'PREVENTIVE' | 'REHABILITATION' | 'MENTAL_HEALTH';

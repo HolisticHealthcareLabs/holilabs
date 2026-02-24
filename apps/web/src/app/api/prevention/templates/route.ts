@@ -78,6 +78,12 @@ export async function GET(request: NextRequest) {
         createdBy: true,
         createdAt: true,
         updatedAt: true,
+        _count: {
+          select: {
+            comments: true,
+            shares: true,
+          },
+        },
       },
     });
 

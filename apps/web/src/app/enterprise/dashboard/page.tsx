@@ -30,7 +30,7 @@ import {
 } from '@/services/risk-calculator.service';
 
 // =============================================================================
-// MOCK DATA — Simulated insurer cohort
+// MOCK FALLBACK DATA — used when API returns empty (first-run experience)
 // =============================================================================
 
 const MOCK_COHORT: Array<{ id: string; patient: PatientRiskInput; overrides: OverrideHistoryInput }> = [
@@ -107,6 +107,32 @@ const MOCK_DAILY_RISK_TREND = [
 ];
 
 // =============================================================================
+// TYPES for API responses
+// =============================================================================
+
+interface UsageTrendPoint {
+  period: string;
+  requests: number;
+  patientAssessments: number;
+  avgResponseTimeMs: number;
+}
+
+interface FlywheelStats {
+  totalAssessments: number;
+  byTier: Record<string, number>;
+  latestAt: string | null;
+}
+
+interface FlywheelAssessment {
+  id: string;
+  anonymizedPatientId: string;
+  compositeRiskScore: number;
+  riskTier: RiskTier;
+  trafficLightColor: string;
+  createdAt: string;
+}
+
+// =============================================================================
 // ANIMATIONS
 // =============================================================================
 
@@ -139,11 +165,47 @@ const TIER_TEXT: Record<RiskTier, string> = {
 };
 
 // =============================================================================
+// DATA FETCHING HOOK
+// =============================================================================
+
+function useEnterpriseDashboard() {
+  const [usageTrend, setUsageTrend] = React.useState<UsageTrendPoint[] | null>(null);
+  const [flywheelStats, setFlywheelStats] = React.useState<FlywheelStats | null>(null);
+  const [flywheelAssessments, setFlywheelAssessments] = React.useState<FlywheelAssessment[] | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const headers = { 'x-pharma-partner-key': process.env.NEXT_PUBLIC_ENTERPRISE_API_KEY ?? '' };
+
+    Promise.allSettled([
+      fetch('/api/enterprise/usage?period=day', { headers }).then((r) => r.ok ? r.json() : null),
+      fetch('/api/enterprise/flywheel/stats', { headers }).then((r) => r.ok ? r.json() : null),
+      fetch('/api/enterprise/flywheel/assessments?limit=20', { headers }).then((r) => r.ok ? r.json() : null),
+    ]).then(([usageResult, statsResult, assessmentsResult]) => {
+      if (usageResult.status === 'fulfilled' && usageResult.value?.trend) {
+        setUsageTrend(usageResult.value.trend);
+      }
+      if (statsResult.status === 'fulfilled' && statsResult.value?.stats) {
+        setFlywheelStats(statsResult.value.stats);
+      }
+      if (assessmentsResult.status === 'fulfilled' && assessmentsResult.value?.assessments) {
+        setFlywheelAssessments(assessmentsResult.value.assessments);
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  return { usageTrend, flywheelStats, flywheelAssessments, loading };
+}
+
+// =============================================================================
 // PAGE
 // =============================================================================
 
 export default function EnterpriseDashboardPage() {
-  // Compute risk for each cohort member
+  const { usageTrend, flywheelStats, flywheelAssessments, loading } = useEnterpriseDashboard();
+
+  // Compute risk for each cohort member (local computation, always available)
   const cohortResults = React.useMemo(
     () =>
       MOCK_COHORT.map((m) => ({
@@ -153,6 +215,21 @@ export default function EnterpriseDashboardPage() {
     [],
   );
 
+  // Use live flywheel data for tier distribution when available, else compute from mock cohort
+  const tierCounts = React.useMemo(() => {
+    if (flywheelStats && flywheelStats.totalAssessments > 0) {
+      return flywheelStats.byTier as Record<string, number>;
+    }
+    const counts: Record<RiskTier, number> = { LOW: 0, MODERATE: 0, HIGH: 0, CRITICAL: 0 };
+    for (const r of cohortResults) counts[r.result.riskTier]++;
+    return counts;
+  }, [flywheelStats, cohortResults]);
+
+  const pieData = (Object.entries(tierCounts) as Array<[string, number]>)
+    .filter(([, count]) => count > 0)
+    .map(([tier, count]) => ({ name: tier, value: count, color: TIER_COLORS[tier as RiskTier] ?? '#94a3b8' }));
+
+  // Aggregate scores
   const scores = cohortResults.map((r) => r.result.compositeScore);
   const avgScore = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100;
   const avgConfidence =
@@ -160,14 +237,6 @@ export default function EnterpriseDashboardPage() {
       (cohortResults.reduce((sum, r) => sum + r.result.confidence, 0) / cohortResults.length) * 100,
     ) / 100;
 
-  // Tier distribution for pie chart
-  const tierCounts: Record<RiskTier, number> = { LOW: 0, MODERATE: 0, HIGH: 0, CRITICAL: 0 };
-  for (const r of cohortResults) tierCounts[r.result.riskTier]++;
-  const pieData = (Object.entries(tierCounts) as Array<[RiskTier, number]>)
-    .filter(([, count]) => count > 0)
-    .map(([tier, count]) => ({ name: tier, value: count, color: TIER_COLORS[tier] }));
-
-  // Cohort classification
   const cohortTier: RiskTier = avgScore >= 75 ? 'CRITICAL' : avgScore >= 50 ? 'HIGH' : avgScore >= 25 ? 'MODERATE' : 'LOW';
 
   // TUSS value delivered
@@ -177,9 +246,64 @@ export default function EnterpriseDashboardPage() {
     'BLOCK',
   );
 
-  // Total API requests this week
-  const totalRequests = MOCK_API_USAGE.reduce((sum, d) => sum + d.requests, 0);
-  const totalAssessments = MOCK_API_USAGE.reduce((sum, d) => sum + d.assessments, 0);
+  // API usage — use live trend or fallback to mock
+  const apiUsageData = React.useMemo(() => {
+    if (usageTrend && usageTrend.length > 0) {
+      return usageTrend.map((t) => ({
+        day: t.period.slice(5), // MM-DD format
+        requests: t.requests,
+        assessments: t.patientAssessments,
+      }));
+    }
+    return MOCK_API_USAGE;
+  }, [usageTrend]);
+
+  const totalRequests = apiUsageData.reduce((sum, d) => sum + d.requests, 0);
+  const totalAssessments = flywheelStats?.totalAssessments ?? apiUsageData.reduce((sum, d) => sum + d.assessments, 0);
+
+  // Risk trend — derive from flywheel assessments when available
+  const riskTrendData = React.useMemo(() => {
+    if (flywheelAssessments && flywheelAssessments.length > 0) {
+      const buckets = new Map<string, { total: number; count: number }>();
+      for (const a of flywheelAssessments) {
+        const day = new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const b = buckets.get(day) ?? { total: 0, count: 0 };
+        b.total += a.compositeRiskScore;
+        b.count++;
+        buckets.set(day, b);
+      }
+      return Array.from(buckets.entries()).map(([date, b]) => ({
+        date,
+        avgRisk: Math.round(b.total / b.count),
+      }));
+    }
+    return MOCK_DAILY_RISK_TREND;
+  }, [flywheelAssessments]);
+
+  // Use live flywheel assessment table if available
+  const assessmentTableData = React.useMemo(() => {
+    if (flywheelAssessments && flywheelAssessments.length > 0) {
+      return flywheelAssessments.map((a) => ({
+        id: a.anonymizedPatientId,
+        compositeScore: a.compositeRiskScore,
+        riskTier: a.riskTier,
+        confidence: null as number | null,
+        topDomain: null as [string, number] | null,
+      }));
+    }
+    return cohortResults.map((r) => {
+      const topDomain = Object.entries(r.result.domainBreakdown).sort(
+        ([, a], [, b]) => (b as number) - (a as number),
+      )[0] as [string, number];
+      return {
+        id: r.id,
+        compositeScore: r.result.compositeScore,
+        riskTier: r.result.riskTier,
+        confidence: r.result.confidence,
+        topDomain,
+      };
+    });
+  }, [flywheelAssessments, cohortResults]);
 
   return (
     <div className="min-h-screen bg-[#fafbfc] dark:bg-[#0a0a0f] relative overflow-hidden">
@@ -195,9 +319,9 @@ export default function EnterpriseDashboardPage() {
         {/* ============================================================= */}
         <motion.header {...fadeUp} className="mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-white/5 border border-indigo-200/50 dark:border-indigo-800/30 backdrop-blur-sm mb-6">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500 animate-pulse' : 'bg-indigo-500 animate-pulse'}`} />
             <span className="text-[10px] font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400">
-              Enterprise Partner
+              {loading ? 'Connecting...' : 'Enterprise Partner — Live'}
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-neutral-900 dark:text-white leading-[1.1]">
@@ -235,7 +359,7 @@ export default function EnterpriseDashboardPage() {
               <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
                 <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-4">API Requests This Week</div>
                 <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={MOCK_API_USAGE} barCategoryGap="20%">
+                  <BarChart data={apiUsageData} barCategoryGap="20%">
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
                     <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
@@ -258,7 +382,7 @@ export default function EnterpriseDashboardPage() {
               <div className="rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
                 <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-4">Average Population Risk (7d)</div>
                 <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={MOCK_DAILY_RISK_TREND}>
+                  <AreaChart data={riskTrendData}>
                     <defs>
                       <linearGradient id="riskGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
@@ -330,7 +454,9 @@ export default function EnterpriseDashboardPage() {
 
               {/* Individual Patient Risk Table */}
               <div className="lg:col-span-2 rounded-2xl border border-neutral-200/60 dark:border-white/5 bg-white/70 dark:bg-white/[0.03] backdrop-blur-md p-5">
-                <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-3">Individual Assessments</div>
+                <div className="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-3">
+                  {flywheelAssessments && flywheelAssessments.length > 0 ? 'Recent Assessments (Live)' : 'Individual Assessments'}
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -338,47 +464,54 @@ export default function EnterpriseDashboardPage() {
                         <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Patient</th>
                         <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Score</th>
                         <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Tier</th>
-                        <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Confidence</th>
-                        <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Top Domain</th>
+                        <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                          {flywheelAssessments && flywheelAssessments.length > 0 ? 'Source' : 'Confidence'}
+                        </th>
+                        <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                          {flywheelAssessments && flywheelAssessments.length > 0 ? 'Timestamp' : 'Top Domain'}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {cohortResults.map((r) => {
-                        const topDomain = Object.entries(r.result.domainBreakdown).sort(
-                          ([, a], [, b]) => (b as number) - (a as number),
-                        )[0];
-                        return (
-                          <tr
-                            key={r.id}
-                            className="border-b border-neutral-100/40 dark:border-white/[0.03] hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-colors"
-                          >
-                            <td className="py-2.5 px-3 font-mono text-xs text-neutral-600 dark:text-neutral-300">{r.id}</td>
-                            <td className="py-2.5 px-3 tabular-nums font-semibold text-neutral-800 dark:text-neutral-100">{r.result.compositeScore}</td>
-                            <td className="py-2.5 px-3">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                  r.result.riskTier === 'CRITICAL'
-                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                    : r.result.riskTier === 'HIGH'
-                                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                                      : r.result.riskTier === 'MODERATE'
-                                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                }`}
-                              >
-                                {r.result.riskTier}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 tabular-nums text-neutral-500 dark:text-neutral-400">
-                              {Math.round(r.result.confidence * 100)}%
-                            </td>
-                            <td className="py-2.5 px-3 text-xs text-neutral-500 dark:text-neutral-400">
-                              {topDomain[0].replace(/([A-Z])/g, ' $1').trim()}
-                              <span className="ml-1 text-neutral-400">({topDomain[1] as number})</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {assessmentTableData.map((row) => (
+                        <tr
+                          key={row.id}
+                          className="border-b border-neutral-100/40 dark:border-white/[0.03] hover:bg-neutral-50/50 dark:hover:bg-white/[0.02] transition-colors"
+                        >
+                          <td className="py-2.5 px-3 font-mono text-xs text-neutral-600 dark:text-neutral-300">{row.id}</td>
+                          <td className="py-2.5 px-3 tabular-nums font-semibold text-neutral-800 dark:text-neutral-100">{row.compositeScore}</td>
+                          <td className="py-2.5 px-3">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                row.riskTier === 'CRITICAL'
+                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                  : row.riskTier === 'HIGH'
+                                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                    : row.riskTier === 'MODERATE'
+                                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              }`}
+                            >
+                              {row.riskTier}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 tabular-nums text-neutral-500 dark:text-neutral-400">
+                            {row.confidence !== null
+                              ? `${Math.round(row.confidence * 100)}%`
+                              : <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">LIVE</span>
+                            }
+                          </td>
+                          <td className="py-2.5 px-3 text-xs text-neutral-500 dark:text-neutral-400">
+                            {row.topDomain
+                              ? <>
+                                  {row.topDomain[0].replace(/([A-Z])/g, ' $1').trim()}
+                                  <span className="ml-1 text-neutral-400">({row.topDomain[1]})</span>
+                                </>
+                              : '—'
+                            }
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
