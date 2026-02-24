@@ -12,7 +12,7 @@ function ThemeToggle({ theme, toggleTheme }: { theme: 'light' | 'dark'; toggleTh
     return (
         <button
             onClick={toggleTheme}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-all text-muted-foreground hover:text-foreground"
+            className="flex items-center justify-center w-8 h-8 rounded-full transition-all text-muted-foreground hover:text-foreground"
             aria-label="Toggle Theme"
         >
             <div className="relative w-4 h-4">
@@ -57,66 +57,68 @@ export function LandingHeader() {
     const copy = getLandingCopy(locale);
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-            <nav className="max-w-[980px] mx-auto flex items-center justify-between h-11 px-4 sm:px-6 text-xs">
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 shrink-0">
-                    <div className="relative w-7 h-7 shrink-0">
-                        <Image
-                            src="/logos/holilabs-helix-blue-dark.svg"
-                            alt="Holi Labs"
-                            width={28}
-                            height={28}
-                            className="hidden dark:block"
-                        />
-                        <Image
-                            src="/logos/holilabs-helix-blue-light.svg"
-                            alt="Holi Labs"
-                            width={28}
-                            height={28}
-                            className="dark:hidden"
-                        />
-                    </div>
-                    <span className="font-semibold text-sm text-foreground">Holi Labs</span>
-                </Link>
+        <header className="fixed top-3 sm:top-4 left-0 right-0 z-50 px-3 sm:px-4">
+            <nav className="max-w-[980px] mx-auto bg-background/80 backdrop-blur-xl rounded-2xl border border-border/60 shadow-lg shadow-black/[0.03] dark:shadow-black/20">
+                <div className="flex items-center justify-between px-3 sm:px-5 py-2.5">
+                    {/* Logo */}
+                    <Link href="/" className="flex items-center gap-2 shrink-0">
+                        <div className="relative w-7 h-7 shrink-0">
+                            <Image
+                                src="/logos/holilabs-helix-blue-dark.svg"
+                                alt="Holi Labs"
+                                width={28}
+                                height={28}
+                                className="hidden dark:block"
+                            />
+                            <Image
+                                src="/logos/holilabs-helix-blue-light.svg"
+                                alt="Holi Labs"
+                                width={28}
+                                height={28}
+                                className="dark:hidden"
+                            />
+                        </div>
+                        <span className="font-semibold text-sm text-foreground">Holi Labs</span>
+                    </Link>
 
-                {/* Center links */}
-                <div className="hidden md:flex items-center gap-6 text-muted-foreground">
+                    {/* Center links */}
+                    <div className="hidden md:flex items-center gap-5 text-[13px] text-muted-foreground">
+                        <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
+                        <a href="#modules" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
+                        <a href="#security" className="hover:text-foreground transition-colors">Safety</a>
+                        <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
+                    </div>
+
+                    {/* Right actions */}
+                    <div className="flex items-center gap-1">
+                        <div className="hidden sm:block">
+                            <LanguageSelector currentLocale={locale} compact />
+                        </div>
+                        <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+                        <Link
+                            href="/auth/login"
+                            className="hidden lg:inline-flex text-[13px] text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5"
+                        >
+                            {copy.header.login}
+                        </Link>
+                        <Link
+                            href="/auth/register"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3.5 py-1.5 rounded-full transition-colors shadow-sm"
+                        >
+                            <span className="hidden sm:inline">{copy.header.betaCta}</span>
+                            <span className="sm:hidden">{copy.header.betaShort}</span>
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Mobile nav row */}
+                <div className="flex md:hidden items-center justify-center gap-5 text-xs text-muted-foreground border-t border-border/40 py-2 px-3">
                     <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
                     <a href="#modules" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
-                    <a href="#security" className="hover:text-foreground transition-colors">Safety</a>
                     <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
-                </div>
-
-                {/* Right actions */}
-                <div className="flex items-center gap-1.5">
-                    <div className="hidden sm:block">
-                        <LanguageSelector currentLocale={locale} compact />
-                    </div>
-                    <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
-                    <Link
-                        href="/auth/login"
-                        className="hidden sm:inline-flex text-muted-foreground hover:text-foreground transition-colors px-2"
-                    >
-                        {copy.header.login}
-                    </Link>
-                    <Link
-                        href="/auth/register"
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3.5 py-1.5 rounded-full transition-colors"
-                    >
-                        <span className="hidden sm:inline">{copy.header.betaCta}</span>
-                        <span className="sm:hidden">{copy.header.betaShort}</span>
-                    </Link>
+                    <Link href="/auth/login" className="hover:text-foreground transition-colors">{copy.header.login}</Link>
                 </div>
             </nav>
-
-            {/* Mobile nav */}
-            <div className="flex md:hidden items-center justify-center gap-5 text-xs text-muted-foreground border-t border-border/30 h-9 px-4">
-                <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
-                <a href="#modules" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
-                <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
-                <Link href="/auth/login" className="hover:text-foreground transition-colors">{copy.header.login}</Link>
-            </div>
         </header>
     );
 }

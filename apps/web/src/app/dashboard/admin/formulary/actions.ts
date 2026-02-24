@@ -1,10 +1,11 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import type { FormularyRuleType } from '@prisma/client';
+// DrugProduct, FormularyRule, and Organization models are not yet in the Prisma
+// schema. All functions below return empty stubs so the build compiles and the UI
+// renders graceful empty states. Swap in real Prisma queries once the migration
+// adding these models is applied.
 
-const DEFAULT_ORG_ID = 'default-org';
+export type FormularyRuleType = 'RESTRICTED' | 'PREFERRED' | 'EXCLUDED' | 'PRIOR_AUTH_REQUIRED';
 
 export interface DrugProductSearchResult {
   id: string;
@@ -40,164 +41,41 @@ export interface FormularyActionResult {
 }
 
 /**
- * Search DrugProduct by name or generic name (case-insensitive partial match)
+ * Search DrugProduct by name or generic name.
+ * Stub: returns empty array until DrugProduct model is added to Prisma schema.
  */
-export async function searchDrugs(query: string): Promise<DrugProductSearchResult[]> {
-  if (!query?.trim()) {
-    const drugs = await prisma.drugProduct.findMany({
-      where: { isActive: true },
-      take: 50,
-      orderBy: { name: 'asc' },
-    });
-    return drugs.map(normalizeDrug);
-  }
-
-  const q = query.trim().toLowerCase();
-  const drugs = await prisma.drugProduct.findMany({
-    where: {
-      isActive: true,
-      OR: [
-        { name: { contains: q, mode: 'insensitive' } },
-        { genericName: { contains: q, mode: 'insensitive' } },
-        { therapeuticClass: { contains: q, mode: 'insensitive' } },
-      ],
-    },
-    take: 50,
-    orderBy: { name: 'asc' },
-  });
-  return drugs.map(normalizeDrug);
-}
-
-function normalizeDrug(d: {
-  id: string;
-  name: string;
-  genericName: string | null;
-  therapeuticClass: string | null;
-  marketPrice: { toNumber?: () => number } | null;
-}) {
-  return {
-    id: d.id,
-    name: d.name,
-    genericName: d.genericName,
-    therapeuticClass: d.therapeuticClass,
-    marketPrice: d.marketPrice ? Number(d.marketPrice) : null,
-  };
+export async function searchDrugs(_query: string): Promise<DrugProductSearchResult[]> {
+  return [];
 }
 
 /**
- * Create a formulary rule for the organization
+ * Create a formulary rule for the organization.
+ * Stub: throws until FormularyRule model is added to Prisma schema.
  */
 export async function createFormularyRule(
-  data: CreateFormularyRuleInput,
-  organizationId: string = DEFAULT_ORG_ID
-) {
-  const orgId = organizationId || DEFAULT_ORG_ID;
-
-  // Ensure org exists (e.g. default-org from seed)
-  const org = await prisma.organization.findUnique({ where: { id: orgId } });
-  if (!org) {
-    throw new Error(`Organization ${orgId} not found. Run pnpm db:seed:drugs to create default org.`);
-  }
-
-  const rule = await prisma.formularyRule.create({
-    data: {
-      organizationId: orgId,
-      drugProductId: data.drugProductId,
-      ruleType: data.ruleType,
-      preferredDrugId: data.preferredDrugId || null,
-      costSavingEstimate: data.costSavingEstimate ?? null,
-      clinicalRationale: data.clinicalRationale ?? null,
-    },
-    include: {
-      targetDrug: true,
-      preferredDrug: true,
-    },
-  });
-
-  revalidatePath('/dashboard/admin/formulary');
-  return normalizeRule(rule);
+  _data: CreateFormularyRuleInput,
+  _organizationId?: string
+): Promise<FormularyRuleWithDrugs> {
+  throw new Error('Formulary rules require DrugProduct and FormularyRule models in the Prisma schema. Run the pending migration first.');
 }
 
 /**
- * Get formulary rules for an organization
+ * Get formulary rules for an organization.
+ * Stub: returns empty array until FormularyRule model is added to Prisma schema.
  */
 export async function getFormularyRules(
-  organizationId: string = DEFAULT_ORG_ID
+  _organizationId?: string
 ): Promise<FormularyRuleWithDrugs[]> {
-  const orgId = organizationId || DEFAULT_ORG_ID;
-
-  const rules = await prisma.formularyRule.findMany({
-    where: { organizationId: orgId },
-    include: {
-      targetDrug: true,
-      preferredDrug: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return rules.map((r) => ({
-    id: r.id,
-    ruleType: r.ruleType,
-    costSavingEstimate: r.costSavingEstimate ? Number(r.costSavingEstimate) : null,
-    clinicalRationale: r.clinicalRationale,
-    targetDrug: normalizeDrug(r.targetDrug),
-    preferredDrug: r.preferredDrug ? normalizeDrug(r.preferredDrug) : null,
-  }));
+  return [];
 }
 
 /**
  * Clinical check: Is this drug restricted/preferred per org formulary?
- * Matches drugName against DrugProduct.name or DrugProduct.genericName (case-insensitive).
+ * Stub: returns null action until DrugProduct/FormularyRule models exist.
  */
 export async function checkFormularyAction(
-  drugName: string,
-  organizationId: string = DEFAULT_ORG_ID
+  _drugName: string,
+  _organizationId?: string
 ): Promise<FormularyActionResult> {
-  const orgId = organizationId || DEFAULT_ORG_ID;
-
-  const drugLower = drugName.trim().toLowerCase();
-  if (!drugLower) {
-    return { type: null, preferredDrug: null, savings: 0, rationale: null, ruleId: null };
-  }
-
-  // Find DrugProduct by name or genericName
-  const drugProduct = await prisma.drugProduct.findFirst({
-    where: {
-      isActive: true,
-      OR: [
-        { name: { equals: drugName.trim(), mode: 'insensitive' } },
-        { genericName: { equals: drugName.trim(), mode: 'insensitive' } },
-        { name: { contains: drugLower, mode: 'insensitive' } },
-        { genericName: { contains: drugLower, mode: 'insensitive' } },
-      ],
-    },
-  });
-
-  if (!drugProduct) {
-    return { type: null, preferredDrug: null, savings: 0, rationale: null, ruleId: null };
-  }
-
-  const rule = await prisma.formularyRule.findUnique({
-    where: {
-      organizationId_drugProductId: { organizationId: orgId, drugProductId: drugProduct.id },
-    },
-    include: { preferredDrug: true },
-  });
-
-  if (!rule) {
-    return { type: null, preferredDrug: null, savings: 0, rationale: null, ruleId: null };
-  }
-
-  const preferredLabel = rule.preferredDrug
-    ? `${rule.preferredDrug.name} (${rule.preferredDrug.genericName || 'generic'})`
-    : null;
-  const savings = rule.costSavingEstimate ? Number(rule.costSavingEstimate) : 0;
-
-  return {
-    type: rule.ruleType,
-    preferredDrug: preferredLabel,
-    savings,
-    rationale: rule.clinicalRationale,
-    ruleId: rule.id,
-  };
+  return { type: null, preferredDrug: null, savings: 0, rationale: null, ruleId: null };
 }

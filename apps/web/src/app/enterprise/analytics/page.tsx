@@ -36,7 +36,36 @@ import {
 } from '@/lib/finance/tuss-lookup';
 
 // =============================================================================
-// MOCK DATA
+// DATA FETCHING
+// =============================================================================
+
+interface FlywheelStats {
+  totalAssessments: number;
+  byTier: Record<string, number>;
+  latestAt: string | null;
+}
+
+function useAnalyticsData() {
+  const [flywheelStats, setFlywheelStats] = React.useState<FlywheelStats | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const headers = { 'x-pharma-partner-key': process.env.NEXT_PUBLIC_ENTERPRISE_API_KEY ?? '' };
+
+    fetch('/api/enterprise/flywheel/stats', { headers })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.stats) setFlywheelStats(data.stats);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { flywheelStats, loading };
+}
+
+// =============================================================================
+// MOCK DATA (fallback)
 // =============================================================================
 
 const MOCK_COHORT: Array<{ patient: PatientRiskInput; overrides: OverrideHistoryInput }> = [
@@ -110,6 +139,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   DIAGNOSTIC: '#38bdf8',
   SPECIALIZED: '#f59e0b',
   SURGICAL: '#ef4444',
+  PREVENTIVE: '#22c55e',
+  REHABILITATION: '#14b8a6',
+  MENTAL_HEALTH: '#a78bfa',
 };
 
 const TOOLTIP_STYLE = {
@@ -125,15 +157,23 @@ const TOOLTIP_STYLE = {
 // =============================================================================
 
 export default function AnalyticsPage() {
+  const { flywheelStats, loading } = useAnalyticsData();
+  const isLive = flywheelStats !== null && flywheelStats.totalAssessments > 0;
+
   // Compute all results
   const results = React.useMemo(
     () => MOCK_COHORT.map((m) => calculateCompositeRisk(m.patient, m.overrides)),
     [],
   );
 
-  // Tier distribution
-  const tierCounts: Record<RiskTier, number> = { LOW: 0, MODERATE: 0, HIGH: 0, CRITICAL: 0 };
-  for (const r of results) tierCounts[r.riskTier]++;
+  // Tier distribution — use live flywheel data when available
+  const tierCounts: Record<string, number> = isLive
+    ? flywheelStats!.byTier
+    : (() => {
+        const counts: Record<RiskTier, number> = { LOW: 0, MODERATE: 0, HIGH: 0, CRITICAL: 0 };
+        for (const r of results) counts[r.riskTier]++;
+        return counts;
+      })();
   const pieData = (Object.entries(tierCounts) as Array<[RiskTier, number]>)
     .filter(([, count]) => count > 0)
     .map(([tier, count]) => ({ name: tier, value: count, color: TIER_COLORS[tier] }));
@@ -202,9 +242,9 @@ export default function AnalyticsPage() {
         {/* Header */}
         <motion.header {...fadeUp} className="mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-white/5 border border-purple-200/50 dark:border-purple-800/30 backdrop-blur-sm mb-4">
-            <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+            <span className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500' : isLive ? 'bg-purple-500' : 'bg-neutral-400'} animate-pulse`} />
             <span className="text-[10px] font-bold tracking-widest uppercase text-purple-600 dark:text-purple-400">
-              Aggregate Trends
+              {loading ? 'Loading...' : isLive ? 'Live Data' : 'Demo Mode'}
             </span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
@@ -219,7 +259,7 @@ export default function AnalyticsPage() {
           {/* KPI Strip */}
           <motion.section {...fadeUp}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <KpiCard label="Cohort Size" value={String(results.length)} sublabel="active patients" />
+              <KpiCard label="Cohort Size" value={String(isLive ? flywheelStats!.totalAssessments : results.length)} sublabel={isLive ? 'flywheel assessments' : 'active patients'} />
               <KpiCard label="Avg Risk Score" value={String(avgScore)} sublabel={avgScore >= 50 ? 'HIGH cohort' : avgScore >= 25 ? 'MODERATE cohort' : 'LOW cohort'} />
               <KpiCard label="Avg Confidence" value={`${avgConfidence}%`} sublabel="data completeness" />
               <KpiCard label="TUSS Catalog" value={`${allCodes.length} codes`} sublabel={`R$ ${totalCatalogBRL.toLocaleString('pt-BR')} total`} />

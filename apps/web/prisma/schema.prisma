@@ -7252,3 +7252,91 @@ enum RuleProposalStatus {
   REJECTED // Closed / Rejected
   DEPLOYED // Live in production
 }
+
+// =============================================================================
+// ENTERPRISE PHASE 5 — Persistent Stores
+// =============================================================================
+// These tables back the in-memory singletons used by the enterprise API.
+// On startup each service hydrates from these tables; mutations write through.
+
+/// Enterprise assessment log — the data flywheel's core dataset.
+/// Each row is a PII-safe composite risk assessment.
+model EnterpriseAssessmentLog {
+  id                  String   @id @default(cuid())
+  anonymizedPatientId String
+  assessmentPayload   Json // AnonymizedRiskPayload
+  trafficLightColor   String // RED | YELLOW | GREEN
+  signalCount         Int
+  compositeRiskScore  Float
+  riskTier            String // LOW | MODERATE | HIGH | CRITICAL
+  organizationId      String
+  createdAt           DateTime @default(now())
+
+  @@index([anonymizedPatientId])
+  @@index([organizationId, createdAt])
+  @@index([riskTier])
+  @@map("enterprise_assessment_logs")
+}
+
+/// Patient outcome records correlated with doctor override decisions.
+model EnterpriseOutcome {
+  id                  String   @id @default(cuid())
+  anonymizedPatientId String
+  outcomeType         String // READMISSION | ADVERSE_EVENT | COMPLICATION | RESOLVED
+  linkedOverrideIds   Json     @default("[]") // string[]
+  metadata            Json     @default("{}")
+  recordedBy          String
+  recordedAt          DateTime @default(now())
+
+  @@index([anonymizedPatientId])
+  @@index([outcomeType])
+  @@map("enterprise_outcomes")
+}
+
+/// API usage metering for enterprise partner billing.
+model EnterpriseUsageLog {
+  id             String   @id @default(cuid())
+  endpoint       String
+  apiKeyHash     String
+  responseTimeMs Int
+  patientCount   Int
+  statusCode     Int
+  method         String
+  timestamp      DateTime @default(now())
+
+  @@index([apiKeyHash, timestamp])
+  @@index([endpoint])
+  @@map("enterprise_usage_logs")
+}
+
+/// Webhook subscription registry for real-time partner notifications.
+model EnterpriseWebhookSubscription {
+  id         String   @id @default(cuid())
+  apiKeyHash String
+  url        String
+  events     Json // WebhookEventType[]
+  secret     String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  deliveryLogs EnterpriseWebhookDeliveryLog[]
+
+  @@index([apiKeyHash])
+  @@map("enterprise_webhook_subscriptions")
+}
+
+/// Webhook delivery history for debugging and retry tracking.
+model EnterpriseWebhookDeliveryLog {
+  id             String                        @id @default(cuid())
+  subscriptionId String
+  subscription   EnterpriseWebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  eventType      String
+  statusCode     Int?
+  success        Boolean
+  attemptCount   Int
+  error          String?
+  deliveredAt    DateTime                      @default(now())
+
+  @@index([subscriptionId])
+  @@map("enterprise_webhook_delivery_logs")
+}

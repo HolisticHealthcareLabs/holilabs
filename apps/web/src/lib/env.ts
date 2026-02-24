@@ -16,13 +16,19 @@
  *   const dbUrl = env.DATABASE_URL;
  */
 
-// @ts-ignore - @next/env is an internal Next.js package without exported types
-import { loadEnvConfig } from '@next/env';
 import { z } from 'zod';
 
-// Load environment variables from .env files
-const projectDir = process.cwd();
-loadEnvConfig(projectDir);
+// Load environment variables from .env files (only needed outside Next.js runtime,
+// e.g., the validate:env script via tsx). Next.js loads .env files automatically.
+// The dynamic require uses a variable to prevent webpack from trying to resolve it.
+try {
+  const nextEnvPkg = '@next/env';
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { loadEnvConfig } = require(nextEnvPkg);
+  loadEnvConfig(process.cwd());
+} catch {
+  // @next/env not available (e.g., strict pnpm in Docker) — env vars already loaded by Next.js
+}
 
 // ============================================================================
 // SERVER-SIDE ENVIRONMENT VARIABLES
@@ -243,6 +249,11 @@ const serverSchema = z.object({
   PHARMA_PARTNER_KEY: z.string().min(16, {
     message: 'PHARMA_PARTNER_KEY must be at least 16 characters',
   }).optional(),
+
+  // Webhook HMAC signing secret
+  WEBHOOK_HMAC_SECRET: z.string().min(32, {
+    message: 'WEBHOOK_HMAC_SECRET must be at least 32 characters. Generate with: openssl rand -hex 32',
+  }).optional(),
 });
 
 // ============================================================================
@@ -293,6 +304,9 @@ const clientSchema = z.object({
   // Analytics - PostHog (HIPAA-compliant)
   NEXT_PUBLIC_POSTHOG_KEY: z.string().startsWith('phc_').optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.string().url().default('https://us.i.posthog.com'),
+
+  // Enterprise API key (client-side, for dashboard pages to call enterprise endpoints)
+  NEXT_PUBLIC_ENTERPRISE_API_KEY: z.string().optional(),
 });
 
 // ============================================================================
@@ -441,6 +455,9 @@ function validateEnv(): Env {
       // Pharma Partner
       if (!env.PHARMA_PARTNER_KEY) {
         warnings.push('PHARMA_PARTNER_KEY not set - pharma partner integrations will not work');
+      }
+      if (!env.WEBHOOK_HMAC_SECRET) {
+        warnings.push('WEBHOOK_HMAC_SECRET not set - webhook payloads will not be signed');
       }
 
       // Print critical errors and exit

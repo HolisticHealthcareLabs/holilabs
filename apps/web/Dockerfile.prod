@@ -15,9 +15,15 @@ FROM base AS deps
 # Copy root package files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 
-# Copy all package.json files from workspace
-COPY packages/*/package.json ./packages/
-COPY apps/*/package.json ./apps/
+# Copy all package.json files preserving workspace structure
+# Docker COPY globs don't preserve subdirectories, so copy each explicitly
+# Only packages that have package.json (some are type-only packages)
+COPY packages/utils/package.json ./packages/utils/
+COPY packages/schemas/package.json ./packages/schemas/
+COPY packages/dp/package.json ./packages/dp/
+COPY packages/deid/package.json ./packages/deid/
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY apps/web/package.json ./apps/web/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
@@ -35,12 +41,21 @@ COPY --from=deps /app/apps ./apps
 # Copy source code
 COPY . .
 
-# Generate Prisma Client
+# Generate Prisma Client then copy to a deterministic path for the runner stage
+# (pnpm stores .prisma deep inside .pnpm/@prisma+client@<version>/node_modules/.prisma
+#  which varies by version — copying to /prisma-client makes COPY reliable)
 RUN cd apps/web && pnpm prisma generate
+RUN cp -r "$(find /app/node_modules/.pnpm -path '*/.prisma/client' -type d | head -1)/.." /prisma-client
 
-# Build packages and web app
+# Build @holi/web's package dependencies only (^... = deps of @holi/web, not web itself)
+RUN turbo run build --filter='@holi/web^...'
+
+# Build web app directly with next build (skip validate:env which needs @next/env
+# unavailable to tsx in Docker's pnpm context; env vars are injected at runtime)
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN turbo run build --filter=@holi/web
+ENV SKIP_ENV_VALIDATION=true
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN cd apps/web && pnpm next build
 
 # ============================================================================
 # Production Stage - Minimal runtime image
@@ -61,7 +76,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/prisma ./apps/web/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# Copy Prisma engine binaries from the deterministic path set in the builder stage
+COPY --from=builder --chown=nextjs:nodejs /prisma-client ./node_modules/.prisma
 
 USER nextjs
 

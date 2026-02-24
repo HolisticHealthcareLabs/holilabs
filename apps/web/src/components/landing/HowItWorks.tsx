@@ -43,12 +43,14 @@ export function HowItWorks() {
         </motion.p>
       </div>
 
-      {/* Interactive workflow demo */}
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-16">
-        <VerificationWorkflow />
+      {/* Interactive workflow - forced dark container so zinc palette always works */}
+      <div className="max-w-[1080px] mx-auto px-4 sm:px-6 pb-16">
+        <div className="rounded-2xl sm:rounded-3xl bg-zinc-950 p-1">
+          <VerificationWorkflow />
+        </div>
       </div>
 
-      {/* Cards: Built For */}
+      {/* Built For cards */}
       <div className="bg-secondary/50 dark:bg-white/[0.02]">
         <div className="max-w-[980px] mx-auto px-4 sm:px-6 py-20">
           <div className="grid md:grid-cols-3 gap-px bg-border/50 rounded-2xl overflow-hidden">

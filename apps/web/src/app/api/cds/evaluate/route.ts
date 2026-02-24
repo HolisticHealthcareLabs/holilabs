@@ -204,16 +204,20 @@ export async function POST(request: NextRequest) {
 
           // Add to result alerts
           result.alerts.push({
-            uuid: uuidv4(),
+            id: uuidv4(),
+            ruleId: doacResult.ruleId || 'DOAC-Safety-Check',
             source: {
               label: 'Cortex DOAC Safety',
               url: doacResult.citationUrl
             },
+            severity: doacResult.severity === 'BLOCK' ? 'critical' : 'warning',
+            category: 'contraindication',
             indicator: doacResult.severity === 'BLOCK' ? 'critical' : 'warning',
             summary: doacResult.severity === 'ATTESTATION_REQUIRED' ? 'Attestation Required' : 'Safety Warning',
             detail: doacResult.rationale || '',
             links: doacResult.citationUrl ? [{ label: 'Evidence', url: doacResult.citationUrl, type: 'absolute' }] : [],
-            suggestions: []
+            suggestions: [],
+            timestamp: new Date().toISOString(),
           });
           result.rulesFired++;
         }

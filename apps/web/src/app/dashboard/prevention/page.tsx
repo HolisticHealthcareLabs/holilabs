@@ -399,6 +399,50 @@ export default function PreventionPage() {
         </div>
       </div>
 
+      {/* Quick Navigation */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Link
+          href="/dashboard/prevention/templates"
+          className="flex items-center space-x-3 p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+        >
+          <span className="text-2xl">📄</span>
+          <div>
+            <p className="font-semibold text-gray-900">Plantillas</p>
+            <p className="text-xs text-gray-500">Gestión de plantillas</p>
+          </div>
+        </Link>
+        <Link
+          href="/dashboard/prevention/reminders"
+          className="flex items-center space-x-3 p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all"
+        >
+          <span className="text-2xl">🔔</span>
+          <div>
+            <p className="font-semibold text-gray-900">Recordatorios</p>
+            <p className="text-xs text-gray-500">Cuidado preventivo</p>
+          </div>
+        </Link>
+        <Link
+          href="/dashboard/prevention/plans"
+          className="flex items-center space-x-3 p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-green-300 hover:shadow-md transition-all"
+        >
+          <span className="text-2xl">📋</span>
+          <div>
+            <p className="font-semibold text-gray-900">Planes</p>
+            <p className="text-xs text-gray-500">Planes activos</p>
+          </div>
+        </Link>
+        <Link
+          href="/dashboard/prevention/settings"
+          className="flex items-center space-x-3 p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all"
+        >
+          <span className="text-2xl">⚙️</span>
+          <div>
+            <p className="font-semibold text-gray-900">Configuración</p>
+            <p className="text-xs text-gray-500">Notificaciones</p>
+          </div>
+        </Link>
+      </div>
+
       {/* Patient-Specific Prevention Dashboard */}
       {showDashboard && (
         <div className="mb-8">

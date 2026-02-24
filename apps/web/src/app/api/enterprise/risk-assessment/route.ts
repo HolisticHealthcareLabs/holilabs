@@ -27,6 +27,8 @@ import {
 import { estimateClaimCost } from '@/lib/finance/tuss-lookup';
 import { validateEnterpriseKey } from '@/lib/enterprise/auth';
 import { checkRateLimit, SINGLE_ASSESSMENT_LIMIT } from '@/lib/enterprise/rate-limiter';
+import { dataFlywheelService } from '@/services/data-flywheel.service';
+import { enterpriseUsageMeter } from '@/lib/enterprise/usage-meter';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +72,8 @@ function validateRequest(body: unknown): body is RiskAssessmentRequest {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   // Step 1: Auth — reject immediately if key is wrong
   const auth = validateEnterpriseKey(request);
   if (!auth.authorized) return auth.response!;
@@ -124,6 +128,31 @@ export async function POST(request: NextRequest) {
     const costEstimate = body.tussCodes?.length
       ? estimateClaimCost(body.tussCodes, riskResult.riskTier === 'CRITICAL' ? 'BLOCK' : 'PASS')
       : null;
+
+    // Flywheel ingest — persist assessment (non-blocking)
+    const syntheticColor = riskResult.riskTier === 'CRITICAL' ? 'RED' as const
+      : riskResult.riskTier === 'HIGH' ? 'YELLOW' as const
+      : 'GREEN' as const;
+
+    dataFlywheelService.ingest({
+      trafficLightResult: { color: syntheticColor, signals: [] },
+      patientRiskInput: patient,
+      overrideHistory: body.overrideHistory,
+      patientId: `api-${Date.now()}`,
+      organizationId: body.organizationId,
+      tussCodes: body.tussCodes,
+    }).catch(() => {});
+
+    // Usage metering
+    enterpriseUsageMeter.logUsage({
+      endpoint: '/api/enterprise/risk-assessment',
+      apiKeyHash: keyHash,
+      timestamp: new Date().toISOString(),
+      responseTimeMs: Date.now() - startTime,
+      patientCount: 1,
+      statusCode: 200,
+      method: 'POST',
+    });
 
     return NextResponse.json({
       __format: 'enterprise_risk_assessment_v1',

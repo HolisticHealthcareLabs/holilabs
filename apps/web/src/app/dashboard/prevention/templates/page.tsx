@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FileText,
   Plus,
@@ -20,6 +21,8 @@ import {
   BarChart3,
   Calendar,
   AlertCircle,
+  MessageSquare,
+  Share2,
 } from 'lucide-react';
 import { StopIcon as Square, CheckCircleIcon as CheckSquare } from '@heroicons/react/24/outline';
 import BulkActionToolbar from '@/components/prevention/BulkActionToolbar';
@@ -37,9 +40,11 @@ interface Template {
   useCount: number;
   createdAt: string;
   updatedAt: string;
+  _count?: { comments: number; shares: number };
 }
 
 export default function PreventionTemplatesPage() {
+  const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -488,7 +493,10 @@ export default function PreventionTemplatesPage() {
 
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3
+                          className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                          onClick={() => router.push(`/dashboard/prevention/templates/${template.id}`)}
+                        >
                           {template.templateName}
                         </h3>
                         {template.isActive ? (
@@ -570,6 +578,18 @@ export default function PreventionTemplatesPage() {
                   <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                     <span>{template.goals.length} metas</span>
                     <span>{template.recommendations.length} recomendaciones</span>
+                    {template._count && template._count.comments > 0 && (
+                      <span className="flex items-center space-x-1">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>{template._count.comments}</span>
+                      </span>
+                    )}
+                    {template._count && template._count.shares > 0 && (
+                      <span className="flex items-center space-x-1">
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>{template._count.shares}</span>
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <BarChart3 className="w-4 h-4 text-gray-400" />

@@ -26,6 +26,9 @@ import {
 import { estimateClaimCost } from '@/lib/finance/tuss-lookup';
 import { validateEnterpriseKey } from '@/lib/enterprise/auth';
 import { checkRateLimit, BULK_ASSESSMENT_LIMIT } from '@/lib/enterprise/rate-limiter';
+import { dataFlywheelService } from '@/services/data-flywheel.service';
+import { enterpriseUsageMeter } from '@/lib/enterprise/usage-meter';
+import { webhookDispatcher } from '@/lib/enterprise/webhook-dispatcher';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +101,8 @@ function classifyCohort(scores: number[]): { tier: RiskTier; label: string } {
 // =============================================================================
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   // Auth
   const auth = validateEnterpriseKey(request);
   if (!auth.authorized) return auth.response!;
@@ -179,6 +184,51 @@ export async function POST(request: NextRequest) {
     const aggregateCostEstimate = allTussCodes.length > 0
       ? estimateClaimCost(allTussCodes, cohort.tier === 'CRITICAL' ? 'BLOCK' : 'PASS')
       : null;
+
+    // Flywheel ingest for each successful assessment (non-blocking)
+    for (const r of assessmentResults) {
+      const syntheticColor = r.riskResult.riskTier === 'CRITICAL' ? 'RED' as const
+        : r.riskResult.riskTier === 'HIGH' ? 'YELLOW' as const
+        : 'GREEN' as const;
+
+      dataFlywheelService.ingest({
+        trafficLightResult: { color: syntheticColor, signals: [] },
+        patientRiskInput: {
+          cvdRiskScore: null, diabetesRiskScore: null,
+          lastBloodPressureCheck: null, lastCholesterolTest: null,
+          lastHbA1c: null, lastPhysicalExam: null,
+          tobaccoUse: false, tobaccoPackYears: null,
+          alcoholUse: false, alcoholDrinksPerWeek: null,
+          physicalActivityMinutesWeek: null, bmi: null, ageYears: 0,
+        },
+        overrideHistory: { totalOverrides: 0, hardBlockOverrides: 0, totalRulesEvaluated: 0 },
+        patientId: r.id,
+        organizationId: body.organizationId,
+        tussCodes: r.tussCodes,
+      }).catch(() => {});
+    }
+
+    // Dispatch BULK_ASSESSMENT_COMPLETED webhook
+    webhookDispatcher.dispatch('BULK_ASSESSMENT_COMPLETED', {
+      totalAssessed: assessmentResults.length,
+      successfulExports: successful.length,
+      failedExports: failed.length,
+      cohortTier: cohort.tier,
+      averageRiskScore: scores.length > 0
+        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100
+        : 0,
+    }).catch(() => {});
+
+    // Usage metering
+    enterpriseUsageMeter.logUsage({
+      endpoint: '/api/enterprise/bulk-assessment',
+      apiKeyHash: keyHash,
+      timestamp: new Date().toISOString(),
+      responseTimeMs: Date.now() - startTime,
+      patientCount: assessmentResults.length,
+      statusCode: 200,
+      method: 'POST',
+    });
 
     return NextResponse.json({
       __format: 'enterprise_bulk_assessment_v1',

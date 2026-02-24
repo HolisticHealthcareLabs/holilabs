@@ -27,7 +27,7 @@ describe('Safety Audit Logger', () => {
       patientId: 'patient-1',
       ruleId: 'rule-1',
       ruleName: 'Test Rule',
-      severity: 'BLOCK',
+      severity: 'HARD_BLOCK',
       action: 'BLOCKED',
       rationale: 'Test rationale'
     });
