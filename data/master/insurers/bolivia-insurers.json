@@ -1,0 +1,77 @@
+{
+  "meta": { "country": "BO", "source": "INASES — Instituto Nacional de Seguros de Salud de Bolivia + CNS", "version": "2024.1" },
+  "insurers": [
+    {
+      "name": "Caja Nacional de Salud",
+      "shortName": "CNS",
+      "country": "BO",
+      "insurerType": "PUBLIC_FUND",
+      "cnsCode": "CNS-001",
+      "estimatedMembers": 1200000,
+      "coverageRegions": ["LP", "CB", "SC", "OR", "PO", "TJ", "BE", "PA", "CH"],
+      "productLines": ["WORKER_FORMAL", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Instituto Nacional de Seguros de Salud",
+      "shortName": "INASES",
+      "country": "BO",
+      "insurerType": "PUBLIC_FUND",
+      "cnsCode": "INASES-001",
+      "estimatedMembers": 800000,
+      "coverageRegions": ["LP", "CB", "SC", "OR", "PO"],
+      "productLines": ["WORKER_FORMAL", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Caja de Seguro Social Militar — COSSMIL",
+      "shortName": "COSSMIL",
+      "country": "BO",
+      "insurerType": "MILITARY_FUND",
+      "cnsCode": "COSSMIL-001",
+      "estimatedMembers": 180000,
+      "coverageRegions": ["LP", "CB", "SC", "OR"],
+      "productLines": ["MILITARY_ACTIVE", "MILITARY_RETIRED", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Caja Petrolera de Salud — CPS",
+      "shortName": "CPS",
+      "country": "BO",
+      "insurerType": "SECTOR_FUND",
+      "cnsCode": "CPS-001",
+      "estimatedMembers": 95000,
+      "coverageRegions": ["SC", "CB", "TJ"],
+      "productLines": ["PETROLEUM_WORKERS", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Bupa Bolivia Seguros de Vida S.A.",
+      "shortName": "Bupa Bolivia",
+      "country": "BO",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "cnsCode": "BUPA-BO-001",
+      "estimatedMembers": 45000,
+      "coverageRegions": ["LP", "SC", "CB"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "INTERNATIONAL"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "BISA Seguros y Reaseguros S.A.",
+      "shortName": "BISA Seguros",
+      "country": "BO",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "cnsCode": "BISA-001",
+      "estimatedMembers": 30000,
+      "coverageRegions": ["LP", "SC", "CB", "OR"],
+      "productLines": ["INDIVIDUAL", "CORPORATE"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    }
+  ]
+}

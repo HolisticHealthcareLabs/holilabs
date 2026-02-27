@@ -133,6 +133,9 @@ model User {
   // Clinical Governance
   interactionSessions InteractionSession[]
 
+  // Billing Intelligence
+  clinicianNetworks ClinicianNetwork[]
+
   @@index([email])
   @@index([walletAddress])
   @@index([invitationCodeId])
@@ -7339,4 +7342,247 @@ model EnterpriseWebhookDeliveryLog {
 
   @@index([subscriptionId])
   @@map("enterprise_webhook_delivery_logs")
+}
+
+// ============================================================================
+// TRI-COUNTRY BILLING INTELLIGENCE (Brazil · Argentina · Bolivia)
+// ============================================================================
+
+enum BillingSystem {
+  TUSS // Brazil — Terminologia Unificada da Saúde Suplementar
+  CBHPM // Brazil — Classificação Brasileira Hierarquizada de Procedimentos Médicos
+  CID10_BR // Brazil — CID-10 (diagnosis cross-reference)
+  NOMENCLADOR // Argentina — Nomenclador Nacional de Prestaciones de Salud
+  CIE10_AR // Argentina — CIE-10
+  CNS_BO // Bolivia — Caja Nacional de Salud catalog
+  INASES_BO // Bolivia — INASES regulated procedures
+  SAFCI_BO // Bolivia — SAFCI publicly-funded procedures
+  SUMI_BO // Bolivia — SUMI maternal/child
+  SSPAM_BO // Bolivia — SSPAM adult/elder
+  SNOMED_CT // Crosswalk source only — maps to national billing codes
+}
+
+enum BillingCurrency {
+  BRL // Brazilian Real
+  ARS // Argentine Peso
+  BOB // Bolivian Boliviano
+}
+
+enum RateConfidence {
+  CONTRACTED // Negotiated rate — most accurate
+  REFERENCE // Published reference rate (ANS/ANMAT/CNS schedule)
+  ESTIMATED // Derived/interpolated — use with caution
+}
+
+/// Payer directory — covers all three countries.
+model Insurer {
+  id          String  @id @default(cuid())
+  name        String
+  shortName   String
+  country     String // "BR" | "AR" | "BO"
+  insurerType String // "PRIVATE_COMMERCIAL" | "OBRAS_SOCIALES" | "PUBLIC_FUND" | "MILITARY_FUND" | "COOPERATIVE" | "SECTOR_FUND"
+
+  // Country-specific identifiers
+  ansCode  String? @unique // Brazil ANS 6-digit registry code: "005711"
+  cnpj     String? // Brazil tax ID (CNPJ)
+  cuitCode String? @unique // Argentina CUIT
+  rnos     String? @unique // Argentina RNOS (Registro Nacional de Obras Sociales)
+  cnsCode  String? @unique // Bolivia CNS institutional code
+
+  // TISS interoperability
+  tissTissVersion String? // "3.04" — version of TISS XML standard used
+
+  // Coverage metadata
+  estimatedMembers Int?
+  coverageRegions  String[]
+  productLines     String[] // "INDIVIDUAL" | "CORPORATE" | "SMB" etc.
+
+  isActive      Boolean  @default(true)
+  effectiveDate DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  feeSchedules      FeeSchedule[]
+  priorAuthRules    PriorAuthRule[]
+  networkClinicians ClinicianNetwork[]
+
+  @@index([country, isActive])
+  @@map("insurers")
+}
+
+/// Universal procedure code registry — all 3 national billing systems.
+model ProcedureCode {
+  id      String        @id @default(cuid())
+  code    String // "1.01.01.09-6" (TUSS), "010101" (NOM), "CON-001" (CNS_BO)
+  system  BillingSystem
+  version String // "2024.1" — annual update key
+
+  country          String // "BR" | "AR" | "BO"
+  shortDescription String // ≤80 chars — used in UI widgets
+  fullDescription  String @db.Text
+  category         String // STANDARD | DIAGNOSTIC | SURGICAL | etc.
+
+  // Reference rates (null if not applicable for this country/system)
+  referenceRateBRL Decimal? @db.Decimal(12, 2)
+  referenceRateARS Decimal? @db.Decimal(12, 2)
+  referenceRateBOB Decimal? @db.Decimal(12, 2)
+
+  actuarialWeight Decimal @default(0.0) @db.Decimal(5, 4)
+
+  // Clinical requirements
+  applicableSeverities    String[] // ["PASS", "FLAG", "BLOCK"]
+  requiresAnesthesia      Boolean  @default(false)
+  requiresHospitalization Boolean  @default(false)
+  typicalDurationMinutes  Int?
+  requiresCBO             String? // Minimum CBO specialty code (Brazil only)
+
+  // Lifecycle
+  isActive        Boolean   @default(true)
+  effectiveDate   DateTime
+  terminationDate DateTime?
+  deprecatedBy    String? // Code string that replaces this one
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  snomedCrosswalks SnomedCrosswalk[]
+  feeScheduleLines FeeScheduleLine[]
+  priorAuthRules   PriorAuthRule[]
+
+  @@unique([code, system, version])
+  @@index([country, system, isActive])
+  @@index([category, country])
+  @@map("procedure_codes")
+}
+
+/// SNOMED CT → national billing code crosswalk (the "unicorn move").
+/// Given a SNOMED concept, instantly retrieve the correct billing code for any country.
+model SnomedCrosswalk {
+  id String @id @default(cuid())
+
+  snomedConceptId String // e.g., "11429006" (Consultation)
+  snomedFsn       String // Fully specified name: "Consultation (procedure)"
+
+  country String // "BR" | "AR" | "BO"
+
+  procedureCodeId String
+  procedureCode   ProcedureCode @relation(fields: [procedureCodeId], references: [id])
+
+  mappingType String // "EXACT" | "BROAD" | "NARROW" | "APPROXIMATE"
+  confidence  Decimal @db.Decimal(4, 3) // 0.000 – 1.000
+
+  // Provenance
+  sourceAuthority String  @default("HoliLabs") // "ANS" | "ANMAT" | "CNS" | "HoliLabs"
+  notes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([snomedConceptId, country, procedureCodeId])
+  @@index([snomedConceptId, country])
+  @@map("snomed_crosswalks")
+}
+
+/// Fee schedule header — one per insurer × billing system × year.
+model FeeSchedule {
+  id             String          @id @default(cuid())
+  insurerId      String
+  insurer        Insurer         @relation(fields: [insurerId], references: [id])
+  billingSystem  BillingSystem
+  currency       BillingCurrency
+  effectiveDate  DateTime
+  expirationDate DateTime?
+  version        String // "2024.1"
+  isActive       Boolean         @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lines FeeScheduleLine[]
+
+  @@unique([insurerId, billingSystem, effectiveDate])
+  @@index([insurerId, isActive])
+  @@map("fee_schedules")
+}
+
+/// Per-procedure rate within a fee schedule.
+model FeeScheduleLine {
+  id              String          @id @default(cuid())
+  feeScheduleId   String
+  feeSchedule     FeeSchedule     @relation(fields: [feeScheduleId], references: [id], onDelete: Cascade)
+  procedureCodeId String
+  procedureCode   ProcedureCode   @relation(fields: [procedureCodeId], references: [id])
+
+  negotiatedRate Decimal         @db.Decimal(12, 2)
+  currency       BillingCurrency
+  confidence     RateConfidence  @default(REFERENCE)
+
+  // Coverage details
+  isCovered      Boolean  @default(true)
+  coverageLimit  Decimal? @db.Decimal(12, 2) // Annual or per-event limit
+  copayFlat      Decimal? @db.Decimal(8, 2) // Fixed copay amount
+  copayPercent   Decimal? @db.Decimal(5, 4) // Percentage copay (0.0–1.0)
+
+  effectiveDate  DateTime
+  expirationDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([feeScheduleId, procedureCodeId])
+  @@index([feeScheduleId])
+  @@map("fee_schedule_lines")
+}
+
+/// Prior authorization requirements per insurer × procedure.
+model PriorAuthRule {
+  id              String        @id @default(cuid())
+  insurerId       String
+  insurer         Insurer       @relation(fields: [insurerId], references: [id])
+  procedureCodeId String
+  procedureCode   ProcedureCode @relation(fields: [procedureCodeId], references: [id])
+
+  required          Boolean @default(false)
+  windowDays        Int? // Standard submission window (days before procedure)
+  urgentWindowHours Int? // Urgent/expedited pathway (hours)
+
+  requiredDocuments String[] // ["REFERRAL_LETTER", "CLINICAL_REPORT", "LAB_RESULTS"]
+  requiredDiagnoses String[] // ICD-10/CIE-10 codes that trigger this rule
+
+  notes          String?  @db.Text
+  effectiveDate  DateTime
+  expirationDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([insurerId, procedureCodeId, effectiveDate])
+  @@index([insurerId])
+  @@index([procedureCodeId])
+  @@map("prior_auth_rules")
+}
+
+/// Clinician in-network status per clinician × insurer.
+model ClinicianNetwork {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insurerId String
+  insurer   Insurer @relation(fields: [insurerId], references: [id])
+
+  isInNetwork   Boolean   @default(false)
+  contractStart DateTime?
+  contractEnd   DateTime?
+  networkTier   String? // "PREFERRED" | "STANDARD" | "OUT_OF_NETWORK"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, insurerId])
+  @@index([userId])
+  @@index([insurerId])
+  @@map("clinician_networks")
 }
