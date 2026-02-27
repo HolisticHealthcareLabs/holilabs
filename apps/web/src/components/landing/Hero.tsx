@@ -40,7 +40,7 @@ export function Hero() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.15 }}
-                    className="text-4xl sm:text-5xl md:text-6xl lg:text-[64px] font-bold leading-[1.05] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-8"
+                    className="text-4xl sm:text-5xl md:text-6xl lg:text-[64px] font-bold leading-[1.3] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 pb-3 mb-6"
                 >
                     {copy.hero.highlight}
                 </motion.p>
@@ -80,7 +80,7 @@ export function Hero() {
                         <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </Link>
                     <Link
-                        href="#demo"
+                        href="#roadmap"
                         className="inline-flex items-center justify-center text-base font-medium text-blue-400 hover:text-blue-300 transition-colors"
                     >
                         <span className="hidden sm:inline">{copy.hero.secondaryCta}</span>

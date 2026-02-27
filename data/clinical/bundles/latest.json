@@ -1,10 +1,11 @@
 {
   "manifest": {
     "bundleVersion": "1.0.0",
-    "generatedAt": "2026-02-11T14:18:56.025Z",
-    "checksum": "d9a68b46598f0cf5361dec8a9eedca327ad73d6bdc84dc95873e5c0457fdd696",
-    "ruleCount": 7,
+    "generatedAt": "2026-02-25T20:25:51.105Z",
+    "checksum": "edcf898414dce78a37f13ddf89928795a3165b4b3d602554f6b05c1245793769",
+    "ruleCount": 18,
     "domainCounts": {
+      "DOAC_SAFETY": 11,
       "CONTRAINDICATION": 3,
       "ALLERGY": 1,
       "DOSING": 1,
@@ -12,6 +13,719 @@
     }
   },
   "rules": [
+    {
+      "ruleId": "DOAC_SAFETY_AGE_001",
+      "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Rivaroxaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "European Heart Rhythm Association",
+        "sourceDocument": "EHRA Practical Guide on the use of NOACs in patients with NVAF, 2021 update",
+        "sourceVersion": "2021-update",
+        "effectiveDate": "2021-04-25",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://doi.org/10.1093/europace/euab065",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            ">=": [
+              {
+                "var": "patient_age"
+              },
+              80
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "rivaroxaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "xarelto"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient is ≥ 80 years old. Elderly patients have increased bleeding risk with rivaroxaban due to age-related renal decline and pharmacokinetic changes.",
+        "recommendation": "Consider reduced dose (15mg QD for AF, 10mg QD for VTE prophylaxis). Assess renal function. Monitor closely for bleeding."
+      },
+      "tags": [
+        "doac",
+        "elderly",
+        "age-adjustment",
+        "rivaroxaban"
+      ],
+      "contentHash": "f53fc8a907812dcc72350f144048bc59a5f9e62d1947c99e658e4d763b842a37"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_AGE_002",
+      "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Apixaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "European Heart Rhythm Association",
+        "sourceDocument": "EHRA Practical Guide on the use of NOACs in patients with NVAF, 2021 update",
+        "sourceVersion": "2021-update",
+        "effectiveDate": "2021-04-25",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://doi.org/10.1093/europace/euab065",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            ">=": [
+              {
+                "var": "patient_age"
+              },
+              80
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "apixaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "eliquis"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient is ≥ 80 years old. Age ≥ 80 is one of the 3 dose-reduction criteria for apixaban (age ≥ 80, weight ≤ 60kg, creatinine ≥ 1.5 mg/dL). If 2 of 3 criteria are met, reduce to 2.5mg BID.",
+        "recommendation": "Evaluate all 3 dose-reduction criteria. If ≥ 2 are met, reduce dose to 2.5mg BID. Document assessment."
+      },
+      "tags": [
+        "doac",
+        "elderly",
+        "age-adjustment",
+        "apixaban"
+      ],
+      "contentHash": "958527eaf5f25a0600acdd60f3e33f9af090b28e1f792750efe14cd2510add96"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_AGE_003",
+      "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Dabigatran",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Pradaxa (dabigatran) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2018/022512s035lbl.pdf",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            ">=": [
+              {
+                "var": "patient_age"
+              },
+              80
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "dabigatran"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "pradaxa"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient is ≥ 80 years old. Elderly patients on dabigatran have increased bleeding risk. RE-LY trial showed higher major bleeding rates in patients ≥ 75 on 150mg BID.",
+        "recommendation": "Consider 110mg BID (where available) for patients ≥ 80. Assess renal function — dose reduce to 75mg BID if CrCl 15-30 mL/min. Monitor for bleeding signs."
+      },
+      "tags": [
+        "doac",
+        "elderly",
+        "age-adjustment",
+        "dabigatran"
+      ],
+      "contentHash": "9fded3ef98e8c42de98c6ca844569f78fc93abb2e0a3cb2db03de4cb85b3b97b"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_AGE_004",
+      "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Edoxaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+        "sourceVersion": "2021.1",
+        "effectiveDate": "2021-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            ">=": [
+              {
+                "var": "patient_age"
+              },
+              80
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "edoxaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "savaysa"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "lixiana"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient is ≥ 80 years old. Elderly patients on edoxaban require careful monitoring. Age-related renal decline may require dose adjustment to 30mg QD.",
+        "recommendation": "Review renal function and weight. If CrCl 15-50 mL/min or weight ≤ 60kg, reduce to 30mg QD. Monitor closely for bleeding."
+      },
+      "tags": [
+        "doac",
+        "elderly",
+        "age-adjustment",
+        "edoxaban"
+      ],
+      "contentHash": "3eeeaa457e674af6a19d85233a559fd559baba450d3f13944beba075a8f853cf"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_DDI_CYP3A4_001",
+      "name": "DOAC + Strong CYP3A4 Inhibitor Interaction — Rivaroxaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Xarelto (rivaroxaban) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2011/202439s001lbl.pdf",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "rivaroxaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "xarelto"
+                ]
+              }
+            ]
+          },
+          {
+            "some": [
+              {
+                "var": "current_medications"
+              },
+              {
+                "in": [
+                  {
+                    "var": ""
+                  },
+                  [
+                    "ketoconazole",
+                    "itraconazole",
+                    "voriconazole",
+                    "posaconazole",
+                    "ritonavir",
+                    "cobicistat",
+                    "lopinavir",
+                    "clarithromycin"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "CONTRAINDICATED: Concurrent use of rivaroxaban with strong combined CYP3A4 and P-gp inhibitors (ketoconazole, itraconazole, ritonavir, etc.) significantly increases rivaroxaban exposure and bleeding risk.",
+        "recommendation": "Avoid co-administration. If antifungal therapy required, consider fluconazole (weak CYP3A4 inhibitor). If antiretroviral required, consult HIV specialist for DOAC-compatible regimen."
+      },
+      "tags": [
+        "doac",
+        "drug-interaction",
+        "cyp3a4",
+        "rivaroxaban",
+        "contraindicated"
+      ],
+      "contentHash": "db05a373865ff79948d06f2edd4112e6454773e35452dce160a835cfa057a051"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_DDI_CYP3A4_002",
+      "name": "DOAC + Strong CYP3A4 Inhibitor Interaction — Apixaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "BLOCK",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Eliquis (apixaban) Prescribing Information",
+        "sourceVersion": "2023.1",
+        "effectiveDate": "2023-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2016/202155s012lbl.pdf",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "apixaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "eliquis"
+                ]
+              }
+            ]
+          },
+          {
+            "some": [
+              {
+                "var": "current_medications"
+              },
+              {
+                "in": [
+                  {
+                    "var": ""
+                  },
+                  [
+                    "ketoconazole",
+                    "itraconazole",
+                    "voriconazole",
+                    "posaconazole",
+                    "ritonavir",
+                    "cobicistat",
+                    "lopinavir",
+                    "clarithromycin"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Strong dual CYP3A4/P-gp inhibitors (ketoconazole, itraconazole, ritonavir, etc.) increase apixaban exposure by ~2x. Dose reduction required if co-administration cannot be avoided.",
+        "recommendation": "If co-administration is necessary, reduce apixaban to 2.5mg BID. If patient is already on 2.5mg BID, avoid the combination entirely. Document clinical rationale."
+      },
+      "tags": [
+        "doac",
+        "drug-interaction",
+        "cyp3a4",
+        "apixaban",
+        "contraindicated"
+      ],
+      "contentHash": "adb3887a2e061cdae1fc99bd9fd678eb02003837e4569fbe81646099d2983232"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_DDI_CYP3A4_003",
+      "name": "DOAC + Strong CYP3A4 Inhibitor Interaction — Edoxaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+        "sourceVersion": "2021.1",
+        "effectiveDate": "2021-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "edoxaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "savaysa"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "lixiana"
+                ]
+              }
+            ]
+          },
+          {
+            "some": [
+              {
+                "var": "current_medications"
+              },
+              {
+                "in": [
+                  {
+                    "var": ""
+                  },
+                  [
+                    "ketoconazole",
+                    "itraconazole",
+                    "voriconazole",
+                    "posaconazole",
+                    "ritonavir",
+                    "cobicistat",
+                    "lopinavir",
+                    "clarithromycin"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "P-gp inhibitors may increase edoxaban exposure. While edoxaban is primarily P-gp (not CYP3A4) metabolized, strong dual inhibitors still warrant monitoring. Ketoconazole increases edoxaban AUC by ~87%.",
+        "recommendation": "No dose adjustment per FDA label, but monitor closely for bleeding. Consider alternative antifungal/antiretroviral if possible. Document co-prescribing rationale."
+      },
+      "tags": [
+        "doac",
+        "drug-interaction",
+        "cyp3a4",
+        "pgp",
+        "edoxaban"
+      ],
+      "contentHash": "5acd171b8889d2551e6186a4dd1568916b2ab4d8d81c5394434084337ab55ab5"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_WEIGHT_001",
+      "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Apixaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "European Heart Rhythm Association",
+        "sourceDocument": "EHRA Practical Guide on the use of NOACs in patients with NVAF, 2021 update",
+        "sourceVersion": "2021-update",
+        "effectiveDate": "2021-04-25",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://doi.org/10.1093/europace/euab065",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            "<": [
+              {
+                "var": "patient_weight"
+              },
+              60
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "apixaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "eliquis"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient weighs < 60kg. Weight ≤ 60kg is one of the 3 dose-reduction criteria for apixaban (age ≥ 80, weight ≤ 60kg, creatinine ≥ 1.5 mg/dL). If 2 of 3 criteria are met, reduce to 2.5mg BID.",
+        "recommendation": "Evaluate all 3 dose-reduction criteria. If ≥ 2 are met, reduce dose to 2.5mg BID. Document weight and assessment."
+      },
+      "tags": [
+        "doac",
+        "low-weight",
+        "weight-adjustment",
+        "apixaban"
+      ],
+      "contentHash": "19392b2770889148891bb6c9b2bc7e65857f060d08a0a37510f00f1d82f26fe2"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_WEIGHT_002",
+      "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Edoxaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "FDA",
+        "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+        "sourceVersion": "2021.1",
+        "effectiveDate": "2021-01-01",
+        "jurisdiction": "US",
+        "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+        "licenseType": "public-domain"
+      },
+      "logic": {
+        "and": [
+          {
+            "<": [
+              {
+                "var": "patient_weight"
+              },
+              60
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "edoxaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "savaysa"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "lixiana"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient weighs < 60kg. Edoxaban dose must be reduced to 30mg QD for patients with body weight ≤ 60kg per FDA labeling.",
+        "recommendation": "Reduce edoxaban dose to 30mg once daily. This is a mandatory dose reduction per prescribing information. Document weight."
+      },
+      "tags": [
+        "doac",
+        "low-weight",
+        "weight-adjustment",
+        "edoxaban"
+      ],
+      "contentHash": "6e70950197c28895c185e8f445d7c792f143fd1507a0c8721f4635303a6d49ad"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_WEIGHT_003",
+      "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Rivaroxaban",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "International Society on Thrombosis and Haemostasis",
+        "sourceDocument": "ISTH Guidance on DOAC Use in Extremes of Body Weight",
+        "sourceVersion": "2021-update",
+        "effectiveDate": "2021-01-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://doi.org/10.1111/jth.15440",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            "<": [
+              {
+                "var": "patient_weight"
+              },
+              60
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "rivaroxaban"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "xarelto"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient weighs < 60kg. Low body weight may increase rivaroxaban exposure and bleeding risk. Limited clinical trial data in very low weight patients.",
+        "recommendation": "Use standard dosing with increased monitoring for bleeding. Consider anti-Xa level monitoring if available. Document weight and clinical rationale."
+      },
+      "tags": [
+        "doac",
+        "low-weight",
+        "weight-adjustment",
+        "rivaroxaban"
+      ],
+      "contentHash": "807109d25c7942267dfa68d88b962091564e293b4f1b48365baee19cd0518d6b"
+    },
+    {
+      "ruleId": "DOAC_SAFETY_WEIGHT_004",
+      "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Dabigatran",
+      "domain": "DOAC_SAFETY",
+      "severity": "FLAG",
+      "provenance": {
+        "sourceAuthority": "International Society on Thrombosis and Haemostasis",
+        "sourceDocument": "ISTH Guidance on DOAC Use in Extremes of Body Weight",
+        "sourceVersion": "2021-update",
+        "effectiveDate": "2021-01-01",
+        "jurisdiction": "INTL",
+        "citationUrl": "https://doi.org/10.1111/jth.15440",
+        "licenseType": "proprietary"
+      },
+      "logic": {
+        "and": [
+          {
+            "<": [
+              {
+                "var": "patient_weight"
+              },
+              60
+            ]
+          },
+          {
+            "or": [
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "dabigatran"
+                ]
+              },
+              {
+                "==": [
+                  {
+                    "var": "proposed_medication"
+                  },
+                  "pradaxa"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "intervention": {
+        "message": "Patient weighs < 60kg. Low body weight may increase dabigatran plasma levels and bleeding risk. RE-LY subgroup analysis showed trends toward increased bleeding in low-weight patients.",
+        "recommendation": "Consider 110mg BID instead of 150mg BID where available. Monitor renal function closely. Document weight and clinical rationale."
+      },
+      "tags": [
+        "doac",
+        "low-weight",
+        "weight-adjustment",
+        "dabigatran"
+      ],
+      "contentHash": "36f4fa5bd971e1f6a7c0e092649d18828f21758a402a51f5c079eff794740f5d"
+    },
     {
       "ruleId": "MED_CONTRA_001",
       "name": "Non-Selective Beta-Blocker in Asthma",

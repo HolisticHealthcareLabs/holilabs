@@ -1,6 +1,9 @@
+import React from 'react';
 import { Resend } from 'resend';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
+import { WelcomeEmail } from './templates/WelcomeEmail';
+import { MagicLinkEmail } from './templates/MagicLinkEmail';
 
 /**
  * Resend Client Initialization
@@ -114,6 +117,39 @@ export async function sendOTPEmail(email: string, otp: string) {
         <p style="font-size: 12px; color: #666;">Este código expira en 5 minutos.</p>
       </div>
     `,
+  });
+}
+
+/**
+ * Send branded welcome email with React template to new clinicians
+ */
+export async function sendWelcomeEmail(
+  email: string,
+  firstName: string,
+  username: string,
+  loginUrl: string,
+  isDemoMode?: boolean,
+) {
+  return sendEmail({
+    to: email,
+    subject: 'Welcome to Cortex by Holi Labs — Your account is ready',
+    react: React.createElement(WelcomeEmail, { firstName, username, loginUrl, isDemoMode }),
+  });
+}
+
+/**
+ * Send magic link email for passwordless clinician sign-in
+ */
+export async function sendClinicianMagicLink(
+  email: string,
+  firstName: string,
+  magicLinkUrl: string,
+  expiresInMinutes: number = 10,
+) {
+  return sendEmail({
+    to: email,
+    subject: 'Sign in to Cortex — Your magic link',
+    react: React.createElement(MagicLinkEmail, { firstName, magicLinkUrl, expiresInMinutes }),
   });
 }
 

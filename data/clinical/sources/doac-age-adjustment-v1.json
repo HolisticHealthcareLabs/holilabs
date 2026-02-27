@@ -1,0 +1,238 @@
+[
+    {
+        "ruleId": "DOAC_SAFETY_AGE_001",
+        "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Rivaroxaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "European Heart Rhythm Association",
+            "sourceDocument": "EHRA Practical Guide on the use of NOACs in patients with NVAF, 2021 update",
+            "sourceVersion": "2021-update",
+            "effectiveDate": "2021-04-25",
+            "jurisdiction": "INTL",
+            "citationUrl": "https://doi.org/10.1093/europace/euab065",
+            "licenseType": "proprietary"
+        },
+        "logic": {
+            "and": [
+                {
+                    ">=": [
+                        {
+                            "var": "patient_age"
+                        },
+                        80
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "rivaroxaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "xarelto"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient is ≥ 80 years old. Elderly patients have increased bleeding risk with rivaroxaban due to age-related renal decline and pharmacokinetic changes.",
+            "recommendation": "Consider reduced dose (15mg QD for AF, 10mg QD for VTE prophylaxis). Assess renal function. Monitor closely for bleeding."
+        },
+        "tags": [
+            "doac",
+            "elderly",
+            "age-adjustment",
+            "rivaroxaban"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_AGE_002",
+        "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Apixaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "European Heart Rhythm Association",
+            "sourceDocument": "EHRA Practical Guide on the use of NOACs in patients with NVAF, 2021 update",
+            "sourceVersion": "2021-update",
+            "effectiveDate": "2021-04-25",
+            "jurisdiction": "INTL",
+            "citationUrl": "https://doi.org/10.1093/europace/euab065",
+            "licenseType": "proprietary"
+        },
+        "logic": {
+            "and": [
+                {
+                    ">=": [
+                        {
+                            "var": "patient_age"
+                        },
+                        80
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "apixaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "eliquis"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient is ≥ 80 years old. Age ≥ 80 is one of the 3 dose-reduction criteria for apixaban (age ≥ 80, weight ≤ 60kg, creatinine ≥ 1.5 mg/dL). If 2 of 3 criteria are met, reduce to 2.5mg BID.",
+            "recommendation": "Evaluate all 3 dose-reduction criteria. If ≥ 2 are met, reduce dose to 2.5mg BID. Document assessment."
+        },
+        "tags": [
+            "doac",
+            "elderly",
+            "age-adjustment",
+            "apixaban"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_AGE_003",
+        "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Dabigatran",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "FDA",
+            "sourceDocument": "Pradaxa (dabigatran) Prescribing Information",
+            "sourceVersion": "2023.1",
+            "effectiveDate": "2023-01-01",
+            "jurisdiction": "US",
+            "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2018/022512s035lbl.pdf",
+            "licenseType": "public-domain"
+        },
+        "logic": {
+            "and": [
+                {
+                    ">=": [
+                        {
+                            "var": "patient_age"
+                        },
+                        80
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "dabigatran"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "pradaxa"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient is ≥ 80 years old. Elderly patients on dabigatran have increased bleeding risk. RE-LY trial showed higher major bleeding rates in patients ≥ 75 on 150mg BID.",
+            "recommendation": "Consider 110mg BID (where available) for patients ≥ 80. Assess renal function — dose reduce to 75mg BID if CrCl 15-30 mL/min. Monitor for bleeding signs."
+        },
+        "tags": [
+            "doac",
+            "elderly",
+            "age-adjustment",
+            "dabigatran"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_AGE_004",
+        "name": "DOAC Dose Review for Elderly Patients (Age ≥ 80) — Edoxaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "FDA",
+            "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+            "sourceVersion": "2021.1",
+            "effectiveDate": "2021-01-01",
+            "jurisdiction": "US",
+            "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+            "licenseType": "public-domain"
+        },
+        "logic": {
+            "and": [
+                {
+                    ">=": [
+                        {
+                            "var": "patient_age"
+                        },
+                        80
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "edoxaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "savaysa"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "lixiana"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient is ≥ 80 years old. Elderly patients on edoxaban require careful monitoring. Age-related renal decline may require dose adjustment to 30mg QD.",
+            "recommendation": "Review renal function and weight. If CrCl 15-50 mL/min or weight ≤ 60kg, reduce to 30mg QD. Monitor closely for bleeding."
+        },
+        "tags": [
+            "doac",
+            "elderly",
+            "age-adjustment",
+            "edoxaban"
+        ]
+    }
+]

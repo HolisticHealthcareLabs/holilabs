@@ -11,6 +11,9 @@
  * @module lib/clinical/content-registry
  */
 
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
 import type {
   ClinicalContentBundle,
   ClinicalBundleManifest,
@@ -123,3 +126,78 @@ export function getRegistryDomainCounts(): Record<string, number> {
   }
   return counts;
 }
+
+// ============================================================================
+// Lazy initialization (cold-path loader)
+// ============================================================================
+
+/**
+ * Resolve the path to the latest clinical content bundle.
+ * Uses process.cwd() which in Next.js points to the project root.
+ */
+function resolveBundlePath(): string {
+  // In Next.js, process.cwd() is the apps/web directory (project root).
+  // The bundle lives at ../../data/clinical/bundles/latest.json relative to it,
+  // or we can resolve from the monorepo root.
+  const candidates = [
+    path.resolve(process.cwd(), 'data', 'clinical', 'bundles', 'latest.json'),
+    path.resolve(process.cwd(), '..', '..', 'data', 'clinical', 'bundles', 'latest.json'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    `Clinical content bundle not found. Searched: ${candidates.join(', ')}. ` +
+    `Run "tsx scripts/clinical/build-content-bundle.ts" to generate.`
+  );
+}
+
+/**
+ * Ensure the clinical content registry is initialized with the latest bundle.
+ *
+ * This function is idempotent: if the registry is already loaded, it returns
+ * immediately (fast path). On cold start, it reads the bundle from disk,
+ * validates it, and populates the in-memory indexes.
+ *
+ * **Must be called before any rule evaluation in safety-critical paths.**
+ * Throws on failure — never silently degrades.
+ */
+export function ensureRegistryInitialized(): void {
+  if (isRegistryReady()) {
+    return; // Fast path: already loaded
+  }
+
+  const bundlePath = resolveBundlePath();
+
+  let rawJson: string;
+  try {
+    rawJson = fs.readFileSync(bundlePath, 'utf-8');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to read clinical content bundle at ${bundlePath}: ${message}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to parse clinical content bundle JSON: ${message}`);
+  }
+
+  // initializeRegistry() calls loadBundle() which validates and throws on error
+  initializeRegistry(parsed);
+
+  // Log success (non-sensitive metadata only)
+  const ruleCount = getRegistryRuleCount();
+  const domainCounts = getRegistryDomainCounts();
+  console.info(
+    `[content-registry] Initialized: ${ruleCount} rules loaded from ${bundlePath}. ` +
+    `Domains: ${JSON.stringify(domainCounts)}`
+  );
+}
+

@@ -2,11 +2,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, BarChart3, Activity } from 'lucide-react';
+import { Shield, BarChart3, Activity, HeartPulse } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getLandingCopy } from '@/components/landing/copy';
 
-const icons = [Shield, BarChart3, Activity];
+const icons = [HeartPulse, Shield, BarChart3, Activity];
 
 export function Architecture() {
   const { locale } = useLanguage();
@@ -45,9 +45,9 @@ export function Architecture() {
         </motion.p>
       </div>
 
-      {/* Three module cards */}
+      {/* Four module cards */}
       <div className="max-w-[980px] mx-auto px-4 sm:px-6 pb-24 sm:pb-32">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           {copy.architecture.cards.map((card, index) => {
             const Icon = icons[index] ?? Activity;
 

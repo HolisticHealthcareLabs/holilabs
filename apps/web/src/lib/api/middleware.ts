@@ -111,8 +111,8 @@ setInterval(() => {
 export function rateLimit(config: RateLimitConfig) {
   return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
     const identifier = request.headers.get('x-forwarded-for') ||
-                      request.headers.get('x-real-ip') ||
-                      'unknown';
+      request.headers.get('x-real-ip') ||
+      'unknown';
 
     // Hash the URL to keep keys short
     const urlHash = Buffer.from(request.url).toString('base64').slice(0, 20);
@@ -319,11 +319,22 @@ export function requireAuth() {
       // Use proper NextAuth v5 session validation for HIPAA compliance
       // ===================================================================
 
-      // Use the canonical NextAuth v5 instance used by `/api/auth/*`
-      // IMPORTANT: Do NOT import `@/lib/auth` here (legacy v4/v5 compat module) or you'll validate
-      // against a different NextAuth instance and all protected routes will 401.
-      const { auth } = await import('@/lib/auth/auth');
-      const session = await auth();
+      let session;
+
+      // In test environments, tests can inject a mock session via global._mockSession 
+      // because Jest struggles to mock dynamic ESM imports reliably
+      if (typeof global !== 'undefined' && 'TEST_ENV' in process.env) {
+        if ((global as any)._mockSession !== undefined) {
+          session = (global as any)._mockSession;
+        } else {
+          const { auth } = await import('@/lib/auth/auth');
+          session = await auth();
+        }
+      } else {
+        // Use the canonical NextAuth v5 instance
+        const { auth } = await import('@/lib/auth/auth');
+        session = await auth();
+      }
 
       // Validate session exists and has user
       if (!session || !session.user || !session.user.id) {

@@ -23,6 +23,12 @@ model User {
   walletAddress String? @unique // Future: Web3 login
   publicKey     String?
 
+  // Authentication
+  passwordHash        String?
+  username            String?  @unique
+  onboardingCompleted Boolean  @default(false)
+  permissions         String[] @default([])
+
   // Profile
   firstName     String
   lastName      String
@@ -75,6 +81,11 @@ model User {
   notificationTemplates NotificationTemplate[]
   createdTemplates      ClinicalTemplate[]     @relation("CreatedTemplates")
 
+  // Prevention Hub Templates
+  preventionTemplates         PreventionPlanTemplate[]        @relation("UserPreventionTemplates")
+  preventionTemplateComments  PreventionTemplateComment[]
+  preventionTemplateShares    PreventionTemplateShare[]       @relation("SharedWithUser")
+
   // Phase 5: Advanced Scheduling
   recurringAppointments RecurringAppointment[]
   providerAvailability  ProviderAvailability[]
@@ -102,6 +113,7 @@ model User {
   clinicalEncounters ClinicalEncounter[] @relation("ProviderEncounters")
 
   @@index([email])
+  @@index([username])
   @@index([walletAddress])
   @@index([cpf])
   @@index([cboCode])
@@ -5195,8 +5207,8 @@ model ClinicalEmbedding {
 
   // Embedding data
   // Note: pgvector uses the vector type, but Prisma doesn't support it natively
-  // We use Unsupported type and handle it in raw queries
-  embedding Unsupported("vector(1536)")? // OpenAI ada-002 uses 1536 dimensions
+  // Disabled for local dev (requires pgvector extension matching PostgreSQL version)
+  // embedding Unsupported("vector(1536)")? // OpenAI ada-002 uses 1536 dimensions
 
   // Content metadata (for result display, no PHI)
   contentPreview String? @db.Text // First 200 chars (for search results)
@@ -5223,7 +5235,7 @@ model PatientSummaryEmbedding {
   patientId String @unique
 
   // Embedding (1536 dimensions for OpenAI ada-002)
-  embedding Unsupported("vector(1536)")?
+  // embedding Unsupported("vector(1536)")?
 
   // Summary metadata (no PHI)
   ageBand          String?
@@ -5252,7 +5264,7 @@ model DiagnosisEmbedding {
   patientId   String
 
   // Embedding
-  embedding Unsupported("vector(1536)")?
+  // embedding Unsupported("vector(1536)")?
 
   // Diagnosis metadata (no PHI)
   icdCode    String?
@@ -5726,5 +5738,110 @@ model FormularyOverride {
   timestamp      DateTime @default(now())
 
   @@map("formulary_overrides")
+}
+
+// ================================================================
+// Prevention Hub - Collaborative Templates with Version Control
+// ================================================================
+
+enum PreventionPlanType {
+  WELLNESS
+  CHRONIC_DISEASE
+  POST_SURGICAL
+  MENTAL_HEALTH
+  PEDIATRIC
+  GERIATRIC
+  MATERNAL
+  OCCUPATIONAL
+  REHABILITATION
+  CUSTOM
+}
+
+model PreventionPlanTemplate {
+  id               String             @id @default(cuid())
+  templateName     String
+  planType         PreventionPlanType
+  description      String?            @db.Text
+  guidelineSource  String?
+  evidenceLevel    String?
+  targetPopulation String?            @db.Text
+
+  goals           Json
+  recommendations Json
+
+  isActive   Boolean   @default(true)
+  useCount   Int       @default(0)
+  lastUsedAt DateTime?
+
+  versions PreventionPlanTemplateVersion[]
+  comments PreventionTemplateComment[]
+  shares   PreventionTemplateShare[]
+
+  createdByUser User   @relation("UserPreventionTemplates", fields: [createdBy], references: [id])
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([createdBy])
+  @@index([planType])
+  @@index([isActive])
+  @@map("prevention_plan_templates")
+}
+
+model PreventionPlanTemplateVersion {
+  id         String @id @default(cuid())
+  templateId String
+  version    Int
+  changeNote String? @db.Text
+  snapshot   Json
+
+  template  PreventionPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@unique([templateId, version])
+  @@index([templateId])
+  @@map("prevention_plan_template_versions")
+}
+
+model PreventionTemplateComment {
+  id         String @id @default(cuid())
+  templateId String
+  content    String @db.Text
+  parentId   String?
+
+  template PreventionPlanTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  parent   PreventionTemplateComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  PreventionTemplateComment[] @relation("CommentReplies")
+  author   User                    @relation(fields: [authorId], references: [id])
+  authorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+  @@index([authorId])
+  @@map("prevention_template_comments")
+}
+
+enum TemplateSharePermission {
+  VIEW
+  EDIT
+  ADMIN
+}
+
+model PreventionTemplateShare {
+  id           String                  @id @default(cuid())
+  templateId   String
+  sharedWithId String
+  permission   TemplateSharePermission @default(VIEW)
+  message      String?
+
+  template   PreventionPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  sharedWith User                   @relation("SharedWithUser", fields: [sharedWithId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([templateId, sharedWithId])
+  @@index([sharedWithId])
+  @@map("prevention_template_shares")
 }
 

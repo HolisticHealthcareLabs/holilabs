@@ -18,6 +18,7 @@ import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useToolUsageTracker } from '@/hooks/useToolUsageTracker';
+import { DemoGuidedTour } from '@/components/demo/DemoGuidedTour';
 import { ChevronRight, User, Clock, MessageSquare, Shield, Activity, Search, Plus, RefreshCw, XCircle, X, CheckCircle2 } from 'lucide-react';
 
 interface NavItem {
@@ -140,22 +141,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       shadowColor: 'slate-500/40',
     },
     {
-      name: 'Downloads',
-      href: '/dashboard/downloads',
-      icon: '/icons/download.svg',
-      gradient: 'from-cyan-500 to-blue-600',
-      hoverGradient: 'from-cyan-600 to-blue-700',
-      shadowColor: 'cyan-500/40',
-    },
-    {
-      name: 'Billing',
-      href: '/dashboard/billing',
-      icon: '/icons/credit-card.svg',
-      gradient: 'from-emerald-500 to-teal-600',
-      hoverGradient: 'from-emerald-600 to-teal-700',
-      shadowColor: 'emerald-500/40',
-    },
-    {
       name: 'Console',
       href: '/dashboard/console',
       icon: '/icons/crisis-response_center_person.svg',
@@ -231,25 +216,21 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   height={32}
                 />
                 {!sidebarCollapsed && (
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
-                      style={{
-                        fontWeight: 600,
-                        letterSpacing: '-0.02em',
-                      }}
-                    >
-                      Holi Labs
-                    </span>
-                    <span className="inline-flex items-center rounded-full border border-emerald-600/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-700 dark:text-emerald-300">
-                      BETA
-                    </span>
-                  </div>
+                  <span
+                    className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
+                    style={{
+                      fontWeight: 600,
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    Holi Labs
+                  </span>
                 )}
               </Link>
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="lg:hidden text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                aria-label="Close navigation menu"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -257,14 +238,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </button>
               <button
                 onClick={() => setSidebarCollapsed((v) => !v)}
-                className="hidden lg:inline-flex items-center justify-center w-9 h-9 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20"
+                className="hidden lg:inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
                 title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
-                {sidebarCollapsed ? (
-                  <Activity className="w-5 h-5 text-cyan-400" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-gray-400 rotate-180" />
-                )}
+                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? '' : 'rotate-180'}`} />
               </button>
             </div>
 
@@ -311,8 +289,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 backdrop-blur-sm shrink-0
                         ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
                         ${item.name === 'Command Center' ? 'bg-gradient-to-br from-slate-500/70 to-slate-700/70 hover:from-slate-600 hover:to-slate-800 hover:shadow-2xl hover:shadow-slate-400/30' : ''}
-                        ${item.name === 'Downloads' ? 'bg-gradient-to-br from-cyan-400/70 to-blue-500/70 hover:from-cyan-500 hover:to-blue-600 hover:shadow-2xl hover:shadow-cyan-400/40' : ''}
-                        ${item.name === 'Billing' ? 'bg-gradient-to-br from-emerald-400/70 to-teal-500/70 hover:from-emerald-500 hover:to-teal-600 hover:shadow-2xl hover:shadow-emerald-400/40' : ''}
                         ${item.name === 'Console' ? 'bg-gradient-to-br from-indigo-400/70 to-purple-500/70 hover:from-indigo-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-indigo-400/40' : ''}
                         ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
                         ${item.name === 'Agenda' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}
@@ -601,12 +577,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{user?.email}</p>
                     </div>
-                    {/* Decorative - low contrast intentional for dropdown chevron icon */}
+                    {/* Decorative - dropdown chevron, hidden from screen readers */}
                     <svg
                       className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                     </svg>
@@ -625,6 +602,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+                aria-label="Open navigation menu"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -658,11 +636,33 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
           {/* Desktop Header */}
           <header className="hidden lg:block bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30">
-            <div className="flex items-center justify-end h-16 px-6 gap-4">
-              <LanguageSelector currentLocale={locale} />
-              <GlobalSearch />
-              <NotificationCenter />
-              <ThemeToggle />
+            <div className="flex items-center justify-between h-14 px-6">
+              {/* Role badge */}
+              <div className="flex items-center gap-2">
+                {session?.user?.role && (
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                    session.user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                    session.user.role === 'PHYSICIAN' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                    'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      session.user.role === 'ADMIN' ? 'bg-purple-500' :
+                      session.user.role === 'PHYSICIAN' ? 'bg-blue-500' :
+                      'bg-gray-400'
+                    }`} />
+                    {session.user.role === 'ADMIN' ? 'Administrator' :
+                     session.user.role === 'PHYSICIAN' ? 'Clinician' :
+                     session.user.role === 'NURSE' ? 'Nurse' :
+                     session.user.role}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <LanguageSelector currentLocale={locale} />
+                <GlobalSearch />
+                <NotificationCenter />
+                <ThemeToggle />
+              </div>
             </div>
           </header>
 
@@ -674,6 +674,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Notification Permission Prompt */}
         <NotificationPrompt />
+
+        {/* Investor Demo Tour */}
+        <DemoGuidedTour />
 
         {/* Session Timeout Warning Modal */}
         <SessionTimeoutWarning

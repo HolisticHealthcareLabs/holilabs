@@ -256,48 +256,24 @@ export default function ClinicianRegisterPage() {
 
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="registration-form space-y-3 sm:space-y-4">
-            {/* Demo Mode Option (moved to top for visibility) - enforced light mode styling */}
-            <div
-              className="rounded-xl p-4 sm:p-5 space-y-3 border-2"
-              style={{
-                background: 'linear-gradient(to bottom right, rgb(239 246 255), rgb(238 242 255))',
-                borderColor: 'rgb(191 219 254)',
-              }}
-            >
-              <label className="flex items-start gap-3 sm:gap-4 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={enableDemoMode}
-                  onChange={(e) => setEnableDemoMode(e.target.checked)}
-                  disabled={isLoading}
-                  className="mt-0.5 sm:mt-1 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="font-semibold text-sm sm:text-base" style={{ color: 'rgb(30 58 138)' }}>
-                      Start with Demo Mode
-                    </span>
-                    <span className="px-2 py-0.5 bg-blue-500 text-white text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
-                      QUICK START
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'rgb(30 64 175)' }}>
-                    Get started immediately with 10 pre-loaded sample patients. Perfect for exploring the platform&apos;s features. You can disable this later or add real patients at any time.
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5 sm:gap-2">
-                    <span className="px-2 py-1 bg-white/80 text-[10px] sm:text-xs rounded border" style={{ color: 'rgb(30 64 175)', borderColor: 'rgb(191 219 254)' }}>
-                      ✨ Instant setup
-                    </span>
-                    <span className="px-2 py-1 bg-white/80 text-[10px] sm:text-xs rounded border" style={{ color: 'rgb(30 64 175)', borderColor: 'rgb(191 219 254)' }}>
-                      🎯 Full features
-                    </span>
-                    <span className="px-2 py-1 bg-white/80 text-[10px] sm:text-xs rounded border" style={{ color: 'rgb(30 64 175)', borderColor: 'rgb(191 219 254)' }}>
-                      🔄 Reversible
-                    </span>
-                  </div>
-                </div>
-              </label>
-            </div>
+            {/* Sample Data Toggle */}
+            <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={enableDemoMode}
+                onChange={(e) => setEnableDemoMode(e.target.checked)}
+                disabled={isLoading}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  Pre-load sample patient data
+                </span>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Explore the platform with 10 clinical profiles. Removable at any time.
+                </p>
+              </div>
+            </label>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>

@@ -1,7 +1,8 @@
 /**
  * NextAuth Type Extensions
  *
- * Extends NextAuth types to include custom user fields
+ * Extends NextAuth types to include custom user fields.
+ * These fields flow: DB → authorize() → JWT → Session → Frontend
  */
 
 import 'next-auth';
@@ -14,8 +15,10 @@ declare module 'next-auth' {
     name?: string;
     firstName?: string;
     lastName?: string;
-    patientId?: string; // Optional for clinician users
+    patientId?: string;
     role: string;
+    username?: string | null;
+    onboardingCompleted?: boolean;
   }
 
   interface Session {
@@ -27,6 +30,8 @@ declare module 'next-auth' {
       lastName?: string;
       patientId?: string;
       role: string;
+      username?: string | null;
+      onboardingCompleted?: boolean;
     };
   }
 }
@@ -35,5 +40,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     patientId: string;
     role: string;
+    username?: string | null;
+    onboardingCompleted?: boolean;
   }
 }

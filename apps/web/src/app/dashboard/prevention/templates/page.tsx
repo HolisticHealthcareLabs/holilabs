@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { StopIcon as Square, CheckCircleIcon as CheckSquare } from '@heroicons/react/24/outline';
 import BulkActionToolbar from '@/components/prevention/BulkActionToolbar';
+import TemplateFormModal from '@/components/prevention/TemplateFormModal';
 
 interface Template {
   id: string;
@@ -604,8 +605,27 @@ export default function PreventionTemplatesPage() {
         )}
       </div>
 
-      {/* Create/Edit Modals would go here */}
-      {/* For brevity, modals are omitted but would follow similar patterns */}
+      {/* Create/Edit Template Modal */}
+      <TemplateFormModal
+        isOpen={showCreateModal || showEditModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setShowEditModal(false);
+          setSelectedTemplate(null);
+        }}
+        onSaved={fetchTemplates}
+        template={showEditModal && selectedTemplate ? {
+          id: selectedTemplate.id,
+          templateName: selectedTemplate.templateName,
+          planType: selectedTemplate.planType,
+          description: selectedTemplate.description || '',
+          guidelineSource: selectedTemplate.guidelineSource || '',
+          evidenceLevel: selectedTemplate.evidenceLevel || '',
+          targetPopulation: '',
+          goals: selectedTemplate.goals || [],
+          recommendations: selectedTemplate.recommendations || [],
+        } : null}
+      />
 
       {/* Bulk Action Toolbar */}
       <BulkActionToolbar

@@ -48,39 +48,28 @@ type LandingCopy = {
     toast: string;
     toastMobile: string;
   };
-  architecture: {
+  roadmap: {
+    kicker: string;
+    title: string;
+    subtitle: string;
+    phases: Array<{
+      badge: string;
+      title: string;
+      timeline: string;
+      challenge: string;
+      features: string[];
+    }>;
+  };
+  dataMoat: {
     kicker: string;
     title: string;
     subtitle: string;
     cards: Array<{
       title: string;
       body: string;
-      chipA: string;
-      chipB: string;
+      metric: string;
     }>;
-    interactionHint: string;
-  };
-  governance: {
-    kicker: string;
-    title: string;
-    subtitle: string;
-    cardOneTitle: string;
-    cardOneBody: string;
-    cardTwoTitle: string;
-    cardTwoBody: string;
-    errorsAvoided: string;
-    complianceRate: string;
-    weekDelta: string;
-  };
-  safety: {
-    kicker: string;
-    title: string;
-    cards: Array<{
-      title: string;
-      body: string;
-      bulletA: string;
-      bulletB: string;
-    }>;
+    flywheel: string;
   };
   demo: {
     title: string;
@@ -127,46 +116,46 @@ const landingCopy: Record<Locale, LandingCopy> = {
   en: {
     a11y: { skipToMain: 'Skip to main content' },
     header: {
-      productTag: 'Cortex Pilot',
+      productTag: 'Cortex Platform',
       howItWorks: 'How it works',
-      audit: 'Audit',
+      audit: 'Roadmap',
       login: 'Sign in',
-      betaCta: 'Start Free Beta',
-      betaShort: 'Beta',
+      betaCta: 'Request Clinical Access',
+      betaShort: 'Access',
     },
     hero: {
-      badge: 'Inpatient Cardiology Pilot',
-      title: 'Cortex by Holi Labs.',
-      highlight: 'Safeguard every decision.',
+      badge: 'The Clinical Validation Layer',
+      title: 'The Guardrail for Clinical AI.',
+      highlight: 'Human expertise in the loop.',
       description:
-        'A premium clinical safety layer for teams that move fast. AI drafts context and documentation, while deterministic logic keeps high-risk moments transparent and auditable.',
-      supportLine: 'Web-first for LATAM workflows, with an optional lightweight desktop companion.',
-      primaryCta: 'For Private Practice: Start Free Beta',
-      primaryShort: 'Start Free Beta',
-      secondaryCta: 'For Enterprise: Request Cortex Pilot',
-      secondaryShort: 'Request Pilot',
+        'Large language models generate possibilities. We validate clinical realities. Cortex captures real-time physician feedback to build the world\'s most powerful dataset of Clinical Ground Truth.',
+      supportLine: 'We don\'t build the engine. We build the steering wheel and the brakes.',
+      primaryCta: 'Request Clinical Access',
+      primaryShort: 'Clinical Access',
+      secondaryCta: 'See the Roadmap',
+      secondaryShort: 'Roadmap',
     },
     howItWorks: {
       kicker: 'How it works',
-      title: 'AI pre-fills the safety check. You validate with one tap.',
-      subtitle: 'Cortex analyzes the chart, drafts the logic path, and leaves the final sign-off to the clinician.',
+      title: 'AI drafts. You validate. The system learns.',
+      subtitle: 'Cortex routes LLM output through a deterministic safety layer. Clinicians accept, reject, or modify recommendations in a sub-second workflow. Every interaction trains the guardrail.',
       builtFor: 'Built for',
       cards: [
         {
           title: 'Clinicians',
-          body: 'A fast, predictable workflow that reduces risk without creating alert fatigue.',
+          body: 'A minimalist validation interface that turns clinical review into a sub-second action. Traffic-light alerts, contextual explainability, and zero alert fatigue.',
         },
         {
-          title: 'Quality and leadership',
-          body: 'Structured evidence of what was validated, what was overridden, and where protocol drift appears.',
+          title: 'Quality leadership',
+          body: 'Live governance console with trust scores, override intelligence, and protocol drift monitoring. Evidence-based visibility into how AI is being used across your organization.',
         },
         {
           title: 'LATAM operations',
-          body: 'Works with basic EHRs and messaging-first coordination without waiting for perfect integrations.',
+          body: 'Works with basic EHRs and messaging-first coordination. LGPD-compliant by default, with ANVISA regulatory references and Portuguese-language clinical content.',
         },
       ],
       note:
-        'Cortex is a verification and documentation layer. Clinicians remain responsible for clinical decisions. Patient messaging is opt-in and should minimize sensitive content.',
+        'Cortex is a clinical decision support and documentation layer. Clinicians remain responsible for all clinical decisions.',
     },
     workflow: {
       progressLabel: 'Verification flow progress',
@@ -179,90 +168,88 @@ const landingCopy: Record<Locale, LandingCopy> = {
       statusQueued: 'Ready when verified',
       ehrReady: 'EHR data ready',
       expiresIn: 'Expires in {seconds}s',
-      contextBody: 'EHR data, labs, and medications are already extracted and normalized by AI.',
-      verifyBody: 'Cortex drafted the logic checks. You confirm the rationale and complete sign-off.',
+      contextBody: 'EHR data, labs, medications, and risk factors are already extracted and normalized. Traffic-light rules have been pre-evaluated.',
+      verifyBody: 'Cortex drafted the logic checks. Review the traffic-light assessment and confirm the clinical rationale.',
       verifyHint: 'Only one action remaining.',
       confirm: 'Confirm Rationale',
-      documentBody: 'Audit note, documentation, and follow-up actions are queued automatically.',
+      documentBody: 'Audit note, governance event, and follow-up actions are queued automatically.',
       toast: 'Documentation generated - care team notified',
       toastMobile: 'Success!',
     },
-    architecture: {
-      kicker: 'Core architecture',
-      title: 'Three modules. One coherent safety system.',
-      subtitle: 'Select a tile to inspect how each module supports safer high-stakes workflows.',
-      cards: [
+    roadmap: {
+      kicker: 'The vision',
+      title: 'Securing the future of AI-assisted care.',
+      subtitle: 'From a seamless workflow tool to the global trust standard for health AI.',
+      phases: [
         {
-          title: 'The Checklist',
-          body: 'A 30-second verification flow for DOAC safety and discharge. If key data is missing, Cortex requests attestation or manual input.',
-          chipA: '30-second flow',
-          chipB: 'No blind defaults',
+          badge: 'LIVE',
+          title: 'The Feedback Engine',
+          timeline: 'In production',
+          challenge: 'Doctors suffer from alert fatigue. If the validation loop adds friction, they abandon it.',
+          features: [
+            'EHR-native "one-click" validation interface',
+            'Sub-second accept, reject, or modify workflow',
+            'Contextual explainability for every recommendation',
+          ],
         },
         {
-          title: 'The Audit Console',
-          body: 'Leadership gets a live governance view of validations, overrides, and protocol drift without retrospective chart review cycles.',
-          chipA: 'Real-time governance',
-          chipB: 'Override intelligence',
+          badge: 'NEXT',
+          title: 'The Clinical Safety Firewall',
+          timeline: '6-12 months',
+          challenge: 'How do we stop LLM hallucinations before the clinician ever sees them?',
+          features: [
+            'Routing model trained on accept/reject data',
+            'Real-time clinical consensus tracking',
+            'Institutional analytics for CIOs and CMOs',
+          ],
         },
         {
-          title: 'The Follow-up',
-          body: 'Close the post-discharge loop with structured reminders and adherence workflows, including WhatsApp where appropriate.',
-          chipA: 'Structured reminders',
-          chipB: 'Care-team escalation',
-        },
-      ],
-      interactionHint: 'Tap or hover tiles to explore',
-    },
-    governance: {
-      kicker: 'Governance',
-      title: 'Protect high-risk decisions with transparent verification.',
-      subtitle:
-        'The Cortex audit console shows what was validated, what was overridden, and where protocols are drifting in real operations.',
-      cardOneTitle: 'Outcome Dashboard',
-      cardOneBody:
-        'Track the operational and clinical outcomes that matter: checks completed, compliance trend, and avoided risk events.',
-      cardTwoTitle: 'Deterministic Clinical Logic',
-      cardTwoBody:
-        'Configure safety guardrails per unit. When a clinician overrides, Cortex captures rationale for training and protocol improvement.',
-      errorsAvoided: 'Risk events avoided',
-      complianceRate: 'Compliance rate',
-      weekDelta: '+27 this week',
-    },
-    safety: {
-      kicker: 'Clinical safety infrastructure',
-      title: 'Built for high-stakes moments across the care continuum.',
-      cards: [
-        {
-          title: 'Revenue integrity at the source',
-          body: 'Catch missing modifiers, documentation gaps, and protocol misses before chart close to reduce downstream denials.',
-          bulletA: 'Deterministic checks with rationale',
-          bulletB: 'Pre-close documentation safeguards',
-        },
-        {
-          title: 'Audit and governance',
-          body: 'Capture override reasons and protocol drift so quality teams improve workflows with evidence, not anecdotes.',
-          bulletA: 'Structured override reasons',
-          bulletB: 'Exportable audit summaries',
-        },
-        {
-          title: 'Follow-up and adherence',
-          body: 'Maintain continuity after discharge with reminders and structured follow-up where patients already engage.',
-          bulletA: 'WhatsApp-compatible reminders',
-          bulletB: 'Escalation to staff when needed',
+          badge: 'HORIZON',
+          title: 'The Global Trust Standard',
+          timeline: '12-24 months',
+          challenge: 'To be a true category leader, we must become the standard other health tech companies rely on.',
+          features: [
+            'Federated learning trust network (no PHI movement)',
+            '"Verified by Cortex" API for third-party apps',
+            'Automated liability mitigation for insurers',
+          ],
         },
       ],
+    },
+    dataMoat: {
+      kicker: 'The data moat',
+      title: 'An engine is useless without a steering wheel.',
+      subtitle: 'OpenAI, Google, and Anthropic will fight over who has the smartest engine. We are building the indispensable trust layer on top.',
+      cards: [
+        {
+          title: 'Clinical Ground Truth',
+          body: 'Every accept, reject, and modification by a physician feeds a proprietary dataset that no competitor can replicate overnight. This is our compounding network effect.',
+          metric: '14,200+ physician validations',
+        },
+        {
+          title: 'Federated Learning',
+          body: 'We share the learnings of AI corrections across hospital systems without moving protected health information. The guardrail gets smarter globally while data stays local.',
+          metric: 'Zero PHI movement',
+        },
+        {
+          title: '"Verified by Cortex" API',
+          body: 'Third-party health apps, telemedicine platforms, and LLM creators themselves will ping our database to score the clinical safety of their outputs before publishing.',
+          metric: 'The tollbooth on top of AI',
+        },
+      ],
+      flywheel: 'Every physician validation strengthens the guardrail.',
     },
     demo: {
-      title: 'Choose your path: clinic or enterprise.',
+      title: 'Join the consensus.',
       subtitle:
-        'Private practice teams can start the beta now. Hospital leadership can request a Cortex pilot for governance, safety checks, and follow-up workflows.',
-      ctaClinic: 'For Private Practice: Start Free Beta',
-      ctaEnterprise: 'For Enterprise: Request Cortex Pilot',
+        'Clinicians can explore the platform now. Hospital and insurer leadership can request a Cortex pilot for governance, safety, and validation workflows.',
+      ctaClinic: 'Request Clinical Access',
+      ctaEnterprise: 'Request Enterprise Pilot',
       emailPlaceholder: 'Enter work email...',
-      requestCta: 'Request Cortex Pilot',
+      requestCta: 'Request Access',
       sending: 'Sending...',
-      inviteOnly: 'Invite-only pilot',
-      noIntegration: 'No deep integration to start',
+      inviteOnly: 'Invite-only',
+      noIntegration: 'No deep integration required',
       desktop: 'macOS + Windows',
       success: "Access request received. We'll be in touch with your invitation soon.",
       requestError: 'Failed to process request.',
@@ -274,8 +261,8 @@ const landingCopy: Record<Locale, LandingCopy> = {
       legal: 'Legal',
       contact: 'Contact',
       howItWorks: 'How it works',
-      modules: 'Modules',
-      audit: 'Audit',
+      modules: 'Roadmap',
+      audit: 'Trust layer',
       requestAccess: 'Request access',
       about: 'About',
       blog: 'Blog',
@@ -296,46 +283,46 @@ const landingCopy: Record<Locale, LandingCopy> = {
   es: {
     a11y: { skipToMain: 'Saltar al contenido principal' },
     header: {
-      productTag: 'Cortex Pilot',
+      productTag: 'Cortex Platform',
       howItWorks: 'Cómo funciona',
-      audit: 'Auditoría',
+      audit: 'Hoja de ruta',
       login: 'Entrar',
-      betaCta: 'Iniciar Beta Gratis',
-      betaShort: 'Beta',
+      betaCta: 'Solicitar Acceso Clínico',
+      betaShort: 'Acceso',
     },
     hero: {
-      badge: 'Piloto de Cardiología Hospitalaria',
-      title: 'Cortex por Holi Labs.',
-      highlight: 'Protege cada decisión.',
+      badge: 'La Capa de Validación Clínica',
+      title: 'El Guardarriel de la IA Clínica.',
+      highlight: 'Expertise humano en el circuito.',
       description:
-        'Una capa premium de seguridad clínica para equipos que operan con velocidad. La IA prepara contexto y documentación, mientras la lógica determinística mantiene momentos críticos auditables.',
-      supportLine: 'Web-first para flujos LATAM, con opción de companion de escritorio liviano.',
-      primaryCta: 'Para Consultorios: Iniciar Beta Gratis',
-      primaryShort: 'Iniciar Beta',
-      secondaryCta: 'Para Enterprise: Solicitar Cortex Pilot',
-      secondaryShort: 'Solicitar Pilot',
+        'Los modelos de lenguaje generan posibilidades. Nosotros validamos realidades clínicas. Cortex captura retroalimentación médica en tiempo real para construir el dataset más poderoso de Verdad Clínica.',
+      supportLine: 'No construimos el motor. Construimos el volante y los frenos.',
+      primaryCta: 'Solicitar Acceso Clínico',
+      primaryShort: 'Acceso Clínico',
+      secondaryCta: 'Ver la Hoja de Ruta',
+      secondaryShort: 'Hoja de Ruta',
     },
     howItWorks: {
       kicker: 'Cómo funciona',
-      title: 'La IA precompleta la verificación. Tú validas con un toque.',
-      subtitle: 'Cortex analiza la historia, propone la lógica y deja la aprobación final al clínico.',
+      title: 'La IA propone. Tú validas. El sistema aprende.',
+      subtitle: 'Cortex enruta la salida de LLMs a través de una capa de seguridad determinística. Los clínicos aceptan, rechazan o modifican las recomendaciones en un flujo de sub-segundo. Cada interacción entrena el guardarriel.',
       builtFor: 'Hecho para',
       cards: [
         {
           title: 'Clínicos',
-          body: 'Un flujo rápido y predecible que reduce riesgo sin fatiga de alertas.',
+          body: 'Una interfaz minimalista de validación que convierte la revisión clínica en una acción de sub-segundo. Alertas semáforo, explicabilidad contextual y cero fatiga de alertas.',
         },
         {
           title: 'Calidad y liderazgo',
-          body: 'Evidencia estructurada de validaciones, sobrescrituras y desvíos de protocolo.',
+          body: 'Consola de gobernanza en vivo con scores de confianza, inteligencia de overrides y monitoreo de desvío de protocolos. Visibilidad basada en evidencia de cómo se usa la IA en tu organización.',
         },
         {
           title: 'Operación LATAM',
-          body: 'Funciona con EHRs básicos y coordinación por mensajería sin esperar integraciones perfectas.',
+          body: 'Funciona con EHRs básicos y coordinación por mensajería. Cumplimiento LGPD por defecto, con referencias regulatorias ANVISA y contenido clínico en portugués.',
         },
       ],
       note:
-        'Cortex es una capa de verificación y documentación. Las decisiones clínicas siguen siendo responsabilidad del profesional tratante.',
+        'Cortex es una capa de soporte a decisiones clínicas y documentación. Las decisiones clínicas siguen siendo responsabilidad del profesional tratante.',
     },
     workflow: {
       progressLabel: 'Progreso de verificación',
@@ -348,90 +335,88 @@ const landingCopy: Record<Locale, LandingCopy> = {
       statusQueued: 'Listo al verificar',
       ehrReady: 'Datos EHR listos',
       expiresIn: 'Expira en {seconds}s',
-      contextBody: 'Datos EHR, laboratorios y medicación ya extraídos y normalizados por IA.',
-      verifyBody: 'Cortex preparó los chequeos lógicos. Tú confirmas el criterio y finalizas.',
+      contextBody: 'Datos EHR, laboratorios, medicamentos y factores de riesgo ya extraídos y normalizados. Reglas semáforo pre-evaluadas.',
+      verifyBody: 'Cortex preparó los chequeos lógicos. Revisa la evaluación semáforo y confirma el criterio clínico.',
       verifyHint: 'Solo queda una acción.',
       confirm: 'Confirmar Criterio',
-      documentBody: 'Nota de auditoría, documentación y siguientes acciones quedan en cola automáticamente.',
+      documentBody: 'Nota de auditoría, evento de gobernanza y acciones de seguimiento quedan en cola automáticamente.',
       toast: 'Documentación generada - equipo notificado',
       toastMobile: '¡Listo!',
     },
-    architecture: {
-      kicker: 'Arquitectura central',
-      title: 'Tres módulos. Un sistema de seguridad coherente.',
-      subtitle: 'Selecciona un tile para ver cómo cada módulo protege flujos críticos.',
-      cards: [
+    roadmap: {
+      kicker: 'La visión',
+      title: 'Asegurando el futuro del cuidado asistido por IA.',
+      subtitle: 'De herramienta de flujo de trabajo a estándar global de confianza para IA en salud.',
+      phases: [
         {
-          title: 'El Checklist',
-          body: 'Flujo de 30 segundos para seguridad DOAC y alta. Si falta un dato clave, Cortex solicita atestación o carga manual.',
-          chipA: 'Flujo en 30 segundos',
-          chipB: 'Sin supuestos ciegos',
+          badge: 'EN VIVO',
+          title: 'El Motor de Retroalimentación',
+          timeline: 'En producción',
+          challenge: 'Los médicos sufren de fatiga de alertas. Si el ciclo de validación agrega fricción, lo abandonan.',
+          features: [
+            'Interfaz de validación "un clic" nativa del EHR',
+            'Flujo de aceptar, rechazar o modificar en sub-segundo',
+            'Explicabilidad contextual para cada recomendación',
+          ],
         },
         {
-          title: 'La Consola de Auditoría',
-          body: 'Liderazgo visualiza validaciones, sobrescrituras y desvíos de protocolo en tiempo real.',
-          chipA: 'Gobernanza en vivo',
-          chipB: 'Inteligencia de override',
+          badge: 'PRÓXIMO',
+          title: 'El Firewall de Seguridad Clínica',
+          timeline: '6-12 meses',
+          challenge: '¿Cómo detenemos las alucinaciones de LLMs antes de que el clínico las vea?',
+          features: [
+            'Modelo de enrutamiento entrenado con datos de aceptación/rechazo',
+            'Rastreo de consenso clínico en tiempo real',
+            'Analítica institucional para CIOs y CMOs',
+          ],
         },
         {
-          title: 'El Seguimiento',
-          body: 'Cierra el ciclo post-alta con recordatorios estructurados y adherencia, incluyendo WhatsApp cuando aplica.',
-          chipA: 'Recordatorios estructurados',
-          chipB: 'Escalamiento al equipo',
-        },
-      ],
-      interactionHint: 'Haz clic o pasa el cursor para explorar',
-    },
-    governance: {
-      kicker: 'Gobernanza',
-      title: 'Protege decisiones críticas con verificación transparente.',
-      subtitle:
-        'La consola de auditoría de Cortex muestra qué se validó, qué se sobrescribió y dónde deriva el protocolo en operación real.',
-      cardOneTitle: 'Dashboard de Resultados',
-      cardOneBody:
-        'Monitorea resultados clínicos y operativos: chequeos completos, tendencia de cumplimiento y eventos de riesgo evitados.',
-      cardTwoTitle: 'Lógica Clínica Determinística',
-      cardTwoBody:
-        'Configura guardrails por unidad. Cuando hay override clínico, Cortex guarda el motivo para mejorar protocolos.',
-      errorsAvoided: 'Eventos de riesgo evitados',
-      complianceRate: 'Tasa de cumplimiento',
-      weekDelta: '+27 esta semana',
-    },
-    safety: {
-      kicker: 'Infraestructura de seguridad clínica',
-      title: 'Diseñado para momentos críticos en todo el continuum de cuidado.',
-      cards: [
-        {
-          title: 'Integridad de ingresos en origen',
-          body: 'Detecta faltantes de modificadores, vacíos de documentación y desvíos antes del cierre de historia clínica.',
-          bulletA: 'Chequeos determinísticos con criterio',
-          bulletB: 'Resguardos pre-cierre',
-        },
-        {
-          title: 'Auditoría y gobernanza',
-          body: 'Registra motivos de override y deriva de protocolos para mejorar con evidencia.',
-          bulletA: 'Motivos estructurados',
-          bulletB: 'Resumen exportable',
-        },
-        {
-          title: 'Seguimiento y adherencia',
-          body: 'Mantiene continuidad tras el alta con recordatorios y flujos estructurados donde el paciente ya interactúa.',
-          bulletA: 'Recordatorios compatibles con WhatsApp',
-          bulletB: 'Escalamiento al staff',
+          badge: 'HORIZONTE',
+          title: 'El Estándar Global de Confianza',
+          timeline: '12-24 meses',
+          challenge: 'Para ser líder de categoría, debemos convertirnos en el estándar que otras empresas de salud usen.',
+          features: [
+            'Red de confianza con aprendizaje federado (sin movimiento de PHI)',
+            'API "Verificado por Cortex" para apps de terceros',
+            'Mitigación automatizada de responsabilidad para aseguradoras',
+          ],
         },
       ],
+    },
+    dataMoat: {
+      kicker: 'El foso de datos',
+      title: 'Un motor es inútil sin un volante.',
+      subtitle: 'OpenAI, Google y Anthropic pelearán por quién tiene el motor más inteligente. Nosotros construimos la capa de confianza indispensable encima.',
+      cards: [
+        {
+          title: 'Verdad Clínica',
+          body: 'Cada aceptación, rechazo y modificación de un médico alimenta un dataset propietario que ningún competidor puede replicar. Este es nuestro efecto de red compuesto.',
+          metric: '14.200+ validaciones médicas',
+        },
+        {
+          title: 'Aprendizaje Federado',
+          body: 'Compartimos las lecciones de correcciones de IA entre sistemas hospitalarios sin mover información de salud protegida. El guardarriel se vuelve más inteligente globalmente mientras los datos se quedan locales.',
+          metric: 'Cero movimiento de PHI',
+        },
+        {
+          title: 'API "Verificado por Cortex"',
+          body: 'Apps de salud, plataformas de telemedicina y los propios creadores de LLMs consultarán nuestra base para calificar la seguridad clínica de sus outputs antes de publicarlos.',
+          metric: 'El peaje sobre la IA',
+        },
+      ],
+      flywheel: 'Cada validación médica fortalece el guardarriel.',
     },
     demo: {
-      title: 'Elige tu ruta: clínica o enterprise.',
+      title: 'Únete al consenso.',
       subtitle:
-        'Equipos de consultorio pueden iniciar beta hoy. Liderazgo hospitalario puede solicitar Cortex Pilot para gobernanza y seguridad.',
-      ctaClinic: 'Para Consultorios: Iniciar Beta Gratis',
-      ctaEnterprise: 'Para Enterprise: Solicitar Cortex Pilot',
+        'Los clínicos pueden explorar la plataforma ahora. Liderazgo hospitalario y asegurador puede solicitar un piloto de Cortex para gobernanza, seguridad y flujos de validación.',
+      ctaClinic: 'Solicitar Acceso Clínico',
+      ctaEnterprise: 'Solicitar Piloto Enterprise',
       emailPlaceholder: 'Ingresa email corporativo...',
-      requestCta: 'Solicitar Cortex Pilot',
+      requestCta: 'Solicitar Acceso',
       sending: 'Enviando...',
-      inviteOnly: 'Piloto por invitación',
-      noIntegration: 'Sin integración profunda al inicio',
+      inviteOnly: 'Solo por invitación',
+      noIntegration: 'Sin integración profunda requerida',
       desktop: 'macOS + Windows',
       success: 'Solicitud recibida. Pronto te contactaremos con la invitación.',
       requestError: 'No fue posible procesar la solicitud.',
@@ -443,8 +428,8 @@ const landingCopy: Record<Locale, LandingCopy> = {
       legal: 'Legal',
       contact: 'Contacto',
       howItWorks: 'Cómo funciona',
-      modules: 'Módulos',
-      audit: 'Auditoría',
+      modules: 'Hoja de ruta',
+      audit: 'Capa de confianza',
       requestAccess: 'Solicitar acceso',
       about: 'Acerca de',
       blog: 'Blog',
@@ -465,46 +450,46 @@ const landingCopy: Record<Locale, LandingCopy> = {
   pt: {
     a11y: { skipToMain: 'Pular para o conteúdo principal' },
     header: {
-      productTag: 'Cortex Pilot',
+      productTag: 'Cortex Platform',
       howItWorks: 'Como funciona',
-      audit: 'Auditoria',
+      audit: 'Roadmap',
       login: 'Entrar',
-      betaCta: 'Começar Beta Gratuita',
-      betaShort: 'Beta',
+      betaCta: 'Solicitar Acesso Clínico',
+      betaShort: 'Acesso',
     },
     hero: {
-      badge: 'Piloto de Cardiologia Intra-hospitalar',
-      title: 'Cortex by Holi Labs.',
-      highlight: 'Proteja cada decisão.',
+      badge: 'A Camada de Validação Clínica',
+      title: 'O Guardrail da IA Clínica.',
+      highlight: 'Expertise humano no circuito.',
       description:
-        'Uma camada premium de segurança clínica para times que operam em alta velocidade. A IA prepara contexto e documentação, enquanto a lógica determinística mantém momentos críticos transparentes e auditáveis.',
-      supportLine: 'Web-first para fluxos LATAM, com opção de companion desktop leve.',
-      primaryCta: 'Para Clínicas: Começar Beta Gratuita',
-      primaryShort: 'Começar Beta',
-      secondaryCta: 'Para Enterprise: Solicitar Cortex Pilot',
-      secondaryShort: 'Solicitar Pilot',
+        'Modelos de linguagem geram possibilidades. Nós validamos realidades clínicas. O Cortex captura feedback médico em tempo real para construir o dataset mais poderoso de Verdade Clínica do mundo.',
+      supportLine: 'Não construímos o motor. Construímos o volante e os freios.',
+      primaryCta: 'Solicitar Acesso Clínico',
+      primaryShort: 'Acesso Clínico',
+      secondaryCta: 'Ver o Roadmap',
+      secondaryShort: 'Roadmap',
     },
     howItWorks: {
       kicker: 'Como funciona',
-      title: 'A IA pré-preenche a verificação. Você valida com um toque.',
-      subtitle: 'O Cortex analisa o prontuário, propõe a trilha lógica e mantém o sign-off final com o clínico.',
+      title: 'A IA propõe. Você valida. O sistema aprende.',
+      subtitle: 'O Cortex roteia a saída de LLMs por uma camada de segurança determinística. Clínicos aceitam, rejeitam ou modificam recomendações em um fluxo de sub-segundo. Cada interação treina o guardrail.',
       builtFor: 'Feito para',
       cards: [
         {
           title: 'Clínicos',
-          body: 'Um fluxo rápido e previsível que reduz risco sem gerar fadiga de alertas.',
+          body: 'Uma interface minimalista de validação que transforma a revisão clínica em uma ação de sub-segundo. Alertas semáforo, explicabilidade contextual e zero fadiga de alertas.',
         },
         {
           title: 'Qualidade e liderança',
-          body: 'Evidência estruturada do que foi validado, do que foi sobrescrito e de onde o protocolo desvia.',
+          body: 'Console de governança ao vivo com scores de confiança, inteligência de overrides e monitoramento de desvio de protocolos. Visibilidade baseada em evidência de como a IA está sendo usada na sua organização.',
         },
         {
           title: 'Operação LATAM',
-          body: 'Funciona com EHRs básicos e coordenação por mensageria sem esperar integração perfeita.',
+          body: 'Funciona com EHRs básicos e coordenação por mensageria. Conformidade LGPD por padrão, com referências regulatórias ANVISA e conteúdo clínico em português.',
         },
       ],
       note:
-        'Cortex é uma camada de verificação e documentação. A decisão clínica final permanece com o profissional responsável. Mensageria com pacientes é opt-in e deve minimizar conteúdo sensível.',
+        'Cortex é uma camada de suporte à decisão clínica e documentação. A decisão clínica final permanece com o profissional responsável.',
     },
     workflow: {
       progressLabel: 'Progresso do fluxo de verificação',
@@ -517,90 +502,88 @@ const landingCopy: Record<Locale, LandingCopy> = {
       statusQueued: 'Pronto após validação',
       ehrReady: 'Dados do EHR prontos',
       expiresIn: 'Expira em {seconds}s',
-      contextBody: 'Dados do EHR, exames e medicamentos já foram extraídos e normalizados pela IA.',
-      verifyBody: 'O Cortex rascunhou as verificações lógicas. Você confirma o racional e conclui.',
+      contextBody: 'Dados do EHR, exames, medicamentos e fatores de risco já extraídos e normalizados. Regras semáforo pré-avaliadas.',
+      verifyBody: 'O Cortex rascunhou as verificações lógicas. Revise a avaliação semáforo e confirme o racional clínico.',
       verifyHint: 'Apenas uma ação restante.',
       confirm: 'Confirmar Racional',
-      documentBody: 'Nota de auditoria, documentação e próximos passos ficam em fila automaticamente.',
+      documentBody: 'Nota de auditoria, evento de governança e próximos passos ficam em fila automaticamente.',
       toast: 'Documentação gerada - equipe notificada',
       toastMobile: 'Sucesso!',
     },
-    architecture: {
-      kicker: 'Arquitetura central',
-      title: 'Três módulos. Um sistema de segurança coeso.',
-      subtitle: 'Selecione um tile para ver como cada módulo protege fluxos de alto risco.',
-      cards: [
+    roadmap: {
+      kicker: 'A visão',
+      title: 'Garantindo o futuro do cuidado assistido por IA.',
+      subtitle: 'De ferramenta de workflow ao padrão global de confiança para IA em saúde.',
+      phases: [
         {
-          title: 'O Checklist',
-          body: 'Fluxo de 30 segundos para segurança de DOAC e alta. Se faltar dado-chave, o Cortex solicita atestação ou entrada manual.',
-          chipA: 'Fluxo em 30 segundos',
-          chipB: 'Sem suposições cegas',
+          badge: 'AO VIVO',
+          title: 'O Motor de Feedback',
+          timeline: 'Em produção',
+          challenge: 'Médicos sofrem de fadiga de alertas. Se o ciclo de validação adicionar fricção, eles abandonam.',
+          features: [
+            'Interface de validação "um clique" nativa do EHR',
+            'Fluxo de aceitar, rejeitar ou modificar em sub-segundo',
+            'Explicabilidade contextual para cada recomendação',
+          ],
         },
         {
-          title: 'O Console de Auditoria',
-          body: 'A liderança acompanha validações, sobrescritas e desvios de protocolo em tempo real, sem esperar auditorias retrospectivas.',
-          chipA: 'Governança em tempo real',
-          chipB: 'Inteligência de override',
+          badge: 'PRÓXIMO',
+          title: 'O Firewall de Segurança Clínica',
+          timeline: '6-12 meses',
+          challenge: 'Como impedimos alucinações de LLMs antes que o clínico as veja?',
+          features: [
+            'Modelo de roteamento treinado com dados de aceite/rejeição',
+            'Rastreamento de consenso clínico em tempo real',
+            'Analítica institucional para CIOs e CMOs',
+          ],
         },
         {
-          title: 'O Follow-up',
-          body: 'Feche o ciclo pós-alta com lembretes estruturados e fluxos de adesão, incluindo WhatsApp quando apropriado.',
-          chipA: 'Lembretes estruturados',
-          chipB: 'Escalonamento para equipe',
-        },
-      ],
-      interactionHint: 'Clique ou passe o mouse para explorar',
-    },
-    governance: {
-      kicker: 'Governança',
-      title: 'Proteja decisões de alto risco com verificação transparente.',
-      subtitle:
-        'O console de auditoria do Cortex mostra o que foi validado, o que foi sobrescrito e onde os protocolos estão desviando na operação real.',
-      cardOneTitle: 'Dashboard de Outcomes',
-      cardOneBody:
-        'Acompanhe outcomes operacionais e clínicos que importam: checagens concluídas, tendência de compliance e eventos de risco evitados.',
-      cardTwoTitle: 'Lógica Clínica Determinística',
-      cardTwoBody:
-        'Configure guardrails por unidade. Quando há sobrescrita clínica, o Cortex registra o racional para aprimorar treinamento e protocolo.',
-      errorsAvoided: 'Eventos de risco evitados',
-      complianceRate: 'Taxa de compliance',
-      weekDelta: '+27 nesta semana',
-    },
-    safety: {
-      kicker: 'Infraestrutura de segurança clínica',
-      title: 'Construído para momentos de alto risco em toda a jornada de cuidado.',
-      cards: [
-        {
-          title: 'Integridade de receita na origem',
-          body: 'Identifique modificadores ausentes, lacunas de documentação e falhas de protocolo antes do fechamento do prontuário.',
-          bulletA: 'Checagens determinísticas com racional',
-          bulletB: 'Salvaguardas pré-fechamento',
-        },
-        {
-          title: 'Auditoria e governança',
-          body: 'Capture motivos de sobrescrita e deriva de protocolo para que qualidade evolua com evidência, não opinião.',
-          bulletA: 'Motivos estruturados de override',
-          bulletB: 'Resumo de auditoria exportável',
-        },
-        {
-          title: 'Follow-up e adesão',
-          body: 'Mantenha continuidade após a alta com lembretes e fluxos estruturados nos canais em que pacientes já estão.',
-          bulletA: 'Lembretes compatíveis com WhatsApp',
-          bulletB: 'Escalonamento para equipe quando necessário',
+          badge: 'HORIZONTE',
+          title: 'O Padrão Global de Confiança',
+          timeline: '12-24 meses',
+          challenge: 'Para ser líder de categoria, precisamos nos tornar o padrão que outras empresas de saúde usam.',
+          features: [
+            'Rede de confiança com aprendizado federado (sem movimento de PHI)',
+            'API "Verificado pelo Cortex" para apps de terceiros',
+            'Mitigação automatizada de responsabilidade para operadoras',
+          ],
         },
       ],
+    },
+    dataMoat: {
+      kicker: 'O fosso de dados',
+      title: 'Um motor é inútil sem um volante.',
+      subtitle: 'OpenAI, Google e Anthropic vão brigar por quem tem o motor mais inteligente. Nós construímos a camada de confiança indispensável por cima.',
+      cards: [
+        {
+          title: 'Verdade Clínica',
+          body: 'Cada aceite, rejeição e modificação de um médico alimenta um dataset proprietário que nenhum concorrente pode replicar. Este é nosso efeito de rede composto.',
+          metric: '14.200+ validações médicas',
+        },
+        {
+          title: 'Aprendizado Federado',
+          body: 'Compartilhamos as lições de correções de IA entre sistemas hospitalares sem mover informações de saúde protegidas. O guardrail fica mais inteligente globalmente enquanto os dados ficam locais.',
+          metric: 'Zero movimento de PHI',
+        },
+        {
+          title: 'API "Verificado pelo Cortex"',
+          body: 'Apps de saúde, plataformas de telemedicina e os próprios criadores de LLMs vão consultar nossa base para pontuar a segurança clínica de seus outputs antes de publicar.',
+          metric: 'O pedágio sobre a IA',
+        },
+      ],
+      flywheel: 'Cada validação médica fortalece o guardrail.',
     },
     demo: {
-      title: 'Escolha seu caminho: clínica ou enterprise.',
+      title: 'Junte-se ao consenso.',
       subtitle:
-        'Times de clínica podem iniciar a beta agora. Lideranças hospitalares podem solicitar um Cortex Pilot para governança, segurança e follow-up.',
-      ctaClinic: 'Para Clínicas: Começar Beta Gratuita',
-      ctaEnterprise: 'Para Enterprise: Solicitar Cortex Pilot',
+        'Clínicos podem explorar a plataforma agora. Lideranças hospitalares e de operadoras podem solicitar um piloto do Cortex para governança, segurança e workflows de validação.',
+      ctaClinic: 'Solicitar Acesso Clínico',
+      ctaEnterprise: 'Solicitar Piloto Enterprise',
       emailPlaceholder: 'Digite e-mail corporativo...',
-      requestCta: 'Solicitar Cortex Pilot',
+      requestCta: 'Solicitar Acesso',
       sending: 'Enviando...',
-      inviteOnly: 'Piloto por convite',
-      noIntegration: 'Sem integração profunda para começar',
+      inviteOnly: 'Somente por convite',
+      noIntegration: 'Sem integração profunda necessária',
       desktop: 'macOS + Windows',
       success: 'Solicitação recebida. Entraremos em contato com seu convite em breve.',
       requestError: 'Falha ao processar solicitação.',
@@ -612,8 +595,8 @@ const landingCopy: Record<Locale, LandingCopy> = {
       legal: 'Legal',
       contact: 'Contato',
       howItWorks: 'Como funciona',
-      modules: 'Módulos',
-      audit: 'Auditoria',
+      modules: 'Roadmap',
+      audit: 'Camada de confiança',
       requestAccess: 'Solicitar acesso',
       about: 'Sobre',
       blog: 'Blog',

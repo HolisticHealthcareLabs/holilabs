@@ -1,0 +1,232 @@
+[
+    {
+        "ruleId": "DOAC_SAFETY_DDI_CYP3A4_001",
+        "name": "DOAC + Strong CYP3A4 Inhibitor Interaction — Rivaroxaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "BLOCK",
+        "provenance": {
+            "sourceAuthority": "FDA",
+            "sourceDocument": "Xarelto (rivaroxaban) Prescribing Information",
+            "sourceVersion": "2023.1",
+            "effectiveDate": "2023-01-01",
+            "jurisdiction": "US",
+            "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2011/202439s001lbl.pdf",
+            "licenseType": "public-domain"
+        },
+        "logic": {
+            "and": [
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "rivaroxaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "xarelto"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "some": [
+                        {
+                            "var": "current_medications"
+                        },
+                        {
+                            "in": [
+                                {
+                                    "var": ""
+                                },
+                                [
+                                    "ketoconazole",
+                                    "itraconazole",
+                                    "voriconazole",
+                                    "posaconazole",
+                                    "ritonavir",
+                                    "cobicistat",
+                                    "lopinavir",
+                                    "clarithromycin"
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "CONTRAINDICATED: Concurrent use of rivaroxaban with strong combined CYP3A4 and P-gp inhibitors (ketoconazole, itraconazole, ritonavir, etc.) significantly increases rivaroxaban exposure and bleeding risk.",
+            "recommendation": "Avoid co-administration. If antifungal therapy required, consider fluconazole (weak CYP3A4 inhibitor). If antiretroviral required, consult HIV specialist for DOAC-compatible regimen."
+        },
+        "tags": [
+            "doac",
+            "drug-interaction",
+            "cyp3a4",
+            "rivaroxaban",
+            "contraindicated"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_DDI_CYP3A4_002",
+        "name": "DOAC + Strong CYP3A4 Inhibitor Interaction — Apixaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "BLOCK",
+        "provenance": {
+            "sourceAuthority": "FDA",
+            "sourceDocument": "Eliquis (apixaban) Prescribing Information",
+            "sourceVersion": "2023.1",
+            "effectiveDate": "2023-01-01",
+            "jurisdiction": "US",
+            "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2016/202155s012lbl.pdf",
+            "licenseType": "public-domain"
+        },
+        "logic": {
+            "and": [
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "apixaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "eliquis"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "some": [
+                        {
+                            "var": "current_medications"
+                        },
+                        {
+                            "in": [
+                                {
+                                    "var": ""
+                                },
+                                [
+                                    "ketoconazole",
+                                    "itraconazole",
+                                    "voriconazole",
+                                    "posaconazole",
+                                    "ritonavir",
+                                    "cobicistat",
+                                    "lopinavir",
+                                    "clarithromycin"
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Strong dual CYP3A4/P-gp inhibitors (ketoconazole, itraconazole, ritonavir, etc.) increase apixaban exposure by ~2x. Dose reduction required if co-administration cannot be avoided.",
+            "recommendation": "If co-administration is necessary, reduce apixaban to 2.5mg BID. If patient is already on 2.5mg BID, avoid the combination entirely. Document clinical rationale."
+        },
+        "tags": [
+            "doac",
+            "drug-interaction",
+            "cyp3a4",
+            "apixaban",
+            "contraindicated"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_DDI_CYP3A4_003",
+        "name": "DOAC + Strong CYP3A4 Inhibitor Interaction — Edoxaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "FDA",
+            "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+            "sourceVersion": "2021.1",
+            "effectiveDate": "2021-01-01",
+            "jurisdiction": "US",
+            "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+            "licenseType": "public-domain"
+        },
+        "logic": {
+            "and": [
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "edoxaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "savaysa"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "lixiana"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "some": [
+                        {
+                            "var": "current_medications"
+                        },
+                        {
+                            "in": [
+                                {
+                                    "var": ""
+                                },
+                                [
+                                    "ketoconazole",
+                                    "itraconazole",
+                                    "voriconazole",
+                                    "posaconazole",
+                                    "ritonavir",
+                                    "cobicistat",
+                                    "lopinavir",
+                                    "clarithromycin"
+                                ]
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "P-gp inhibitors may increase edoxaban exposure. While edoxaban is primarily P-gp (not CYP3A4) metabolized, strong dual inhibitors still warrant monitoring. Ketoconazole increases edoxaban AUC by ~87%.",
+            "recommendation": "No dose adjustment per FDA label, but monitor closely for bleeding. Consider alternative antifungal/antiretroviral if possible. Document co-prescribing rationale."
+        },
+        "tags": [
+            "doac",
+            "drug-interaction",
+            "cyp3a4",
+            "pgp",
+            "edoxaban"
+        ]
+    }
+]

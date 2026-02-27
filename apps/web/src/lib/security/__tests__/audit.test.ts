@@ -487,6 +487,33 @@ describe('Audit Logging', () => {
       await expect(Promise.all(auditPromises)).resolves.not.toThrow();
       expect(mockCreateChainedAuditEntry).toHaveBeenCalledTimes(10);
     });
+
+    it('should handle audit log with invalid data (error handling)', async () => {
+      // Setup mock to throw an error when invalid data is provided
+      mockCreateChainedAuditEntry.mockRejectedValue(new Error('Invalid data provided'));
+
+      const spyLoggerError = jest.spyOn(require('@/lib/logger').default || require('@/lib/logger'), 'error');
+
+      const auditData = {
+        action: 'INVALID_ACTION' as any, // Force invalid action
+        resource: 'Patient',
+        resourceId: 'patient-123',
+      };
+
+      // The createAuditLog function rescues errors so it shouldn't throw
+      await expect(
+        createAuditLog(auditData, undefined, 'user-123')
+      ).resolves.not.toThrow();
+
+      // Verify that the error was logged
+      expect(spyLoggerError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'audit_log_creation_failed',
+        })
+      );
+
+      spyLoggerError.mockRestore();
+    });
   });
 
   describe('HIPAA Compliance Scenarios', () => {
