@@ -205,8 +205,24 @@ const App: React.FC = () => {
   const handleReturnToConsole = useCallback(() => {
     setViewMode('console');
     setState(prev => ({ ...prev, minimized: false, chatExpanded: false }));
-    // Signal main process to restore focus/opacity if needed
+    // Restore full mouse interactivity when leaving ghost mode
+    window.electronAPI.setIgnoreMouseEvents(false);
   }, []);
+
+  // Ghost Mode: become "solid" when RED alert fires so the doctor can interact with Break-Glass
+  // GREEN/YELLOW/null in ghost mode → keep click-through (pass events to EHR underneath)
+  useEffect(() => {
+    if (viewMode !== 'ghost') return;
+
+    const isRedAlert = state.trafficLightResult?.color === 'RED';
+    if (isRedAlert) {
+      // Solid: doctor must acknowledge the Break-Glass chat
+      window.electronAPI.setIgnoreMouseEvents(false);
+    } else {
+      // Transparent: pass all clicks to EHR underneath (default safe state)
+      window.electronAPI.setIgnoreMouseEvents(true, { forward: true });
+    }
+  }, [state.trafficLightResult, viewMode]);
 
   const handleMouseEnter = useCallback(() => {
     window.electronAPI.setIgnoreMouseEvents(false);

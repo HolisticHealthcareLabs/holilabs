@@ -1,11 +1,14 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-export const metadata = {
-  title: 'Billing - Holi Labs',
-  description: 'Manage your plan, invoices, and payment method.',
-};
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function BillingPage() {
-  redirect('/dashboard/settings?tab=billing');
-}
+  const router = useRouter();
 
+  useEffect(() => {
+    router.replace('/dashboard/settings?tab=billing');
+  }, [router]);
+
+  return null;
+}

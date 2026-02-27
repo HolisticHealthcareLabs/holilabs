@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { isOverrideReasonCode, type OverrideReasonCode } from '@/lib/governance/shared-types';
+import ConsoleTour from '@/components/onboarding/ConsoleTour';
 
 /**
  * Universal Validation Console (Control Plane)
@@ -528,12 +529,6 @@ export default function ValidationConsolePage() {
               <div className="font-semibold tracking-wide text-sm text-gray-900 dark:text-gray-100">
                 Cortex <span className="text-gray-500 dark:text-gray-300 font-normal">Assurance Layer</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-blue-700 dark:text-blue-300 font-mono tracking-wider">CONTROL PLANE</span>
-                <span className="text-[9px] font-mono text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 px-1 rounded" title="Active ruleset version">
-                  {rulesVersion}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -543,12 +538,6 @@ export default function ValidationConsolePage() {
               className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
             >
               Download agent
-            </a>
-            <a
-              href="/dashboard/settings?tab=billing"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Billing
             </a>
             <div className="hidden sm:flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -585,7 +574,7 @@ export default function ValidationConsolePage() {
             onChange={(date) => setFilters((current) => ({ ...current, date }))}
           />
         </div>
-        <div className="max-w-[1600px] mx-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <div data-tour="code-focus" className="max-w-[1600px] mx-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Code focus controls</div>
@@ -681,7 +670,7 @@ export default function ValidationConsolePage() {
 
       <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 max-w-[1600px] mx-auto">
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+          <div data-tour="trust-score" className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">Global Trust Score</h3>
               <span className="text-emerald-700 dark:text-emerald-300 text-xs font-mono bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
@@ -714,21 +703,25 @@ export default function ValidationConsolePage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <StatCard
-              title="Interventions"
-              value={metrics.interventions}
-              color="text-gray-900 dark:text-white"
-              sub="Validation actions"
-              definition={metricDefinitionByKey.interventions}
-            />
-            <StatCard
-              title="Hard Brakes"
-              value={metrics.hardBrakes}
-              color="text-red-600 dark:text-red-300"
-              sub="Critical stops"
-              isDanger
-              definition={metricDefinitionByKey.hardBrakes}
-            />
+            <div data-tour="interventions">
+              <StatCard
+                title="Interventions"
+                value={metrics.interventions}
+                color="text-gray-900 dark:text-white"
+                sub="Validation actions"
+                definition={metricDefinitionByKey.interventions}
+              />
+            </div>
+            <div data-tour="hard-brakes">
+              <StatCard
+                title="Hard Brakes"
+                value={metrics.hardBrakes}
+                color="text-red-600 dark:text-red-300"
+                sub="Critical stops"
+                isDanger
+                definition={metricDefinitionByKey.hardBrakes}
+              />
+            </div>
             <StatCard
               title="Uptime"
               value={metrics.uptime}
@@ -801,7 +794,7 @@ export default function ValidationConsolePage() {
           </div>
         </div>
 
-        <div className="lg:col-span-8 flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
+        <div data-tour="validation-stream" className="lg:col-span-8 flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
           <div className="h-12 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 flex items-center justify-between bg-gray-50 dark:bg-gray-800/80">
             <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">Live Validation Stream</span>
             <div className="flex items-center gap-2">
@@ -844,6 +837,8 @@ export default function ValidationConsolePage() {
           )}
         </div>
       </div>
+
+      <ConsoleTour />
 
       {showPresetModal && canEditCodes && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">

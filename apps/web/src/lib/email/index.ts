@@ -6,6 +6,8 @@
 
 export {
   sendEmail,
+  sendWelcomeEmail,
+  sendClinicianMagicLink,
   sendMagicLinkEmail,
   sendOTPEmail,
   sendAppointmentReminderEmail,

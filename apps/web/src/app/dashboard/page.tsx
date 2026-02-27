@@ -1,7 +1,14 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-// Dashboard root should land on the Control Plane Command Center.
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
 export default function DashboardPage() {
-  redirect('/dashboard/command-center');
-}
+  const router = useRouter();
 
+  useEffect(() => {
+    router.replace('/dashboard/command-center');
+  }, [router]);
+
+  return null;
+}

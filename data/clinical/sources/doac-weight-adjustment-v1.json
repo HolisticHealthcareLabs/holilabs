@@ -1,0 +1,238 @@
+[
+    {
+        "ruleId": "DOAC_SAFETY_WEIGHT_001",
+        "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Apixaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "European Heart Rhythm Association",
+            "sourceDocument": "EHRA Practical Guide on the use of NOACs in patients with NVAF, 2021 update",
+            "sourceVersion": "2021-update",
+            "effectiveDate": "2021-04-25",
+            "jurisdiction": "INTL",
+            "citationUrl": "https://doi.org/10.1093/europace/euab065",
+            "licenseType": "proprietary"
+        },
+        "logic": {
+            "and": [
+                {
+                    "<": [
+                        {
+                            "var": "patient_weight"
+                        },
+                        60
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "apixaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "eliquis"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient weighs < 60kg. Weight ≤ 60kg is one of the 3 dose-reduction criteria for apixaban (age ≥ 80, weight ≤ 60kg, creatinine ≥ 1.5 mg/dL). If 2 of 3 criteria are met, reduce to 2.5mg BID.",
+            "recommendation": "Evaluate all 3 dose-reduction criteria. If ≥ 2 are met, reduce dose to 2.5mg BID. Document weight and assessment."
+        },
+        "tags": [
+            "doac",
+            "low-weight",
+            "weight-adjustment",
+            "apixaban"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_WEIGHT_002",
+        "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Edoxaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "FDA",
+            "sourceDocument": "Savaysa (edoxaban) Prescribing Information",
+            "sourceVersion": "2021.1",
+            "effectiveDate": "2021-01-01",
+            "jurisdiction": "US",
+            "citationUrl": "https://www.accessdata.fda.gov/drugsatfda_docs/label/2015/206316lbl.pdf",
+            "licenseType": "public-domain"
+        },
+        "logic": {
+            "and": [
+                {
+                    "<": [
+                        {
+                            "var": "patient_weight"
+                        },
+                        60
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "edoxaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "savaysa"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "lixiana"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient weighs < 60kg. Edoxaban dose must be reduced to 30mg QD for patients with body weight ≤ 60kg per FDA labeling.",
+            "recommendation": "Reduce edoxaban dose to 30mg once daily. This is a mandatory dose reduction per prescribing information. Document weight."
+        },
+        "tags": [
+            "doac",
+            "low-weight",
+            "weight-adjustment",
+            "edoxaban"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_WEIGHT_003",
+        "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Rivaroxaban",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "International Society on Thrombosis and Haemostasis",
+            "sourceDocument": "ISTH Guidance on DOAC Use in Extremes of Body Weight",
+            "sourceVersion": "2021-update",
+            "effectiveDate": "2021-01-01",
+            "jurisdiction": "INTL",
+            "citationUrl": "https://doi.org/10.1111/jth.15440",
+            "licenseType": "proprietary"
+        },
+        "logic": {
+            "and": [
+                {
+                    "<": [
+                        {
+                            "var": "patient_weight"
+                        },
+                        60
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "rivaroxaban"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "xarelto"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient weighs < 60kg. Low body weight may increase rivaroxaban exposure and bleeding risk. Limited clinical trial data in very low weight patients.",
+            "recommendation": "Use standard dosing with increased monitoring for bleeding. Consider anti-Xa level monitoring if available. Document weight and clinical rationale."
+        },
+        "tags": [
+            "doac",
+            "low-weight",
+            "weight-adjustment",
+            "rivaroxaban"
+        ]
+    },
+    {
+        "ruleId": "DOAC_SAFETY_WEIGHT_004",
+        "name": "DOAC Dose Review for Low Body Weight (< 60kg) — Dabigatran",
+        "domain": "DOAC_SAFETY",
+        "severity": "FLAG",
+        "provenance": {
+            "sourceAuthority": "International Society on Thrombosis and Haemostasis",
+            "sourceDocument": "ISTH Guidance on DOAC Use in Extremes of Body Weight",
+            "sourceVersion": "2021-update",
+            "effectiveDate": "2021-01-01",
+            "jurisdiction": "INTL",
+            "citationUrl": "https://doi.org/10.1111/jth.15440",
+            "licenseType": "proprietary"
+        },
+        "logic": {
+            "and": [
+                {
+                    "<": [
+                        {
+                            "var": "patient_weight"
+                        },
+                        60
+                    ]
+                },
+                {
+                    "or": [
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "dabigatran"
+                            ]
+                        },
+                        {
+                            "==": [
+                                {
+                                    "var": "proposed_medication"
+                                },
+                                "pradaxa"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "intervention": {
+            "message": "Patient weighs < 60kg. Low body weight may increase dabigatran plasma levels and bleeding risk. RE-LY subgroup analysis showed trends toward increased bleeding in low-weight patients.",
+            "recommendation": "Consider 110mg BID instead of 150mg BID where available. Monitor renal function closely. Document weight and clinical rationale."
+        },
+        "tags": [
+            "doac",
+            "low-weight",
+            "weight-adjustment",
+            "dabigatran"
+        ]
+    }
+]

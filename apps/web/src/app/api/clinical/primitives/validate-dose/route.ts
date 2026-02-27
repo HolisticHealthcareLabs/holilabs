@@ -16,6 +16,7 @@ import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { assessRenalDataQuality } from '@/lib/clinical/lab-decision-rules';
 import { DOAC_MEDICATION_ALIASES, DOAC_RENAL_POLICY } from '@/config/clinical-rules';
+import { ensureRegistryInitialized } from '@/lib/clinical/content-registry';
 import {
   getActiveContentBundle,
   getRuntimeContentStatus,
@@ -283,6 +284,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       dose: input.dose,
       unit: input.unit,
     });
+
+    // Ensure the clinical content registry is loaded (cold-path init; no-op if warm)
+    try {
+      ensureRegistryInitialized();
+    } catch (registryError) {
+      logger.error({
+        event: 'primitive_validate_dose_registry_init_failed',
+        error: registryError instanceof Error ? registryError.message : String(registryError),
+      });
+      // Do NOT swallow — surface the failure explicitly
+      return NextResponse.json(
+        { success: false, error: 'Clinical content registry initialization failed. Contact system administrator.' },
+        { status: 503 }
+      );
+    }
 
     // Resolve active content bundle provenance
     const activeBundle: ContentBundleMetadata = getActiveContentBundle();

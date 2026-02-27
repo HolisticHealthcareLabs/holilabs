@@ -124,6 +124,20 @@ export default defineConfig({
         ...devices['iPad (gen 7)'],
       },
     },
+
+    // Named viewport projects for targeted smoke tests
+    {
+      name: 'Desktop Chrome',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 } },
+    },
+    {
+      name: 'Tablet',
+      use: { viewport: { width: 768, height: 1024 } },
+    },
+    {
+      name: 'Mobile',
+      use: { ...devices['iPhone 14'] },
+    },
   ],
 
   // Run your local dev server before starting the tests

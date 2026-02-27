@@ -3,6 +3,8 @@
  *
  * Clinician portal authentication (doctors, nurses, staff).
  *
+ * Fields flow: DB → authorize() → JWT callback → Session callback → Frontend
+ *
  * Patient portal uses separate auth endpoints under `/api/portal/auth/*`
  * and a separate cookie/JWT session (`patient-session`).
  */
@@ -15,16 +17,12 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
-// Login schema
 const LoginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 export const authConfig: NextAuthConfig = {
-  // adapter: PrismaAdapter(prisma) as any, // Disabled for JWT-only strategy
-
-  // CRITICAL: Required for NextAuth v5 in development
   trustHost: true,
 
   providers: [
@@ -44,25 +42,16 @@ export const authConfig: NextAuthConfig = {
       },
       async authorize(credentials) {
         try {
-          console.log('🔐 [Auth] Starting authorization for:', credentials?.email);
           const validation = LoginSchema.safeParse(credentials);
 
           if (!validation.success) {
-            console.log('❌ [Auth] Validation failed:', validation.error.errors);
             return null;
           }
 
           const { email, password } = validation.data;
 
-          // =================================================================
-          // [DEMO HOTFIX] Robust Login Strategy - DB-FREE
-          // =================================================================
-          const isDemoUser = email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#';
-
-          if (isDemoUser) {
-            console.log('✅ [Auth] Demo Login Successful (DB-FREE MODE)');
-            // Return hardcoded demo user without touching database
-            // (Production DB schema is incompatible)
+          // Demo user — DB-free login for demos and testing
+          if (email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#') {
             return {
               id: 'demo-clinician-id',
               email: 'demo-clinician@holilabs.xyz',
@@ -70,10 +59,11 @@ export const authConfig: NextAuthConfig = {
               role: 'CLINICIAN',
               firstName: 'Demo',
               lastName: 'Clinician',
+              username: 'democlinician',
+              onboardingCompleted: true,
             };
           }
 
-          console.log('🔎 [Auth] Looking up user:', email);
           const user = await prisma.user.findUnique({
             where: { email },
             select: {
@@ -83,32 +73,25 @@ export const authConfig: NextAuthConfig = {
               lastName: true,
               role: true,
               passwordHash: true,
-              specialty: true,
-              permissions: true,
-              lastLoginAt: true,
-            }
+              username: true,
+              onboardingCompleted: true,
+            },
           });
 
           if (!user || !user.passwordHash) {
-            console.log('❌ [Auth] User not found or no password');
             return null;
           }
 
-          console.log('🗝 [Auth] Verifying password...');
           const isValid = await bcrypt.compare(password, user.passwordHash);
 
           if (!isValid) {
-            console.log('❌ [Auth] Password verification failed');
             return null;
           }
 
-          // Update last login (fire and forget)
           prisma.user.update({
             where: { id: user.id },
             data: { lastLoginAt: new Date() },
-          }).catch((err: unknown) => console.warn('Failed to update last login', err));
-
-          console.log('✅ [Auth] Login successful for user:', user.id);
+          }).catch(() => {});
 
           return {
             id: user.id,
@@ -117,9 +100,11 @@ export const authConfig: NextAuthConfig = {
             role: user.role,
             firstName: user.firstName,
             lastName: user.lastName,
+            username: user.username,
+            onboardingCompleted: user.onboardingCompleted,
           };
         } catch (error) {
-          console.error('💥 [Auth] CRITICAL ERROR during authorize:', error);
+          console.error('[Auth] Authorization error:', error);
           return null;
         }
       },
@@ -133,26 +118,46 @@ export const authConfig: NextAuthConfig = {
 
   callbacks: {
     async jwt({ token, user, account, trigger }) {
-      // Add custom fields to JWT on sign in
+      // Initial sign-in: copy fields from authorize() return into JWT
       if (user) {
         token.role = user.role;
-        token.iat = Math.floor(Date.now() / 1000); // Issued at
-        token.sessionId = crypto.randomBytes(16).toString('hex'); // Unique session ID
+        token.username = user.username ?? null;
+        token.onboardingCompleted = user.onboardingCompleted ?? false;
+        token.iat = Math.floor(Date.now() / 1000);
+        token.sessionId = crypto.randomBytes(16).toString('hex');
       }
 
-      // Token rotation: Refresh token on update trigger
-      if (trigger === 'update' && token.iat) {
-        const now = Math.floor(Date.now() / 1000);
-        const tokenAge = now - (token.iat as number);
-
-        // Rotate token if older than 5 minutes
-        if (tokenAge > 5 * 60) {
-          token.iat = now;
-          token.rotatedAt = now;
+      // Magic link / OAuth: resolve fields from DB since authorize() isn't called
+      if (account && !token.role && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: { role: true, id: true, username: true, onboardingCompleted: true },
+        });
+        if (dbUser) {
+          token.sub = dbUser.id;
+          token.role = dbUser.role;
+          token.username = dbUser.username;
+          token.onboardingCompleted = dbUser.onboardingCompleted;
         }
       }
 
-      // Store refresh token if available
+      // Session update trigger: refresh fields from DB (called after onboarding completes)
+      if (trigger === 'update' && token.sub) {
+        try {
+          const freshUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { username: true, onboardingCompleted: true, role: true },
+          });
+          if (freshUser) {
+            token.username = freshUser.username;
+            token.onboardingCompleted = freshUser.onboardingCompleted;
+            token.role = freshUser.role;
+          }
+        } catch {
+          // Non-critical — keep existing token values
+        }
+      }
+
       if (account?.refresh_token) {
         token.refreshToken = account.refresh_token;
       }
@@ -161,21 +166,19 @@ export const authConfig: NextAuthConfig = {
     },
 
     async session({ session, token }) {
-      // Add custom fields to session
       if (token && session.user) {
         session.user.id = token.sub!;
         session.user.role = token.role as string;
+        session.user.username = token.username ?? null;
+        session.user.onboardingCompleted = token.onboardingCompleted ?? false;
       }
       return session;
     },
 
     async authorized({ auth, request }) {
       const { pathname } = request.nextUrl;
-
-      // Check if user is authenticated
       const isAuthenticated = !!auth?.user;
 
-      // Protect clinician app routes
       const isClinicianRoute =
         pathname.startsWith('/dashboard') ||
         pathname.startsWith('/clinician');
@@ -190,23 +193,22 @@ export const authConfig: NextAuthConfig = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 15 * 60, // 15 minutes idle timeout (sliding window)
-    updateAge: 5 * 60, // Update session every 5 minutes of activity
+    maxAge: 15 * 60,
+    updateAge: 5 * 60,
   },
 
   jwt: {
-    maxAge: 8 * 60 * 60, // 8 hours absolute timeout
+    maxAge: 8 * 60 * 60,
   },
 
-  // Security (let NextAuth handle dev vs prod cookie naming)
   useSecureCookies: process.env.NODE_ENV === 'production',
 
   events: {
     async signIn({ user, account }) {
-      console.log(`✅ [Auth] Event: User ${user.id} signed in via ${account?.provider}`);
+      console.log(`[Auth] User ${user.id} signed in via ${account?.provider}`);
     },
-    async signOut(message) {
-      console.log('👋 [Auth] Event: User signed out');
+    async signOut() {
+      console.log('[Auth] User signed out');
     },
   },
 };

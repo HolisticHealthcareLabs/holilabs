@@ -24,10 +24,29 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fill demo credentials
-  const fillDemoCredentials = () => {
-    setEmail('demo-clinician@holilabs.xyz');
-    setPassword('Demo123!@#');
+  const launchPlatformDemo = async () => {
+    setError(null);
+    setIsLoading(true);
+    setEmail('dr.silva@holilabs.xyz');
+    setPassword('Cortex2026!');
+    try {
+      const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard/command-center';
+      const result = await signIn('credentials', {
+        email: 'dr.silva@holilabs.xyz',
+        password: 'Cortex2026!',
+        redirect: false,
+        callbackUrl,
+      });
+      if (!result || result.error) {
+        setError('Demo account not found. Run: npx tsx prisma/seed-demo.ts');
+        setIsLoading(false);
+        return;
+      }
+      router.push(result.url || '/dashboard');
+    } catch {
+      setError('Connection error. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,38 +117,32 @@ function LoginContent() {
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs sm:text-sm">Clinician Portal</p>
         </motion.div>
 
-        {/* Demo Access Banner - enforced dark text for light mode */}
+        {/* Platform Demo — one-click sign-in */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="mb-4 sm:mb-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 sm:p-5"
-          style={{
-            background: 'linear-gradient(to bottom right, rgb(239 246 255), rgb(238 242 255))',
-            borderColor: 'rgb(191 219 254)',
-          }}
+          className="mb-4 sm:mb-6"
         >
-          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-            <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11l.75 2.25L22 14l-2.25.75L19 17l-.75-2.25L16 14l2.25-.75L19 11z" />
+          <button
+            type="button"
+            onClick={launchPlatformDemo}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all text-sm"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold mb-1" style={{ color: 'rgb(30 58 138)' }}>Try the Demo</p>
-              <p className="text-xs mb-3" style={{ color: 'rgb(30 64 175)' }}>
-                Explore HoliLabs with a demo clinician account pre-loaded with patient data.
-              </p>
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-sm"
-              >
-                Load Demo Credentials
-              </button>
-            </div>
-          </div>
+            )}
+            Launch Platform Demo
+          </button>
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-2">
+            Sign in instantly as Dr. Ricardo Silva (Cardiology)
+          </p>
         </motion.div>
 
         {/* Login Card */}

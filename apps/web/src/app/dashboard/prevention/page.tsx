@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import DashboardTile, { TileColor } from '@/components/dashboard/DashboardTile';
+import TemplateCreateModal from '@/components/prevention/TemplateCreateModal';
 
 export const dynamic = 'force-dynamic';
 
@@ -209,6 +210,7 @@ const protocolTemplates: ProtocolTemplate[] = [
 export default function PreventionPage() {
   const sessionData = useSession();
   const session = sessionData?.data ?? null;
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<'interventions' | 'screenings' | 'education'>(
     'interventions'
@@ -366,7 +368,30 @@ export default function PreventionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 lg:p-8">
-      {/* NEW: Prevention Hub Banner */}
+      {/* Welcome bar with @username and Create Template CTA */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Prevention Hub
+          </h1>
+          {session?.user?.username && (
+            <p className="text-sm text-gray-500 mt-0.5">
+              Signed in as <span className="font-mono font-medium text-blue-600">@{session.user.username}</span>
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => setShowTemplateModal(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Create Template
+        </button>
+      </div>
+
+      {/* Prevention Hub Banner */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-8 mb-8 shadow-2xl">
         <div className="flex items-center justify-between">
           <div className="flex-1">
@@ -864,6 +889,13 @@ export default function PreventionPage() {
           </div>
         </div>
       </div>
+
+      {/* Template Creation Modal */}
+      <TemplateCreateModal
+        isOpen={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        onCreated={() => setShowTemplateModal(false)}
+      />
     </div>
   );
 }

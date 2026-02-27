@@ -84,8 +84,7 @@ export function LandingHeader() {
                     {/* Center links */}
                     <div className="hidden md:flex items-center gap-5 text-[13px] text-muted-foreground">
                         <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
-                        <a href="#modules" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
-                        <a href="#security" className="hover:text-foreground transition-colors">Safety</a>
+                        <a href="#roadmap" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
                         <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
                     </div>
 
@@ -114,7 +113,7 @@ export function LandingHeader() {
                 {/* Mobile nav row */}
                 <div className="flex md:hidden items-center justify-center gap-5 text-xs text-muted-foreground border-t border-border/40 py-2 px-3">
                     <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
-                    <a href="#modules" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
+                    <a href="#roadmap" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
                     <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
                     <Link href="/auth/login" className="hover:text-foreground transition-colors">{copy.header.login}</Link>
                 </div>

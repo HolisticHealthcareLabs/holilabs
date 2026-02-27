@@ -199,6 +199,7 @@ export function CookieConsentBanner() {
           onClick={() => setShowPreferences(false)}
           role="dialog"
           aria-modal="true"
+          aria-labelledby="cookie-preferences-title"
         >
           <div
             className="w-full max-w-xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-5 sm:p-6"
@@ -206,13 +207,13 @@ export function CookieConsentBanner() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-lg font-semibold">Cookie preferences</h3>
+                <h3 id="cookie-preferences-title" className="text-lg font-semibold">Cookie preferences</h3>
                 <p className="text-sm text-gray-300 mt-1">
                   Essential cookies are always on. You can opt into functional and analytics cookies.
                 </p>
               </div>
               <button
-                className="text-gray-400 hover:text-white"
+                className="text-gray-300 hover:text-white"
                 onClick={() => setShowPreferences(false)}
                 aria-label="Close"
               >
@@ -224,7 +225,7 @@ export function CookieConsentBanner() {
               <label className="flex items-center justify-between gap-3 rounded-xl border border-gray-700 px-4 py-3">
                 <div>
                   <div className="font-medium">Essential</div>
-                  <div className="text-xs text-gray-400">Required for sign-in, security, and core features.</div>
+                  <div className="text-xs text-gray-300">Required for sign-in, security, and core features.</div>
                 </div>
                 <input type="checkbox" checked disabled className="h-5 w-5" />
               </label>
@@ -232,7 +233,7 @@ export function CookieConsentBanner() {
               <label className="flex items-center justify-between gap-3 rounded-xl border border-gray-700 px-4 py-3 hover:border-gray-600 transition-colors">
                 <div>
                   <div className="font-medium">Functional</div>
-                  <div className="text-xs text-gray-400">Remember preferences like theme and language.</div>
+                  <div className="text-xs text-gray-300">Remember preferences like theme and language.</div>
                 </div>
                 <input
                   type="checkbox"
@@ -245,7 +246,7 @@ export function CookieConsentBanner() {
               <label className="flex items-center justify-between gap-3 rounded-xl border border-gray-700 px-4 py-3 hover:border-gray-600 transition-colors">
                 <div>
                   <div className="font-medium">Analytics</div>
-                  <div className="text-xs text-gray-400">Help us understand usage to improve the product.</div>
+                  <div className="text-xs text-gray-300">Help us understand usage to improve the product.</div>
                 </div>
                 <input
                   type="checkbox"
