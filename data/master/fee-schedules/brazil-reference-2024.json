@@ -1,0 +1,63 @@
+{
+  "meta": { "country": "BR", "currency": "BRL", "version": "2024.1", "source": "ANS — Tabela de Referência de Procedimentos Ambulatoriais 2024", "effectiveDate": "2024-01-01" },
+  "schedules": [
+    {
+      "insurerAnsCode": "005711",
+      "billingSystem": "TUSS",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "1.01.01.09-6", "negotiatedRate": 280.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 20.00 },
+        { "code": "1.01.01.10-0", "negotiatedRate": 380.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 30.00 },
+        { "code": "1.01.01.11-8", "negotiatedRate": 480.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 0.00 },
+        { "code": "1.01.01.12-6", "negotiatedRate": 210.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 15.00 },
+        { "code": "2.01.01.22-3", "negotiatedRate": 35.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.01.01.23-1", "negotiatedRate": 15.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.01.01.24-0", "negotiatedRate": 48.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.01.01.25-8", "negotiatedRate": 70.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.02.01.10-2", "negotiatedRate": 85.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.02.01.11-0", "negotiatedRate": 420.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.03.01.10-8", "negotiatedRate": 110.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.03.01.11-6", "negotiatedRate": 750.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "2.03.01.12-4", "negotiatedRate": 1050.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "2.03.01.13-2", "negotiatedRate": 210.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "3.01.01.10-3", "negotiatedRate": 4800.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "3.01.01.11-1", "negotiatedRate": 5400.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "3.01.01.13-8", "negotiatedRate": 4100.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "3.01.01.14-6", "negotiatedRate": 20000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "3.01.01.15-4", "negotiatedRate": 42000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "4.01.01.10-1", "negotiatedRate": 165.00, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    },
+    {
+      "insurerAnsCode": "013774",
+      "billingSystem": "TUSS",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "1.01.01.09-6", "negotiatedRate": 260.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 25.00 },
+        { "code": "1.01.01.10-0", "negotiatedRate": 360.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 35.00 },
+        { "code": "1.01.01.12-6", "negotiatedRate": 195.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 18.00 },
+        { "code": "2.01.01.22-3", "negotiatedRate": 32.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.01.01.24-0", "negotiatedRate": 44.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.03.01.11-6", "negotiatedRate": 720.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "3.01.01.10-3", "negotiatedRate": 4500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "3.01.01.11-1", "negotiatedRate": 5100.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "3.01.01.15-4", "negotiatedRate": 40000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 }
+      ]
+    },
+    {
+      "insurerAnsCode": "006246",
+      "billingSystem": "TUSS",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "1.01.01.09-6", "negotiatedRate": 270.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 22.00 },
+        { "code": "1.01.01.10-0", "negotiatedRate": 370.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 30.00 },
+        { "code": "1.01.01.12-6", "negotiatedRate": 200.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 16.00 },
+        { "code": "2.01.01.22-3", "negotiatedRate": 33.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.01.01.24-0", "negotiatedRate": 46.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "2.03.01.12-4", "negotiatedRate": 1000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "3.01.01.10-3", "negotiatedRate": 4600.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "3.01.01.14-6", "negotiatedRate": 19500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 }
+      ]
+    }
+  ]
+}

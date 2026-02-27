@@ -620,3 +620,146 @@ export interface OverrideOutcomeCorrelationStats {
 
 /** Extended TUSS category including Phase 5 additions. */
 export type TUSSCategory = 'STANDARD' | 'DIAGNOSTIC' | 'SPECIALIZED' | 'SURGICAL' | 'PREVENTIVE' | 'REHABILITATION' | 'MENTAL_HEALTH';
+
+// ============================================================================
+// TRI-COUNTRY BILLING INTELLIGENCE (Phase 6)
+// Consumed by: BillingRouter, TISS serializer, enterprise API, UI widget
+// ============================================================================
+
+/** ISO-3166-1 alpha-2 country codes for supported LatAm markets. */
+export type BillingCountry = 'BR' | 'AR' | 'BO';
+
+/**
+ * All supported national billing system identifiers.
+ * Mirrors the BillingSystem enum in the Prisma schema.
+ */
+export type BillingSystemCode =
+  | 'TUSS'      // Brazil — Terminologia Unificada da Saúde Suplementar
+  | 'CBHPM'     // Brazil — Classificação Brasileira Hierarquizada
+  | 'CID10_BR'  // Brazil — CID-10 diagnosis cross-reference
+  | 'NOMENCLADOR' // Argentina — Nomenclador Nacional de Prestaciones
+  | 'CIE10_AR'  // Argentina — CIE-10
+  | 'CNS_BO'    // Bolivia — Caja Nacional de Salud
+  | 'INASES_BO' // Bolivia — INASES regulated procedures
+  | 'SAFCI_BO'  // Bolivia — SAFCI publicly-funded
+  | 'SUMI_BO'   // Bolivia — SUMI maternal/child
+  | 'SSPAM_BO'  // Bolivia — SSPAM adult/elder
+  | 'SNOMED_CT'; // Crosswalk source only
+
+/** Currency identifiers for the three supported markets. */
+export type LatAmCurrency = 'BRL' | 'ARS' | 'BOB';
+
+/** Rate confidence level — mirrors RateConfidence Prisma enum. */
+export type RateConfidenceLevel = 'CONTRACTED' | 'REFERENCE' | 'ESTIMATED';
+
+/** A resolved billing code with metadata — output of SNOMED crosswalk. */
+export interface ResolvedBillingCode {
+  /** National billing code string (e.g., "1.01.01.09-6", "010101", "CON-001"). */
+  code: string;
+  /** Billing system that owns this code. */
+  system: BillingSystemCode;
+  /** Country for which this code is valid. */
+  country: BillingCountry;
+  /** ≤80 character human-readable description for UI. */
+  shortDescription: string;
+  /** Actuarial cost weight (0.0–1.0) for risk modeling. */
+  actuarialWeight: number;
+  /** SNOMED→billing mapping confidence (0.0–1.0). */
+  confidence: number;
+}
+
+/** Payer-specific rate and coverage details for a billing code. */
+export interface PayerRate {
+  /** Negotiated or reference rate. */
+  amount: number;
+  /** Currency of the rate. */
+  currency: LatAmCurrency;
+  /** How reliable this rate is. */
+  confidence: RateConfidenceLevel;
+  /** Is this procedure covered at all? */
+  isCovered: boolean;
+  /** Annual or per-event coverage ceiling (null = unlimited). */
+  coverageLimit: number | null;
+  /** Fixed patient co-payment in local currency. */
+  copayFlat: number | null;
+  /** Percentage co-payment (0.0–1.0). */
+  copayPercent: number | null;
+  /** True if rate came from a fallback path (legacy data or reference table). */
+  usedFallback: boolean;
+}
+
+/** Pre-authorization requirements for a procedure × insurer pair. */
+export interface PayerAuthRequirement {
+  /** Is prior authorization required? */
+  required: boolean;
+  /** Standard submission window in days before the procedure. */
+  windowDays: number | null;
+  /** Expedited/urgent pathway in hours. */
+  urgentWindowHours: number | null;
+  /** Documents the insurer requires (e.g., "REFERRAL_LETTER", "IMAGING_REPORT"). */
+  requiredDocuments: string[];
+  /** ICD-10/CIE-10 diagnosis codes that trigger this rule (empty = applies always). */
+  requiredDiagnoses: string[];
+  /** Human-readable notes from insurer guidelines. */
+  notes: string | null;
+}
+
+/**
+ * Full claim routing result — the output of BillingRouter.routeClaim().
+ * Powers the inline billing widget in the clinical workflow and feeds
+ * the enterprise export and TISS XML serializer.
+ */
+export interface ClaimRoutingResult {
+  readonly __type: 'claim_routing_result';
+
+  /** Input SNOMED concept ID. */
+  snomedConceptId: string;
+  /** Country the routing was performed for. */
+  country: BillingCountry;
+
+  /** Resolved national billing code (null if SNOMED not in crosswalk). */
+  billingCode: string | null;
+  /** Billing system for the resolved code. */
+  billingSystem: BillingSystemCode | null;
+  /** Short description of the resolved procedure. */
+  procedureDescription: string | null;
+  /** Actuarial cost weight (0.0–1.0). */
+  actuarialWeight: number;
+
+  /** Payer rate and coverage details. */
+  rate: PayerRate | null;
+  /** Prior authorization requirements. */
+  priorAuth: PayerAuthRequirement;
+  /** Clinician network status (null if clinicianId not provided). */
+  clinicianNetwork: {
+    isInNetwork: boolean;
+    networkTier: string | null;
+  } | null;
+
+  /** Composite routing confidence (0.0–1.0). */
+  routingConfidence: number;
+  /** True if any component used fallback/legacy data. */
+  usedFallback: boolean;
+  /** ISO-8601 timestamp of routing resolution. */
+  resolvedAt: string;
+}
+
+/**
+ * Extended actuarial payload including tri-country billing context.
+ * Extends ActuarialPayload with billing intelligence for enterprise API v2.
+ */
+export interface BillingEnrichedActuarialPayload extends ActuarialPayload {
+  readonly __format: 'enterprise_risk_export_billing_v2';
+
+  /** Per-country billing codes resolved for this assessment. */
+  billingContext: {
+    country: BillingCountry;
+    codes: ResolvedBillingCode[];
+    totalReferenceRateBRL: number | null;
+    totalReferenceRateARS: number | null;
+    totalReferenceRateBOB: number | null;
+    insurerId: string | null;
+    payerRates: PayerRate[];
+    priorAuthRequired: boolean;
+  }[];
+}

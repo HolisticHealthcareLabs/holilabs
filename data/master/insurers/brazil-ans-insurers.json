@@ -1,0 +1,89 @@
+{
+  "meta": { "country": "BR", "source": "ANS — Agência Nacional de Saúde Suplementar", "version": "2024.1" },
+  "insurers": [
+    {
+      "name": "Bradesco Saúde S.A.",
+      "shortName": "Bradesco Saúde",
+      "country": "BR",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "ansCode": "005711",
+      "cnpj": "92.693.118/0001-60",
+      "tissTissVersion": "3.04",
+      "estimatedMembers": 4200000,
+      "coverageRegions": ["SP", "RJ", "MG", "RS", "PR", "SC", "BA", "DF", "GO", "CE"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "SMB", "FAMILY"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Amil Assistência Médica Internacional S.A.",
+      "shortName": "Amil",
+      "country": "BR",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "ansCode": "013774",
+      "cnpj": "29.309.127/0001-79",
+      "tissTissVersion": "3.04",
+      "estimatedMembers": 5800000,
+      "coverageRegions": ["SP", "RJ", "PE", "CE", "AM", "PA", "DF"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "SMB"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "SulAmérica Seguro Saúde S.A.",
+      "shortName": "SulAmérica",
+      "country": "BR",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "ansCode": "006246",
+      "cnpj": "01.685.053/0001-56",
+      "tissTissVersion": "3.04",
+      "estimatedMembers": 3100000,
+      "coverageRegions": ["SP", "RJ", "MG", "RS", "PR", "SC"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "FAMILY"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Unimed Paulistana Sociedade Cooperativa de Trabalho Médico",
+      "shortName": "Unimed-SP",
+      "country": "BR",
+      "insurerType": "COOPERATIVE",
+      "ansCode": "315737",
+      "cnpj": "45.067.494/0001-40",
+      "tissTissVersion": "3.04",
+      "estimatedMembers": 1900000,
+      "coverageRegions": ["SP"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "SMB", "FAMILY"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Hapvida Assistência Médica S.A.",
+      "shortName": "Hapvida",
+      "country": "BR",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "ansCode": "359017",
+      "cnpj": "63.554.067/0001-98",
+      "tissTissVersion": "3.04",
+      "estimatedMembers": 8500000,
+      "coverageRegions": ["CE", "RN", "PI", "MA", "PA", "AM", "GO", "BA", "MG", "SP", "PR", "RS", "SC"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "SMB"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Notre Dame Intermédica Saúde S.A.",
+      "shortName": "Notre Dame",
+      "country": "BR",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "ansCode": "346659",
+      "cnpj": "44.649.812/0001-38",
+      "tissTissVersion": "3.04",
+      "estimatedMembers": 2800000,
+      "coverageRegions": ["SP", "RJ"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "SMB"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    }
+  ]
+}

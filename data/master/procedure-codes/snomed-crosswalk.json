@@ -1,0 +1,6759 @@
+{
+  "meta": {
+    "version": "2024.1",
+    "source": "HoliLabs Tri-Country SNOMED→Billing Crosswalk",
+    "createdAt": "2024-01-01"
+  },
+  "mappings": [
+    {
+      "snomedConceptId": "11429006",
+      "snomedFsn": "Consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.09-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "406547006",
+      "snomedFsn": "Urgent consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.10-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "AR",
+          "code": "010102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "BO",
+          "code": "CON-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "310019001",
+      "snomedFsn": "Emergency consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.11-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        },
+        {
+          "country": "AR",
+          "code": "010102",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "CON-002",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "386472008",
+      "snomedFsn": "Telephone consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.12-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.9
+        },
+        {
+          "country": "AR",
+          "code": "010401",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.9
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11429006-ante",
+      "snomedFsn": "Antenatal care (regime/therapy)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.02.03-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "AR",
+          "code": "010301",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "BO",
+          "code": "CON-005",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "396550006",
+      "snomedFsn": "Blood specimen (specimen)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.22-3",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "26604007",
+      "snomedFsn": "Complete blood count (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.22-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "33747003",
+      "snomedFsn": "Fasting blood glucose measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.23-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "LAB-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "43396009",
+      "snomedFsn": "Hemoglobin A1c measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.24-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "LAB-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "166831000",
+      "snomedFsn": "Fasting lipid profile (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.25-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030104",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-004",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "70180000",
+      "snomedFsn": "Renal function tests (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.26-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "030105",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "LAB-005",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "29583002",
+      "snomedFsn": "Thyroid stimulating hormone measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.28-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030106",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "LAB-006",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "167217005",
+      "snomedFsn": "Urine specimen (specimen)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.32-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "AR",
+          "code": "030107",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "BO",
+          "code": "LAB-007",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "122442007",
+      "snomedFsn": "C-reactive protein measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.36-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030110",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "LAB-008",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "29303009",
+      "snomedFsn": "Electrocardiogram (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.10-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040107",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "IMG-005",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "40701008",
+      "snomedFsn": "Echocardiography (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.11-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040108",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-005",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "399208008",
+      "snomedFsn": "Plain chest X-ray (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.10-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "IMG-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "77477000",
+      "snomedFsn": "Computerized tomography of head (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.11-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-004",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241615005",
+      "snomedFsn": "Magnetic resonance imaging of lumbar spine (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.12-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "040103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "45036003",
+      "snomedFsn": "Ultrasonography of abdomen (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.13-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040104",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241493000",
+      "snomedFsn": "Obstetric ultrasound scan (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.14-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "040105",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241055006",
+      "snomedFsn": "Mammography (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.10-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040106",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "PRV-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "385432009",
+      "snomedFsn": "Upper gastrointestinal endoscopy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.04.01.20-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "IMG-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "73761001",
+      "snomedFsn": "Colonoscopy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.04.01.21-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "80146002",
+      "snomedFsn": "Appendectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.10-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "38102005",
+      "snomedFsn": "Cholecystectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.11-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "QUI-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11466000",
+      "snomedFsn": "Cesarean section (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.13-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050104",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "QUI-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "53530004",
+      "snomedFsn": "Inguinal herniorrhaphy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.12-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-004",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "265764009",
+      "snomedFsn": "Renal dialysis (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.15-4",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        },
+        {
+          "country": "AR",
+          "code": "050106",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.55
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "14693006",
+      "snomedFsn": "Total knee replacement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.14-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050105",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "175095005",
+      "snomedFsn": "Coronary artery bypass graft (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.15-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050106",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.55
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "171279008",
+      "snomedFsn": "Cervical smear (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.11-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "060101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "PRV-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "86198006",
+      "snomedFsn": "Influenza vaccination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.13-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "060102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "PRV-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "127785005",
+      "snomedFsn": "Administration of vaccine (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.13-6",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "AR",
+          "code": "060102",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "SAF-004",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "229070002",
+      "snomedFsn": "Physical therapy (regime/therapy)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.10-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "229070003",
+      "snomedFsn": "Occupational therapy (regime/therapy)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.11-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "070102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "18512004",
+      "snomedFsn": "Individual psychotherapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.11-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "080101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "PSI-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "76168009",
+      "snomedFsn": "Group psychotherapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.12-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "080102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "PSI-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "225792001",
+      "snomedFsn": "Psychiatric consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.10-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020106",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "PSI-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11429006-card",
+      "snomedFsn": "Cardiology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.10-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11429006-ortho",
+      "snomedFsn": "Orthopedic consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.11-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11429006-neuro",
+      "snomedFsn": "Neurology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.12-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11429006-onco",
+      "snomedFsn": "Oncology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.13-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020104",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11429006-endo",
+      "snomedFsn": "Endocrinology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.14-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020105",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "171048005",
+      "snomedFsn": "Bone density scan (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.15-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040109",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "396550007",
+      "snomedFsn": "Venipuncture (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.22-3",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "9632001",
+      "snomedFsn": "Nursing procedure (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.10-7",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.75
+        },
+        {
+          "country": "AR",
+          "code": "010103",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "71388002",
+      "snomedFsn": "Procedure on head (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.11-6",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "AR",
+          "code": "040102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "IMG-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "104957008",
+      "snomedFsn": "Normal labor (finding)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.13-8",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "AR",
+          "code": "050104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "SAF-003",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "3391000119104",
+      "snomedFsn": "COVID-19 vaccination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.13-6",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.78
+        },
+        {
+          "country": "AR",
+          "code": "060102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "SAF-004",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "281685002",
+      "snomedFsn": "Mastectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.17-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.72
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "26890003",
+      "snomedFsn": "Prostatectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.18-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050106",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "QUI-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "41976001",
+      "snomedFsn": "Cardiac catheterization (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.12-9",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.72
+        },
+        {
+          "country": "AR",
+          "code": "040108",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "386053000",
+      "snomedFsn": "Evaluation procedure (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.09-6",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.75
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.75
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.75
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "386019007",
+      "snomedFsn": "Bone marrow biopsy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.13-8",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        },
+        {
+          "country": "AR",
+          "code": "050107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "281036007",
+      "snomedFsn": "Follow-up consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.40-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "308335008",
+      "snomedFsn": "Patient encounter (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.09-6",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "390906007",
+      "snomedFsn": "Follow-up encounter (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.40-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "AR",
+          "code": "010504",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "185349003",
+      "snomedFsn": "Encounter for check up (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.03.10-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "439708006",
+      "snomedFsn": "Home visit (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.10-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "AR",
+          "code": "010103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305354007",
+      "snomedFsn": "Ward round (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.15-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010201",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "CON-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305353001",
+      "snomedFsn": "Intensive care unit visit (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.16-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010202",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-004",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183519002",
+      "snomedFsn": "Referral to specialist (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.23-1",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "66902005",
+      "snomedFsn": "Pediatric examination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.20-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010502",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-006",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "78318003",
+      "snomedFsn": "History and physical examination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.09-6",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.83
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "410620009",
+      "snomedFsn": "Well child visit (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.02.10-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "060105",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-003",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "170258001",
+      "snomedFsn": "Child 6 month examination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.02.12-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060105",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-003",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.83
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "170261005",
+      "snomedFsn": "Child 12 month examination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.02.13-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060105",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-003",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.83
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "170263008",
+      "snomedFsn": "Child 24 month examination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.02.14-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060105",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-003",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.83
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183452005",
+      "snomedFsn": "Geriatric assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.21-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010501",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "CON-007",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "306294006",
+      "snomedFsn": "Discharge planning (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.38-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "AR",
+          "code": "010201",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "CON-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "182836005",
+      "snomedFsn": "Palliative care consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.26-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "370864003",
+      "snomedFsn": "Multidisciplinary care conference (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.39-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "410122003",
+      "snomedFsn": "Drug therapy monitoring (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.40-1",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "AR",
+          "code": "010504",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "243788004",
+      "snomedFsn": "Prenatal visit second trimester (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.02.04-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010302",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-005",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "243789007",
+      "snomedFsn": "Prenatal visit third trimester (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.02.05-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010302",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-005",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "398166005",
+      "snomedFsn": "Postoperative follow-up visit (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.22-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010504",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "306170007",
+      "snomedFsn": "Pre-operative assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.24-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "24623002",
+      "snomedFsn": "Screening examination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.03.10-5",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.75
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "108220007",
+      "snomedFsn": "Preoperative anesthetic evaluation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.25-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "386478007",
+      "snomedFsn": "Nursing assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.10-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.91
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "428191000124101",
+      "snomedFsn": "Second opinion consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.23-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "308646001",
+      "snomedFsn": "Wound dressing (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.11-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "225358003",
+      "snomedFsn": "Catheterization of urinary bladder (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.12-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "225708004",
+      "snomedFsn": "Post-surgical wound care (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.13-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010504",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "385763009",
+      "snomedFsn": "Hospice care (regime/therapy)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.14-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "AR",
+          "code": "010103",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "385804009",
+      "snomedFsn": "Diabetes education (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.25-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "169762003",
+      "snomedFsn": "Breastfeeding education (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.28-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010301",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "SAF-002",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "408443003",
+      "snomedFsn": "General nutrition advice (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.27-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11816003",
+      "snomedFsn": "Sports medicine consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.29-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "165171009",
+      "snomedFsn": "Occupational health assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.30-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "171245007",
+      "snomedFsn": "Travel health consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.31-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "225897006",
+      "snomedFsn": "Pain clinic consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.32-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "170578005",
+      "snomedFsn": "Initial allergy assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.33-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020107",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "ESP-007",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "41829006",
+      "snomedFsn": "Sleep disorder assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.34-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020103",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "409063005",
+      "snomedFsn": "Genetic counseling (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.35-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "431713009",
+      "snomedFsn": "Administration of injectable medication (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.15-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "396540005",
+      "snomedFsn": "Phlebotomy for blood collection (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.16-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "116154003",
+      "snomedFsn": "Vital signs measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.19-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "56251003",
+      "snomedFsn": "Nebulizer therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.17-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-006",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "57485005",
+      "snomedFsn": "Oxygen therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.03.18-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010503",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-006",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "27171005",
+      "snomedFsn": "Urinalysis (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.32-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030107",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "BO",
+          "code": "LAB-007",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "67900009",
+      "snomedFsn": "Urine culture (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.33-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030108",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-007",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "46973005",
+      "snomedFsn": "Blood coagulation study (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.30-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030109",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-010",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "271236005",
+      "snomedFsn": "Serum electrolyte measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.27-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030105",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "LAB-005",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "36048009",
+      "snomedFsn": "Prostate specific antigen measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.29-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "271243003",
+      "snomedFsn": "Liver function test (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.31-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030201",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-011",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "104326007",
+      "snomedFsn": "Vitamin D measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.34-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "269911007",
+      "snomedFsn": "Serum ferritin measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.35-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030210",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-009",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "104110009",
+      "snomedFsn": "Hepatic panel (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.40-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030201",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-011",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252292006",
+      "snomedFsn": "Thyroid panel (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.41-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030202",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "LAB-006",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "271240000",
+      "snomedFsn": "Serum calcium measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.42-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030203",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "30088009",
+      "snomedFsn": "Blood culture (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.43-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030204",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "104435004",
+      "snomedFsn": "Stool examination for parasites (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.44-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "SAF-005",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "171121004",
+      "snomedFsn": "HIV screening test (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.45-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030205",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-001",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "72281000119105",
+      "snomedFsn": "Hepatitis B and C panel (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.46-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030206",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252363003",
+      "snomedFsn": "Prothrombin time measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.47-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030109",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "LAB-010",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "408790000",
+      "snomedFsn": "D-dimer assay (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.48-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030208",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-010",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "105000003",
+      "snomedFsn": "Troponin measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.49-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030207",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "390952007",
+      "snomedFsn": "Brain natriuretic peptide measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.50-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "26758005",
+      "snomedFsn": "Serum albumin measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.51-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030201",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "LAB-011",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "302049001",
+      "snomedFsn": "Bilirubin measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.52-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030201",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "LAB-011",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "269996007",
+      "snomedFsn": "Serum iron and TIBC measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.53-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030210",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "LAB-009",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "993421000000100",
+      "snomedFsn": "Vitamin B12 and folate measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.54-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030210",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "313545000",
+      "snomedFsn": "Arterial blood gas measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.57-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030209",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "86228006",
+      "snomedFsn": "Uric acid measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.58-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "104934005",
+      "snomedFsn": "Serum magnesium measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.59-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030203",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "43491000",
+      "snomedFsn": "Amylase and lipase measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.60-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "030201",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "LAB-011",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "416838001",
+      "snomedFsn": "Erythrocyte sedimentation rate measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.61-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030110",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "LAB-008",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "273974004",
+      "snomedFsn": "Serum lactate measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.62-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252167001",
+      "snomedFsn": "Lithium level measurement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.56-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "167044002",
+      "snomedFsn": "Drug level monitoring in serum (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.01.01.55-6",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "030101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "LAB-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "174041007",
+      "snomedFsn": "Laparotomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.16-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "25353009",
+      "snomedFsn": "Lithotripsy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.19-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050106",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "44558001",
+      "snomedFsn": "Tonsillectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.20-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050201",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "173422009",
+      "snomedFsn": "Septoplasty (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.21-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050201",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "231747001",
+      "snomedFsn": "Cataract extraction by phacoemulsification (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.22-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050203",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "179406004",
+      "snomedFsn": "Total hip replacement (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.23-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050202",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-008",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "44946007",
+      "snomedFsn": "Lumbar spinal fusion (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.24-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050212",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "176258007",
+      "snomedFsn": "Transurethral resection of prostate (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.25-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050211",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "QUI-006",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "24443003",
+      "snomedFsn": "Total thyroidectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.26-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050204",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-007",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "442338001",
+      "snomedFsn": "Gastric bypass (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.27-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050205",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "307280005",
+      "snomedFsn": "Pacemaker implantation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.28-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050106",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "36969009",
+      "snomedFsn": "Percutaneous coronary intervention (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.29-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050106",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "174299006",
+      "snomedFsn": "Endoscopic retrograde cholangiopancreatography (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.30-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050206",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "QUI-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "176093003",
+      "snomedFsn": "Nissen fundoplication (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.31-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "QUI-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "236886002",
+      "snomedFsn": "Total abdominal hysterectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.32-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050207",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-005",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "176832004",
+      "snomedFsn": "Bilateral tubal ligation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.33-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050208",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "QUI-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "22523008",
+      "snomedFsn": "Vasectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.34-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "050209",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "QUI-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "302337002",
+      "snomedFsn": "Carpal tunnel release (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.35-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050103",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "239252009",
+      "snomedFsn": "Anterior cruciate ligament reconstruction (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.36-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050105",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "25353000",
+      "snomedFsn": "Craniotomy for tumor resection (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.37-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050213",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "359623002",
+      "snomedFsn": "Pulmonary lobectomy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.38-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "QUI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "175899003",
+      "snomedFsn": "Kidney transplant (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.39-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "050106",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.55
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "275978004",
+      "snomedFsn": "Screening colonoscopy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.12-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "PRV-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "313185004",
+      "snomedFsn": "HPV vaccination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.14-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "060104",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-002",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "412726003",
+      "snomedFsn": "Neonatal screening test (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.02.11-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060201",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-004",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252957005",
+      "snomedFsn": "Neonatal hearing screening (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.02.15-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060201",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-004",
+          "system": "SAFCI_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "281018005",
+      "snomedFsn": "Adult health check (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.03.11-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "310641000",
+      "snomedFsn": "DTP vaccination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.15-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "060202",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.72
+        },
+        {
+          "country": "BO",
+          "code": "SAF-004",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "170370000",
+      "snomedFsn": "MMR vaccination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.16-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "060203",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "SAF-004",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "16584000",
+      "snomedFsn": "Hepatitis B vaccination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.17-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "060202",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "SAF-004",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.85
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "274804006",
+      "snomedFsn": "Dental screening examination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.03.12-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "060204",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "PRV-004",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252886009",
+      "snomedFsn": "Visual acuity screening (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.03.13-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "060205",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "268552003",
+      "snomedFsn": "Blood pressure screening (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.03.14-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "SAF-001",
+          "system": "SAFCI_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.75
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "271538002",
+      "snomedFsn": "Osteoporosis screening by DEXA (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.03.15-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040109",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "310060005",
+      "snomedFsn": "Pneumococcal vaccination (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.13-6",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "060203",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "SAF-004",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "171228008",
+      "snomedFsn": "Cervical cancer screening program (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "4.01.01.11-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "060101",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "PRV-001",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "401174001",
+      "snomedFsn": "Neuropsychological assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.13-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020106",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "PSI-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183524004",
+      "snomedFsn": "Psychiatric inpatient stay (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.02.10-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "080103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "PSI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "228557008",
+      "snomedFsn": "Family therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.14-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "080102",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "PSI-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "710841007",
+      "snomedFsn": "Comprehensive neuropsychiatric evaluation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.15-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "020106",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "PSI-003",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "23915005",
+      "snomedFsn": "Substance abuse counseling (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.16-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "080101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-005",
+          "system": "SAFCI_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "429304002",
+      "snomedFsn": "EMDR therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.17-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "080101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "PSI-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "313071005",
+      "snomedFsn": "Electroconvulsive therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.02.11-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "080103",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "PSI-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "165325009",
+      "snomedFsn": "Cognitive behavioral therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.11-2",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "AR",
+          "code": "080101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.84
+        },
+        {
+          "country": "BO",
+          "code": "PSI-002",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "710826001",
+      "snomedFsn": "Crisis intervention (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.10-4",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "020106",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "PSI-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "385727004",
+      "snomedFsn": "Play therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.11-2",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "080101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "PSI-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "710823004",
+      "snomedFsn": "Art therapy session (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.12-0",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.72
+        },
+        {
+          "country": "AR",
+          "code": "080102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-005",
+          "system": "SAFCI_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "304891004",
+      "snomedFsn": "Community mental health assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "6.01.01.10-4",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "020106",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-005",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "410082002",
+      "snomedFsn": "Speech therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.12-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "070103",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "229268003",
+      "snomedFsn": "Clinical pilates (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.13-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "226029000",
+      "snomedFsn": "Aquatic therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.14-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "070105",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "29550001",
+      "snomedFsn": "Postural reeducation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.15-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "80750009",
+      "snomedFsn": "Cardiac rehabilitation (regime/therapy)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.16-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "070104",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "REH-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "371700004",
+      "snomedFsn": "Respiratory physiotherapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.17-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-006",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "439740005",
+      "snomedFsn": "Postoperative orthopedic rehabilitation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.18-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.83
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "64915003",
+      "snomedFsn": "Neurological rehabilitation (regime/therapy)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.19-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "408983001",
+      "snomedFsn": "Vestibular rehabilitation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.12-4",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "070103",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "228513004",
+      "snomedFsn": "Lymphatic drainage therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.10-8",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "228585002",
+      "snomedFsn": "Electrotherapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.10-8",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "228584003",
+      "snomedFsn": "Ultrasound therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.10-8",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "410171007",
+      "snomedFsn": "Functional capacity evaluation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.10-8",
+          "system": "TUSS",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.78
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.75
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "310068003",
+      "snomedFsn": "Hand therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.11-6",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "AR",
+          "code": "070102",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "398740003",
+      "snomedFsn": "Swallowing therapy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.12-4",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "AR",
+          "code": "070103",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "228532005",
+      "snomedFsn": "Balance training (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.10-8",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "91251008",
+      "snomedFsn": "Gait training (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.10-8",
+          "system": "TUSS",
+          "mappingType": "NARROW",
+          "confidence": 0.85
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "266694003",
+      "snomedFsn": "Pulmonary rehabilitation (regime/therapy)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "5.01.01.17-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "070104",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "SAFCI-006",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "169070004",
+      "snomedFsn": "Holter monitoring (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.13-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040107",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "IMG-005",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252170008",
+      "snomedFsn": "Ambulatory blood pressure monitoring (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.14-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040107",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "IMG-005",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241577003",
+      "snomedFsn": "Carotid duplex ultrasound (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.15-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040204",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-005",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "240491006",
+      "snomedFsn": "Renal duplex ultrasound (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.16-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040203",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "274816004",
+      "snomedFsn": "Thyroid ultrasound (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.17-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040205",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "169069000",
+      "snomedFsn": "Chest CT scan (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.18-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040110",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "IMG-004",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "431231001",
+      "snomedFsn": "Brain MRI (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.19-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040201",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-004",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252441006",
+      "snomedFsn": "Whole body bone scintigraphy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.20-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040207",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "443752003",
+      "snomedFsn": "PET-CT with FDG (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.21-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040206",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241071005",
+      "snomedFsn": "Lumbosacral spine X-ray (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.22-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "IMG-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241539006",
+      "snomedFsn": "Bilateral breast ultrasound (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.23-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040106",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "PRV-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241578008",
+      "snomedFsn": "Abdominopelvic CT scan (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.24-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040110",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-006",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241599008",
+      "snomedFsn": "Shoulder MRI (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.25-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040202",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "IMG-006",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "232717009",
+      "snomedFsn": "Diagnostic bronchoscopy (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.04.01.23-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040208",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-008",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "54550000",
+      "snomedFsn": "Electroencephalogram (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.04.01.24-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "ESP-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "11739002",
+      "snomedFsn": "Electromyography (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.04.01.25-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "ESP-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "386616007",
+      "snomedFsn": "Spirometry (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.04.01.22-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "020110",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.8
+        },
+        {
+          "country": "BO",
+          "code": "ESP-008",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "241536003",
+      "snomedFsn": "Knee MRI (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.16-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040202",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "BO",
+          "code": "IMG-006",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252116004",
+      "snomedFsn": "Exercise stress test (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.12-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.97
+        },
+        {
+          "country": "AR",
+          "code": "040108",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "IMG-005",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183550002",
+      "snomedFsn": "Rheumatology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.15-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183551003",
+      "snomedFsn": "Dermatology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.16-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020107",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-007",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183556008",
+      "snomedFsn": "Ophthalmology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.17-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183552005",
+      "snomedFsn": "Gynecology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.18-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020108",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-006",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183553000",
+      "snomedFsn": "Gastroenterology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.19-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020112",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183554006",
+      "snomedFsn": "Urology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.20-2",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020109",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "183555007",
+      "snomedFsn": "Pulmonology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.21-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020110",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "ESP-008",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305919000",
+      "snomedFsn": "Nephrology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.22-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020111",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "275681003",
+      "snomedFsn": "Pediatric specialist consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.23-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010502",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "CON-006",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "275682005",
+      "snomedFsn": "Geriatric specialist consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.24-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010501",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.94
+        },
+        {
+          "country": "BO",
+          "code": "CON-007",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.92
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305920006",
+      "snomedFsn": "Infectious disease consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.26-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305918008",
+      "snomedFsn": "Vascular surgery consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.27-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020101",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305921005",
+      "snomedFsn": "Plastic surgery consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.28-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305922003",
+      "snomedFsn": "Thoracic surgery consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.29-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020110",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-008",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305923008",
+      "snomedFsn": "Neurosurgery consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.30-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020103",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "ESP-004",
+          "system": "CNS_BO",
+          "mappingType": "BROAD",
+          "confidence": 0.8
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305924002",
+      "snomedFsn": "Hematology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.31-8",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305925001",
+      "snomedFsn": "Allergy and immunology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.32-6",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020107",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-007",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305926000",
+      "snomedFsn": "Emergency medicine consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.33-4",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "AR",
+          "code": "010102",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        },
+        {
+          "country": "BO",
+          "code": "CON-002",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.91
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305927004",
+      "snomedFsn": "Nuclear medicine consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.35-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040206",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "IMG-004",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305928009",
+      "snomedFsn": "Otolaryngology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.36-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "ESP-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.6
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305929001",
+      "snomedFsn": "Radiation therapy consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.38-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020104",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305930006",
+      "snomedFsn": "Proctology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.39-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020112",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305931005",
+      "snomedFsn": "Pediatric surgery consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.40-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "010502",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-006",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305932003",
+      "snomedFsn": "Physical medicine and rehabilitation consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.41-5",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "070101",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "REH-001",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305933008",
+      "snomedFsn": "Mastology consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.42-3",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020108",
+          "system": "NOMENCLADOR",
+          "mappingType": "NARROW",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "ESP-006",
+          "system": "CNS_BO",
+          "mappingType": "NARROW",
+          "confidence": 0.78
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305934002",
+      "snomedFsn": "Head and neck surgery consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.43-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305935003",
+      "snomedFsn": "Medical genetics consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.44-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        },
+        {
+          "country": "BO",
+          "code": "ESP-003",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.58
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "305936004",
+      "snomedFsn": "Digestive surgery consultation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.04.37-7",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "020112",
+          "system": "NOMENCLADOR",
+          "mappingType": "BROAD",
+          "confidence": 0.82
+        },
+        {
+          "country": "BO",
+          "code": "CON-001",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "408754009",
+      "snomedFsn": "Endoscopy of upper gastrointestinal tract (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.04.01.20-1",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040208",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "73589003",
+      "snomedFsn": "Treadmill exercise test (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.02.01.12-9",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040108",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "IMG-005",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.62
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "439569004",
+      "snomedFsn": "Resuscitation (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "1.01.01.11-8",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "AR",
+          "code": "010102",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.68
+        },
+        {
+          "country": "BO",
+          "code": "CON-002",
+          "system": "CNS_BO",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.65
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "65546002",
+      "snomedFsn": "Normal vaginal delivery (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "3.01.01.13-8",
+          "system": "TUSS",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.72
+        },
+        {
+          "country": "AR",
+          "code": "050104",
+          "system": "NOMENCLADOR",
+          "mappingType": "APPROXIMATE",
+          "confidence": 0.7
+        },
+        {
+          "country": "BO",
+          "code": "SAF-003",
+          "system": "SAFCI_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        }
+      ]
+    },
+    {
+      "snomedConceptId": "252289005",
+      "snomedFsn": "Obstetric ultrasound assessment (procedure)",
+      "mappings": [
+        {
+          "country": "BR",
+          "code": "2.03.01.14-0",
+          "system": "TUSS",
+          "mappingType": "EXACT",
+          "confidence": 0.96
+        },
+        {
+          "country": "AR",
+          "code": "040105",
+          "system": "NOMENCLADOR",
+          "mappingType": "EXACT",
+          "confidence": 0.95
+        },
+        {
+          "country": "BO",
+          "code": "IMG-003",
+          "system": "CNS_BO",
+          "mappingType": "EXACT",
+          "confidence": 0.93
+        }
+      ]
+    }
+  ]
+}

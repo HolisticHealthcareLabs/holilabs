@@ -1,0 +1,67 @@
+{
+  "meta": { "country": "AR", "currency": "ARS", "version": "2024.1", "source": "SSSalud — Nomenclador Nacional + Obras Sociales aranceles de referencia 2024", "effectiveDate": "2024-01-01" },
+  "schedules": [
+    {
+      "insurerRnos": "540202",
+      "billingSystem": "NOMENCLADOR",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "010101", "negotiatedRate": 6200.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 500.00 },
+        { "code": "010102", "negotiatedRate": 9300.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "010401", "negotiatedRate": 4700.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 400.00 },
+        { "code": "020101", "negotiatedRate": 9300.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 600.00 },
+        { "code": "020104", "negotiatedRate": 10500.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 800.00 },
+        { "code": "030101", "negotiatedRate": 820.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "030103", "negotiatedRate": 1200.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "030104", "negotiatedRate": 1700.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "040101", "negotiatedRate": 3100.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "040102", "negotiatedRate": 21000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "040103", "negotiatedRate": 30000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "040104", "negotiatedRate": 5700.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "040108", "negotiatedRate": 12000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "050101", "negotiatedRate": 130000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "050102", "negotiatedRate": 150000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "050104", "negotiatedRate": 112000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "050105", "negotiatedRate": 580000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "050106", "negotiatedRate": 1200000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "060101", "negotiatedRate": 1740.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "060103", "negotiatedRate": 24500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "070101", "negotiatedRate": 3000.00, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    },
+    {
+      "insurerRnos": "423600",
+      "billingSystem": "NOMENCLADOR",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "010101", "negotiatedRate": 4800.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "020101", "negotiatedRate": 7200.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "030101", "negotiatedRate": 650.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "030103", "negotiatedRate": 950.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "040101", "negotiatedRate": 2400.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "040104", "negotiatedRate": 4500.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "050101", "negotiatedRate": 105000.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "050104", "negotiatedRate": 90000.00, "confidence": "REFERENCE", "isCovered": true },
+        { "code": "060101", "negotiatedRate": 1380.00, "confidence": "REFERENCE", "isCovered": true }
+      ]
+    },
+    {
+      "insurerRnos": "001200",
+      "billingSystem": "NOMENCLADOR",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "010101", "negotiatedRate": 5200.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "010102", "negotiatedRate": 7800.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "020101", "negotiatedRate": 7800.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 500.00 },
+        { "code": "030101", "negotiatedRate": 710.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "030103", "negotiatedRate": 1050.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "040101", "negotiatedRate": 2700.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "040102", "negotiatedRate": 18500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "050101", "negotiatedRate": 115000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "050104", "negotiatedRate": 98000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "060101", "negotiatedRate": 1500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "070101", "negotiatedRate": 2600.00, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    }
+  ]
+}

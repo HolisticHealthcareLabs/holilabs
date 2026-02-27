@@ -1,0 +1,122 @@
+{
+  "meta": { "country": "AR", "source": "SSSalud — Superintendencia de Servicios de Salud de Argentina", "version": "2024.1" },
+  "insurers": [
+    {
+      "name": "PAMI — Instituto Nacional de Servicios Sociales para Jubilados y Pensionados",
+      "shortName": "PAMI",
+      "country": "AR",
+      "insurerType": "PUBLIC_FUND",
+      "cuitCode": "30-54667062-3",
+      "rnos": "423600",
+      "estimatedMembers": 5200000,
+      "coverageRegions": ["BA", "CAB", "COR", "SF", "TUC", "MZA", "ROS", "CBA", "MDZ"],
+      "productLines": ["RETIREES", "PENSIONERS", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "IOMA — Instituto de Obra Médico Asistencial",
+      "shortName": "IOMA",
+      "country": "AR",
+      "insurerType": "OBRAS_SOCIALES",
+      "cuitCode": "30-66609282-7",
+      "rnos": "001200",
+      "estimatedMembers": 2800000,
+      "coverageRegions": ["BA"],
+      "productLines": ["PROVINCIAL_EMPLOYEES", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "OSDE — Organización de Servicios Directos Empresarios",
+      "shortName": "OSDE",
+      "country": "AR",
+      "insurerType": "OBRAS_SOCIALES",
+      "cuitCode": "30-51421739-5",
+      "rnos": "540202",
+      "estimatedMembers": 2400000,
+      "coverageRegions": ["CAB", "BA", "COR", "SF", "MZA", "TUC", "NQN", "ROS"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "FAMILY"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Swiss Medical Medicina Privada S.A.",
+      "shortName": "Swiss Medical",
+      "country": "AR",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "cuitCode": "30-68056403-7",
+      "rnos": "113912",
+      "estimatedMembers": 750000,
+      "coverageRegions": ["CAB", "BA", "COR"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "PREMIUM"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Galeno Argentina S.A.",
+      "shortName": "Galeno",
+      "country": "AR",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "cuitCode": "30-70920229-4",
+      "rnos": "113807",
+      "estimatedMembers": 860000,
+      "coverageRegions": ["CAB", "BA", "ROS", "COR"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "SMB"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Medifé Asociación Civil",
+      "shortName": "Medifé",
+      "country": "AR",
+      "insurerType": "OBRAS_SOCIALES",
+      "cuitCode": "30-53688098-5",
+      "rnos": "116807",
+      "estimatedMembers": 490000,
+      "coverageRegions": ["CAB", "BA"],
+      "productLines": ["INDIVIDUAL", "FAMILY", "CORPORATE"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "OSECAC — Obra Social Empleados de Comercio y Actividades Civiles",
+      "shortName": "OSECAC",
+      "country": "AR",
+      "insurerType": "OBRAS_SOCIALES",
+      "cuitCode": "30-50432291-0",
+      "rnos": "800200",
+      "estimatedMembers": 1100000,
+      "coverageRegions": ["CAB", "BA", "COR", "SF", "TUC"],
+      "productLines": ["COMMERCE_WORKERS", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "OSFATUN — Obra Social para la Actividad Docente y Universitaria Nacional",
+      "shortName": "OSFATUN",
+      "country": "AR",
+      "insurerType": "OBRAS_SOCIALES",
+      "cuitCode": "30-52193545-5",
+      "rnos": "802701",
+      "estimatedMembers": 420000,
+      "coverageRegions": ["CAB", "BA", "COR", "SF", "MDZ", "RIO", "TUC"],
+      "productLines": ["UNIVERSITY_WORKERS", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "IOSFA — Instituto de Obra Social de las Fuerzas Armadas",
+      "shortName": "IOSFA",
+      "country": "AR",
+      "insurerType": "MILITARY_FUND",
+      "cuitCode": "30-59361736-8",
+      "rnos": "500100",
+      "estimatedMembers": 380000,
+      "coverageRegions": ["CAB", "BA", "COR", "MDZ", "NQN", "RIO", "USHUAIA"],
+      "productLines": ["ARMED_FORCES", "FAMILY_DEPENDENTS"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    }
+  ]
+}

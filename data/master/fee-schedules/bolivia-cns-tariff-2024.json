@@ -1,0 +1,51 @@
+{
+  "meta": { "country": "BO", "currency": "BOB", "version": "2024.1", "source": "CNS Bolivia — Tarifario de Prestaciones 2024", "effectiveDate": "2024-01-01" },
+  "schedules": [
+    {
+      "insurerCnsCode": "CNS-001",
+      "billingSystem": "CNS_BO",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "CON-001", "negotiatedRate": 85.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "CON-002", "negotiatedRate": 130.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "CON-003", "negotiatedRate": 105.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "CON-004", "negotiatedRate": 220.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "CON-005", "negotiatedRate": 95.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "LAB-001", "negotiatedRate": 18.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "LAB-002", "negotiatedRate": 8.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "LAB-003", "negotiatedRate": 48.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "LAB-004", "negotiatedRate": 65.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "LAB-005", "negotiatedRate": 28.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "IMG-001", "negotiatedRate": 45.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "IMG-002", "negotiatedRate": 85.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "IMG-003", "negotiatedRate": 92.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "IMG-004", "negotiatedRate": 320.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "IMG-005", "negotiatedRate": 32.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "QUI-001", "negotiatedRate": 1980.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "QUI-002", "negotiatedRate": 2260.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "QUI-003", "negotiatedRate": 1695.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "QUI-004", "negotiatedRate": 1835.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "PRV-001", "negotiatedRate": 25.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "PRV-002", "negotiatedRate": 22.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "PRV-003", "negotiatedRate": 68.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "REH-001", "negotiatedRate": 45.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "PSI-001", "negotiatedRate": 150.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "PSI-002", "negotiatedRate": 95.00, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    },
+    {
+      "insurerCnsCode": "BUPA-BO-001",
+      "billingSystem": "CNS_BO",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "CON-001", "negotiatedRate": 120.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 10.00 },
+        { "code": "CON-002", "negotiatedRate": 185.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "LAB-001", "negotiatedRate": 25.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "LAB-003", "negotiatedRate": 65.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "IMG-004", "negotiatedRate": 450.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "QUI-001", "negotiatedRate": 2800.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "QUI-003", "negotiatedRate": 2400.00, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    }
+  ]
+}
