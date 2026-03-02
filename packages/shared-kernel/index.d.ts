@@ -626,8 +626,8 @@ export type TUSSCategory = 'STANDARD' | 'DIAGNOSTIC' | 'SPECIALIZED' | 'SURGICAL
 // Consumed by: BillingRouter, TISS serializer, enterprise API, UI widget
 // ============================================================================
 
-/** ISO-3166-1 alpha-2 country codes for supported LatAm markets. */
-export type BillingCountry = 'BR' | 'AR' | 'BO';
+/** ISO-3166-1 alpha-2 country codes for supported billing markets. */
+export type BillingCountry = 'BR' | 'AR' | 'BO' | 'US' | 'CA' | 'CO' | 'MX';
 
 /**
  * All supported national billing system identifiers.
@@ -644,9 +644,27 @@ export type BillingSystemCode =
   | 'SAFCI_BO'  // Bolivia — SAFCI publicly-funded
   | 'SUMI_BO'   // Bolivia — SUMI maternal/child
   | 'SSPAM_BO'  // Bolivia — SSPAM adult/elder
-  | 'SNOMED_CT'; // Crosswalk source only
+  | 'SNOMED_CT' // Crosswalk source only
+  | 'CPT'       // US — Current Procedural Terminology
+  | 'HCPCS'     // US — Healthcare Common Procedure Coding System
+  | 'ICD10_PCS' // US — ICD-10 Procedure Coding System
+  | 'MS_DRG'    // US — Medicare Severity DRG
+  | 'NDC'       // US — National Drug Code
+  | 'CCI'       // Canada — Canadian Classification of Health Interventions
+  | 'OHIP'      // Canada — Ontario Health Insurance Plan
+  | 'RAMQ'      // Canada — Régie de l'assurance maladie du Québec
+  | 'MSP_BC'    // Canada — Medical Services Plan of BC
+  | 'AHCIP'     // Canada — Alberta Health Care Insurance Plan
+  | 'CUPS'      // Colombia — Clasificación Única de Procedimientos en Salud
+  | 'ISS_SOAT_CO' // Colombia — ISS/SOAT tariff system
+  | 'CIE9_MC_MX'  // Mexico — CIE-9-MC procedural classification
+  | 'CAUSES'       // Mexico — Catálogo Universal de Servicios de Salud
+  | 'TABULADOR_IMSS'; // Mexico — IMSS institutional fee schedule
 
-/** Currency identifiers for the three supported markets. */
+/** Currency identifiers for all supported billing markets. */
+export type BillingCurrencyCode = 'BRL' | 'ARS' | 'BOB' | 'USD' | 'CAD' | 'COP' | 'MXN';
+
+/** @deprecated Use BillingCurrencyCode instead. */
 export type LatAmCurrency = 'BRL' | 'ARS' | 'BOB';
 
 /** Rate confidence level — mirrors RateConfidence Prisma enum. */
@@ -758,6 +776,10 @@ export interface BillingEnrichedActuarialPayload extends ActuarialPayload {
     totalReferenceRateBRL: number | null;
     totalReferenceRateARS: number | null;
     totalReferenceRateBOB: number | null;
+    totalReferenceRateUSD: number | null;
+    totalReferenceRateCAD: number | null;
+    totalReferenceRateCOP: number | null;
+    totalReferenceRateMXN: number | null;
     insurerId: string | null;
     payerRates: PayerRate[];
     priorAuthRequired: boolean;

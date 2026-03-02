@@ -12,8 +12,8 @@ import { z } from 'zod';
 
 // ─── Shared Enums ────────────────────────────────────────────────────────────
 
-const BillingCountryEnum = z.enum(['BR', 'AR', 'BO'], {
-  errorMap: () => ({ message: 'Country must be BR, AR, or BO' }),
+const BillingCountryEnum = z.enum(['BR', 'AR', 'BO', 'US', 'CA', 'CO', 'MX'], {
+  errorMap: () => ({ message: 'Country must be BR, AR, BO, US, CA, CO, or MX' }),
 });
 
 // ─── POST /api/billing/route-claim ───────────────────────────────────────────

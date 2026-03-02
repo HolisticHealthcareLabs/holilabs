@@ -23,7 +23,7 @@ const CORE_SNOMED_CONCEPTS = [
   { id: '86198006', description: 'Influenza vaccination' },
 ];
 
-const COUNTRIES = ['BR', 'AR', 'BO'];
+const COUNTRIES = ['BR', 'AR', 'BO', 'US', 'CA', 'CO', 'MX'];
 
 export async function validateBillingData(): Promise<ValidationResult[]> {
   const results: ValidationResult[] = [];
@@ -91,7 +91,7 @@ export async function validateBillingData(): Promise<ValidationResult[]> {
     const coveredCountries = crosswalks.map(c => c.country);
     const missingCountries = COUNTRIES.filter(c => !coveredCountries.includes(c));
     results.push({
-      check: `Core SNOMED ${concept.id} (${concept.description}) has crosswalks for all 3 countries`,
+      check: `Core SNOMED ${concept.id} (${concept.description}) has crosswalks for all 7 countries`,
       passed: missingCountries.length === 0,
       details: missingCountries.length === 0
         ? `Covered: ${COUNTRIES.join(', ')}`
@@ -130,9 +130,37 @@ export async function validateBillingData(): Promise<ValidationResult[]> {
 
   results.push({
     check: 'Row count summary',
-    passed: procedureCodes >= 200 && insurers >= 18 && crosswalks >= 50,
+    passed: procedureCodes >= 900 && insurers >= 60 && crosswalks >= 300,
     details: `ProcedureCodes=${procedureCodes}, Insurers=${insurers}, SnomedCrosswalks=${crosswalks}, FeeSchedules=${schedules}, PriorAuthRules=${authRules}`,
   });
+
+  // 8. Each country has ≥1 insurer with a fee schedule
+  for (const country of COUNTRIES) {
+    const insurerWithSchedule = await prisma.insurer.findFirst({
+      where: { country, isActive: true, feeSchedules: { some: {} } },
+    });
+    results.push({
+      check: `Country ${country} has ≥1 insurer with fee schedule`,
+      passed: insurerWithSchedule !== null,
+      details: insurerWithSchedule
+        ? `${insurerWithSchedule.shortName} has fee schedule`
+        : `No insurer in ${country} has a fee schedule`,
+    });
+  }
+
+  // 9. Each country's primary system has ≥50 active codes
+  const primarySystems: Record<string, string> = { BR: 'TUSS', AR: 'NOMENCLADOR', BO: 'CNS_BO', US: 'CPT', CA: 'OHIP', CO: 'CUPS', MX: 'CIE9_MC_MX' };
+  for (const country of COUNTRIES) {
+    const system = primarySystems[country];
+    const codeCount = await prisma.procedureCode.count({
+      where: { country, system: system as any, isActive: true },
+    });
+    results.push({
+      check: `Country ${country} (${system}) has ≥50 active codes`,
+      passed: codeCount >= 50,
+      details: `${system} has ${codeCount} active codes in ${country}`,
+    });
+  }
 
   return results;
 }

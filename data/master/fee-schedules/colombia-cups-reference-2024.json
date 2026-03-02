@@ -1,0 +1,71 @@
+{
+  "meta": { "country": "CO", "currency": "COP", "version": "2024.1", "source": "Tarifas ISS/SOAT 2024 — Tarifas negociadas EPS contributivo", "effectiveDate": "2024-01-01" },
+  "schedules": [
+    {
+      "insurerRutCode": "800088702-2",
+      "billingSystem": "CUPS",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "890201", "negotiatedRate": 52000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 3500.00 },
+        { "code": "890202", "negotiatedRate": 83000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 8500.00 },
+        { "code": "890207", "negotiatedRate": 55000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 3500.00 },
+        { "code": "890301", "negotiatedRate": 110000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 12000.00 },
+        { "code": "902210", "negotiatedRate": 17500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903841", "negotiatedRate": 9200.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903856", "negotiatedRate": 32000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903817", "negotiatedRate": 40000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903818", "negotiatedRate": 10500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "871121", "negotiatedRate": 52000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 5000.00 },
+        { "code": "881302", "negotiatedRate": 75000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "895801", "negotiatedRate": 40000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "811503", "negotiatedRate": 9800000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "471100", "negotiatedRate": 3700000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.12 },
+        { "code": "470100", "negotiatedRate": 3200000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 }
+      ]
+    },
+    {
+      "insurerRutCode": "900156264-2",
+      "billingSystem": "CUPS",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "890201", "negotiatedRate": 48000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 3000.00 },
+        { "code": "890202", "negotiatedRate": 78000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 7500.00 },
+        { "code": "890207", "negotiatedRate": 52000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 3000.00 },
+        { "code": "890301", "negotiatedRate": 102000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 10000.00 },
+        { "code": "902210", "negotiatedRate": 16000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903841", "negotiatedRate": 8500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903856", "negotiatedRate": 30000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903817", "negotiatedRate": 37500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903818", "negotiatedRate": 9800.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "871121", "negotiatedRate": 48000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 4500.00 },
+        { "code": "881302", "negotiatedRate": 70000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "895801", "negotiatedRate": 37000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "811503", "negotiatedRate": 9200000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "471100", "negotiatedRate": 3450000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.12 },
+        { "code": "470100", "negotiatedRate": 3000000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 }
+      ]
+    },
+    {
+      "insurerRutCode": "800251440-6",
+      "billingSystem": "CUPS",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "890201", "negotiatedRate": 50000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 3200.00 },
+        { "code": "890202", "negotiatedRate": 80000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 8000.00 },
+        { "code": "890207", "negotiatedRate": 53000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 3200.00 },
+        { "code": "890301", "negotiatedRate": 105000.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 11000.00 },
+        { "code": "902210", "negotiatedRate": 16800.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903841", "negotiatedRate": 8800.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903856", "negotiatedRate": 31000.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903817", "negotiatedRate": 38500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "903818", "negotiatedRate": 10200.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "871121", "negotiatedRate": 50000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "881302", "negotiatedRate": 72000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "895801", "negotiatedRate": 38500.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "811503", "negotiatedRate": 9500000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "471100", "negotiatedRate": 3550000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.12 },
+        { "code": "470100", "negotiatedRate": 3100000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 }
+      ]
+    }
+  ]
+}

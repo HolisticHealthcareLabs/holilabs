@@ -52,6 +52,11 @@ export const GET = createProtectedRoute(
         ansCode: true,
         rnos: true,
         cnsCode: true,
+        npiNumber: true,
+        naicCode: true,
+        provinceCode: true,
+        rutCode: true,
+        rfcCode: true,
       },
       orderBy: { name: 'asc' },
     });

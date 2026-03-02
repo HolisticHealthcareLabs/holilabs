@@ -28,6 +28,9 @@ interface FeeScheduleInput {
   insurerAnsCode?: string;
   insurerRnos?: string;
   insurerCnsCode?: string;
+  insurerNaicCode?: string;
+  insurerRutCode?: string;
+  insurerRfcCode?: string;
   billingSystem: string;
   effectiveDate: string;
   lines: FeeScheduleLineInput[];
@@ -48,6 +51,10 @@ export async function seedFeeSchedules(): Promise<{ schedules: number; lines: nu
     { path: 'fee-schedules/brazil-reference-2024.json', version: '2024.1' },
     { path: 'fee-schedules/bolivia-cns-tariff-2024.json', version: '2024.1' },
     { path: 'fee-schedules/argentina-nomenclador-2024.json', version: '2024.1' },
+    { path: 'fee-schedules/united-states-reference-2024.json', version: '2024.1' },
+    { path: 'fee-schedules/canada-ohip-reference-2024.json', version: '2024.1' },
+    { path: 'fee-schedules/colombia-cups-reference-2024.json', version: '2024.1' },
+    { path: 'fee-schedules/mexico-imss-reference-2024.json', version: '2024.1' },
   ];
 
   let totalSchedules = 0;
@@ -66,6 +73,12 @@ export async function seedFeeSchedules(): Promise<{ schedules: number; lines: nu
         insurer = await prisma.insurer.findUnique({ where: { rnos: schedule.insurerRnos } });
       } else if (schedule.insurerCnsCode) {
         insurer = await prisma.insurer.findUnique({ where: { cnsCode: schedule.insurerCnsCode } });
+      } else if (schedule.insurerNaicCode) {
+        insurer = await prisma.insurer.findUnique({ where: { naicCode: schedule.insurerNaicCode } });
+      } else if (schedule.insurerRutCode) {
+        insurer = await prisma.insurer.findUnique({ where: { rutCode: schedule.insurerRutCode } });
+      } else if (schedule.insurerRfcCode) {
+        insurer = await prisma.insurer.findUnique({ where: { rfcCode: schedule.insurerRfcCode } });
       }
 
       if (!insurer) {
@@ -147,6 +160,10 @@ export async function seedFeeSchedules(): Promise<{ schedules: number; lines: nu
     BR: { system: 'TUSS' as BillingSystem, currency: 'BRL' as BillingCurrency, rateField: 'referenceRateBRL' },
     AR: { system: 'NOMENCLADOR' as BillingSystem, currency: 'ARS' as BillingCurrency, rateField: 'referenceRateARS' },
     BO: { system: 'CNS_BO' as BillingSystem, currency: 'BOB' as BillingCurrency, rateField: 'referenceRateBOB' },
+    US: { system: 'CPT' as BillingSystem, currency: 'USD' as BillingCurrency, rateField: 'referenceRateUSD' },
+    CA: { system: 'OHIP' as BillingSystem, currency: 'CAD' as BillingCurrency, rateField: 'referenceRateCAD' },
+    CO: { system: 'CUPS' as BillingSystem, currency: 'COP' as BillingCurrency, rateField: 'referenceRateCOP' },
+    MX: { system: 'CIE9_MC_MX' as BillingSystem, currency: 'MXN' as BillingCurrency, rateField: 'referenceRateMXN' },
   };
 
   const uncoveredInsurers = await prisma.insurer.findMany({

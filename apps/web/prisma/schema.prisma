@@ -7360,12 +7360,31 @@ enum BillingSystem {
   SUMI_BO // Bolivia — SUMI maternal/child
   SSPAM_BO // Bolivia — SSPAM adult/elder
   SNOMED_CT // Crosswalk source only — maps to national billing codes
+  CPT // US — Current Procedural Terminology (AMA)
+  HCPCS // US — Healthcare Common Procedure Coding System
+  ICD10_PCS // US — ICD-10 Procedure Coding System
+  MS_DRG // US — Medicare Severity Diagnosis Related Groups
+  NDC // US — National Drug Code
+  CCI // Canada — Canadian Classification of Health Interventions
+  OHIP // Canada — Ontario Health Insurance Plan fee codes
+  RAMQ // Canada — Régie de l'assurance maladie du Québec
+  MSP_BC // Canada — Medical Services Plan of British Columbia
+  AHCIP // Canada — Alberta Health Care Insurance Plan
+  CUPS // Colombia — Clasificación Única de Procedimientos en Salud
+  ISS_SOAT_CO // Colombia — ISS/SOAT tariff system
+  CIE9_MC_MX // Mexico — CIE-9-MC procedural classification
+  CAUSES // Mexico — Catálogo Universal de Servicios de Salud
+  TABULADOR_IMSS // Mexico — IMSS institutional fee schedule
 }
 
 enum BillingCurrency {
   BRL // Brazilian Real
   ARS // Argentine Peso
   BOB // Bolivian Boliviano
+  USD // US Dollar
+  CAD // Canadian Dollar
+  COP // Colombian Peso
+  MXN // Mexican Peso
 }
 
 enum RateConfidence {
@@ -7374,13 +7393,13 @@ enum RateConfidence {
   ESTIMATED // Derived/interpolated — use with caution
 }
 
-/// Payer directory — covers all three countries.
+/// Payer directory — covers all seven countries.
 model Insurer {
   id          String  @id @default(cuid())
   name        String
   shortName   String
-  country     String // "BR" | "AR" | "BO"
-  insurerType String // "PRIVATE_COMMERCIAL" | "OBRAS_SOCIALES" | "PUBLIC_FUND" | "MILITARY_FUND" | "COOPERATIVE" | "SECTOR_FUND"
+  country     String // "BR" | "AR" | "BO" | "US" | "CA" | "CO" | "MX"
+  insurerType String // "PRIVATE_COMMERCIAL" | "OBRAS_SOCIALES" | "PUBLIC_FUND" | "MILITARY_FUND" | "COOPERATIVE" | "SECTOR_FUND" | "SOCIAL_SECURITY" | "PROVINCIAL_PUBLIC" | "EPS_CONTRIBUTIVO" | "EPS_SUBSIDIADO"
 
   // Country-specific identifiers
   ansCode  String? @unique // Brazil ANS 6-digit registry code: "005711"
@@ -7388,6 +7407,11 @@ model Insurer {
   cuitCode String? @unique // Argentina CUIT
   rnos     String? @unique // Argentina RNOS (Registro Nacional de Obras Sociales)
   cnsCode  String? @unique // Bolivia CNS institutional code
+  npiNumber    String? @unique // US NPI (National Provider Identifier) — 10 digits
+  naicCode     String? @unique // US NAIC (National Association of Insurance Commissioners) — 5 digits
+  provinceCode String?          // Canada 2-letter province code (ON, QC, BC, AB)
+  rutCode      String? @unique // Colombia RUT tax ID
+  rfcCode      String? @unique // Mexico RFC tax ID
 
   // TISS interoperability
   tissTissVersion String? // "3.04" — version of TISS XML standard used
@@ -7412,14 +7436,14 @@ model Insurer {
   @@map("insurers")
 }
 
-/// Universal procedure code registry — all 3 national billing systems.
+/// Universal procedure code registry — all 7 national billing systems.
 model ProcedureCode {
   id      String        @id @default(cuid())
-  code    String // "1.01.01.09-6" (TUSS), "010101" (NOM), "CON-001" (CNS_BO)
+  code    String // "1.01.01.09-6" (TUSS), "010101" (NOM), "CON-001" (CNS_BO), "99213" (CPT), "1.PC.74.HA" (CCI), "890201" (CUPS), "89.7" (CIE9_MC_MX)
   system  BillingSystem
   version String // "2024.1" — annual update key
 
-  country          String // "BR" | "AR" | "BO"
+  country          String // "BR" | "AR" | "BO" | "US" | "CA" | "CO" | "MX"
   shortDescription String // ≤80 chars — used in UI widgets
   fullDescription  String @db.Text
   category         String // STANDARD | DIAGNOSTIC | SURGICAL | etc.
@@ -7428,6 +7452,10 @@ model ProcedureCode {
   referenceRateBRL Decimal? @db.Decimal(12, 2)
   referenceRateARS Decimal? @db.Decimal(12, 2)
   referenceRateBOB Decimal? @db.Decimal(12, 2)
+  referenceRateUSD Decimal? @db.Decimal(12, 2)
+  referenceRateCAD Decimal? @db.Decimal(12, 2)
+  referenceRateCOP Decimal? @db.Decimal(12, 2)
+  referenceRateMXN Decimal? @db.Decimal(12, 2)
 
   actuarialWeight Decimal @default(0.0) @db.Decimal(5, 4)
 

@@ -1,0 +1,3681 @@
+{
+  "meta": {
+    "system": "CIE9MC_CAUSES",
+    "version": "2024.1",
+    "country": "MX",
+    "effectiveDate": "2024-01-01"
+  },
+  "codes": [
+    {
+      "code": "89.7",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Exploración y examen general",
+      "fullDescription": "Exploración y examen médico general del paciente",
+      "referenceRateMXN": 850.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.01",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Entrevista y evaluación diagnóstica",
+      "fullDescription": "Entrevista médica y evaluación diagnóstica integral del paciente",
+      "referenceRateMXN": 750.0,
+      "actuarialWeight": 0.07,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.03",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Entrevista y evaluación limitada",
+      "fullDescription": "Entrevista médica y evaluación diagnóstica limitada del paciente",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.02",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Entrevista y evaluación completa",
+      "fullDescription": "Entrevista médica y evaluación diagnóstica completa e integral",
+      "referenceRateMXN": 900.0,
+      "actuarialWeight": 0.09,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 40,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.04",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Consulta de seguimiento",
+      "fullDescription": "Consulta médica de seguimiento y reevaluación del tratamiento",
+      "referenceRateMXN": 600.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.05",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Consulta pediátrica",
+      "fullDescription": "Consulta médica pediátrica para pacientes menores de 18 años",
+      "referenceRateMXN": 800.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.06",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Consulta geriátrica",
+      "fullDescription": "Consulta médica geriátrica para pacientes mayores de 65 años",
+      "referenceRateMXN": 900.0,
+      "actuarialWeight": 0.09,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 35,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.08",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Consulta de urgencias",
+      "fullDescription": "Consulta médica de urgencias en servicio de emergencias",
+      "referenceRateMXN": 1200.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.09",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Visita hospitalaria",
+      "fullDescription": "Visita médica diaria a paciente hospitalizado en piso general",
+      "referenceRateMXN": 700.0,
+      "actuarialWeight": 0.1,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.11",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Visita en terapia intensiva",
+      "fullDescription": "Visita médica diaria a paciente internado en unidad de terapia intensiva",
+      "referenceRateMXN": 1500.0,
+      "actuarialWeight": 0.3,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 40,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.5",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Examen microscópico de sangre",
+      "fullDescription": "Examen microscópico de muestra de sangre — biometría hemática completa",
+      "referenceRateMXN": 250.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "91.3",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Examen general de orina",
+      "fullDescription": "Análisis general de orina con sedimento urinario",
+      "referenceRateMXN": 150.0,
+      "actuarialWeight": 0.03,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 5,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.41",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Química sanguínea de 6 elementos",
+      "fullDescription": "Determinación de glucosa, urea, creatinina, ácido úrico, colesterol y triglicéridos",
+      "referenceRateMXN": 350.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.42",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Perfil de lípidos",
+      "fullDescription": "Determinación de colesterol total, HDL, LDL, VLDL y triglicéridos",
+      "referenceRateMXN": 400.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.43",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Glucosa en ayuno",
+      "fullDescription": "Determinación de glucosa plasmática en ayuno de 8 horas",
+      "referenceRateMXN": 120.0,
+      "actuarialWeight": 0.03,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 5,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.44",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Hemoglobina glucosilada",
+      "fullDescription": "Determinación de hemoglobina glucosilada HbA1c para control de diabetes",
+      "referenceRateMXN": 380.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 5,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.45",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Pruebas de función hepática",
+      "fullDescription": "Determinación de TGO, TGP, fosfatasa alcalina, bilirrubinas y albúmina",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.46",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Pruebas de función renal",
+      "fullDescription": "Determinación de creatinina, BUN, ácido úrico y depuración de creatinina",
+      "referenceRateMXN": 320.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.47",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Pruebas de coagulación",
+      "fullDescription": "Determinación de TP, TTPa, INR y fibrinógeno",
+      "referenceRateMXN": 380.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.48",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Perfil tiroideo",
+      "fullDescription": "Determinación de TSH, T3 y T4 libre para evaluación tiroidea",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.49",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Antígeno prostático específico",
+      "fullDescription": "Determinación de PSA total y libre para tamizaje de cáncer de próstata",
+      "referenceRateMXN": 480.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 5,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.51",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Electrólitos séricos",
+      "fullDescription": "Determinación de sodio, potasio, cloro, calcio y magnesio séricos",
+      "referenceRateMXN": 300.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.52",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Gasometría arterial",
+      "fullDescription": "Análisis de gases arteriales: pH, pO2, pCO2, HCO3 y saturación de oxígeno",
+      "referenceRateMXN": 420.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.53",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Proteína C reactiva",
+      "fullDescription": "Determinación cuantitativa de proteína C reactiva como marcador inflamatorio",
+      "referenceRateMXN": 280.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 5,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "91.31",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Urocultivo con antibiograma",
+      "fullDescription": "Cultivo de orina cuantitativo con identificación de patógeno y antibiograma",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 5,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.54",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Hemocultivo",
+      "fullDescription": "Cultivo de sangre para identificación de bacteriemia o septicemia",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "90.55",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Examen coproparasitoscópico",
+      "fullDescription": "Examen coproparasitoscópico seriado de 3 muestras",
+      "referenceRateMXN": 180.0,
+      "actuarialWeight": 0.03,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 5,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.52",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Electrocardiograma",
+      "fullDescription": "Electrocardiograma de reposo de 12 derivaciones con interpretación",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.41",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Prueba de esfuerzo",
+      "fullDescription": "Prueba de esfuerzo en banda sin fin con monitoreo electrocardiográfico continuo",
+      "referenceRateMXN": 2500.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.54",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Holter de 24 horas",
+      "fullDescription": "Monitoreo electrocardiográfico continuo ambulatorio de 24 horas",
+      "referenceRateMXN": 2800.0,
+      "actuarialWeight": 0.12,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.37",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Espirometría",
+      "fullDescription": "Prueba de función pulmonar por espirometría con broncodilatador",
+      "referenceRateMXN": 1200.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "89.17",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Electroencefalograma",
+      "fullDescription": "Electroencefalograma estándar de 20 canales con interpretación",
+      "referenceRateMXN": 2200.0,
+      "actuarialWeight": 0.1,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 40,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "93.08",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Electromiografía",
+      "fullDescription": "Estudio electromiográfico de conducción nerviosa de extremidades",
+      "referenceRateMXN": 3500.0,
+      "actuarialWeight": 0.14,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "87.44",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Radiografía de tórax",
+      "fullDescription": "Radiografía posteroanterior y lateral de tórax con interpretación",
+      "referenceRateMXN": 650.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "87.03",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Tomografía computada de cráneo",
+      "fullDescription": "Tomografía computada simple de cráneo con interpretación",
+      "referenceRateMXN": 3500.0,
+      "actuarialWeight": 0.18,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "87.41",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Tomografía computada de tórax",
+      "fullDescription": "Tomografía computada de tórax simple y contrastada con interpretación",
+      "referenceRateMXN": 4500.0,
+      "actuarialWeight": 0.22,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.01",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Tomografía computada de abdomen",
+      "fullDescription": "Tomografía computada de abdomen simple y contrastada con interpretación",
+      "referenceRateMXN": 4800.0,
+      "actuarialWeight": 0.24,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.38",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Tomografía computada de columna",
+      "fullDescription": "Tomografía computada de columna vertebral con reconstrucción 3D",
+      "referenceRateMXN": 4200.0,
+      "actuarialWeight": 0.2,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.71",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Ultrasonido diagnóstico",
+      "fullDescription": "Ultrasonido diagnóstico de órganos abdominales con interpretación",
+      "referenceRateMXN": 1200.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.72",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Ultrasonido obstétrico",
+      "fullDescription": "Ultrasonido obstétrico estructural con mediciones fetales y biometría",
+      "referenceRateMXN": 1500.0,
+      "actuarialWeight": 0.1,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.73",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Ultrasonido pélvico",
+      "fullDescription": "Ultrasonido pélvico transabdominal y transvaginal con interpretación",
+      "referenceRateMXN": 1300.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.74",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Ultrasonido renal y vías urinarias",
+      "fullDescription": "Ultrasonido de riñones, uréteres y vejiga con interpretación",
+      "referenceRateMXN": 1100.0,
+      "actuarialWeight": 0.07,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.75",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Ultrasonido de tejidos blandos",
+      "fullDescription": "Ultrasonido de tejidos blandos superficiales con interpretación",
+      "referenceRateMXN": 950.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.76",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Ecocardiograma transtorácico",
+      "fullDescription": "Ecocardiograma transtorácico bidimensional con Doppler color",
+      "referenceRateMXN": 3200.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.77",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Ultrasonido Doppler vascular",
+      "fullDescription": "Ultrasonido Doppler de vasos sanguíneos periféricos con interpretación",
+      "referenceRateMXN": 2800.0,
+      "actuarialWeight": 0.12,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.91",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Resonancia magnética de cerebro",
+      "fullDescription": "Resonancia magnética de encéfalo simple y contrastada con interpretación",
+      "referenceRateMXN": 5500.0,
+      "actuarialWeight": 0.28,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.92",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Resonancia magnética de columna",
+      "fullDescription": "Resonancia magnética de columna vertebral con interpretación",
+      "referenceRateMXN": 5200.0,
+      "actuarialWeight": 0.26,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 40,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.94",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Resonancia magnética musculoesquelética",
+      "fullDescription": "Resonancia magnética de articulación o extremidad con interpretación",
+      "referenceRateMXN": 5200.0,
+      "actuarialWeight": 0.25,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 40,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.95",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Resonancia magnética de abdomen",
+      "fullDescription": "Resonancia magnética de abdomen y pelvis con contraste e interpretación",
+      "referenceRateMXN": 6000.0,
+      "actuarialWeight": 0.3,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 50,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.96",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Resonancia magnética cardíaca",
+      "fullDescription": "Resonancia magnética cardíaca funcional con gadolinio e interpretación",
+      "referenceRateMXN": 8500.0,
+      "actuarialWeight": 0.38,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "87.71",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Radiografía de columna cervical",
+      "fullDescription": "Radiografía anteroposterior y lateral de columna cervical",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "87.72",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Radiografía de columna lumbar",
+      "fullDescription": "Radiografía anteroposterior y lateral de columna lumbosacra",
+      "referenceRateMXN": 600.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.21",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Radiografía de rodilla",
+      "fullDescription": "Radiografía anteroposterior y lateral de rodilla bilateral",
+      "referenceRateMXN": 500.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.22",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Radiografía de mano",
+      "fullDescription": "Radiografía posteroanterior y oblicua de mano y muñeca",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "87.37",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Mamografía bilateral",
+      "fullDescription": "Mamografía bilateral de tamizaje con interpretación",
+      "referenceRateMXN": 1200.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "92.14",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Gammagrama óseo",
+      "fullDescription": "Gammagrama óseo corporal total con tecnecio-99m MDP",
+      "referenceRateMXN": 4500.0,
+      "actuarialWeight": 0.2,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "92.11",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Gammagrama tiroideo",
+      "fullDescription": "Gammagrama de tiroides con captación de yodo-131",
+      "referenceRateMXN": 3200.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "92.18",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "PET-CT corporal",
+      "fullDescription": "Tomografía por emisión de positrones con TC fusionada y F18-FDG",
+      "referenceRateMXN": 22000.0,
+      "actuarialWeight": 0.45,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "88.78",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "DIAGNOSTIC",
+      "shortDescription": "Densitometría ósea",
+      "fullDescription": "Densitometría ósea central de columna y cadera por DXA",
+      "referenceRateMXN": 1800.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "51.23",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Colecistectomía laparoscópica",
+      "fullDescription": "Colecistectomía laparoscópica con colangiografía transoperatoria",
+      "referenceRateMXN": 45000.0,
+      "actuarialWeight": 0.55,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 90,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "47.09",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Apendicectomía",
+      "fullDescription": "Apendicectomía abierta o laparoscópica por apendicitis aguda",
+      "referenceRateMXN": 38000.0,
+      "actuarialWeight": 0.52,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 75,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "81.54",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Reemplazo total de rodilla",
+      "fullDescription": "Artroplastia total de rodilla con prótesis e implantes",
+      "referenceRateMXN": 120000.0,
+      "actuarialWeight": 0.82,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 150,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "36.1",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Revascularización coronaria (CABG)",
+      "fullDescription": "Cirugía de revascularización coronaria con injerto de bypass aortocoronario",
+      "referenceRateMXN": 280000.0,
+      "actuarialWeight": 0.99,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 300,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "45.23",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Colonoscopía",
+      "fullDescription": "Colonoscopía diagnóstica y terapéutica con toma de biopsias",
+      "referenceRateMXN": 8500.0,
+      "actuarialWeight": 0.25,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "44.13",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Gastroscopía",
+      "fullDescription": "Endoscopía gastrointestinal alta diagnóstica y terapéutica con biopsia",
+      "referenceRateMXN": 6500.0,
+      "actuarialWeight": 0.2,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "53.0",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Reparación de hernia",
+      "fullDescription": "Hernioplastia inguinal o umbilical con colocación de malla protésica",
+      "referenceRateMXN": 28000.0,
+      "actuarialWeight": 0.42,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 75,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "74.1",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Cesárea",
+      "fullDescription": "Operación cesárea segmentaria transperitoneal tipo Kerr",
+      "referenceRateMXN": 55000.0,
+      "actuarialWeight": 0.6,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "72.0",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Parto con fórceps bajo",
+      "fullDescription": "Aplicación de fórceps bajo para asistencia del parto vaginal",
+      "referenceRateMXN": 35000.0,
+      "actuarialWeight": 0.48,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "66.51",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Oclusión tubaria laparoscópica",
+      "fullDescription": "Ligadura tubaria bilateral por vía laparoscópica como método anticonceptivo",
+      "referenceRateMXN": 25000.0,
+      "actuarialWeight": 0.35,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "86.3",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Desbridamiento de piel",
+      "fullDescription": "Desbridamiento quirúrgico de piel y tejido subcutáneo desvitalizado",
+      "referenceRateMXN": 3500.0,
+      "actuarialWeight": 0.18,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "83.21",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Biopsia de tejido blando",
+      "fullDescription": "Biopsia excisional o incisional de tejido blando con estudio histopatológico",
+      "referenceRateMXN": 4200.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "13.71",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Facoemulsificación de catarata",
+      "fullDescription": "Extracción de catarata por facoemulsificación con implante de lente intraocular",
+      "referenceRateMXN": 35000.0,
+      "actuarialWeight": 0.45,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "81.51",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Reemplazo total de cadera",
+      "fullDescription": "Artroplastia total de cadera con prótesis cementada o no cementada",
+      "referenceRateMXN": 130000.0,
+      "actuarialWeight": 0.85,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 150,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "80.26",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Artroscopía de rodilla",
+      "fullDescription": "Artroscopía de rodilla diagnóstica y terapéutica con reparación meniscal",
+      "referenceRateMXN": 32000.0,
+      "actuarialWeight": 0.4,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "79.31",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Reducción abierta de fractura de fémur",
+      "fullDescription": "Reducción abierta y fijación interna de fractura de fémur con material de osteosíntesis",
+      "referenceRateMXN": 65000.0,
+      "actuarialWeight": 0.72,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "79.32",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Reducción abierta de fractura de tibia",
+      "fullDescription": "Reducción abierta y fijación interna de fractura de tibia con clavo intramedular",
+      "referenceRateMXN": 55000.0,
+      "actuarialWeight": 0.65,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 100,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "79.11",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Reducción cerrada de fractura de radio",
+      "fullDescription": "Reducción cerrada de fractura distal de radio con inmovilización con yeso",
+      "referenceRateMXN": 8000.0,
+      "actuarialWeight": 0.22,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "39.61",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Angioplastia coronaria con stent",
+      "fullDescription": "Intervención coronaria percutánea con colocación de stent farmacoactivo",
+      "referenceRateMXN": 180000.0,
+      "actuarialWeight": 0.92,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 90,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "37.22",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Cateterismo cardíaco izquierdo",
+      "fullDescription": "Cateterismo cardíaco izquierdo diagnóstico con coronariografía",
+      "referenceRateMXN": 45000.0,
+      "actuarialWeight": 0.58,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "37.83",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Implante de marcapasos",
+      "fullDescription": "Implante de marcapasos cardíaco definitivo unicameral o bicameral",
+      "referenceRateMXN": 150000.0,
+      "actuarialWeight": 0.88,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 90,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "35.21",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Reemplazo de válvula aórtica",
+      "fullDescription": "Reemplazo de válvula aórtica con prótesis mecánica o biológica",
+      "referenceRateMXN": 250000.0,
+      "actuarialWeight": 0.97,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 240,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "32.41",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Lobectomía pulmonar",
+      "fullDescription": "Lobectomía pulmonar por toracotomía o videotoracoscopía asistida",
+      "referenceRateMXN": 95000.0,
+      "actuarialWeight": 0.8,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "33.24",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Broncoscopía con biopsia",
+      "fullDescription": "Broncoscopía fibroóptica flexible con lavado broncoalveolar y biopsia",
+      "referenceRateMXN": 12000.0,
+      "actuarialWeight": 0.28,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "43.11",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Gastrectomía parcial",
+      "fullDescription": "Gastrectomía subtotal con reconstrucción por técnica Billroth II o Y de Roux",
+      "referenceRateMXN": 85000.0,
+      "actuarialWeight": 0.78,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "45.73",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Colectomía parcial",
+      "fullDescription": "Hemicolectomía derecha o izquierda con anastomosis primaria",
+      "referenceRateMXN": 75000.0,
+      "actuarialWeight": 0.75,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 150,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "50.22",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Hepatectomía parcial",
+      "fullDescription": "Resección hepática parcial segmentaria o lobectomía hepática",
+      "referenceRateMXN": 150000.0,
+      "actuarialWeight": 0.9,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 240,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "52.7",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Pancreatoduodenectomía (Whipple)",
+      "fullDescription": "Procedimiento de Whipple: pancreatoduodenectomía cefálica con reconstrucción",
+      "referenceRateMXN": 200000.0,
+      "actuarialWeight": 0.96,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 360,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "55.51",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Nefrectomía radical",
+      "fullDescription": "Nefrectomía radical laparoscópica o abierta con linfadenectomía",
+      "referenceRateMXN": 95000.0,
+      "actuarialWeight": 0.8,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "60.5",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Prostatectomía radical",
+      "fullDescription": "Prostatectomía radical retropúbica o laparoscópica por cáncer de próstata",
+      "referenceRateMXN": 110000.0,
+      "actuarialWeight": 0.83,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "57.71",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Cistoscopía con biopsia",
+      "fullDescription": "Cistoscopía flexible o rígida con toma de biopsias vesicales",
+      "referenceRateMXN": 12000.0,
+      "actuarialWeight": 0.25,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "56.31",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Ureteroscopía con litotripsia",
+      "fullDescription": "Ureteroscopía con litotripsia láser para extracción de cálculos ureterales",
+      "referenceRateMXN": 35000.0,
+      "actuarialWeight": 0.45,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "98.51",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Litotripsia extracorpórea",
+      "fullDescription": "Litotripsia extracorpórea por ondas de choque para cálculos renales",
+      "referenceRateMXN": 25000.0,
+      "actuarialWeight": 0.35,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "68.41",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Histerectomía abdominal total",
+      "fullDescription": "Histerectomía total abdominal con o sin salpingooforectomía bilateral",
+      "referenceRateMXN": 65000.0,
+      "actuarialWeight": 0.68,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "68.51",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Histerectomía vaginal",
+      "fullDescription": "Histerectomía vaginal asistida por laparoscopía (LAVH)",
+      "referenceRateMXN": 55000.0,
+      "actuarialWeight": 0.62,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 100,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "65.01",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Ooforectomía laparoscópica",
+      "fullDescription": "Ooforectomía laparoscópica unilateral o bilateral con salpingectomía",
+      "referenceRateMXN": 35000.0,
+      "actuarialWeight": 0.45,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "67.2",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Conización cervical",
+      "fullDescription": "Conización cervical con asa de LEEP o bisturí frío para displasia",
+      "referenceRateMXN": 12000.0,
+      "actuarialWeight": 0.22,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "69.02",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Legrado uterino",
+      "fullDescription": "Legrado uterino instrumentado diagnóstico o terapéutico",
+      "referenceRateMXN": 8500.0,
+      "actuarialWeight": 0.2,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "73.59",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Atención del parto eutócico",
+      "fullDescription": "Atención del parto vaginal eutócico con episiotomía y episiorrafia",
+      "referenceRateMXN": 22000.0,
+      "actuarialWeight": 0.38,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "01.24",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Craneotomía para evacuación de hematoma",
+      "fullDescription": "Craneotomía para evacuación de hematoma epidural o subdural agudo",
+      "referenceRateMXN": 120000.0,
+      "actuarialWeight": 0.9,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "03.09",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Laminectomía descompresiva",
+      "fullDescription": "Laminectomía descompresiva lumbar con discectomía por hernia discal",
+      "referenceRateMXN": 75000.0,
+      "actuarialWeight": 0.72,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "81.06",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Artrodesis vertebral",
+      "fullDescription": "Artrodesis vertebral posterolateral instrumentada con injerto óseo",
+      "referenceRateMXN": 150000.0,
+      "actuarialWeight": 0.88,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 240,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "04.07",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Liberación del túnel del carpo",
+      "fullDescription": "Descompresión quirúrgica del nervio mediano en túnel del carpo",
+      "referenceRateMXN": 18000.0,
+      "actuarialWeight": 0.28,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "28.3",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Amigdalectomía",
+      "fullDescription": "Amigdalectomía bilateral con o sin adenoidectomía",
+      "referenceRateMXN": 22000.0,
+      "actuarialWeight": 0.3,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "21.31",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Septoplastía nasal",
+      "fullDescription": "Septoplastía nasal por desviación del septum con turbinoplastía",
+      "referenceRateMXN": 28000.0,
+      "actuarialWeight": 0.35,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "22.41",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Cirugía endoscópica de senos paranasales",
+      "fullDescription": "Cirugía endoscópica funcional de senos paranasales (FESS) bilateral",
+      "referenceRateMXN": 35000.0,
+      "actuarialWeight": 0.42,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 90,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "20.01",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Miringotomía con colocación de tubos",
+      "fullDescription": "Miringotomía bilateral con inserción de tubos de ventilación timpánica",
+      "referenceRateMXN": 15000.0,
+      "actuarialWeight": 0.22,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "06.39",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Tiroidectomía total",
+      "fullDescription": "Tiroidectomía total con exploración cervical y preservación de paratiroides",
+      "referenceRateMXN": 55000.0,
+      "actuarialWeight": 0.62,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "85.41",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Mastectomía radical modificada",
+      "fullDescription": "Mastectomía radical modificada con disección axilar de ganglios linfáticos",
+      "referenceRateMXN": 65000.0,
+      "actuarialWeight": 0.7,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 150,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "85.12",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Biopsia de mama con aguja gruesa",
+      "fullDescription": "Biopsia de mama con aguja de corte guiada por ultrasonido",
+      "referenceRateMXN": 5500.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "86.4",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Escisión de lesión cutánea",
+      "fullDescription": "Escisión radical de lesión cutánea con márgenes oncológicos adecuados",
+      "referenceRateMXN": 6000.0,
+      "actuarialWeight": 0.18,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "86.59",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Sutura de herida",
+      "fullDescription": "Reparación primaria de herida traumática con sutura por planos",
+      "referenceRateMXN": 3000.0,
+      "actuarialWeight": 0.12,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "54.21",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Laparoscopía diagnóstica",
+      "fullDescription": "Laparoscopía diagnóstica abdominal con toma de biopsias",
+      "referenceRateMXN": 18000.0,
+      "actuarialWeight": 0.32,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "44.38",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Manga gástrica laparoscópica",
+      "fullDescription": "Gastrectomía en manga laparoscópica para obesidad mórbida",
+      "referenceRateMXN": 95000.0,
+      "actuarialWeight": 0.78,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "44.31",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Bypass gástrico",
+      "fullDescription": "Bypass gástrico laparoscópico en Y de Roux para obesidad mórbida",
+      "referenceRateMXN": 110000.0,
+      "actuarialWeight": 0.82,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 150,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "99.04",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Transfusión de concentrado eritrocitario",
+      "fullDescription": "Transfusión de concentrado eritrocitario con pruebas de compatibilidad",
+      "referenceRateMXN": 5500.0,
+      "actuarialWeight": 0.3,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "99.15",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Transfusión de plaquetas",
+      "fullDescription": "Transfusión de concentrado plaquetario por trombocitopenia",
+      "referenceRateMXN": 8000.0,
+      "actuarialWeight": 0.35,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "99.21",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Inyección de antibiótico IV",
+      "fullDescription": "Administración intravenosa de antibiótico en infusión continua",
+      "referenceRateMXN": 850.0,
+      "actuarialWeight": 0.1,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "99.25",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Quimioterapia intravenosa",
+      "fullDescription": "Administración de quimioterapia antineoplásica intravenosa — sesión",
+      "referenceRateMXN": 15000.0,
+      "actuarialWeight": 0.55,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "92.29",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Radioterapia — sesión",
+      "fullDescription": "Sesión de radioterapia externa conformacional o IMRT",
+      "referenceRateMXN": 12000.0,
+      "actuarialWeight": 0.45,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "93.11",
+      "system": "CIE9_MC_MX",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Terapia física — sesión",
+      "fullDescription": "Sesión de rehabilitación física con ejercicios terapéuticos y modalidades",
+      "referenceRateMXN": 650.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-001",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Atención prenatal",
+      "fullDescription": "Atención prenatal integral con consultas mensuales, laboratorios y ultrasonidos de seguimiento",
+      "referenceRateMXN": 1200.0,
+      "actuarialWeight": 0.1,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-002",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Atención del parto",
+      "fullDescription": "Atención integral del parto vaginal o cesárea con estancia hospitalaria",
+      "referenceRateMXN": 15000.0,
+      "actuarialWeight": 0.45,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-003",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Diabetes mellitus tipo 2",
+      "fullDescription": "Manejo integral de diabetes mellitus tipo 2 con consulta, laboratorios y medicamentos",
+      "referenceRateMXN": 2500.0,
+      "actuarialWeight": 0.18,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-004",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Hipertensión arterial",
+      "fullDescription": "Manejo integral de hipertensión arterial sistémica con consulta y tratamiento farmacológico",
+      "referenceRateMXN": 1800.0,
+      "actuarialWeight": 0.14,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-005",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Infección respiratoria aguda",
+      "fullDescription": "Diagnóstico y tratamiento de infección respiratoria aguda de vías superiores e inferiores",
+      "referenceRateMXN": 650.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-006",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Enfermedad diarreica aguda",
+      "fullDescription": "Diagnóstico y tratamiento de enfermedad diarreica aguda con rehidratación oral",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-007",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Vacunación universal",
+      "fullDescription": "Aplicación de vacunas del esquema nacional de vacunación para todas las edades",
+      "referenceRateMXN": 350.0,
+      "actuarialWeight": 0.02,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-008",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Detección de cáncer cervicouterino",
+      "fullDescription": "Tamizaje de cáncer cervicouterino con citología cervical y prueba de VPH",
+      "referenceRateMXN": 850.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-009",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Detección de cáncer de mama",
+      "fullDescription": "Tamizaje de cáncer de mama con exploración clínica y mamografía bilateral",
+      "referenceRateMXN": 1500.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-010",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Planificación familiar",
+      "fullDescription": "Consejería y provisión de métodos anticonceptivos temporales y definitivos",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-011",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Asma bronquial",
+      "fullDescription": "Diagnóstico y manejo integral del asma bronquial con tratamiento de mantenimiento",
+      "referenceRateMXN": 1800.0,
+      "actuarialWeight": 0.14,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-012",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Enfermedad pulmonar obstructiva crónica",
+      "fullDescription": "Manejo integral de EPOC con broncodilatadores, oxígeno suplementario y rehabilitación",
+      "referenceRateMXN": 3200.0,
+      "actuarialWeight": 0.22,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-013",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Insuficiencia renal crónica",
+      "fullDescription": "Manejo conservador de enfermedad renal crónica estadios 1-4 con dieta y farmacoterapia",
+      "referenceRateMXN": 4500.0,
+      "actuarialWeight": 0.32,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-014",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Epilepsia",
+      "fullDescription": "Diagnóstico y tratamiento farmacológico de epilepsia con seguimiento neurológico",
+      "referenceRateMXN": 2800.0,
+      "actuarialWeight": 0.2,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-015",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Depresión",
+      "fullDescription": "Diagnóstico y tratamiento de trastorno depresivo mayor con farmacoterapia y psicoterapia",
+      "referenceRateMXN": 2200.0,
+      "actuarialWeight": 0.16,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-016",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Ansiedad generalizada",
+      "fullDescription": "Diagnóstico y tratamiento de trastorno de ansiedad generalizada",
+      "referenceRateMXN": 1900.0,
+      "actuarialWeight": 0.14,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-017",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Infección de vías urinarias",
+      "fullDescription": "Diagnóstico y tratamiento de infección de vías urinarias no complicada",
+      "referenceRateMXN": 750.0,
+      "actuarialWeight": 0.07,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-018",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Gastritis y enfermedad ácido péptica",
+      "fullDescription": "Diagnóstico y tratamiento de gastritis y enfermedad ácido péptica con IBP",
+      "referenceRateMXN": 850.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-019",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Anemia ferropénica",
+      "fullDescription": "Diagnóstico y tratamiento de anemia por deficiencia de hierro con suplementación",
+      "referenceRateMXN": 650.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-020",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Hipotiroidismo",
+      "fullDescription": "Diagnóstico y tratamiento de hipotiroidismo con levotiroxina y seguimiento",
+      "referenceRateMXN": 1200.0,
+      "actuarialWeight": 0.1,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-021",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Obesidad y sobrepeso",
+      "fullDescription": "Manejo integral de obesidad con plan nutricional, actividad física y seguimiento",
+      "referenceRateMXN": 1500.0,
+      "actuarialWeight": 0.12,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-022",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Dislipidemia",
+      "fullDescription": "Diagnóstico y tratamiento de dislipidemia con estatinas y cambio de estilo de vida",
+      "referenceRateMXN": 1100.0,
+      "actuarialWeight": 0.09,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-023",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Insuficiencia cardíaca",
+      "fullDescription": "Manejo ambulatorio de insuficiencia cardíaca con IECA, betabloqueador y diuréticos",
+      "referenceRateMXN": 3800.0,
+      "actuarialWeight": 0.28,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-024",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Artritis reumatoide",
+      "fullDescription": "Diagnóstico y tratamiento de artritis reumatoide con FARME y seguimiento reumatológico",
+      "referenceRateMXN": 5500.0,
+      "actuarialWeight": 0.35,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-025",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Osteoporosis",
+      "fullDescription": "Diagnóstico y tratamiento de osteoporosis con bifosfonatos, calcio y vitamina D",
+      "referenceRateMXN": 2200.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-026",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Lumbalgia",
+      "fullDescription": "Diagnóstico y manejo de lumbalgia mecánica con analgésicos y rehabilitación",
+      "referenceRateMXN": 900.0,
+      "actuarialWeight": 0.08,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-027",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Control del niño sano",
+      "fullDescription": "Vigilancia del crecimiento y desarrollo del niño sano de 0 a 5 años",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-028",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Tamizaje neonatal",
+      "fullDescription": "Tamizaje metabólico neonatal con toma de muestra de talón para 6 enfermedades",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.03,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-029",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Desnutrición infantil",
+      "fullDescription": "Diagnóstico y manejo de desnutrición infantil con suplementación y seguimiento nutricional",
+      "referenceRateMXN": 1200.0,
+      "actuarialWeight": 0.1,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-030",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Otitis media aguda",
+      "fullDescription": "Diagnóstico y tratamiento de otitis media aguda en pediatría",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-031",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Faringoamigdalitis aguda",
+      "fullDescription": "Diagnóstico y tratamiento de faringoamigdalitis aguda bacteriana",
+      "referenceRateMXN": 500.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-032",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Neumonía adquirida en la comunidad",
+      "fullDescription": "Diagnóstico y tratamiento de neumonía comunitaria con antibióticos y seguimiento",
+      "referenceRateMXN": 3500.0,
+      "actuarialWeight": 0.25,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-033",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Tuberculosis pulmonar",
+      "fullDescription": "Diagnóstico y tratamiento de tuberculosis pulmonar con esquema TAES de 6 meses",
+      "referenceRateMXN": 4800.0,
+      "actuarialWeight": 0.3,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-034",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Dengue",
+      "fullDescription": "Diagnóstico y manejo de dengue no grave con hidratación y vigilancia",
+      "referenceRateMXN": 1500.0,
+      "actuarialWeight": 0.12,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-035",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "VIH/SIDA — tratamiento antirretroviral",
+      "fullDescription": "Manejo integral de VIH/SIDA con terapia antirretroviral de primera línea",
+      "referenceRateMXN": 8500.0,
+      "actuarialWeight": 0.48,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-036",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Detección de diabetes mellitus",
+      "fullDescription": "Tamizaje de diabetes mellitus tipo 2 con glucosa en ayuno y hemoglobina glucosilada",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.03,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-037",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Detección de hipertensión arterial",
+      "fullDescription": "Tamizaje de hipertensión arterial con toma de presión arterial y evaluación de riesgo",
+      "referenceRateMXN": 300.0,
+      "actuarialWeight": 0.02,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-038",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Detección de cáncer de próstata",
+      "fullDescription": "Tamizaje de cáncer de próstata con tacto rectal y antígeno prostático específico",
+      "referenceRateMXN": 750.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-039",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Detección de cáncer de colon",
+      "fullDescription": "Tamizaje de cáncer colorrectal con sangre oculta en heces y colonoscopía de seguimiento",
+      "referenceRateMXN": 650.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-040",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Diabetes mellitus tipo 1",
+      "fullDescription": "Manejo integral de diabetes mellitus tipo 1 con insulinoterapia y monitoreo",
+      "referenceRateMXN": 5500.0,
+      "actuarialWeight": 0.38,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-041",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Preeclampsia",
+      "fullDescription": "Diagnóstico y manejo de preeclampsia con control de presión arterial y vigilancia fetal",
+      "referenceRateMXN": 8000.0,
+      "actuarialWeight": 0.52,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-042",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Hemorragia obstétrica",
+      "fullDescription": "Manejo de hemorragia obstétrica posparto con uterotónicos y reposición de volumen",
+      "referenceRateMXN": 12000.0,
+      "actuarialWeight": 0.65,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-043",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Atención del recién nacido",
+      "fullDescription": "Atención inmediata del recién nacido con valoración Apgar y tamizaje neonatal",
+      "referenceRateMXN": 2500.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-044",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Ictericia neonatal",
+      "fullDescription": "Diagnóstico y tratamiento de ictericia neonatal con fototerapia y seguimiento",
+      "referenceRateMXN": 3500.0,
+      "actuarialWeight": 0.22,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-045",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Sepsis neonatal",
+      "fullDescription": "Diagnóstico y tratamiento de sepsis neonatal con antibióticos IV y cuidados intensivos",
+      "referenceRateMXN": 18000.0,
+      "actuarialWeight": 0.72,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-046",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Cáncer de mama — tratamiento quirúrgico",
+      "fullDescription": "Tratamiento quirúrgico de cáncer de mama con mastectomía y reconstrucción",
+      "referenceRateMXN": 65000.0,
+      "actuarialWeight": 0.75,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-047",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Cáncer cervicouterino — tratamiento",
+      "fullDescription": "Tratamiento de cáncer cervicouterino con cirugía, radioterapia y quimioterapia",
+      "referenceRateMXN": 55000.0,
+      "actuarialWeight": 0.7,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-048",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Cáncer de próstata — tratamiento",
+      "fullDescription": "Tratamiento integral de cáncer de próstata con hormonoterapia y seguimiento",
+      "referenceRateMXN": 45000.0,
+      "actuarialWeight": 0.65,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-049",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Leucemia linfoblástica aguda infantil",
+      "fullDescription": "Tratamiento de leucemia linfoblástica aguda en niños con quimioterapia protocolizada",
+      "referenceRateMXN": 95000.0,
+      "actuarialWeight": 0.92,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-050",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Linfoma no Hodgkin",
+      "fullDescription": "Tratamiento de linfoma no Hodgkin con quimioterapia R-CHOP y seguimiento oncológico",
+      "referenceRateMXN": 85000.0,
+      "actuarialWeight": 0.88,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-051",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Cáncer colorrectal — tratamiento quirúrgico",
+      "fullDescription": "Tratamiento quirúrgico de cáncer colorrectal con colectomía y quimioterapia adyuvante",
+      "referenceRateMXN": 75000.0,
+      "actuarialWeight": 0.78,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 180,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-052",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Infarto agudo al miocardio",
+      "fullDescription": "Atención de urgencia de infarto agudo al miocardio con trombolisis y estabilización",
+      "referenceRateMXN": 35000.0,
+      "actuarialWeight": 0.8,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-053",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Evento vascular cerebral",
+      "fullDescription": "Atención de urgencia de evento vascular cerebral isquémico con trombolisis y rehabilitación",
+      "referenceRateMXN": 42000.0,
+      "actuarialWeight": 0.82,
+      "applicableSeverities": [
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-054",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Diabetes gestacional",
+      "fullDescription": "Diagnóstico y manejo de diabetes gestacional con dieta, ejercicio e insulina si requiere",
+      "referenceRateMXN": 2800.0,
+      "actuarialWeight": 0.18,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-055",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Enfermedad inflamatoria pélvica",
+      "fullDescription": "Diagnóstico y tratamiento de enfermedad inflamatoria pélvica con antibióticos IV",
+      "referenceRateMXN": 3500.0,
+      "actuarialWeight": 0.22,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-056",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Hepatitis C",
+      "fullDescription": "Diagnóstico y tratamiento de hepatitis C crónica con antivirales de acción directa",
+      "referenceRateMXN": 45000.0,
+      "actuarialWeight": 0.55,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-057",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Hepatitis B",
+      "fullDescription": "Diagnóstico y tratamiento de hepatitis B crónica con antivirales y seguimiento",
+      "referenceRateMXN": 12000.0,
+      "actuarialWeight": 0.35,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-058",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Cirrosis hepática",
+      "fullDescription": "Manejo de cirrosis hepática compensada y descompensada con seguimiento",
+      "referenceRateMXN": 8500.0,
+      "actuarialWeight": 0.48,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-059",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Hernia inguinal — reparación",
+      "fullDescription": "Reparación quirúrgica de hernia inguinal con malla protésica por mínima invasión",
+      "referenceRateMXN": 22000.0,
+      "actuarialWeight": 0.38,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-060",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Catarata — cirugía",
+      "fullDescription": "Extracción de catarata por facoemulsificación con lente intraocular incluido",
+      "referenceRateMXN": 25000.0,
+      "actuarialWeight": 0.4,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-061",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Glaucoma",
+      "fullDescription": "Diagnóstico y tratamiento de glaucoma de ángulo abierto con hipotensores oculares",
+      "referenceRateMXN": 2800.0,
+      "actuarialWeight": 0.18,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 20,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-062",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Retinopatía diabética",
+      "fullDescription": "Tamizaje y tratamiento de retinopatía diabética con fotocoagulación láser",
+      "referenceRateMXN": 5500.0,
+      "actuarialWeight": 0.32,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-063",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Pie diabético",
+      "fullDescription": "Manejo integral de pie diabético con curaciones, antibióticos y valoración vascular",
+      "referenceRateMXN": 6500.0,
+      "actuarialWeight": 0.38,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-064",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Quemaduras — manejo inicial",
+      "fullDescription": "Manejo integral de quemaduras de segundo y tercer grado con curaciones y rehabilitación",
+      "referenceRateMXN": 15000.0,
+      "actuarialWeight": 0.55,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-065",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Fracturas — reducción y fijación",
+      "fullDescription": "Reducción y fijación de fracturas de huesos largos con material de osteosíntesis",
+      "referenceRateMXN": 45000.0,
+      "actuarialWeight": 0.6,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 120,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-066",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Esquizofrenia",
+      "fullDescription": "Diagnóstico y tratamiento de esquizofrenia con antipsicóticos y rehabilitación psicosocial",
+      "referenceRateMXN": 6500.0,
+      "actuarialWeight": 0.42,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 40,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-067",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Trastorno bipolar",
+      "fullDescription": "Diagnóstico y tratamiento de trastorno bipolar con estabilizadores del ánimo",
+      "referenceRateMXN": 4500.0,
+      "actuarialWeight": 0.32,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 35,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-068",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Adicciones — tratamiento",
+      "fullDescription": "Tratamiento integral de adicciones a sustancias con desintoxicación y rehabilitación",
+      "referenceRateMXN": 8000.0,
+      "actuarialWeight": 0.45,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-069",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Trastorno por déficit de atención",
+      "fullDescription": "Diagnóstico y tratamiento de TDAH en niños y adolescentes con farmacoterapia",
+      "referenceRateMXN": 2200.0,
+      "actuarialWeight": 0.15,
+      "applicableSeverities": [
+        "PASS",
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-070",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Salud bucal preventiva",
+      "fullDescription": "Atención preventiva de salud bucal con limpieza dental, selladores y aplicación de flúor",
+      "referenceRateMXN": 550.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-071",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Caries dental — tratamiento",
+      "fullDescription": "Tratamiento restaurativo de caries dental con resina o amalgama",
+      "referenceRateMXN": 750.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 30,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-072",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Varicela",
+      "fullDescription": "Diagnóstico y manejo ambulatorio de varicela con antivirales y cuidados generales",
+      "referenceRateMXN": 650.0,
+      "actuarialWeight": 0.05,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-073",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Conjuntivitis",
+      "fullDescription": "Diagnóstico y tratamiento de conjuntivitis bacteriana o viral con colirios",
+      "referenceRateMXN": 400.0,
+      "actuarialWeight": 0.03,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-074",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Dermatitis atópica",
+      "fullDescription": "Diagnóstico y tratamiento de dermatitis atópica con emolientes y esteroides tópicos",
+      "referenceRateMXN": 850.0,
+      "actuarialWeight": 0.07,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-075",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Rinitis alérgica",
+      "fullDescription": "Diagnóstico y tratamiento de rinitis alérgica con antihistamínicos y esteroides nasales",
+      "referenceRateMXN": 750.0,
+      "actuarialWeight": 0.06,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 15,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-076",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "SURGICAL",
+      "shortDescription": "Apendicectomía pediátrica",
+      "fullDescription": "Apendicectomía laparoscópica en pacientes pediátricos por apendicitis aguda",
+      "referenceRateMXN": 32000.0,
+      "actuarialWeight": 0.5,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": true,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": 60,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-077",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Parasitosis intestinal",
+      "fullDescription": "Diagnóstico y tratamiento de parasitosis intestinal con antiparasitarios",
+      "referenceRateMXN": 450.0,
+      "actuarialWeight": 0.04,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 10,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-078",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "PREVENTIVE",
+      "shortDescription": "Educación para la salud",
+      "fullDescription": "Sesión de educación para la salud en prevención de enfermedades crónicas",
+      "referenceRateMXN": 250.0,
+      "actuarialWeight": 0.02,
+      "applicableSeverities": [
+        "PASS"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 45,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-079",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Enfermedad de Chagas",
+      "fullDescription": "Diagnóstico y tratamiento de enfermedad de Chagas con benznidazol y seguimiento cardiológico",
+      "referenceRateMXN": 5500.0,
+      "actuarialWeight": 0.35,
+      "applicableSeverities": [
+        "FLAG"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": false,
+      "typicalDurationMinutes": 25,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "code": "CAUSES-080",
+      "system": "CAUSES",
+      "version": "2024.1",
+      "country": "MX",
+      "category": "STANDARD",
+      "shortDescription": "Mordedura de serpiente — tratamiento",
+      "fullDescription": "Manejo de envenenamiento por mordedura de serpiente con faboterápico antiviperino",
+      "referenceRateMXN": 18000.0,
+      "actuarialWeight": 0.6,
+      "applicableSeverities": [
+        "FLAG",
+        "BLOCK"
+      ],
+      "requiresAnesthesia": false,
+      "requiresHospitalization": true,
+      "typicalDurationMinutes": null,
+      "effectiveDate": "2024-01-01"
+    }
+  ]
+}

@@ -30,8 +30,8 @@ interface StepResult {
 
 async function run() {
   console.log('═══════════════════════════════════════════════════════════');
-  console.log(' Holi Labs — Tri-Country Billing Intelligence Seeder');
-  console.log(' Brazil (TUSS/ANS) · Argentina (Nomenclador) · Bolivia (CNS)');
+  console.log(' Holi Labs — 7-Country Billing Intelligence Seeder');
+  console.log(' BR · AR · BO · US · CA · CO · MX');
   console.log('═══════════════════════════════════════════════════════════\n');
 
   const steps: StepResult[] = [];

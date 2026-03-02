@@ -1,0 +1,86 @@
+{
+  "meta": { "country": "US", "currency": "USD", "version": "2024.1", "source": "CMS Medicare Physician Fee Schedule (MPFS) 2024 — negotiated commercial rates", "effectiveDate": "2024-01-01" },
+  "schedules": [
+    {
+      "insurerNaicCode": "79413",
+      "billingSystem": "CPT",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "99213", "negotiatedRate": 110.50, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 30.00 },
+        { "code": "99214", "negotiatedRate": 158.50, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 40.00 },
+        { "code": "99215", "negotiatedRate": 219.40, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 50.00 },
+        { "code": "99281", "negotiatedRate": 27.10, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 75.00 },
+        { "code": "99283", "negotiatedRate": 107.25, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 150.00 },
+        { "code": "99285", "negotiatedRate": 249.30, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 250.00 },
+        { "code": "85025", "negotiatedRate": 13.10, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "80053", "negotiatedRate": 17.40, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "83036", "negotiatedRate": 15.98, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "84443", "negotiatedRate": 27.65, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "71046", "negotiatedRate": 37.20, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 20.00 },
+        { "code": "73721", "negotiatedRate": 283.20, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "93000", "negotiatedRate": 20.70, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "93306", "negotiatedRate": 212.90, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "27447", "negotiatedRate": 1712.40, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "45378", "negotiatedRate": 363.60, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 75.00 },
+        { "code": "47562", "negotiatedRate": 985.20, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "44950", "negotiatedRate": 817.20, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "90471", "negotiatedRate": 30.40, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "96372", "negotiatedRate": 30.55, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    },
+    {
+      "insurerNaicCode": "54828",
+      "billingSystem": "CPT",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "99213", "negotiatedRate": 105.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 25.00 },
+        { "code": "99214", "negotiatedRate": 152.40, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 35.00 },
+        { "code": "99215", "negotiatedRate": 210.30, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 50.00 },
+        { "code": "99281", "negotiatedRate": 25.90, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 50.00 },
+        { "code": "99283", "negotiatedRate": 102.80, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 100.00 },
+        { "code": "99285", "negotiatedRate": 239.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 200.00 },
+        { "code": "85025", "negotiatedRate": 12.60, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "80053", "negotiatedRate": 16.50, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "83036", "negotiatedRate": 15.30, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "84443", "negotiatedRate": 26.50, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "71046", "negotiatedRate": 35.65, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 15.00 },
+        { "code": "73721", "negotiatedRate": 271.40, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "93000", "negotiatedRate": 19.85, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "93306", "negotiatedRate": 204.10, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "27447", "negotiatedRate": 1641.10, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "45378", "negotiatedRate": 348.45, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 50.00 },
+        { "code": "47562", "negotiatedRate": 944.15, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "44950", "negotiatedRate": 783.15, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "90471", "negotiatedRate": 29.10, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "96372", "negotiatedRate": 29.30, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    },
+    {
+      "insurerNaicCode": "60054",
+      "billingSystem": "CPT",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "99213", "negotiatedRate": 108.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 30.00 },
+        { "code": "99214", "negotiatedRate": 155.50, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 40.00 },
+        { "code": "99215", "negotiatedRate": 214.70, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 50.00 },
+        { "code": "99281", "negotiatedRate": 26.40, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 65.00 },
+        { "code": "99283", "negotiatedRate": 104.60, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 125.00 },
+        { "code": "99285", "negotiatedRate": 243.10, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 250.00 },
+        { "code": "85025", "negotiatedRate": 12.85, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "80053", "negotiatedRate": 16.95, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "83036", "negotiatedRate": 15.60, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "84443", "negotiatedRate": 27.05, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "71046", "negotiatedRate": 36.30, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 20.00 },
+        { "code": "73721", "negotiatedRate": 277.20, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "93000", "negotiatedRate": 20.25, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "93306", "negotiatedRate": 208.40, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "27447", "negotiatedRate": 1669.60, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "45378", "negotiatedRate": 354.50, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "47562", "negotiatedRate": 962.60, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "44950", "negotiatedRate": 797.50, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "90471", "negotiatedRate": 29.65, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "96372", "negotiatedRate": 29.80, "confidence": "CONTRACTED", "isCovered": true }
+      ]
+    }
+  ]
+}
