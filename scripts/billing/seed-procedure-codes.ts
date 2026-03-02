@@ -27,6 +27,10 @@ interface ProcedureCodeInput {
   referenceRateBRL?: number | null;
   referenceRateARS?: number | null;
   referenceRateBOB?: number | null;
+  referenceRateUSD?: number | null;
+  referenceRateCAD?: number | null;
+  referenceRateCOP?: number | null;
+  referenceRateMXN?: number | null;
   actuarialWeight: number;
   applicableSeverities: string[];
   requiresAnesthesia: boolean;
@@ -46,6 +50,10 @@ export async function seedProcedureCodes(): Promise<number> {
     'procedure-codes/tuss-expanded.json',
     'procedure-codes/nomenclador-argentina.json',
     'procedure-codes/cns-bolivia.json',
+    'procedure-codes/cpt-united-states.json',
+    'procedure-codes/cci-ohip-canada.json',
+    'procedure-codes/cups-colombia.json',
+    'procedure-codes/cie9mc-causes-mexico.json',
   ];
 
   let total = 0;
@@ -68,6 +76,10 @@ export async function seedProcedureCodes(): Promise<number> {
           referenceRateBRL: c.referenceRateBRL ?? null,
           referenceRateARS: c.referenceRateARS ?? null,
           referenceRateBOB: c.referenceRateBOB ?? null,
+          referenceRateUSD: c.referenceRateUSD ?? null,
+          referenceRateCAD: c.referenceRateCAD ?? null,
+          referenceRateCOP: c.referenceRateCOP ?? null,
+          referenceRateMXN: c.referenceRateMXN ?? null,
           actuarialWeight: c.actuarialWeight,
           applicableSeverities: c.applicableSeverities,
           requiresAnesthesia: c.requiresAnesthesia,
@@ -87,6 +99,10 @@ export async function seedProcedureCodes(): Promise<number> {
           referenceRateBRL: c.referenceRateBRL ?? null,
           referenceRateARS: c.referenceRateARS ?? null,
           referenceRateBOB: c.referenceRateBOB ?? null,
+          referenceRateUSD: c.referenceRateUSD ?? null,
+          referenceRateCAD: c.referenceRateCAD ?? null,
+          referenceRateCOP: c.referenceRateCOP ?? null,
+          referenceRateMXN: c.referenceRateMXN ?? null,
           actuarialWeight: c.actuarialWeight,
           applicableSeverities: c.applicableSeverities,
           requiresAnesthesia: c.requiresAnesthesia,

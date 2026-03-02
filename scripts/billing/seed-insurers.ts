@@ -25,6 +25,11 @@ interface InsurerInput {
   cuitCode?: string;
   rnos?: string;
   cnsCode?: string;
+  npiNumber?: string;
+  naicCode?: string;
+  provinceCode?: string;
+  rutCode?: string;
+  rfcCode?: string;
   tissTissVersion?: string;
   estimatedMembers?: number;
   coverageRegions: string[];
@@ -43,6 +48,10 @@ export async function seedInsurers(): Promise<number> {
     'insurers/brazil-ans-insurers.json',
     'insurers/bolivia-insurers.json',
     'insurers/argentina-insurers.json',
+    'insurers/united-states-insurers.json',
+    'insurers/canada-insurers.json',
+    'insurers/colombia-insurers.json',
+    'insurers/mexico-insurers.json',
   ];
 
   let total = 0;
@@ -58,9 +67,19 @@ export async function seedInsurers(): Promise<number> {
         whereClause = { rnos: ins.rnos };
       } else if (ins.cnsCode) {
         whereClause = { cnsCode: ins.cnsCode };
+      } else if (ins.naicCode) {
+        whereClause = { naicCode: ins.naicCode };
+      } else if (ins.rutCode) {
+        whereClause = { rutCode: ins.rutCode };
+      } else if (ins.rfcCode) {
+        whereClause = { rfcCode: ins.rfcCode };
+      } else if (ins.cuitCode) {
+        whereClause = { cuitCode: ins.cuitCode };
+      } else if (ins.npiNumber) {
+        whereClause = { npiNumber: ins.npiNumber };
       } else {
-        // Fallback: use cuit
-        whereClause = { cuitCode: ins.cuitCode! };
+        console.warn(`  ⚠ No unique identifier for insurer: ${ins.shortName}`);
+        continue;
       }
 
       const commonData = {
@@ -86,6 +105,11 @@ export async function seedInsurers(): Promise<number> {
           cuitCode: ins.cuitCode ?? null,
           rnos: ins.rnos ?? null,
           cnsCode: ins.cnsCode ?? null,
+          npiNumber: ins.npiNumber ?? null,
+          naicCode: ins.naicCode ?? null,
+          provinceCode: ins.provinceCode ?? null,
+          rutCode: ins.rutCode ?? null,
+          rfcCode: ins.rfcCode ?? null,
         },
       });
       total++;

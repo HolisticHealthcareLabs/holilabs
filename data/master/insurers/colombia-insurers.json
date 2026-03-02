@@ -1,0 +1,125 @@
+{
+  "meta": { "country": "CO", "source": "Superintendencia Nacional de Salud", "version": "2024.1" },
+  "insurers": [
+    {
+      "name": "EPS Sura",
+      "shortName": "Sura EPS",
+      "country": "CO",
+      "insurerType": "EPS_CONTRIBUTIVO",
+      "rutCode": "800088702-2",
+      "estimatedMembers": 5200000,
+      "coverageRegions": ["ANT", "BOG", "VAL", "ATL", "SAN"],
+      "productLines": ["POS_CONTRIBUTIVO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Nueva EPS S.A.",
+      "shortName": "Nueva EPS",
+      "country": "CO",
+      "insurerType": "EPS_CONTRIBUTIVO",
+      "rutCode": "900156264-2",
+      "estimatedMembers": 10500000,
+      "coverageRegions": ["BOG", "ANT", "VAL", "ATL", "SAN", "BOY", "NAR", "CAU", "RIS", "CAL", "TOL", "HUI", "MET", "CES", "MAG", "COR", "SUC", "BOL"],
+      "productLines": ["POS_CONTRIBUTIVO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "EPS Sanitas S.A.",
+      "shortName": "Sanitas",
+      "country": "CO",
+      "insurerType": "EPS_CONTRIBUTIVO",
+      "rutCode": "800251440-6",
+      "estimatedMembers": 5300000,
+      "coverageRegions": ["BOG", "ANT", "VAL", "ATL", "SAN", "BOY", "RIS", "CAL"],
+      "productLines": ["POS_CONTRIBUTIVO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Salud Total EPS S.A.",
+      "shortName": "Salud Total",
+      "country": "CO",
+      "insurerType": "EPS_CONTRIBUTIVO",
+      "rutCode": "800130907-4",
+      "estimatedMembers": 4800000,
+      "coverageRegions": ["BOG", "ANT", "VAL", "ATL", "SAN", "BOY", "TOL", "HUI"],
+      "productLines": ["POS_CONTRIBUTIVO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Coosalud EPS S.A.",
+      "shortName": "Coosalud",
+      "country": "CO",
+      "insurerType": "EPS_SUBSIDIADO",
+      "rutCode": "900226715-5",
+      "estimatedMembers": 4200000,
+      "coverageRegions": ["BOL", "SUC", "COR", "MAG", "ATL", "BOG", "SAN", "ANT"],
+      "productLines": ["POS_SUBSIDIADO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Famisanar EPS S.A.",
+      "shortName": "Famisanar",
+      "country": "CO",
+      "insurerType": "EPS_CONTRIBUTIVO",
+      "rutCode": "830003564-7",
+      "estimatedMembers": 3100000,
+      "coverageRegions": ["BOG", "CUN", "BOY", "TOL", "HUI"],
+      "productLines": ["POS_CONTRIBUTIVO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Compensar EPS",
+      "shortName": "Compensar",
+      "country": "CO",
+      "insurerType": "EPS_CONTRIBUTIVO",
+      "rutCode": "860066942-7",
+      "estimatedMembers": 2800000,
+      "coverageRegions": ["BOG", "CUN", "BOY"],
+      "productLines": ["POS_CONTRIBUTIVO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Mutual SER EPS",
+      "shortName": "Mutual SER",
+      "country": "CO",
+      "insurerType": "EPS_SUBSIDIADO",
+      "rutCode": "806008394-6",
+      "estimatedMembers": 3500000,
+      "coverageRegions": ["COR", "SUC", "BOL", "MAG", "CES", "ATL", "GUA"],
+      "productLines": ["POS_SUBSIDIADO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Emssanar E.S.S.",
+      "shortName": "Emssanar",
+      "country": "CO",
+      "insurerType": "EPS_SUBSIDIADO",
+      "rutCode": "891200528-0",
+      "estimatedMembers": 2900000,
+      "coverageRegions": ["NAR", "CAU", "PUT", "VAL"],
+      "productLines": ["POS_SUBSIDIADO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Capital Salud EPS-S S.A.S.",
+      "shortName": "Capital Salud",
+      "country": "CO",
+      "insurerType": "EPS_SUBSIDIADO",
+      "rutCode": "900298372-9",
+      "estimatedMembers": 2200000,
+      "coverageRegions": ["BOG", "CUN"],
+      "productLines": ["POS_SUBSIDIADO"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    }
+  ]
+}

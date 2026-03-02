@@ -21,6 +21,21 @@ jest.mock('@prisma/client', () => ({
     SUMI_BO: 'SUMI_BO',
     SSPAM_BO: 'SSPAM_BO',
     SNOMED_CT: 'SNOMED_CT',
+    CPT: 'CPT',
+    HCPCS: 'HCPCS',
+    ICD10_PCS: 'ICD10_PCS',
+    MS_DRG: 'MS_DRG',
+    NDC: 'NDC',
+    CCI: 'CCI',
+    OHIP: 'OHIP',
+    RAMQ: 'RAMQ',
+    MSP_BC: 'MSP_BC',
+    AHCIP: 'AHCIP',
+    CUPS: 'CUPS',
+    ISS_SOAT_CO: 'ISS_SOAT_CO',
+    CIE9_MC_MX: 'CIE9_MC_MX',
+    CAUSES: 'CAUSES',
+    TABULADOR_IMSS: 'TABULADOR_IMSS',
   },
 }));
 
@@ -517,6 +532,171 @@ describe('BillingRouter', () => {
       expect(result.priorAuth.required).toBe(true);
       expect(result.priorAuth.windowDays).toBe(5);
       expect(result.priorAuth.requiredDocuments).toContain('medical_report');
+    });
+  });
+
+  // ── 7-country expansion ───────────────────────────────────────────────────
+
+  describe('7-country expansion', () => {
+    const US_CPT_CROSSWALK = {
+      snomedConceptId: '11429006',
+      country: 'US',
+      mappingType: 'EXACT',
+      confidence: 0.93,
+      procedureCode: {
+        code: '99213',
+        system: 'CPT',
+        shortDescription: 'Office visit — established patient, level 3',
+        actuarialWeight: 0.08,
+      },
+    };
+
+    it('crosswalkCode resolves SNOMED → CPT for US', async () => {
+      (db.snomedCrosswalk.findFirst as jest.Mock).mockResolvedValue(US_CPT_CROSSWALK);
+
+      const result = await router.crosswalkCode('11429006', 'US');
+
+      expect(result).toEqual({
+        snomedConceptId: '11429006',
+        billingCode: '99213',
+        billingSystem: 'CPT',
+        country: 'US',
+        shortDescription: 'Office visit — established patient, level 3',
+        actuarialWeight: 0.08,
+        mappingType: 'EXACT',
+        confidence: 0.93,
+      });
+    });
+
+    it('lookupRate uses referenceRateUSD fallback for US', async () => {
+      (db.feeSchedule.findFirst as jest.Mock).mockResolvedValue(null);
+      (db.procedureCode.findFirst as jest.Mock).mockResolvedValue({
+        code: '99213',
+        system: 'CPT',
+        referenceRateBRL: null,
+        referenceRateARS: null,
+        referenceRateBOB: null,
+        referenceRateUSD: 92.33,
+        referenceRateCAD: null,
+        referenceRateCOP: null,
+        referenceRateMXN: null,
+      });
+      (db.insurer.findUnique as jest.Mock).mockResolvedValue({ country: 'US' });
+
+      const result = await router.lookupRate('99213', BillingSystem.CPT, 'ins-uhc');
+
+      expect(result!.negotiatedRate).toBe(92.33);
+      expect(result!.currency).toBe('USD');
+      expect(result!.usedFallback).toBe(true);
+    });
+
+    it('lookupRate uses referenceRateCAD for Canada', async () => {
+      (db.feeSchedule.findFirst as jest.Mock).mockResolvedValue(null);
+      (db.procedureCode.findFirst as jest.Mock).mockResolvedValue({
+        code: 'A003A',
+        system: 'OHIP',
+        referenceRateBRL: null,
+        referenceRateARS: null,
+        referenceRateBOB: null,
+        referenceRateUSD: null,
+        referenceRateCAD: 37.95,
+        referenceRateCOP: null,
+        referenceRateMXN: null,
+      });
+      (db.insurer.findUnique as jest.Mock).mockResolvedValue({ country: 'CA' });
+
+      const result = await router.lookupRate('A003A', BillingSystem.OHIP, 'ins-ohip');
+
+      expect(result!.negotiatedRate).toBe(37.95);
+      expect(result!.currency).toBe('CAD');
+    });
+
+    it('lookupRate uses referenceRateCOP for Colombia', async () => {
+      (db.feeSchedule.findFirst as jest.Mock).mockResolvedValue(null);
+      (db.procedureCode.findFirst as jest.Mock).mockResolvedValue({
+        code: '890201',
+        system: 'CUPS',
+        referenceRateBRL: null,
+        referenceRateARS: null,
+        referenceRateBOB: null,
+        referenceRateUSD: null,
+        referenceRateCAD: null,
+        referenceRateCOP: 45000.0,
+        referenceRateMXN: null,
+      });
+      (db.insurer.findUnique as jest.Mock).mockResolvedValue({ country: 'CO' });
+
+      const result = await router.lookupRate('890201', BillingSystem.CUPS, 'ins-sura');
+
+      expect(result!.negotiatedRate).toBe(45000.0);
+      expect(result!.currency).toBe('COP');
+    });
+
+    it('lookupRate uses referenceRateMXN for Mexico', async () => {
+      (db.feeSchedule.findFirst as jest.Mock).mockResolvedValue(null);
+      (db.procedureCode.findFirst as jest.Mock).mockResolvedValue({
+        code: '89.7',
+        system: 'CIE9_MC_MX',
+        referenceRateBRL: null,
+        referenceRateARS: null,
+        referenceRateBOB: null,
+        referenceRateUSD: null,
+        referenceRateCAD: null,
+        referenceRateCOP: null,
+        referenceRateMXN: 850.0,
+      });
+      (db.insurer.findUnique as jest.Mock).mockResolvedValue({ country: 'MX' });
+
+      const result = await router.lookupRate('89.7', BillingSystem.CIE9_MC_MX, 'ins-imss');
+
+      expect(result!.negotiatedRate).toBe(850.0);
+      expect(result!.currency).toBe('MXN');
+    });
+
+    it('routeClaim returns full routing for US CPT', async () => {
+      (db.snomedCrosswalk.findFirst as jest.Mock).mockResolvedValue(US_CPT_CROSSWALK);
+      (db.feeSchedule.findFirst as jest.Mock).mockResolvedValue({
+        id: 'fs-uhc-01',
+        insurerId: 'ins-uhc',
+        billingSystem: 'CPT',
+        currency: 'USD',
+        isActive: true,
+        effectiveDate: new Date('2024-01-01'),
+      });
+      (db.feeScheduleLine.findFirst as jest.Mock).mockResolvedValue({
+        negotiatedRate: 110.50,
+        confidence: 'CONTRACTED',
+        isCovered: true,
+        coverageLimit: null,
+        copayFlat: 30.0,
+        copayPercent: null,
+        procedureCode: { code: '99213', system: 'CPT', isActive: true },
+      });
+      (db.priorAuthRule.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const result = await router.routeClaim({
+        snomedConceptId: '11429006',
+        country: 'US',
+        insurerId: 'ins-uhc',
+      });
+
+      expect(result.billingCode).toBe('99213');
+      expect(result.billingSystem).toBe('CPT');
+      expect(result.country).toBe('US');
+      expect(result.rate!.negotiatedRate).toBe(110.50);
+      expect(result.rate!.currency).toBe('USD');
+      expect(result.rate!.usedFallback).toBe(false);
+      expect(result.routingConfidence).toBe(0.93);
+    });
+
+    it('tuss-lookup fallback is NOT triggered for non-TUSS systems', async () => {
+      (db.feeSchedule.findFirst as jest.Mock).mockResolvedValue(null);
+      (db.procedureCode.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const result = await router.lookupRate('99213', BillingSystem.CPT, 'ins-uhc');
+
+      expect(result).toBeNull();
+      expect(getTUSSByCode).not.toHaveBeenCalled();
     });
   });
 

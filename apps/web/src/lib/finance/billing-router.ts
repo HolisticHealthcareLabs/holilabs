@@ -18,7 +18,17 @@ import { getTUSSByCode } from './tuss-lookup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type BillingCountry = 'BR' | 'AR' | 'BO';
+export type BillingCountry = 'BR' | 'AR' | 'BO' | 'US' | 'CA' | 'CO' | 'MX';
+
+const COUNTRY_RATE_MAP: Record<string, { field: string; currency: string }> = {
+  BR: { field: 'referenceRateBRL', currency: 'BRL' },
+  AR: { field: 'referenceRateARS', currency: 'ARS' },
+  BO: { field: 'referenceRateBOB', currency: 'BOB' },
+  US: { field: 'referenceRateUSD', currency: 'USD' },
+  CA: { field: 'referenceRateCAD', currency: 'CAD' },
+  CO: { field: 'referenceRateCOP', currency: 'COP' },
+  MX: { field: 'referenceRateMXN', currency: 'MXN' },
+};
 
 export interface CrosswalkResult {
   snomedConceptId: string;
@@ -186,13 +196,11 @@ export class BillingRouter {
       });
       const country = insurer?.country ?? 'BR';
 
-      const rate =
-        country === 'BR' ? procedureCode.referenceRateBRL :
-        country === 'AR' ? procedureCode.referenceRateARS :
-        procedureCode.referenceRateBOB;
+      const rateMapping = COUNTRY_RATE_MAP[country] ?? COUNTRY_RATE_MAP.BR;
+      const rate = procedureCode[rateMapping.field as keyof typeof procedureCode];
 
       if (rate !== null && rate !== undefined) {
-        const currency = country === 'BR' ? 'BRL' : country === 'AR' ? 'ARS' : 'BOB';
+        const currency = rateMapping.currency;
         return {
           billingCode,
           billingSystem: system,

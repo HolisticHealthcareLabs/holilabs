@@ -1,0 +1,71 @@
+{
+  "meta": { "country": "MX", "currency": "MXN", "version": "2024.1", "source": "IMSS Tabulador de Cuotas 2024 — Tarifas negociadas aseguradoras privadas", "effectiveDate": "2024-01-01" },
+  "schedules": [
+    {
+      "insurerRfcCode": "IMS421231I45",
+      "billingSystem": "CIE9_MC_MX",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "89.7", "negotiatedRate": 950.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 50.00 },
+        { "code": "89.01", "negotiatedRate": 850.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 50.00 },
+        { "code": "90.5", "negotiatedRate": 280.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "91.3", "negotiatedRate": 320.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "89.52", "negotiatedRate": 450.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "87.44", "negotiatedRate": 850.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 100.00 },
+        { "code": "88.71", "negotiatedRate": 4200.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "88.91", "negotiatedRate": 5500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "51.23", "negotiatedRate": 18500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "47.09", "negotiatedRate": 15200.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "81.54", "negotiatedRate": 85000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "36.1", "negotiatedRate": 120000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "45.23", "negotiatedRate": 8500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "44.13", "negotiatedRate": 7200.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "53.0", "negotiatedRate": 12500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 }
+      ]
+    },
+    {
+      "insurerRfcCode": "GSM920101FG3",
+      "billingSystem": "CIE9_MC_MX",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "89.7", "negotiatedRate": 1100.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 200.00 },
+        { "code": "89.01", "negotiatedRate": 980.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 200.00 },
+        { "code": "90.5", "negotiatedRate": 320.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "91.3", "negotiatedRate": 365.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "89.52", "negotiatedRate": 520.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "87.44", "negotiatedRate": 980.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 150.00 },
+        { "code": "88.71", "negotiatedRate": 4800.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "88.91", "negotiatedRate": 6200.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "51.23", "negotiatedRate": 21000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "47.09", "negotiatedRate": 17500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "81.54", "negotiatedRate": 98000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "36.1", "negotiatedRate": 138000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "45.23", "negotiatedRate": 9800.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "44.13", "negotiatedRate": 8300.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "53.0", "negotiatedRate": 14500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 }
+      ]
+    },
+    {
+      "insurerRfcCode": "ASE930201HI4",
+      "billingSystem": "CIE9_MC_MX",
+      "effectiveDate": "2024-01-01",
+      "lines": [
+        { "code": "89.7", "negotiatedRate": 1050.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 180.00 },
+        { "code": "89.01", "negotiatedRate": 940.00, "confidence": "CONTRACTED", "isCovered": true, "copayFlat": 180.00 },
+        { "code": "90.5", "negotiatedRate": 300.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "91.3", "negotiatedRate": 345.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "89.52", "negotiatedRate": 490.00, "confidence": "CONTRACTED", "isCovered": true },
+        { "code": "87.44", "negotiatedRate": 920.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "88.71", "negotiatedRate": 4500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "88.91", "negotiatedRate": 5900.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "51.23", "negotiatedRate": 19800.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "47.09", "negotiatedRate": 16200.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 },
+        { "code": "81.54", "negotiatedRate": 92000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "36.1", "negotiatedRate": 130000.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.20 },
+        { "code": "45.23", "negotiatedRate": 9200.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "44.13", "negotiatedRate": 7800.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.10 },
+        { "code": "53.0", "negotiatedRate": 13500.00, "confidence": "CONTRACTED", "isCovered": true, "copayPercent": 0.15 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "meta": { "country": "MX", "source": "CNSF / IMSS / ISSSTE Registry", "version": "2024.1" },
+  "insurers": [
+    {
+      "name": "Instituto Mexicano del Seguro Social",
+      "shortName": "IMSS",
+      "country": "MX",
+      "insurerType": "SOCIAL_SECURITY",
+      "rfcCode": "IMS421231I45",
+      "estimatedMembers": 80000000,
+      "coverageRegions": ["AGU", "BCN", "BCS", "CAM", "CHP", "CHH", "COA", "COL", "CMX", "DUR", "GUA", "GRO", "HID", "JAL", "MEX", "MIC", "MOR", "NAY", "NLE", "OAX", "PUE", "QUE", "ROO", "SLP", "SIN", "SON", "TAB", "TAM", "TLA", "VER", "YUC", "ZAC"],
+      "productLines": ["WORKER_FORMAL", "FAMILY_DEPENDENTS", "VOLUNTARY"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado",
+      "shortName": "ISSSTE",
+      "country": "MX",
+      "insurerType": "SOCIAL_SECURITY",
+      "rfcCode": "ISS600101AB1",
+      "estimatedMembers": 13500000,
+      "coverageRegions": ["CMX", "MEX", "JAL", "NLE", "PUE", "GUA", "VER", "QUE", "HID", "TAB", "OAX", "CHP", "YUC"],
+      "productLines": ["STATE_WORKER", "FAMILY_DEPENDENTS", "PENSIONER"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "IMSS-Bienestar",
+      "shortName": "IMSS-Bienestar",
+      "country": "MX",
+      "insurerType": "PUBLIC_FUND",
+      "rfcCode": "IBE190101XY2",
+      "estimatedMembers": 60000000,
+      "coverageRegions": ["OAX", "CHP", "GRO", "PUE", "VER", "HID", "TAB", "CAM", "ROO", "YUC", "TLA", "MIC", "GUA", "SLP", "ZAC", "NAY", "DUR", "CHH", "SON", "SIN"],
+      "productLines": ["PUBLIC_UNIVERSAL", "UNINSURED_POPULATION"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Grupo Nacional Provincial S.A.B. de C.V.",
+      "shortName": "GNP Seguros",
+      "country": "MX",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "rfcCode": "GSM920101FG3",
+      "estimatedMembers": 4000000,
+      "coverageRegions": ["CMX", "MEX", "JAL", "NLE", "QUE", "PUE", "GUA", "BCN", "SON", "CHH"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "GROUP", "MAJOR_MEDICAL"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "AXA Seguros S.A. de C.V.",
+      "shortName": "AXA Seguros",
+      "country": "MX",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "rfcCode": "ASE930201HI4",
+      "estimatedMembers": 3200000,
+      "coverageRegions": ["CMX", "MEX", "JAL", "NLE", "QUE", "PUE", "GUA", "BCN"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "GROUP", "MAJOR_MEDICAL"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "MetLife México S.A. de C.V.",
+      "shortName": "MetLife México",
+      "country": "MX",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "rfcCode": "MMS840301JK5",
+      "estimatedMembers": 2800000,
+      "coverageRegions": ["CMX", "MEX", "JAL", "NLE", "QUE", "PUE", "GUA"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "GROUP", "DENTAL"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Mapfre Tepeyac S.A.",
+      "shortName": "Mapfre Tepeyac",
+      "country": "MX",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "rfcCode": "MTS860401LM6",
+      "estimatedMembers": 1500000,
+      "coverageRegions": ["CMX", "MEX", "JAL", "NLE", "QUE", "PUE"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "MAJOR_MEDICAL"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Zurich Santander Seguros México S.A.",
+      "shortName": "Zurich Santander",
+      "country": "MX",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "rfcCode": "ZSS870501NO7",
+      "estimatedMembers": 1200000,
+      "coverageRegions": ["CMX", "MEX", "JAL", "NLE", "QUE"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "GROUP"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Seguros Monterrey New York Life S.A. de C.V.",
+      "shortName": "Monterrey NYL",
+      "country": "MX",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "rfcCode": "SMN880601PQ8",
+      "estimatedMembers": 2000000,
+      "coverageRegions": ["CMX", "MEX", "NLE", "JAL", "QUE", "PUE", "GUA", "BCN"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "GROUP", "MAJOR_MEDICAL"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    },
+    {
+      "name": "Allianz México S.A. de C.V.",
+      "shortName": "Allianz México",
+      "country": "MX",
+      "insurerType": "PRIVATE_COMMERCIAL",
+      "rfcCode": "AMS910701RS9",
+      "estimatedMembers": 800000,
+      "coverageRegions": ["CMX", "MEX", "JAL", "NLE", "QUE"],
+      "productLines": ["INDIVIDUAL", "CORPORATE", "MAJOR_MEDICAL"],
+      "isActive": true,
+      "effectiveDate": "2024-01-01"
+    }
+  ]
+}
