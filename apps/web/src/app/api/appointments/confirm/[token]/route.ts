@@ -14,6 +14,7 @@ import {
 } from '@/lib/appointments/confirmation';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export async function GET(
   request: NextRequest,
@@ -209,7 +210,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         },
         { status: 400 }
       );

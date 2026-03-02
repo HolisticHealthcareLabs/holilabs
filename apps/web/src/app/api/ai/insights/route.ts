@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdssService } from '@/lib/services/cdss.service';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,20 +112,13 @@ export const GET = createProtectedRoute(
           cacheDuration: CACHE_DURATION,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'ai_insights_generation_failed',
         clinicianId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        {
-          error: 'Failed to generate AI insights',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to generate AI insights' });
     }
   }
 );
@@ -151,20 +145,13 @@ export const POST = createProtectedRoute(
         success: true,
         message: 'Insights cache cleared. Next GET request will generate fresh insights.',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'ai_insights_cache_clear_failed',
         clinicianId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        {
-          error: 'Failed to clear cache',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to clear cache' });
     }
   }
 );

@@ -18,6 +18,7 @@ import { auth } from '@/lib/auth/auth';
 import * as crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
@@ -247,7 +248,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized - Please log in' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      );
     }
 
     const { patientId } = params;
@@ -317,7 +321,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     if (!patient.value) {
-      return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Patient not found' },
+        { status: 404 }
+      );
     }
 
     const patientRecord = patient.value;
@@ -462,7 +469,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     logger.error({
       event: 'prevention_hub_fetch_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(

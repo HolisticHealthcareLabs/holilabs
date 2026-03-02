@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma';
 import { sendDeletionCompletedEmail } from '@/lib/email/deletion-emails';
 import { logger } from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,18 +92,17 @@ export const GET = async (
         },
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'deletion_request_fetch_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error?.stack,
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json(
       {
         error: 'Failed to fetch deletion request',
         // Only include details in development
         ...(process.env.NODE_ENV === 'development' && {
-          details: error.message
         })
       },
       { status: 500 }
@@ -333,18 +333,17 @@ export const POST = async (
       message: 'Patient data has been successfully deleted',
       completedAt: new Date(),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'patient_deletion_execution_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error?.stack,
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json(
       {
         error: 'Failed to execute deletion',
         // Only include details in development
         ...(process.env.NODE_ENV === 'development' && {
-          details: error.message
         })
       },
       { status: 500 }

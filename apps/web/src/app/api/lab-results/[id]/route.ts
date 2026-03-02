@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,21 +58,15 @@ export const GET = createProtectedRoute(
         success: true,
         data: labResult,
       });
-    } catch (error: any) {
-      console.error('Error fetching lab result:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch lab result', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch lab result' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
-    audit: {
-      action: 'READ',
-      resource: 'LabResult',
-    },
+    skipCsrf: true,
+    audit: { action: 'READ', resource: 'LabResult' },
   }
 );
 
@@ -139,17 +134,14 @@ export const PATCH = createProtectedRoute(
         success: true,
         data: updatedResult,
       });
-    } catch (error: any) {
-      console.error('Error updating lab result:', error);
-      return NextResponse.json(
-        { error: 'Failed to update lab result', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to update lab result' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'UPDATE', resource: 'LabResult' },
   }
 );
 
@@ -203,16 +195,13 @@ export const DELETE = createProtectedRoute(
         success: true,
         message: 'Lab result deleted successfully',
       });
-    } catch (error: any) {
-      console.error('Error deleting lab result:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete lab result', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to delete lab result' });
     }
   },
   {
     roles: ['ADMIN'],
     rateLimit: { windowMs: 60000, maxRequests: 10 },
+    audit: { action: 'DELETE', resource: 'LabResult' },
   }
 );

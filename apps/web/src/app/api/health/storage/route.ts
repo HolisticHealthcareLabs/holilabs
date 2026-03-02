@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { S3Client, HeadBucketCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,12 +138,11 @@ export async function GET() {
         lifecycle: 'supported',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Storage health check error:', error);
     return NextResponse.json({
       status: 'error',
       service: 'storage',
-      message: error.message || 'Unknown error',
       configured: !!(config.accessKeyId && config.secretAccessKey),
       connected: false,
     }, { status: 500 });

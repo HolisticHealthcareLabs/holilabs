@@ -29,6 +29,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processConsentReminders } from '@/lib/consent/reminder-service';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max execution time
@@ -183,7 +184,6 @@ export async function POST(request: NextRequest) {
       event: 'cron_job_error',
       job: 'send_consent_reminders',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
       duration,
       retries: retryCount,
     });

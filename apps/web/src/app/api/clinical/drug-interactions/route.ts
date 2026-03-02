@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { validateArray, sanitizeMedicationName } from '@/lib/security/validation';
 import { checkDrugInteractions } from '@/lib/openfda/drug-interactions';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -115,9 +116,9 @@ export const POST = createProtectedRoute(
           50, // Max 50 medications
           (med: any) => typeof med === 'string' && med.trim().length > 0
         );
-      } catch (error: any) {
+      } catch (error) {
         return NextResponse.json(
-          { error: error.message },
+          { error: error instanceof Error ? error.message : String(error) },
           { status: 400 }
         );
       }
@@ -180,15 +181,8 @@ export const POST = createProtectedRoute(
           },
         },
       });
-    } catch (error: any) {
-      console.error('Error checking drug interactions:', error);
-      return NextResponse.json(
-        {
-          error: 'Failed to check drug interactions',
-          ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to check drug interactions' });
     }
   },
   {

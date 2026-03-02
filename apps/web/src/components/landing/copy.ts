@@ -86,6 +86,38 @@ type LandingCopy = {
     requestError: string;
     networkError: string;
   };
+  architecture: {
+    kicker: string;
+    title: string;
+    subtitle: string;
+    cards: Array<{
+      title: string;
+      body: string;
+      chipA: string;
+      chipB: string;
+    }>;
+  };
+  governance: {
+    kicker: string;
+    subtitle: string;
+    cardOneTitle: string;
+    cardOneBody: string;
+    errorsAvoided: string;
+    weekDelta: string;
+    complianceRate: string;
+    cardTwoTitle: string;
+    cardTwoBody: string;
+  };
+  safety: {
+    kicker: string;
+    title: string;
+    cards: Array<{
+      title: string;
+      body: string;
+      bulletA: string;
+      bulletB: string;
+    }>;
+  };
   footer: {
     product: string;
     company: string;
@@ -255,6 +287,72 @@ const landingCopy: Record<Locale, LandingCopy> = {
       requestError: 'Failed to process request.',
       networkError: 'Connection error. Please try again later.',
     },
+    architecture: {
+      kicker: 'Architecture',
+      title: 'Deterministic safety, not probabilistic hope.',
+      subtitle: 'A layered architecture that validates every AI output before it reaches a clinician.',
+      cards: [
+        {
+          title: 'Ingestion Layer',
+          body: 'Pulls structured data from EHR, labs, and medications. Normalizes to FHIR R4 for universal compatibility.',
+          chipA: 'FHIR R4',
+          chipB: 'HL7 ADT/ORU',
+        },
+        {
+          title: 'Deterministic Engine',
+          body: 'SNOMED-coded ontology rules execute first. Drug interactions, contraindications, and dosing checks run in constant time.',
+          chipA: 'SNOMED CT',
+          chipB: 'ICD-10',
+        },
+        {
+          title: 'Probabilistic Layer',
+          body: 'LLM reasoning handles nuance—context synthesis, differential support, and documentation drafts. Always gated by deterministic checks.',
+          chipA: 'GPT-4 / Claude',
+          chipB: 'Gated output',
+        },
+        {
+          title: 'Governance & Audit',
+          body: 'Every validation, override, and correction is immutably logged. Trust scores update in real time for institutional dashboards.',
+          chipA: 'Immutable log',
+          chipB: 'Trust scores',
+        },
+      ],
+    },
+    governance: {
+      kicker: 'Governance',
+      subtitle: 'Real-time visibility into how AI is being used across your organization.',
+      cardOneTitle: 'Override Intelligence',
+      cardOneBody: 'Every clinician override feeds a learning loop. The system tracks why recommendations were rejected and adjusts confidence thresholds automatically.',
+      errorsAvoided: '847 errors avoided',
+      weekDelta: '+12% this week',
+      complianceRate: '99.2% compliance',
+      cardTwoTitle: 'Protocol Drift Monitoring',
+      cardTwoBody: 'Detect when clinical practice deviates from institutional protocols. Surface trends before they become incidents.',
+    },
+    safety: {
+      kicker: 'High-stakes safety',
+      title: 'Built for decisions where mistakes cost lives.',
+      cards: [
+        {
+          title: 'Drug Interaction Firewall',
+          body: 'Every prescription is checked against the patient\'s full medication list, allergies, and renal function before it reaches the clinician.',
+          bulletA: 'CYP3A4/P-gp pathway analysis',
+          bulletB: 'Real-time renal dose adjustment',
+        },
+        {
+          title: 'Clinical Attestation Gates',
+          body: 'High-risk actions require explicit clinician attestation. No silent pass-throughs on BLOCK-level alerts.',
+          bulletA: 'Mandatory override justification',
+          bulletB: 'Immutable audit trail',
+        },
+        {
+          title: 'Stale Data Detection',
+          body: 'Lab results older than 72 hours trigger automatic warnings. Clinicians must attest they\'ve reviewed recent data before proceeding.',
+          bulletA: 'Configurable staleness thresholds',
+          bulletB: 'Automatic re-check prompts',
+        },
+      ],
+    },
     footer: {
       product: 'Product',
       company: 'Company',
@@ -422,6 +520,72 @@ const landingCopy: Record<Locale, LandingCopy> = {
       requestError: 'No fue posible procesar la solicitud.',
       networkError: 'Error de conexión. Intenta de nuevo.',
     },
+    architecture: {
+      kicker: 'Arquitectura',
+      title: 'Seguridad determinística, no esperanza probabilística.',
+      subtitle: 'Una arquitectura en capas que valida cada salida de IA antes de que llegue al clínico.',
+      cards: [
+        {
+          title: 'Capa de Ingesta',
+          body: 'Extrae datos estructurados de EHR, laboratorios y medicamentos. Normaliza a FHIR R4 para compatibilidad universal.',
+          chipA: 'FHIR R4',
+          chipB: 'HL7 ADT/ORU',
+        },
+        {
+          title: 'Motor Determinístico',
+          body: 'Las reglas de ontología codificadas en SNOMED se ejecutan primero. Interacciones, contraindicaciones y chequeos de dosis en tiempo constante.',
+          chipA: 'SNOMED CT',
+          chipB: 'ICD-10',
+        },
+        {
+          title: 'Capa Probabilística',
+          body: 'El razonamiento LLM maneja matices—síntesis de contexto, soporte diferencial y borradores de documentación. Siempre controlado por chequeos determinísticos.',
+          chipA: 'GPT-4 / Claude',
+          chipB: 'Salida controlada',
+        },
+        {
+          title: 'Gobernanza y Auditoría',
+          body: 'Cada validación, override y corrección queda registrada de forma inmutable. Los scores de confianza se actualizan en tiempo real.',
+          chipA: 'Log inmutable',
+          chipB: 'Scores de confianza',
+        },
+      ],
+    },
+    governance: {
+      kicker: 'Gobernanza',
+      subtitle: 'Visibilidad en tiempo real de cómo se usa la IA en tu organización.',
+      cardOneTitle: 'Inteligencia de Overrides',
+      cardOneBody: 'Cada override clínico alimenta un ciclo de aprendizaje. El sistema rastrea por qué se rechazaron recomendaciones y ajusta umbrales de confianza automáticamente.',
+      errorsAvoided: '847 errores evitados',
+      weekDelta: '+12% esta semana',
+      complianceRate: '99.2% cumplimiento',
+      cardTwoTitle: 'Monitoreo de Desvío de Protocolos',
+      cardTwoBody: 'Detecta cuando la práctica clínica se desvía de los protocolos institucionales. Superficie tendencias antes de que se conviertan en incidentes.',
+    },
+    safety: {
+      kicker: 'Seguridad de alto riesgo',
+      title: 'Diseñado para decisiones donde los errores cuestan vidas.',
+      cards: [
+        {
+          title: 'Firewall de Interacciones',
+          body: 'Cada prescripción se verifica contra la lista completa de medicamentos, alergias y función renal del paciente antes de llegar al clínico.',
+          bulletA: 'Análisis de vías CYP3A4/P-gp',
+          bulletB: 'Ajuste renal en tiempo real',
+        },
+        {
+          title: 'Puertas de Atestación Clínica',
+          body: 'Las acciones de alto riesgo requieren atestación explícita del clínico. Sin pasajes silenciosos en alertas nivel BLOCK.',
+          bulletA: 'Justificación de override obligatoria',
+          bulletB: 'Traza de auditoría inmutable',
+        },
+        {
+          title: 'Detección de Datos Obsoletos',
+          body: 'Los resultados de laboratorio con más de 72 horas disparan advertencias automáticas. Los clínicos deben atestar que revisaron datos recientes.',
+          bulletA: 'Umbrales de obsolescencia configurables',
+          bulletB: 'Prompts de re-chequeo automáticos',
+        },
+      ],
+    },
     footer: {
       product: 'Producto',
       company: 'Empresa',
@@ -588,6 +752,72 @@ const landingCopy: Record<Locale, LandingCopy> = {
       success: 'Solicitação recebida. Entraremos em contato com seu convite em breve.',
       requestError: 'Falha ao processar solicitação.',
       networkError: 'Erro de conexão. Tente novamente mais tarde.',
+    },
+    architecture: {
+      kicker: 'Arquitetura',
+      title: 'Segurança determinística, não esperança probabilística.',
+      subtitle: 'Uma arquitetura em camadas que valida cada saída de IA antes de chegar ao clínico.',
+      cards: [
+        {
+          title: 'Camada de Ingestão',
+          body: 'Extrai dados estruturados do EHR, exames e medicamentos. Normaliza para FHIR R4 para compatibilidade universal.',
+          chipA: 'FHIR R4',
+          chipB: 'HL7 ADT/ORU',
+        },
+        {
+          title: 'Motor Determinístico',
+          body: 'Regras de ontologia codificadas em SNOMED executam primeiro. Interações, contraindicações e verificações de dose em tempo constante.',
+          chipA: 'SNOMED CT',
+          chipB: 'ICD-10',
+        },
+        {
+          title: 'Camada Probabilística',
+          body: 'O raciocínio LLM lida com nuances—síntese de contexto, suporte diferencial e rascunhos de documentação. Sempre controlado por verificações determinísticas.',
+          chipA: 'GPT-4 / Claude',
+          chipB: 'Saída controlada',
+        },
+        {
+          title: 'Governança e Auditoria',
+          body: 'Cada validação, override e correção é registrada de forma imutável. Scores de confiança atualizam em tempo real para dashboards institucionais.',
+          chipA: 'Log imutável',
+          chipB: 'Scores de confiança',
+        },
+      ],
+    },
+    governance: {
+      kicker: 'Governança',
+      subtitle: 'Visibilidade em tempo real de como a IA está sendo usada na sua organização.',
+      cardOneTitle: 'Inteligência de Overrides',
+      cardOneBody: 'Cada override clínico alimenta um ciclo de aprendizado. O sistema rastreia por que recomendações foram rejeitadas e ajusta limiares de confiança automaticamente.',
+      errorsAvoided: '847 erros evitados',
+      weekDelta: '+12% esta semana',
+      complianceRate: '99.2% conformidade',
+      cardTwoTitle: 'Monitoramento de Desvio de Protocolos',
+      cardTwoBody: 'Detecta quando a prática clínica desvia dos protocolos institucionais. Superficie tendências antes que se tornem incidentes.',
+    },
+    safety: {
+      kicker: 'Segurança de alto risco',
+      title: 'Construído para decisões onde erros custam vidas.',
+      cards: [
+        {
+          title: 'Firewall de Interações',
+          body: 'Cada prescrição é verificada contra a lista completa de medicamentos, alergias e função renal do paciente antes de chegar ao clínico.',
+          bulletA: 'Análise de vias CYP3A4/P-gp',
+          bulletB: 'Ajuste renal em tempo real',
+        },
+        {
+          title: 'Portões de Atestação Clínica',
+          body: 'Ações de alto risco exigem atestação explícita do clínico. Sem passagens silenciosas em alertas nível BLOCK.',
+          bulletA: 'Justificativa de override obrigatória',
+          bulletB: 'Trilha de auditoria imutável',
+        },
+        {
+          title: 'Detecção de Dados Obsoletos',
+          body: 'Resultados de laboratório com mais de 72 horas disparam avisos automáticos. Clínicos devem atestar que revisaram dados recentes.',
+          bulletA: 'Limiares de obsolescência configuráveis',
+          bulletB: 'Prompts de re-verificação automáticos',
+        },
+      ],
     },
     footer: {
       product: 'Produto',

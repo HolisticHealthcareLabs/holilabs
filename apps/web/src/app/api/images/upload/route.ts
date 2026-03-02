@@ -24,6 +24,7 @@ import logger from '@/lib/logger';
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Maximum file size: 50MB
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -229,20 +230,13 @@ export async function POST(request: NextRequest) {
         auditLogId: result.auditLogId,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'image_upload_error',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
 
-    return NextResponse.json(
-      {
-        error: 'Failed to process image upload',
-        details: error.message,
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to process image upload' });
   }
 }
 

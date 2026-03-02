@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { verifyRecordingConsent } from '@/lib/consent/recording-consent';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -169,12 +170,9 @@ export const POST = createProtectedRoute(
         success: true,
         data: session,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating scribe session:', error);
-      return NextResponse.json(
-        { error: 'Failed to create scribe session', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to create scribe session' });
     }
   }
   ,
@@ -265,12 +263,9 @@ export const GET = createProtectedRoute(
           totalPages: Math.ceil(total / limit),
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching scribe sessions:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch scribe sessions', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch scribe sessions' });
     }
   }
 );

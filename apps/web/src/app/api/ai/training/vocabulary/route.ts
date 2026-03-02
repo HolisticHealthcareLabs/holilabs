@@ -12,6 +12,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { transcriptionCorrectionService } from '@/lib/services/transcription-correction.service';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,20 +138,13 @@ export const GET = createProtectedRoute(
           },
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'ai_vocabulary_generation_failed',
         userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        {
-          error: 'Failed to generate vocabulary',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to generate vocabulary' });
     }
   }
 );

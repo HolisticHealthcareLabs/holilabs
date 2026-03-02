@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { notifyPatientSOAPReady } from '@/lib/notifications/whatsapp';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,12 +103,9 @@ export const POST = createProtectedRoute(
           language,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending WhatsApp notification:', error);
-      return NextResponse.json(
-        { error: 'Failed to send notification', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to send notification' });
     }
   }
 );

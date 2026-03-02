@@ -17,6 +17,7 @@ import {
 import { logger } from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
 import { auth } from '@/lib/auth/auth';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,17 +115,13 @@ export async function GET(request: NextRequest) {
       format,
       context,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'patient_context_generation_failed',
       patientId: request.nextUrl.searchParams.get('patientId'),
       format: request.nextUrl.searchParams.get('format'),
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Internal server error' });
   }
 }

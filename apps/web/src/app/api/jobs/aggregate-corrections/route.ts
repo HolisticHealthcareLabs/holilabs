@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { aggregateDailyCorrections, aggregateCorrectionsRange } from '@/lib/jobs/correction-aggregation';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max
@@ -90,15 +91,9 @@ export async function POST(request: NextRequest) {
         data: null,
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ [Job] Error running correction aggregation:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to run correction aggregation job',
-        message: error.message,
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to run correction aggregation job' });
   }
 }
 

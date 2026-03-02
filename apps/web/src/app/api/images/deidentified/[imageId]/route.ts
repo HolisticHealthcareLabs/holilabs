@@ -15,6 +15,7 @@ import { authOptions } from '@/lib/auth';
 import logger from '@/lib/logger';
 import fs from 'fs/promises';
 import path from 'path';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Storage directory for de-identified images
 const STORAGE_DIR = path.join(process.cwd(), '.data', 'deidentified-images');
@@ -57,7 +58,10 @@ export async function GET(
 
     // Step 2: Validate imageId format (prevent path traversal)
     if (!imageId || imageId.includes('..') || imageId.includes('/') || imageId.includes('\\')) {
-      return NextResponse.json({ error: 'Invalid image ID' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid image ID' },
+        { status: 400 }
+      );
     }
 
     // Step 3: Find image file (try all supported extensions)
@@ -121,21 +125,14 @@ export async function GET(
         'X-Image-Type': 'deidentified',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'image_retrieval_error',
       imageId: params.imageId,
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
 
-    return NextResponse.json(
-      {
-        error: 'Failed to retrieve image',
-        details: error.message,
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to retrieve image' });
   }
 }
 
@@ -152,7 +149,10 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     // TODO: Check if user has admin/delete permissions
@@ -163,7 +163,10 @@ export async function DELETE(
 
     // Validate imageId
     if (!imageId || imageId.includes('..') || imageId.includes('/') || imageId.includes('\\')) {
-      return NextResponse.json({ error: 'Invalid image ID' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid image ID' },
+        { status: 400 }
+      );
     }
 
     // Find and delete image file
@@ -190,7 +193,10 @@ export async function DELETE(
     }
 
     if (!deleted) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Image not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
@@ -198,16 +204,13 @@ export async function DELETE(
       message: 'Image deleted successfully',
       imageId,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'image_deletion_error',
       imageId: params.imageId,
-      error: error.message,
+      error: (error instanceof Error ? error.message : String(error)),
     });
 
-    return NextResponse.json(
-      { error: 'Failed to delete image' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to delete image' });
   }
 }

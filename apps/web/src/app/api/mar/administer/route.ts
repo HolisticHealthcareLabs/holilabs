@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getMinutesLate, getDoseStatus } from '@/lib/mar/schedule-generator';
 import { logAuditEvent } from '@/lib/audit';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * MAR Administration API
@@ -18,7 +19,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -148,12 +152,8 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'mar_administration_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json(
-      { error: 'Failed to record administration', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to record administration' });
   }
 }
 
@@ -162,7 +162,10 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -174,7 +177,10 @@ export async function GET(request: NextRequest) {
     const shift = searchParams.get('shift'); // 'day' (7am-3pm), 'evening' (3pm-11pm), 'night' (11pm-7am)
 
     if (!patientId) {
-      return NextResponse.json({ error: 'Patient ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Patient ID is required' },
+        { status: 400 }
+      );
     }
 
     const where: any = { patientId };
@@ -274,9 +280,8 @@ export async function GET(request: NextRequest) {
     logger.error({
       event: 'mar_fetch_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json({ error: 'Failed to fetch MAR' }, { status: 500 });
+    return safeErrorResponse(error, { userMessage: 'Failed to fetch MAR' });
   }
 }
 

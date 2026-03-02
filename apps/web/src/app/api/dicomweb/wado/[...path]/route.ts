@@ -13,6 +13,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { downloadFromR2, generatePresignedUrl } from '@/lib/storage/r2-client';
 import { parseDicomFile } from '@/lib/imaging/dicom-parser';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 1 minute for large DICOM retrieval
@@ -226,12 +227,9 @@ export const GET = createProtectedRoute(
           'Access-Control-Expose-Headers': 'Content-Disposition',
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('WADO-RS retrieval error:', error);
-      return NextResponse.json(
-        { error: 'Failed to retrieve DICOM object', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to retrieve DICOM object' });
     }
   },
   {

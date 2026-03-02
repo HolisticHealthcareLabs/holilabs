@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,12 +100,9 @@ export const GET = createProtectedRoute(
           amountDue,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching invoice:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch invoice', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch invoice' });
     }
   },
   {
@@ -339,12 +337,9 @@ export const PATCH = createProtectedRoute(
         data: updatedInvoice,
         message: 'Invoice updated successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating invoice:', error);
-      return NextResponse.json(
-        { error: 'Failed to update invoice', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to update invoice' });
     }
   },
   {
@@ -435,12 +430,9 @@ export const DELETE = createProtectedRoute(
         success: true,
         message: 'Invoice voided successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error voiding invoice:', error);
-      return NextResponse.json(
-        { error: 'Failed to void invoice', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to void invoice' });
     }
   },
   {

@@ -8,6 +8,7 @@ import {
 } from '@/lib/mar/schedule-generator';
 import { logger } from '@/lib/logger';
 import { logAuditEvent } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * MAR Schedule Management API
@@ -21,14 +22,20 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
     const { medicationId, startDate, endDate } = body;
 
     if (!medicationId) {
-      return NextResponse.json({ error: 'Medication ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Medication ID is required' },
+        { status: 400 }
+      );
     }
 
     // Fetch medication
@@ -38,7 +45,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!medication) {
-      return NextResponse.json({ error: 'Medication not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Medication not found' },
+        { status: 404 }
+      );
     }
 
     // Generate schedule from frequency
@@ -108,12 +118,8 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'mar_schedule_generation_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json(
-      { error: 'Failed to generate schedules', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to generate schedules' });
   }
 }
 
@@ -122,7 +128,10 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -131,7 +140,10 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date'); // YYYY-MM-DD
 
     if (!patientId && !medicationId) {
-      return NextResponse.json({ error: 'Patient ID or Medication ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Patient ID or Medication ID is required' },
+        { status: 400 }
+      );
     }
 
     const where: any = { isActive: true };
@@ -193,9 +205,8 @@ export async function GET(request: NextRequest) {
     logger.error({
       event: 'mar_schedules_fetch_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json({ error: 'Failed to fetch schedules' }, { status: 500 });
+    return safeErrorResponse(error, { userMessage: 'Failed to fetch schedules' });
   }
 }
 
@@ -204,14 +215,20 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
     const scheduleId = searchParams.get('scheduleId');
 
     if (!scheduleId) {
-      return NextResponse.json({ error: 'Schedule ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Schedule ID is required' },
+        { status: 400 }
+      );
     }
 
     // Soft delete - mark as inactive
@@ -250,8 +267,7 @@ export async function DELETE(request: NextRequest) {
     logger.error({
       event: 'mar_schedule_delete_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json({ error: 'Failed to delete schedule' }, { status: 500 });
+    return safeErrorResponse(error, { userMessage: 'Failed to delete schedule' });
   }
 }

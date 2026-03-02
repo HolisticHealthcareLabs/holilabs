@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export const dynamic = 'force-dynamic';
  * Get a single prescription by ID
  */
 export const GET = createProtectedRoute(
-  async (request: NextRequest, context) => {
+  async (request: NextRequest, context: any) => {
     try {
       const prescriptionId = context.params?.id;
 
@@ -62,8 +63,8 @@ export const GET = createProtectedRoute(
 
       // Verify access - only the prescribing clinician or ADMIN can view
       if (
-        prescription.clinicianId !== (request as any).user.id &&
-        (request as any).user.role !== 'ADMIN'
+        prescription.clinicianId !== context.user.id &&
+        context.user.role !== 'ADMIN'
       ) {
         return NextResponse.json(
           { error: 'Forbidden: You cannot access this prescription' },
@@ -75,12 +76,8 @@ export const GET = createProtectedRoute(
         success: true,
         data: prescription,
       });
-    } catch (error: any) {
-      console.error('Error fetching prescription:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch prescription', details: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch prescription' });
     }
   },
   {
@@ -96,7 +93,7 @@ export const GET = createProtectedRoute(
  * Update prescription (mainly for status changes)
  */
 export const PATCH = createProtectedRoute(
-  async (request: NextRequest, context) => {
+  async (request: NextRequest, context: any) => {
     try {
       const prescriptionId = context.params?.id;
 
@@ -122,8 +119,8 @@ export const PATCH = createProtectedRoute(
 
       // Verify access - only the prescribing clinician or ADMIN can update
       if (
-        existingPrescription.clinicianId !== (request as any).user.id &&
-        (request as any).user.role !== 'ADMIN'
+        existingPrescription.clinicianId !== context.user.id &&
+        context.user.role !== 'ADMIN'
       ) {
         return NextResponse.json(
           { error: 'Forbidden: You cannot update this prescription' },
@@ -164,8 +161,8 @@ export const PATCH = createProtectedRoute(
       // Create audit log
       await prisma.auditLog.create({
         data: {
-          userId: (request as any).user.id,
-          userEmail: (request as any).user.email,
+          userId: context.user.id,
+          userEmail: context.user.email || 'unknown',
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           action: 'UPDATE',
           resource: 'Prescription',
@@ -182,12 +179,8 @@ export const PATCH = createProtectedRoute(
         data: updatedPrescription,
         message: 'Prescription updated successfully',
       });
-    } catch (error: any) {
-      console.error('Error updating prescription:', error);
-      return NextResponse.json(
-        { error: 'Failed to update prescription', details: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to update prescription' });
     }
   },
   {
@@ -202,7 +195,7 @@ export const PATCH = createProtectedRoute(
  * Delete a prescription (ADMIN only or if status is PENDING)
  */
 export const DELETE = createProtectedRoute(
-  async (request: NextRequest, context) => {
+  async (request: NextRequest, context: any) => {
     try {
       const prescriptionId = context.params?.id;
 
@@ -227,8 +220,8 @@ export const DELETE = createProtectedRoute(
 
       // Verify access - only the prescribing clinician or ADMIN can delete
       if (
-        existingPrescription.clinicianId !== (request as any).user.id &&
-        (request as any).user.role !== 'ADMIN'
+        existingPrescription.clinicianId !== context.user.id &&
+        context.user.role !== 'ADMIN'
       ) {
         return NextResponse.json(
           { error: 'Forbidden: You cannot delete this prescription' },
@@ -255,8 +248,8 @@ export const DELETE = createProtectedRoute(
       // Create audit log
       await prisma.auditLog.create({
         data: {
-          userId: (request as any).user.id,
-          userEmail: (request as any).user.email,
+          userId: context.user.id,
+          userEmail: context.user.email || 'unknown',
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           action: 'DELETE',
           resource: 'Prescription',
@@ -272,12 +265,8 @@ export const DELETE = createProtectedRoute(
         success: true,
         message: 'Prescription deleted successfully',
       });
-    } catch (error: any) {
-      console.error('Error deleting prescription:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete prescription', details: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to delete prescription' });
     }
   },
   {

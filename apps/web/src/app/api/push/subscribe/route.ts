@@ -9,6 +9,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +81,7 @@ export const POST = createProtectedRoute(
         message: 'Push subscription saved successfully',
         data: { id: savedSubscription.id },
       });
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           {
@@ -96,13 +97,10 @@ export const POST = createProtectedRoute(
 
       logger.error({
         event: 'push_subscription_error',
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
       });
 
-      return NextResponse.json(
-        { error: 'Failed to save push subscription', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to save push subscription' });
     }
   },
   {
@@ -150,16 +148,13 @@ export const DELETE = createProtectedRoute(
         success: true,
         message: 'Push subscription removed successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'push_subscription_delete_error',
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
       });
 
-      return NextResponse.json(
-        { error: 'Failed to remove push subscription', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to remove push subscription' });
     }
   },
   {

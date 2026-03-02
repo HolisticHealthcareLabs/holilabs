@@ -11,6 +11,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,16 +108,12 @@ export const GET = createProtectedRoute(
         success: true,
         data: payments,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'payments_fetch_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
       });
-      return NextResponse.json(
-        { error: 'Failed to fetch payments' },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch payments' });
     }
   },
   {
@@ -218,9 +215,7 @@ export const POST = createProtectedRoute(
 
         if (amount > amountDue) {
           return NextResponse.json(
-            {
-              error: `Payment amount (${amount}) exceeds amount due (${amountDue})`,
-            },
+            { error: 'Payment amount (${amount}) exceeds amount due (${amountDue})' },
             { status: 400 }
           );
         }
@@ -344,18 +339,14 @@ export const POST = createProtectedRoute(
         },
         { status: 201 }
       );
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'payment_processing_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
         patientId: body?.patientId,
         invoiceId: body?.invoiceId,
       });
-      return NextResponse.json(
-        { error: 'Failed to process payment' },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to process payment' });
     }
   },
   {

@@ -25,6 +25,7 @@ import {
   isValidDate,
 } from '@/lib/security/validation';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -183,9 +184,9 @@ export const POST = createProtectedRoute(
       // Validate file size (max 10MB)
       try {
         validateFileSize(file.size, 10);
-      } catch (error: any) {
+      } catch (error) {
         return NextResponse.json(
-          { error: error.message },
+          { error: error instanceof Error ? error.message : String(error) },
           { status: 400 }
         );
       }
@@ -446,11 +447,11 @@ export const POST = createProtectedRoute(
               error: trackingError instanceof Error ? trackingError.message : 'Unknown error',
             });
           }
-        } catch (error: any) {
+        } catch (error) {
           logger.error({
             event: 'patients_bulk_import_failed',
             error: error instanceof Error ? error.message : 'Unknown error',
-            stack: error?.stack,
+            stack: error instanceof Error ? error.stack : undefined,
           });
 
           // If batch insert fails, mark all as failed
@@ -459,7 +460,7 @@ export const POST = createProtectedRoute(
               failed.push({
                 row: index + 2,
                 data: rows[index],
-                reason: `Batch insert failed: ${error.message}`,
+                reason: `Batch insert failed: ${(error instanceof Error ? error.message : String(error))}`,
               });
             }
           }
@@ -475,8 +476,8 @@ export const POST = createProtectedRoute(
                 eventType: 'BULK_IMPORT_FAILURE',
                 metadata: {
                   totalRows: rows.length,
-                  errorMessage: error.message,
-                  errorType: error.code || 'UNKNOWN_ERROR',
+                  errorMessage: (error instanceof Error ? error.message : String(error)),
+                  errorType: (error as any).code || 'UNKNOWN_ERROR',
                   timestamp: new Date().toISOString(),
                 },
               },
@@ -488,11 +489,11 @@ export const POST = createProtectedRoute(
               data: {
                 source: 'CSV_IMPORT',
                 errorType: 'BATCH_INSERT_FAILED',
-                errorMessage: error.message,
+                errorMessage: (error instanceof Error ? error.message : String(error)),
                 userId: context.user.id,
                 metadata: {
                   totalRows: rows.length,
-                  errorCode: error.code,
+                  errorCode: (error as any).code,
                 },
               },
             });
@@ -534,19 +535,13 @@ export const POST = createProtectedRoute(
         imported,
         failed,
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'patients_import_error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to import patients',
-          ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to import patients' });
     }
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN'],
+    rateLimit: { windowMs: 60_000, maxRequests: 5 },
+    audit: { action: 'CREATE', resource: 'Patient' },
   }
 );

@@ -1,29 +1,119 @@
-import { NextResponse } from 'next/server';
-import { checkAttestation } from '@/lib/clinical/doac-attestation';
-import { auth } from '@/lib/auth/auth'; // Assuming auth helper exists
+/**
+ * CDS Attestation Gate API
+ *
+ * POST /api/cds/attestation - Check if clinician attestation is required
+ *   before a safety-critical prescription can proceed.
+ *
+ * Returns attestation requirement status, missing/stale fields, legal basis,
+ * and governance metadata.
+ *
+ * @compliance FDA 21 CFR Part 11, HIPAA Audit Trail
+ */
 
-export async function POST(req: Request) {
-  try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { createProtectedRoute } from '@/lib/api/middleware';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import {
+  checkAttestation,
+  checkLabFreshness,
+  getFailingCriticalFields,
+} from '@/lib/clinical/safety/attestation-gate';
+import {
+  logAttestationRequired,
+  getGovernanceMetadata,
+} from '@/lib/clinical/safety/governance-events';
+
+export const dynamic = 'force-dynamic';
+
+const attestationSchema = z.object({
+  patientId: z.string().min(1, 'patientId is required'),
+  medication: z.string().optional(),
+  patient: z.object({
+    creatinineClearance: z.number().nullable().optional(),
+    weight: z.number().nullable().optional(),
+    age: z.number().nullable().optional(),
+    labTimestamp: z.string().nullable().optional(),
+  }),
+});
+
+/**
+ * POST /api/cds/attestation
+ * Check if clinician attestation is required for this patient/medication context
+ */
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const body = await request.json();
+      const parsed = attestationSchema.safeParse(body);
+
+      if (!parsed.success) {
+        return NextResponse.json(
+          {
+            error: 'Validation failed',
+            details: parsed.error.errors.map((e) => ({
+              field: e.path.join('.'),
+              message: e.message,
+            })),
+          },
+          { status: 400 }
+        );
+      }
+
+      const { patientId, medication, patient } = parsed.data;
+
+      // Run attestation gate check
+      const result = checkAttestation({ medication, patient });
+
+      // Check lab freshness separately for response enrichment
+      const labFreshness = checkLabFreshness(patient.labTimestamp);
+
+      // Get failing critical fields for structured response
+      const failingCriticalFields = getFailingCriticalFields({
+        creatinineClearance: patient.creatinineClearance ?? null,
+        weight: patient.weight ?? null,
+        age: patient.age ?? null,
+      });
+
+      // Log governance event if attestation required
+      if (result.required) {
+        logAttestationRequired({
+          actor: context.user.id,
+          patientId,
+          medication: medication ?? 'unspecified',
+          reason: result.reason ?? 'MISSING_DATA',
+          missingFields: result.missingFields,
+          staleSince: result.staleSince,
+          traceId: context.requestId,
+        });
+      }
+
+      const governance = getGovernanceMetadata({
+        actor: context.user.id,
+        patientId,
+        traceId: context.requestId,
+      });
+
+      return NextResponse.json({
+        attestationRequired: result.required,
+        reason: result.reason ?? null,
+        message: result.message,
+        legalBasis: result.legalBasis,
+        missingFields: result.missingFields ?? [],
+        labFreshness,
+        failingCriticalFields,
+        governance,
+      });
+    } catch (error) {
+      return safeErrorResponse(error, {
+        userMessage: 'Attestation check failed',
+      });
     }
-
-    const body = await req.json();
-    const { patient, medication } = body;
-
-    if (!patient || !medication) {
-      return NextResponse.json({ error: 'Missing patient or medication' }, { status: 400 });
-    }
-
-    const result = checkAttestation({
-      labTimestamp: patient.labTimestamp,
-      medication
-    });
-
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('Attestation check failed:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  },
+  {
+    roles: ['ADMIN', 'CLINICIAN', 'PHYSICIAN', 'NURSE'],
+    rateLimit: { windowMs: 60_000, maxRequests: 120 },
+    skipCsrf: true,
+    audit: { action: 'CDS_ATTESTATION_CHECK', resource: 'ClinicalDecisionSupport' },
   }
-}
+);

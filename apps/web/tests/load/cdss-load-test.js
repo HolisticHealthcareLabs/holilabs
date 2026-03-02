@@ -58,6 +58,10 @@ export const options = {
     'http_req_duration{name:medication-prescribe}': ['p(95)<1000'], // Prescribe < 1s (critical)
     'cdss_evaluation_duration': ['p(95)<2000'],         // Engine evaluation < 2s
 
+    // Prevention + Clinical Command Center targets
+    'http_req_duration{name:prevention-hub}': ['p(95)<500'],
+    'http_req_duration{name:clinical-command-summary}': ['p(95)<1000'],
+
     // System health indicators
     'cache_hits': ['rate>0.7'],                         // >70% cache hit rate after warmup
   ],
@@ -283,6 +287,33 @@ export default function () {
         );
       }
     }
+  });
+
+  // Prevention Integration test group
+  group('Prevention Integration', () => {
+    // GET prevention hub for a patient
+    const hubResponse = http.get(`${BASE_URL}/api/prevention/hub/patient-005`, {
+      headers: { 'Content-Type': 'application/json' },
+      tags: { name: 'prevention-hub' },
+    });
+
+    check(hubResponse, {
+      'prevention-hub status 200 or 401': (r) => r.status === 200 || r.status === 401,
+      'prevention-hub response < 500ms': (r) => r.timings.duration < 500,
+    });
+  });
+
+  // Clinical Command Summary test group
+  group('Clinical Command Summary', () => {
+    const summaryResponse = http.get(`${BASE_URL}/api/clinical-command/summary`, {
+      headers: { 'Content-Type': 'application/json' },
+      tags: { name: 'clinical-command-summary' },
+    });
+
+    check(summaryResponse, {
+      'command-summary status 200 or 401': (r) => r.status === 200 || r.status === 401,
+      'command-summary response < 1s': (r) => r.timings.duration < 1000,
+    });
   });
 
   // Random think time between requests (0.5-2 seconds)

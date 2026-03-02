@@ -10,6 +10,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { generateMRN, generateTokenId } from '@/lib/fhir/patient-mapper';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,10 +82,10 @@ export const POST = createProtectedRoute(
           });
 
           createdPatients.push(patient);
-        } catch (error: any) {
+        } catch (error) {
           errors.push({
             patient: `${patientData.firstName} ${patientData.lastName}`,
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
           });
         }
       }
@@ -104,12 +105,8 @@ export const POST = createProtectedRoute(
         event: 'patients_bulk_import_failed',
         userId: context.user?.id,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
       });
-      return NextResponse.json(
-        { error: 'Failed to import patients' },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to import patients' });
     }
   },
   {

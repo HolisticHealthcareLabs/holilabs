@@ -14,6 +14,7 @@ import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware'
 import { sendDeletionConfirmationEmail } from '@/lib/email/deletion-emails';
 import { createAuditLog } from '@/lib/audit';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -154,23 +155,8 @@ export const POST = createProtectedRoute(
           confirmationDeadline: deletionRequest.confirmationDeadline,
         },
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'deletion_request_create_error',
-        patientId: context.params.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to create deletion request',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to create deletion request' });
     }
   },
   {
@@ -221,23 +207,8 @@ export const GET = createProtectedRoute(
         success: true,
         requests: deletionRequests,
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'deletion_requests_fetch_error',
-        patientId: context.params.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to fetch deletion requests',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch deletion requests' });
     }
   },
   {

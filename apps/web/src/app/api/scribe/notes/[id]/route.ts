@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { UpdateSOAPNoteSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,12 +70,9 @@ export const GET = createProtectedRoute(
         success: true,
         data: note,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching SOAP note:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch SOAP note', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch SOAP note' });
     }
   },
   {
@@ -228,12 +226,9 @@ export const PATCH = createProtectedRoute(
         data: updatedNote,
         message: newEdits.length > 0 ? `${newEdits.length} field(s) updated` : 'No changes detected',
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating SOAP note:', error);
-      return NextResponse.json(
-        { error: 'Failed to update SOAP note', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to update SOAP note' });
     }
   },
   {

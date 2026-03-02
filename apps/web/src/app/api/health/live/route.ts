@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,6 @@ export async function GET() {
     logger.error({
       event: 'health_check_live_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     // Even if there's an error gathering metrics, we want to return that we're alive

@@ -10,6 +10,7 @@ import { getServerSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -130,11 +131,7 @@ export async function GET(request: NextRequest) {
     logger.error({
       event: 'patient_search_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json(
-      { error: 'Failed to search patients' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to search patients' });
   }
 }

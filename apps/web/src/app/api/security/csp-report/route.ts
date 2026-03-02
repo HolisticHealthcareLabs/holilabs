@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * CSP Violation Report Endpoint
@@ -21,7 +22,10 @@ export async function POST(request: NextRequest) {
         msg: 'Invalid CSP report format',
         body: report,
       });
-      return NextResponse.json({ error: 'Invalid report format' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid report format' },
+        { status: 400 }
+      );
     }
 
     // Log CSP violation with context
@@ -49,7 +53,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       msg: 'Failed to process CSP report',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     // Still return 204 to prevent browser retries

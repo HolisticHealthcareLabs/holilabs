@@ -97,11 +97,8 @@ export default function () {
 
   // Group: Patient Search (Read-heavy operation)
   group('Patient Search', () => {
-    const searchRes = http.post(
-      `${BASE_URL}/api/patients/search`,
-      JSON.stringify({
-        name: 'Test',
-      }),
+    const searchRes = http.get(
+      `${BASE_URL}/api/patients/search?q=Test`,
       { headers }
     );
 

@@ -31,6 +31,7 @@ import {
   // PrivacyBudgetTracker, // TEMPORARILY DISABLED - Build issue
 } from '@holi/deid';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -257,12 +258,11 @@ export const POST = createProtectedRoute(
           exportedAt: new Date().toISOString(),
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'patients_export_failed',
         userId: context.user?.id,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
         isValidationError: error instanceof z.ZodError,
       });
 
@@ -277,7 +277,6 @@ export const POST = createProtectedRoute(
       return NextResponse.json({
         success: false,
         error: 'EXPORT_FAILED',
-        message: error.message || 'Failed to export data',
       }, { status: 500 });
     }
   },

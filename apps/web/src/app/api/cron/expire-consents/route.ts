@@ -24,6 +24,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { expireAllExpiredConsents } from '@/lib/consent/expiration-checker';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max execution time
@@ -169,7 +170,6 @@ export async function POST(request: NextRequest) {
       event: 'cron_job_error',
       job: 'expire_consents',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
       duration,
       retries: retryCount,
     });

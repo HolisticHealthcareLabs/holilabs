@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -147,12 +148,9 @@ export const GET = createProtectedRoute(
         success: true,
         data: invoicesWithStatus,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching invoices:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch invoices', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch invoices' });
     }
   },
   {
@@ -328,12 +326,9 @@ export const POST = createProtectedRoute(
         },
         { status: 201 }
       );
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating invoice:', error);
-      return NextResponse.json(
-        { error: 'Failed to create invoice', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to create invoice' });
     }
   },
   {

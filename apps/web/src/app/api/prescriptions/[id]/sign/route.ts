@@ -10,6 +10,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic';
  * Electronically sign a prescription
  */
 export const POST = createProtectedRoute(
-  async (request: NextRequest, context) => {
+  async (request: NextRequest, context: any) => {
     try {
       const prescriptionId = context.params?.id;
 
@@ -70,7 +71,7 @@ export const POST = createProtectedRoute(
       }
 
       // Verify access - only the prescribing clinician can sign
-      if (prescription.clinicianId !== (request as any).user.id) {
+      if (prescription.clinicianId !== context.user.id) {
         return NextResponse.json(
           { error: 'Forbidden: Only the prescribing clinician can sign this prescription' },
           { status: 403 }
@@ -154,8 +155,8 @@ export const POST = createProtectedRoute(
       // Create audit log
       await prisma.auditLog.create({
         data: {
-          userId: (request as any).user.id,
-          userEmail: (request as any).user.email,
+          userId: context.user.id,
+          userEmail: context.user.email || 'unknown',
           ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
           action: 'SIGN',
           resource: 'Prescription',
@@ -172,7 +173,7 @@ export const POST = createProtectedRoute(
       // Track analytics event (NO PHI!)
       await trackEvent(
         ServerAnalyticsEvents.PRESCRIPTION_SIGNED,
-        (request as any).user.id,
+        context.user.id,
         {
           signatureMethod: body.signatureMethod,
           success: true,
@@ -184,22 +185,8 @@ export const POST = createProtectedRoute(
         data: signedPrescription,
         message: 'Prescription signed successfully',
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'prescription_sign_error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to sign prescription',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to sign prescription' });
     }
   },
   {

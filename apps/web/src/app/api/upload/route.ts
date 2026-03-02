@@ -11,6 +11,7 @@ import { authOptions } from '@/lib/auth';
 import { uploadFile, type MulterFile } from '@/lib/storage/file-storage';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -105,7 +106,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'file_upload_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(

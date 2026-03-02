@@ -29,6 +29,7 @@ import { findApplicableGuidelines } from '../rules/clinical-guidelines';
 import { WHO_PEN_RULES } from '../rules/who-pen-protocols';
 import { PAHO_PREVENTION_RULES } from '../rules/paho-prevention';
 import { getCacheClient, generateCacheKey } from '@/lib/cache/redis-client';
+import { SCREENING_RULES } from '@/lib/prevention/screening-triggers';
 
 /**
  * Performance Metrics
@@ -610,6 +611,111 @@ export class CDSEngine {
             },
             {
               label: 'Consolidate to single agent if appropriate',
+            },
+          ],
+          timestamp: new Date().toISOString(),
+        };
+      },
+    });
+
+    // Rule: Prevention Screening Gaps (USPSTF Grade A/B)
+    this.registerRule({
+      id: 'prevention-screening-gaps',
+      name: 'Prevention Screening Gap Detection',
+      description: 'Checks patient demographics against USPSTF screening rules to identify overdue preventive care',
+      category: 'preventive-care',
+      severity: 'info',
+      triggerHooks: ['patient-view', 'encounter-start'],
+      priority: 6,
+      enabled: true,
+      evidenceStrength: 'A',
+      source: 'USPSTF 2024',
+      condition: (context) => {
+        return !!context.context.demographics;
+      },
+      evaluate: (context) => {
+        const demographics = context.context.demographics;
+        if (!demographics) return null;
+
+        const { age, gender } = demographics;
+        const labResults = context.context.labResults || [];
+
+        // Check each USPSTF screening rule against demographics
+        const gaps: Array<{ name: string; priority: string; recommendation: string }> = [];
+
+        for (const rule of SCREENING_RULES) {
+          // Age check
+          if (age < rule.ageRange.min) continue;
+          if (rule.ageRange.max && age > rule.ageRange.max) continue;
+
+          // Gender check
+          if (rule.genderRestriction && gender !== rule.genderRestriction) continue;
+
+          // Risk factor check (BMI from vital signs, tobacco from demographics)
+          if (rule.riskFactors) {
+            if (rule.riskFactors.bmiMin) {
+              const bmi = context.context.vitalSigns?.bmi;
+              if (!bmi || bmi < rule.riskFactors.bmiMin) continue;
+            }
+            if (rule.riskFactors.tobaccoUse !== undefined) {
+              const smoking = demographics.smoking;
+              if (smoking !== rule.riskFactors.tobaccoUse) continue;
+            }
+          }
+
+          // Check if a matching recent lab result exists (simple heuristic)
+          const screeningLabMap: Record<string, string[]> = {
+            BLOOD_PRESSURE: ['blood pressure', 'bp'],
+            CHOLESTEROL: ['ldl', 'cholesterol', 'lipid'],
+            DIABETES_SCREENING: ['hba1c', 'hemoglobin a1c', 'glucose'],
+            COLONOSCOPY: ['colonoscopy', 'fit', 'fobt'],
+            MAMMOGRAM: ['mammogram', 'mammography'],
+            CERVICAL_CANCER: ['pap', 'hpv'],
+            LUNG_CANCER: ['ldct', 'lung ct'],
+          };
+
+          const labTerms = screeningLabMap[rule.screeningType] || [];
+          const hasRecentLab = labResults.some((lab) => {
+            const testLower = lab.testName.toLowerCase();
+            return labTerms.some((term) => testLower.includes(term));
+          });
+
+          // If no recent lab matches this screening, it's a gap
+          if (!hasRecentLab) {
+            gaps.push({
+              name: rule.name,
+              priority: rule.priority,
+              recommendation: rule.clinicalRecommendation.split('\n')[0], // First line only
+            });
+          }
+        }
+
+        if (gaps.length === 0) return null;
+
+        const gapList = gaps
+          .slice(0, 5) // Top 5 gaps
+          .map((g) => `- [${g.priority}] ${g.name}`)
+          .join('\n');
+
+        return {
+          id: uuidv4(),
+          ruleId: 'prevention-screening-gaps',
+          summary: `${gaps.length} Preventive Screening Gap${gaps.length > 1 ? 's' : ''} Detected`,
+          detail: `Patient may be overdue for the following USPSTF-recommended screenings:\n\n${gapList}\n\nReview the Prevention Hub for full screening schedule.`,
+          severity: 'info',
+          category: 'preventive-care',
+          indicator: 'info',
+          source: {
+            label: 'USPSTF Grade A/B Recommendations',
+            url: 'https://www.uspreventiveservicestaskforce.org/',
+          },
+          suggestions: [
+            {
+              label: 'Open Prevention Hub',
+              isRecommended: true,
+            },
+            {
+              label: 'Schedule screening appointments',
             },
           ],
           timestamp: new Date().toISOString(),

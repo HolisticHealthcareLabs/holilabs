@@ -30,6 +30,7 @@ import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware'
 import { aggressivePullPatientData } from '@/lib/fhir/aggressive-pull';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,21 +121,14 @@ export const POST = createProtectedRoute(
           ? `Successfully imported ${Object.values(result.summary).reduce((a, b) => a + b, 0)} resources`
           : 'FHIR pull completed with errors',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'fhir_pull_request_failed',
         patientId,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
 
-      return NextResponse.json(
-        {
-          error: 'Failed to pull FHIR data',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to pull FHIR data' });
     }
   },
   {

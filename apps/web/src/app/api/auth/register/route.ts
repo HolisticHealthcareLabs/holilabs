@@ -15,6 +15,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import bcrypt from 'bcryptjs';
 import { sendWelcomeEmail } from '@/lib/email';
 import { generateUsername } from '@/lib/auth/username';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -211,7 +212,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'registration_error',
       error: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     const isDevelopment = process.env.NODE_ENV === 'development';

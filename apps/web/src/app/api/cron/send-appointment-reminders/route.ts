@@ -29,6 +29,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendRemindersForTomorrow } from '@/lib/notifications/appointment-reminders';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max execution time
@@ -180,7 +181,6 @@ export async function GET(request: NextRequest) {
       event: 'cron_job_error',
       job: 'send_appointment_reminders',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
       duration,
       retries: retryCount,
     });

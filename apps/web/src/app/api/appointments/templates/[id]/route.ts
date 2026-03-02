@@ -11,6 +11,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * GET /api/appointments/templates/[id]
@@ -61,12 +62,11 @@ export async function GET(
       success: true,
       data: { template },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'appointment_template_fetch_failed',
       templateId: params.id,
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
     return NextResponse.json(
       { success: false, error: 'Failed to fetch template' },
@@ -169,12 +169,11 @@ export async function PATCH(
       data: { template: updatedTemplate },
       message: 'Template updated successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'appointment_template_update_failed',
       templateId: params.id,
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
     return NextResponse.json(
       { success: false, error: 'Failed to update template' },
@@ -254,12 +253,11 @@ export async function DELETE(
       success: true,
       message: 'Template deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'appointment_template_delete_failed',
       templateId: params.id,
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
     return NextResponse.json(
       { success: false, error: 'Failed to delete template' },

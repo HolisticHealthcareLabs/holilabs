@@ -8,9 +8,12 @@ declare module 'lucide-react' {
   export const Activity: LucideIcon;
   export const AlertCircle: LucideIcon;
   export const AlertTriangle: LucideIcon;
+  export const ArrowLeft: LucideIcon;
   export const ArrowUp: LucideIcon;
   export const Award: LucideIcon;
   export const BarChart3: LucideIcon;
+  export const Bell: LucideIcon;
+  export const BookOpen: LucideIcon;
   export const Brain: LucideIcon;
   export const Calendar: LucideIcon;
   export const Check: LucideIcon;
@@ -37,7 +40,11 @@ declare module 'lucide-react' {
   export const Filter: LucideIcon;
   export const Flag: LucideIcon;
   export const GitCompare: LucideIcon;
+  export const GripVertical: LucideIcon;
   export const Grid3X3: LucideIcon;
+  export const Heart: LucideIcon;
+  export const HeartPulse: LucideIcon;
+  export const History: LucideIcon;
   export const Info: LucideIcon;
   export const Loader2: LucideIcon;
   export const Lock: LucideIcon;
@@ -47,6 +54,8 @@ declare module 'lucide-react' {
   export const MessageSquare: LucideIcon;
   export const Minimize2: LucideIcon;
   export const Minus: LucideIcon;
+  export const Monitor: LucideIcon;
+  export const Moon: LucideIcon;
   export const Move: LucideIcon;
   export const Pause: LucideIcon;
   export const Play: LucideIcon;
@@ -57,8 +66,12 @@ declare module 'lucide-react' {
   export const Ruler: LucideIcon;
   export const Save: LucideIcon;
   export const Search: LucideIcon;
+  export const Settings: LucideIcon;
   export const Share2: LucideIcon;
   export const Shield: LucideIcon;
+  export const ShieldAlert: LucideIcon;
+  export const ShieldCheck: LucideIcon;
+  export const Smartphone: LucideIcon;
   export const Square: LucideIcon;
   export const Star: LucideIcon;
   export const Stethoscope: LucideIcon;

@@ -18,10 +18,10 @@ import crypto from 'crypto';
 import { logger } from '@/lib/logger';
 import { emitPatientEvent } from '@/lib/socket-server';
 import { getSyntheticPatients, isDemoClinician } from '@/lib/demo/synthetic';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
-
 
 /**
  * GET /api/patients
@@ -198,16 +198,8 @@ export const GET = createProtectedRoute(
           totalPages: Math.ceil(total / limit),
         },
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'patients_fetch_error',
-        clinicianId: context.user.id,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-      return NextResponse.json(
-        { error: 'Failed to fetch patients' },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch patients' });
     }
   },
   {
@@ -606,31 +598,16 @@ Registration Date: ${new Date().toISOString()}
       data: patient,
       message: 'Patient created successfully',
     }, { status: 201 });
-  } catch (error: any) {
-    logger.error({
-      event: 'patient_create_error',
-      errorCode: error.code,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-
+  } catch (error) {
     // Handle unique constraint violations
-    if (error.code === 'P2002') {
+    if ((error as any).code === 'P2002') {
       return NextResponse.json(
         { error: 'Patient with this MRN already exists' },
         { status: 409 }
       );
     }
 
-    return NextResponse.json(
-      {
-        error: 'Failed to create patient',
-        // Only include details in development
-        ...(process.env.NODE_ENV === 'development' && {
-          details: error.message
-        })
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to create patient' });
   }
   },
   {

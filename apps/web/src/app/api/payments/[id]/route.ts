@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,12 +59,9 @@ export const GET = createProtectedRoute(
         success: true,
         data: payment,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching payment:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch payment', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch payment' });
     }
   },
   {
@@ -274,12 +272,9 @@ export const PATCH = createProtectedRoute(
           ? 'Payment refunded successfully'
           : 'Payment updated successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating payment:', error);
-      return NextResponse.json(
-        { error: 'Failed to update payment', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to update payment' });
     }
   },
   {

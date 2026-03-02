@@ -12,6 +12,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * POST /api/ai/confidence
@@ -89,16 +90,12 @@ export async function POST(request: NextRequest) {
       ids: confidenceRecords.map(r => r.id),
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'ai_confidence_store_failed',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
   }
 }
 
@@ -176,15 +173,11 @@ export async function GET(request: NextRequest) {
       })),
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'ai_confidence_fetch_failed',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
   }
 }

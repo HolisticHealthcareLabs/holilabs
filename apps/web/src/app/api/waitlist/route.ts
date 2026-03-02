@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Initialize Resend only if API key is available
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -123,15 +124,11 @@ export async function POST(request: Request) {
       success: true,
       message: 'Successfully joined the waitlist!',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'waitlist_signup_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json(
-      { error: 'Failed to join waitlist. Please try again.' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to join waitlist. Please try again.' });
   }
 }

@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -166,17 +167,15 @@ export const POST = createProtectedRoute(
         data: updatedPrescription,
         message: 'Prescription sent to pharmacy successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'prescription_send_pharmacy_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
       });
       return NextResponse.json(
         {
           error: 'Failed to send prescription to pharmacy',
           ...(process.env.NODE_ENV === 'development' && {
-            details: error.message,
           }),
         },
         { status: 500 }

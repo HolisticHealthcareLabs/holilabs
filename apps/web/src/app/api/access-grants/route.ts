@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,17 +117,13 @@ export const GET = createProtectedRoute(
         data: enrichedGrants,
         count: enrichedGrants.length,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'access_grants_fetch_failed',
         patientId: new URL(request.url).searchParams.get('patientId'),
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        { error: 'Failed to fetch access grants', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch access grants' });
     }
   },
   {
@@ -298,17 +295,13 @@ export const POST = createProtectedRoute(
         data: accessGrant,
         message: 'Access grant created successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'access_grant_create_failed',
         userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        { error: 'Failed to create access grant', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to create access grant' });
     }
   },
   {

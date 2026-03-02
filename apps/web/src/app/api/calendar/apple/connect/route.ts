@@ -10,10 +10,10 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { encryptToken } from '@/lib/calendar/token-encryption';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
-
 
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
@@ -115,17 +115,13 @@ export const POST = createProtectedRoute(
           connected: true,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'calendar_apple_connect_failed',
         userId: context.user?.id,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
       });
-      return NextResponse.json(
-        { error: 'Failed to connect Apple Calendar', details: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to connect Apple Calendar' });
     }
   },
   {

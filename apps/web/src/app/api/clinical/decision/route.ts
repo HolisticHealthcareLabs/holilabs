@@ -45,6 +45,7 @@ import {
 } from '@/lib/clinical/process-clinical-decision';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -351,7 +352,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<ClinicalDecis
     logger.error({
       event: 'clinical_decision_api_error',
       error: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(
@@ -425,9 +425,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       health: 'ok',
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Health check failed' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Health check failed' });
   }
 }

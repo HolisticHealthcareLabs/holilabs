@@ -13,6 +13,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * POST /api/ai/review-queue
@@ -103,16 +104,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'review_queue_add_failed',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
   }
 }
 
@@ -202,16 +199,12 @@ export async function GET(request: NextRequest) {
       })),
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'review_queue_fetch_failed',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
   }
 }
 
@@ -281,15 +274,11 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'review_queue_update_failed',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
   }
 }

@@ -15,6 +15,7 @@ import { sendPushNotification } from '@/lib/notifications/send-push';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 type NotificationChannel = 'whatsapp' | 'email' | 'sms' | 'push' | 'in-app' | 'all';
 type NotificationType = 'payment_reminder' | 'appointment_reminder' | 'followup';
@@ -145,16 +146,15 @@ export async function POST(
           });
           results.push({ channel: 'push', success: pushResult.success });
         }
-      } catch (error: any) {
+      } catch (error) {
         logger.error({
           event: 'appointment_notification_channel_failed',
           appointmentId,
           channel: ch,
           userId: (session.user as any).id,
-          error: error.message,
-          stack: error.stack,
+          error: error instanceof Error ? error.message : String(error),
         });
-        results.push({ channel: ch, success: false, error: error.message });
+        results.push({ channel: ch, success: false, error: error instanceof Error ? error.message : String(error) });
       }
     }
 
@@ -190,12 +190,11 @@ export async function POST(
       data: { results },
       message: 'Notifications sent',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'appointment_notifications_failed',
       appointmentId: params.id,
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
     return NextResponse.json(
       { success: false, error: 'Failed to send notifications' },

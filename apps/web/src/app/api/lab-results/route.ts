@@ -14,6 +14,7 @@ import { logger } from '@/lib/logger';
 import { monitorLabResult } from '@/lib/prevention/lab-result-monitors';
 import { onLabResultCreated } from '@/lib/cache/patient-context-cache';
 import { emitLabResultEvent } from '@/lib/socket-server';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import {
   getReferenceRange,
   getReferenceRangeByTestName,
@@ -77,25 +78,19 @@ export const GET = createProtectedRoute(
         success: true,
         data: labResults,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'lab_results_fetch_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
       });
-      return NextResponse.json(
-        { error: 'Failed to fetch lab results' },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch lab results' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
-    audit: {
-      action: 'READ',
-      resource: 'LabResult',
-},
+    skipCsrf: true,
+    audit: { action: 'READ', resource: 'LabResult' },
   }
 );
 
@@ -405,22 +400,19 @@ export const POST = createProtectedRoute(
         } : null,
         clinicalContext: clinicalContext, // Include clinical interpretation
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'lab_result_create_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
         patientId: body?.patientId,
         testName: body?.testName,
       });
-      return NextResponse.json(
-        { error: 'Failed to create lab result' },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to create lab result' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'CREATE', resource: 'LabResult' },
   }
 );

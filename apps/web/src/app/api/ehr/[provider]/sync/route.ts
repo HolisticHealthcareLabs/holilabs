@@ -24,6 +24,7 @@ import {
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import {
   fromFHIRObservation,
   fromFHIRCondition,
@@ -214,7 +215,7 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
           fhirError: error.fhirOperationOutcome,
         },
         { status: error.statusCode || 500 }

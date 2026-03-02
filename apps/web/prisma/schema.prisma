@@ -33,6 +33,8 @@ model User {
   specialty         String?
   licenseNumber     String?
   npi               String? // National Provider Identifier (US only)
+  username            String?   @unique
+  onboardingCompleted Boolean   @default(false)
 
   // Security
   passwordHash   String? // Optional for OAuth-only users

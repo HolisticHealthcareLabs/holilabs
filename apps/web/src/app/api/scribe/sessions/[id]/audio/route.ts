@@ -12,6 +12,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { encryptBuffer } from '@/lib/security/encryption';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for large audio files
@@ -114,12 +115,9 @@ export const POST = createProtectedRoute(
       let finalBuffer: Buffer;
       try {
         finalBuffer = encryptBuffer(buffer);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Audio encryption error:', error);
-        return NextResponse.json(
-          { error: 'Failed to encrypt audio file', message: error.message },
-          { status: 500 }
-        );
+        return safeErrorResponse(error, { userMessage: 'Failed to encrypt audio file' });
       }
 
       // Generate unique, secure filename
@@ -198,7 +196,7 @@ export const POST = createProtectedRoute(
           // Don't return audio URL to client for security
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error uploading audio:', error);
 
       // Track failure event
@@ -207,14 +205,11 @@ export const POST = createProtectedRoute(
         context.user.id,
         {
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         }
       ).catch(() => {}); // Don't fail if tracking fails
 
-      return NextResponse.json(
-        { error: 'Failed to upload audio', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to upload audio' });
     }
   }
   ,

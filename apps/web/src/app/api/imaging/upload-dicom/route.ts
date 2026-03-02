@@ -18,6 +18,7 @@ import {
   normalizeBodyPart,
 } from '@/lib/imaging/dicom-parser';
 import crypto from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for large DICOM uploads
@@ -187,15 +188,9 @@ export const POST = createProtectedRoute(
           seriesDescription: dicomMetadata.series.seriesDescription,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error uploading DICOM file:', error);
-      return NextResponse.json(
-        {
-          error: 'Failed to upload DICOM file',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to upload DICOM file' });
     }
   },
   {

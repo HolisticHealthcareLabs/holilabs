@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -195,12 +196,9 @@ export const GET = createProtectedRoute(
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('QIDO-RS studies query error:', error);
-      return NextResponse.json(
-        { error: 'Failed to query studies', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to query studies' });
     }
   },
   {

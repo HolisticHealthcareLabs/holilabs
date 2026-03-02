@@ -15,6 +15,7 @@ import {
 } from '@/lib/jobs/correction-aggregation';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,20 +124,13 @@ export const POST = createProtectedRoute(
         message: 'Correction aggregation completed successfully',
         data: result.results,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'correction_aggregation_failed',
         userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        {
-          error: 'Failed to run correction aggregation',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to run correction aggregation' });
     }
   }
 );
