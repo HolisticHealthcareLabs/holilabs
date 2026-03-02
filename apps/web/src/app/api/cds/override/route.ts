@@ -20,6 +20,12 @@ import {
 } from '@/lib/clinical/safety/override-handler';
 import { getGovernanceMetadata } from '@/lib/clinical/safety/governance-events';
 import { emitGovernanceOverrideEvent } from '@/lib/socket-server';
+import { prisma } from '@/lib/prisma';
+import { createHash } from 'crypto';
+import logger from '@/lib/logger';
+
+// Type assertion for newer Prisma models
+const db = prisma as any;
 
 export const dynamic = 'force-dynamic';
 
@@ -108,6 +114,34 @@ export const POST = createProtectedRoute(
         });
       } catch {
         // Non-blocking — governance event emission must not fail the override
+      }
+
+      // Record AssuranceEvent for Clinical Ground Truth flywheel
+      try {
+        const patientIdHash = createHash('sha256')
+          .update(patientId + (process.env.PATIENT_HASH_SALT || ''))
+          .digest('hex');
+
+        await db.assuranceEvent.create({
+          data: {
+            patientIdHash,
+            eventType: 'ALERT',
+            inputContextSnapshot: { ruleId, severity, traceId: traceId ?? context.requestId },
+            aiRecommendation: { action: 'BLOCK_OR_FLAG', ruleId, severity },
+            humanDecision: { action: 'OVERRIDE', reasonCode, notes },
+            humanOverride: true,
+            overrideReason: reasonCode,
+            clinicId: context.user.clinicId || 'default',
+            decidedAt: new Date(),
+          },
+        });
+      } catch (assuranceErr) {
+        // Non-blocking — ground truth recording must not fail the override
+        logger.warn({
+          event: 'assurance_event_creation_failed',
+          source: 'cds_override',
+          error: assuranceErr instanceof Error ? assuranceErr.message : 'Unknown',
+        });
       }
 
       return NextResponse.json({

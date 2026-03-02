@@ -15,18 +15,13 @@ import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
-// Update profile schema
-// TODO: These fields don't exist in Patient model yet
+// Update profile schema — fields that exist on the Patient model
 const UpdateProfileSchema = z.object({
-  // emergencyContactName: z.string().min(2).optional(),
-  // emergencyContactPhone: z.string().min(10).optional(),
-  // emergencyContactRelationship: z.string().optional(),
-  // preferredLanguage: z.enum(['en', 'es']).optional(),
-  // communicationPreferences: z.object({
-  //   email: z.boolean().optional(),
-  //   sms: z.boolean().optional(),
-  //   push: z.boolean().optional(),
-  // }).optional(),
+  phone: z.string().min(7).optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -46,15 +41,6 @@ export async function GET(request: NextRequest) {
             specialty: true,
             licenseNumber: true,
             email: true,
-            // TODO: phone field doesn't exist in User model
-            // phone: true,
-            // TODO: user relation doesn't exist - assignedClinician IS a User
-            // user: {
-            //   select: {
-            //     email: true,
-            //     phone: true,
-            //   },
-            // },
           },
         },
         medications: {
@@ -64,8 +50,7 @@ export async function GET(request: NextRequest) {
         appointments: {
           where: {
             startTime: { gte: new Date() },
-            // TODO: RESCHEDULED status doesn't exist - using SCHEDULED and CONFIRMED
-            status: { in: ['SCHEDULED', 'CONFIRMED'] },
+            status: { in: ['SCHEDULED', 'CONFIRMED', 'RESCHEDULED'] },
           },
           select: { id: true },
         },
@@ -107,20 +92,18 @@ export async function GET(request: NextRequest) {
         success: true,
         data: {
           id: patient.id,
-          // TODO: patientId field doesn't exist - using mrn instead
           patientId: patient.mrn,
           tokenId: patient.tokenId,
           firstName: patient.firstName,
           lastName: patient.lastName,
           dateOfBirth: patient.dateOfBirth,
           gender: patient.gender,
-          // TODO: These fields don't exist in Patient model yet
-          // bloodType: patient.bloodType,
-          // allergies: patient.allergies,
-          // chronicConditions: patient.chronicConditions,
-          // emergencyContactName: patient.emergencyContactName,
-          // emergencyContactPhone: patient.emergencyContactPhone,
-          // emergencyContactRelationship: patient.emergencyContactRelationship,
+          email: patient.email,
+          phone: patient.phone,
+          address: patient.address,
+          city: patient.city,
+          state: patient.state,
+          postalCode: patient.postalCode,
           assignedClinician: patient.assignedClinician,
           stats: {
             activeMedications: patient.medications.length,

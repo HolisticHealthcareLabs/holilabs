@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       where.isActive = true;
     }
 
-    // Fetch medications
+    // Fetch medications with prescriber and prescription data
     const medications = await prisma.medication.findMany({
       where,
       include: {
@@ -42,16 +42,15 @@ export async function GET(request: NextRequest) {
             profilePictureUrl: true,
           },
         },
-        // TODO: prescription relation doesn't exist in Prisma schema yet
-        // prescription: {
-        //   select: {
-        //     id: true,
-        //     startDate: true,
-        //     endDate: true,
-        //     status: true,
-        //     refillsRemaining: true,
-        //   },
-        // },
+        prescription: {
+          select: {
+            id: true,
+            signedAt: true,
+            status: true,
+            refillsRemaining: true,
+            daysSupply: true,
+          },
+        },
       },
       orderBy: [
         { isActive: 'desc' },
@@ -63,17 +62,16 @@ export async function GET(request: NextRequest) {
     const activeMedications = medications.filter((med) => med.isActive);
     const inactiveMedications = medications.filter((med) => !med.isActive);
 
-    // TODO: prescription relation doesn't exist - cannot check refill needs
-    // Check for medications needing refill
-    // const needsRefill = activeMedications.filter((med) => {
-    //   if (!med.prescription) return false;
-    //   const endDate = new Date(med.prescription.endDate);
-    //   const daysUntilEnd = Math.ceil(
-    //     (endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    //   );
-    //   return daysUntilEnd <= 7 && med.prescription.refillsRemaining > 0;
-    // });
-    const needsRefill: any[] = [];
+    // Check for medications needing refill (supply runs out within 7 days)
+    const needsRefill = activeMedications.filter((med: any) => {
+      if (!med.prescription?.signedAt || !med.prescription?.daysSupply) return false;
+      const supplyEndDate = new Date(med.prescription.signedAt);
+      supplyEndDate.setDate(supplyEndDate.getDate() + med.prescription.daysSupply);
+      const daysUntilEnd = Math.ceil(
+        (supplyEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      );
+      return daysUntilEnd <= 7 && (med.prescription.refillsRemaining ?? 0) > 0;
+    });
 
     // HIPAA Audit Log: Patient accessed their medications list
     await createAuditLog({
