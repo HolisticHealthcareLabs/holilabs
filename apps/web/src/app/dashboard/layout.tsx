@@ -141,6 +141,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       shadowColor: 'slate-500/40',
     },
     {
+      name: 'Clinical Command',
+      href: '/dashboard/clinical-command',
+      icon: '/icons/crisis-response_center_person.svg',
+      gradient: 'from-rose-500 to-red-600',
+      hoverGradient: 'from-rose-600 to-red-700',
+      shadowColor: 'rose-500/40',
+    },
+    {
       name: 'Console',
       href: '/dashboard/console',
       icon: '/icons/crisis-response_center_person.svg',
@@ -289,6 +297,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 backdrop-blur-sm shrink-0
                         ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
                         ${item.name === 'Command Center' ? 'bg-gradient-to-br from-slate-500/70 to-slate-700/70 hover:from-slate-600 hover:to-slate-800 hover:shadow-2xl hover:shadow-slate-400/30' : ''}
+                        ${item.name === 'Clinical Command' ? 'bg-gradient-to-br from-rose-400/70 to-red-500/70 hover:from-rose-500 hover:to-red-600 hover:shadow-2xl hover:shadow-rose-400/40' : ''}
                         ${item.name === 'Console' ? 'bg-gradient-to-br from-indigo-400/70 to-purple-500/70 hover:from-indigo-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-indigo-400/40' : ''}
                         ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
                         ${item.name === 'Agenda' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}

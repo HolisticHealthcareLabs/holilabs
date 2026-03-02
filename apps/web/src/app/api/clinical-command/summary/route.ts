@@ -164,6 +164,76 @@ export const GET = createProtectedRoute(
         preventionByType[group.planType] = group._count.id;
       }
 
+      // Ground Truth: feedback aggregation (last 7 days)
+      const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const [
+        feedbackByType,
+        feedbackTotal,
+        overrideDecisions,
+        acceptDecisions,
+        topOverrideReasons,
+      ] = await Promise.all([
+        db.humanFeedback.groupBy({
+          by: ['feedbackType'],
+          _count: { id: true },
+          where: { createdAt: { gte: last7d } },
+        }).catch(() => []),
+
+        db.humanFeedback.count({
+          where: { createdAt: { gte: last7d } },
+        }).catch(() => 0),
+
+        db.assuranceEvent.count({
+          where: {
+            humanOverride: true,
+            decidedAt: { gte: last7d },
+          },
+        }).catch(() => 0),
+
+        db.assuranceEvent.count({
+          where: {
+            humanOverride: false,
+            decidedAt: { gte: last7d, not: null },
+          },
+        }).catch(() => 0),
+
+        db.assuranceEvent.groupBy({
+          by: ['overrideReason'],
+          _count: { id: true },
+          where: {
+            humanOverride: true,
+            decidedAt: { gte: last7d },
+            overrideReason: { not: null },
+          },
+          orderBy: { _count: { id: 'desc' } },
+          take: 3,
+        }).catch(() => []),
+      ]);
+
+      // Build feedback type breakdown
+      const feedbackByTypeMap: Record<string, number> = {
+        THUMBS_UP: 0,
+        THUMBS_DOWN: 0,
+        CORRECTION: 0,
+        COMMENT: 0,
+      };
+      for (const group of feedbackByType as any[]) {
+        feedbackByTypeMap[group.feedbackType] = group._count.id;
+      }
+
+      // Calculate accept rate
+      const totalGTDecisions = overrideDecisions + acceptDecisions;
+      const acceptRate = totalGTDecisions > 0
+        ? Math.round((acceptDecisions / totalGTDecisions) * 100)
+        : 0;
+
+      // Top override reasons
+      const overrideReasons = (topOverrideReasons as any[]).map((g: any) => ({
+        reason: g.overrideReason,
+        count: g._count.id,
+      }));
+
       return NextResponse.json({
         success: true,
         data: {
@@ -204,7 +274,16 @@ export const GET = createProtectedRoute(
           governanceFeed: {
             last24h: governanceEventsCount,
             overrides: governanceOverrides,
-            blocks: 0, // Governance blocks tracked via GovernanceEvent model
+            blocks: 0,
+          },
+          groundTruth: {
+            acceptRate,
+            totalDecisions: totalGTDecisions,
+            overrides: overrideDecisions,
+            accepts: acceptDecisions,
+            feedbackVolume: feedbackTotal,
+            feedbackByType: feedbackByTypeMap,
+            topOverrideReasons: overrideReasons,
           },
         },
       });

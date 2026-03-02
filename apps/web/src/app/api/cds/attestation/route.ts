@@ -23,6 +23,12 @@ import {
   logAttestationRequired,
   getGovernanceMetadata,
 } from '@/lib/clinical/safety/governance-events';
+import { prisma } from '@/lib/prisma';
+import { createHash } from 'crypto';
+import logger from '@/lib/logger';
+
+// Type assertion for newer Prisma models
+const db = prisma as any;
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +99,43 @@ export const POST = createProtectedRoute(
         patientId,
         traceId: context.requestId,
       });
+
+      // Record AssuranceEvent for Clinical Ground Truth flywheel (accept flow)
+      try {
+        const patientIdHash = createHash('sha256')
+          .update(patientId + (process.env.PATIENT_HASH_SALT || ''))
+          .digest('hex');
+
+        await db.assuranceEvent.create({
+          data: {
+            patientIdHash,
+            eventType: 'ALERT',
+            inputContextSnapshot: {
+              patientId,
+              medication,
+              patient,
+              labFreshness,
+              failingCriticalFields,
+            },
+            aiRecommendation: {
+              attestationRequired: result.required,
+              reason: result.reason,
+              legalBasis: result.legalBasis,
+            },
+            humanDecision: { action: 'ACCEPT', attestationRequired: result.required },
+            humanOverride: false,
+            clinicId: context.user.clinicId || 'default',
+            decidedAt: new Date(),
+          },
+        });
+      } catch (assuranceErr) {
+        // Non-blocking — ground truth recording must not fail the attestation check
+        logger.warn({
+          event: 'assurance_event_creation_failed',
+          source: 'cds_attestation',
+          error: assuranceErr instanceof Error ? assuranceErr.message : 'Unknown',
+        });
+      }
 
       return NextResponse.json({
         attestationRequired: result.required,

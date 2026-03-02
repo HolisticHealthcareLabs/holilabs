@@ -105,14 +105,6 @@ export async function GET(request: NextRequest) {
             licenseNumber: true,
           },
         },
-        // TODO: recordingSessions relation doesn't exist in Prisma schema yet
-        // recordingSessions: {
-        //   select: {
-        //     id: true,
-        //     audioDuration: true,
-        //     status: true,
-        //   },
-        // },
       },
       orderBy: {
         startTime: 'desc',
@@ -122,10 +114,9 @@ export async function GET(request: NextRequest) {
 
     // Separate into upcoming and past
     const now = new Date();
-    // TODO: RESCHEDULED status doesn't exist - using SCHEDULED and CONFIRMED
     const upcomingAppointments = appointments.filter(
       (apt) =>
-        apt.startTime >= now && ['SCHEDULED', 'CONFIRMED'].includes(apt.status)
+        apt.startTime >= now && ['SCHEDULED', 'CONFIRMED', 'RESCHEDULED'].includes(apt.status)
     );
     const pastAppointments = appointments.filter(
       (apt) =>
@@ -259,19 +250,23 @@ export async function POST(request: NextRequest) {
 
     const appointmentEnd = new Date(appointmentStart.getTime() + 30 * 60 * 1000); // 30 min duration
 
-    // Create appointment request with PENDING status
+    // Create appointment request with SCHEDULED status
+    const descParts = [
+      notes || `Solicitud de ${type === 'VIRTUAL' ? 'consulta virtual' : type === 'PHONE' ? 'consulta telefónica' : 'consulta presencial'}`,
+      urgency !== 'ROUTINE' ? `[Urgencia: ${urgency}]` : '',
+    ].filter(Boolean).join(' ');
+
     const appointment = await prisma.appointment.create({
       data: {
         patientId: session.patientId,
         clinicianId: patient.assignedClinicianId,
         title: reason,
-        description: notes || `Solicitud de ${type === 'VIRTUAL' ? 'consulta virtual' : type === 'PHONE' ? 'consulta telefónica' : 'consulta presencial'}`,
+        description: descParts,
+        patientNotes: urgency !== 'ROUTINE' ? `Urgency: ${urgency}` : undefined,
         startTime: appointmentStart,
         endTime: appointmentEnd,
         type: appointmentType,
-        status: 'SCHEDULED', // Set to SCHEDULED - clinic will confirm
-        // TODO: urgency field doesn't exist in Prisma schema yet
-        // urgency,
+        status: 'SCHEDULED',
       },
       include: {
         clinician: {

@@ -14,6 +14,10 @@ import {
   Eye,
   ShieldAlert,
   ShieldCheck,
+  ThumbsUp,
+  ThumbsDown,
+  BarChart3,
+  TrendingUp,
 } from 'lucide-react';
 import { useGovernanceRealtime } from '@/hooks/useGovernanceRealtime';
 
@@ -57,6 +61,15 @@ interface CommandCenterData {
     last24h: number;
     overrides: number;
     blocks: number;
+  };
+  groundTruth?: {
+    acceptRate: number;
+    totalDecisions: number;
+    overrides: number;
+    accepts: number;
+    feedbackVolume: number;
+    feedbackByType: Record<string, number>;
+    topOverrideReasons: Array<{ reason: string; count: number }>;
   };
 }
 
@@ -284,6 +297,100 @@ function GovernanceFeedPanel({
   );
 }
 
+function GroundTruthPanel({ data }: { data: NonNullable<CommandCenterData['groundTruth']> }) {
+  const acceptColor = data.acceptRate >= 80 ? 'text-green-700' : data.acceptRate >= 50 ? 'text-amber-700' : 'text-red-700';
+  const acceptBg = data.acceptRate >= 80 ? 'bg-green-50' : data.acceptRate >= 50 ? 'bg-amber-50' : 'bg-red-50';
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-emerald-600" />
+          <h2 className="text-lg font-semibold text-gray-900">Clinical Ground Truth</h2>
+          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+            Flywheel
+          </span>
+        </div>
+        <span className="text-xs text-gray-400">Last 7 days</span>
+      </div>
+
+      {/* Key Metrics Row */}
+      <div className="grid grid-cols-4 gap-3 mb-5">
+        <div className={`text-center ${acceptBg} rounded-lg py-3`}>
+          <div className="flex items-center justify-center gap-1">
+            <TrendingUp className={`w-4 h-4 ${acceptColor}`} />
+            <span className={`text-2xl font-bold ${acceptColor}`}>{data.acceptRate}%</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-0.5">Accept Rate</div>
+        </div>
+        <div className="text-center bg-blue-50 rounded-lg py-3">
+          <div className="text-2xl font-bold text-blue-700">{data.totalDecisions}</div>
+          <div className="text-xs text-blue-600">Decisions</div>
+        </div>
+        <div className="text-center bg-amber-50 rounded-lg py-3">
+          <div className="text-2xl font-bold text-amber-700">{data.overrides}</div>
+          <div className="text-xs text-amber-600">Overrides</div>
+        </div>
+        <div className="text-center bg-purple-50 rounded-lg py-3">
+          <div className="text-2xl font-bold text-purple-700">{data.feedbackVolume}</div>
+          <div className="text-xs text-purple-600">Feedback</div>
+        </div>
+      </div>
+
+      {/* Feedback Breakdown + Override Reasons */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Feedback by Type */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Feedback Volume</h3>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-1.5 text-gray-600">
+                <ThumbsUp className="w-3.5 h-3.5 text-green-500" />
+                Thumbs Up
+              </span>
+              <span className="font-medium text-gray-800">{data.feedbackByType.THUMBS_UP || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-1.5 text-gray-600">
+                <ThumbsDown className="w-3.5 h-3.5 text-red-500" />
+                Thumbs Down
+              </span>
+              <span className="font-medium text-gray-800">{data.feedbackByType.THUMBS_DOWN || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Corrections</span>
+              <span className="font-medium text-gray-800">{data.feedbackByType.CORRECTION || 0}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Comments</span>
+              <span className="font-medium text-gray-800">{data.feedbackByType.COMMENT || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Override Reasons */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Override Reasons</h3>
+          {data.topOverrideReasons.length > 0 ? (
+            <div className="space-y-1.5">
+              {data.topOverrideReasons.map((r, i) => (
+                <div key={r.reason} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 truncate max-w-[160px]">
+                    {(r.reason || '').replace(/_/g, ' ')}
+                  </span>
+                  <span className="font-medium text-gray-800">{r.count}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">No overrides recorded</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ============================================================================
 // MAIN PAGE
 // ============================================================================
@@ -400,6 +507,13 @@ export default function ClinicalCommandCenterPage() {
         <PreventionGapsPanel data={data.preventionGaps} />
         <GovernanceFeedPanel data={data.governanceFeed} realtimeConnected={realtimeConnected} />
       </div>
+
+      {/* Ground Truth Flywheel Panel (full-width) */}
+      {data.groundTruth && (
+        <div className="mt-5">
+          <GroundTruthPanel data={data.groundTruth} />
+        </div>
+      )}
     </div>
   );
 }
