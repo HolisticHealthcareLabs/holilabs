@@ -16,6 +16,7 @@ import { searchPatients, initializeMeilisearch } from '@/lib/search/meilisearch'
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { getSyntheticPatients, isDemoClinician } from '@/lib/demo/synthetic';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -142,15 +143,15 @@ export const GET = createProtectedRoute(
           processingTimeMs: results.processingTimeMs,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'patient_search_error',
-        errorCode: error.code,
+        errorCode: (error as any).code,
         error: error instanceof Error ? error.message : 'Unknown error'
       });
 
       // If Meilisearch is not available, return helpful error
-      if (error.code === 'ECONNREFUSED') {
+      if ((error as any).code === 'ECONNREFUSED') {
         return NextResponse.json(
           {
             error: 'Search service unavailable',
@@ -160,19 +161,13 @@ export const GET = createProtectedRoute(
         );
       }
 
-      return NextResponse.json(
-        {
-          error: 'Failed to search patients',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to search patients' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
-     // GET requests don't need CSRF protection
+    skipCsrf: true, // GET requests don't need CSRF protection
     audit: { action: 'READ', resource: 'Patient' },
   }
 );

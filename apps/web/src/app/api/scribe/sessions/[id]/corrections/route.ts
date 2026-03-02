@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,12 +165,9 @@ export const POST = createProtectedRoute(
           updatedAt: new Date().toISOString(),
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving correction:', error);
-      return NextResponse.json(
-        { error: 'Failed to save correction', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to save correction' });
     }
   },
   {

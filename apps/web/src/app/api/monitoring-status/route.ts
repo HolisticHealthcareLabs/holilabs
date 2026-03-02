@@ -12,6 +12,7 @@
 
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export async function GET() {
   try {
@@ -166,7 +167,6 @@ export async function GET() {
     logger.error({
       event: 'monitoring_status_check_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(

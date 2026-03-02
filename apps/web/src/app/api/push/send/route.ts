@@ -14,6 +14,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import webpush from 'web-push';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -124,16 +125,16 @@ export const POST = createProtectedRoute(
             });
 
             return { success: true, endpoint: sub.endpoint };
-          } catch (error: any) {
+          } catch (error) {
             logger.error({
               event: 'push_notification_failed',
               endpoint: sub.endpoint,
-              error: error.message,
-              statusCode: error.statusCode,
+              error: error instanceof Error ? error.message : String(error),
+              statusCode: (error as any).statusCode,
             });
 
             // If subscription is invalid (410 Gone), mark as inactive
-            if (error.statusCode === 410) {
+            if ((error as any).statusCode === 410) {
               await prisma.pushSubscription.update({
                 where: { id: sub.id },
                 data: { isActive: false },
@@ -148,7 +149,7 @@ export const POST = createProtectedRoute(
               });
             }
 
-            return { success: false, endpoint: sub.endpoint, error: error.message };
+            return { success: false, endpoint: sub.endpoint, error: error instanceof Error ? error.message : String(error) };
           }
         })
       );
@@ -169,7 +170,7 @@ export const POST = createProtectedRoute(
         message: `Push notifications sent: ${successful} successful, ${failed} failed`,
         stats: { total: results.length, successful, failed },
       });
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           {
@@ -185,13 +186,10 @@ export const POST = createProtectedRoute(
 
       logger.error({
         event: 'push_notification_error',
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
       });
 
-      return NextResponse.json(
-        { error: 'Failed to send push notification', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to send push notification' });
     }
   }
 );

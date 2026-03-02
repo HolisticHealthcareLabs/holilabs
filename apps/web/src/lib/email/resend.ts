@@ -21,6 +21,7 @@ interface SendEmailOptions {
   replyTo?: string | string[];
   cc?: string | string[];
   bcc?: string | string[];
+  tags?: Array<{ name: string; value: string }>;
 }
 
 /**

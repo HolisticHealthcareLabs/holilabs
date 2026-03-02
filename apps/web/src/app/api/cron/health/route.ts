@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CronMonitor } from '@/lib/cron/monitoring';
 import logger from '@/lib/logger';
 import { getServerSession } from '@/lib/auth';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,16 +91,9 @@ export async function GET(request: NextRequest) {
     logger.error({
       event: 'cron_health_check_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
-    return NextResponse.json(
-      {
-        error: 'Failed to get cron health',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to get cron health' });
   }
 }
 
@@ -125,7 +119,7 @@ export async function POST(request: NextRequest) {
     const health = monitor.getJobHealth(jobName);
     if (!health) {
       return NextResponse.json(
-        { error: `Job not found: ${jobName}` },
+        { error: 'Job not found: ${jobName}' },
         { status: 404 }
       );
     }
@@ -171,15 +165,8 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'cron_job_details_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
-    return NextResponse.json(
-      {
-        error: 'Failed to get job details',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to get job details' });
   }
 }

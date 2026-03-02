@@ -29,6 +29,7 @@ import logger from '@/lib/logger';
 import { emitTrafficLightEvent } from '@/lib/socket-server';
 import type { EvaluationAction } from '@/lib/traffic-light/types';
 import { dataFlywheelService } from '@/services/data-flywheel.service';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -168,7 +169,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const authResult = await authenticateRequest(req);
     if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const body = await req.json();
@@ -277,18 +281,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     logger.error({
       event: 'traffic_light_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
-    return NextResponse.json(
-      {
-        error: 'Failed to evaluate traffic light',
-        ...(process.env.NODE_ENV === 'development' && {
-          details: error instanceof Error ? error.message : 'Unknown error',
-        }),
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to evaluate traffic light' });
   }
 }
 
@@ -440,7 +435,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const authResult = await authenticateRequest(req);
     if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const rules = trafficLightEngine.getRules();
@@ -498,6 +496,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    return NextResponse.json({ error: 'Failed to get rules' }, { status: 500 });
+    return safeErrorResponse(error, { userMessage: 'Failed to get rules' });
   }
 }

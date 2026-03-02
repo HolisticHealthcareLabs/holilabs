@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { SignJWT } from 'jose';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -256,15 +257,15 @@ export const POST = createProtectedRoute(
             pending: true,
             message: 'WhatsApp requires Business API approval',
           };
-        } catch (error: any) {
+        } catch (error) {
           logger.error({
             event: 'whatsapp_invitation_error',
             patientId: patient.id,
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
           });
           results.whatsapp = {
             success: false,
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
           };
         }
       }
@@ -323,18 +324,17 @@ export const POST = createProtectedRoute(
         },
         { status: hasSuccess ? 200 : 500 }
       );
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'invitation_error',
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
 
       return NextResponse.json(
         {
           success: false,
           error: 'Failed to send invitation',
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+          details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined,
         },
         { status: 500 }
       );

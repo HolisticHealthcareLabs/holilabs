@@ -20,6 +20,7 @@ import { parseADT, ADTParser } from '@/lib/hl7/adt-parser';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 import { generateMRN, generateTokenId } from '@/lib/fhir/patient-mapper';
 import { auditCreate, auditUpdate } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -93,11 +94,10 @@ export async function POST(request: NextRequest) {
     let parsedADT;
     try {
       parsedADT = parseADT(hl7Message);
-    } catch (error: any) {
+    } catch (error) {
       return NextResponse.json(
         {
           error: 'HL7 parsing failed',
-          message: error.message || 'Failed to parse HL7 message',
         },
         { status: 400 }
       );
@@ -315,16 +315,14 @@ export async function POST(request: NextRequest) {
       },
       { status: 409 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('HL7 ADT ingestion error:', {
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
 
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: error.message || 'Failed to process HL7 message',
       },
       { status: 500 }
     );

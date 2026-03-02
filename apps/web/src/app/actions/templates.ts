@@ -96,9 +96,10 @@ export async function createTemplate(formData: FormData): Promise<CreateTemplate
     await prisma.preventionPlanTemplateVersion.create({
       data: {
         templateId: template.id,
-        version: 1,
-        changeNote: 'Initial version',
-        snapshot: {
+        versionNumber: 1,
+        versionLabel: 'v1.0',
+        changeLog: 'Initial version',
+        templateData: {
           templateName: data.templateName,
           planType: data.planType,
           description: data.description,

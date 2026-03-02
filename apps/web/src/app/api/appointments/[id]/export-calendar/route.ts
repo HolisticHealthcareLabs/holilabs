@@ -12,6 +12,7 @@ import {
   type AppointmentData,
 } from '@/lib/calendar/ics-generator';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * GET /api/appointments/[id]/export-calendar
@@ -70,12 +71,11 @@ export async function GET(
         'Cache-Control': 'no-cache',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'appointment_calendar_export_failed',
       appointmentId: params.id,
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
     return NextResponse.json(
       { success: false, error: 'Failed to generate calendar export' },

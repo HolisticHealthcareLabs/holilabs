@@ -41,6 +41,7 @@ import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware'
 import { generateEmbedding } from '@/lib/ai/embeddings';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -319,7 +320,7 @@ export const POST = createProtectedRoute(
 
         default:
           return NextResponse.json(
-            { error: `Invalid search type: ${searchType}` },
+            { error: 'Invalid search type: ${searchType}' },
             { status: 400 }
           );
       }
@@ -367,16 +368,15 @@ export const POST = createProtectedRoute(
           resultCount: results.length,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'semantic_search_error',
         userId: context.user?.id,
-        error: error.message,
-        stack: error.stack,
+        error: error instanceof Error ? error.message : String(error),
       });
 
       // Check for pgvector extension missing
-      if (error.message?.includes('operator does not exist') || error.message?.includes('vector')) {
+      if ((error instanceof Error ? error.message : String(error))?.includes('operator does not exist') || (error instanceof Error ? error.message : String(error))?.includes('vector')) {
         return NextResponse.json(
           {
             error: 'Vector search not available',
@@ -386,13 +386,7 @@ export const POST = createProtectedRoute(
         );
       }
 
-      return NextResponse.json(
-        {
-          error: 'Failed to execute semantic search',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to execute semantic search' });
     }
   },
   {

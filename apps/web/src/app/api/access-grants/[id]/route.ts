@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,17 +90,13 @@ export const GET = createProtectedRoute(
           isRevoked,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'access_grant_fetch_failed',
         grantId: context.params.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        { error: 'Failed to fetch access grant', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch access grant' });
     }
   },
   {
@@ -223,18 +220,14 @@ export const PATCH = createProtectedRoute(
         data: updatedGrant,
         message: revoke ? 'Access grant revoked successfully' : 'Access grant updated successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'access_grant_update_failed',
         grantId: context.params.id,
         userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        { error: 'Failed to update access grant', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to update access grant' });
     }
   },
   {
@@ -316,18 +309,14 @@ export const DELETE = createProtectedRoute(
         success: true,
         message: 'Access grant deleted successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'access_grant_delete_failed',
         grantId: context.params.id,
         userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        { error: 'Failed to delete access grant', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to delete access grant' });
     }
   },
   {

@@ -17,6 +17,7 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 import { auditCreate, auditUpdate } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,7 +72,10 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized - Please log in' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized - Please log in' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -96,7 +100,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!patient) {
-      return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Patient not found' },
+        { status: 404 }
+      );
     }
 
     // Validate encounter if provided
@@ -166,7 +173,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!existingPlan) {
-      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Plan not found' },
+        { status: 404 }
+      );
     }
 
     // Create the goal/intervention entry
@@ -299,7 +309,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'add_to_plan_failed',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(

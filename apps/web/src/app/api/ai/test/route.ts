@@ -11,6 +11,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { routeAIRequest } from '@/lib/ai/router';
 import { cacheHealthCheck } from '@/lib/ai/cache';
 import { compareProviderCosts } from '@/lib/ai/usage-tracker';
@@ -131,12 +132,7 @@ export async function GET() {
       ],
     });
 
-  } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      timestamp: new Date().toISOString(),
-    }, { status: 500 });
+  } catch (error) {
+    return safeErrorResponse(error, { userMessage: 'AI infrastructure test failed' });
   }
 }

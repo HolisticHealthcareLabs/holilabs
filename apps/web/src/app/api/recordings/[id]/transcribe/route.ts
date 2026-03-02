@@ -66,6 +66,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import OpenAI from 'openai';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 const TranscribeRequestSchema = z.object({
   audioUrl: z.string().url(),
@@ -415,7 +416,6 @@ Responde en formato JSON con esta estructura:
     logger.error({
       event: 'transcription_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     // Update recording status to failed

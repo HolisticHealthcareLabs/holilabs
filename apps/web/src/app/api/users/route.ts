@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -64,20 +65,17 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating user:', error);
 
     // Handle unique constraint violations
-    if (error.code === 'P2002') {
+    if ((error as any).code === 'P2002') {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 409 }
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to create user', details: error.message },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to create user' });
   }
 }

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,12 +42,9 @@ export const GET = createProtectedRoute(
         success: true,
         data: carePlans,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching care plans:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch care plans', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch care plans' });
     }
   },
   {
@@ -127,7 +125,7 @@ export const POST = createProtectedRoute(
         data: carePlan,
         message: 'Care plan created successfully',
       }, { status: 201 });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating care plan:', error);
 
       if (error instanceof z.ZodError) {
@@ -140,10 +138,7 @@ export const POST = createProtectedRoute(
         );
       }
 
-      return NextResponse.json(
-        { error: 'Failed to create care plan', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to create care plan' });
     }
   },
   {

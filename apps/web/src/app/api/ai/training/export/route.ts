@@ -12,6 +12,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { transcriptionCorrectionService } from '@/lib/services/transcription-correction.service';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,20 +121,13 @@ export const GET = createProtectedRoute(
           'Cache-Control': 'no-cache, no-store, must-revalidate',
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'corrections_export_failed',
         userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
-      return NextResponse.json(
-        {
-          error: 'Failed to export corrections',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to export corrections' });
     }
   }
 );

@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -116,19 +117,12 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'audit_logs_fetch_failed',
-      error: error.message,
-      stack: error.stack,
+      error: error instanceof Error ? error.message : String(error),
     });
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch audit logs',
-        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to fetch audit logs' });
   }
 }
 
@@ -187,18 +181,11 @@ export async function POST(request: Request) {
       { success: true, data: auditLog },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'audit_log_create_failed',
-      error: error.message,
-      stack: error.stack,
+      error: error instanceof Error ? error.message : String(error),
     });
-    return NextResponse.json(
-      {
-        error: 'Failed to create audit log',
-        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-      },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to create audit log' });
   }
 }

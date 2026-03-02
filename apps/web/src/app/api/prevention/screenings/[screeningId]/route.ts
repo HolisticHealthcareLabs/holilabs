@@ -15,6 +15,7 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 import { auditUpdate, auditView } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,7 +132,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     logger.error({
       event: 'screening_fetch_error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -304,7 +304,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     logger.error({
       event: 'screening_update_error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -401,7 +400,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     logger.error({
       event: 'screening_delete_error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 

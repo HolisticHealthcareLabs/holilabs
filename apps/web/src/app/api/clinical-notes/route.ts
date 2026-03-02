@@ -12,10 +12,10 @@ import crypto from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { logger } from '@/lib/logger';
 import { emitClinicalNoteEvent } from '@/lib/socket-server';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
-
 
 /**
  * POST /api/clinical-notes
@@ -154,22 +154,8 @@ export const POST = createProtectedRoute(
         },
         { status: 201 }
       );
-    } catch (error: any) {
-      logger.error({
-        event: 'clinical_note_create_error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to create clinical note',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to create clinical note' });
     }
   },
   {
@@ -235,22 +221,8 @@ export const GET = createProtectedRoute(
         success: true,
         data: notes,
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'clinical_notes_fetch_error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to fetch clinical notes',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch clinical notes' });
     }
   },
   {

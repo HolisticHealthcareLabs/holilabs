@@ -26,6 +26,7 @@ import { logger } from '@/lib/logger';
 import { createPublicRoute } from '@/lib/api/middleware';
 import { validatePassword } from '@/lib/auth/password-validation';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -281,7 +282,6 @@ export const POST = createPublicRoute(
       logger.error({
         event: 'portal_register_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
       });
 
       return NextResponse.json(

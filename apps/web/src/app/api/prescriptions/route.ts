@@ -11,10 +11,13 @@ import { logger } from '@/lib/logger';
 import crypto from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { emitMedicationEvent } from '@/lib/socket-server';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { cdsEngine } from '@/lib/cds/engines/cds-engine';
+import type { CDSContext, CDSHookType } from '@/lib/cds/types';
+import { v4 as uuidv4 } from 'uuid';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
-
 
 /**
  * POST /api/prescriptions
@@ -184,30 +187,52 @@ export const POST = createProtectedRoute(
         }
       );
 
+      // Non-blocking CDS safety net: evaluate drug interactions post-save
+      // The frontend should ALSO call /api/cds/evaluate BEFORE creating the prescription.
+      // This is a backstop to catch anything the frontend missed.
+      let cdsSafetyAlerts: any[] = [];
+      try {
+        const cdsContext: CDSContext = {
+          patientId: body.patientId,
+          userId: clinicianId,
+          hookInstance: uuidv4(),
+          hookType: 'medication-prescribe' as CDSHookType,
+          context: {
+            patientId: body.patientId,
+            medications: body.medications.map((med: any, idx: number) => ({
+              id: `rx-${idx}`,
+              name: med.name,
+              genericName: med.genericName || med.name,
+              dosage: med.dose,
+              frequency: med.frequency,
+              route: med.route || 'oral',
+              status: 'active' as const,
+            })),
+          },
+        };
+
+        const cdsResult = await cdsEngine.evaluate(cdsContext);
+        if (cdsResult.alerts?.length > 0) {
+          cdsSafetyAlerts = cdsResult.alerts;
+        }
+      } catch {
+        // CDS safety net is non-blocking — prescription already created
+      }
+
       return NextResponse.json(
         {
           success: true,
           data: prescription,
           message: 'Prescription created successfully',
+          ...(cdsSafetyAlerts.length > 0 ? {
+            cdsSafetyAlerts,
+            cdsSafetyWarning: `${cdsSafetyAlerts.length} clinical alert(s) detected post-prescription. Review recommended.`,
+          } : {}),
         },
         { status: 201 }
       );
-    } catch (error: any) {
-      logger.error({
-        event: 'prescription_create_error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to create prescription',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to create prescription' });
     }
   },
   {
@@ -323,22 +348,8 @@ export const GET = createProtectedRoute(
         success: true,
         data: prescriptions,
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'prescription_fetch_error',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to fetch prescriptions',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch prescriptions' });
     }
   },
   {

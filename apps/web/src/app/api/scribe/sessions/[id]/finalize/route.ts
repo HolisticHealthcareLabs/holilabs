@@ -18,6 +18,7 @@ import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analyt
 import Anthropic from '@anthropic-ai/sdk';
 import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
 import { enqueuePatientDossierJob } from '@/lib/patients/dossier-queue';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -165,7 +166,7 @@ export const POST = createProtectedRoute(
         let audioBuffer: Buffer;
         try {
           audioBuffer = decryptBuffer(encryptedBuffer);
-        } catch (error: any) {
+        } catch (error) {
           console.error('Failed to decrypt audio:', error);
           return NextResponse.json(
             { error: 'Failed to decrypt audio file' },
@@ -200,21 +201,18 @@ export const POST = createProtectedRoute(
 
           console.log(`✅ Deepgram transcription completed in ${transcriptionResult.processingTimeMs}ms`);
           console.log(`   Confidence: ${(transcriptionResult.confidence * 100).toFixed(1)}%, Speakers: ${transcriptionResult.speakerCount}`);
-        } catch (error: any) {
+        } catch (error) {
           console.error('❌ Deepgram transcription error:', error);
 
           await prisma.scribeSession.update({
             where: { id: sessionId },
             data: {
               status: 'FAILED',
-              processingError: `Transcription failed: ${error.message}`,
+              processingError: `Transcription failed: ${(error instanceof Error ? error.message : String(error))}`,
             },
           });
 
-          return NextResponse.json(
-            { error: 'Failed to transcribe audio', message: error.message },
-            { status: 500 }
-          );
+          return safeErrorResponse(error, { userMessage: 'Failed to transcribe audio' });
         }
 
         // STEP 2.5: De-identify transcript with Presidio BEFORE persisting or sending to any LLM (hard gate)
@@ -460,7 +458,7 @@ export const POST = createProtectedRoute(
           },
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error finalizing session:', error);
 
       // Update session with error
@@ -469,17 +467,14 @@ export const POST = createProtectedRoute(
           where: { id: context.params.id },
           data: {
             status: 'FAILED',
-            processingError: error.message,
+            processingError: (error instanceof Error ? error.message : String(error)),
           },
         });
       } catch (updateError) {
         console.error('Failed to update session error:', updateError);
       }
 
-      return NextResponse.json(
-        { error: 'Failed to finalize session', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to finalize session' });
     }
   }
   ,

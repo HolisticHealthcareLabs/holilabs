@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { getPreventionNotificationService } from '@/lib/services/prevention-notification.service';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,7 +52,10 @@ export async function POST(request: NextRequest) {
     // Verify cron authentication
     const authHeader = request.headers.get('authorization');
     if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const notificationService = getPreventionNotificationService();
@@ -333,7 +337,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'cron_send_reminders_error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 

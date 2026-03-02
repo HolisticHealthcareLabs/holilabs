@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { generateCsrfToken } from '@/lib/security/csrf';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - don't try to generate at build time
 export const dynamic = 'force-dynamic';
@@ -40,7 +41,6 @@ export async function GET() {
     logger.error({
       event: 'csrf_token_generation_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
     return NextResponse.json(

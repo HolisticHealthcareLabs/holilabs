@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,12 +104,9 @@ export const POST = createProtectedRoute(
         },
         message: 'SOAP note signed successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error signing SOAP note:', error);
-      return NextResponse.json(
-        { error: 'Failed to sign SOAP note', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to sign SOAP note' });
     }
   }
 );

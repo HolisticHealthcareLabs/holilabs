@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,12 +60,9 @@ export const GET = createProtectedRoute(
         success: true,
         data: session,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching session:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch session', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch session' });
     }
   },
   {

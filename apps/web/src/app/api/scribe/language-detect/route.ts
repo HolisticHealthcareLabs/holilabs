@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { createClient } from '@deepgram/sdk';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +90,7 @@ export const POST = createProtectedRoute(
 
     if (error) {
       return NextResponse.json(
-        { error: 'Deepgram error', details: error.message },
+        { error: 'Deepgram error' },
         { status: 502 }
       );
     }
@@ -123,5 +124,4 @@ export const POST = createProtectedRoute(
   // while still requiring auth via createProtectedRoute().
   { skipCsrf: true }
 );
-
 

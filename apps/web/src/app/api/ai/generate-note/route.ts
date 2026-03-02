@@ -15,6 +15,7 @@ import { soapGenerator } from '@/lib/clinical-notes/soap-generator';
 import { confidenceScoringService } from '@/lib/ai/confidence-scoring';
 import type { ClinicalSessionContext } from '@/lib/scribe/ai-scribe-service';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * Request body schema
@@ -221,36 +222,33 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateN
     });
 
     return NextResponse.json(response, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'soap_note_generation_failed',
-      error: error.message,
-      stack: error.stack,
+      error: error instanceof Error ? error.message : String(error),
     });
 
     // Handle specific errors
-    if (error.name === 'ComprehendMedicalError') {
+    if (error instanceof Error && error.name === 'ComprehendMedicalError') {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'MEDICAL_NLP_ERROR',
             message: 'Failed to extract medical entities',
-            details: error.message,
           },
         },
         { status: 500 }
       );
     }
 
-    if (error.name === 'AIGenerationError') {
+    if (error instanceof Error && error.name === 'AIGenerationError') {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: 'AI_GENERATION_ERROR',
             message: 'Failed to generate SOAP sections',
-            details: error.message,
           },
         },
         { status: 500 }
@@ -264,7 +262,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateN
         error: {
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to generate SOAP note',
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+          details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined,
         },
       },
       { status: 500 }

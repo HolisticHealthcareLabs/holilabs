@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,17 +57,15 @@ export const GET = createProtectedRoute(
         success: true,
         data: imagingStudy,
       });
-    } catch (error: any) {
-      console.error('Error fetching imaging study:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch imaging study', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch imaging study' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    skipCsrf: true,
+    audit: { action: 'READ', resource: 'ImagingStudy' },
   }
 );
 
@@ -146,17 +145,14 @@ export const PATCH = createProtectedRoute(
         success: true,
         data: updatedStudy,
       });
-    } catch (error: any) {
-      console.error('Error updating imaging study:', error);
-      return NextResponse.json(
-        { error: 'Failed to update imaging study', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to update imaging study' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'UPDATE', resource: 'ImagingStudy' },
   }
 );
 
@@ -211,16 +207,13 @@ export const DELETE = createProtectedRoute(
         success: true,
         message: 'Imaging study deleted successfully',
       });
-    } catch (error: any) {
-      console.error('Error deleting imaging study:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete imaging study', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to delete imaging study' });
     }
   },
   {
     roles: ['ADMIN'],
     rateLimit: { windowMs: 60000, maxRequests: 10 },
+    audit: { action: 'DELETE', resource: 'ImagingStudy' },
   }
 );

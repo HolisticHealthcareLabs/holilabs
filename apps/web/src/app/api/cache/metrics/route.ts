@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCacheClient } from '@/lib/cache/redis-client';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,12 +66,9 @@ export async function GET(request: NextRequest) {
       },
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching cache metrics:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch cache metrics', details: error.message },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to fetch cache metrics' });
   }
 }
 
@@ -88,11 +86,8 @@ export async function POST(request: NextRequest) {
       message: 'Cache metrics reset successfully',
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error resetting cache metrics:', error);
-    return NextResponse.json(
-      { error: 'Failed to reset cache metrics', details: error.message },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Failed to reset cache metrics' });
   }
 }

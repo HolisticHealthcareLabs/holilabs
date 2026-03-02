@@ -22,6 +22,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -442,21 +443,14 @@ export const POST = createProtectedRoute(
         success: true,
         data: result,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'research_query_error',
         userId: context.user?.id,
-        error: error.message,
-        stack: error.stack,
+        error: (error instanceof Error ? error.message : String(error)),
       });
 
-      return NextResponse.json(
-        {
-          error: 'Failed to execute research query',
-          message: error.message,
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to execute research query' });
     }
   },
   {

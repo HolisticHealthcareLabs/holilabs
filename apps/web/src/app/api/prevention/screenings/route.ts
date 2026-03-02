@@ -14,6 +14,7 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 import { auditCreate, auditView } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,7 +108,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!patient) {
-      return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Patient not found' },
+        { status: 404 }
+      );
     }
 
     // Verify prevention plan if provided
@@ -118,7 +122,10 @@ export async function POST(request: NextRequest) {
       });
 
       if (!plan) {
-        return NextResponse.json({ error: 'Prevention plan not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Prevention plan not found' },
+          { status: 404 }
+        );
       }
 
       if (plan.patientId !== patientId) {
@@ -186,7 +193,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'screening_schedule_error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -236,7 +242,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!patient) {
-      return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Patient not found' },
+        { status: 404 }
+      );
     }
 
     // Build query conditions
@@ -321,7 +330,6 @@ export async function GET(request: NextRequest) {
     logger.error({
       event: 'screenings_fetch_error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 

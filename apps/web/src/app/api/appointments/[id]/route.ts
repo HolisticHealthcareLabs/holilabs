@@ -12,6 +12,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { checkAppointmentConflicts } from '@/lib/appointments/conflict-detection';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -76,31 +77,15 @@ export const GET = createProtectedRoute(
         success: true,
         data: appointment,
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'appointment_fetch_failed',
-        appointmentId: context.params.id,
-        userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to fetch appointment',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch appointment' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
     audit: { action: 'READ', resource: 'Appointment' },
-
+    skipCsrf: true,
   }
 );
 
@@ -249,7 +234,7 @@ export const PATCH = createProtectedRoute(
         data: updatedAppointment,
         message: 'Appointment updated successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           {
@@ -263,23 +248,7 @@ export const PATCH = createProtectedRoute(
         );
       }
 
-      logger.error({
-        event: 'appointment_update_failed',
-        appointmentId: context.params.id,
-        userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to update appointment',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to update appointment' });
     }
   },
   {
@@ -340,24 +309,8 @@ export const DELETE = createProtectedRoute(
         message: 'Appointment cancelled successfully',
         data: cancelledAppointment,
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'appointment_cancel_failed',
-        appointmentId: context.params.id,
-        userId: context.user.id,
-        error: error.message,
-        stack: error.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to cancel appointment',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to cancel appointment' });
     }
   },
   {

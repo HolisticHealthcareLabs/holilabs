@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { syncAllCalendars } from '@/lib/calendar/sync';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
@@ -25,17 +26,13 @@ export const POST = createProtectedRoute(
         message: `Synced ${totalSynced} appointments`,
         results,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'calendar_sync_failed',
         userId: context.user?.id,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
       });
-      return NextResponse.json(
-        { error: 'Failed to sync calendars', details: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to sync calendars' });
     }
   },
   {

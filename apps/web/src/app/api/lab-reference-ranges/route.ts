@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import {
   REFERENCE_RANGES,
   getReferenceRange,
@@ -149,12 +150,9 @@ export const GET = createProtectedRoute(
           ranges: paginatedRanges,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching lab reference ranges:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch lab reference ranges', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch lab reference ranges' });
     }
   },
   {

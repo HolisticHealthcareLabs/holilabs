@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,12 +80,11 @@ export async function GET() {
         maxTokens: 200000,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Anthropic health check error:', error);
     return NextResponse.json({
       status: 'error',
       service: 'anthropic',
-      message: error.message || 'Unknown error',
       configured: !!process.env.ANTHROPIC_API_KEY,
       connected: false,
     }, { status: 500 });

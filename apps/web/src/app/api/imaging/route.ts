@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,17 +60,15 @@ export const GET = createProtectedRoute(
         success: true,
         data: imagingStudies,
       });
-    } catch (error: any) {
-      console.error('Error fetching imaging studies:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch imaging studies', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch imaging studies' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    skipCsrf: true,
+    audit: { action: 'READ', resource: 'ImagingStudy' },
   }
 );
 
@@ -181,16 +180,13 @@ export const POST = createProtectedRoute(
         success: true,
         data: imagingStudy,
       });
-    } catch (error: any) {
-      console.error('Error creating imaging study:', error);
-      return NextResponse.json(
-        { error: 'Failed to create imaging study', message: error.message },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to create imaging study' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'CREATE', resource: 'ImagingStudy' },
   }
 );

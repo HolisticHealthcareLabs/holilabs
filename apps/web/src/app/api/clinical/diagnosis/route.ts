@@ -33,6 +33,7 @@ import { createAuditLog } from '@/lib/audit';
 import { symptomDiagnosisEngine } from '@/lib/clinical/engines/symptom-diagnosis-engine';
 import type { SymptomInput, PatientContext } from '@holilabs/shared-types';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -224,9 +225,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
       if (body.symptomDuration) {
         body.symptomDuration = sanitizeString(body.symptomDuration, 200);
       }
-    } catch (error: any) {
+    } catch (error) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: error instanceof Error ? error.message : String(error) },
         { status: 400 }
       );
     }
@@ -265,9 +266,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
           normalRange: lab.normalRange ? sanitizeString(lab.normalRange, 100) : undefined,
         }));
       }
-    } catch (error: any) {
+    } catch (error) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: error instanceof Error ? error.message : String(error) },
         { status: 400 }
       );
     }
@@ -474,17 +475,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<DiagnosisResp
       },
     });
 
-  } catch (error: any) {
-    console.error('[Diagnosis API] Error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to generate diagnosis',
-        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
-      },
-      { status: 500 }
-    );
+  } catch (error) {
+    return safeErrorResponse(error, { userMessage: 'Failed to generate diagnosis' }) as NextResponse<DiagnosisResponse>;
   }
 }
 

@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { toFHIRPatient, validateFHIRPatient } from '@/lib/fhir/patient-mapper';
 import { auditView } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -128,18 +129,17 @@ export async function GET(
         'X-FHIR-Version': 'R4',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('FHIR Patient GET error:', {
       patientId: params.id,
-      error: error.message,
-      stack: error.stack,
+      error: error instanceof Error ? error.message : String(error),
     });
 
     // Return FHIR OperationOutcome for server errors
     const outcome = createOperationOutcome(
       'fatal',
       'exception',
-      `Internal server error: ${error.message || 'Unknown error occurred'}`
+      `Internal server error: ${(error instanceof Error ? error.message : String(error)) || 'Unknown error occurred'}`
     );
 
     return NextResponse.json(outcome, {

@@ -13,6 +13,7 @@ import { sendMagicLinkEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { createPublicRoute, ApiContext } from '@/lib/api/middleware';
 import { createAuditLog } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -167,7 +168,6 @@ export const POST = createPublicRoute(
     logger.error({
       event: 'magic_link_send_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json(
       {

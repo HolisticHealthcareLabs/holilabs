@@ -20,6 +20,7 @@ import { auditCreate } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { LabResultStatus } from '@prisma/client';
 import crypto from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -395,7 +396,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'hl7_oru_ingestion_error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 

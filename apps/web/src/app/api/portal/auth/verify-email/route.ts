@@ -22,6 +22,7 @@ import { createPatientSession } from '@/lib/auth/patient-session';
 import { createAuditLog } from '@/lib/audit';
 import { logger } from '@/lib/logger';
 import { createPublicRoute } from '@/lib/api/middleware';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -165,7 +166,6 @@ export const GET = createPublicRoute(
       logger.error({
         event: 'email_verification_error',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
       });
 
       return NextResponse.redirect(

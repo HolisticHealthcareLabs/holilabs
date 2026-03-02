@@ -8,6 +8,7 @@ import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 // FIXME: Old rate limiting API - needs refactor
 // import { rateLimit } from '@/lib/rate-limit';
 
@@ -49,11 +50,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: { situations },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'situations_fetch_failed',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
     return NextResponse.json(
       { success: false, error: 'Failed to fetch situations' },
@@ -122,11 +122,10 @@ export async function POST(request: NextRequest) {
       data: { situation },
       message: 'Situation created successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'situation_create_failed',
-      error: error.message,
-      stack: error.stack,
+      error: (error instanceof Error ? error.message : String(error)),
     });
     return NextResponse.json(
       { success: false, error: 'Failed to create situation' },

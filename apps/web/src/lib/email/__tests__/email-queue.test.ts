@@ -280,7 +280,7 @@ describe('Email Queue System', () => {
     });
 
     it('should use Resend on first attempt', async () => {
-      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce(true);
+      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce({ success: true });
 
       startEmailWorker();
 
@@ -307,7 +307,7 @@ describe('Email Queue System', () => {
     });
 
     it('should use Resend on second attempt', async () => {
-      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce(true);
+      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce({ success: true });
 
       startEmailWorker();
 
@@ -401,7 +401,7 @@ describe('Email Queue System', () => {
     });
 
     it('should log successful email delivery', async () => {
-      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce(true);
+      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce({ success: true });
 
       startEmailWorker();
 
@@ -425,7 +425,7 @@ describe('Email Queue System', () => {
     });
 
     it('should include metadata in logs', async () => {
-      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce(true);
+      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce({ success: true });
 
       startEmailWorker();
 
@@ -451,7 +451,7 @@ describe('Email Queue System', () => {
     });
 
     it('should handle provider returning false', async () => {
-      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce(false);
+      (resendModule.sendEmail as jest.Mock).mockResolvedValueOnce({ success: false });
 
       startEmailWorker();
 
@@ -583,11 +583,11 @@ describe('Email Queue System', () => {
         id: 'status-job-1',
         state: 'active',
         progress: 0,
-        failedReason: null,
+        failedReason: undefined,
         attemptsMade: 1,
         data: mockEmailData,
-        finishedOn: null,
-        processedOn: null,
+        finishedOn: undefined,
+        processedOn: undefined,
       });
     });
 

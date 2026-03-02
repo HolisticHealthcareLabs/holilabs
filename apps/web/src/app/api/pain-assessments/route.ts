@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,12 +51,9 @@ export const GET = createProtectedRoute(
           latestScore: assessments[0]?.painScore || 0,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching pain assessments:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch pain assessments', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch pain assessments' });
     }
   },
   {
@@ -135,7 +133,7 @@ export const POST = createProtectedRoute(
         data: assessment,
         message: 'Pain assessment recorded successfully',
       }, { status: 201 });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating pain assessment:', error);
 
       if (error instanceof z.ZodError) {
@@ -148,10 +146,7 @@ export const POST = createProtectedRoute(
         );
       }
 
-      return NextResponse.json(
-        { error: 'Failed to create pain assessment', message: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to create pain assessment' });
     }
   },
   {

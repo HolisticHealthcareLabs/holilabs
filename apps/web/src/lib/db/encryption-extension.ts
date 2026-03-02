@@ -111,6 +111,15 @@ const PHI_FIELDS_CONFIG: Record<string, string[]> = {
     'billingAddress',
     'patientNotes',
   ],
+  User: [
+    'licenseNumber',    // Medical license (PII)
+    'npi',              // National Provider Identifier (PII)
+    'mfaPhoneNumber',   // 2FA phone number (PII)
+  ],
+  Appointment: [
+    'notes',              // Clinical notes (PHI)
+    'cancellationReason', // May contain clinical info
+  ],
 };
 
 /**

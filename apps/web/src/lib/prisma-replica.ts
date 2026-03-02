@@ -16,12 +16,36 @@ function getReplicaUrls(): string[] {
   return urls;
 }
 
+function maskUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    if (u.password) u.password = '***';
+    return u.toString();
+  } catch {
+    return 'invalid-url';
+  }
+}
+
+function parseHost(raw: string): string | null {
+  try {
+    const u = new URL(raw);
+    return u.host;
+  } catch {
+    return null;
+  }
+}
+
 export function createPrismaWithReplicas(basePrisma: PrismaClient): PrismaClient {
   const replicaUrls = getReplicaUrls();
 
   if (replicaUrls.length === 0) {
     return basePrisma;
   }
+
+  logger.info({
+    event: 'read_replicas_enabled',
+    replicaUrls: replicaUrls.map(maskUrl),
+  }, `Enabling ${replicaUrls.length} read replica(s)`);
 
   const replicaClients = replicaUrls.map(url => new PrismaClient({ datasources: { db: { url } } }));
 
@@ -44,6 +68,14 @@ export function createPrismaWithReplicas(basePrisma: PrismaClient): PrismaClient
 export function createAnalyticsPrisma(basePrisma: PrismaClient): PrismaClient | null {
   const analyticsUrl = process.env.DATABASE_ANALYTICS_REPLICA_URL;
   if (!analyticsUrl) return null;
+
+  const host = parseHost(analyticsUrl);
+  if (!host) {
+    logger.warn({ event: 'analytics_replica_invalid_url' }, 'Invalid analytics replica URL');
+    return null;
+  }
+
+  logger.info({ event: 'analytics_replica_enabled', host }, 'Analytics replica enabled');
 
   const analyticsReplicaClient = new PrismaClient({ datasources: { db: { url: analyticsUrl } } });
 

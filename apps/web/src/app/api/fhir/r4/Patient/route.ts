@@ -227,7 +227,7 @@ export async function GET(request: NextRequest) {
     logger.error({
       event: 'fhir_patient_search_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error?.stack,
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
     // Return FHIR OperationOutcome for server errors
@@ -477,7 +477,7 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'fhir_patient_create_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error?.stack,
+      stack: error instanceof Error ? error.stack : undefined,
     });
 
     // Return FHIR OperationOutcome for server errors

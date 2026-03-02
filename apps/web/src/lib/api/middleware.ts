@@ -13,6 +13,7 @@ import { logger, createLogger, logError } from '@/lib/logger';
 import { applySecurityHeaders } from './security-headers';
 import { Redis } from '@upstash/redis';
 import crypto from 'crypto';
+import { auditBuffer } from './audit-buffer';
 
 // ============================================================================
 // TYPES
@@ -835,39 +836,22 @@ export function withAuditLog(action: string, resource: string) {
     const response = await next();
     const duration = Date.now() - start;
 
-    // Log async (don't block response)
-    (async () => {
-      const log = createLogger({ requestId: context.requestId, userId: context.user?.id });
-
-      try {
-        await prisma.auditLog.create({
-          data: {
-            userId: context.user?.id,
-            userEmail: context.user?.email || 'anonymous',
-            ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-            action: action as any, // Cast to avoid type error with string
-            resource,
-            resourceId: context.params?.id || 'N/A',
-            success: response.status < 400,
-            details: {
-              method: request.method,
-              url: request.url,
-              duration,
-              statusCode: response.status,
-            },
-          },
-        });
-
-        log.info({
-          event: 'audit_log_created',
-          action,
-          resource,
-          success: response.status < 400,
-        }, 'Audit log created');
-      } catch (error) {
-        log.error(logError(error), 'Failed to create audit log');
-      }
-    })();
+    // Enqueue audit entry (buffered, non-blocking)
+    auditBuffer.enqueue({
+      userId: context.user?.id,
+      userEmail: context.user?.email || 'anonymous',
+      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
+      action: action as any,
+      resource,
+      resourceId: context.params?.id || 'N/A',
+      success: response.status < 400,
+      details: {
+        method: request.method,
+        url: request.url,
+        duration,
+        statusCode: response.status,
+      },
+    });
 
     return response;
   };

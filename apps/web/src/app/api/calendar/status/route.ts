@@ -9,10 +9,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
-
 
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
@@ -48,17 +48,13 @@ export const GET = createProtectedRoute(
         success: true,
         data: status,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.error({
         event: 'calendar_status_fetch_failed',
         userId: context.user?.id,
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
       });
-      return NextResponse.json(
-        { error: 'Failed to fetch calendar status', details: error.message },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch calendar status' });
     }
   },
   {

@@ -18,6 +18,7 @@ import { getServerSession, authOptions } from '@/lib/auth';
 import { exportPreventionReport, ExportOptions } from '@/lib/services/prevention-export.service';
 import logger from '@/lib/logger';
 import { auditExport } from '@/lib/audit';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,7 +112,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       event: 'prevention_export_error',
       patientId,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       latencyMs: elapsed.toFixed(2),
     });
 

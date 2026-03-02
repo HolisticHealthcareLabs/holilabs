@@ -30,6 +30,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import {
   getSmartConfiguration,
   exchangeCodeForToken,
@@ -272,7 +273,6 @@ export async function GET(request: NextRequest) {
     logger.error({
       event: 'smart_callback_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
       duration: Date.now() - startTime,
     });
 

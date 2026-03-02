@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 const prisma = new PrismaClient();
 
@@ -180,16 +181,12 @@ export async function POST(request: Request) {
         status: betaSignup.status,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.error({
       event: 'beta_signup_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
     });
 
-    return NextResponse.json(
-      { error: 'Error al procesar tu registro. Por favor intenta de nuevo.' },
-      { status: 500 }
-    );
+    return safeErrorResponse(error, { userMessage: 'Error al procesar tu registro. Por favor intenta de nuevo.' });
   }
 }

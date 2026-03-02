@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@deepgram/sdk';
 import { createHash } from 'crypto';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,12 +76,11 @@ export async function GET() {
         smartFormat: true,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Deepgram health check error:', error);
     return NextResponse.json({
       status: 'error',
       service: 'deepgram',
-      message: error.message || 'Unknown error',
       configured: !!process.env.DEEPGRAM_API_KEY,
       connected: false,
     }, { status: 500 });

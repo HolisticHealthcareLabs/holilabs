@@ -15,6 +15,7 @@ import { getServerSession, authOptions } from '@/lib/auth';
 import { z } from 'zod';
 import { preventionEngine, type TranscriptFindings } from '@/lib/services';
 import logger from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -167,7 +168,6 @@ export async function POST(request: NextRequest) {
     logger.error({
       event: 'prevention_process_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
       totalRequestTimeMs: totalRequestTime,
     });
 

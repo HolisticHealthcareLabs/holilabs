@@ -13,6 +13,7 @@ import { createNoteVersion, calculateNoteHash } from '@/lib/clinical-notes/versi
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -77,30 +78,15 @@ export const GET = createProtectedRoute(
         success: true,
         data: note,
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'clinical_note_fetch_error',
-        noteId: context.params?.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to fetch clinical note',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch clinical note' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE', 'STAFF'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
     audit: { action: 'READ', resource: 'ClinicalNote' },
-    
+    skipCsrf: true,
   }
 );
 
@@ -267,7 +253,7 @@ export const PATCH = createProtectedRoute(
         data: updatedNote,
         message: 'Clinical note updated successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           {
@@ -281,22 +267,7 @@ export const PATCH = createProtectedRoute(
         );
       }
 
-      logger.error({
-        event: 'clinical_note_update_error',
-        noteId: context.params?.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to update clinical note',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+      return safeErrorResponse(error, { userMessage: 'Failed to update clinical note' });
     }
   },
   {
@@ -366,23 +337,8 @@ export const DELETE = createProtectedRoute(
         success: true,
         message: 'Clinical note deleted successfully',
       });
-    } catch (error: any) {
-      logger.error({
-        event: 'clinical_note_delete_error',
-        noteId: context.params?.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error?.stack,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to delete clinical note',
-          // Only include details in development
-          ...(process.env.NODE_ENV === 'development' && {
-            details: error.message
-          })
-        },
-        { status: 500 }
-      );
+    } catch (error) {
+      return safeErrorResponse(error, { userMessage: 'Failed to delete clinical note' });
     }
   },
   {

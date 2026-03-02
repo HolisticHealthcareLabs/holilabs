@@ -13,6 +13,25 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { calculateDiabetesRisk } from '@/lib/risk-scores/diabetes';
 import { calculateASCVDRisk } from '@/lib/risk-scores/ascvd';
+import { emitPreventionEventToRoom } from '@/lib/socket-server';
+
+/**
+ * Fire-and-forget Socket.IO emission when a PreventionPlan is created from lab monitoring.
+ * Non-blocking — failures are silently caught so lab processing is never interrupted.
+ */
+function emitPlanCreated(patientId: string, planName: string, planType: string) {
+  try {
+    emitPreventionEventToRoom('patient:', patientId, 'prevention:plan:created', {
+      patientId,
+      planName,
+      planType,
+      source: 'lab-monitor',
+      timestamp: new Date(),
+    });
+  } catch {
+    // Non-blocking — Socket.IO emission must never interrupt lab processing
+  }
+}
 
 /**
  * Lab result structure
@@ -2239,6 +2258,13 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
   const testNameLower = labResult.testName.toLowerCase();
   const loincCode = labResult.loincCode;
 
+  // Helper: emit Socket.IO event if a prevention plan was created
+  function emitIfPlanCreated(testType: string, result: any) {
+    if (result?.preventionPlanCreated) {
+      emitPlanCreated(labResult.patientId, `${testType} Prevention Plan`, result.category || testType);
+    }
+  }
+
   // HbA1c monitoring (LOINC: 4548-4)
   if (
     testNameLower.includes('hba1c') ||
@@ -2247,6 +2273,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '4548-4'
   ) {
     const result = await monitorHbA1c(labResult);
+    emitIfPlanCreated('HbA1c', result);
     return {
       monitored: true,
       testType: 'HbA1c',
@@ -2261,6 +2288,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '13457-7'
   ) {
     const result = await monitorLDL(labResult);
+    emitIfPlanCreated('LDL', result);
     return {
       monitored: true,
       testType: 'LDL',
@@ -2276,6 +2304,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '1558-6'
   ) {
     const result = await monitorFastingGlucose(labResult);
+    emitIfPlanCreated('Fasting Glucose', result);
     return {
       monitored: true,
       testType: 'Fasting Glucose',
@@ -2291,6 +2320,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '48643-1'
   ) {
     const result = await monitorEGFR(labResult);
+    emitIfPlanCreated('eGFR', result);
     return {
       monitored: true,
       testType: 'eGFR',
@@ -2305,6 +2335,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '3016-3'
   ) {
     const result = await monitorTSH(labResult);
+    emitIfPlanCreated('TSH', result);
     return {
       monitored: true,
       testType: 'TSH',
@@ -2319,6 +2350,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '2085-9'
   ) {
     const result = await monitorHDL(labResult);
+    emitIfPlanCreated('HDL', result);
     return {
       monitored: true,
       testType: 'HDL',
@@ -2333,6 +2365,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '2571-8'
   ) {
     const result = await monitorTriglycerides(labResult);
+    emitIfPlanCreated('Triglycerides', result);
     return {
       monitored: true,
       testType: 'Triglycerides',
@@ -2348,6 +2381,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '2093-3'
   ) {
     const result = await monitorTotalCholesterol(labResult);
+    emitIfPlanCreated('Total Cholesterol', result);
     return {
       monitored: true,
       testType: 'Total Cholesterol',
@@ -2365,6 +2399,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '14635-7'
   ) {
     const result = await monitorVitaminD(labResult);
+    emitIfPlanCreated('Vitamin D', result);
     return {
       monitored: true,
       testType: 'Vitamin D',
@@ -2381,6 +2416,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '718-7'
   ) {
     const result = await monitorHemoglobin(labResult);
+    emitIfPlanCreated('Hemoglobin', result);
     return {
       monitored: true,
       testType: 'Hemoglobin',
@@ -2394,6 +2430,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '2276-4'
   ) {
     const result = await monitorFerritin(labResult);
+    emitIfPlanCreated('Ferritin', result);
     return {
       monitored: true,
       testType: 'Ferritin',
@@ -2409,6 +2446,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '2132-9'
   ) {
     const result = await monitorVitaminB12(labResult);
+    emitIfPlanCreated('Vitamin B12', result);
     return {
       monitored: true,
       testType: 'Vitamin B12',
@@ -2424,6 +2462,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '1742-6'
   ) {
     const result = await monitorALT(labResult);
+    emitIfPlanCreated('ALT', result);
     return {
       monitored: true,
       testType: 'ALT',
@@ -2438,6 +2477,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '17861-6'
   ) {
     const result = await monitorCalcium(labResult);
+    emitIfPlanCreated('Calcium', result);
     return {
       monitored: true,
       testType: 'Calcium',
@@ -2452,6 +2492,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '3084-1'
   ) {
     const result = await monitorUricAcid(labResult);
+    emitIfPlanCreated('Uric Acid', result);
     return {
       monitored: true,
       testType: 'Uric Acid',
@@ -2466,6 +2507,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '2160-0'
   ) {
     const result = await monitorCreatinine(labResult);
+    emitIfPlanCreated('Creatinine', result);
     return {
       monitored: true,
       testType: 'Creatinine',
@@ -2479,6 +2521,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '1751-7'
   ) {
     const result = await monitorAlbumin(labResult);
+    emitIfPlanCreated('Albumin', result);
     return {
       monitored: true,
       testType: 'Albumin',
@@ -2493,6 +2536,7 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     loincCode === '777-3'
   ) {
     const result = await monitorPlateletCount(labResult);
+    emitIfPlanCreated('Platelet Count', result);
     return {
       monitored: true,
       testType: 'Platelet Count',
@@ -2505,4 +2549,27 @@ export async function monitorLabResult(labResult: LabResult): Promise<{
     monitored: false,
     testType: labResult.testName,
   };
+}
+
+/**
+ * Wrapper around monitorLabResult that emits Socket.IO events on plan creation.
+ * Use this as the primary entry point for lab result monitoring with real-time notifications.
+ */
+export async function monitorLabResultWithEmit(labResult: LabResult): Promise<{
+  monitored: boolean;
+  testType: string;
+  result?: any;
+}> {
+  const outcome = await monitorLabResult(labResult);
+
+  // Emit Socket.IO event if a prevention plan was created
+  if (outcome.result?.preventionPlanCreated) {
+    emitPlanCreated(
+      labResult.patientId,
+      `${outcome.testType} Prevention Plan`,
+      outcome.result.category || outcome.testType,
+    );
+  }
+
+  return outcome;
 }

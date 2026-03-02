@@ -86,17 +86,14 @@ async function main() {
 
   console.log('✅ Created patient:', patient.tokenId);
 
-  // Hash password for test patient account (Test123!@#)
-  const testPasswordHash = await bcrypt.hash('Test123!@#', 12);
-
   // Create PatientUser for authentication (NEW - for patient portal login)
+  // Note: passwordHash was removed from PatientUser model; auth is via magic links
   const patientUser = await prisma.patientUser.upsert({
     where: { email: 'maria.gonzalez@example.com' },
     update: {},
     create: {
       email: 'maria.gonzalez@example.com',
       patientId: patient.id,
-      passwordHash: testPasswordHash,
       emailVerifiedAt: new Date(),
       mfaEnabled: false,
     },
@@ -141,17 +138,13 @@ async function main() {
 
   console.log('✅ Created demo patient:', demoPatient.tokenId);
 
-  // Hash password for demo account (Demo123!@#)
-  const demoPasswordHash = await bcrypt.hash('Demo123!@#', 12);
-
-  // Create PatientUser for demo account
+  // Create PatientUser for demo account (auth via magic links, no passwordHash)
   const demoPatientUser = await prisma.patientUser.upsert({
     where: { email: 'demo@holilabs.xyz' },
     update: {},
     create: {
       email: 'demo@holilabs.xyz',
       patientId: demoPatient.id,
-      passwordHash: demoPasswordHash,
       emailVerifiedAt: new Date(),
       mfaEnabled: false,
     },
