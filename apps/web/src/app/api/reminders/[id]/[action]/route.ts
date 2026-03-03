@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,12 +46,14 @@ function calculateNextExecution(
  * POST /api/reminders/[id]/[action]
  * Perform actions on scheduled reminders
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string; action: string } }
-) {
-  try {
-    const { id, action } = params;
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
+    // Extract id and action from URL path: /api/reminders/[id]/[action]
+    const url = new URL(request.url);
+    const segments = url.pathname.split('/');
+    const remindersIdx = segments.indexOf('reminders');
+    const id = segments[remindersIdx + 1];
+    const action = segments[remindersIdx + 2];
 
     // Validate action
     const validActions = ['cancel', 'pause', 'resume', 'retry'];
@@ -197,20 +199,5 @@ export async function POST(
       data: updatedReminder,
       message: `Reminder ${action}ed successfully`,
     });
-  } catch (error) {
-    logger.error({
-      event: 'reminder_action_error',
-      action: params.action,
-      reminderId: params.id,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: `Failed to ${params.action} reminder`,
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+);

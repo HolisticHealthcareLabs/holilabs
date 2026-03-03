@@ -72,7 +72,7 @@ export async function completeOnboarding(formData: FormData): Promise<Onboarding
     });
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const loginUrl = `${baseUrl}/auth/login`;
+    const loginUrl = `${baseUrl}/sign-in`;
 
     await sendWelcomeEmail(
       updated.email,

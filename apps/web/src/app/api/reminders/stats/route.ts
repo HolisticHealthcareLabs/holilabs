@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +16,8 @@ export const dynamic = 'force-dynamic';
  * GET /api/reminders/stats
  * Get reminder statistics for dashboard
  */
-export async function GET(request: NextRequest) {
-  try {
+export const GET = createProtectedRoute(
+  async () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -134,18 +134,6 @@ export async function GET(request: NextRequest) {
       success: true,
       data: stats,
     });
-  } catch (error) {
-    logger.error({
-      event: 'reminder_stats_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch reminder statistics',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { skipCsrf: true },
+);

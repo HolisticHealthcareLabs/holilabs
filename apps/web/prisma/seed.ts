@@ -51,6 +51,103 @@ async function main() {
 
   console.log('✅ Created demo clinician:', demoClinician.email);
 
+  // ============================================================================
+  // DR. SILVA — Primary demo user (dr.silva@holilabs.xyz / Cortex2026!)
+  // ID must match auth.config.ts hardcoded value so requireAuth() DB lookup succeeds
+  // ============================================================================
+  const drSilvaPasswordHash = await bcrypt.hash('Cortex2026!', 12);
+  const drSilva = await prisma.user.upsert({
+    where: { email: 'dr.silva@holilabs.xyz' },
+    update: {
+      id: 'demo-dr-silva-id',
+      passwordHash: drSilvaPasswordHash,
+      firstName: 'Ricardo',
+      lastName: 'Silva',
+      role: 'CLINICIAN',
+      onboardingCompleted: true,
+    },
+    create: {
+      id: 'demo-dr-silva-id',
+      email: 'dr.silva@holilabs.xyz',
+      firstName: 'Ricardo',
+      lastName: 'Silva',
+      role: 'CLINICIAN',
+      specialty: 'Internal Medicine',
+      licenseNumber: 'CRM-SP-123456',
+      username: 'dr.silva',
+      onboardingCompleted: true,
+      mfaEnabled: false,
+      passwordHash: drSilvaPasswordHash,
+      permissions: ['READ_PATIENTS', 'WRITE_PATIENTS', 'READ_RECORDS', 'WRITE_RECORDS'],
+    },
+  });
+
+  console.log('✅ Created Dr. Silva demo user:', drSilva.email);
+
+  // Create a default workspace for Dr. Silva (required by /dashboard/command-center)
+  const drSilvaWorkspace = await prisma.workspace.upsert({
+    where: { slug: 'demo-hospital-silva' },
+    update: {},
+    create: {
+      name: 'Hospital Demo Silva',
+      slug: 'demo-hospital-silva',
+      createdByUserId: drSilva.id,
+      metadata: { plan: 'demo', region: 'BR' },
+    },
+  });
+
+  // Link Dr. Silva to the workspace
+  await prisma.workspaceMember.upsert({
+    where: {
+      workspaceId_userId: {
+        workspaceId: drSilvaWorkspace.id,
+        userId: drSilva.id,
+      },
+    },
+    update: {},
+    create: {
+      workspaceId: drSilvaWorkspace.id,
+      userId: drSilva.id,
+      role: 'OWNER',
+    },
+  });
+
+  console.log('✅ Created workspace for Dr. Silva:', drSilvaWorkspace.slug);
+
+  // Create a demo patient assigned to Dr. Silva (so dashboard panels have data)
+  const silvaDemoPatient = await prisma.patient.upsert({
+    where: { mrn: 'MRN-DEMO-SILVA-001' },
+    update: {},
+    create: {
+      firstName: 'Fernanda',
+      lastName: 'Costa Oliveira',
+      dateOfBirth: new Date('1968-03-22'),
+      gender: 'F',
+      email: 'fernanda.costa@example.com',
+      phone: '+55 11 9876 5432',
+      address: 'Rua Augusta 1200, Consolação',
+      city: 'São Paulo',
+      state: 'SP',
+      postalCode: '01304-001',
+      country: 'BR',
+      mrn: 'MRN-DEMO-SILVA-001',
+      tokenId: 'PT-silva-demo-001',
+      ageBand: '50-59',
+      region: 'SP',
+      assignedClinicianId: drSilva.id,
+      dataHash: generatePatientDataHash({
+        id: 'silva-demo-001',
+        firstName: 'Fernanda',
+        lastName: 'Costa Oliveira',
+        dateOfBirth: '1968-03-22',
+        mrn: 'MRN-DEMO-SILVA-001',
+      }),
+      lastHashUpdate: new Date(),
+    },
+  });
+
+  console.log('✅ Created demo patient for Dr. Silva:', silvaDemoPatient.tokenId);
+
   // Create test patient with blockchain-ready fields
   const patient = await prisma.patient.upsert({
     where: { mrn: 'MRN-2024-001' },
@@ -337,19 +434,23 @@ async function main() {
 
   console.log('\n🎉 Database seeded successfully!\n');
   console.log('📊 Summary:');
-  console.log(`   - 1 Clinician (${clinician.email})`);
-  console.log(`   - 2 Patients (${patient.tokenId}, ${demoPatient.tokenId})`);
+  console.log(`   - 3 Clinicians (${clinician.email}, ${demoClinician.email}, ${drSilva.email})`);
+  console.log(`   - 3 Patients (${patient.tokenId}, ${demoPatient.tokenId}, ${silvaDemoPatient.tokenId})`);
   console.log(`   - 2 Patient Users (${patientUser.email}, ${demoPatientUser.email})`);
+  console.log(`   - 1 Workspace (${drSilvaWorkspace.slug})`);
   console.log(`   - 8 Medications (6 for demo account, 2 for test patient)`);
   console.log(`   - 4 Appointments (3 for demo account, 1 for test patient)`);
   console.log(`   - 1 Audit Log`);
   console.log('\n💡 Test the app:');
-  console.log(`   - Clinician Dashboard: http://localhost:3000/dashboard/patients/${patient.id}`);
+  console.log(`   - Clinician Dashboard: http://localhost:3000/dashboard`);
   console.log(`   - Patient Portal Login: http://localhost:3000/portal/login`);
-  console.log(`\n🎭 Demo Account (Public Access):`);
+  console.log(`\n🎭 Dr. Silva Demo (Primary):`);
+  console.log(`   - Email: dr.silva@holilabs.xyz / Cortex2026!`);
+  console.log(`   - Dashboard: http://localhost:3000/dashboard`);
+  console.log(`   - ID: demo-dr-silva-id (matches auth.config.ts)`);
+  console.log(`\n🎭 Demo Patient Account:`);
   console.log(`   - Email: ${demoPatientUser.email}`);
   console.log(`   - Portal: http://localhost:3000/portal/login`);
-  console.log(`   - Features: 6 medications, 3 appointments, comprehensive medical history`);
   console.log(`\n🔬 Test Account:`);
   console.log(`   - Email: ${patientUser.email}`);
 }

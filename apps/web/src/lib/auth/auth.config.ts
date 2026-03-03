@@ -50,7 +50,19 @@ export const authConfig: NextAuthConfig = {
 
           const { email, password } = validation.data;
 
-          // Demo user — DB-free login for demos and testing
+          // Demo users — DB-free login for demos and testing
+          if (email === 'dr.silva@holilabs.xyz' && password === 'Cortex2026!') {
+            return {
+              id: 'demo-dr-silva-id',
+              email: 'dr.silva@holilabs.xyz',
+              name: 'Dr. Ricardo Silva',
+              role: 'CLINICIAN',
+              firstName: 'Ricardo',
+              lastName: 'Silva',
+              username: 'dr.silva',
+              onboardingCompleted: true,
+            };
+          }
           if (email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#') {
             return {
               id: 'demo-clinician-id',
@@ -112,7 +124,7 @@ export const authConfig: NextAuthConfig = {
   ],
 
   pages: {
-    signIn: '/auth/login',
+    signIn: '/sign-in',
     error: '/auth/error',
   },
 

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import { useRouter, usePathname } from '@/i18n/navigation';
 
 // ─── useFadeIn hook ────────────────────────────────────────────────────────────
 function useFadeIn(delay = 0) {
@@ -30,16 +32,41 @@ function useFadeIn(delay = 0) {
   return { ref, style };
 }
 
+const LOCALE_OPTIONS = [
+  { code: 'en', label: 'EN', name: 'English' },
+  { code: 'pt-BR', label: 'PT', name: 'Portugues' },
+] as const;
+
 export function BillingComplianceLanding() {
+  const t = useTranslations('landing.hero');
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [email, setEmail] = useState('');
+  const [formState, setFormState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [formMsg, setFormMsg] = useState('');
+  const [langOpen, setLangOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+
+  // Capture ?plan= from hash fragment (e.g. /#access?plan=safety)
+  useEffect(() => {
+    const hash = window.location.hash; // e.g. "#access?plan=safety"
+    if (hash.includes('plan=')) {
+      const match = hash.match(/plan=([^&]+)/);
+      if (match) setSelectedPlan(match[1]);
+    }
+  }, []);
+
+  // Nav text adapts to dark hero vs white scrolled background
+  const navText = scrolled ? 'text-[#1d1d1f]' : 'text-white';
+  const navMuted = scrolled ? 'text-[#6e6e73]' : 'text-white/60';
+  const navBurger = scrolled ? 'bg-[#1d1d1f]' : 'bg-white';
+  const currentLabel = LOCALE_OPTIONS.find((o) => o.code === locale)?.label ?? 'EN';
 
   // ── Parallax refs ──────────────────────────────────────────────────────────
   const heroContentRef = useRef<HTMLDivElement>(null);
-  const blob1Ref = useRef<HTMLDivElement>(null);
-  const blob2Ref = useRef<HTMLDivElement>(null);
-  const blob3Ref = useRef<HTMLDivElement>(null);
 
   // ── Fade-in hooks (all unconditional) ─────────────────────────────────────
   const featureALeft  = useFadeIn(0);
@@ -81,15 +108,6 @@ export function BillingComplianceLanding() {
         if (heroContentRef.current) {
           heroContentRef.current.style.transform = `translateY(${y * 0.13}px)`;
         }
-        if (blob1Ref.current) {
-          blob1Ref.current.style.transform = `translateY(${y * 0.09}px)`;
-        }
-        if (blob2Ref.current) {
-          blob2Ref.current.style.transform = `translateY(${y * 0.17}px)`;
-        }
-        if (blob3Ref.current) {
-          blob3Ref.current.style.transform = `translateY(${y * -0.06}px)`;
-        }
       });
     };
 
@@ -100,34 +118,96 @@ export function BillingComplianceLanding() {
     };
   }, []);
 
+  // ── Close lang dropdown on outside click ───────────────────────────────────
+  useEffect(() => {
+    if (!langOpen) return;
+    const close = () => setLangOpen(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [langOpen]);
+
+  // ── Form submission ────────────────────────────────────────────────────────
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || formState === 'loading') return;
+
+    setFormState('loading');
+    setFormMsg('');
+
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, plan: selectedPlan }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setFormState('success');
+        setFormMsg('You\u2019re on the list. We\u2019ll be in touch within 48 hours.');
+        setEmail('');
+      } else {
+        setFormState('error');
+        setFormMsg(data.error || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setFormState('error');
+      setFormMsg('Network error. Please try again.');
+    }
+  };
+
   return (
     <>
       <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0px,  0px) scale(1);    }
-          33%       { transform: translate(32px, -56px) scale(1.1); }
-          66%       { transform: translate(-20px, 24px) scale(0.94);}
-        }
-        .animate-blob           { animation: blob 14s ease-in-out infinite; }
-        .animate-blob-delay-2   { animation: blob 14s ease-in-out 2s infinite; }
-        .animate-blob-delay-4   { animation: blob 14s ease-in-out 4s infinite; }
+        @keyframes float-tag { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+        .float-tag-1 { animation: float-tag 3s ease-in-out infinite; }
+        .float-tag-2 { animation: float-tag 3s ease-in-out 0.5s infinite; }
+        .float-tag-3 { animation: float-tag 3s ease-in-out 1s infinite; }
+        .float-tag-4 { animation: float-tag 3s ease-in-out 1.5s infinite; }
+        .float-tag-5 { animation: float-tag 3s ease-in-out 2s infinite; }
+        .float-tag-6 { animation: float-tag 3s ease-in-out 2.5s infinite; }
       `}</style>
 
       <div className="bg-white text-[#1d1d1f] font-sans antialiased overflow-x-hidden selection:bg-blue-100 selection:text-blue-900">
 
         {/* ── Mobile full-screen menu overlay ──────────────────────────────── */}
         {menuOpen && (
-          <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-10">
-            {(['How it works', 'For hospitals', 'Trust'] as const).map((label) => (
+          <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-8">
+            {[
+              { label: 'How it works', href: '#how-it-works' },
+              { label: 'For hospitals', href: '#' },
+              { label: 'Pricing', href: '/pricing' },
+            ].map((item) => (
               <a
-                key={label}
-                href="#"
+                key={item.label}
+                href={item.href}
                 onClick={() => setMenuOpen(false)}
                 className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] hover:text-[#0071e3] transition-colors"
               >
-                {label}
+                {item.label}
               </a>
             ))}
+            <a
+              href="/sign-in"
+              onClick={() => setMenuOpen(false)}
+              className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] hover:text-[#0071e3] transition-colors"
+            >
+              Sign in
+            </a>
+            <div className="flex gap-3 mt-2">
+              {LOCALE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.code}
+                  onClick={() => { router.replace(pathname, { locale: opt.code }); setMenuOpen(false); }}
+                  className={`text-[15px] font-medium px-3 py-1.5 rounded-full transition-colors ${
+                    locale === opt.code ? 'bg-[#0071e3] text-white' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             <a
               href="#access"
               onClick={() => setMenuOpen(false)}
@@ -146,33 +226,78 @@ export function BillingComplianceLanding() {
               : 'bg-transparent'
           }`}
         >
-          <nav className="max-w-[980px] mx-auto flex items-center justify-between h-[52px] px-5">
+          <nav className="max-w-[1120px] mx-auto flex items-center justify-between h-[52px] px-5">
             {/* Logo */}
-            <span className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
+            <a href="/" className={`flex-shrink-0 text-[17px] font-semibold tracking-[-0.02em] ${navText} transition-colors duration-300`}>
               Cortex{' '}
-              <span className="text-[#6e6e73] font-normal text-[15px]">by Holi Labs</span>
-            </span>
+              <span className={`${navMuted} font-normal text-[15px] transition-colors duration-300`}>by Holi Labs</span>
+            </a>
 
             {/* Desktop center links */}
             <div className="hidden md:flex items-center gap-7">
-              {(['How it works', 'For hospitals', 'Trust'] as const).map((label) => (
+              {[
+                { label: 'How it works', href: '#how-it-works' },
+                { label: 'For hospitals', href: '#' },
+                { label: 'Pricing', href: '/pricing' },
+              ].map((item) => (
                 <a
-                  key={label}
-                  href="#"
-                  className="text-[14px] text-[#1d1d1f] hover:text-[#0071e3] transition-colors"
+                  key={item.label}
+                  href={item.href}
+                  className={`text-[14px] ${navText} hover:text-[#0071e3] transition-colors duration-300`}
                 >
-                  {label}
+                  {item.label}
                 </a>
               ))}
             </div>
 
-            {/* Desktop CTA */}
-            <a
-              href="#access"
-              className="hidden md:inline-flex items-center rounded-full bg-[#0071e3] text-white text-[13px] font-semibold px-5 py-2 hover:bg-[#0077ed] transition-colors active:scale-[0.98]"
-            >
-              Request access
-            </a>
+            {/* Desktop right: lang + sign in + CTA */}
+            <div className="hidden md:flex items-center gap-3">
+              {/* Language switcher */}
+              <div className="relative" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setLangOpen((v) => !v)}
+                  className={`flex items-center gap-1 text-[13px] font-medium ${navMuted} hover:${navText} transition-colors duration-300 px-2 py-1 rounded-md hover:bg-white/[0.08]`}
+                  aria-label="Change language"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  {currentLabel}
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" className={`opacity-40 transition-transform ${langOpen ? 'rotate-180' : ''}`}>
+                    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {langOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 bg-white rounded-lg shadow-lg border border-black/[0.08] py-1 min-w-[100px] z-50">
+                    {LOCALE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.code}
+                        onClick={() => { router.replace(pathname, { locale: opt.code }); setLangOpen(false); }}
+                        className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
+                          locale === opt.code ? 'text-[#0071e3] font-semibold bg-blue-50/60' : 'text-[#1d1d1f] hover:bg-black/[0.04]'
+                        }`}
+                      >
+                        {opt.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <a
+                href="/sign-in"
+                className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300 border ${scrolled ? 'border-black/15 hover:border-[#0071e3]/40' : 'border-white/25 hover:border-white/50'} rounded-full px-4 py-1.5`}
+              >
+                Sign in
+              </a>
+              <a
+                href="#access"
+                className="inline-flex items-center rounded-full bg-[#0071e3] text-white text-[13px] font-semibold px-5 py-2 hover:bg-[#0077ed] transition-colors active:scale-[0.98]"
+              >
+                Request access
+              </a>
+            </div>
 
             {/* Mobile hamburger */}
             <button
@@ -182,17 +307,17 @@ export function BillingComplianceLanding() {
               aria-expanded={menuOpen}
             >
               <span
-                className={`block h-[1.5px] w-5 bg-[#1d1d1f] origin-center transition-transform duration-200 ${
+                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${
                   menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''
                 }`}
               />
               <span
-                className={`block h-[1.5px] w-5 bg-[#1d1d1f] transition-opacity duration-200 ${
+                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} transition-all duration-200 ${
                   menuOpen ? 'opacity-0' : ''
                 }`}
               />
               <span
-                className={`block h-[1.5px] w-5 bg-[#1d1d1f] origin-center transition-transform duration-200 ${
+                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${
                   menuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''
                 }`}
               />
@@ -200,55 +325,46 @@ export function BillingComplianceLanding() {
           </nav>
         </header>
 
-        {/* ── 2. Hero ──────────────────────────────────────────────────────── */}
+        {/* ── 2. Hero (dark with background image + integrated trust bar) ── */}
         <section
-          className="relative min-h-svh flex flex-col items-center justify-center text-center px-5 pt-[52px] overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%)' }}
+          className="relative flex flex-col items-center justify-center text-center px-5 pt-[52px] overflow-hidden"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(15,15,20,0.82) 0%, rgba(15,15,20,0.90) 60%, rgba(15,15,20,0.96) 100%), url('/cortex-bg.jpeg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
         >
-          {/* Gradient blobs — outer div is parallax wrapper (no React style), inner keeps keyframe */}
-          <div ref={blob1Ref} className="absolute top-1/4 left-1/3" aria-hidden="true">
-            <div className="w-[640px] h-[640px] rounded-full bg-[#0071e3] opacity-[0.07] blur-[130px] animate-blob" />
-          </div>
-          <div ref={blob2Ref} className="absolute top-1/3 right-1/4" aria-hidden="true">
-            <div className="w-[520px] h-[520px] rounded-full bg-indigo-500 opacity-[0.06] blur-[110px] animate-blob-delay-2" />
-          </div>
-          <div ref={blob3Ref} className="absolute bottom-1/4 left-1/4" aria-hidden="true">
-            <div className="w-[440px] h-[440px] rounded-full bg-sky-400 opacity-[0.06] blur-[100px] animate-blob-delay-4" />
-          </div>
-
-          {/* Hero content — parallax wrapper (no React style prop, direct DOM only) */}
-          <div ref={heroContentRef} className="relative z-10 max-w-[760px] mx-auto">
+          {/* Hero content — parallax wrapper */}
+          <div ref={heroContentRef} className="relative z-10 max-w-[760px] mx-auto pt-24 pb-8 sm:pt-32 sm:pb-12 lg:pt-40 lg:pb-16">
             {/* Eyebrow pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 backdrop-blur-sm px-4 py-[7px] mb-10 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 backdrop-blur-sm px-4 py-[7px] mb-8 shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-[#34c759] flex-shrink-0" aria-hidden="true" />
-              <span className="text-[13px] font-medium text-[#6e6e73]">Now in pilot — Bolivia &amp; Brazil</span>
+              <span className="text-[13px] font-medium text-white/70">{t('eyebrow')}</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-[clamp(52px,9vw,96px)] font-semibold tracking-[-0.03em] leading-[1.01] text-[#1d1d1f] mb-8">
-              The safety layer<br />
-              medicine was<br />
-              missing.
+            <h1 className="text-[clamp(40px,7.5vw,76px)] font-semibold tracking-[-0.035em] leading-[1.05] text-white mb-6">
+              {t('headline')}
             </h1>
 
             {/* Subhead */}
-            <p className="text-[clamp(18px,2.5vw,24px)] text-[#6e6e73] tracking-[-0.01em] leading-[1.4] mb-12 max-w-[520px] mx-auto">
-              Real-time clinical guardrails. Built for Latin America.
+            <p className="text-[clamp(17px,2.2vw,22px)] text-white/55 tracking-[-0.01em] leading-[1.45] mb-10 max-w-[540px] mx-auto">
+              {t('subhead')}
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
               <a
                 href="#access"
                 className="inline-flex items-center rounded-full bg-[#0071e3] text-white text-[17px] font-semibold px-8 py-[14px] hover:bg-[#0077ed] transition-colors shadow-[0_4px_24px_rgba(0,113,227,0.28)] active:scale-[0.98]"
               >
-                Request clinical access
+                {t('ctaPrimary')}
               </a>
               <a
-                href="#how-it-works"
-                className="inline-flex items-center gap-1.5 text-[17px] text-[#0071e3] font-medium hover:text-[#0077ed] transition-colors active:scale-[0.98]"
+                href="/demo"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/25 text-[17px] text-white/80 font-medium px-7 py-[12px] hover:bg-white/10 hover:text-white transition-colors active:scale-[0.98]"
               >
-                See how it works
+                {t('ctaSecondary')}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -256,155 +372,132 @@ export function BillingComplianceLanding() {
             </div>
           </div>
 
-          {/* Scroll hint line */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2" aria-hidden="true">
-            <div className="w-px h-10 bg-gradient-to-b from-transparent to-[#d2d2d7]" />
+          {/* ── Trust bar (inside hero, dark-themed, seamless) ─────────── */}
+          <div className="relative z-10 w-full border-t border-white/[0.08] mt-auto">
+            <div className="max-w-[980px] mx-auto px-5 py-4">
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+                {([
+                  t('trustLgpd'),
+                  t('trustAnvisa'),
+                  t('trustDeterministic'),
+                  t('trustSpeed'),
+                  t('trustPhi'),
+                ] as string[]).map((item, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <span className="hidden sm:inline text-white/15 select-none">&middot;</span>
+                    )}
+                    <span className="text-[12px] font-medium text-white/40 tracking-wide uppercase">{item}</span>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ── 3. Trust bar ─────────────────────────────────────────────────── */}
-        <div className="bg-[#f5f5f7] border-y border-black/[0.06]">
-          <div className="max-w-[980px] mx-auto px-5 py-5">
-            <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
-              {[
-                '1,587 tests passing',
-                '14,200+ validations',
-                'LGPD-native',
-                'ANVISA-ready',
-                '<90s median review',
-              ].map((item, i) => (
-                <React.Fragment key={item}>
-                  {i > 0 && (
-                    <span className="hidden sm:inline text-[#d2d2d7] select-none">·</span>
-                  )}
-                  <span className="text-[13px] font-medium text-[#6e6e73]">{item}</span>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ── 4. Feature A ─────────────────────────────────────────────────── */}
+        {/* ── 4. Feature A — Cross-Reference Engine ──────────────────────── */}
         <section id="how-it-works" className="py-36 px-5">
           <div className="max-w-[980px] mx-auto grid md:grid-cols-2 gap-16 lg:gap-24 items-center">
-            {/* Copy — fade-in outer wrapper */}
+            {/* Copy */}
             <div ref={featureALeft.ref} style={featureALeft.style}>
               <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                Clinical Intelligence
+                The Cortex Cross-Reference Engine
               </p>
               <h2 className="text-[clamp(36px,5vw,52px)] font-semibold tracking-[-0.03em] leading-[1.05] text-[#1d1d1f] mb-6">
-                One look.<br />Everything you need.
+                Catch the error before it becomes a glosa.
               </h2>
               <p className="text-[19px] text-[#6e6e73] leading-[1.55] tracking-[-0.01em] mb-8">
-                Cortex reads the chart, surfaces what matters, and flags what doesn&apos;t add up
-                — before the order is placed.
+                Cortex runs every clinical decision through a global logic core that adapts to local mandates. Whether it&apos;s validating a dosage against international protocols or cross-referencing a prescription with country-specific codes (ICD-10, TUSS, SNOMED, etc.), we catch the mismatch at the source.
               </p>
               <a
                 href="#"
                 className="inline-flex items-center gap-1.5 text-[16px] text-[#0071e3] font-medium hover:text-[#0077ed] transition-colors"
               >
-                Learn more
+                See the clinical signals
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </a>
             </div>
 
-            {/* Signal card — fade-in outer, hover lift on inner (avoids transform conflict) */}
+            {/* Engine image with floating tags */}
             <div ref={featureARight.ref} style={featureARight.style}>
-              <div className="rounded-2xl bg-[#f5f5f7] p-7 ring-1 ring-black/[0.06] shadow-2xl shadow-black/[0.04] hover:shadow-[0_32px_64px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500">
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-[13px] font-semibold text-[#1d1d1f] tracking-[-0.01em]">
-                    Clinical Signal
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#6e6e73]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#34c759]" aria-hidden="true" />
-                    Live
-                  </span>
-                </div>
-                <div className="space-y-2.5">
-                  {[
-                    {
-                      label: 'ICD-10 match',
-                      color: 'bg-[#34c759]',
-                      msg: 'J18.9 — Pneumonia, unspecified',
-                    },
-                    {
-                      label: 'Drug interaction',
-                      color: 'bg-[#ff9f0a]',
-                      msg: 'Azithromycin × warfarin — review',
-                    },
-                    {
-                      label: 'Dosage check',
-                      color: 'bg-[#34c759]',
-                      msg: 'Within therapeutic range',
-                    },
-                    {
-                      label: 'TUSS billing code',
-                      color: 'bg-[#ff3b30]',
-                      msg: 'Code mismatch — 40308052 expected',
-                    },
-                  ].map((row) => (
+              <div className="relative">
+                {/* Image wrapper with cropped top and radial fade */}
+                <div className="rounded-2xl overflow-hidden ring-1 ring-black/[0.06] shadow-2xl shadow-black/[0.04]">
+                  <div className="relative -mt-12">
+                    <img
+                      src="/cortex-engine.jpeg"
+                      alt="Cortex Cross-Reference Engine"
+                      className="w-full block"
+                    />
+                    {/* Radial gradient mask to blend edges */}
                     <div
-                      key={row.label}
-                      className="flex items-start gap-3 rounded-xl bg-white p-3.5 ring-1 ring-black/[0.05]"
-                    >
-                      <span className={`mt-[3px] h-2 w-2 rounded-full flex-shrink-0 ${row.color}`} aria-hidden="true" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-[#1d1d1f] leading-none mb-1">
-                          {row.label}
-                        </p>
-                        <p className="text-[12px] text-[#6e6e73] leading-snug truncate">{row.msg}</p>
-                      </div>
-                    </div>
-                  ))}
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(255,255,255,0.8) 100%)',
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="mt-5 pt-5 border-t border-black/[0.06] flex items-center justify-between">
-                  <span className="text-[12px] text-[#6e6e73]">Reviewed in</span>
-                  <span className="text-[13px] font-semibold text-[#1d1d1f]">47 seconds</span>
-                </div>
+
+                {/* Floating code tags */}
+                {[
+                  { label: 'ICD-10', cls: 'float-tag-1', pos: 'top-4 left-4' },
+                  { label: 'TUSS', cls: 'float-tag-2', pos: 'top-4 right-6' },
+                  { label: 'ANVISA', cls: 'float-tag-3', pos: 'top-1/3 -left-2' },
+                  { label: 'SNOMED CT', cls: 'float-tag-4', pos: 'top-1/3 -right-2' },
+                  { label: 'Dosage Limits', cls: 'float-tag-5', pos: 'bottom-16 left-6' },
+                  { label: 'Drug Interactions', cls: 'float-tag-6', pos: 'bottom-8 right-4' },
+                ].map((tag) => (
+                  <span
+                    key={tag.label}
+                    className={`absolute ${tag.pos} ${tag.cls} bg-cyan-500/15 border border-cyan-400/30 text-cyan-700 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium shadow-[0_0_12px_rgba(0,200,170,0.15)]`}
+                  >
+                    {tag.label}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── 5. Feature B (dark) ──────────────────────────────────────────── */}
+        {/* ── 5. Feature B — For Physicians (dark) ───────────────────────── */}
         <section
           className="py-36 px-5"
           style={{ background: 'radial-gradient(ellipse at 50% 0%, #2c2c2e 0%, #1d1d1f 60%)' }}
         >
           <div className="max-w-[980px] mx-auto">
-            {/* Heading — fade-in */}
+            {/* Heading */}
             <div ref={featureBHead.ref} style={featureBHead.style} className="text-center mb-20">
               <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                Physician Experience
+                For Physicians
               </p>
               <h2 className="text-[clamp(36px,5.5vw,60px)] font-semibold tracking-[-0.03em] leading-[1.05] text-white mb-6">
-                No extra clicks.<br />No extra time.
+                Your doctors won&apos;t even<br />notice it&apos;s there.
               </h2>
               <p className="text-[21px] text-[#a1a1a6] leading-[1.5] tracking-[-0.01em] max-w-[560px] mx-auto">
-                Physicians validate in under 90 seconds. The system learns from every decision.
-                The guardrail gets sharper.
+                No training. No new screens. No workflow disruption. Cortex runs silently alongside your existing systems and only speaks up when something is actually wrong.
               </p>
             </div>
 
-            {/* Stat cards — staggered fade-in, hover ring + bg (no transform, no conflict) */}
+            {/* Stat cards */}
             <div className="grid sm:grid-cols-3 gap-4">
               {[
                 {
                   stat: '< 90s',
                   label: 'Median physician review',
-                  sub: 'From chart open to order confirmation',
+                  sub: 'No extra steps. Same workflow, safer outcomes.',
                 },
                 {
                   stat: '0 PHI',
-                  label: 'Data moved off-device',
-                  sub: 'All processing runs on-premise',
+                  label: 'Patient data leaves your network',
+                  sub: 'LGPD-compliant by architecture, not by policy.',
                 },
                 {
                   stat: '24/7',
                   label: 'Audit trail coverage',
-                  sub: 'Every decision logged and timestamped',
+                  sub: 'Every clinical decision documented. Ready for any audit.',
                 },
               ].map((card, i) => (
                 <div key={card.stat} ref={bCards[i]!.ref} style={bCards[i]!.style}>
@@ -421,47 +514,61 @@ export function BillingComplianceLanding() {
           </div>
         </section>
 
-        {/* ── 6. Feature C ─────────────────────────────────────────────────── */}
+        {/* ── 6. Feature C — Latin America First ─────────────────────────── */}
         <section className="py-36 px-5">
           <div className="max-w-[980px] mx-auto">
-            {/* Heading — fade-in */}
-            <div ref={featureCHead.ref} style={featureCHead.style} className="text-center mb-20">
+            {/* Heading */}
+            <div ref={featureCHead.ref} style={featureCHead.style} className="text-center mb-12">
               <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                Geography
+                Built for Latin America
               </p>
               <h2 className="text-[clamp(36px,5.5vw,60px)] font-semibold tracking-[-0.03em] leading-[1.05] text-[#1d1d1f] mb-6">
-                Built for where medicine<br />actually happens.
+                Not a US product with<br />a Spanish translation.
               </h2>
-              <p className="text-[21px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em] max-w-[560px] mx-auto">
-                WhatsApp-first. Portuguese and Spanish. LGPD by default.
-                No 18-month EHR integration.
+              <p className="text-[21px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em] max-w-[620px] mx-auto mb-4">
+                Every rule, every code, every protocol — engineered from scratch for Latin American healthcare. Cortex validates prescriptions against local formularies, catches dangerous drug interactions in real time, and flags billing mismatches before they become denied claims.
               </p>
+              <p className="text-[17px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em] max-w-[560px] mx-auto mb-8">
+                One engine. Three countries. Loaded with the specific clinical and regulatory libraries your region demands — from TUSS codes in Brazil to provincial formularies in Argentina.
+              </p>
+              <a
+                href="/demo"
+                className="inline-flex items-center gap-1.5 text-[16px] text-[#0071e3] font-medium hover:text-[#0077ed] transition-colors"
+              >
+                See it catch a real drug interaction
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
             </div>
 
-            {/* Country cards — staggered fade-in outer, hover lift on inner (avoids transform conflict) */}
-            <div className="grid sm:grid-cols-3 gap-4">
+            {/* Country cards */}
+            <div className="grid sm:grid-cols-3 gap-4 mt-16">
               {[
                 {
                   country: 'Brazil',
+                  flag: '🇧🇷',
                   badge: 'Pilot active',
-                  desc: 'LGPD-compliant, TUSS billing codes, ANVISA drug registry, and a Portuguese-first interface.',
+                  desc: 'LGPD-compliant. TUSS billing. ANVISA drug registry. Portuguese-native. Every prescription checked against local protocols.',
                 },
                 {
                   country: 'Bolivia',
+                  flag: '🇧🇴',
                   badge: 'Pilot active',
-                  desc: 'Spanish-language workflows with Ministry of Health data standards and local formulary coverage.',
+                  desc: 'Spanish-first. Ministry of Health standards. Local formulary integration. Built with Bolivian clinics, not adapted for them.',
                 },
                 {
                   country: 'Argentina',
+                  flag: '🇦🇷',
                   badge: 'Coming 2026',
-                  desc: 'SNOMED CT mapping, provincial formulary integration, and IOMA billing code support.',
+                  desc: 'SNOMED CT. Provincial formulary. IOMA billing. Full regulatory coverage launching Q3 2026.',
                 },
               ].map((c, i) => (
                 <div key={c.country} ref={cCards[i]!.ref} style={cCards[i]!.style}>
                   <div className="rounded-2xl bg-[#f5f5f7] p-8 ring-1 ring-black/[0.05] hover:ring-black/[0.10] hover:-translate-y-0.5 transition-all duration-300">
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-[22px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
-                        {c.country}
+                        <span className="mr-2" aria-hidden="true">{c.flag}</span>{c.country}
                       </h3>
                       <span className="text-[11px] font-medium text-[#6e6e73] bg-white rounded-full px-2.5 py-1 ring-1 ring-black/[0.06] whitespace-nowrap ml-3 mt-0.5">
                         {c.badge}
@@ -479,34 +586,51 @@ export function BillingComplianceLanding() {
         <section id="access" className="bg-black py-36 px-5">
           <div ref={ctaContent.ref} style={ctaContent.style} className="max-w-[700px] mx-auto text-center">
             <h2 className="text-[clamp(36px,5.5vw,60px)] font-semibold tracking-[-0.03em] leading-[1.05] text-white mb-6">
-              Medicine is high-stakes.<br />Your tools should be too.
+              How many claims did your hospital lose last month?
             </h2>
             <p className="text-[21px] text-[#a1a1a6] tracking-[-0.01em] mb-12">
-              Request early clinical access.
+              Most administrators don&apos;t know. Cortex shows you in the first week.
             </p>
 
             {/* Inline email form */}
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="flex flex-col sm:flex-row gap-3 max-w-[440px] mx-auto mb-6"
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@hospital.com"
-                className="flex-1 min-w-0 rounded-full px-5 py-4 bg-white/10 text-white placeholder-[#6e6e73] text-[15px] border border-white/20 focus:outline-none focus:border-white/50 transition-colors"
-              />
-              <button
-                type="submit"
-                className="rounded-full bg-white text-black text-[15px] font-semibold px-7 py-4 hover:bg-[#f5f5f7] transition-colors whitespace-nowrap active:scale-[0.98]"
+            {formState === 'success' ? (
+              <div className="max-w-[440px] mx-auto mb-6">
+                <div className="flex items-center justify-center gap-2 rounded-full bg-[#34c759]/10 border border-[#34c759]/20 px-6 py-4">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" className="text-[#34c759] flex-shrink-0">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-[15px] text-[#34c759] font-medium">{formMsg}</span>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col sm:flex-row gap-3 max-w-[440px] mx-auto mb-6"
               >
-                Request access
-              </button>
-            </form>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (formState === 'error') setFormState('idle'); }}
+                  placeholder="your@hospital.com"
+                  required
+                  className="flex-1 min-w-0 rounded-full px-5 py-4 bg-white/10 text-white placeholder-[#6e6e73] text-[15px] border border-white/20 focus:outline-none focus:border-white/50 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={formState === 'loading'}
+                  className="rounded-full bg-white text-black text-[15px] font-semibold px-7 py-4 hover:bg-[#f5f5f7] transition-colors whitespace-nowrap active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {formState === 'loading' ? 'Sending...' : 'Request access'}
+                </button>
+              </form>
+            )}
+
+            {formState === 'error' && (
+              <p className="text-[13px] text-red-400 mb-3">{formMsg}</p>
+            )}
 
             <p className="text-[12px] text-[#6e6e73] leading-relaxed">
-              HIPAA-aligned. LGPD-native. We never store PHI on form submit.
+              No PHI collected on this form. LGPD-native. Response within 48 hours.
             </p>
           </div>
         </section>
@@ -528,15 +652,31 @@ export function BillingComplianceLanding() {
               {[
                 {
                   heading: 'Product',
-                  links: ['How it works', 'For hospitals', 'Security', 'Changelog'],
+                  links: [
+                    { label: 'How it works', href: '#how-it-works' },
+                    { label: 'Pricing', href: '/pricing' },
+                    { label: 'Live Demo', href: '/demo' },
+                    { label: 'For hospitals', href: '#' },
+                    { label: 'Sign in', href: '/sign-in' },
+                  ],
                 },
                 {
                   heading: 'Company',
-                  links: ['About', 'Blog', 'Careers', 'Press'],
+                  links: [
+                    { label: 'About', href: '#' },
+                    { label: 'Blog', href: '#' },
+                    { label: 'Careers', href: '#' },
+                    { label: 'Press', href: '#' },
+                  ],
                 },
                 {
                   heading: 'Legal',
-                  links: ['Privacy', 'Terms', 'HIPAA policy', 'LGPD policy'],
+                  links: [
+                    { label: 'Privacy', href: '#' },
+                    { label: 'Terms', href: '#' },
+                    { label: 'HIPAA policy', href: '#' },
+                    { label: 'LGPD policy', href: '#' },
+                  ],
                 },
               ].map((col) => (
                 <div key={col.heading}>
@@ -545,12 +685,12 @@ export function BillingComplianceLanding() {
                   </p>
                   <ul className="space-y-3">
                     {col.links.map((link) => (
-                      <li key={link}>
+                      <li key={link.label}>
                         <a
-                          href="#"
+                          href={link.href}
                           className="text-[13px] text-[#6e6e73] hover:text-white transition-colors"
                         >
-                          {link}
+                          {link.label}
                         </a>
                       </li>
                     ))}
@@ -560,10 +700,10 @@ export function BillingComplianceLanding() {
             </div>
             <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <p className="text-[12px] text-[#6e6e73]">
-                Copyright © 2026 Holi Labs. All rights reserved.
+                Copyright &copy; 2026 Holi Labs. All rights reserved.
               </p>
               <p className="text-[12px] text-[#6e6e73]">
-                HIPAA-aligned · LGPD-native · ANVISA-ready
+                HIPAA-aligned &middot; LGPD-native &middot; ANVISA-ready
               </p>
             </div>
           </div>

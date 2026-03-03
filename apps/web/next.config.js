@@ -1,3 +1,6 @@
+const createNextIntlPlugin = require('next-intl/plugin');
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -37,6 +40,11 @@ const nextConfig = {
       return process.env.BUILD_ID || `build-${Date.now()}`
     },
   }),
+  async redirects() {
+    return [
+      { source: '/login', destination: '/sign-in', permanent: true },
+    ];
+  },
   webpack: (config, { isServer }) => {
     config.externals.push({
       'utf-8-validate': 'commonjs utf-8-validate',
@@ -85,4 +93,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig)
