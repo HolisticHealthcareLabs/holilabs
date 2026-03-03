@@ -78,6 +78,22 @@ export const KPI_DICTIONARY = {
     unit: 'percentage',
     sourceModel: 'PreventionPlan',
   },
+  glosaInterceptCount: {
+    queryId: 'glosaInterceptCount',
+    label: 'Glosa Interceptions',
+    numerator: 'COUNT(*) WHERE encounterId IS NOT NULL',
+    denominator: 'N/A (absolute count)',
+    unit: 'count',
+    sourceModel: 'Prescription',
+  },
+  tussCatchCount: {
+    queryId: 'tussCatchCount',
+    label: 'TUSS Checks Run',
+    numerator: "COUNT(*) WHERE encounterId IS NOT NULL AND status = 'PENDING' AND diagnosis IS NOT NULL",
+    denominator: 'N/A (absolute count)',
+    unit: 'count',
+    sourceModel: 'Prescription',
+  },
 } as const satisfies Record<string, KPIDictionaryEntry>;
 
 export type KPIDictionaryKey = keyof typeof KPI_DICTIONARY;

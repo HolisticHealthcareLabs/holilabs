@@ -23,6 +23,7 @@ import {
 import { useGovernanceRealtime } from '@/hooks/useGovernanceRealtime';
 import { FirstRunWelcome } from '@/components/dashboard/FirstRunWelcome';
 import { KPICard } from '@/components/console/KPICard';
+import { CopilotDraftPanel } from '@/components/console/CopilotDraftPanel';
 import { KPI_DICTIONARY, type KPIDictionaryKey } from '@/lib/kpi/kpi-dictionary';
 import type { KPIResult } from '@/lib/kpi/kpi-queries';
 
@@ -582,6 +583,11 @@ export default function ClinicalCommandCenterPage() {
           <GroundTruthPanel data={data.groundTruth} />
         </div>
       )}
+
+      {/* AI Copilot → Draft Prescription Panel */}
+      <div className="mt-5">
+        <CopilotDraftPanel />
+      </div>
     </div>
   );
 }

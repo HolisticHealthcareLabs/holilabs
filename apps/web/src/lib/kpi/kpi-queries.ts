@@ -15,7 +15,9 @@ export type KPIType =
   | 'reminderReach'
   | 'escalationSlaClosure'
   | 'groundTruthAcceptRate'
-  | 'preventionCompletion';
+  | 'preventionCompletion'
+  | 'glosaInterceptCount'
+  | 'tussCatchCount';
 
 export interface KPIResult {
   value: number;
@@ -244,6 +246,45 @@ async function getPreventionCompletion(filter: KPIFilterState): Promise<KPIResul
 }
 
 // ============================================================================
+// FINANCIAL GUARDRAIL KPIs (9-10) — Glosa Prevention
+// ============================================================================
+
+/**
+ * KPI 9: Glosa Intercept Count
+ * Total prescriptions that went through the encounter-linked safety pipeline.
+ * These are prescriptions with encounterId set, meaning billing guardrails were run.
+ * Numerator = Denominator: absolute count (not a rate).
+ */
+async function getGlosaInterceptCount(filter: KPIFilterState): Promise<KPIResult> {
+  const dateWhere = buildDateWhere(filter, 'createdAt');
+  const count = await prisma.prescription.count({
+    where: { ...dateWhere, encounterId: { not: null } },
+  });
+  return { value: count, unit: 'count', label: 'Glosa Interceptions' };
+}
+
+/**
+ * KPI 10: TUSS Hallucination Catch Count
+ * Total prescriptions blocked by FIN-002 (invalid TUSS code).
+ * Derived from prescriptions where status = PENDING and encounterId IS NOT NULL
+ * and the medications JSON contains any entry with a tussCode field.
+ * A pending encounter-linked prescription with a tussCode means the safety
+ * check was invoked and the prescriber was warned before signing.
+ */
+async function getTussCatchCount(filter: KPIFilterState): Promise<KPIResult> {
+  const dateWhere = buildDateWhere(filter, 'createdAt');
+  const count = await prisma.prescription.count({
+    where: {
+      ...dateWhere,
+      encounterId: { not: null },
+      status: 'PENDING',
+      diagnosis: { not: null },
+    },
+  });
+  return { value: count, unit: 'count', label: 'TUSS Checks Run' };
+}
+
+// ============================================================================
 // DISPATCHER
 // ============================================================================
 
@@ -274,6 +315,10 @@ export async function getKPI(
       return getGroundTruthAcceptRate(filter);
     case 'preventionCompletion':
       return getPreventionCompletion(filter);
+    case 'glosaInterceptCount':
+      return getGlosaInterceptCount(filter);
+    case 'tussCatchCount':
+      return getTussCatchCount(filter);
     default:
       throw new Error(`Unknown KPI type: ${kpiType}`);
   }
@@ -294,6 +339,8 @@ export async function getAllKPIs(filter: KPIFilterState = {}): Promise<Record<KP
     escalationSlaClosure,
     groundTruthAcceptRate,
     preventionCompletion,
+    glosaInterceptCount,
+    tussCatchCount,
   ] = await Promise.all([
     getTotalEvaluations(filter),
     getBlockRate(filter),
@@ -303,6 +350,8 @@ export async function getAllKPIs(filter: KPIFilterState = {}): Promise<Record<KP
     getEscalationSlaClosure(filter),
     getGroundTruthAcceptRate(filter),
     getPreventionCompletion(filter),
+    getGlosaInterceptCount(filter),
+    getTussCatchCount(filter),
   ]);
 
   return {
@@ -314,5 +363,7 @@ export async function getAllKPIs(filter: KPIFilterState = {}): Promise<Record<KP
     escalationSlaClosure,
     groundTruthAcceptRate,
     preventionCompletion,
+    glosaInterceptCount,
+    tussCatchCount,
   };
 }
