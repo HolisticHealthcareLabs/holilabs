@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { sendSMS, sendWhatsApp } from '@/lib/sms/twilio';
 import { sendEmail } from '@/lib/email';
 import logger from '@/lib/logger';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import {
   buildReminderLifecycleEvent,
   buildReminderRetryState,
@@ -304,8 +305,8 @@ async function sendViaWhatsApp(phone: string, message: string) {
  * POST /api/reminders/send
  * Send reminders to one or more patients
  */
-export async function POST(request: NextRequest) {
-  try {
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
     const body: SendReminderRequest = await request.json();
 
     const { patientIds, template, channel, sendImmediately = true, scheduledFor } = body;
@@ -788,18 +789,5 @@ export async function POST(request: NextRequest) {
       failed,
       results: results.map((r) => (r.status === 'fulfilled' ? r.value : { success: false, error: 'Unknown error' })),
     });
-  } catch (error) {
-    logger.error({
-      event: 'reminder_send_api_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to send reminders',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+);

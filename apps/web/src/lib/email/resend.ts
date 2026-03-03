@@ -4,6 +4,8 @@ import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
 import { WelcomeEmail } from './templates/WelcomeEmail';
 import { MagicLinkEmail } from './templates/MagicLinkEmail';
+import { WaitlistConfirmationEmail } from './templates/WaitlistConfirmationEmail';
+import { ApprovalInviteEmail } from './templates/ApprovalInviteEmail';
 
 /**
  * Resend Client Initialization
@@ -187,5 +189,36 @@ export async function sendAppointmentReminderEmail(
         </div>
       </div>
     `,
+  });
+}
+
+/**
+ * Send waitlist confirmation to a new lead
+ */
+export async function sendWaitlistConfirmation(
+  email: string,
+  firstName: string | null,
+) {
+  return sendEmail({
+    to: email,
+    subject: 'Cortex — We received your request',
+    react: React.createElement(WaitlistConfirmationEmail, { firstName }),
+    tags: [{ name: 'category', value: 'waitlist' }],
+  });
+}
+
+/**
+ * Send approval invite with onboarding magic link
+ */
+export async function sendApprovalInvite(
+  email: string,
+  firstName: string | null,
+  onboardingUrl: string,
+) {
+  return sendEmail({
+    to: email,
+    subject: 'Cortex — Your pilot is ready',
+    react: React.createElement(ApprovalInviteEmail, { firstName, onboardingUrl }),
+    tags: [{ name: 'category', value: 'approval' }],
   });
 }

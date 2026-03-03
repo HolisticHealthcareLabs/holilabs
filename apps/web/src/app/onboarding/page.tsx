@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -31,8 +31,18 @@ export default function OnboardingPage() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [generatedUsername, setGeneratedUsername] = useState<string | null>(null);
+  const [defaultOrg, setDefaultOrg] = useState<string>('');
 
   const firstName = session?.user?.name?.split(' ')[0] || 'there';
+
+  useEffect(() => {
+    fetch('/api/user/workspace')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.workspaceName) setDefaultOrg(d.workspaceName);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = (formData: FormData) => {
     setError(null);
@@ -46,7 +56,7 @@ export default function OnboardingPage() {
         await update();
 
         setTimeout(() => {
-          router.push('/dashboard/prevention');
+          router.push('/dashboard/clinical-command');
         }, 1500);
       } else {
         setError(result.error);
@@ -133,6 +143,7 @@ export default function OnboardingPage() {
                 id="organization"
                 name="organization"
                 type="text"
+                defaultValue={defaultOrg}
                 className="w-full px-4 py-3 rounded-xl bg-white/[0.06] border border-white/10 text-white placeholder:text-white/30 text-sm outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-shadow"
                 placeholder="Hospital or clinic name (optional)"
               />

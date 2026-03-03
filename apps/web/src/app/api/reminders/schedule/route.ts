@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createProtectedRoute, type ApiContext } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,13 +63,12 @@ function calculateNextExecution(
  * POST /api/reminders/schedule
  * Create a scheduled reminder
  */
-export async function POST(request: NextRequest) {
-  try {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: ApiContext) => {
     const body: ScheduleReminderRequest = await request.json();
 
     const { patientIds, template, channel, scheduledFor, recurrence } = body;
 
-    // Validate input
     if (!patientIds || patientIds.length === 0) {
       return NextResponse.json(
         { success: false, error: 'At least one patient ID is required' },
@@ -113,7 +112,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate recurrence if provided
     if (recurrence) {
       if (!['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'].includes(recurrence.pattern)) {
         return NextResponse.json(
@@ -147,15 +145,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // TODO: Get current user ID from session
-    const createdBy = 'system'; // Replace with actual user ID from auth session
+    const createdBy = context.user?.id || 'system';
 
-    // Calculate next execution for recurring reminders
     const nextExecution = recurrence
       ? calculateNextExecution(scheduleDate, recurrence.pattern, recurrence.interval)
       : null;
 
-    // Create scheduled reminder
     const scheduledReminder = await prisma.scheduledReminder.create({
       data: {
         templateName: template.name,
@@ -171,13 +166,14 @@ export async function POST(request: NextRequest) {
         recurrenceCount: recurrence?.count || null,
         status: recurrence ? 'ACTIVE' : 'PENDING',
         nextExecution: nextExecution,
-        createdBy: createdBy,
+        createdBy,
       },
     });
 
     logger.info({
       event: 'reminder_scheduled',
       reminderId: scheduledReminder.id,
+      createdBy,
       patientCount: patientIds.length,
       channel,
       scheduledFor: scheduleDate.toISOString(),
@@ -197,34 +193,21 @@ export async function POST(request: NextRequest) {
         nextExecution: nextExecution?.toISOString() || null,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'reminder_schedule_api_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to schedule reminder',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+);
 
 /**
  * GET /api/reminders/schedule
  * Get all scheduled reminders
  */
-export async function GET(request: NextRequest) {
-  try {
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status'); // PENDING, ACTIVE, COMPLETED, etc.
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const status = searchParams.get('status');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    const where: any = {};
+    const where: Record<string, string> = {};
     if (status) {
       where.status = status;
     }
@@ -242,25 +225,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: reminders,
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + limit < total,
-      },
+      pagination: { total, limit, offset, hasMore: offset + limit < total },
     });
-  } catch (error) {
-    logger.error({
-      event: 'reminder_schedule_list_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch scheduled reminders',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { skipCsrf: true },
+);

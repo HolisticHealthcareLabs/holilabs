@@ -56,6 +56,20 @@ export default function AdminPage() {
         {/* Quick Actions */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <a
+            href="/dashboard/admin/waitlist"
+            className="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-3 group"
+          >
+            <div className="p-3 bg-amber-100 rounded-lg group-hover:bg-amber-200 transition-colors">
+              <svg className="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">Waitlist</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Lead approvals</div>
+            </div>
+          </a>
+          <a
             href="/dashboard/admin/business-associate-agreement"
             className="p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-3 group"
           >

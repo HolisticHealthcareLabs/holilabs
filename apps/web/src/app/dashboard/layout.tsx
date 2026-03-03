@@ -19,7 +19,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useToolUsageTracker } from '@/hooks/useToolUsageTracker';
 import { DemoGuidedTour } from '@/components/demo/DemoGuidedTour';
-import { ChevronRight, User, Clock, MessageSquare, Shield, Activity, Search, Plus, RefreshCw, XCircle, X, CheckCircle2 } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 interface NavItem {
   name: string;
@@ -55,7 +55,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { showWarning, timeRemaining, extendSession, logout } = useSessionTimeout({
     timeoutMs: 15 * 60 * 1000, // 15 minutes
     warningMs: 2 * 60 * 1000,  // 2 minute warning
-    redirectTo: '/auth/login',
+    redirectTo: '/sign-in',
   });
 
   useEffect(() => {
@@ -121,7 +121,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     // Unauthenticated: send to login, preserving where they were going.
     const callbackUrl = pathname || '/dashboard';
-    router.push(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+    router.push(`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }, [status, session, router, pathname]);
 
   const handleLoadingComplete = () => {
@@ -129,43 +129,34 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     sessionStorage.setItem('hasSeenLoadingScreen', 'true');
   };
 
-  // Streamlined Navigation - Minimal & Elegant
-  // Keep the Command Center/Console icon mapping as requested for demo week.
+  // Streamlined Navigation - Minimal & Clean (Phantom-style)
   const navItems: NavItem[] = [
     {
-      name: 'Command Center',
+      name: 'Dashboard',
       href: '/dashboard/command-center',
       icon: '/icons/chart-cured-increasing.svg',
-      gradient: 'from-slate-600 to-slate-800',
-      hoverGradient: 'from-slate-700 to-slate-900',
-      shadowColor: 'slate-500/40',
     },
     {
-      name: 'Clinical Command',
+      name: 'Clinical Intel',
       href: '/dashboard/clinical-command',
-      icon: '/icons/crisis-response_center_person.svg',
-      gradient: 'from-rose-500 to-red-600',
-      hoverGradient: 'from-rose-600 to-red-700',
-      shadowColor: 'rose-500/40',
+      icon: '/icons/stethoscope.svg',
     },
     {
-      name: 'Console',
+      name: 'Validation',
       href: '/dashboard/console',
+      icon: '/icons/diagnostics.svg',
+    },
+    {
+      name: 'Escalations',
+      href: '/dashboard/escalations',
       icon: '/icons/crisis-response_center_person.svg',
-      gradient: 'from-indigo-500 to-purple-600',
-      hoverGradient: 'from-indigo-600 to-purple-700',
-      shadowColor: 'indigo-500/40',
     },
   ];
 
   const handleSignOut = async () => {
     // Clear NextAuth session and return to login
-    await signOut({ redirect: true, callbackUrl: '/auth/login' });
+    await signOut({ redirect: true, callbackUrl: '/sign-in' });
   };
-
-  const hasMultipleOptions = (item: NavItem) => (item.subItems?.length || 0) > 1;
-
-  // HoverTooltip moved to main render logic for portal-like behavior
 
   return (
     <>
@@ -215,23 +206,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         >
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
-              <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-gray-700/50">
+              <Link href="/dashboard" className="flex items-center gap-2">
                 <Image
                   src="/logos/Logo 1_Light.svg"
                   alt="Holi Labs"
-                  width={32}
-                  height={32}
+                  width={28}
+                  height={28}
                 />
                 {!sidebarCollapsed && (
-                  <span
-                    className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
-                    style={{
-                      fontWeight: 600,
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    Holi Labs
+                  <span className="text-[15px] font-semibold tracking-[-0.02em] text-gray-900 dark:text-gray-100">
+                    Cortex
                   </span>
                 )}
               </Link>
@@ -254,14 +239,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            {/* Navigation - Beautiful Circular Gradient Tiles */}
-            <nav className="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
-              {/* All Navigation Items - Clinical Tools First, Then Main Nav */}
+            {/* Navigation - Minimal (Phantom-style) */}
+            <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
               {navItems.map((item) => {
                 const currentPath = pathname || '';
                 const isActive = currentPath === item.href || (item.href !== '/dashboard' && currentPath.startsWith(item.href));
 
-                const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+                const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
                   if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
                   const rect = e.currentTarget.getBoundingClientRect();
                   setHoveredTool(item.name);
@@ -276,156 +260,60 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 };
 
                 return (
-                  <div
+                  <Link
                     key={item.href}
-                    className="group relative flex items-center transition-all duration-300"
+                    href={item.href}
+                    onClick={() => {
+                      setSidebarOpen(false);
+                      setSidebarPeekOpen(false);
+                      bumpUsage(item.name);
+                    }}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150
+                      ${isActive
+                        ? 'bg-gray-100 dark:bg-gray-700/50 text-gray-900 dark:text-white'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/25 hover:text-gray-900 dark:hover:text-white'
+                      }`}
                   >
-                    <Link
-                      href={item.href}
-                      onClick={() => {
-                        setSidebarOpen(false);
-                        setSidebarPeekOpen(false);
-                        bumpUsage(item.name);
-                      }}
-                      className={`w-full flex items-center gap-3 px-2 py-1.5 rounded-2xl transition-all duration-300
-                      ${isActive ? 'bg-gray-100 dark:bg-gray-700/40' : 'hover:bg-gray-100/70 dark:hover:bg-gray-700/25'}`}
-                    >
-                      {/* Circular Gradient Tile */}
-                      <div
-                        className={`flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 backdrop-blur-sm shrink-0
-                        ${item.name === 'Dashboard' ? 'bg-gradient-to-br from-blue-400/70 to-indigo-500/70 hover:from-blue-500 hover:to-indigo-600 hover:shadow-2xl hover:shadow-blue-400/50' : ''}
-                        ${item.name === 'Command Center' ? 'bg-gradient-to-br from-slate-500/70 to-slate-700/70 hover:from-slate-600 hover:to-slate-800 hover:shadow-2xl hover:shadow-slate-400/30' : ''}
-                        ${item.name === 'Clinical Command' ? 'bg-gradient-to-br from-rose-400/70 to-red-500/70 hover:from-rose-500 hover:to-red-600 hover:shadow-2xl hover:shadow-rose-400/40' : ''}
-                        ${item.name === 'Console' ? 'bg-gradient-to-br from-indigo-400/70 to-purple-500/70 hover:from-indigo-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-indigo-400/40' : ''}
-                        ${item.name === 'Patients' ? 'bg-gradient-to-br from-violet-400/70 to-purple-500/70 hover:from-violet-500 hover:to-purple-600 hover:shadow-2xl hover:shadow-violet-400/50' : ''}
-                        ${item.name === 'Agenda' ? 'bg-gradient-to-br from-green-400/70 to-emerald-500/70 hover:from-green-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-green-400/50' : ''}
-                        ${item.name === 'Co-Pilot' ? 'bg-gradient-to-br from-sky-400/70 to-cyan-500/70 hover:from-sky-500 hover:to-cyan-600 hover:shadow-2xl hover:shadow-sky-400/50' : ''}
-                        ${item.name === 'Clinical Support' ? 'bg-gradient-to-br from-fuchsia-400/70 to-pink-500/70 hover:from-fuchsia-500 hover:to-pink-600 hover:shadow-2xl hover:shadow-fuchsia-400/50' : ''}
-                        ${item.name === 'Prevention' ? 'bg-gradient-to-br from-orange-400/70 to-amber-500/70 hover:from-orange-500 hover:to-amber-600 hover:shadow-2xl hover:shadow-orange-400/50' : ''}
-                        ${item.name === 'Forms' ? 'bg-gradient-to-br from-indigo-400/70 to-blue-500/70 hover:from-indigo-500 hover:to-blue-600 hover:shadow-2xl hover:shadow-indigo-400/50' : ''}
-                        ${item.name === 'Governance' ? 'bg-gradient-to-br from-slate-500/70 to-slate-700/70 hover:from-slate-600 hover:to-slate-800 hover:shadow-2xl hover:shadow-slate-400/30' : ''}
-                        ${item.name === 'Analytics' ? 'bg-gradient-to-br from-teal-400/70 to-emerald-500/70 hover:from-teal-500 hover:to-emerald-600 hover:shadow-2xl hover:shadow-teal-400/50' : ''}
-                        ${item.name === 'Settings' ? 'bg-gradient-to-br from-gray-300/70 to-gray-500/70 hover:from-gray-400 hover:to-gray-600 hover:shadow-2xl hover:shadow-gray-400/40' : ''}
-                        ${isActive ? 'scale-105 ring-4 ring-white/50 shadow-2xl' : 'shadow-md'}
-                        hover:scale-105 hover:ring-4 hover:ring-white/30`}
-                      >
-                        <div className="relative w-6 h-6 transition-transform duration-300 group-hover:scale-125">
-                          <Image
-                            src={item.icon}
-                            alt={item.name}
-                            width={24}
-                            height={24}
-                            className="dark:invert brightness-0 invert"
-                          />
-                        </div>
-                      </div>
-
-                      {!sidebarCollapsed && (
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.name}</div>
-                        </div>
-                      )}
-                    </Link>
-                  </div>
+                    <div className={`w-5 h-5 shrink-0 transition-opacity duration-150 ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
+                      <Image
+                        src={item.icon}
+                        alt=""
+                        width={20}
+                        height={20}
+                        className="dark:invert"
+                      />
+                    </div>
+                    {!sidebarCollapsed && (
+                      <span className={`text-[13px] truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                        {item.name}
+                      </span>
+                    )}
+                  </Link>
                 );
               })}
-
             </nav>
 
-            {/* Portal-like Hover Menu/Tooltip */}
+            {/* Collapsed sidebar tooltip */}
             {hoveredTool && hoveredRect && sidebarCollapsed && (
               <div
-                className="fixed left-20 z-[60]"
+                className="fixed left-20 z-[60] pointer-events-none"
                 style={{ top: hoveredRect.top + (hoveredRect.height / 2) }}
-                onMouseEnter={() => {
-                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-                }}
-                onMouseLeave={() => {
-                  hoverTimeoutRef.current = setTimeout(() => {
-                    setHoveredTool(null);
-                    setHoveredRect(null);
-                  }, 200);
-                }}
               >
-                <div className="bg-white dark:bg-gray-800 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-2xl pointer-events-auto -translate-y-1/2 ml-2 animate-in fade-in slide-in-from-left-2 duration-200">
-                  {(() => {
-                    const item = navItems.find(i => i.name === hoveredTool);
-                    if (!item) return null;
-                    const showSubtitlesOnly = hasMultipleOptions(item);
-
-                    return (
-                      <div className="p-2 min-w-[180px]">
-                        {showSubtitlesOnly ? (
-                          <div className="flex flex-col gap-1">
-                            <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 border-b border-gray-100 dark:border-gray-700 pb-1">
-                              {item.name}
-                            </div>
-                            {(item.subItems || []).map((sub) => (
-                              <Link
-                                key={sub.href}
-                                href={sub.href}
-                                onClick={() => setSidebarOpen(false)}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                              >
-                                <span>{sub.name}</span>
-                              </Link>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="px-3 py-1.5 font-semibold text-sm text-gray-900 dark:text-white">{item.name}</div>
-                        )}
-
-                        {/* Arrow pointer */}
-                        <div className="absolute right-full top-1/2 -translate-y-1/2 -mr-1 w-2 h-2 bg-white dark:bg-gray-800 border-l border-b border-gray-200/80 dark:border-gray-700/80 transform rotate-45" />
-                      </div>
-                    );
-                  })()}
+                <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg -translate-y-1/2 ml-1.5 whitespace-nowrap shadow-lg">
+                  {hoveredTool}
                 </div>
               </div>
             )}
 
-            {/* Enhanced animations */}
+            {/* Slide-up animation for profile menu */}
             <style jsx>{`
-            @keyframes textReveal {
-              0% {
-                opacity: 0;
-                transform: translateX(-20px);
-                letter-spacing: 0.2em;
-              }
-              60% {
-                letter-spacing: 0.05em;
-              }
-              100% {
-                opacity: 1;
-                transform: translateX(0);
-                letter-spacing: 0.025em;
-              }
+            @keyframes slideUp {
+              from { opacity: 0; transform: translateY(8px); }
+              to { opacity: 1; transform: translateY(0); }
             }
-
-            @keyframes glowPulse {
-              0%, 100% {
-                box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-              }
-              50% {
-                box-shadow: 0 0 30px rgba(139, 92, 246, 0.7);
-              }
-            }
-
-            @keyframes slideIn {
-              0% {
-                opacity: 0;
-                transform: translateX(-20px) scale(0.8);
-              }
-              60% {
-                transform: translateX(2px) scale(1.05);
-              }
-              100% {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-              }
-            }
+            .animate-slideUp { animation: slideUp 0.15s ease-out; }
           `}</style>
 
             {/* User Profile with Dropdown Menu */}
@@ -568,27 +456,21 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               {/* Profile Button */}
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'} p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group`}
+                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors group`}
               >
-                <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
-                  {/* subtle "profile photo" background pattern */}
-                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.9),transparent_55%)]" />
-                  <svg className="w-7 h-7 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 20.25a7.5 7.5 0 0115 0" />
-                  </svg>
+                <div className="w-9 h-9 bg-gray-900 dark:bg-gray-600 rounded-full flex items-center justify-center text-white text-[13px] font-semibold shrink-0">
+                  {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
                 </div>
                 {!sidebarCollapsed && (
                   <>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        Dr. {user?.email?.split('@')[0]}
+                      <p className="text-[13px] font-semibold text-gray-900 dark:text-white truncate">
+                        {user?.name || user?.email?.split('@')[0] || 'User'}
                       </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-300 truncate">{user?.email}</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                     </div>
-                    {/* Decorative - dropdown chevron, hidden from screen readers */}
                     <svg
-                      className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
+                      className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${profileMenuOpen ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

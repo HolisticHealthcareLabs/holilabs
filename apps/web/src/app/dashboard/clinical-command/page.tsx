@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import {
   Activity,
   AlertTriangle,
@@ -20,6 +21,9 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useGovernanceRealtime } from '@/hooks/useGovernanceRealtime';
+import { FirstRunWelcome } from '@/components/dashboard/FirstRunWelcome';
+
+const FIRST_RUN_DISMISSED_KEY = 'holilabs:firstRunDismissed';
 
 // ============================================================================
 // TYPES
@@ -396,10 +400,20 @@ function GroundTruthPanel({ data }: { data: NonNullable<CommandCenterData['groun
 // ============================================================================
 
 export default function ClinicalCommandCenterPage() {
+  const { data: session } = useSession();
   const [data, setData] = useState<CommandCenterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [firstRunDismissed, setFirstRunDismissed] = useState(true); // default true to avoid flash
+
+  useEffect(() => {
+    try {
+      setFirstRunDismissed(localStorage.getItem(FIRST_RUN_DISMISSED_KEY) === 'true');
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
 
   // Real-time governance updates
   const { connected: realtimeConnected } = useGovernanceRealtime({
@@ -437,7 +451,7 @@ export default function ClinicalCommandCenterPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
         <div className="flex flex-col items-center gap-3">
           <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
           <p className="text-gray-500">Loading Clinical Command Center...</p>
@@ -448,7 +462,7 @@ export default function ClinicalCommandCenterPage() {
 
   if (error || !data) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
         <div className="text-center">
           <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
           <p className="text-gray-700 font-medium">Failed to load data</p>
@@ -461,6 +475,31 @@ export default function ClinicalCommandCenterPage() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // First-run detection: all panels empty and user hasn't dismissed
+  const isFirstRun =
+    !firstRunDismissed &&
+    data.cdsAlerts.recentEvaluations === 0 &&
+    data.reviewQueue.pending === 0 &&
+    data.preventionGaps.overdue === 0 &&
+    data.governanceFeed.last24h === 0;
+
+  if (isFirstRun) {
+    const userName = session?.user?.name?.split(' ')[0] || 'there';
+    return (
+      <FirstRunWelcome
+        userName={userName}
+        onDismiss={() => {
+          setFirstRunDismissed(true);
+          try {
+            localStorage.setItem(FIRST_RUN_DISMISSED_KEY, 'true');
+          } catch {
+            // localStorage unavailable
+          }
+        }}
+      />
     );
   }
 

@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { sendSMS, sendWhatsApp } from '@/lib/sms/twilio';
 import { sendEmail } from '@/lib/email';
 import logger from '@/lib/logger';
+import { createEscalation, autoResolveByReminder } from '@/lib/escalations/escalation-service';
 
 interface PatientData {
   id: string;
@@ -444,8 +445,19 @@ export async function executeScheduledReminders(): Promise<{
 
         if (results.sent > 0) {
           stats.successful++;
+          // Auto-resolve any open escalations for this reminder
+          await autoResolveByReminder(reminder.id);
         } else {
           stats.failed++;
+          // Create an escalation for this failed reminder
+          const patientIds = (reminder.patientIds as string[]) || [];
+          await createEscalation({
+            scheduledReminderId: reminder.id,
+            patientId: patientIds[0],
+            reason: results.errors.join('; ') || `Reminder failed: ${reminder.templateName}`,
+            channel: reminder.channel,
+            attempt: reminder.executionCount + 1,
+          });
         }
 
         logger.info({
@@ -477,6 +489,16 @@ export async function executeScheduledReminders(): Promise<{
               errors: [error instanceof Error ? error.message : 'Unknown error'],
             },
           },
+        });
+
+        // Create escalation for the failed reminder
+        const patientIds = (reminder.patientIds as string[]) || [];
+        await createEscalation({
+          scheduledReminderId: reminder.id,
+          patientId: patientIds[0],
+          reason: error instanceof Error ? error.message : 'Reminder execution failed',
+          channel: reminder.channel,
+          attempt: reminder.executionCount + 1,
         });
       }
     }

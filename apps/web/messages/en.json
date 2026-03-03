@@ -394,5 +394,112 @@
       "dashboard": "Taking you to the main Dashboard where you can see a summary of your active patients, scheduled appointments, pending prescriptions, and more."
     },
     "defaultResponse": "I understand you're looking for \"{query}\".\n\nI can help you with:\n• **Prevention**: 30-year longitudinal system with automatic alerts\n• **AI Scribe**: Real-time transcription and SOAP notes (saves 3-4h/day)\n• **CDSS**: 12+ clinical support rules with WHO/PAHO protocols\n• **Patients**: Complete portal that reduces calls by 40%\n• **E-Prescribing**: Digital signature to 8+ integrated pharmacies\n\nWhat would you like to know more about?"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Now in pilot — Bolivia & Brazil",
+      "headline": "Stop losing revenue your hospital has already earned.",
+      "subhead": "Cortex catches billing errors, drug interactions, and compliance gaps before they cost you. Built for Latin American healthcare.",
+      "ctaPrimary": "See what you're missing",
+      "ctaSecondary": "Try Live Demo",
+      "trustLgpd": "LGPD-native",
+      "trustAnvisa": "ANVISA-ready",
+      "trustDeterministic": "Every alert traceable",
+      "trustSpeed": "<90s per review",
+      "trustPhi": "Zero PHI in the cloud"
+    }
+  },
+  "pricing": {
+    "hero": {
+      "eyebrow": "Pricing",
+      "headline": "Transparent pricing for every hospital size.",
+      "subhead": "No hidden fees. No per-query charges. One predictable price per practitioner."
+    },
+    "toggle": {
+      "monthly": "Monthly",
+      "annually": "Annually",
+      "save": "Save 20%"
+    },
+    "currency": "Prices shown in USD. Local currency invoicing (BRL, BOB) available.",
+    "tiers": {
+      "safety": {
+        "name": "Cortex Safety",
+        "priceMonthly": "$59",
+        "priceAnnual": "$49",
+        "period": "/practitioner/mo",
+        "description": "Essential safety checks for clinics with 5-50 practitioners.",
+        "cta": "Start pilot",
+        "features": [
+          "Real-time drug interaction checks",
+          "Billing code validation (TUSS / ICD-10 / SNOMED)",
+          "LGPD-compliant audit trail",
+          "Basic safety analytics",
+          "Email support"
+        ]
+      },
+      "complete": {
+        "name": "Cortex Complete",
+        "badge": "Most popular",
+        "priceMonthly": "$89",
+        "priceAnnual": "$75",
+        "period": "/practitioner/mo",
+        "description": "Full platform for hospitals with 50-500 beds.",
+        "cta": "Request access",
+        "features": [
+          "Everything in Safety, plus:",
+          "Prevention protocols & screening gap detection",
+          "Clinical Command Center",
+          "Patient portal",
+          "Advanced analytics & reporting",
+          "Priority support"
+        ]
+      },
+      "governance": {
+        "name": "Cortex Governance",
+        "price": "Custom",
+        "period": "",
+        "description": "Enterprise governance for insurers and operadoras.",
+        "cta": "Talk to sales",
+        "features": [
+          "Everything in Complete, plus:",
+          "Glosa reduction dashboard",
+          "Claims analytics & denial tracking",
+          "Governance console",
+          "Dedicated API access",
+          "Custom integrations",
+          "Dedicated account manager"
+        ]
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "items": [
+        {
+          "question": "Do I need to replace my current EHR?",
+          "answer": "No. Cortex runs silently alongside your existing systems via our API or web portal."
+        },
+        {
+          "question": "Is patient data LGPD compliant?",
+          "answer": "Yes. We process rules using an on-premise architecture or stripped data. Zero PHI is stored in our cloud."
+        },
+        {
+          "question": "How fast is implementation?",
+          "answer": "The API wedge can be implemented by your IT team in under 48 hours."
+        },
+        {
+          "question": "Do you support local billing codes?",
+          "answer": "Yes, the Cortex engine natively supports TUSS, SUS, and ICD-10 cross-referencing."
+        },
+        {
+          "question": "Can we run a pilot before committing?",
+          "answer": "Yes, we offer a 14-day retrospective data pilot to show you exactly how many glosas we would have caught."
+        }
+      ]
+    },
+    "cta": {
+      "headline": "Not sure yet? See it in action.",
+      "subhead": "Try the live demo — no sign-up required.",
+      "button": "Try Live Demo"
+    }
   }
 }

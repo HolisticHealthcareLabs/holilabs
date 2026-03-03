@@ -1,0 +1,505 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "loading": "Carregando...",
+    "yes": "Sim",
+    "no": "Não",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "print": "Imprimir",
+    "close": "Fechar",
+    "submit": "Enviar",
+    "required": "Obrigatório",
+    "optional": "Opcional"
+  },
+  "navigation": {
+    "dashboard": "Painel Principal",
+    "patients": "Pacientes",
+    "appointments": "Consultas",
+    "medications": "Medicamentos",
+    "documents": "Documentos",
+    "settings": "Configurações",
+    "login": "Entrar",
+    "logout": "Sair"
+  },
+  "copilot": {
+    "title": "Co-Pilot",
+    "subtitle": "Espaço clínico unificado com IA",
+    "liveMode": "Modo ao vivo",
+    "liveModeActive": "Modo ao vivo ativo",
+    "selectPatientTitle": "Selecionar paciente",
+    "selectPatientSubtitle": "Escolha o paciente para esta consulta",
+    "searchPlaceholder": "Buscar por nome ou prontuário...",
+    "noPatientsTitle": "Nenhum paciente encontrado para esta conta",
+    "noPatientsSubtitle": "Se você gerou Synthea com outro clínico, pode anexar pacientes demo no desenvolvimento.",
+    "attachDemoPatients": "Anexar pacientes demo",
+    "activePatient": "Paciente ativo",
+    "changePatient": "Trocar paciente",
+    "clinicalCommandCenter": "Centro de comando clínico",
+    "ehrAccessGranted": "Acesso ao EHR concedido",
+    "toolkitSubtitle": "Kit digital modular personalizável para sua especialidade",
+    "record": "Gravar",
+    "stop": "Parar",
+    "patientSnapshot": "Resumo do paciente",
+    "editVitals": "Editar sinais vitais",
+    "noVitalsYet": "Ainda não há sinais vitais. Clique em “Editar sinais vitais”.",
+    "copy": "Copiar",
+    "clinicalToolsTitle": "Ferramentas clínicas",
+    "clinicalToolsSubtitle": "Fluxos embutidos (sem troca de contexto / sem novas abas)",
+    "risk": "Risco",
+    "labs": "Exames",
+    "uploads": "Uploads",
+    "transcriptEmptyTitle": "Nenhuma transcrição disponível",
+    "transcriptEmptySubtitle": "A transcrição aparecerá aqui após o áudio ser processado",
+    "transcriptCorrectionSavedTitle": "✅ Correção salva e enviada para treinamento",
+    "transcriptCorrectionSavedBody": "Sua correção ajuda a melhorar a precisão da transcrição médica no futuro.",
+    "transcriptRlhfLabel": "Loop RLHF:",
+    "transcriptRlhfActive": "Feedback ativo",
+    "transcriptEdit": "Corrigir",
+    "transcriptQuickSaveHint": "Dica: pressione ⌘+Enter para salvar rapidamente",
+    "transcriptCancel": "Cancelar",
+    "transcriptSaveCorrection": "Salvar correção",
+    "transcriptOriginalAi": "Original (IA):",
+    "transcriptLowConfidenceTitle": "Este segmento tem baixa confiança",
+    "transcriptLowConfidenceBody": "Revise e corrija se necessário para garantir precisão clínica.",
+    "transcriptStatsSegments": "Segmentos",
+    "transcriptStatsHighConfidence": "Alta confiança",
+    "transcriptStatsNeedsReview": "Precisa revisão",
+    "transcriptStatsCorrected": "Corrigidos",
+    "transcriptStatsContributing": "Contribuindo para o treinamento do modelo",
+    "transcriptRlhfActiveLabel": "Loop RLHF ativo:",
+    "transcriptRlhfActiveBody": "{n} correção{s} contribuindo para melhorar o modelo",
+    "findingsTimelineTitle": "Linha do tempo de achados",
+    "findingsTimelineSubtitle": "Entidades extraídas com carimbo de data/hora e trilha de auditoria nesta sessão",
+    "findingsTimelineRefresh": "Atualizar",
+    "findingsTimelineRefreshing": "Atualizando…",
+    "findingsTimelineNoSession": "Inicie a gravação para começar a capturar achados.",
+    "findingsTimelineEmpty": "Nenhum achado capturado ainda.",
+    "findingsTimelineLatest": "Última captura",
+    "findingsTimelineChiefComplaint": "Queixa principal:",
+    "findingsTimelineSymptoms": "Sintomas",
+    "findingsTimelineDiagnoses": "Diagnósticos",
+    "findingsTimelineAuditHash": "Hash de auditoria:",
+    "findingsTimelineCopyHash": "Copiar hash de auditoria",
+    "findingsTimelineCopy": "Copiar",
+    "findingsTimelineHistory": "Histórico",
+    "findingsTimelineEntryNoCc": "Sem queixa principal registrada"
+  },
+  "patient": {
+    "title": "Pacientes",
+    "newPatient": "Novo Paciente",
+    "editPatient": "Editar Paciente",
+    "patientDetails": "Detalhes do Paciente",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "preferredName": "Nome Preferido",
+    "dateOfBirth": "Data de Nascimento",
+    "age": "Idade",
+    "gender": "Gênero",
+    "phone": "Telefone",
+    "email": "E-mail",
+    "address": "Endereço",
+    "city": "Cidade",
+    "state": "Estado",
+    "postalCode": "CEP",
+    "country": "País",
+    "mrn": "Prontuário",
+    "pronouns": "Pronomes",
+    "culturalPreferences": "Preferências Culturais"
+  },
+  "brazilianIds": {
+    "title": "Identificadores Brasileiros",
+    "cns": "CNS (Cartão Nacional de Saúde)",
+    "cnsDescription": "Número do cartão nacional de saúde de 15 dígitos",
+    "cpf": "CPF (Cadastro de Pessoa Física)",
+    "cpfDescription": "Cadastro de Pessoa Física de 11 dígitos",
+    "rg": "RG (Registro Geral)",
+    "municipalityCode": "Código do Município (IBGE)",
+    "municipalityCodeDescription": "Código IBGE do município de 7 dígitos",
+    "healthUnitCNES": "CNES da Unidade de Saúde",
+    "healthUnitCNESDescription": "Código CNES da unidade de saúde de 7 dígitos",
+    "susPacientId": "ID do Paciente SUS"
+  },
+  "palliativeCare": {
+    "title": "Cuidados Paliativos",
+    "isPalliativeCare": "Paciente em Cuidados Paliativos",
+    "comfortCareOnly": "Apenas Cuidados de Conforto",
+    "codeStatus": "Status de Código",
+    "codeStatusDescription": "Preferências de reanimação e suporte de vida",
+    "qualityOfLifeScore": "Pontuação de Qualidade de Vida",
+    "qualityOfLifeScoreDescription": "Escala 0-10 (0 = ruim, 10 = excelente)",
+    "lastQoLAssessment": "Última Avaliação de Qualidade de Vida",
+    "advanceDirectives": "Diretivas Antecipadas",
+    "advanceDirectivesStatus": "Status das Diretivas Antecipadas",
+    "advanceDirectivesDate": "Data das Diretivas Antecipadas",
+    "advanceDirectivesNotes": "Notas das Diretivas Antecipadas",
+    "dnr": "DNR (Não Reanimar)",
+    "dni": "DNI (Não Intubar)",
+    "dnrStatus": "Status DNR",
+    "dnrDate": "Data DNR",
+    "dniStatus": "Status DNI",
+    "dniDate": "Data DNI",
+    "primaryCaregiver": "Cuidador Principal"
+  },
+  "codeStatus": {
+    "FULL_CODE": "Código Completo",
+    "DNR": "DNR (Não Reanimar)",
+    "DNI": "DNI (Não Intubar)",
+    "DNR_DNI": "DNR/DNI (Não Reanimar/Não Intubar)",
+    "COMFORT_CARE_ONLY": "Apenas Cuidados de Conforto",
+    "AND": "AND (Permitir Morte Natural)"
+  },
+  "advanceDirectivesStatus": {
+    "NOT_COMPLETED": "Não Concluído",
+    "IN_PROGRESS": "Em Andamento",
+    "COMPLETED": "Concluído",
+    "REVIEWED_ANNUALLY": "Revisado Anualmente"
+  },
+  "spiritualCare": {
+    "title": "Cuidado Espiritual",
+    "religiousAffiliation": "Afiliação Religiosa",
+    "spiritualCareNeeds": "Necessidades de Cuidado Espiritual",
+    "chaplainAssigned": "Capelão Designado"
+  },
+  "familyContacts": {
+    "title": "Contatos Familiares",
+    "primaryContact": "Contato Principal",
+    "secondaryContact": "Contato Secundário",
+    "emergencyContact": "Contato de Emergência",
+    "name": "Nome",
+    "relation": "Relação",
+    "phone": "Telefone",
+    "email": "E-mail",
+    "address": "Endereço",
+    "familyPortalEnabled": "Portal Familiar Habilitado",
+    "familyPortalInviteSent": "Convite Enviado"
+  },
+  "specialNeeds": {
+    "title": "Necessidades Especiais",
+    "hasSpecialNeeds": "Possui Necessidades Especiais",
+    "specialNeedsType": "Tipo de Necessidades Especiais",
+    "communicationNeeds": "Necessidades de Comunicação",
+    "mobilityNeeds": "Necessidades de Mobilidade",
+    "dietaryNeeds": "Necessidades Dietéticas",
+    "sensoryNeeds": "Necessidades Sensoriais",
+    "careTeamNotes": "Notas da Equipe de Cuidados",
+    "flaggedConcerns": "Preocupações Sinalizadas"
+  },
+  "specialNeedsType": {
+    "Cognitive": "Cognitivo",
+    "Physical": "Físico",
+    "Sensory": "Sensorial"
+  },
+  "flaggedConcerns": {
+    "Pain Management": "Controle da Dor",
+    "Nutrition Support": "Suporte Nutricional",
+    "Fall Risk": "Risco de Queda",
+    "Aspiration Risk": "Risco de Aspiração",
+    "Seizure Risk": "Risco de Convulsão",
+    "Wandering Risk": "Risco de Deambulação",
+    "Nutrition Risk": "Risco Nutricional",
+    "Pressure Ulcer Risk": "Risco de Lesão por Pressão",
+    "Infection Risk": "Risco de Infecção"
+  },
+  "carePlan": {
+    "title": "Planos de Cuidado",
+    "newCarePlan": "Novo Plano de Cuidado",
+    "editCarePlan": "Editar Plano de Cuidado",
+    "category": "Categoria",
+    "priority": "Prioridade",
+    "goals": "Objetivos",
+    "targetDate": "Data Alvo",
+    "status": "Estado",
+    "assignedTeam": "Equipe Designada",
+    "progressNotes": "Notas de Progresso",
+    "lastReviewed": "Última Revisão",
+    "nextReview": "Próxima Revisão",
+    "description": "Descrição"
+  },
+  "carePlanCategory": {
+    "PAIN_MANAGEMENT": "Controle da Dor",
+    "SYMPTOM_CONTROL": "Controle de Sintomas",
+    "PSYCHOSOCIAL_SUPPORT": "Apoio Psicossocial",
+    "SPIRITUAL_CARE": "Cuidado Espiritual",
+    "FAMILY_SUPPORT": "Apoio Familiar",
+    "QUALITY_OF_LIFE": "Qualidade de Vida",
+    "END_OF_LIFE_PLANNING": "Planejamento de Fim de Vida",
+    "MOBILITY": "Mobilidade",
+    "NUTRITION": "Nutrição",
+    "WOUND_CARE": "Cuidado de Feridas"
+  },
+  "carePlanStatus": {
+    "ACTIVE": "Ativo",
+    "COMPLETED": "Concluído",
+    "ON_HOLD": "Em Espera",
+    "CANCELLED": "Cancelado"
+  },
+  "priority": {
+    "LOW": "Baixa",
+    "MEDIUM": "Média",
+    "HIGH": "Alta",
+    "URGENT": "Urgente"
+  },
+  "painAssessment": {
+    "title": "Avaliações da Dor",
+    "newAssessment": "Nova Avaliação da Dor",
+    "painScore": "Pontuação da Dor (0-10)",
+    "painScoreDescription": "0 = Sem dor, 10 = Pior dor imaginável",
+    "painType": "Tipo de Dor",
+    "location": "Localização",
+    "description": "Descrição",
+    "quality": "Qualidade",
+    "timing": "Temporalidade",
+    "aggravatingFactors": "Fatores Agravantes",
+    "relievingFactors": "Fatores Atenuantes",
+    "functionalImpact": "Impacto Funcional",
+    "sleepImpact": "Impacto no Sono",
+    "moodImpact": "Impacto no Humor",
+    "interventionsGiven": "Intervenções Realizadas",
+    "responseToTreatment": "Resposta ao Tratamento",
+    "assessedAt": "Avaliado Em",
+    "assessedBy": "Avaliado Por",
+    "notes": "Notas",
+    "stats": "Estatísticas",
+    "avgPainScore": "Pontuação Média da Dor",
+    "latestScore": "Última Pontuação",
+    "count": "Total de Avaliações"
+  },
+  "painType": {
+    "ACUTE": "Aguda",
+    "CHRONIC": "Crônica",
+    "BREAKTHROUGH": "Irruptiva",
+    "NEUROPATHIC": "Neuropática",
+    "VISCERAL": "Visceral",
+    "SOMATIC": "Somática"
+  },
+  "painQuality": {
+    "Sharp": "Aguda",
+    "Dull": "Surda",
+    "Aching": "Latejante",
+    "Burning": "Queimação",
+    "Stabbing": "Penetrante",
+    "Throbbing": "Pulsátil",
+    "Shooting": "Fulgurante",
+    "Deep": "Profunda"
+  },
+  "familyPortal": {
+    "title": "Acesso ao Portal Familiar",
+    "newAccess": "Conceder Acesso Familiar",
+    "familyMemberName": "Nome do Familiar",
+    "relationship": "Relacionamento",
+    "accessLevel": "Nível de Acesso",
+    "accessToken": "Token de Acesso",
+    "permissions": "Permissões",
+    "canViewClinicalNotes": "Visualizar Notas Clínicas",
+    "canViewMedications": "Visualizar Medicamentos",
+    "canViewCarePlan": "Visualizar Plano de Cuidado",
+    "canViewPainAssessments": "Visualizar Avaliações da Dor",
+    "canReceiveDailyUpdates": "Receber Atualizações Diárias",
+    "canViewPhotos": "Visualizar Fotos",
+    "isActive": "Ativo",
+    "inviteSentAt": "Convite Enviado",
+    "firstAccessAt": "Primeiro Acesso",
+    "lastAccessAt": "Último Acesso",
+    "accessCount": "Número de Acessos",
+    "expiresAt": "Expira",
+    "revokedAt": "Revogado",
+    "revokedBy": "Revogado Por",
+    "revokedReason": "Motivo da Revogação"
+  },
+  "familyAccessLevel": {
+    "READ_ONLY": "Somente Leitura",
+    "LIMITED_INTERACTION": "Interação Limitada",
+    "FULL_ACCESS": "Acesso Completo"
+  },
+  "humanization": {
+    "title": "Humanização e Dignidade",
+    "photoUrl": "Foto",
+    "photoConsent": "Consentimento de Foto",
+    "photoConsentDate": "Data do Consentimento",
+    "photoConsentBy": "Consentimento Por"
+  },
+  "language": {
+    "select": "Selecionar Idioma",
+    "english": "Inglês",
+    "spanish": "Espanhol",
+    "portuguese": "Português"
+  },
+  "soapTemplates": {
+    "title": "Modelos de Nota SOAP",
+    "selectTemplate": "Selecionar Modelo",
+    "loadTemplate": "Carregar Modelo",
+    "palliativeCare": {
+      "title": "Cuidados Paliativos",
+      "painAssessment": "Avaliação de Dor",
+      "symptomManagement": "Controle de Sintomas",
+      "comfortInterventions": "Intervenções de Conforto",
+      "familyCommunication": "Comunicação com Família"
+    },
+    "quickActions": {
+      "title": "Ações Rápidas",
+      "insertText": "Inserir Texto",
+      "painMedication": "Medicação para Dor",
+      "repositioning": "Reposicionamento",
+      "familyNotification": "Notificar Família",
+      "chaplainVisit": "Visita do Capelão",
+      "comfortMeasures": "Medidas de Conforto",
+      "symptomControl": "Controle de Sintomas"
+    },
+    "interventions": {
+      "morphine": "Morfina administrada",
+      "repositioning": "Paciente reposicionado para conforto",
+      "familyCalled": "Família notificada sobre evolução",
+      "chaplainRequested": "Solicitada visita do capelão",
+      "oxygenTherapy": "Oxigenoterapia iniciada",
+      "antiNausea": "Antiemético administrado",
+      "anxiolytic": "Ansiolítico administrado",
+      "skinCare": "Cuidados com a pele realizados",
+      "oralCare": "Higiene oral realizada",
+      "musicTherapy": "Musicoterapia implementada"
+    },
+    "painScale": {
+      "title": "Escala de Dor",
+      "noPain": "Sem dor",
+      "mildPain": "Dor leve",
+      "moderatePain": "Dor moderada",
+      "severePain": "Dor intensa",
+      "worstPain": "Pior dor imaginável",
+      "selectIntensity": "Selecionar intensidade da dor"
+    },
+    "voiceInput": {
+      "title": "Entrada por Voz",
+      "startRecording": "Iniciar Gravação",
+      "stopRecording": "Parar Gravação",
+      "listening": "Ouvindo...",
+      "processing": "Processando...",
+      "transcribing": "Transcrevendo...",
+      "insertTranscription": "Inserir Transcrição",
+      "microphonePermission": "Permissão de microfone necessária",
+      "unsupportedBrowser": "Navegador não suporta reconhecimento de voz"
+    }
+  },
+  "aiCommandCenter": {
+    "navigation": {
+      "cdss": "Levando você ao Sistema de Suporte à Decisão Clínica (CDSS). Aqui você encontrará mais de 12 regras ativas que detectam problemas antes que ocorram, interações medicamentosas e protocolos OMS/OPAS.",
+      "scribe": "Perfeito! Levando você ao AI Medical Scribe. Esta ferramenta transcreve suas consultas em tempo real e gera notas SOAP automaticamente, economizando 3-4 horas diárias.",
+      "prevention": "Direcionando você ao Hub de Prevenção Longitudinal. Aqui você pode ver cronogramas de 30 anos, 7 domínios de saúde e mais de 100 intervenções preventivas baseadas em protocolos OMS/OPAS/USPSTF.",
+      "patients": "Levando você ao Portal de Gestão de Pacientes. Aqui você pode ver todos os seus pacientes, histórico completo e acessar o portal do paciente que reduz suas chamadas em 40%.",
+      "pricing": "Claro! Vou mostrar nossos planos de preços. Oferecemos desde o plano Starter gratuito até Enterprise personalizado. Todos incluem IA médica, prevenção automatizada e suporte em português.",
+      "login": "Levando você à página de login. Você pode entrar com o Google ou com sua conta Holi Labs.",
+      "dashboard": "Levando você ao Dashboard principal onde você pode ver um resumo dos seus pacientes ativos, consultas agendadas, prescrições pendentes e mais."
+    },
+    "defaultResponse": "Entendo que você está procurando por \"{query}\".\n\nPosso ajudá-lo com:\n• **Prevenção**: Sistema longitudinal de 30 anos com alertas automáticos\n• **AI Scribe**: Transcrição e notas SOAP em tempo real (economiza 3-4h/dia)\n• **CDSS**: Mais de 12 regras de suporte clínico com protocolos OMS/OPAS\n• **Pacientes**: Portal completo que reduz chamadas em 40%\n• **E-Prescribing**: Assinatura digital para mais de 8 farmácias integradas\n\nSobre o que você gostaria de saber mais?"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Em piloto — Bolívia e Brasil",
+      "headline": "Pare de perder a receita que seu hospital já conquistou.",
+      "subhead": "O Cortex detecta erros de faturamento, interações medicamentosas e falhas de conformidade antes que custem caro. Feito para a saúde latino-americana.",
+      "ctaPrimary": "Veja o que está perdendo",
+      "ctaSecondary": "Teste o Demo",
+      "trustLgpd": "Nativo LGPD",
+      "trustAnvisa": "Pronto para ANVISA",
+      "trustDeterministic": "Cada alerta rastreável",
+      "trustSpeed": "<90s por revisão",
+      "trustPhi": "Zero PHI na nuvem"
+    }
+  },
+  "pricing": {
+    "hero": {
+      "eyebrow": "Precos",
+      "headline": "Precos transparentes para cada tamanho de hospital.",
+      "subhead": "Sem taxas ocultas. Sem cobranças por consulta. Um preço previsível por profissional."
+    },
+    "toggle": {
+      "monthly": "Mensal",
+      "annually": "Anual",
+      "save": "Economize 20%"
+    },
+    "currency": "Preços exibidos em USD. Faturamento em moeda local (BRL, BOB) disponível.",
+    "tiers": {
+      "safety": {
+        "name": "Cortex Safety",
+        "priceMonthly": "$59",
+        "priceAnnual": "$49",
+        "period": "/profissional/mês",
+        "description": "Verificações de segurança essenciais para clínicas de 5 a 50 profissionais.",
+        "cta": "Iniciar piloto",
+        "features": [
+          "Verificação de interações medicamentosas em tempo real",
+          "Validação de códigos de faturamento (TUSS / CID-10 / SNOMED)",
+          "Trilha de auditoria compatível com LGPD",
+          "Análises básicas de segurança",
+          "Suporte por e-mail"
+        ]
+      },
+      "complete": {
+        "name": "Cortex Complete",
+        "badge": "Mais popular",
+        "priceMonthly": "$89",
+        "priceAnnual": "$75",
+        "period": "/profissional/mês",
+        "description": "Plataforma completa para hospitais de 50 a 500 leitos.",
+        "cta": "Solicitar acesso",
+        "features": [
+          "Tudo do Safety, mais:",
+          "Protocolos de prevenção e detecção de lacunas",
+          "Centro de Comando Clínico",
+          "Portal do paciente",
+          "Análises avançadas e relatórios",
+          "Suporte prioritário"
+        ]
+      },
+      "governance": {
+        "name": "Cortex Governance",
+        "price": "Personalizado",
+        "period": "",
+        "description": "Governança empresarial para seguradoras e operadoras.",
+        "cta": "Fale com vendas",
+        "features": [
+          "Tudo do Complete, mais:",
+          "Painel de redução de glosas",
+          "Análise de sinistros e rastreamento de negativas",
+          "Console de governança",
+          "Acesso dedicado à API",
+          "Integrações personalizadas",
+          "Gerente de conta dedicado"
+        ]
+      }
+    },
+    "faq": {
+      "title": "Perguntas frequentes",
+      "items": [
+        {
+          "question": "Preciso substituir meu sistema atual (EHR)?",
+          "answer": "Não. O Cortex funciona silenciosamente junto aos seus sistemas existentes via nossa API ou portal web."
+        },
+        {
+          "question": "Os dados dos pacientes são compatíveis com a LGPD?",
+          "answer": "Sim. Processamos regras usando arquitetura on-premise ou dados desidentificados. Zero PHI é armazenado na nossa nuvem."
+        },
+        {
+          "question": "Qual a velocidade de implementação?",
+          "answer": "A API pode ser implementada pela sua equipe de TI em menos de 48 horas."
+        },
+        {
+          "question": "Vocês suportam códigos de faturamento locais?",
+          "answer": "Sim, o motor Cortex suporta nativamente TUSS, SUS e referência cruzada CID-10."
+        },
+        {
+          "question": "Podemos fazer um piloto antes de assinar?",
+          "answer": "Sim, oferecemos um piloto retrospectivo de 14 dias para mostrar exatamente quantas glosas teríamos detectado."
+        }
+      ]
+    },
+    "cta": {
+      "headline": "Ainda não tem certeza? Veja em ação.",
+      "subhead": "Teste o demo ao vivo — sem cadastro necessário.",
+      "button": "Teste o Demo"
+    }
+  }
+}

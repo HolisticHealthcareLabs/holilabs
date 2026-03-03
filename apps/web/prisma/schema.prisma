@@ -123,6 +123,9 @@ model User {
   workspaceMembers  WorkspaceMember[]
   createdWorkspaces Workspace[]       @relation("WorkspaceCreatedBy")
 
+  // Escalation Queue
+  resolvedEscalations Escalation[] @relation("EscalationResolvedBy")
+
   // BYOK API Keys
   apiKeys UserAPIKey[]
 
@@ -1079,6 +1082,9 @@ model Patient {
 
   // GDPR/LGPD Compliance (Priority 3: Legal Compliance)
   deletionRequests DeletionRequest[]
+
+  // Escalation Queue
+  escalations Escalation[]
 
   @@index([mrn])
   @@index([tokenId])
@@ -4503,6 +4509,8 @@ model ScheduledReminder {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  escalations Escalation[]
+
   @@index([scheduledFor])
   @@index([status])
   @@index([nextExecution])
@@ -4526,6 +4534,53 @@ enum RecurrencePattern {
   MONTHLY
   YEARLY
   CUSTOM // For complex patterns
+}
+
+// ============================================================================
+// ESCALATION QUEUE (Epic C — Follow-up Orchestration)
+// ============================================================================
+
+enum EscalationStatus {
+  OPEN
+  BREACHED
+  RESOLVED
+}
+
+model Escalation {
+  id String @id @default(cuid())
+
+  // What triggered this escalation
+  scheduledReminderId String
+  scheduledReminder   ScheduledReminder @relation(fields: [scheduledReminderId], references: [id])
+
+  // Who is affected (optional — some reminders are system-level)
+  patientId String?
+  patient   Patient? @relation(fields: [patientId], references: [id])
+
+  // Escalation details
+  status      EscalationStatus @default(OPEN)
+  reason      String           @db.Text
+  channel     String?          // SMS, EMAIL, WHATSAPP
+  attempt     Int              @default(0) // Which attempt triggered escalation
+
+  // SLA tracking
+  slaDeadline DateTime // When this escalation must be resolved by
+
+  // Resolution
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  resolvedByUser User? @relation("EscalationResolvedBy", fields: [resolvedBy], references: [id])
+  resolution  String?  @db.Text // Free-text resolution notes
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([slaDeadline])
+  @@index([patientId])
+  @@index([scheduledReminderId])
+  @@map("escalations")
 }
 
 // Doctor Preferences for Appointment Scheduling
@@ -7615,4 +7670,33 @@ model ClinicianNetwork {
   @@index([userId])
   @@index([insurerId])
   @@map("clinician_networks")
+}
+
+// ============================================================================
+// WAITLIST / LEAD CAPTURE (Track A Revenue Pipeline)
+// ============================================================================
+
+model WaitlistEntry {
+  id          String            @id @default(cuid())
+  email       String            @unique
+  firstName   String?
+  lastName    String?
+  companyName String?           // Hospital or clinic name
+  plan        String?           // "safety" | "complete" — from pricing page attribution
+  status      WaitlistEntryStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("waitlist_entries")
+}
+
+enum WaitlistEntryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED // Account created — link cannot be reused
 }

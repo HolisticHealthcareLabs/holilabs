@@ -7,7 +7,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/dashboard/command-center');
+    router.replace('/dashboard/clinical-command');
   }, [router]);
 
   return null;

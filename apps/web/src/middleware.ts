@@ -1,12 +1,19 @@
 /**
- * Next.js Middleware for Authentication, i18n, Security, and LGPD Compliance
+ * Next.js Middleware for Authentication, i18n (next-intl), Security, and LGPD Compliance
  *
- * Protects dashboard routes, manages sessions, enforces access reasons (LGPD Art. 18), and applies security headers
+ * - Locale routing for landing page (en / pt-BR) via next-intl
+ * - Protects dashboard routes, manages sessions
+ * - Enforces access reasons (LGPD Art. 18)
+ * - Applies security headers
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from '@/i18n/routing';
 import { applySecurityHeaders, handleCORSPreflight } from '@/lib/security-headers';
 
+// next-intl middleware instance (handles locale detection + rewriting)
+const handleI18nRouting = createIntlMiddleware(routing);
 
 // LGPD-protected endpoints (require access reason)
 const PHI_ENDPOINTS = [
@@ -29,7 +36,20 @@ const VALID_ACCESS_REASONS = [
   'QUALITY_IMPROVEMENT',
 ];
 
-// Locale handling removed - application uses client-side translation system
+// Routes that are NOT locale-routed (bypass next-intl)
+const NON_LOCALE_PREFIXES = [
+  '/api',
+  '/auth',
+  '/dashboard',
+  '/demo',
+  '/sign-in',
+  '/portal',
+  '/enterprise',
+  '/onboarding',
+  '/download',
+  '/_next',
+  '/_vercel',
+];
 
 export async function middleware(request: NextRequest) {
   // Handle CORS preflight requests
@@ -39,8 +59,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Never run auth/compliance/security middleware on Next internals or static assets.
-  // If these requests are intercepted, CSS/JS can 404 in dev and the UI renders unstyled.
+  // Never run middleware on Next internals or static assets.
   const isStaticOrInternalRequest =
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/public/') ||
@@ -51,33 +70,33 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ===== LOCALE PREFIX SELF-HEAL =====
-  // We do NOT use locale-prefixed routes in this app. However, older/stale builds
-  // (or cached links) may still point to `/en/...`, `/es/...`, `/pt/...`.
-  // Redirect these to the canonical non-prefixed route to avoid 404s.
-  const supportedLocalePrefixes = ['en', 'es', 'pt'] as const;
-  for (const loc of supportedLocalePrefixes) {
-    if (pathname === `/${loc}` || pathname.startsWith(`/${loc}/`)) {
-      const url = request.nextUrl.clone();
-      const stripped = pathname.replace(new RegExp(`^/${loc}(?=/|$)`), '') || '/';
-      url.pathname = stripped;
-      return NextResponse.redirect(url);
-    }
+  // ===== LOCALE ROUTING (next-intl) =====
+  // Only apply to the landing page and locale-prefixed variants.
+  // All other routes (dashboard, demo, api, etc.) bypass locale routing.
+  const isNonLocaleRoute = NON_LOCALE_PREFIXES.some(
+    (prefix) => pathname.startsWith(prefix)
+  );
+
+  if (!isNonLocaleRoute) {
+    // Let next-intl handle locale detection + rewriting for landing page
+    const intlResponse = handleI18nRouting(request);
+
+    // Apply security headers on top of next-intl response
+    const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+    intlResponse.headers.set('x-nonce', nonce);
+    intlResponse.headers.set('x-pathname', pathname);
+
+    return applySecurityHeaders(intlResponse, nonce);
   }
 
   // ===== LGPD ACCESS REASON ENFORCEMENT =====
   const isPHIRequest = PHI_ENDPOINTS.some(endpoint => pathname.startsWith(endpoint));
 
-  // In production, require an explicit access reason header for PHI reads.
-  // In local development/demo, this can break the UX (the browser won't add the header by default),
-  // so we only enforce it when it actually matters (production) or when explicitly enabled.
   const enforceAccessReason =
     process.env.REQUIRE_ACCESS_REASON === 'true' || process.env.NODE_ENV === 'production';
 
   if (enforceAccessReason && isPHIRequest && request.method !== 'OPTIONS') {
     const accessReason = request.headers.get('X-Access-Reason');
-
-    // Only require for READ operations (GET)
     const isReadOperation = request.method === 'GET';
 
     if (isReadOperation && !accessReason) {
@@ -94,7 +113,6 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // Validate access reason enum
     if (accessReason && !VALID_ACCESS_REASONS.includes(accessReason)) {
       return NextResponse.json(
         {
@@ -108,31 +126,18 @@ export async function middleware(request: NextRequest) {
   }
   // ===== END LGPD ENFORCEMENT =====
 
-  // Supabase has been removed. NextAuth + patient-session handle auth.
-  const response = NextResponse.next();
-
-  // Add pathname to response headers for layout routing logic
-  response.headers.set('x-pathname', pathname);
-
-  // Generate cryptographically secure nonce for CSP
-  // Nonce is used to allow specific inline scripts while blocking others (XSS protection)
+  // Generate CSP nonce for all other routes
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
 
-  // Make nonce available to pages via header (for inline script tags: <script nonce={nonce}>)
-  response.headers.set('x-nonce', nonce);
-
-  // IMPORTANT: Set nonce on REQUEST headers so RootLayout (Server Component) can read it via headers()
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
 
-  // If there are other modifications to request headers needed, apply them here
   const finalResponse = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
 
-  // Copy response headers (like x-pathname and x-nonce) to the final response
   finalResponse.headers.set('x-pathname', pathname);
   finalResponse.headers.set('x-nonce', nonce);
 
@@ -140,15 +145,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     * - Files with extensions (images, etc.)
-     */
-    '/:path*',
-  ],
+  matcher: ['/:path*'],
 };
