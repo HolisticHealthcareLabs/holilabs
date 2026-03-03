@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import type { TrafficLightResult, TrafficLightSignal } from '../../types';
+import { PrescriptionSafetyPanel } from './PrescriptionSafetyPanel';
 
 interface ConsoleViewProps {
     onMinimize: () => void;
     signalsLog: TrafficLightResult[];
     connectionStatus: 'connected' | 'degraded' | 'offline';
     ruleVersion: string | null;
+    latestResult: TrafficLightResult | null;
+    isEvaluating: boolean;
+    onEvaluate: () => void;
 }
 
 export const ConsoleView: React.FC<ConsoleViewProps> = ({
     onMinimize,
     signalsLog,
     connectionStatus,
-    ruleVersion
+    ruleVersion,
+    latestResult,
+    isEvaluating,
+    onEvaluate,
 }) => {
     // Mock metrics for the prototype (would come from backend in prod)
     const metrics = {
@@ -94,26 +101,36 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({
                     </div>
                 </div>
 
-                {/* Center/Right: Live Feed (9 cols) */}
-                <div className="col-span-9 flex flex-col bg-slate-900/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm">
-                    <div className="h-10 border-b border-white/5 px-4 flex items-center justify-between bg-white/5">
-                        <span className="text-xs font-medium text-white/70">LIVE VALIDATION STREAM</span>
-                        <span className="text-[10px] font-mono text-white/30">REAL-TIME • ENCRYPTED</span>
-                    </div>
+                {/* Center/Right: Safety Panel + Live Feed (9 cols) */}
+                <div className="col-span-9 flex flex-col gap-4 overflow-hidden">
+                    {/* Prescription Safety Panel */}
+                    <PrescriptionSafetyPanel
+                        result={latestResult}
+                        loading={isEvaluating}
+                        onCheck={onEvaluate}
+                    />
 
-                    <div className="flex-1 overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-                        {signalsLog.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-white/20 gap-4">
-                                <div className="w-16 h-16 rounded-full border-2 border-dashed border-white/20 animate-spin-slow"></div>
-                                <span className="text-sm font-mono">WAITING FOR CLINICAL SIGNALS...</span>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col">
-                                {signalsLog.map((log, i) => (
-                                    <LogEntry key={i} result={log} index={i} />
-                                ))}
-                            </div>
-                        )}
+                    {/* Live Validation Stream */}
+                    <div className="flex-1 flex flex-col bg-slate-900/30 border border-white/5 rounded-xl overflow-hidden backdrop-blur-sm min-h-0">
+                        <div className="h-10 border-b border-white/5 px-4 flex items-center justify-between bg-white/5 flex-shrink-0">
+                            <span className="text-xs font-medium text-white/70">LIVE VALIDATION STREAM</span>
+                            <span className="text-[10px] font-mono text-white/30">REAL-TIME • ENCRYPTED</span>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-0 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                            {signalsLog.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-white/20 gap-4">
+                                    <div className="w-16 h-16 rounded-full border-2 border-dashed border-white/20 animate-spin-slow"></div>
+                                    <span className="text-sm font-mono">WAITING FOR CLINICAL SIGNALS...</span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col">
+                                    {signalsLog.map((log, i) => (
+                                        <LogEntry key={i} result={log} index={i} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

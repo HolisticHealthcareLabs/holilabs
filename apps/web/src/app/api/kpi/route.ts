@@ -1,38 +1,37 @@
 /**
  * GET /api/kpi
- * Retrieves all 4 KPIs with optional date range filtering
+ * Retrieves all 8 KPIs with optional date range filtering.
+ * Pass ?include=definitions to receive KPI dictionary alongside values.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllKPIs, validateFilterState } from '@/lib/kpi';
+import { getAllKPIs, validateFilterState, KPI_DICTIONARY } from '@/lib/kpi';
+import { createProtectedRoute, ApiContext } from '@/lib/api/middleware';
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  try {
-    const searchParams = req.nextUrl.searchParams;
+async function handler(req: NextRequest, _ctx: ApiContext): Promise<NextResponse> {
+  const searchParams = req.nextUrl.searchParams;
 
-    // Parse filter parameters
-    const filter = validateFilterState({
-      startDate: searchParams.get('startDate') || undefined,
-      endDate: searchParams.get('endDate') || undefined,
-    });
+  const filter = validateFilterState({
+    startDate: searchParams.get('startDate') || undefined,
+    endDate: searchParams.get('endDate') || undefined,
+  });
 
-    // Fetch all KPIs
-    const kpis = await getAllKPIs(filter);
+  const kpis = await getAllKPIs(filter);
 
-    return NextResponse.json(kpis, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'private, max-age=60', // Cache for 60 seconds
-      },
-    });
-  } catch (error) {
-    console.error('[KPI] API Error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch KPIs',
-      },
-      { status: 500 }
-    );
-  }
+  const includeDefinitions = searchParams.get('include') === 'definitions';
+
+  const body = includeDefinitions ? { kpis, definitions: KPI_DICTIONARY } : kpis;
+
+  return NextResponse.json(body, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, max-age=60',
+    },
+  });
 }
+
+export const GET = createProtectedRoute(handler, {
+  roles: ['ADMIN', 'PHYSICIAN', 'CLINICIAN', 'NURSE'],
+  skipCsrf: true,
+  audit: { action: 'KPI_VIEW', resource: 'kpi' },
+});

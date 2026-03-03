@@ -1602,6 +1602,10 @@ model Prescription {
   sentToPharmacy Boolean            @default(false)
   pharmacyId     String?
 
+  // Encounter link (optional)
+  encounterId String?
+  encounter   ClinicalEncounter? @relation(fields: [encounterId], references: [id], onDelete: SetNull)
+
   // Relations
   activeMedications Medication[]         @relation() // Active medications from this prescription
   dispenses         MedicationDispense[] // Pharmacy fills
@@ -1612,6 +1616,7 @@ model Prescription {
 
   @@index([patientId])
   @@index([clinicianId])
+  @@index([encounterId])
   @@index([prescriptionHash])
   @@index([txHash])
   @@map("prescriptions")
@@ -2484,6 +2489,9 @@ model ClinicalEncounter {
 
   // CDSS V3
   analysisJobs AnalysisJob[]
+
+  // Encounter-linked prescriptions
+  prescriptions Prescription[]
 
   // Prevention Hub - Links to prevention recommendations detected during encounter
   preventionEncounterLinks PreventionEncounterLink[]

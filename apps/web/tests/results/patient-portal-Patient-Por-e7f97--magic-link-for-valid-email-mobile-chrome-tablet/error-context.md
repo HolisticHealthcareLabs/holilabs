@@ -1,0 +1,69 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "We use cookies" [level=3] [ref=e7]
+      - paragraph [ref=e8]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e9] [cursor=pointer]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e10]:
+      - button "Accept All" [ref=e11] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e12] [cursor=pointer]
+      - button "Customize" [ref=e13] [cursor=pointer]
+  - main [ref=e14]:
+    - generic [ref=e16]:
+      - button "Switch language" [ref=e18] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e21]: EN
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - img "Holi Labs" [ref=e24]
+          - heading "Patient Portal" [level=1] [ref=e25]
+          - paragraph [ref=e26]: Access your clinical history
+        - generic [ref=e31]: Sign in with your account
+        - generic [ref=e33]:
+          - img [ref=e35]
+          - generic [ref=e38]:
+            - paragraph [ref=e39]: Try the Demo
+            - paragraph [ref=e40]: Explore HoliLabs with a demo patient account pre-loaded with sample data.
+            - button "Load Demo Credentials" [ref=e41] [cursor=pointer]
+        - generic [ref=e42]:
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - generic [ref=e46]: Email address*
+              - textbox "Email addressrequired" [active] [ref=e48]:
+                - /placeholder: you@email.com
+                - text: test@example.com
+            - generic [ref=e49]:
+              - generic [ref=e50]: Password*
+              - generic [ref=e51]:
+                - textbox "Passwordrequired" [ref=e52]:
+                  - /placeholder: ••••••••
+                - img [ref=e53] [cursor=pointer]
+            - generic [ref=e56]:
+              - generic [ref=e57] [cursor=pointer]:
+                - checkbox "Remember me" [ref=e58]
+                - generic [ref=e59]: Remember me
+              - link "Forgot password?" [ref=e60] [cursor=pointer]:
+                - /url: /portal/forgot-password
+            - button "Sign in" [ref=e61] [cursor=pointer]:
+              - generic [ref=e62]: Sign in
+            - button "Prefer a magic link? →" [ref=e63] [cursor=pointer]
+          - paragraph [ref=e65]:
+            - text: Don't have an account?
+            - link "Create account" [ref=e66] [cursor=pointer]:
+              - /url: /portal/register
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - img [ref=e69]
+            - generic [ref=e71]: Cifrado end-to-end
+          - generic [ref=e72]:
+            - img [ref=e73]
+            - generic [ref=e75]: HIPAA Compliant
+  - alert [ref=e76]
+```

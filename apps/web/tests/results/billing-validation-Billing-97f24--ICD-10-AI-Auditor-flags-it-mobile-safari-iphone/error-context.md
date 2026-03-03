@@ -1,0 +1,97 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - button "Cerrar" [ref=e5] [cursor=pointer]:
+      - img [ref=e6]
+    - generic [ref=e8]:
+      - img [ref=e10]
+      - generic [ref=e12]:
+        - heading "Instalar Holi Labs" [level=3] [ref=e13]
+        - paragraph [ref=e14]: Acceso rápido desde tu pantalla de inicio
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e18]: "1"
+        - paragraph [ref=e20]:
+          - text: Toca el botón
+          - strong [ref=e21]: Compartir
+          - img [ref=e22]
+          - text: en la barra de Safari
+      - generic [ref=e24]:
+        - generic [ref=e26]: "2"
+        - paragraph [ref=e28]:
+          - text: Desplázate y selecciona
+          - strong [ref=e29]: "\"Agregar a pantalla de inicio\""
+      - generic [ref=e30]:
+        - generic [ref=e32]: "3"
+        - paragraph [ref=e34]:
+          - text: Confirma tocando
+          - strong [ref=e35]: "\"Agregar\""
+    - paragraph [ref=e37]: ✨ Acceso instantáneo • 🚀 Carga más rápida • 📱 Experiencia nativa
+    - generic [ref=e38]:
+      - button "Ahora no" [ref=e39] [cursor=pointer]
+      - button "Entendido" [ref=e40] [cursor=pointer]
+  - generic [ref=e43]:
+    - paragraph [ref=e45]:
+      - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+      - link "Learn more" [ref=e46]:
+        - /url: /legal/cookie-policy
+    - generic [ref=e47]:
+      - button "Accept All" [ref=e48] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e49] [cursor=pointer]
+      - button "Customize" [ref=e50] [cursor=pointer]
+  - main [ref=e51]:
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - button "Switch language" [ref=e54] [cursor=pointer]:
+          - img [ref=e55]
+          - generic [ref=e57]: EN
+        - button "Switch to dark mode" [ref=e58] [cursor=pointer]:
+          - img [ref=e59]
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - img "Holi Labs" [ref=e65]
+          - heading "Holi Labs" [level=1] [ref=e66]
+          - paragraph [ref=e67]: Clinician Portal
+        - generic [ref=e68]:
+          - button "Launch Platform Demo" [ref=e69] [cursor=pointer]:
+            - img [ref=e70]
+            - text: Launch Platform Demo
+          - paragraph [ref=e73]: Sign in instantly as Dr. Ricardo Silva (Cardiology)
+        - generic [ref=e74]:
+          - heading "Welcome back" [level=2] [ref=e75]
+          - paragraph [ref=e76]: Sign in to access your clinician dashboard
+          - generic [ref=e77]:
+            - generic [ref=e78]:
+              - generic [ref=e79]: Email address
+              - textbox "Email address" [ref=e80]:
+                - /placeholder: doctor@holilabs.com
+                - text: test@example.com
+            - generic [ref=e81]:
+              - generic [ref=e82]: Password
+              - generic [ref=e83]:
+                - textbox "Password" [active] [ref=e84]:
+                  - /placeholder: ••••••••
+                  - text: TestPassword123!
+                - button "Show password" [ref=e85] [cursor=pointer]:
+                  - img [ref=e86]
+            - link "Forgot password?" [ref=e90]:
+              - /url: /auth/forgot-password
+            - button "Sign in" [ref=e91] [cursor=pointer]:
+              - img [ref=e92]
+              - generic [ref=e94]: Sign in
+          - paragraph [ref=e96]:
+            - text: Don't have an account?
+            - link "Create new profile" [ref=e97]:
+              - /url: /auth/register
+        - generic [ref=e98]:
+          - paragraph [ref=e99]:
+            - text: Need help?
+            - link "Contact Support" [ref=e100]:
+              - /url: /contact
+          - paragraph [ref=e101]: Protected by industry-standard authentication
+  - alert [ref=e102]
+```

@@ -7,6 +7,18 @@ jest.mock('@/lib/prisma', () => ({
     governanceEvent: {
       count: jest.fn(),
     },
+    scheduledReminder: {
+      count: jest.fn(),
+    },
+    escalation: {
+      count: jest.fn(),
+    },
+    assuranceEvent: {
+      count: jest.fn(),
+    },
+    preventionPlan: {
+      count: jest.fn(),
+    },
   },
 }));
 
@@ -17,6 +29,10 @@ describe('KPI Queries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
+  // ========================================================================
+  // GOVERNANCE KPIs (existing)
+  // ========================================================================
 
   describe('Total Evaluations', () => {
     it('KPI-001: Total evaluations query returns count', async () => {
@@ -46,10 +62,9 @@ describe('KPI Queries', () => {
 
   describe('Block Rate', () => {
     it('KPI-002: Block rate is (blocks / total evaluations)', async () => {
-      // Set up mocks: first call returns total (100), second returns blocks (5)
       (prisma.governanceEvent.count as jest.Mock)
-        .mockResolvedValueOnce(100) // total
-        .mockResolvedValueOnce(5); // blocks
+        .mockResolvedValueOnce(100)
+        .mockResolvedValueOnce(5);
 
       const result = await getKPI('blockRate', {
         startDate: '2026-02-01',
@@ -59,8 +74,6 @@ describe('KPI Queries', () => {
       expect(result.value).toBe(5);
       expect(result.unit).toBe('percentage');
       expect(result.label).toBe('Block Rate');
-      expect(result.value).toBeGreaterThanOrEqual(0);
-      expect(result.value).toBeLessThanOrEqual(100);
     });
 
     it('returns 0% when no evaluations', async () => {
@@ -74,8 +87,8 @@ describe('KPI Queries', () => {
 
     it('handles 100% block rate', async () => {
       (prisma.governanceEvent.count as jest.Mock)
-        .mockResolvedValueOnce(50) // total
-        .mockResolvedValueOnce(50); // blocks
+        .mockResolvedValueOnce(50)
+        .mockResolvedValueOnce(50);
 
       const result = await getKPI('blockRate');
 
@@ -85,10 +98,9 @@ describe('KPI Queries', () => {
 
   describe('Override Rate', () => {
     it('calculates override rate from blocked/flagged items', async () => {
-      // Total at risk (HARD_BLOCK + SOFT_NUDGE)
       (prisma.governanceEvent.count as jest.Mock)
-        .mockResolvedValueOnce(50) // total at risk
-        .mockResolvedValueOnce(5); // overrides
+        .mockResolvedValueOnce(50)
+        .mockResolvedValueOnce(5);
 
       const result = await getKPI('overrideRate');
 
@@ -107,10 +119,9 @@ describe('KPI Queries', () => {
 
   describe('Attestation Compliance', () => {
     it('KPI-004: Attestation compliance is (attested / required)', async () => {
-      // Total SOFT_NUDGE (required)
       (prisma.governanceEvent.count as jest.Mock)
-        .mockResolvedValueOnce(100) // total required
-        .mockResolvedValueOnce(95); // submitted
+        .mockResolvedValueOnce(100)
+        .mockResolvedValueOnce(95);
 
       const result = await getKPI('attestationCompliance');
 
@@ -127,29 +138,196 @@ describe('KPI Queries', () => {
     });
   });
 
+  // ========================================================================
+  // NEW KPIs (5-8)
+  // ========================================================================
+
+  describe('Reminder Reach', () => {
+    it('calculates percentage of sent reminders', async () => {
+      (prisma.scheduledReminder.count as jest.Mock)
+        .mockResolvedValueOnce(200) // total
+        .mockResolvedValueOnce(150); // sent
+
+      const result = await getKPI('reminderReach');
+
+      expect(result.value).toBe(75);
+      expect(result.unit).toBe('percentage');
+      expect(result.label).toBe('Reminder Reach');
+    });
+
+    it('returns 0% when no reminders exist', async () => {
+      (prisma.scheduledReminder.count as jest.Mock).mockResolvedValueOnce(0);
+
+      const result = await getKPI('reminderReach');
+
+      expect(result.value).toBe(0);
+    });
+
+    it('handles 100% reach', async () => {
+      (prisma.scheduledReminder.count as jest.Mock)
+        .mockResolvedValueOnce(80)
+        .mockResolvedValueOnce(80);
+
+      const result = await getKPI('reminderReach');
+
+      expect(result.value).toBe(100);
+    });
+  });
+
+  describe('Escalation SLA Closure', () => {
+    it('calculates percentage of resolved escalations', async () => {
+      (prisma.escalation.count as jest.Mock)
+        .mockResolvedValueOnce(40) // total
+        .mockResolvedValueOnce(30); // resolved
+
+      const result = await getKPI('escalationSlaClosure');
+
+      expect(result.value).toBe(75);
+      expect(result.unit).toBe('percentage');
+      expect(result.label).toBe('Escalation SLA Closure');
+    });
+
+    it('returns 0% when no escalations exist', async () => {
+      (prisma.escalation.count as jest.Mock).mockResolvedValueOnce(0);
+
+      const result = await getKPI('escalationSlaClosure');
+
+      expect(result.value).toBe(0);
+    });
+
+    it('handles 100% closure', async () => {
+      (prisma.escalation.count as jest.Mock)
+        .mockResolvedValueOnce(25)
+        .mockResolvedValueOnce(25);
+
+      const result = await getKPI('escalationSlaClosure');
+
+      expect(result.value).toBe(100);
+    });
+  });
+
+  describe('Ground Truth Accept Rate', () => {
+    it('calculates percentage of accepted AI recommendations', async () => {
+      (prisma.assuranceEvent.count as jest.Mock)
+        .mockResolvedValueOnce(100) // total decided
+        .mockResolvedValueOnce(85); // accepted (humanOverride = false)
+
+      const result = await getKPI('groundTruthAcceptRate');
+
+      expect(result.value).toBe(85);
+      expect(result.unit).toBe('percentage');
+      expect(result.label).toBe('Ground Truth Accept Rate');
+    });
+
+    it('returns 0% when no decided events', async () => {
+      (prisma.assuranceEvent.count as jest.Mock).mockResolvedValueOnce(0);
+
+      const result = await getKPI('groundTruthAcceptRate');
+
+      expect(result.value).toBe(0);
+    });
+
+    it('handles 100% accept rate', async () => {
+      (prisma.assuranceEvent.count as jest.Mock)
+        .mockResolvedValueOnce(50)
+        .mockResolvedValueOnce(50);
+
+      const result = await getKPI('groundTruthAcceptRate');
+
+      expect(result.value).toBe(100);
+    });
+  });
+
+  describe('Prevention Plan Completion', () => {
+    it('calculates percentage of completed plans (excluding archived)', async () => {
+      (prisma.preventionPlan.count as jest.Mock)
+        .mockResolvedValueOnce(60) // total non-archived
+        .mockResolvedValueOnce(24); // completed
+
+      const result = await getKPI('preventionCompletion');
+
+      expect(result.value).toBe(40);
+      expect(result.unit).toBe('percentage');
+      expect(result.label).toBe('Prevention Plan Completion');
+    });
+
+    it('returns 0% when no non-archived plans exist', async () => {
+      (prisma.preventionPlan.count as jest.Mock).mockResolvedValueOnce(0);
+
+      const result = await getKPI('preventionCompletion');
+
+      expect(result.value).toBe(0);
+    });
+
+    it('handles 100% completion', async () => {
+      (prisma.preventionPlan.count as jest.Mock)
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(10);
+
+      const result = await getKPI('preventionCompletion');
+
+      expect(result.value).toBe(100);
+    });
+  });
+
+  // ========================================================================
+  // BATCH + ERROR
+  // ========================================================================
+
   describe('getAllKPIs', () => {
-    it('fetches all 4 KPIs in parallel', async () => {
+    it('fetches all 8 KPIs in parallel', async () => {
+      // Governance KPIs
       (prisma.governanceEvent.count as jest.Mock)
-        .mockResolvedValueOnce(100) // totalEvaluations
-        .mockResolvedValueOnce(100) // blockRate - total
-        .mockResolvedValueOnce(5) // blockRate - blocks
-        .mockResolvedValueOnce(50) // overrideRate - total at risk
-        .mockResolvedValueOnce(5) // overrideRate - overrides
-        .mockResolvedValueOnce(100) // attestationCompliance - total required
-        .mockResolvedValueOnce(95); // attestationCompliance - submitted
+        .mockResolvedValueOnce(100)  // totalEvaluations
+        .mockResolvedValueOnce(100)  // blockRate - total
+        .mockResolvedValueOnce(5)    // blockRate - blocks
+        .mockResolvedValueOnce(50)   // overrideRate - total at risk
+        .mockResolvedValueOnce(5)    // overrideRate - overrides
+        .mockResolvedValueOnce(100)  // attestationCompliance - total required
+        .mockResolvedValueOnce(95);  // attestationCompliance - submitted
+
+      // Reminder Reach
+      (prisma.scheduledReminder.count as jest.Mock)
+        .mockResolvedValueOnce(200)
+        .mockResolvedValueOnce(150);
+
+      // Escalation SLA Closure
+      (prisma.escalation.count as jest.Mock)
+        .mockResolvedValueOnce(40)
+        .mockResolvedValueOnce(30);
+
+      // Ground Truth Accept Rate
+      (prisma.assuranceEvent.count as jest.Mock)
+        .mockResolvedValueOnce(100)
+        .mockResolvedValueOnce(85);
+
+      // Prevention Completion
+      (prisma.preventionPlan.count as jest.Mock)
+        .mockResolvedValueOnce(60)
+        .mockResolvedValueOnce(24);
 
       const result = await getAllKPIs({
         startDate: '2026-02-01',
         endDate: '2026-02-11',
       });
 
+      // All 8 keys present
+      expect(Object.keys(result)).toHaveLength(8);
       expect(result.totalEvaluations).toBeDefined();
       expect(result.blockRate).toBeDefined();
       expect(result.overrideRate).toBeDefined();
       expect(result.attestationCompliance).toBeDefined();
+      expect(result.reminderReach).toBeDefined();
+      expect(result.escalationSlaClosure).toBeDefined();
+      expect(result.groundTruthAcceptRate).toBeDefined();
+      expect(result.preventionCompletion).toBeDefined();
 
       expect(result.totalEvaluations.value).toBe(100);
       expect(result.blockRate.value).toBe(5);
+      expect(result.reminderReach.value).toBe(75);
+      expect(result.escalationSlaClosure.value).toBe(75);
+      expect(result.groundTruthAcceptRate.value).toBe(85);
+      expect(result.preventionCompletion.value).toBe(40);
     });
   });
 

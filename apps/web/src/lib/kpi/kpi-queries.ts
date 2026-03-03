@@ -1,6 +1,6 @@
 /**
  * KPI Query Functions
- * Core business logic for calculating 4 key performance indicators
+ * Core business logic for calculating 8 key performance indicators
  */
 
 import { prisma } from '@/lib/prisma';
@@ -11,7 +11,11 @@ export type KPIType =
   | 'totalEvaluations'
   | 'blockRate'
   | 'overrideRate'
-  | 'attestationCompliance';
+  | 'attestationCompliance'
+  | 'reminderReach'
+  | 'escalationSlaClosure'
+  | 'groundTruthAcceptRate'
+  | 'preventionCompletion';
 
 export interface KPIResult {
   value: number;
@@ -20,208 +24,228 @@ export interface KPIResult {
 }
 
 /**
- * KPI 1: Total Evaluations
- * Count all governance events (treated as rule evaluations)
- * Numerator: COUNT(*) FROM GovernanceEvent
+ * Build a Prisma date-range where clause for a given timestamp field.
+ * Eliminates repeated date-filter boilerplate across KPI queries.
  */
-async function getTotalEvaluations(filter: KPIFilterState): Promise<KPIResult> {
+function buildDateWhere(
+  filter: KPIFilterState,
+  timestampField: string = 'timestamp'
+): Record<string, unknown> {
   const where: Record<string, unknown> = {};
 
-  if (filter.startDate) {
-    where.timestamp = { gte: new Date(filter.startDate) };
-  }
-
-  if (filter.endDate) {
-    const endDate = new Date(filter.endDate);
-    endDate.setHours(23, 59, 59, 999);
-    if (where.timestamp && typeof where.timestamp === 'object') {
-      (where.timestamp as Record<string, unknown>).lte = endDate;
-    } else {
-      where.timestamp = { lte: endDate };
+  if (filter.startDate || filter.endDate) {
+    const dateFilter: Record<string, unknown> = {};
+    if (filter.startDate) {
+      dateFilter.gte = new Date(filter.startDate);
     }
+    if (filter.endDate) {
+      const endDate = new Date(filter.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      dateFilter.lte = endDate;
+    }
+    where[timestampField] = dateFilter;
   }
 
-  const count = await prisma.governanceEvent.count({ where });
-
-  return {
-    value: count,
-    unit: 'count',
-    label: 'Total Evaluations',
-  };
+  return where;
 }
 
-/**
- * KPI 2: Block Rate
- * Percentage of evaluations that resulted in blocks
- * Numerator: COUNT(*) WHERE severity = 'HARD_BLOCK'
- * Denominator: COUNT(*) FROM GovernanceEvent
- * Unit: percentage
- */
+/** Round to 2 decimal places */
+function pct(numerator: number, denominator: number): number {
+  if (denominator === 0) return 0;
+  return Math.round((numerator / denominator) * 10000) / 100;
+}
+
+// ============================================================================
+// GOVERNANCE KPIs (1-4)
+// ============================================================================
+
+async function getTotalEvaluations(filter: KPIFilterState): Promise<KPIResult> {
+  const where = buildDateWhere(filter);
+  const count = await prisma.governanceEvent.count({ where });
+  return { value: count, unit: 'count', label: 'Total Evaluations' };
+}
+
 async function getBlockRate(filter: KPIFilterState): Promise<KPIResult> {
-  const baseWhere: Record<string, unknown> = {};
-
-  if (filter.startDate) {
-    baseWhere.timestamp = { gte: new Date(filter.startDate) };
-  }
-
-  if (filter.endDate) {
-    const endDate = new Date(filter.endDate);
-    endDate.setHours(23, 59, 59, 999);
-    if (baseWhere.timestamp && typeof baseWhere.timestamp === 'object') {
-      (baseWhere.timestamp as Record<string, unknown>).lte = endDate;
-    } else {
-      baseWhere.timestamp = { lte: endDate };
-    }
-  }
-
+  const baseWhere = buildDateWhere(filter);
   const totalCount = await prisma.governanceEvent.count({ where: baseWhere });
 
   if (totalCount === 0) {
-    return {
-      value: 0,
-      unit: 'percentage',
-      label: 'Block Rate',
-    };
+    return { value: 0, unit: 'percentage', label: 'Block Rate' };
   }
 
-  const blockWhere = {
-    ...baseWhere,
-    severity: GovernanceSeverity.HARD_BLOCK,
-  };
+  const blockCount = await prisma.governanceEvent.count({
+    where: { ...baseWhere, severity: GovernanceSeverity.HARD_BLOCK },
+  });
 
-  const blockCount = await prisma.governanceEvent.count({ where: blockWhere });
-
-  const percentage = (blockCount / totalCount) * 100;
-
-  return {
-    value: Math.round(percentage * 100) / 100, // Round to 2 decimal places
-    unit: 'percentage',
-    label: 'Block Rate',
-  };
+  return { value: pct(blockCount, totalCount), unit: 'percentage', label: 'Block Rate' };
 }
 
-/**
- * KPI 3: Override Rate
- * Percentage of overrides among blocked/flagged items
- * Numerator: COUNT(*) WHERE overrideByUser = true
- * Denominator: COUNT(*) WHERE severity IN ('HARD_BLOCK', 'SOFT_NUDGE')
- * Unit: percentage
- */
 async function getOverrideRate(filter: KPIFilterState): Promise<KPIResult> {
-  const baseWhere: Record<string, unknown> = {};
-
-  if (filter.startDate) {
-    baseWhere.timestamp = { gte: new Date(filter.startDate) };
-  }
-
-  if (filter.endDate) {
-    const endDate = new Date(filter.endDate);
-    endDate.setHours(23, 59, 59, 999);
-    if (baseWhere.timestamp && typeof baseWhere.timestamp === 'object') {
-      (baseWhere.timestamp as Record<string, unknown>).lte = endDate;
-    } else {
-      baseWhere.timestamp = { lte: endDate };
-    }
-  }
-
-  // Denominator: severity in HARD_BLOCK or SOFT_NUDGE
+  const baseWhere = buildDateWhere(filter);
   const denominatorWhere = {
     ...baseWhere,
     severity: { in: [GovernanceSeverity.HARD_BLOCK, GovernanceSeverity.SOFT_NUDGE] },
   };
 
-  const totalAtRisk = await prisma.governanceEvent.count({
-    where: denominatorWhere,
-  });
+  const totalAtRisk = await prisma.governanceEvent.count({ where: denominatorWhere });
 
   if (totalAtRisk === 0) {
-    return {
-      value: 0,
-      unit: 'percentage',
-      label: 'Override Rate',
-    };
+    return { value: 0, unit: 'percentage', label: 'Override Rate' };
   }
-
-  // Numerator: overrideByUser = true
-  const overrideWhere = {
-    ...denominatorWhere,
-    overrideByUser: true,
-  };
 
   const overrideCount = await prisma.governanceEvent.count({
-    where: overrideWhere,
+    where: { ...denominatorWhere, overrideByUser: true },
   });
 
-  const percentage = (overrideCount / totalAtRisk) * 100;
-
-  return {
-    value: Math.round(percentage * 100) / 100,
-    unit: 'percentage',
-    label: 'Override Rate',
-  };
+  return { value: pct(overrideCount, totalAtRisk), unit: 'percentage', label: 'Override Rate' };
 }
 
-/**
- * KPI 4: Attestation Compliance
- * This measures cases where SOFT_NUDGE events were handled (vs ignored)
- * We treat SOFT_NUDGE as "ATTESTATION_REQUIRED" and overrideByUser=true as attestation submitted
- * Numerator: COUNT(*) WHERE severity = 'SOFT_NUDGE' AND overrideByUser = true
- * Denominator: COUNT(*) WHERE severity = 'SOFT_NUDGE'
- * Unit: percentage
- */
 async function getAttestationCompliance(filter: KPIFilterState): Promise<KPIResult> {
-  const baseWhere: Record<string, unknown> = {};
-
-  if (filter.startDate) {
-    baseWhere.timestamp = { gte: new Date(filter.startDate) };
-  }
-
-  if (filter.endDate) {
-    const endDate = new Date(filter.endDate);
-    endDate.setHours(23, 59, 59, 999);
-    if (baseWhere.timestamp && typeof baseWhere.timestamp === 'object') {
-      (baseWhere.timestamp as Record<string, unknown>).lte = endDate;
-    } else {
-      baseWhere.timestamp = { lte: endDate };
-    }
-  }
-
-  // Denominator: all SOFT_NUDGE events
+  const baseWhere = buildDateWhere(filter);
   const denominatorWhere = {
     ...baseWhere,
     severity: GovernanceSeverity.SOFT_NUDGE,
   };
 
-  const totalRequired = await prisma.governanceEvent.count({
-    where: denominatorWhere,
-  });
+  const totalRequired = await prisma.governanceEvent.count({ where: denominatorWhere });
 
   if (totalRequired === 0) {
-    return {
-      value: 100,
-      unit: 'percentage',
-      label: 'Attestation Compliance',
-    };
+    return { value: 100, unit: 'percentage', label: 'Attestation Compliance' };
   }
 
-  // Numerator: SOFT_NUDGE with override
-  const submittedWhere = {
-    ...denominatorWhere,
-    overrideByUser: true,
-  };
-
   const submittedCount = await prisma.governanceEvent.count({
-    where: submittedWhere,
+    where: { ...denominatorWhere, overrideByUser: true },
   });
 
-  const percentage = (submittedCount / totalRequired) * 100;
-
   return {
-    value: Math.round(percentage * 100) / 100,
+    value: pct(submittedCount, totalRequired),
     unit: 'percentage',
     label: 'Attestation Compliance',
   };
 }
+
+// ============================================================================
+// NEW KPIs (5-8)
+// ============================================================================
+
+/**
+ * KPI 5: Reminder Reach
+ * Percentage of scheduled reminders that were successfully sent.
+ * Numerator: ScheduledReminder WHERE status = 'SENT'
+ * Denominator: all ScheduledReminder
+ */
+async function getReminderReach(filter: KPIFilterState): Promise<KPIResult> {
+  const baseWhere = buildDateWhere(filter, 'scheduledFor');
+
+  const total = await prisma.scheduledReminder.count({ where: baseWhere });
+
+  if (total === 0) {
+    return { value: 0, unit: 'percentage', label: 'Reminder Reach' };
+  }
+
+  const sent = await prisma.scheduledReminder.count({
+    where: { ...baseWhere, status: 'SENT' },
+  });
+
+  return { value: pct(sent, total), unit: 'percentage', label: 'Reminder Reach' };
+}
+
+/**
+ * KPI 6: Escalation SLA Closure
+ * Percentage of escalations that were resolved (vs total).
+ * Numerator: Escalation WHERE status = 'RESOLVED'
+ * Denominator: all Escalation
+ */
+async function getEscalationSlaClosure(filter: KPIFilterState): Promise<KPIResult> {
+  const baseWhere = buildDateWhere(filter, 'createdAt');
+
+  const total = await prisma.escalation.count({ where: baseWhere });
+
+  if (total === 0) {
+    return { value: 0, unit: 'percentage', label: 'Escalation SLA Closure' };
+  }
+
+  const resolved = await prisma.escalation.count({
+    where: { ...baseWhere, status: 'RESOLVED' },
+  });
+
+  return { value: pct(resolved, total), unit: 'percentage', label: 'Escalation SLA Closure' };
+}
+
+/**
+ * KPI 7: Ground Truth Accept Rate
+ * Percentage of decided assurance events where clinician accepted AI recommendation.
+ * Numerator: AssuranceEvent WHERE humanOverride = false AND decidedAt IS NOT NULL
+ * Denominator: AssuranceEvent WHERE decidedAt IS NOT NULL
+ */
+async function getGroundTruthAcceptRate(filter: KPIFilterState): Promise<KPIResult> {
+  const baseWhere = {
+    ...buildDateWhere(filter, 'decidedAt'),
+    decidedAt: undefined as unknown,
+  };
+
+  // Build the decided filter (decidedAt IS NOT NULL + optional date range)
+  const dateFilter = buildDateWhere(filter, 'decidedAt');
+  const decidedWhere: Record<string, unknown> = {
+    ...dateFilter,
+  };
+
+  // Ensure decidedAt is not null — merge with any date range
+  if (decidedWhere.decidedAt && typeof decidedWhere.decidedAt === 'object') {
+    (decidedWhere.decidedAt as Record<string, unknown>).not = null;
+  } else {
+    decidedWhere.decidedAt = { not: null };
+  }
+
+  const totalDecided = await prisma.assuranceEvent.count({ where: decidedWhere });
+
+  if (totalDecided === 0) {
+    return { value: 0, unit: 'percentage', label: 'Ground Truth Accept Rate' };
+  }
+
+  const accepted = await prisma.assuranceEvent.count({
+    where: { ...decidedWhere, humanOverride: false },
+  });
+
+  return {
+    value: pct(accepted, totalDecided),
+    unit: 'percentage',
+    label: 'Ground Truth Accept Rate',
+  };
+}
+
+/**
+ * KPI 8: Prevention Plan Completion
+ * Percentage of non-archived prevention plans that are completed.
+ * Numerator: PreventionPlan WHERE status = 'COMPLETED'
+ * Denominator: PreventionPlan WHERE status != 'ARCHIVED'
+ */
+async function getPreventionCompletion(filter: KPIFilterState): Promise<KPIResult> {
+  const baseWhere = {
+    ...buildDateWhere(filter, 'activatedAt'),
+    status: { not: 'ARCHIVED' as const },
+  };
+
+  const total = await prisma.preventionPlan.count({ where: baseWhere });
+
+  if (total === 0) {
+    return { value: 0, unit: 'percentage', label: 'Prevention Plan Completion' };
+  }
+
+  const completed = await prisma.preventionPlan.count({
+    where: { ...buildDateWhere(filter, 'activatedAt'), status: 'COMPLETED' },
+  });
+
+  return {
+    value: pct(completed, total),
+    unit: 'percentage',
+    label: 'Prevention Plan Completion',
+  };
+}
+
+// ============================================================================
+// DISPATCHER
+// ============================================================================
 
 /**
  * Generic KPI getter that dispatches to specific KPI functions
@@ -242,29 +266,53 @@ export async function getKPI(
       return getOverrideRate(filter);
     case 'attestationCompliance':
       return getAttestationCompliance(filter);
+    case 'reminderReach':
+      return getReminderReach(filter);
+    case 'escalationSlaClosure':
+      return getEscalationSlaClosure(filter);
+    case 'groundTruthAcceptRate':
+      return getGroundTruthAcceptRate(filter);
+    case 'preventionCompletion':
+      return getPreventionCompletion(filter);
     default:
       throw new Error(`Unknown KPI type: ${kpiType}`);
   }
 }
 
 /**
- * Batch fetch all 4 KPIs
+ * Batch fetch all 8 KPIs
  * @param filter - Date range filter
- * @returns Object with all 4 KPIs
+ * @returns Object with all 8 KPIs
  */
 export async function getAllKPIs(filter: KPIFilterState = {}): Promise<Record<KPIType, KPIResult>> {
-  const [totalEvaluations, blockRate, overrideRate, attestationCompliance] =
-    await Promise.all([
-      getTotalEvaluations(filter),
-      getBlockRate(filter),
-      getOverrideRate(filter),
-      getAttestationCompliance(filter),
-    ]);
+  const [
+    totalEvaluations,
+    blockRate,
+    overrideRate,
+    attestationCompliance,
+    reminderReach,
+    escalationSlaClosure,
+    groundTruthAcceptRate,
+    preventionCompletion,
+  ] = await Promise.all([
+    getTotalEvaluations(filter),
+    getBlockRate(filter),
+    getOverrideRate(filter),
+    getAttestationCompliance(filter),
+    getReminderReach(filter),
+    getEscalationSlaClosure(filter),
+    getGroundTruthAcceptRate(filter),
+    getPreventionCompletion(filter),
+  ]);
 
   return {
     totalEvaluations,
     blockRate,
     overrideRate,
     attestationCompliance,
+    reminderReach,
+    escalationSlaClosure,
+    groundTruthAcceptRate,
+    preventionCompletion,
   };
 }

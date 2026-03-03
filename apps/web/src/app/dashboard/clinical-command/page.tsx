@@ -22,6 +22,9 @@ import {
 } from 'lucide-react';
 import { useGovernanceRealtime } from '@/hooks/useGovernanceRealtime';
 import { FirstRunWelcome } from '@/components/dashboard/FirstRunWelcome';
+import { KPICard } from '@/components/console/KPICard';
+import { KPI_DICTIONARY, type KPIDictionaryKey } from '@/lib/kpi/kpi-dictionary';
+import type { KPIResult } from '@/lib/kpi/kpi-queries';
 
 const FIRST_RUN_DISMISSED_KEY = 'holilabs:firstRunDismissed';
 
@@ -402,6 +405,7 @@ function GroundTruthPanel({ data }: { data: NonNullable<CommandCenterData['groun
 export default function ClinicalCommandCenterPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<CommandCenterData | null>(null);
+  const [kpiData, setKpiData] = useState<Record<string, KPIResult> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
@@ -428,10 +432,16 @@ export default function ClinicalCommandCenterPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch('/api/clinical-command/summary');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const [summaryRes, kpiRes] = await Promise.all([
+        fetch('/api/clinical-command/summary'),
+        fetch('/api/kpi'),
+      ]);
+      if (!summaryRes.ok) throw new Error(`HTTP ${summaryRes.status}`);
+      const json = await summaryRes.json();
       setData(json.data);
+      if (kpiRes.ok) {
+        setKpiData(await kpiRes.json());
+      }
       setError(null);
       setLastRefresh(new Date());
     } catch (err) {
@@ -538,6 +548,25 @@ export default function ClinicalCommandCenterPage() {
           )}
         </div>
       </div>
+
+      {/* KPI Strip */}
+      {kpiData && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {(Object.keys(KPI_DICTIONARY) as KPIDictionaryKey[]).map((key) => {
+            const kpi = kpiData[key];
+            if (!kpi) return null;
+            return (
+              <KPICard
+                key={key}
+                label={kpi.label}
+                value={kpi.value}
+                unit={kpi.unit}
+                definition={KPI_DICTIONARY[key]}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {/* 2x2 Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
