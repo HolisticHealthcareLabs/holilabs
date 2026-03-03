@@ -1,0 +1,193 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "We use cookies" [level=3] [ref=e7]
+      - paragraph [ref=e8]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e9] [cursor=pointer]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e10]:
+      - button "Accept All" [ref=e11] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e12] [cursor=pointer]
+      - button "Customize" [ref=e13] [cursor=pointer]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e17]:
+        - link "Holi Labs Holi Labs" [ref=e18] [cursor=pointer]:
+          - /url: /portal/dashboard
+          - img "Holi Labs" [ref=e19]
+          - generic [ref=e20]: Holi Labs
+        - generic [ref=e21]:
+          - button [ref=e22] [cursor=pointer]:
+            - img [ref=e23]
+          - button [ref=e26] [cursor=pointer]:
+            - img [ref=e27]
+          - button "Switch to dark mode" [ref=e29] [cursor=pointer]:
+            - img [ref=e30]
+          - button [ref=e32] [cursor=pointer]:
+            - img [ref=e33]
+      - main [ref=e36]:
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - button "Volver al Perfil" [ref=e40] [cursor=pointer]:
+              - img [ref=e41]
+              - text: Volver al Perfil
+            - generic [ref=e43]:
+              - img [ref=e44]
+              - heading "Seguridad y Actividad" [level=1] [ref=e46]
+            - paragraph [ref=e47]: Revisa tu actividad de inicio de sesión y eventos de seguridad
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - img [ref=e51]
+              - generic [ref=e53]:
+                - heading "Sesión Actual" [level=2] [ref=e54]
+                - paragraph [ref=e55]: Activa ahora
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - img [ref=e58]
+                - generic [ref=e60]:
+                  - paragraph [ref=e61]: Android
+                  - paragraph [ref=e62]: Chrome
+              - generic [ref=e63]:
+                - img [ref=e64]
+                - generic [ref=e67]:
+                  - paragraph [ref=e68]: Ciudad de México, México
+                  - paragraph [ref=e69]: "IP: 192.168.1.100"
+              - generic [ref=e70]:
+                - img [ref=e71]
+                - generic [ref=e73]:
+                  - paragraph [ref=e74]: Última actividad
+                  - paragraph [ref=e75]: 3 de marzo, 09:47
+          - generic [ref=e76]:
+            - heading "Eventos de Seguridad Recientes" [level=2] [ref=e77]
+            - generic [ref=e79]:
+              - img [ref=e81]
+              - generic [ref=e83]:
+                - paragraph [ref=e84]: Contraseña cambiada
+                - paragraph [ref=e85]: Tu contraseña fue actualizada exitosamente
+                - paragraph [ref=e86]: 24 de febrero a las 09:47
+          - generic [ref=e87]:
+            - heading "Historial de Inicios de Sesión" [level=2] [ref=e88]
+            - generic [ref=e89]:
+              - generic [ref=e90]:
+                - img [ref=e92]
+                - generic [ref=e94]:
+                  - paragraph [ref=e96]: Android · Chrome
+                  - generic [ref=e97]:
+                    - generic [ref=e98]:
+                      - img [ref=e99]
+                      - text: Ciudad de México, México
+                    - generic [ref=e102]:
+                      - img [ref=e103]
+                      - text: 3 mar, 09:47
+              - generic [ref=e105]:
+                - img [ref=e107]
+                - generic [ref=e109]:
+                  - paragraph [ref=e111]: Android · Chrome
+                  - generic [ref=e112]:
+                    - generic [ref=e113]:
+                      - img [ref=e114]
+                      - text: Guadalajara, México
+                    - generic [ref=e117]:
+                      - img [ref=e118]
+                      - text: 2 mar, 09:47
+              - generic [ref=e120]:
+                - img [ref=e122]
+                - generic [ref=e124]:
+                  - paragraph [ref=e126]: Android · Chrome
+                  - generic [ref=e127]:
+                    - generic [ref=e128]:
+                      - img [ref=e129]
+                      - text: Monterrey, México
+                    - generic [ref=e132]:
+                      - img [ref=e133]
+                      - text: 1 mar, 09:47
+              - generic [ref=e135]:
+                - img [ref=e137]
+                - generic [ref=e139]:
+                  - paragraph [ref=e141]: Android · Chrome
+                  - generic [ref=e142]:
+                    - generic [ref=e143]:
+                      - img [ref=e144]
+                      - text: Ciudad de México, México
+                    - generic [ref=e147]:
+                      - img [ref=e148]
+                      - text: 28 feb, 09:47
+              - generic [ref=e150]:
+                - img [ref=e152]
+                - generic [ref=e154]:
+                  - paragraph [ref=e156]: Android · Chrome
+                  - generic [ref=e157]:
+                    - generic [ref=e158]:
+                      - img [ref=e159]
+                      - text: Guadalajara, México
+                    - generic [ref=e162]:
+                      - img [ref=e163]
+                      - text: 27 feb, 09:47
+              - generic [ref=e165]:
+                - img [ref=e167]
+                - generic [ref=e169]:
+                  - generic [ref=e170]:
+                    - paragraph [ref=e171]: Android · Chrome
+                    - generic [ref=e172]: Fallido
+                  - generic [ref=e173]:
+                    - generic [ref=e174]:
+                      - img [ref=e175]
+                      - text: Monterrey, México
+                    - generic [ref=e178]:
+                      - img [ref=e179]
+                      - text: 26 feb, 09:47
+              - generic [ref=e181]:
+                - img [ref=e183]
+                - generic [ref=e185]:
+                  - paragraph [ref=e187]: Android · Chrome
+                  - generic [ref=e188]:
+                    - generic [ref=e189]:
+                      - img [ref=e190]
+                      - text: Ciudad de México, México
+                    - generic [ref=e193]:
+                      - img [ref=e194]
+                      - text: 25 feb, 09:47
+              - generic [ref=e196]:
+                - img [ref=e198]
+                - generic [ref=e200]:
+                  - paragraph [ref=e202]: Android · Chrome
+                  - generic [ref=e203]:
+                    - generic [ref=e204]:
+                      - img [ref=e205]
+                      - text: Guadalajara, México
+                    - generic [ref=e208]:
+                      - img [ref=e209]
+                      - text: 24 feb, 09:47
+              - generic [ref=e211]:
+                - img [ref=e213]
+                - generic [ref=e215]:
+                  - paragraph [ref=e217]: Android · Chrome
+                  - generic [ref=e218]:
+                    - generic [ref=e219]:
+                      - img [ref=e220]
+                      - text: Monterrey, México
+                    - generic [ref=e223]:
+                      - img [ref=e224]
+                      - text: 23 feb, 09:47
+              - generic [ref=e226]:
+                - img [ref=e228]
+                - generic [ref=e230]:
+                  - paragraph [ref=e232]: Android · Chrome
+                  - generic [ref=e233]:
+                    - generic [ref=e234]:
+                      - img [ref=e235]
+                      - text: Ciudad de México, México
+                    - generic [ref=e238]:
+                      - img [ref=e239]
+                      - text: 22 feb, 09:47
+          - paragraph [ref=e242]:
+            - strong [ref=e243]: "💡 Consejo de seguridad:"
+            - text: Si ves actividad sospechosa o inicios de sesión que no reconoces, cambia tu contraseña inmediatamente y contacta al soporte.
+  - alert [ref=e244]
+```

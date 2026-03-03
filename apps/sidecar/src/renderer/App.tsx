@@ -272,6 +272,9 @@ const App: React.FC = () => {
         signalsLog={signalsLog}
         connectionStatus={state.connection}
         ruleVersion="1.0.4-rc (Golden Master)"
+        latestResult={state.trafficLightResult}
+        isEvaluating={state.isEvaluating}
+        onEvaluate={handleEvaluate}
       />
     );
   }

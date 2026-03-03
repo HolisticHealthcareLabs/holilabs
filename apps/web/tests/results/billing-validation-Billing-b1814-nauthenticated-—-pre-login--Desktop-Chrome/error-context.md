@@ -1,0 +1,62 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "We use cookies" [level=3] [ref=e7]
+      - paragraph [ref=e8]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e9] [cursor=pointer]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e10]:
+      - button "Accept All" [ref=e11] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e12] [cursor=pointer]
+      - button "Customize" [ref=e13] [cursor=pointer]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - button "Switch to dark mode" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - img "Holi Labs" [ref=e24]
+          - heading "Holi Labs" [level=1] [ref=e25]
+          - paragraph [ref=e26]: Clinician Portal
+        - generic [ref=e27]:
+          - button "Launch Platform Demo" [ref=e28] [cursor=pointer]:
+            - img [ref=e29]
+            - text: Launch Platform Demo
+          - paragraph [ref=e32]: Sign in instantly as Dr. Ricardo Silva (Cardiology)
+        - generic [ref=e33]:
+          - heading "Welcome back" [level=2] [ref=e34]
+          - paragraph [ref=e35]: Sign in to access your clinician dashboard
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]: Email address
+              - textbox "Email address" [active] [ref=e39]:
+                - /placeholder: doctor@holilabs.com
+            - generic [ref=e40]:
+              - generic [ref=e41]: Password
+              - generic [ref=e42]:
+                - textbox "Password" [ref=e43]:
+                  - /placeholder: ••••••••
+                - button "Show password" [ref=e44] [cursor=pointer]:
+                  - img [ref=e45]
+            - link "Forgot password?" [ref=e49] [cursor=pointer]:
+              - /url: /auth/forgot-password
+            - button "Sign in" [disabled] [ref=e50]:
+              - img [ref=e51]
+              - generic [ref=e53]: Sign in
+          - paragraph [ref=e55]:
+            - text: Don't have an account?
+            - link "Create new profile" [ref=e56] [cursor=pointer]:
+              - /url: /auth/register
+        - generic [ref=e57]:
+          - paragraph [ref=e58]:
+            - text: Need help?
+            - link "Contact Support" [ref=e59] [cursor=pointer]:
+              - /url: /contact
+          - paragraph [ref=e60]: Protected by industry-standard authentication
+```

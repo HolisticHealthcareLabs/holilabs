@@ -1,0 +1,227 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - button "Cerrar" [ref=e5] [cursor=pointer]:
+      - img [ref=e6]
+    - generic [ref=e8]:
+      - img [ref=e10]
+      - generic [ref=e12]:
+        - heading "Instalar Holi Labs" [level=3] [ref=e13]
+        - paragraph [ref=e14]: Acceso rápido desde tu pantalla de inicio
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e18]: "1"
+        - paragraph [ref=e20]:
+          - text: Toca el botón
+          - strong [ref=e21]: Compartir
+          - img [ref=e22]
+          - text: en la barra de Safari
+      - generic [ref=e24]:
+        - generic [ref=e26]: "2"
+        - paragraph [ref=e28]:
+          - text: Desplázate y selecciona
+          - strong [ref=e29]: "\"Agregar a pantalla de inicio\""
+      - generic [ref=e30]:
+        - generic [ref=e32]: "3"
+        - paragraph [ref=e34]:
+          - text: Confirma tocando
+          - strong [ref=e35]: "\"Agregar\""
+    - paragraph [ref=e37]: ✨ Acceso instantáneo • 🚀 Carga más rápida • 📱 Experiencia nativa
+    - generic [ref=e38]:
+      - button "Ahora no" [ref=e39] [cursor=pointer]
+      - button "Entendido" [ref=e40] [cursor=pointer]
+  - generic [ref=e43]:
+    - generic [ref=e44]:
+      - heading "We use cookies" [level=3] [ref=e45]
+      - paragraph [ref=e46]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e47]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e48]:
+      - button "Accept All" [ref=e49] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e50] [cursor=pointer]
+      - button "Customize" [ref=e51] [cursor=pointer]
+  - main [ref=e52]:
+    - generic [ref=e53]:
+      - generic [ref=e55]:
+        - link "Holi Labs Holi Labs" [ref=e56]:
+          - /url: /portal/dashboard
+          - img "Holi Labs" [ref=e57]
+          - generic [ref=e58]: Holi Labs
+        - generic [ref=e59]:
+          - button "Search patients... Cmd K" [ref=e60] [cursor=pointer]:
+            - img [ref=e61]
+            - generic [ref=e63]: Search patients...
+            - generic [ref=e64]:
+              - generic [ref=e65]: Cmd
+              - text: K
+          - button [ref=e67] [cursor=pointer]:
+            - img [ref=e68]
+          - button "Switch to light mode" [ref=e70] [cursor=pointer]:
+            - img [ref=e71]
+          - button [ref=e73] [cursor=pointer]:
+            - img [ref=e74]
+      - main [ref=e77]:
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - button "Volver al Perfil" [ref=e81] [cursor=pointer]:
+              - img [ref=e82]
+              - text: Volver al Perfil
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - heading "Seguridad y Actividad" [level=1] [ref=e87]
+            - paragraph [ref=e88]: Revisa tu actividad de inicio de sesión y eventos de seguridad
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - img [ref=e92]
+              - generic [ref=e94]:
+                - heading "Sesión Actual" [level=2] [ref=e95]
+                - paragraph [ref=e96]: Activa ahora
+            - generic [ref=e97]:
+              - generic [ref=e98]:
+                - img [ref=e99]
+                - generic [ref=e101]:
+                  - paragraph [ref=e102]: iPad
+                  - paragraph [ref=e103]: Safari
+              - generic [ref=e104]:
+                - img [ref=e105]
+                - generic [ref=e108]:
+                  - paragraph [ref=e109]: Ciudad de México, México
+                  - paragraph [ref=e110]: "IP: 192.168.1.100"
+              - generic [ref=e111]:
+                - img [ref=e112]
+                - generic [ref=e114]:
+                  - paragraph [ref=e115]: Última actividad
+                  - paragraph [ref=e116]: 3 de marzo, 10:06
+          - generic [ref=e117]:
+            - heading "Eventos de Seguridad Recientes" [level=2] [ref=e118]
+            - generic [ref=e120]:
+              - img [ref=e122]
+              - generic [ref=e124]:
+                - paragraph [ref=e125]: Contraseña cambiada
+                - paragraph [ref=e126]: Tu contraseña fue actualizada exitosamente
+                - paragraph [ref=e127]: 24 de febrero a las 10:06
+          - generic [ref=e128]:
+            - heading "Historial de Inicios de Sesión" [level=2] [ref=e129]
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - img [ref=e133]
+                - generic [ref=e135]:
+                  - paragraph [ref=e137]: iPad · Safari
+                  - generic [ref=e138]:
+                    - generic [ref=e139]:
+                      - img [ref=e140]
+                      - text: Ciudad de México, México
+                    - generic [ref=e143]:
+                      - img [ref=e144]
+                      - text: 3 mar, 10:06
+              - generic [ref=e146]:
+                - img [ref=e148]
+                - generic [ref=e150]:
+                  - paragraph [ref=e152]: iPad · Safari
+                  - generic [ref=e153]:
+                    - generic [ref=e154]:
+                      - img [ref=e155]
+                      - text: Guadalajara, México
+                    - generic [ref=e158]:
+                      - img [ref=e159]
+                      - text: 2 mar, 10:06
+              - generic [ref=e161]:
+                - img [ref=e163]
+                - generic [ref=e165]:
+                  - paragraph [ref=e167]: iPad · Safari
+                  - generic [ref=e168]:
+                    - generic [ref=e169]:
+                      - img [ref=e170]
+                      - text: Monterrey, México
+                    - generic [ref=e173]:
+                      - img [ref=e174]
+                      - text: 1 mar, 10:06
+              - generic [ref=e176]:
+                - img [ref=e178]
+                - generic [ref=e180]:
+                  - paragraph [ref=e182]: iPad · Safari
+                  - generic [ref=e183]:
+                    - generic [ref=e184]:
+                      - img [ref=e185]
+                      - text: Ciudad de México, México
+                    - generic [ref=e188]:
+                      - img [ref=e189]
+                      - text: 28 feb, 10:06
+              - generic [ref=e191]:
+                - img [ref=e193]
+                - generic [ref=e195]:
+                  - paragraph [ref=e197]: iPad · Safari
+                  - generic [ref=e198]:
+                    - generic [ref=e199]:
+                      - img [ref=e200]
+                      - text: Guadalajara, México
+                    - generic [ref=e203]:
+                      - img [ref=e204]
+                      - text: 27 feb, 10:06
+              - generic [ref=e206]:
+                - img [ref=e208]
+                - generic [ref=e210]:
+                  - generic [ref=e211]:
+                    - paragraph [ref=e212]: iPad · Safari
+                    - generic [ref=e213]: Fallido
+                  - generic [ref=e214]:
+                    - generic [ref=e215]:
+                      - img [ref=e216]
+                      - text: Monterrey, México
+                    - generic [ref=e219]:
+                      - img [ref=e220]
+                      - text: 26 feb, 10:06
+              - generic [ref=e222]:
+                - img [ref=e224]
+                - generic [ref=e226]:
+                  - paragraph [ref=e228]: iPad · Safari
+                  - generic [ref=e229]:
+                    - generic [ref=e230]:
+                      - img [ref=e231]
+                      - text: Ciudad de México, México
+                    - generic [ref=e234]:
+                      - img [ref=e235]
+                      - text: 25 feb, 10:06
+              - generic [ref=e237]:
+                - img [ref=e239]
+                - generic [ref=e241]:
+                  - paragraph [ref=e243]: iPad · Safari
+                  - generic [ref=e244]:
+                    - generic [ref=e245]:
+                      - img [ref=e246]
+                      - text: Guadalajara, México
+                    - generic [ref=e249]:
+                      - img [ref=e250]
+                      - text: 24 feb, 10:06
+              - generic [ref=e252]:
+                - img [ref=e254]
+                - generic [ref=e256]:
+                  - paragraph [ref=e258]: iPad · Safari
+                  - generic [ref=e259]:
+                    - generic [ref=e260]:
+                      - img [ref=e261]
+                      - text: Monterrey, México
+                    - generic [ref=e264]:
+                      - img [ref=e265]
+                      - text: 23 feb, 10:06
+              - generic [ref=e267]:
+                - img [ref=e269]
+                - generic [ref=e271]:
+                  - paragraph [ref=e273]: iPad · Safari
+                  - generic [ref=e274]:
+                    - generic [ref=e275]:
+                      - img [ref=e276]
+                      - text: Ciudad de México, México
+                    - generic [ref=e279]:
+                      - img [ref=e280]
+                      - text: 22 feb, 10:06
+          - paragraph [ref=e283]:
+            - strong [ref=e284]: "💡 Consejo de seguridad:"
+            - text: Si ves actividad sospechosa o inicios de sesión que no reconoces, cambia tu contraseña inmediatamente y contacta al soporte.
+  - alert [ref=e285]
+```

@@ -1,0 +1,164 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "We use cookies" [level=3] [ref=e7]
+      - paragraph [ref=e8]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e9] [cursor=pointer]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e10]:
+      - button "Accept All" [ref=e11] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e12] [cursor=pointer]
+      - button "Customize" [ref=e13] [cursor=pointer]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - complementary [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - link "Holi Labs Cortex" [ref=e19] [cursor=pointer]:
+              - /url: /dashboard
+              - img "Holi Labs" [ref=e20]
+              - generic [ref=e21]: Cortex
+            - button "Collapse sidebar" [ref=e22] [cursor=pointer]:
+              - img [ref=e23]
+          - navigation [ref=e25]:
+            - link "Dashboard" [ref=e26] [cursor=pointer]:
+              - /url: /dashboard/command-center
+              - generic [ref=e28]: Dashboard
+            - link "Clinical Intel" [ref=e29] [cursor=pointer]:
+              - /url: /dashboard/clinical-command
+              - generic [ref=e31]: Clinical Intel
+            - link "Validation" [ref=e32] [cursor=pointer]:
+              - /url: /dashboard/console
+              - generic [ref=e34]: Validation
+            - link "Escalations" [ref=e35] [cursor=pointer]:
+              - /url: /dashboard/escalations
+              - generic [ref=e37]: Escalations
+          - button "? User" [ref=e39] [cursor=pointer]:
+            - generic [ref=e40]: "?"
+            - generic [ref=e41]:
+              - paragraph [ref=e42]: User
+              - paragraph
+            - img [ref=e43]
+      - generic [ref=e45]:
+        - generic [ref=e48]:
+          - button "Select language" [ref=e50] [cursor=pointer]:
+            - generic [ref=e51]: 🇺🇸
+            - generic [ref=e52]: English
+            - img [ref=e53]
+          - button "Search patients... Cmd K" [ref=e55] [cursor=pointer]:
+            - img [ref=e56]
+            - generic [ref=e58]: Search patients...
+            - generic [ref=e59]:
+              - generic [ref=e60]: Cmd
+              - text: K
+          - button [ref=e62] [cursor=pointer]:
+            - img [ref=e63]
+          - 'button "Current theme: Auto (Light). Click to cycle themes. Keyboard shortcut: Cmd + Shift + L" [ref=e66] [cursor=pointer]':
+            - img [ref=e68]
+        - main [ref=e71]:
+          - generic [ref=e72]:
+            - generic [ref=e75]:
+              - link "Holi Labs VidaBanq" [ref=e76] [cursor=pointer]:
+                - /url: /dashboard
+                - img "Holi Labs" [ref=e77]
+                - heading "VidaBanq" [level=1] [ref=e78]
+              - navigation [ref=e79]:
+                - link "📊 Panel" [ref=e80] [cursor=pointer]:
+                  - /url: /dashboard
+                  - generic [ref=e81]: 📊
+                  - generic [ref=e82]: Panel
+                - link "👥 Pacientes" [ref=e83] [cursor=pointer]:
+                  - /url: /dashboard/patients
+                  - generic [ref=e84]: 👥
+                  - generic [ref=e85]: Pacientes
+                - link "📤 Subir Datos" [ref=e86] [cursor=pointer]:
+                  - /url: /dashboard/upload
+                  - generic [ref=e87]: 📤
+                  - generic [ref=e88]: Subir Datos
+                - link "🤖 IA" [ref=e89] [cursor=pointer]:
+                  - /url: /dashboard/ai
+                  - generic [ref=e90]: 🤖
+                  - generic [ref=e91]: IA
+                - link "🔧 Administración" [ref=e92] [cursor=pointer]:
+                  - /url: /dashboard/admin
+                  - generic [ref=e93]: 🔧
+                  - generic [ref=e94]: Administración
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - img [ref=e97]
+                  - generic [ref=e99]: HIPAA
+                - generic [ref=e100]:
+                  - generic [ref=e101]: DR
+                  - paragraph [ref=e103]: Dr. Isabella Rossi
+                - button "Switch to sidebar navigation" [ref=e104] [cursor=pointer]:
+                  - img [ref=e105]
+            - main [ref=e107]:
+              - generic [ref=e108]:
+                - heading "📄 Documentos - Holi Labs" [level=2] [ref=e109]
+                - generic [ref=e112]:
+                  - generic [ref=e113]:
+                    - generic [ref=e114]: "1"
+                    - generic [ref=e115]: Seleccionar Paciente
+                  - generic [ref=e117]:
+                    - generic [ref=e118]: "2"
+                    - generic [ref=e119]: Subir Documento
+                  - generic [ref=e121]:
+                    - generic [ref=e122]: "3"
+                    - generic [ref=e123]: Asignar a Billetera
+                - generic [ref=e125]:
+                  - heading "Seleccionar o Crear Paciente" [level=2] [ref=e126]
+                  - generic [ref=e127]:
+                    - button "➕ Crear Nuevo Paciente Registrar un nuevo paciente y asignar documento" [ref=e128] [cursor=pointer]:
+                      - generic [ref=e129]:
+                        - generic [ref=e130]: ➕
+                        - generic [ref=e131]:
+                          - generic [ref=e132]: Crear Nuevo Paciente
+                          - generic [ref=e133]: Registrar un nuevo paciente y asignar documento
+                    - generic [ref=e136]: o seleccionar existente
+                    - generic [ref=e138]:
+                      - generic [ref=e139]:
+                        - generic:
+                          - img
+                        - textbox "Search patients by name, token, or condition..." [ref=e140]
+                      - generic [ref=e141]:
+                        - heading "Most Viewed Patients" [level=3] [ref=e142]:
+                          - img [ref=e143]
+                          - text: Most Viewed Patients
+                        - generic [ref=e146]:
+                          - generic [ref=e147] [cursor=pointer]:
+                            - generic [ref=e148]:
+                              - generic [ref=e149]: 👩
+                              - generic [ref=e150]:
+                                - paragraph [ref=e151]: María González
+                                - paragraph [ref=e152]: VBQ-MG-4554-T2D
+                            - generic [ref=e153]:
+                              - generic [ref=e154]: Diabetes Tipo 2
+                              - generic [ref=e155]: 24 views
+                          - generic [ref=e156] [cursor=pointer]:
+                            - generic [ref=e157]:
+                              - generic [ref=e158]: 👨
+                              - generic [ref=e159]:
+                                - paragraph [ref=e160]: Carlos Silva
+                                - paragraph [ref=e161]: VBQ-CS-6069-PIM
+                            - generic [ref=e162]:
+                              - generic [ref=e163]: Post-IAM
+                              - generic [ref=e164]: 18 views
+                          - generic [ref=e165] [cursor=pointer]:
+                            - generic [ref=e166]:
+                              - generic [ref=e167]: 👩‍🦰
+                              - generic [ref=e168]:
+                                - paragraph [ref=e169]: Ana Rodríguez
+                                - paragraph [ref=e170]: VBQ-AR-3039-ASM
+                            - generic [ref=e171]:
+                              - generic [ref=e172]: Asma
+                              - generic [ref=e173]: 12 views
+      - button "Quick Tour" [ref=e174] [cursor=pointer]:
+        - img [ref=e175]
+        - text: Quick Tour
+```

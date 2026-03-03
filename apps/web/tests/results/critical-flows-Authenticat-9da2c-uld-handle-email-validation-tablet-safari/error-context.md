@@ -1,0 +1,222 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - button "Cerrar" [ref=e5] [cursor=pointer]:
+      - img [ref=e6]
+    - generic [ref=e8]:
+      - img [ref=e10]
+      - generic [ref=e12]:
+        - heading "Instalar Holi Labs" [level=3] [ref=e13]
+        - paragraph [ref=e14]: Acceso rápido desde tu pantalla de inicio
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e18]: "1"
+        - paragraph [ref=e20]:
+          - text: Toca el botón
+          - strong [ref=e21]: Compartir
+          - img [ref=e22]
+          - text: en la barra de Safari
+      - generic [ref=e24]:
+        - generic [ref=e26]: "2"
+        - paragraph [ref=e28]:
+          - text: Desplázate y selecciona
+          - strong [ref=e29]: "\"Agregar a pantalla de inicio\""
+      - generic [ref=e30]:
+        - generic [ref=e32]: "3"
+        - paragraph [ref=e34]:
+          - text: Confirma tocando
+          - strong [ref=e35]: "\"Agregar\""
+    - paragraph [ref=e37]: ✨ Acceso instantáneo • 🚀 Carga más rápida • 📱 Experiencia nativa
+    - generic [ref=e38]:
+      - button "Ahora no" [ref=e39] [cursor=pointer]
+      - button "Entendido" [ref=e40] [cursor=pointer]
+  - generic [ref=e43]:
+    - generic [ref=e44]:
+      - heading "We use cookies" [level=3] [ref=e45]
+      - paragraph [ref=e46]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e47]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e48]:
+      - button "Accept All" [ref=e49] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e50] [cursor=pointer]
+      - button "Customize" [ref=e51] [cursor=pointer]
+  - main [ref=e52]:
+    - generic [ref=e53]:
+      - navigation [ref=e55]:
+        - link "Cortex by Holi Labs" [ref=e56]:
+          - /url: /
+        - generic [ref=e57]:
+          - link "How it works" [ref=e58]:
+            - /url: "#how-it-works"
+          - link "For hospitals" [ref=e59]:
+            - /url: "#"
+          - link "Pricing" [ref=e60]:
+            - /url: /pricing
+        - generic [ref=e61]:
+          - button "Change language" [ref=e63] [cursor=pointer]:
+            - img [ref=e64]
+            - text: EN
+            - img [ref=e67]
+          - link "Sign in" [ref=e69]:
+            - /url: /sign-in
+          - link "Request access" [ref=e70]:
+            - /url: "#access"
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - generic [ref=e75]: Now in pilot — Bolivia & Brazil
+          - heading "Stop losing revenue your hospital has already earned." [level=1] [ref=e76]
+          - paragraph [ref=e77]: Cortex catches billing errors, drug interactions, and compliance gaps before they cost you. Built for Latin American healthcare.
+          - generic [ref=e78]:
+            - link "See what you're missing" [ref=e79]:
+              - /url: "#access"
+            - link "Try Live Demo" [ref=e80]:
+              - /url: /demo
+              - text: Try Live Demo
+              - img [ref=e81]
+        - generic [ref=e85]:
+          - generic [ref=e86]: LGPD-native
+          - generic [ref=e87]: ·
+          - generic [ref=e88]: ANVISA-ready
+          - generic [ref=e89]: ·
+          - generic [ref=e90]: Every alert traceable
+          - generic [ref=e91]: ·
+          - generic [ref=e92]: <90s per review
+          - generic [ref=e93]: ·
+          - generic [ref=e94]: Zero PHI in the cloud
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - paragraph [ref=e98]: The Cortex Cross-Reference Engine
+          - heading "Catch the error before it becomes a glosa." [level=2] [ref=e99]
+          - paragraph [ref=e100]: Cortex runs every clinical decision through a global logic core that adapts to local mandates. Whether it's validating a dosage against international protocols or cross-referencing a prescription with country-specific codes (ICD-10, TUSS, SNOMED, etc.), we catch the mismatch at the source.
+          - link "See the clinical signals" [ref=e101]:
+            - /url: "#"
+            - text: See the clinical signals
+            - img [ref=e102]
+        - generic [ref=e105]:
+          - img "Cortex Cross-Reference Engine" [ref=e108]
+          - generic [ref=e109]: ICD-10
+          - generic [ref=e110]: TUSS
+          - generic [ref=e111]: ANVISA
+          - generic [ref=e112]: SNOMED CT
+          - generic [ref=e113]: Dosage Limits
+          - generic [ref=e114]: Drug Interactions
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - paragraph [ref=e118]: For Physicians
+          - heading "Your doctors won't even notice it's there." [level=2] [ref=e119]:
+            - text: Your doctors won't even
+            - text: notice it's there.
+          - paragraph [ref=e120]: No training. No new screens. No workflow disruption. Cortex runs silently alongside your existing systems and only speaks up when something is actually wrong.
+        - generic [ref=e121]:
+          - generic [ref=e123]:
+            - paragraph [ref=e124]: < 90s
+            - paragraph [ref=e125]: Median physician review
+            - paragraph [ref=e126]: No extra steps. Same workflow, safer outcomes.
+          - generic [ref=e128]:
+            - paragraph [ref=e129]: 0 PHI
+            - paragraph [ref=e130]: Patient data leaves your network
+            - paragraph [ref=e131]: LGPD-compliant by architecture, not by policy.
+          - generic [ref=e133]:
+            - paragraph [ref=e134]: 24/7
+            - paragraph [ref=e135]: Audit trail coverage
+            - paragraph [ref=e136]: Every clinical decision documented. Ready for any audit.
+      - generic [ref=e138]:
+        - generic [ref=e139]:
+          - paragraph [ref=e140]: Built for Latin America
+          - heading "Not a US product with a Spanish translation." [level=2] [ref=e141]:
+            - text: Not a US product with
+            - text: a Spanish translation.
+          - paragraph [ref=e142]: Every rule, every code, every protocol — engineered from scratch for Latin American healthcare. Cortex validates prescriptions against local formularies, catches dangerous drug interactions in real time, and flags billing mismatches before they become denied claims.
+          - paragraph [ref=e143]: One engine. Three countries. Loaded with the specific clinical and regulatory libraries your region demands — from TUSS codes in Brazil to provincial formularies in Argentina.
+          - link "See it catch a real drug interaction" [ref=e144]:
+            - /url: /demo
+            - text: See it catch a real drug interaction
+            - img [ref=e145]
+        - generic [ref=e147]:
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - heading "Brazil" [level=3] [ref=e151]: 🇧🇷Brazil
+              - generic [ref=e152]: Pilot active
+            - paragraph [ref=e153]: LGPD-compliant. TUSS billing. ANVISA drug registry. Portuguese-native. Every prescription checked against local protocols.
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - heading "Bolivia" [level=3] [ref=e157]: 🇧🇴Bolivia
+              - generic [ref=e158]: Pilot active
+            - paragraph [ref=e159]: Spanish-first. Ministry of Health standards. Local formulary integration. Built with Bolivian clinics, not adapted for them.
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - heading "Argentina" [level=3] [ref=e163]: 🇦🇷Argentina
+              - generic [ref=e164]: Coming 2026
+            - paragraph [ref=e165]: SNOMED CT. Provincial formulary. IOMA billing. Full regulatory coverage launching Q3 2026.
+      - generic [ref=e167]:
+        - heading "How many claims did your hospital lose last month?" [level=2] [ref=e168]
+        - paragraph [ref=e169]: Most administrators don't know. Cortex shows you in the first week.
+        - generic [ref=e170]:
+          - textbox "your@hospital.com" [active] [ref=e171]: invalid-email
+          - button "Request access" [ref=e172] [cursor=pointer]
+        - paragraph [ref=e173]: No PHI collected on this form. LGPD-native. Response within 48 hours.
+      - generic [ref=e175]:
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - paragraph [ref=e178]: Cortex
+            - paragraph [ref=e179]:
+              - text: Clinical decision support
+              - text: for Latin America.
+          - generic [ref=e180]:
+            - paragraph [ref=e181]: Product
+            - list [ref=e182]:
+              - listitem [ref=e183]:
+                - link "How it works" [ref=e184]:
+                  - /url: "#how-it-works"
+              - listitem [ref=e185]:
+                - link "Pricing" [ref=e186]:
+                  - /url: /pricing
+              - listitem [ref=e187]:
+                - link "Live Demo" [ref=e188]:
+                  - /url: /demo
+              - listitem [ref=e189]:
+                - link "For hospitals" [ref=e190]:
+                  - /url: "#"
+              - listitem [ref=e191]:
+                - link "Sign in" [ref=e192]:
+                  - /url: /sign-in
+          - generic [ref=e193]:
+            - paragraph [ref=e194]: Company
+            - list [ref=e195]:
+              - listitem [ref=e196]:
+                - link "About" [ref=e197]:
+                  - /url: "#"
+              - listitem [ref=e198]:
+                - link "Blog" [ref=e199]:
+                  - /url: "#"
+              - listitem [ref=e200]:
+                - link "Careers" [ref=e201]:
+                  - /url: "#"
+              - listitem [ref=e202]:
+                - link "Press" [ref=e203]:
+                  - /url: "#"
+          - generic [ref=e204]:
+            - paragraph [ref=e205]: Legal
+            - list [ref=e206]:
+              - listitem [ref=e207]:
+                - link "Privacy" [ref=e208]:
+                  - /url: "#"
+              - listitem [ref=e209]:
+                - link "Terms" [ref=e210]:
+                  - /url: "#"
+              - listitem [ref=e211]:
+                - link "HIPAA policy" [ref=e212]:
+                  - /url: "#"
+              - listitem [ref=e213]:
+                - link "LGPD policy" [ref=e214]:
+                  - /url: "#"
+        - generic [ref=e215]:
+          - paragraph [ref=e216]: Copyright © 2026 Holi Labs. All rights reserved.
+          - paragraph [ref=e217]: HIPAA-aligned · LGPD-native · ANVISA-ready
+  - alert [ref=e218]
+```

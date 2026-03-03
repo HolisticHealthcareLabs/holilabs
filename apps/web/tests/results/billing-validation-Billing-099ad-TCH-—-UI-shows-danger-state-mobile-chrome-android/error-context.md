@@ -1,0 +1,173 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "We use cookies" [level=3] [ref=e7]
+      - paragraph [ref=e8]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e9] [cursor=pointer]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e10]:
+      - button "Accept All" [ref=e11] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e12] [cursor=pointer]
+      - button "Customize" [ref=e13] [cursor=pointer]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - complementary [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Holi Labs Cortex" [ref=e20] [cursor=pointer]:
+              - /url: /dashboard
+              - img "Holi Labs" [ref=e21]
+              - generic [ref=e22]: Cortex
+            - button "Close navigation menu" [ref=e23] [cursor=pointer]:
+              - img [ref=e24]
+          - navigation [ref=e26]:
+            - link "Dashboard" [ref=e27] [cursor=pointer]:
+              - /url: /dashboard/command-center
+              - generic [ref=e29]: Dashboard
+            - link "Clinical Intel" [ref=e30] [cursor=pointer]:
+              - /url: /dashboard/clinical-command
+              - generic [ref=e32]: Clinical Intel
+            - link "Validation" [ref=e33] [cursor=pointer]:
+              - /url: /dashboard/console
+              - generic [ref=e35]: Validation
+            - link "Escalations" [ref=e36] [cursor=pointer]:
+              - /url: /dashboard/escalations
+              - generic [ref=e38]: Escalations
+          - button "? User" [ref=e40] [cursor=pointer]:
+            - generic [ref=e41]: "?"
+            - generic [ref=e42]:
+              - paragraph [ref=e43]: User
+              - paragraph
+            - img [ref=e44]
+      - generic [ref=e46]:
+        - generic [ref=e48]:
+          - button "Open navigation menu" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+          - generic [ref=e52]:
+            - img "Holi Labs" [ref=e53]
+            - generic [ref=e54]: Holi Labs
+          - generic [ref=e55]:
+            - button "Select language" [ref=e57] [cursor=pointer]:
+              - generic [ref=e58]: 🇺🇸
+              - img [ref=e59]
+            - button [ref=e61] [cursor=pointer]:
+              - img [ref=e62]
+            - button [ref=e65] [cursor=pointer]:
+              - img [ref=e66]
+            - 'button "Current theme: Auto (Light). Click to cycle themes. Keyboard shortcut: Cmd + Shift + L" [ref=e69] [cursor=pointer]':
+              - img [ref=e71]
+        - main [ref=e74]:
+          - generic [ref=e75]:
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - generic [ref=e80]: C
+                - generic [ref=e82]: Cortex Assurance Layer
+              - link "Download agent" [ref=e84] [cursor=pointer]:
+                - /url: /download
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - generic [ref=e87]:
+                  - generic [ref=e88]: Country
+                  - combobox "Country" [ref=e89]:
+                    - option "all" [selected]
+                    - option "AR"
+                    - option "BO"
+                    - option "BR"
+                - generic [ref=e90]:
+                  - generic [ref=e91]: Site
+                  - combobox "Site" [ref=e92]:
+                    - option "all" [selected]
+                    - option "Site-A"
+                    - option "Site-B"
+                    - option "Site-C"
+                - generic [ref=e93]:
+                  - generic [ref=e94]: Unit
+                  - combobox "Unit" [ref=e95]:
+                    - option "all" [selected]
+                    - option "ICU"
+                    - option "ER"
+                    - option "Oncology"
+                    - option "Ward-3"
+                - generic [ref=e96]:
+                  - generic [ref=e97]: Date
+                  - combobox "Date" [ref=e98]:
+                    - option "all"
+                    - option "24h" [selected]
+                    - option "7d"
+                    - option "30d"
+              - generic [ref=e99]:
+                - generic [ref=e100]:
+                  - generic [ref=e101]:
+                    - generic [ref=e102]: Code focus controls
+                    - paragraph [ref=e103]: Admins and doctors can tune which ICD/CPT/protocol codes are prioritized in this console view.
+                  - generic [ref=e105]: "Read-only: role UNKNOWN cannot edit. Ask an admin or doctor."
+                - generic [ref=e107]: No code filters applied.
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - generic [ref=e110]:
+                  - generic [ref=e111]:
+                    - heading "Global Trust Score" [level=3] [ref=e112]
+                    - generic [ref=e113]: ▲ 0.2% vs last week
+                  - generic [ref=e114]:
+                    - generic [ref=e115]: "100"
+                    - generic [ref=e116]: / 100
+                  - paragraph [ref=e119]: Filtered by all/all/all/24h. The network is actively preventing high-risk deviations.
+                  - paragraph [ref=e120]: "Definition: METRIC-TRUST-SCORE-V1"
+                  - paragraph [ref=e121]: "Formula: Weighted policy-aligned decisions across evaluated events / Total weighted evaluated events"
+                  - paragraph [ref=e122]: "Query: qry.governance.trust_score.v1"
+                - generic [ref=e123]:
+                  - generic [ref=e125]:
+                    - generic [ref=e126]: Interventions
+                    - generic [ref=e127]: "0"
+                    - generic [ref=e128]: Validation actions
+                    - generic [ref=e129]: "Definition: METRIC-INTERVENTIONS-V1"
+                    - generic [ref=e130]: "Formula: Validation interventions executed in selected interval / Total evaluated clinical workflow events"
+                    - generic [ref=e131]: "Query: qry.governance.interventions.count.v1"
+                  - generic [ref=e133]:
+                    - generic [ref=e134]: Hard Brakes
+                    - generic [ref=e135]: "0"
+                    - generic [ref=e136]: Critical stops
+                    - generic [ref=e137]: "Definition: METRIC-HARD-BRAKES-V1"
+                    - generic [ref=e138]: "Formula: Critical stop interventions issued in selected interval / Total interventions executed in selected interval"
+                    - generic [ref=e139]: "Query: qry.governance.interventions.hard_brakes_ratio.v1"
+                  - generic [ref=e140]:
+                    - generic [ref=e141]: Uptime
+                    - generic [ref=e142]: 100.00%
+                    - generic [ref=e143]: Observed reliability
+                    - generic [ref=e144]: "Definition: METRIC-UPTIME-V1"
+                    - generic [ref=e145]: "Formula: Minutes with policy engine healthy and enforcing / Total scheduled service minutes in selected interval"
+                    - generic [ref=e146]: "Query: qry.governance.runtime.uptime.v1"
+                  - generic [ref=e147]:
+                    - generic [ref=e148]: Protocols
+                    - generic [ref=e149]: 8,530
+                    - generic [ref=e150]: Active rules
+                    - generic [ref=e151]: "Definition: METRIC-PROTOCOLS-ACTIVE-V1"
+                    - generic [ref=e152]: "Formula: Protocols loaded and successfully enforcing / Total protocols deployed to selected fleet scope"
+                    - generic [ref=e153]: "Query: qry.governance.protocols.active_ratio.v1"
+                - generic [ref=e154]:
+                  - generic [ref=e155]:
+                    - heading "Top Override Reasons" [level=3] [ref=e156]
+                    - generic [ref=e157]: n=0 overrides
+                  - paragraph [ref=e158]: "Scope: country/site/unit/date = all/all/all/24h"
+                  - paragraph [ref=e159]: Percent denominator = total overrides in current filtered stream (0).
+                  - generic [ref=e160]: No override reason events found in the current filter scope.
+              - generic [ref=e161]:
+                - generic [ref=e162]:
+                  - generic [ref=e163]: Live Validation Stream
+                  - generic [ref=e166]: LIVE • ENCRYPTED
+                - generic [ref=e170]: WAITING FOR SIGNALS...
+            - generic [ref=e172]:
+              - generic [ref=e173]: KPI Definition Hooks
+              - generic [ref=e174]: KPI cards render manifest-backed metric IDs, formulas, and query references for auditable governance definitions.
+              - generic [ref=e175]: All KPI definition keys are resolved from manifest/default contract.
+      - button "Quick Tour" [ref=e176] [cursor=pointer]:
+        - img [ref=e177]
+        - text: Quick Tour
+  - alert [ref=e180]
+```

@@ -6,15 +6,41 @@
 'use client';
 
 import React from 'react';
+import Tooltip from '@/components/common/Tooltip';
+import type { KPIDictionaryEntry } from '@/lib/kpi/kpi-dictionary';
 
 export interface KPICardProps {
   label: string;
   value: number | string;
   unit: 'count' | 'percentage';
   tooltip?: string;
+  definition?: KPIDictionaryEntry;
   trend?: 'up' | 'down' | 'neutral';
   isLoading?: boolean;
   error?: string | null;
+}
+
+function DefinitionContent({ definition }: { definition: KPIDictionaryEntry }) {
+  return (
+    <div className="space-y-1.5 text-xs">
+      <div>
+        <span className="font-semibold text-gray-300">Query ID:</span>{' '}
+        <span className="font-mono">{definition.queryId}</span>
+      </div>
+      <div>
+        <span className="font-semibold text-gray-300">Numerator:</span>{' '}
+        {definition.numerator}
+      </div>
+      <div>
+        <span className="font-semibold text-gray-300">Denominator:</span>{' '}
+        {definition.denominator}
+      </div>
+      <div>
+        <span className="font-semibold text-gray-300">Source:</span>{' '}
+        {definition.sourceModel}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -25,6 +51,7 @@ export const KPICard: React.FC<KPICardProps> = ({
   value,
   unit,
   tooltip,
+  definition,
   trend = 'neutral',
   isLoading = false,
   error = null,
@@ -57,7 +84,17 @@ export const KPICard: React.FC<KPICardProps> = ({
         ? 'text-red-600 dark:text-red-400'
         : 'text-gray-600 dark:text-gray-400';
 
-  const CardContent = (
+  const InfoIcon = (
+    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+      <path
+        fillRule="evenodd"
+        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+
+  return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
       <div className="flex items-start justify-between">
         <div>
@@ -74,24 +111,22 @@ export const KPICard: React.FC<KPICardProps> = ({
             )}
           </div>
         </div>
-        {tooltip && (
+        {definition ? (
+          <Tooltip
+            content={<DefinitionContent definition={definition} />}
+            position="bottom"
+            maxWidth="300px"
+          >
+            <div className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help">
+              {InfoIcon}
+            </div>
+          </Tooltip>
+        ) : tooltip ? (
           <div className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title={tooltip}>
-            <svg
-              className="h-5 w-5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
+            {InfoIcon}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
-
-  return CardContent;
 };

@@ -1,0 +1,70 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "We use cookies" [level=3] [ref=e7]
+      - paragraph [ref=e8]:
+        - text: We use cookies to improve your experience and analyze platform usage. Essential cookies are required for the platform to function.
+        - link "Learn more" [ref=e9] [cursor=pointer]:
+          - /url: /legal/cookie-policy
+    - generic [ref=e10]:
+      - button "Accept All" [ref=e11] [cursor=pointer]
+      - button "Reject Non-Essential" [ref=e12] [cursor=pointer]
+      - button "Customize" [ref=e13] [cursor=pointer]
+  - main [ref=e14]:
+    - generic [ref=e15]:
+      - complementary [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "Holi Labs Cortex" [ref=e20] [cursor=pointer]:
+              - /url: /dashboard
+              - img "Holi Labs" [ref=e21]
+              - generic [ref=e22]: Cortex
+            - button "Close navigation menu" [ref=e23] [cursor=pointer]:
+              - img [ref=e24]
+          - navigation [ref=e26]:
+            - link "Dashboard" [ref=e27] [cursor=pointer]:
+              - /url: /dashboard/command-center
+              - generic [ref=e29]: Dashboard
+            - link "Clinical Intel" [ref=e30] [cursor=pointer]:
+              - /url: /dashboard/clinical-command
+              - generic [ref=e32]: Clinical Intel
+            - link "Validation" [ref=e33] [cursor=pointer]:
+              - /url: /dashboard/console
+              - generic [ref=e35]: Validation
+            - link "Escalations" [ref=e36] [cursor=pointer]:
+              - /url: /dashboard/escalations
+              - generic [ref=e38]: Escalations
+          - button "? User" [ref=e40] [cursor=pointer]:
+            - generic [ref=e41]: "?"
+            - generic [ref=e42]:
+              - paragraph [ref=e43]: User
+              - paragraph
+            - img [ref=e44]
+      - generic [ref=e46]:
+        - generic [ref=e48]:
+          - button "Open navigation menu" [ref=e49] [cursor=pointer]:
+            - img [ref=e50]
+          - generic [ref=e52]:
+            - img "Holi Labs" [ref=e53]
+            - generic [ref=e54]: Holi Labs
+          - generic [ref=e55]:
+            - button "Select language" [ref=e57] [cursor=pointer]:
+              - generic [ref=e58]: 🇺🇸
+              - img [ref=e59]
+            - button [ref=e61] [cursor=pointer]:
+              - img [ref=e62]
+            - button [ref=e65] [cursor=pointer]:
+              - img [ref=e66]
+            - 'button "Current theme: Auto (Light). Click to cycle themes. Keyboard shortcut: Cmd + Shift + L" [ref=e69] [cursor=pointer]':
+              - img [ref=e71]
+        - main
+      - button "Quick Tour" [ref=e74] [cursor=pointer]:
+        - img [ref=e75]
+        - text: Quick Tour
+  - alert [ref=e78]
+```
