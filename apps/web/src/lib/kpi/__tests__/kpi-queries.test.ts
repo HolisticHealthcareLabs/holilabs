@@ -19,6 +19,9 @@ jest.mock('@/lib/prisma', () => ({
     preventionPlan: {
       count: jest.fn(),
     },
+    prescription: {
+      count: jest.fn(),
+    },
   },
 }));
 
@@ -306,13 +309,18 @@ describe('KPI Queries', () => {
         .mockResolvedValueOnce(60)
         .mockResolvedValueOnce(24);
 
+      // Financial Guardrail KPIs
+      (prisma.prescription.count as jest.Mock)
+        .mockResolvedValueOnce(3)  // glosaInterceptCount
+        .mockResolvedValueOnce(3); // tussCatchCount
+
       const result = await getAllKPIs({
         startDate: '2026-02-01',
         endDate: '2026-02-11',
       });
 
-      // All 8 keys present
-      expect(Object.keys(result)).toHaveLength(8);
+      // All 10 keys present
+      expect(Object.keys(result)).toHaveLength(10);
       expect(result.totalEvaluations).toBeDefined();
       expect(result.blockRate).toBeDefined();
       expect(result.overrideRate).toBeDefined();
@@ -321,6 +329,8 @@ describe('KPI Queries', () => {
       expect(result.escalationSlaClosure).toBeDefined();
       expect(result.groundTruthAcceptRate).toBeDefined();
       expect(result.preventionCompletion).toBeDefined();
+      expect(result.glosaInterceptCount).toBeDefined();
+      expect(result.tussCatchCount).toBeDefined();
 
       expect(result.totalEvaluations.value).toBe(100);
       expect(result.blockRate.value).toBe(5);
@@ -328,6 +338,56 @@ describe('KPI Queries', () => {
       expect(result.escalationSlaClosure.value).toBe(75);
       expect(result.groundTruthAcceptRate.value).toBe(85);
       expect(result.preventionCompletion.value).toBe(40);
+      expect(result.glosaInterceptCount.value).toBe(3);
+      expect(result.tussCatchCount.value).toBe(3);
+    });
+  });
+
+  // ========================================================================
+  // FINANCIAL GUARDRAIL KPIs (9-10)
+  // ========================================================================
+
+  describe('Glosa Intercept Count', () => {
+    it('KPI-009: counts encounter-linked prescriptions', async () => {
+      (prisma.prescription.count as jest.Mock).mockResolvedValue(3);
+
+      const result = await getKPI('glosaInterceptCount', {});
+
+      expect(result).toEqual({ value: 3, unit: 'count', label: 'Glosa Interceptions' });
+      expect(prisma.prescription.count).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ encounterId: { not: null } }) })
+      );
+    });
+
+    it('KPI-009: returns 0 when no encounter-linked prescriptions exist', async () => {
+      (prisma.prescription.count as jest.Mock).mockResolvedValue(0);
+      const result = await getKPI('glosaInterceptCount', {});
+      expect(result.value).toBe(0);
+    });
+  });
+
+  describe('TUSS Catch Count', () => {
+    it('KPI-010: counts pending encounter-linked prescriptions with diagnosis', async () => {
+      (prisma.prescription.count as jest.Mock).mockResolvedValue(2);
+
+      const result = await getKPI('tussCatchCount', {});
+
+      expect(result).toEqual({ value: 2, unit: 'count', label: 'TUSS Checks Run' });
+      expect(prisma.prescription.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            encounterId: { not: null },
+            status: 'PENDING',
+            diagnosis: { not: null },
+          }),
+        })
+      );
+    });
+
+    it('KPI-010: returns 0 when no TUSS checks have been run', async () => {
+      (prisma.prescription.count as jest.Mock).mockResolvedValue(0);
+      const result = await getKPI('tussCatchCount', {});
+      expect(result.value).toBe(0);
     });
   });
 
