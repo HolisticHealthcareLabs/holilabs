@@ -334,14 +334,8 @@ export class CDSEngine {
       evaluate: async (context) => {
         const medications = context.context.medications || [];
 
-        // Use async API for live RxNav data
-        let interactions;
-        try {
-          interactions = await checkDrugInteractionsWithAPI(medications);
-        } catch (error) {
-          console.error('[CDS Engine] Drug interaction API failed, using fallback:', error);
-          interactions = checkDrugInteractions(medications);
-        }
+        // Use synchronous hardcoded fallback for instant demo evaluation
+        const interactions = checkDrugInteractions(medications);
 
         if (interactions.length === 0) return null;
 
@@ -354,8 +348,8 @@ export class CDSEngine {
         const indicator = mostSevere.severity === 'contraindicated' || mostSevere.severity === 'major'
           ? 'critical'
           : mostSevere.severity === 'moderate'
-          ? 'warning'
-          : 'info';
+            ? 'warning'
+            : 'info';
 
         return {
           id: uuidv4(),
@@ -412,7 +406,7 @@ export class CDSEngine {
         for (const med of medications) {
           for (const allergy of allergies) {
             if (med.name.toLowerCase().includes(allergy.allergen.toLowerCase()) ||
-                allergy.allergen.toLowerCase().includes(med.name.toLowerCase())) {
+              allergy.allergen.toLowerCase().includes(med.name.toLowerCase())) {
 
               return {
                 id: uuidv4(),

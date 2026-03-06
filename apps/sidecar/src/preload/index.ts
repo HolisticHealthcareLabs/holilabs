@@ -64,6 +64,32 @@ const electronAPI = {
   openScreenRecordingSettings: (): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke('permissions:openScreenRecordingSettings'),
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OLLAMA / FOG NODE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  getOllamaStatus: (): Promise<{
+    connected: boolean;
+    version?: string;
+    models: Array<{ name: string; size: number; digest: string; quantization?: string }>;
+    checkedAt: string;
+  }> => ipcRenderer.invoke('ollama:status'),
+
+  listOllamaModels: (): Promise<Array<{ name: string; size: number; digest: string; quantization?: string }>> =>
+    ipcRenderer.invoke('ollama:list-models'),
+
+  pullOllamaModel: (name: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('ollama:pull-model', name),
+
+  onOllamaPullProgress: (
+    callback: (data: { name: string; pct: number }) => void
+  ): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, data: { name: string; pct: number }) =>
+      callback(data);
+    ipcRenderer.on('ollama:pull-progress', listener);
+    return () => ipcRenderer.removeListener('ollama:pull-progress', listener);
+  },
+
   // Toggle minimize state
   toggleMinimize: (): void => ipcRenderer.send('toggle:minimize'),
 

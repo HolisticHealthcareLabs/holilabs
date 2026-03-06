@@ -17,10 +17,25 @@ autoUpdater.channel = process.env.UPDATE_CHANNEL || 'stable';
 // Check for updates every 4 hours
 const UPDATE_CHECK_INTERVAL = 4 * 60 * 60 * 1000;
 
+/** Returns true when the error is the expected missing app-update.yml in local/dry-run builds. */
+function isUpdateYmlMissing(err: unknown): boolean {
+    const e = err as any;
+    return e?.code === 'ENOENT' && typeof e?.message === 'string' && e.message.includes('app-update.yml');
+}
+
 export function initAutoUpdater(): void {
+    // app-update.yml is only present in fully signed, published builds.
+    // Skip all update machinery in development and --dir dry-runs to avoid
+    // the ENOENT spam that would otherwise fill the console.
+    if (!app.isPackaged) {
+        log.info('Auto-updater disabled — not a packaged build.');
+        return;
+    }
+
     // Check on startup (after 30 second delay to not block UI)
     setTimeout(() => {
         autoUpdater.checkForUpdates().catch(err => {
+            if (isUpdateYmlMissing(err)) return; // silently ignore — expected in dry-run
             log.error('Failed to check for updates on startup:', err);
         });
     }, 30_000);
@@ -28,6 +43,7 @@ export function initAutoUpdater(): void {
     // Periodic checks
     setInterval(() => {
         autoUpdater.checkForUpdates().catch(err => {
+            if (isUpdateYmlMissing(err)) return;
             log.error('Failed to check for updates (periodic):', err);
         });
     }, UPDATE_CHECK_INTERVAL);
@@ -57,6 +73,7 @@ export function initAutoUpdater(): void {
     });
 
     autoUpdater.on('error', (error) => {
+        if (isUpdateYmlMissing(error)) return; // belt-and-suspenders: suppress ENOENT from event path too
         log.error('Auto-updater error:', error);
         // Don't crash - just log and retry next interval
     });

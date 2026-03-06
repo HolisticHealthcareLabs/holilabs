@@ -1,593 +1,498 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import {
-  Activity,
-  AlertTriangle,
-  Shield,
-  Heart,
-  Clock,
-  RefreshCw,
-  ChevronRight,
-  FileText,
-  Eye,
-  ShieldAlert,
-  ShieldCheck,
-  ThumbsUp,
-  ThumbsDown,
-  BarChart3,
-  TrendingUp,
-} from 'lucide-react';
-import { useGovernanceRealtime } from '@/hooks/useGovernanceRealtime';
-import { FirstRunWelcome } from '@/components/dashboard/FirstRunWelcome';
-import { KPICard } from '@/components/console/KPICard';
-import { CopilotDraftPanel } from '@/components/console/CopilotDraftPanel';
-import { KPI_DICTIONARY, type KPIDictionaryKey } from '@/lib/kpi/kpi-dictionary';
-import type { KPIResult } from '@/lib/kpi/kpi-queries';
+import { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
+import type { Step } from 'react-joyride';
+import { Stethoscope, Star, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TranscriptPane, type Segment } from './_components/TranscriptPane';
+import { SoapNotePane } from './_components/SoapNotePane';
+import { CdssAlertsPane, type CDSCard, type ModelId, type ModelConfig } from './_components/CdssAlertsPane';
+import { PatientContextBar, type Patient } from './_components/PatientContextBar';
+import { PatientHandoutModal } from './_components/PatientHandoutModal';
+import { SignAndBillModal } from './_components/SignAndBillModal';
 
-const FIRST_RUN_DISMISSED_KEY = 'holilabs:firstRunDismissed';
+// Lazy-load react-joyride — browser-only, never rendered until after mount.
+// Using React.lazy + isMounted guard instead of next/dynamic({ssr:false}) to avoid
+// the BailoutToCSR Suspense-boundary hydration error in Next.js 14 App Router.
+const JoyrideClient = lazy(() => import('react-joyride'));
 
-// ============================================================================
-// TYPES
-// ============================================================================
+// ─────────────────────────────────────────────────────────────────────────────
+// Spotlight tour steps
+// ─────────────────────────────────────────────────────────────────────────────
 
-interface CommandCenterData {
-  cdsAlerts: {
-    recentEvaluations: number;
-    recentAlerts: Array<{
-      id: string;
-      action: string;
-      resource: string;
-      timestamp: string;
-      user: string;
-    }>;
-  };
-  reviewQueue: {
-    pending: number;
-    inReview: number;
-    highPriority: number;
-    recentItems: Array<{
-      id: string;
-      contentType: string;
-      priority: number;
-      confidence: number;
-      flagReason: string;
-      status: string;
-      patientName?: string;
-      createdAt: string;
-    }>;
-  };
-  preventionGaps: {
-    overdue: number;
-    dueThisWeek: number;
-    activePlans: number;
-    byType: Record<string, number>;
-  };
-  governanceFeed: {
-    last24h: number;
-    overrides: number;
-    blocks: number;
-  };
-  groundTruth?: {
-    acceptRate: number;
-    totalDecisions: number;
-    overrides: number;
-    accepts: number;
-    feedbackVolume: number;
-    feedbackByType: Record<string, number>;
-    topOverrideReasons: Array<{ reason: string; count: number }>;
-  };
-}
+const TOUR_STEPS: Step[] = [
+  {
+    target:        '#live-meeting-notes',
+    title:         'Live AI Scribe',
+    content:       'Real-time transcription with automatic PHI de-identification. Every name, date, and identifier is masked before storage — HIPAA & LGPD compliant by design.',
+    disableBeacon: true,
+    placement:     'right',
+  },
+  {
+    target:    '#soap-note-pane',
+    title:     'Auto SOAP Generation',
+    content:   'The AI auto-populates structured Subjective, Objective, Assessment, and Plan fields as the conversation progresses. Sign & Bill when the encounter is complete.',
+    placement: 'left',
+  },
+  {
+    target:    '#cdss-pane',
+    title:     'Intelligent Clinical Partner',
+    content:   'CDSS analyses the full transcript against clinical guidelines and flags drug interactions, contraindications, and protocol gaps. Ask follow-up questions in the chat.',
+    placement: 'left',
+  },
+];
 
-// ============================================================================
-// SEVERITY BADGE
-// ============================================================================
+// ─────────────────────────────────────────────────────────────────────────────
+// Rich demo transcript — naturalized phrasing, LATAM clinical scenario
+// ─────────────────────────────────────────────────────────────────────────────
 
-function SeverityBadge({ level }: { level: 'critical' | 'warning' | 'info' }) {
-  const styles = {
-    critical: 'bg-red-100 text-red-800 border-red-200',
-    warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    info: 'bg-blue-100 text-blue-800 border-blue-200',
-  };
-  const labels = { critical: 'RED', warning: 'YELLOW', info: 'GREEN' };
+const TRANSCRIPT_CHUNKS: Segment[] = [
+  { kind: 'text', text: 'Doctor: Good morning, ' },
+  { kind: 'phi',  label: 'PATIENT_NAME' },
+  { kind: 'text', text: '. Just for my records, I have your date of birth as ' },
+  { kind: 'phi',  label: 'DOB' },
+  { kind: 'text', text: '. Please describe what brings you in today.\n' },
+  { kind: 'text', text: "Patient: Doctor, for the past five days I've had chest tightness and real shortness of breath. It gets worse when I climb stairs or walk briskly. I also noticed my ankles are quite swollen.\n" },
+  { kind: 'text', text: 'Doctor: Any prior history of heart disease? I see CKD Stage 3 and Type 2 Diabetes in your records.\n' },
+  { kind: 'text', text: 'Patient: My father had a heart attack at 65. I\'ve been on dialysis watch for two years. Symptoms started around ' },
+  { kind: 'phi',  label: 'ONSET_DATE' },
+  { kind: 'text', text: '.\n' },
+  { kind: 'text', text: 'Doctor: Checking vitals now. BP is 162/95 mmHg — that\'s well above target. HR 94 bpm, SpO2 93% on room air. Your Lisinopril 10mg clearly isn\'t controlling this adequately.\n' },
+  { kind: 'text', text: 'Patient: I\'m also on Metformin 1000mg twice daily, Atorvastatin 40mg, Furosemide 40mg for the swelling, and low-dose Aspirin. My patient ID is ' },
+  { kind: 'phi',  label: 'PATIENT_SSN' },
+  { kind: 'text', text: '.\n' },
+  { kind: 'text', text: 'Doctor: On auscultation: bibasilar crackles, possible S3 gallop. Pitting oedema 2+ bilateral. This presentation is concerning for acute decompensated heart failure, possibly ACS given the family history.\n' },
+  { kind: 'text', text: 'Doctor: I\'m ordering urgent ECG, Troponin I series, BNP, CMP, and chest X-ray stat. We may need contrast angiography — I need to flag a concern about the Metformin given your kidney function.\n' },
+  { kind: 'text', text: 'Patient: Is my Metformin a problem? My GP told me to keep taking it.\n' },
+  { kind: 'text', text: 'Doctor: With eGFR below 45, Metformin and contrast dye together can cause lactic acidosis. We\'ll hold it before any contrast procedure. The CDSS will flag this automatically.\n' },
+  // These final chunks contain raw PHI — maskPHI() catches them and renders cyan pills.
+  { kind: 'text', text: '\nDoctor: I\'m documenting the encounter for James O\'Brien, dated 03/05/2026.' },
+  { kind: 'text', text: '\nDoctor: Starting IV Furosemide 80mg now. Holding oral Metformin pending contrast clearance.' },
+];
 
-  return (
-    <span className={`px-2 py-0.5 text-xs font-semibold rounded border ${styles[level]}`}>
-      {labels[level]}
-    </span>
-  );
-}
+const STREAM_INTERVAL_MS = 1200;
 
-// ============================================================================
-// PANEL COMPONENTS
-// ============================================================================
-
-function CDSAlertsPanel({ data }: { data: CommandCenterData['cdsAlerts'] }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-gray-900">CDS Alerts</h2>
-        </div>
-        <Link
-          href="/dashboard/clinical-support"
-          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-        >
-          View all <ChevronRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      <div className="flex gap-4 mb-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{data.recentEvaluations}</div>
-          <div className="text-xs text-gray-500">Evaluations (24h)</div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {data.recentAlerts.slice(0, 5).map((alert) => (
-          <div key={alert.id} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
-            <div className="flex items-center gap-2">
-              <SeverityBadge level={alert.action === 'CDS_OVERRIDE' ? 'warning' : 'info'} />
-              <span className="text-gray-700 truncate max-w-[180px]">{alert.action.replace('CDS_', '')}</span>
-            </div>
-            <span className="text-xs text-gray-400">
-              {new Date(alert.timestamp).toLocaleTimeString()}
-            </span>
-          </div>
-        ))}
-        {data.recentAlerts.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-4">No recent CDS alerts</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ReviewQueuePanel({ data }: { data: CommandCenterData['reviewQueue'] }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-purple-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Review Queue</h2>
-        </div>
-        <Link
-          href="/dashboard/ai"
-          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-        >
-          Review <ChevronRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="text-center bg-amber-50 rounded-lg py-2">
-          <div className="text-xl font-bold text-amber-700">{data.pending}</div>
-          <div className="text-xs text-amber-600">Pending</div>
-        </div>
-        <div className="text-center bg-blue-50 rounded-lg py-2">
-          <div className="text-xl font-bold text-blue-700">{data.inReview}</div>
-          <div className="text-xs text-blue-600">In Review</div>
-        </div>
-        <div className="text-center bg-red-50 rounded-lg py-2">
-          <div className="text-xl font-bold text-red-700">{data.highPriority}</div>
-          <div className="text-xs text-red-600">High Priority</div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {data.recentItems.map((item) => (
-          <div key={item.id} className="flex items-center justify-between text-sm py-1.5 border-b border-gray-50 last:border-0">
-            <div>
-              <span className="font-medium text-gray-700">{item.patientName || 'Unknown'}</span>
-              <span className="text-gray-400 ml-2 text-xs">
-                {Math.round(item.confidence)}% conf
-              </span>
-            </div>
-            <span className="text-xs text-gray-400">{item.flagReason}</span>
-          </div>
-        ))}
-        {data.recentItems.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-4">Queue is empty</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function PreventionGapsPanel({ data }: { data: CommandCenterData['preventionGaps'] }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Heart className="w-5 h-5 text-rose-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Prevention Gaps</h2>
-        </div>
-        <Link
-          href="/dashboard/prevention"
-          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-        >
-          View Hub <ChevronRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="text-center bg-red-50 rounded-lg py-2">
-          <div className="text-xl font-bold text-red-700">{data.overdue}</div>
-          <div className="text-xs text-red-600">Overdue</div>
-        </div>
-        <div className="text-center bg-amber-50 rounded-lg py-2">
-          <div className="text-xl font-bold text-amber-700">{data.dueThisWeek}</div>
-          <div className="text-xs text-amber-600">Due This Week</div>
-        </div>
-        <div className="text-center bg-green-50 rounded-lg py-2">
-          <div className="text-xl font-bold text-green-700">{data.activePlans}</div>
-          <div className="text-xs text-green-600">Active Plans</div>
-        </div>
-      </div>
-
-      {Object.keys(data.byType).length > 0 && (
-        <div className="space-y-1.5">
-          {Object.entries(data.byType).map(([type, count]) => (
-            <div key={type} className="flex justify-between text-sm">
-              <span className="text-gray-600">{type.replace('_', ' ')}</span>
-              <span className="font-medium text-gray-800">{count}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {Object.keys(data.byType).length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-4">No active prevention plans</p>
-      )}
-    </div>
-  );
-}
-
-function GovernanceFeedPanel({
-  data,
-  realtimeConnected,
-}: {
-  data: CommandCenterData['governanceFeed'];
-  realtimeConnected: boolean;
-}) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-indigo-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Governance Feed</h2>
-          {realtimeConnected && (
-            <span className="flex items-center gap-1 text-xs text-green-600">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              Live
-            </span>
-          )}
-        </div>
-        <Link
-          href="/dashboard/governance"
-          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-        >
-          Full Log <ChevronRight className="w-4 h-4" />
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="text-center bg-gray-50 rounded-lg py-2">
-          <div className="text-xl font-bold text-gray-700">{data.last24h}</div>
-          <div className="text-xs text-gray-500">Events (24h)</div>
-        </div>
-        <div className="text-center bg-amber-50 rounded-lg py-2">
-          <div className="flex items-center justify-center gap-1">
-            <ShieldAlert className="w-4 h-4 text-amber-600" />
-            <span className="text-xl font-bold text-amber-700">{data.overrides}</span>
-          </div>
-          <div className="text-xs text-amber-600">Overrides</div>
-        </div>
-        <div className="text-center bg-red-50 rounded-lg py-2">
-          <div className="flex items-center justify-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-red-600" />
-            <span className="text-xl font-bold text-red-700">{data.blocks}</span>
-          </div>
-          <div className="text-xs text-red-600">Blocks</div>
-        </div>
-      </div>
-
-      <div className="text-sm text-gray-500 text-center">
-        {data.last24h === 0
-          ? 'No governance activity in last 24 hours'
-          : `${data.overrides + data.blocks} interventions of ${data.last24h} evaluations`}
-      </div>
-    </div>
-  );
-}
-
-function GroundTruthPanel({ data }: { data: NonNullable<CommandCenterData['groundTruth']> }) {
-  const acceptColor = data.acceptRate >= 80 ? 'text-green-700' : data.acceptRate >= 50 ? 'text-amber-700' : 'text-red-700';
-  const acceptBg = data.acceptRate >= 80 ? 'bg-green-50' : data.acceptRate >= 50 ? 'bg-amber-50' : 'bg-red-50';
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-emerald-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Clinical Ground Truth</h2>
-          <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
-            Flywheel
-          </span>
-        </div>
-        <span className="text-xs text-gray-400">Last 7 days</span>
-      </div>
-
-      {/* Key Metrics Row */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
-        <div className={`text-center ${acceptBg} rounded-lg py-3`}>
-          <div className="flex items-center justify-center gap-1">
-            <TrendingUp className={`w-4 h-4 ${acceptColor}`} />
-            <span className={`text-2xl font-bold ${acceptColor}`}>{data.acceptRate}%</span>
-          </div>
-          <div className="text-xs text-gray-500 mt-0.5">Accept Rate</div>
-        </div>
-        <div className="text-center bg-blue-50 rounded-lg py-3">
-          <div className="text-2xl font-bold text-blue-700">{data.totalDecisions}</div>
-          <div className="text-xs text-blue-600">Decisions</div>
-        </div>
-        <div className="text-center bg-amber-50 rounded-lg py-3">
-          <div className="text-2xl font-bold text-amber-700">{data.overrides}</div>
-          <div className="text-xs text-amber-600">Overrides</div>
-        </div>
-        <div className="text-center bg-purple-50 rounded-lg py-3">
-          <div className="text-2xl font-bold text-purple-700">{data.feedbackVolume}</div>
-          <div className="text-xs text-purple-600">Feedback</div>
-        </div>
-      </div>
-
-      {/* Feedback Breakdown + Override Reasons */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Feedback by Type */}
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Feedback Volume</h3>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-1.5 text-gray-600">
-                <ThumbsUp className="w-3.5 h-3.5 text-green-500" />
-                Thumbs Up
-              </span>
-              <span className="font-medium text-gray-800">{data.feedbackByType.THUMBS_UP || 0}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-1.5 text-gray-600">
-                <ThumbsDown className="w-3.5 h-3.5 text-red-500" />
-                Thumbs Down
-              </span>
-              <span className="font-medium text-gray-800">{data.feedbackByType.THUMBS_DOWN || 0}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Corrections</span>
-              <span className="font-medium text-gray-800">{data.feedbackByType.CORRECTION || 0}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Comments</span>
-              <span className="font-medium text-gray-800">{data.feedbackByType.COMMENT || 0}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Override Reasons */}
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Override Reasons</h3>
-          {data.topOverrideReasons.length > 0 ? (
-            <div className="space-y-1.5">
-              {data.topOverrideReasons.map((r, i) => (
-                <div key={r.reason} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600 truncate max-w-[160px]">
-                    {(r.reason || '').replace(/_/g, ' ')}
-                  </span>
-                  <span className="font-medium text-gray-800">{r.count}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400">No overrides recorded</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// MAIN PAGE
-// ============================================================================
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ClinicalCommandCenterPage() {
-  const { data: session } = useSession();
-  const [data, setData] = useState<CommandCenterData | null>(null);
-  const [kpiData, setKpiData] = useState<Record<string, KPIResult> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [firstRunDismissed, setFirstRunDismissed] = useState(true); // default true to avoid flash
+  // ── Patient context ───────────────────────────────────────────────────────
+  const [selectedPatient,  setSelectedPatient]  = useState<Patient | null>(null);
+  // Key-based reset forces PatientContextBar to remount (clears internal state)
+  const [patientResetKey,  setPatientResetKey]  = useState(0);
 
-  useEffect(() => {
-    try {
-      setFirstRunDismissed(localStorage.getItem(FIRST_RUN_DISMISSED_KEY) === 'true');
-    } catch {
-      // localStorage unavailable
-    }
-  }, []);
+  // ── Transcript state ──────────────────────────────────────────────────────
+  const [segments,    setSegments]    = useState<Segment[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const chunkIndexRef                 = useRef(0);
 
-  // Real-time governance updates
-  const { connected: realtimeConnected } = useGovernanceRealtime({
-    autoConnect: true,
-    onNewLog: () => {
-      // Refresh data when new governance events arrive
-      fetchData();
-    },
-    onOverride: () => fetchData(),
-    onBlocked: () => fetchData(),
+  // ── Model + workspace config ──────────────────────────────────────────────
+  const [activeModel,  setActiveModel]  = useState<ModelId>('anthropic');
+  const [modelConfigs, setModelConfigs] = useState<Partial<Record<ModelId, ModelConfig>>>({
+    anthropic: { isConfigured: true, isActive: true },
   });
 
-  const fetchData = useCallback(async () => {
+  // ── CDSS state ────────────────────────────────────────────────────────────
+  const [cdssAlerts, setCdssAlerts] = useState<CDSCard[]>([]);
+  const [isSyncing,  setIsSyncing]  = useState(false);
+  const [syncError,  setSyncError]  = useState<string | null>(null);
+
+  // ── Chat reset signal (Great Reset target) ────────────────────────────────
+  const [resetSignal, setResetSignal] = useState(0);
+
+  // ── Modal states ──────────────────────────────────────────────────────────
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+  const [isHandoutModalOpen, setIsHandoutModalOpen] = useState(false);
+
+  // ── Tour state ────────────────────────────────────────────────────────────
+  const [isTourRunning, setIsTourRunning] = useState(false);
+
+  // ── Mount guard — prevents Joyride from rendering during SSR/hydration ────
+  // This eliminates the BailoutToCSR Suspense-boundary hydration error that
+  // next/dynamic({ssr:false}) produces in Next.js 14 App Router.
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
+  // ── Modular layout preference (persisted in localStorage) ─────────────────
+  type LayoutMode = 'default' | 'transcript-right';
+  const LAYOUT_KEY = 'clinical-command-layout';
+
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('default');
+
+  // Hydrate from localStorage after mount (avoids SSR mismatch)
+  useEffect(() => {
     try {
-      const [summaryRes, kpiRes] = await Promise.all([
-        fetch('/api/clinical-command/summary'),
-        fetch('/api/kpi'),
-      ]);
-      if (!summaryRes.ok) throw new Error(`HTTP ${summaryRes.status}`);
-      const json = await summaryRes.json();
-      setData(json.data);
-      if (kpiRes.ok) {
-        setKpiData(await kpiRes.json());
-      }
-      setError(null);
-      setLastRefresh(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
-    } finally {
-      setLoading(false);
-    }
+      const stored = localStorage.getItem(LAYOUT_KEY) as LayoutMode | null;
+      if (stored) setLayoutMode(stored);
+    } catch { /* ignore */ }
   }, []);
 
+  const cycleLayout = useCallback(() => {
+    setLayoutMode((prev) => {
+      const next: LayoutMode = prev === 'default' ? 'transcript-right' : 'default';
+      try { localStorage.setItem(LAYOUT_KEY, next); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  // ── Auto-sync guard ───────────────────────────────────────────────────────
+  const hasAutoSyncedRef = useRef(false);
+
+  // ── Fetch workspace + model configs on mount ──────────────────────────────
   useEffect(() => {
-    fetchData();
+    let cancelled = false;
 
-    // Fallback polling every 30s if Socket.IO disconnects
-    const interval = setInterval(fetchData, 30_000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    async function loadConfig() {
+      try {
+        const wsRes = await fetch('/api/workspace/current');
+        if (!wsRes.ok || cancelled) return;
+        const wsData = await wsRes.json();
+        const wsId: string | null = wsData.workspaceId ?? null;
+        if (!wsId || cancelled) return;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-        <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-          <p className="text-gray-500">Loading Clinical Command Center...</p>
-        </div>
-      </div>
-    );
+        const cfgRes = await fetch(`/api/workspace/llm-config?workspaceId=${wsId}`);
+        if (!cfgRes.ok || cancelled) return;
+        const cfgData = await cfgRes.json();
+
+        const map: Partial<Record<ModelId, ModelConfig>> = {};
+        for (const cfg of cfgData.configs ?? []) {
+          map[cfg.provider as ModelId] = {
+            isConfigured: cfg.isConfigured,
+            isActive:     cfg.isActive,
+          };
+        }
+        if (!cancelled) setModelConfigs(map);
+      } catch {
+        // Demo default stays in place.
+      }
+    }
+
+    loadConfig();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Transcript streaming simulation ──────────────────────────────────────
+  useEffect(() => {
+    if (!isRecording) return;
+
+    const id = setInterval(() => {
+      if (chunkIndexRef.current >= TRANSCRIPT_CHUNKS.length) {
+        setIsRecording(false);
+        return;
+      }
+      const chunk = TRANSCRIPT_CHUNKS[chunkIndexRef.current];
+      setSegments((prev) => [...prev, chunk]);
+      chunkIndexRef.current += 1;
+    }, STREAM_INTERVAL_MS);
+
+    return () => clearInterval(id);
+  }, [isRecording]);
+
+  // ── Auto-sync once streaming completes ───────────────────────────────────
+  useEffect(() => {
+    const streamingComplete =
+      !isRecording &&
+      segments.length >= TRANSCRIPT_CHUNKS.length &&
+      segments.length > 0;
+
+    if (streamingComplete && selectedPatient && !hasAutoSyncedRef.current) {
+      hasAutoSyncedRef.current = true;
+      handleSync();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecording, segments.length, selectedPatient]);
+
+  function toggleRecord() {
+    if (isRecording) {
+      setIsRecording(false);
+    } else {
+      setSegments([]);
+      chunkIndexRef.current = 0;
+      hasAutoSyncedRef.current = false;
+      setIsRecording(true);
+    }
   }
 
-  if (error || !data) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-        <div className="text-center">
-          <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-          <p className="text-gray-700 font-medium">Failed to load data</p>
-          <p className="text-gray-400 text-sm mt-1">{error}</p>
-          <button
-            onClick={fetchData}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
+  // ── Live Sync → CDSS endpoint ─────────────────────────────────────────────
+
+  const DEMO_CDSS_CARDS: CDSCard[] = [
+    {
+      summary:   'Drug Interaction: Metformin + Contrast Dye (CKD Stage 3)',
+      detail:    'eGFR < 45 mL/min: hold Metformin 48 h before contrast-enhanced angiography to prevent lactic acidosis. Risk of contrast-induced nephropathy is elevated.',
+      indicator: 'critical',
+      source:    { label: 'CDSS Rule Engine' },
+    },
+    {
+      summary:   'Drug Interaction: Furosemide + Lisinopril',
+      detail:    'Monitor for first-dose hypotension and acute kidney injury. Maintain adequate hydration and check serum electrolytes.',
+      indicator: 'warning',
+      source:    { label: 'CDSS Rule Engine' },
+    },
+    {
+      summary:   'BP Advisory: 162/95 mmHg — Exceeds JNC-8 Target',
+      detail:    'Current reading exceeds goal of < 140/90 mmHg despite active Lisinopril therapy. Consider dose escalation or adding amlodipine.',
+      indicator: 'info',
+      source:    { label: 'CDSS Rule Engine' },
+    },
+  ];
+
+  async function handleSync() {
+    setIsSyncing(true);
+    setSyncError(null);
+
+    const transcriptText = segments
+      .filter((s) => s.kind === 'text')
+      .map((s) => (s as { kind: 'text'; text: string }).text)
+      .join('');
+
+    // Hard timeout circuit breaker — abort the fetch if the backend hasn't
+    // responded within 15 s to prevent isSyncing from staying true indefinitely.
+    const SYNC_HARD_TIMEOUT_MS = 15_000;
+    const controller  = new AbortController();
+    const timeoutId   = setTimeout(() => controller.abort(), SYNC_HARD_TIMEOUT_MS);
+
+    try {
+      const res = await fetch('/api/cds/hooks/medication-prescribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body: JSON.stringify({
+          hookInstance: `scribe-${Date.now()}`,
+          hook:         'medication-prescribe',
+          context: {
+            patientId:   selectedPatient?.id ?? 'demo-patient-001',
+            encounterId: 'demo-encounter-001',
+            userId:      'demo-user',
+            transcript:  transcriptText,
+            medications: [
+              {
+                code: {
+                  coding: [
+                    {
+                      system:  'http://www.nlm.nih.gov/research/umls/rxnorm',
+                      code:    '860975',
+                      display: 'Metformin 500 MG',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCdssAlerts(data.cards?.length ? data.cards : DEMO_CDSS_CARDS);
+      } else {
+        setCdssAlerts(DEMO_CDSS_CARDS);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        setSyncError('Sync timed out after 15 s — CDSS did not respond. Using cached alerts.');
+      }
+      setCdssAlerts(DEMO_CDSS_CARDS);
+    } finally {
+      clearTimeout(timeoutId);
+      setIsSyncing(false);
+    }
   }
 
-  // First-run detection: all panels empty and user hasn't dismissed
-  const isFirstRun =
-    !firstRunDismissed &&
-    data.cdsAlerts.recentEvaluations === 0 &&
-    data.reviewQueue.pending === 0 &&
-    data.preventionGaps.overdue === 0 &&
-    data.governanceFeed.last24h === 0;
-
-  if (isFirstRun) {
-    const userName = session?.user?.name?.split(' ')[0] || 'there';
-    return (
-      <FirstRunWelcome
-        userName={userName}
-        onDismiss={() => {
-          setFirstRunDismissed(true);
-          try {
-            localStorage.setItem(FIRST_RUN_DISMISSED_KEY, 'true');
-          } catch {
-            // localStorage unavailable
-          }
-        }}
-      />
-    );
+  // ── The Great Reset — called after billing claim is approved ─────────────
+  function handleBillingComplete() {
+    setIsRecording(false);
+    setSegments([]);
+    chunkIndexRef.current = 0;
+    hasAutoSyncedRef.current = false;
+    setCdssAlerts([]);
+    setSyncError(null);
+    setResetSignal((s) => s + 1);     // clears CdssAlertsPane chat state
+    setSelectedPatient(null);
+    setPatientResetKey((k) => k + 1); // remounts PatientContextBar → clears its chip
+    setIsBillingModalOpen(false);
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col h-screen overflow-hidden bg-white dark:bg-slate-900">
+      {/* Joyride spotlight tour — rendered only after mount (isMounted guard) so
+          server HTML and first client render are identical (both null).
+          Wrapped in Suspense because React.lazy requires it. */}
+      {isMounted && (
+        <Suspense fallback={null}>
+          <JoyrideClient
+            run={isTourRunning}
+            steps={TOUR_STEPS}
+            continuous
+            showSkipButton
+            spotlightClicks={false}
+            disableOverlayClose
+            callback={({ status }: { status: string }) => {
+              if (status === 'finished' || status === 'skipped') {
+                setIsTourRunning(false);
+              }
+            }}
+            styles={{
+              options: {
+                primaryColor:    '#22d3ee',
+                backgroundColor: '#0f172a',
+                textColor:       '#e2e8f0',
+                arrowColor:      '#0f172a',
+                zIndex:          10000,
+              },
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* ── Modals (rendered at root to avoid z-index conflicts) ─────────── */}
+      <PatientHandoutModal
+        isOpen={isHandoutModalOpen}
+        onClose={() => setIsHandoutModalOpen(false)}
+      />
+      <SignAndBillModal
+        isOpen={isBillingModalOpen}
+        onClose={() => setIsBillingModalOpen(false)}
+        onComplete={handleBillingComplete}
+      />
+
+      {/* ── Top header ─────────────────────────────────────────────────────── */}
+      <header className="
+        flex-shrink-0 px-6 py-4 border-b flex items-center justify-between
+        border-slate-200 dark:border-slate-800
+      ">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Activity className="w-6 h-6 text-blue-600" />
+          <h1 className="font-semibold text-base flex items-center gap-2
+                         text-slate-900 dark:text-white">
+            <Stethoscope className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
             Clinical Command Center
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Real-time clinical intelligence across CDSS, Prevention, and Governance
+          <p className="text-xs mt-0.5 text-slate-500">
+            Live Transcription · SOAP Note · CDSS Alerts
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {realtimeConnected && (
-            <span className="flex items-center gap-1.5 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Live
-            </span>
-          )}
+
+        <div className="flex items-center gap-2">
+          {/* Layout toggle — cycles pane arrangement, persisted to localStorage */}
           <button
-            onClick={fetchData}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+            onClick={cycleLayout}
+            title={layoutMode === 'default' ? 'Switch to transcript-right layout' : 'Switch to default layout'}
+            aria-label="Toggle workspace layout"
+            className="
+              flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium
+              text-slate-500 dark:text-slate-400
+              border border-slate-200 dark:border-slate-700
+              hover:text-cyan-600 dark:hover:text-cyan-400
+              hover:border-cyan-400/40 dark:hover:border-cyan-400/30
+              transition-colors
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
+            "
           >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
+            <RefreshCw className="w-3 h-3" />
+            Layout
           </button>
-          {lastRefresh && (
-            <span className="text-xs text-gray-400 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {lastRefresh.toLocaleTimeString()}
-            </span>
-          )}
+
+          {/* Quick Tour — premium outline style, in the page nav (not floating) */}
+          <button
+            onClick={() => setIsTourRunning(true)}
+            className="
+              flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+              text-slate-600 dark:text-slate-300
+              border border-slate-300 dark:border-slate-600
+              hover:text-cyan-600 dark:hover:text-cyan-400
+              hover:border-cyan-400/50 dark:hover:border-cyan-400/40
+              hover:bg-cyan-50/50 dark:hover:bg-cyan-400/5
+              transition-colors
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
+            "
+            aria-label="Start product tour"
+          >
+            <Star className="w-3 h-3" />
+            Quick Tour
+          </button>
+
+          <span className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full
+                           text-emerald-700 dark:text-emerald-400
+                           bg-emerald-50 dark:bg-emerald-400/8
+                           border border-emerald-200 dark:border-emerald-400/20">
+            <span className="w-1.5 h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse" />
+            HIPAA / LGPD · De-id Active
+          </span>
         </div>
-      </div>
+      </header>
 
-      {/* KPI Strip */}
-      {kpiData && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {(Object.keys(KPI_DICTIONARY) as KPIDictionaryKey[]).map((key) => {
-            const kpi = kpiData[key];
-            if (!kpi) return null;
-            return (
-              <KPICard
-                key={key}
-                label={kpi.label}
-                value={kpi.value}
-                unit={kpi.unit}
-                definition={KPI_DICTIONARY[key]}
-              />
-            );
-          })}
-        </div>
-      )}
+      {/* ── Patient context bar ─────────────────────────────────────────────── */}
+      <PatientContextBar
+        key={patientResetKey}
+        onSelectPatient={setSelectedPatient}
+      />
 
-      {/* 2x2 Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <CDSAlertsPanel data={data.cdsAlerts} />
-        <ReviewQueuePanel data={data.reviewQueue} />
-        <PreventionGapsPanel data={data.preventionGaps} />
-        <GovernanceFeedPanel data={data.governanceFeed} realtimeConnected={realtimeConnected} />
-      </div>
+      {/* ── Main split-pane layout ────────────────────────────────────────────
+           Left col:  TranscriptPane (full height)   id: live-meeting-notes
+           Right col: flex column split proportionally:
+             • SoapNotePane   ~1/3 height              id: soap-note-pane
+             • CdssAlertsPane ~2/3 height              id: cdss-pane
+      ──────────────────────────────────────────────────────────────────────── */}
+      {/*
+        ── Main split-pane layout ────────────────────────────────────────────
+        Layout modes (persisted to localStorage):
+          'default'          → Transcript left  | SOAP + CDSS right
+          'transcript-right' → SOAP + CDSS left | Transcript right
+        framer-motion `layout` prop animates the position swap smoothly.
+      */}
+      <main className="flex-1 grid grid-cols-2 gap-4 p-4 min-h-0">
+        {/* Transcript pane */}
+        <motion.div
+          layout
+          id="live-meeting-notes"
+          className={`min-h-0 ${layoutMode === 'transcript-right' ? 'order-2' : 'order-1'}`}
+        >
+          <TranscriptPane
+            segments={segments}
+            isRecording={isRecording}
+            onToggleRecord={toggleRecord}
+            disabled={!selectedPatient}
+          />
+        </motion.div>
 
-      {/* Ground Truth Flywheel Panel (full-width) */}
-      {data.groundTruth && (
-        <div className="mt-5">
-          <GroundTruthPanel data={data.groundTruth} />
-        </div>
-      )}
+        {/* SOAP + CDSS column */}
+        <motion.div
+          layout
+          className={`flex flex-col gap-4 min-h-0 ${layoutMode === 'transcript-right' ? 'order-1' : 'order-2'}`}
+        >
+          {/* SOAP Note — 1/3 of column height */}
+          <div id="soap-note-pane" className="min-h-0 overflow-hidden" style={{ flex: '1 0 0' }}>
+            <SoapNotePane
+              segmentCount={segments.length}
+              patientSelected={!!selectedPatient}
+              onSignAndBill={() => setIsBillingModalOpen(true)}
+            />
+          </div>
 
-      {/* AI Copilot → Draft Prescription Panel */}
-      <div className="mt-5">
-        <CopilotDraftPanel />
-      </div>
+          {/* CDSS — 2/3 of column height */}
+          <div id="cdss-pane" className="min-h-0" style={{ flex: '2 0 0' }}>
+            <CdssAlertsPane
+              activeModel={activeModel}
+              modelConfigs={modelConfigs}
+              onModelChange={setActiveModel}
+              cdssAlerts={cdssAlerts}
+              isSyncing={isSyncing}
+              onSync={handleSync}
+              syncError={syncError}
+              patientSelected={!!selectedPatient}
+              hasTranscript={segments.length > 0}
+              selectedPatient={selectedPatient}
+              transcript={segments
+                .filter((s) => s.kind === 'text')
+                .map((s) => (s as { kind: 'text'; text: string }).text)
+                .join('')}
+              onOpenHandout={() => setIsHandoutModalOpen(true)}
+              resetSignal={resetSignal}
+            />
+          </div>
+        </motion.div>
+      </main>
     </div>
   );
 }

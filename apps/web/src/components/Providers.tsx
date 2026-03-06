@@ -7,18 +7,23 @@ import { ThemeProvider } from '@/providers/ThemeProvider';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 
 export function Providers({ children }: { children: ReactNode }) {
+  // SessionProvider must sit OUTSIDE the ErrorBoundary.
+  // When ErrorBoundary catches an error and renders its fallback, every component
+  // inside the boundary is unmounted — including SessionProvider.  Any component
+  // (e.g. ValidationConsolePage) that calls useSession() during that cycle would
+  // throw "must be wrapped in <SessionProvider>" again, creating a crash loop.
   return (
-    <ErrorBoundary>
-      <SessionProvider
-        refetchInterval={5 * 60} // Refetch session every 5 minutes
-        refetchOnWindowFocus={false} // Disable refetch on window focus to reduce noise
-      >
+    <SessionProvider
+      refetchInterval={5 * 60}
+      refetchOnWindowFocus={false}
+    >
+      <ErrorBoundary>
         <ThemeProvider defaultTheme="auto">
           <LanguageProvider>
             {children}
           </LanguageProvider>
         </ThemeProvider>
-      </SessionProvider>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </SessionProvider>
   );
 }

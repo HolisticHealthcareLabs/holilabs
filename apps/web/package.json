@@ -1,6 +1,6 @@
 {
   "name": "@holi/web",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "NODE_ENV=development next dev --port 3000",
     "build": "pnpm run validate:env && next build",
+    "build:release": "NEXT_TELEMETRY_DISABLED=1 SKIP_ENV_VALIDATION=1 next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -75,6 +76,8 @@
     "@react-pdf/renderer": "^4.3.1",
     "@sendgrid/mail": "^8.1.6",
     "@sentry/nextjs": "^10.32.1",
+    "@simplewebauthn/browser": "^13.2.2",
+    "@simplewebauthn/server": "^13.2.3",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.12",
     "@upstash/ratelimit": "^2.0.7",

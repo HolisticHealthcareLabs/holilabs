@@ -407,6 +407,78 @@
       "trustDeterministic": "Cada alerta rastreável",
       "trustSpeed": "<90s por revisão",
       "trustPhi": "Zero PHI na nuvem"
+    },
+    "nav": {
+      "howItWorks": "Como funciona",
+      "forHospitals": "Para hospitais",
+      "pricing": "Preços",
+      "signIn": "Entrar",
+      "requestAccess": "Solicitar acesso"
+    },
+    "featureA": {
+      "eyebrow": "O Motor de Referência Cruzada Cortex",
+      "headline": "Detecte o erro antes que se torne uma glosa.",
+      "description": "O Cortex passa cada decisão clínica por um motor lógico global que se adapta às normas locais. Seja validando uma dosagem contra protocolos internacionais ou cruzando uma prescrição com códigos específicos do país (CID-10, TUSS, SNOMED, etc.), detectamos a inconsistência na origem.",
+      "link": "Veja os sinais clínicos"
+    },
+    "featureB": {
+      "eyebrow": "Para Médicos",
+      "headline": "Seus médicos nem vão perceber que está lá.",
+      "description": "Sem treinamento. Sem novas telas. Sem interrupção do fluxo de trabalho. O Cortex funciona silenciosamente ao lado dos seus sistemas existentes e só se manifesta quando algo está realmente errado.",
+      "stat1Value": "< 90s",
+      "stat1Label": "Revisão médica mediana",
+      "stat1Sub": "Sem passos extras. Mesmo fluxo, resultados mais seguros.",
+      "stat2Value": "0 PHI",
+      "stat2Label": "Dados de pacientes saem da sua rede",
+      "stat2Sub": "Conformidade com LGPD por arquitetura, não por política.",
+      "stat3Value": "24/7",
+      "stat3Label": "Cobertura de trilha de auditoria",
+      "stat3Sub": "Cada decisão clínica documentada. Pronto para qualquer auditoria."
+    },
+    "featureC": {
+      "eyebrow": "Feito para a América Latina",
+      "headline": "Não é um produto americano com tradução para o espanhol.",
+      "description1": "Cada regra, cada código, cada protocolo — projetado do zero para a saúde latino-americana. O Cortex valida prescrições contra formulários locais, detecta interações medicamentosas perigosas em tempo real e sinaliza inconsistências de faturamento antes que se tornem negativas.",
+      "description2": "Um motor. Três países. Carregado com as bibliotecas clínicas e regulatórias específicas que sua região exige — dos códigos TUSS no Brasil aos formulários provinciais na Argentina.",
+      "link": "Veja o Cortex detectar uma interação medicamentosa real",
+      "brazilName": "Brasil",
+      "brazilBadge": "Piloto ativo",
+      "brazilDesc": "Conformidade com LGPD. Faturamento TUSS. Registro de medicamentos ANVISA. Nativo em português. Cada prescrição verificada contra protocolos locais.",
+      "boliviaName": "Bolívia",
+      "boliviaBadge": "Piloto ativo",
+      "boliviaDesc": "Espanhol nativo. Normas do Ministério da Saúde. Integração com formulários locais. Construído com clínicas bolivianas, não adaptado para elas.",
+      "argentinaName": "Argentina",
+      "argentinaBadge": "Em breve 2026",
+      "argentinaDesc": "SNOMED CT. Formulário provincial. Faturamento IOMA. Cobertura regulatória completa no Q3 2026."
+    },
+    "cta": {
+      "headline": "Quantas glosas seu hospital perdeu no mês passado?",
+      "subhead": "A maioria dos administradores não sabe. O Cortex mostra na primeira semana.",
+      "placeholder": "seu@hospital.com",
+      "submit": "Solicitar acesso",
+      "sending": "Enviando...",
+      "successMsg": "Você está na lista. Entraremos em contato em até 48 horas.",
+      "errorDefault": "Algo deu errado. Tente novamente.",
+      "errorNetwork": "Erro de conexão. Tente novamente.",
+      "disclaimer": "Nenhum PHI coletado neste formulário. Nativo LGPD. Resposta em até 48 horas."
+    },
+    "footer": {
+      "brand": "Cortex",
+      "brandSub": "Suporte à decisão clínica para a América Latina.",
+      "product": "Produto",
+      "company": "Empresa",
+      "legal": "Jurídico",
+      "about": "Sobre",
+      "blog": "Blog",
+      "careers": "Carreiras",
+      "press": "Imprensa",
+      "privacy": "Privacidade",
+      "terms": "Termos",
+      "hipaaPolicy": "Política HIPAA",
+      "lgpdPolicy": "Política LGPD",
+      "liveDemo": "Demo ao Vivo",
+      "copyright": "Copyright © 2026 Holi Labs. Todos os direitos reservados.",
+      "badges": "Alinhado ao HIPAA · Nativo LGPD · Pronto para ANVISA"
     }
   },
   "pricing": {

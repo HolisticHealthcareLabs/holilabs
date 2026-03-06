@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
 import crypto from 'crypto';
+import { verifyWebAuthnToken } from '@/lib/auth/webauthn-token';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { emitMedicationEvent } from '@/lib/socket-server';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -69,6 +70,33 @@ export const POST = createProtectedRoute(
 
       // Use authenticated user ID as clinician
       const clinicianId = context.user.id;
+
+      // ===================================================================
+      // WEBAUTHN SIGNATURE VERIFICATION (backward compatible)
+      // PIN / signature_pad paths continue unchanged below this block
+      // ===================================================================
+      if (body.signatureMethod === 'webauthn') {
+        const payload = await verifyWebAuthnToken(body.signatureData);
+        if (!payload || payload.userId !== clinicianId) {
+          return NextResponse.json(
+            { error: 'Invalid or expired biometric signature token' },
+            { status: 401 }
+          );
+        }
+
+        // Verify nonce matches the prescription payload
+        const computedNonce = crypto
+          .createHash('sha256')
+          .update(JSON.stringify({ patientId: body.patientId, medications: body.medications }))
+          .digest('hex');
+
+        if (payload.prescriptionNonce !== computedNonce) {
+          return NextResponse.json(
+            { error: 'Signature nonce mismatch — prescription payload was tampered' },
+            { status: 401 }
+          );
+        }
+      }
 
       // Generate prescription hash for blockchain
       const prescriptionData = {
@@ -236,7 +264,7 @@ export const POST = createProtectedRoute(
     }
   },
   {
-    roles: ['ADMIN', 'CLINICIAN'],
+    roles: ['ADMIN', 'CLINICIAN', 'PHYSICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
     audit: { action: 'CREATE', resource: 'Prescription' },
   }

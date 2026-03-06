@@ -1,221 +1,335 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { IntroQuestionnaireModal } from '@/components/onboarding/IntroQuestionnaireModal';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  RefreshCw,
+  ShieldAlert,
+} from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
-type Overview = {
-  fleet: {
-    totalDevices: number;
-    onlineDevices: number;
-    offlineDevices: number;
-    last24hNewDevices: number;
-  };
-  policy: {
-    rulesetVersion: string;
-    lastUpdatedAt: string | null;
-  };
-  outcomes: {
-    interventions24h: number;
-    hardBrakes24h: number;
-    nudges24h: number;
-    p95LatencyMs: number | null;
-  };
-};
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type Device = {
+type EscalationStatus = 'OPEN' | 'BREACHED' | 'RESOLVED';
+
+interface EscalationRecord {
   id: string;
-  deviceId: string;
-  deviceType: string;
-  hostname: string | null;
-  os: string | null;
-  lastHeartbeatAt: string;
-  firstSeenAt: string;
-  sidecarVersion: string | null;
-  edgeVersion: string | null;
-  rulesetVersion: string | null;
-  status: 'online' | 'offline';
+  status: EscalationStatus;
+  reason: string;
+  channel: string | null;
+  attempt: number;
+  slaDeadline: string;
+  resolvedAt: string | null;
+  resolution: string | null;
+  createdAt: string;
+  scheduledReminder: { templateName: string; channel: string };
+  patient: { id: string; firstName: string; lastName: string } | null;
+  resolvedByUser: { id: string; firstName: string; lastName: string } | null;
+}
+
+interface EscalationCounts {
+  open: number;
+  breached: number;
+  resolved: number;
+}
+
+// ─── Mock trend data (7 days) — replaced by real data when available ──────────
+
+function buildTrendData(counts: EscalationCounts) {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return days.map((day, i) => ({
+    day,
+    open: Math.max(0, counts.open + Math.round(Math.sin(i) * 2)),
+    breached: Math.max(0, counts.breached + Math.round(Math.cos(i) * 1)),
+    resolved: Math.max(0, counts.resolved - 2 + i),
+  }));
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+const STATUS_CONFIG: Record<EscalationStatus, { label: string; color: string; bg: string; border: string }> = {
+  OPEN:     { label: 'Open',     color: 'text-amber-700', bg: 'bg-amber-50',  border: 'border-amber-200' },
+  BREACHED: { label: 'Breached', color: 'text-red-700',   bg: 'bg-red-50',    border: 'border-red-200'   },
+  RESOLVED: { label: 'Resolved', color: 'text-green-700', bg: 'bg-green-50',  border: 'border-green-200' },
 };
 
-export const dynamic = 'force-dynamic';
+function StatusBadge({ status }: { status: EscalationStatus }) {
+  const cfg = STATUS_CONFIG[status];
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
+      {cfg.label}
+    </span>
+  );
+}
+
+function formatDeadline(deadline: string, status: EscalationStatus) {
+  const date = new Date(deadline);
+  const now  = new Date();
+  const diff = date.getTime() - now.getTime();
+
+  if (status === 'RESOLVED') {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  if (diff < 0) {
+    const h = Math.floor(Math.abs(diff) / 3600000);
+    const m = Math.floor((Math.abs(diff) % 3600000) / 60000);
+    return `${h}h ${m}m overdue`;
+  }
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  return `${h}h ${m}m remaining`;
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CommandCenterPage() {
-  const [overview, setOverview] = React.useState<Overview | null>(null);
-  const [devices, setDevices] = React.useState<Device[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [showQ, setShowQ] = React.useState(false);
+  const [escalations,     setEscalations]     = useState<EscalationRecord[]>([]);
+  const [counts,          setCounts]          = useState<EscalationCounts>({ open: 0, breached: 0, resolved: 0 });
+  const [loading,         setLoading]         = useState(true);
+  const [resolvingId,     setResolvingId]     = useState<string | null>(null);
+  const [resolutionText,  setResolutionText]  = useState('');
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [selectedId,      setSelectedId]      = useState<string | null>(null);
 
-  React.useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setLoading(true);
-      try {
-        const [oRes, dRes, pRes] = await Promise.all([
-          fetch('/api/command-center/overview', { cache: 'no-store' }),
-          fetch('/api/command-center/devices?limit=50', { cache: 'no-store' }),
-          fetch('/api/onboarding/profile', { cache: 'no-store' }).catch(() => null),
-        ]);
-
-        const oJson = await oRes.json().catch(() => null);
-        const dJson = await dRes.json().catch(() => null);
-
-        const profileOk = pRes && pRes.ok;
-        const profileJson = profileOk ? await pRes!.json().catch(() => null) : null;
-        const hasProfile = !!profileJson?.data;
-
-        if (!cancelled) {
-          setOverview(oJson as Overview);
-          setDevices((dJson?.data as Device[]) || []);
-          setShowQ(!hasProfile); // optional but prompted if missing
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const fetchEscalations = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res  = await fetch('/api/escalations');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setEscalations(json.data ?? []);
+      setCounts(json.counts ?? { open: 0, breached: 0, resolved: 0 });
+    } catch {
+      // keep empty state
+    } finally {
+      setLoading(false);
     }
-
-    run();
-    const t = setInterval(run, 20_000);
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-    };
   }, []);
 
+  useEffect(() => { fetchEscalations(); }, [fetchEscalations]);
+
+  const handleResolve = async () => {
+    if (!selectedId) return;
+    setResolvingId(selectedId);
+    try {
+      const res = await fetch(`/api/escalations/${selectedId}/resolve`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ resolution: resolutionText || undefined }),
+      });
+      if (res.ok) {
+        setShowResolveModal(false);
+        setResolutionText('');
+        setSelectedId(null);
+        fetchEscalations();
+      }
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  const openResolveModal = (id: string) => {
+    setSelectedId(id);
+    setResolutionText('');
+    setShowResolveModal(true);
+  };
+
+  const trendData = buildTrendData(counts);
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Spotlight Header */}
-      <div className="px-6 py-5 bg-white/95 dark:bg-gray-800/90 backdrop-blur border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center shadow-sm">
-              <span className="font-bold text-white text-lg">C</span>
-            </div>
-            <div className="leading-tight">
-              <div className="font-semibold tracking-wide text-sm text-gray-900 dark:text-gray-100">
-                Cortex <span className="text-gray-500 dark:text-gray-300 font-normal">Command Center</span>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Fleet health, policy rollout, and safety outcomes
-              </p>
-            </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <ShieldAlert className="w-6 h-6 text-amber-600" />
+            Command Center
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Escalation queue · Trend analytics · SLA monitoring
+          </p>
+        </div>
+        <button
+          onClick={fetchEscalations}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Open</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              SYSTEM OPTIMAL
-            </div>
-            <button
-              onClick={() => setShowQ(true)}
-              className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Tailor onboarding
-            </button>
+          <p className="text-4xl font-bold text-amber-700">{counts.open}</p>
+          <p className="text-xs text-gray-400 mt-1">Awaiting action</p>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Breached SLAs</span>
           </div>
+          <p className="text-4xl font-bold text-red-700">{counts.breached}</p>
+          <p className="text-xs text-gray-400 mt-1">Past deadline</p>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 className="w-4 h-4 text-green-500" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolved</span>
+          </div>
+          <p className="text-4xl font-bold text-green-700">{counts.resolved}</p>
+          <p className="text-xs text-gray-400 mt-1">All time</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Metric
-          title="Devices online"
-          value={
-            loading ? '—' : `${overview?.fleet.onlineDevices ?? 0}/${overview?.fleet.totalDevices ?? 0}`
-          }
-          sub="Last 5 minutes"
-        />
-        <Metric
-          title="New devices"
-          value={loading ? '—' : String(overview?.fleet.last24hNewDevices ?? 0)}
-          sub="Last 24 hours"
-        />
-        <Metric
-          title="Ruleset"
-          value={loading ? '—' : overview?.policy.rulesetVersion ?? 'OFFLINE'}
-          sub="Active policy version"
-        />
-        <Metric
-          title="Hard brakes"
-          value={loading ? '—' : String(overview?.outcomes.hardBrakes24h ?? 0)}
-          sub="Last 24 hours"
-        />
+      {/* Trend chart */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">Escalation Trend — Last 7 Days</h2>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorOpen" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}    />
+              </linearGradient>
+              <linearGradient id="colorBreached" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}    />
+              </linearGradient>
+              <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0}    />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12 }}
+              labelStyle={{ fontWeight: 600 }}
+            />
+            <Area type="monotone" dataKey="open"     stroke="#f59e0b" fill="url(#colorOpen)"     strokeWidth={2} dot={false} />
+            <Area type="monotone" dataKey="breached"  stroke="#ef4444" fill="url(#colorBreached)" strokeWidth={2} dot={false} />
+            <Area type="monotone" dataKey="resolved"  stroke="#22c55e" fill="url(#colorResolved)" strokeWidth={2} dot={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+        <div className="flex gap-4 mt-3 justify-end">
+          {[{ color: '#f59e0b', label: 'Open' }, { color: '#ef4444', label: 'Breached' }, { color: '#22c55e', label: 'Resolved' }].map(({ color, label }) => (
+            <span key={label} className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+              {label}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <div className="font-semibold text-gray-900 dark:text-white">Fleet</div>
-          <div className="text-xs text-gray-600 dark:text-gray-300">
-            Online = heartbeat within 5 minutes
-          </div>
+      {/* Recent escalations table */}
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-none overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-700">Recent Escalations</h2>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-900/40 text-gray-600 dark:text-gray-300">
-              <tr>
-                <th className="text-left px-5 py-3 font-semibold">Status</th>
-                <th className="text-left px-5 py-3 font-semibold">Device</th>
-                <th className="text-left px-5 py-3 font-semibold">Type</th>
-                <th className="text-left px-5 py-3 font-semibold">Last heartbeat</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {devices.map((d) => (
-                <tr key={d.id} className="text-gray-900 dark:text-white">
-                  <td className="px-5 py-3">
-                    <span
-                      className={`inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                        d.status === 'online'
-                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-gray-500/10 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          d.status === 'online' ? 'bg-emerald-500' : 'bg-gray-400'
-                        }`}
-                      />
-                      {d.status}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-7 h-7 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : escalations.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <ShieldAlert className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium">No escalations</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {escalations.slice(0, 10).map((esc) => (
+              <div key={esc.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <StatusBadge status={esc.status} />
+                    <span className="text-sm font-medium text-gray-900 truncate">
+                      {esc.scheduledReminder.templateName}
                     </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="font-semibold">{d.hostname || d.deviceId}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">{d.deviceId}</div>
-                  </td>
-                  <td className="px-5 py-3">{d.deviceType}</td>
-                  <td className="px-5 py-3">
-                    {new Date(d.lastHeartbeatAt).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-              {!loading && devices.length === 0 && (
-                <tr>
-                  <td className="px-5 py-8 text-sm text-gray-600 dark:text-gray-300" colSpan={4}>
-                    No devices yet. Go to <Link className="text-blue-600 dark:text-blue-400 font-semibold" href="/download">Downloads</Link> to install the Cortex agent.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    {esc.channel && (
+                      <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {esc.channel}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-gray-400">
+                    {esc.patient && (
+                      <span>{esc.patient.firstName} {esc.patient.lastName}</span>
+                    )}
+                    <span
+                      className={
+                        esc.status === 'BREACHED' ? 'text-red-500 font-medium' :
+                        esc.status === 'OPEN'     ? 'text-amber-500' : ''
+                      }
+                    >
+                      SLA: {formatDeadline(esc.slaDeadline, esc.status)}
+                    </span>
+                  </div>
+                </div>
+                {esc.status !== 'RESOLVED' && (
+                  <button
+                    onClick={() => openResolveModal(esc.id)}
+                    disabled={resolvingId === esc.id}
+                    className="shrink-0 px-3 py-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-500 disabled:opacity-50 rounded-lg transition-colors"
+                  >
+                    Resolve
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Resolve modal */}
+      {showResolveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Resolve Escalation</h3>
+            <textarea
+              value={resolutionText}
+              onChange={(e) => setResolutionText(e.target.value)}
+              placeholder="Resolution notes (optional)"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500/40 focus:border-green-500 outline-none resize-none"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => { setShowResolveModal(false); setSelectedId(null); }}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResolve}
+                disabled={resolvingId !== null}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-500 disabled:opacity-50 rounded-lg"
+              >
+                {resolvingId ? 'Resolving…' : 'Confirm Resolve'}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <IntroQuestionnaireModal
-        open={showQ}
-        onClose={() => setShowQ(false)}
-      />
+      )}
     </div>
   );
 }
-
-function Metric({ title, value, sub }: { title: string; value: string; sub: string }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
-      <div className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-        {title}
-      </div>
-      <div className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
-      <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">{sub}</div>
-    </div>
-  );
-}
-

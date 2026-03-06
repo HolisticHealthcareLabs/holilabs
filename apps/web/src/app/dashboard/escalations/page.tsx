@@ -136,7 +136,7 @@ export default function EscalationsPage() {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-gray-500">Loading escalations...</p>
         </div>
       </div>
@@ -196,11 +196,10 @@ export default function EscalationsPage() {
           <button
             key={tab.key}
             onClick={() => { setActiveTab(tab.key); setLoading(true); }}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.key
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             {tab.label}
             <span className="ml-1.5 text-xs opacity-60">({tab.count})</span>
@@ -224,9 +223,8 @@ export default function EscalationsPage() {
           {escalations.map((esc) => (
             <div
               key={esc.id}
-              className={`bg-white rounded-xl border p-4 transition-shadow hover:shadow-sm ${
-                esc.status === 'BREACHED' ? 'border-red-200' : 'border-gray-200'
-              }`}
+              className={`bg-white rounded-xl border p-4 transition-shadow hover:shadow-sm ${esc.status === 'BREACHED' ? 'border-red-200' : 'border-gray-200'
+                }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
