@@ -1,55 +1,190 @@
-# Enterprise deployment configuration
-appId: com.holilabs.sidecar
-productName: HoliLabs Clinical Assurance
-copyright: Copyright © 2026 HoliLabs
-directories:
-  output: dist/installers
+# ─────────────────────────────────────────────────────────────────────────────
+# Cortex Assurance Sidecar — electron-builder production configuration
+# Version 2.0.0  |  Targets: macOS (universal) + Windows (nsis x64)
+#
+# Code-signing:
+#   macOS  — set APPLE_TEAM_ID, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD in CI
+#   Windows — set AZURE_SIGNING_ENDPOINT, AZURE_SIGNING_CERT_PROFILE,
+#             AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET in CI
+#
+# Build:
+#   pnpm build:enterprise          — full signed installer
+#   pnpm build:release:dir         — unpacked dir (no signing, fast dry-run)
+# ─────────────────────────────────────────────────────────────────────────────
 
-# Mac Configuration
+appId: com.holilabs.cortex
+productName: Cortex
+copyright: "Copyright © 2026 HoliLabs. All rights reserved."
+
+# Version is read from package.json — single source of truth.
+# Artifact filenames include the version for clean release tracking.
+artifactName: "${productName}-v${version}-${os}-${arch}.${ext}"
+
+directories:
+  # Relative to apps/sidecar/ — resolves to <repo-root>/release/
+  output: ../../release
+  buildResources: build
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FILE PACKAGING
+#
+# electron-builder automatically excludes devDependencies from the asar.
+# We only need to explicitly list what to INCLUDE from the build output,
+# and add targeted exclusions for artifacts that bloat the bundle.
+# ─────────────────────────────────────────────────────────────────────────────
+
+files:
+  # Compiled application (electron-vite output)
+  - dist/**
+
+  # Package manifest (needed by electron-builder for dependency resolution)
+  - package.json
+
+  # Strip source maps from the bundle — halves the asar size in practice
+  - "!dist/**/*.map"
+
+  # Strip TypeScript declaration files (not needed at runtime)
+  - "!dist/**/*.d.ts"
+
+  # Strip test scaffolding that electron-vite may carry along
+  - "!dist/**/__tests__/**"
+  - "!dist/**/*.spec.*"
+  - "!dist/**/*.test.*"
+
+  # Exclude legacy electron-builder output that may be present in dist/ from
+  # a previous build that used dist/installers/ as the output directory.
+  # The output directory is now ../../release (repo root).
+  - "!dist/installers/**"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NATIVE MODULE UNPACKING
+#
+# Native .node addons cannot be loaded from inside an asar archive — they must
+# be on the real filesystem. electron-builder copies them to app.asar.unpacked/
+# and patches the require() calls automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+asarUnpack:
+  # better-sqlite3 has a prebuilt .node addon
+  - node_modules/better-sqlite3/**
+  # macOS native permission APIs
+  - node_modules/@hurdlegroup/node-mac-permissions/**
+  # Catch-all: any other native addon that slips through
+  - "**/*.node"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXTRA RESOURCES
+#
+# Large static data files that tesseract.js reads at runtime.
+# Placed in the platform resources directory, accessible via
+# process.resourcesPath at runtime.
+# ─────────────────────────────────────────────────────────────────────────────
+
+extraResources:
+  - from: "eng.traineddata"
+    to: "eng.traineddata"
+  - from: "por.traineddata"
+    to: "por.traineddata"
+  - from: "src/main/ontology/cortex-knowledge.db"
+    to: "cortex-knowledge.db"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# macOS
+# ─────────────────────────────────────────────────────────────────────────────
+
 mac:
+  # "universal" produces a single fat binary that runs natively on
+  # both Apple Silicon (arm64) and Intel (x64) — ideal for clinic fleet
+  # deployments where hardware is mixed.
   target:
     - target: dmg
-      arch: [arm64, x64]  # Support both Apple Silicon and Intel
+      arch: universal
     - target: zip
-      arch: [arm64, x64]
-  hardenedRuntime: true  # Required for notarization
+      arch: universal
+
+  # Hardened runtime is mandatory for Apple notarization (Gatekeeper).
+  # Without it, macOS 10.15+ will refuse to open the app.
+  hardenedRuntime: true
   gatekeeperAssess: false
+
+  # Entitlements grant the app the specific OS capabilities it needs.
+  # The plist lives in apps/sidecar/build/
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  notarize:
-    teamId: ${APPLE_TEAM_ID}  # Uses notarytool (electron-builder 24.0+)
 
-# Windows Configuration (MSI for Group Policy deployment)
+  # Notarization via notarytool (electron-builder v26 / Xcode ≥13).
+  # electron-builder v26 uses a boolean here; credentials are read from env:
+  #   APPLE_TEAM_ID + APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD  (password-based)
+  #   or APPLE_API_KEY + APPLE_API_KEY_ID + APPLE_API_ISSUER  (key-based, preferred)
+  # When none of these vars are set, notarization is silently skipped.
+  notarize: true
+
+  # App icon (512×512 .icns for macOS)
+  # icon: build/icons/icon.icns
+
+dmg:
+  title: Cortex ${version}
+  # background: build/dmg-background.png
+  window:
+    width: 540
+    height: 380
+  contents:
+    - x: 140
+      y: 200
+      type: file
+    - x: 400
+      y: 200
+      type: link
+      path: /Applications
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Windows
+# ─────────────────────────────────────────────────────────────────────────────
+
 win:
   target:
-    - target: msi
-      arch: [x64]
     - target: nsis
       arch: [x64]
 
-  # Azure Trusted Signing (cloud HSM for EV certificate)
-  sign: "./scripts/azure-sign.js"
-  signingHashAlgorithms: ['sha256']
+  # Code signing is driven entirely by environment variables — no secrets in git.
+  #
+  # Option A — Azure Trusted Signing (production CI):
+  #   Set AZURE_SIGNING_ENDPOINT, AZURE_SIGNING_ACCOUNT, AZURE_SIGNING_CERT_PROFILE,
+  #   AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET in CI.
+  #   Then the scripts/azure-sign.js hook is invoked by the build-and-pack.sh script.
+  #
+  # Option B — PFX certificate (staging / developer machines):
+  #   Set CSC_LINK (path or base64 pfx) + CSC_KEY_PASSWORD in the environment.
+  #   electron-builder picks these up automatically.
+  #
+  # When neither is set, forceCodeSigning: false means the build succeeds
+  # unsigned — suitable for dry-run and local testing.
+  forceCodeSigning: false
 
-msi:
-  # GPO-friendly options
-  oneClick: false
-  perMachine: true
-  createDesktopShortcut: false
-  createStartMenuShortcut: true
-
-  # Silent install support
-  # msiexec /i HoliLabs.msi /qn ALLUSERS=1
-  runAfterFinish: false
+  # App icon (.ico)
+  # icon: build/icons/icon.ico
 
 nsis:
+  # Wizard-style installer (not one-click) — lets clinic IT choose install dir
   oneClick: false
   perMachine: true
+  allowElevation: true
   allowToChangeInstallationDirectory: true
+  createDesktopShortcut: false
+  createStartMenuShortcut: true
+  shortcutName: Cortex
+  runAfterFinish: false
+  # License displayed during install — satisfy LGPD/healthcare compliance
+  # license: build/license.rtf
 
-# Auto-update configuration - GitHub Releases
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTO-UPDATE
+#
+# electron-updater reads this section. Replace owner/repo before release.
+# ─────────────────────────────────────────────────────────────────────────────
+
 publish:
   provider: github
   owner: holilabs
-  repo: holilabsv2
-  private: false
+  repo: cortex
+  private: true

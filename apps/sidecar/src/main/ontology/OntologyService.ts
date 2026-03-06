@@ -1,5 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import { app } from 'electron';
+import fs from 'fs';
 
 interface DrugConcept {
     rxcui: string;
@@ -22,8 +24,22 @@ export class OntologyService {
     private db: Database.Database;
 
     constructor(dbPath?: string) {
-        // Default to the standard location if not provided
-        const targetPath = dbPath || path.join(__dirname, 'cortex-knowledge.db');
+        let targetPath: string;
+        if (dbPath) {
+            targetPath = dbPath;
+        } else if (app.isPackaged) {
+            // Packaged: DB was placed in process.resourcesPath via electron-builder extraResources.
+            // Copy once to userData so the path is stable and writable for future hot-swap updates.
+            const srcPath  = path.join(process.resourcesPath, 'cortex-knowledge.db');
+            const destPath = path.join(app.getPath('userData'), 'cortex-knowledge.db');
+            if (!fs.existsSync(destPath)) {
+                fs.copyFileSync(srcPath, destPath);
+            }
+            targetPath = destPath;
+        } else {
+            // Development: compiled output is dist/main/; DB lives two levels up in src/
+            targetPath = path.join(__dirname, '../../src/main/ontology/cortex-knowledge.db');
+        }
         console.log(`🔌 Initializing OntologyService with DB: ${targetPath}`);
 
         this.db = new Database(targetPath, {

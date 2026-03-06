@@ -9,7 +9,11 @@ async function getMacPermissions() {
   try {
     // Dynamic import so the app still runs if the native module fails to load.
     const mod = await import('@hurdlegroup/node-mac-permissions');
-    return mod as unknown as {
+    // CJS modules wrapped by ESM dynamic import expose their exports on .default.
+    // Guard against both shapes so this works whether bundled with or without interop.
+    const api = (mod as any).default ?? mod;
+    if (typeof api?.getAuthStatus !== 'function') return null;
+    return api as {
       getAuthStatus: (type: string) => MacPermissionsStatus;
       askForAccessibilityAccess: () => boolean;
       askForScreenCaptureAccess: () => boolean;

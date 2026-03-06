@@ -65,17 +65,33 @@ export default async function RootLayout({
           suppressHydrationWarning
         />
         {/* Early crash catcher (before React hydration). */}
+        {/* suppressHydrationWarning: nonce is injected by the server CSP header and
+            intentionally differs between SSR and client — skipping hydration check
+            on this element prevents the nonce mismatch from triggering a hydration
+            error cascade across the whole page. */}
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
 (function() {
   function showCrash(label, err) {
     try {
       var msg = (err && (err.message || err.reason && err.reason.message)) || String(err || 'Unknown error');
-      // Next.js uses thrown errors for control-flow (redirects, not-found).
-      // These should NOT display the crash overlay.
-      if (msg && (msg.indexOf('NEXT_REDIRECT') !== -1 || msg.indexOf('NEXT_NOT_FOUND') !== -1)) return;
+      // Non-fatal / recoverable signals — never show the crash overlay for these.
+      // • NEXT_REDIRECT / NEXT_NOT_FOUND: Next.js control-flow signals, not errors.
+      // • hydrat / Hydration: React recovers automatically from hydration mismatches.
+      // • ChunkLoadError / Loading chunk: expected for ssr:false dynamic imports.
+      // • BailoutToCSR: Next.js internal signal for client-only components.
+      if (msg && (
+        msg.indexOf('NEXT_REDIRECT') !== -1 ||
+        msg.indexOf('NEXT_NOT_FOUND') !== -1 ||
+        msg.indexOf('hydrat') !== -1 ||
+        msg.indexOf('Hydration') !== -1 ||
+        msg.indexOf('ChunkLoadError') !== -1 ||
+        msg.indexOf('Loading chunk') !== -1 ||
+        msg.indexOf('BailoutToCSR') !== -1
+      )) return;
       var stack = (err && (err.stack || err.reason && err.reason.stack)) || '';
       var el = document.getElementById('__holilabs_crash__');
       if (!el) {

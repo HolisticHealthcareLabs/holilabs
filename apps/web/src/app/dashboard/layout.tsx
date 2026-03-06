@@ -60,23 +60,35 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Hard failsafe: surface client-side crashes even if the dev overlay doesn't show.
+    // Patterns below are non-fatal and handled automatically by React / Next.js:
+    //  - Hydration mismatches → React recovers and re-renders client-side
+    //  - ChunkLoadError for ssr:false dynamic imports → expected BailoutToCSR behaviour
+    //  - NEXT_REDIRECT → intentional navigation signal, not an app error
+    const IGNORABLE = [
+      'hydrat',          // "Hydration failed", "hydrating this Suspense"
+      'ChunkLoadError',
+      'Loading chunk',
+      'NEXT_REDIRECT',
+      'BailoutToCSR',
+    ];
+    const isIgnorable = (msg: string) =>
+      IGNORABLE.some((p) => msg.toLowerCase().includes(p.toLowerCase()));
+
     const onError = (event: ErrorEvent) => {
       try {
         const err: any = (event as any)?.error;
-        setFatalError({
-          message: String(err?.message || event.message || 'Unknown client error'),
-          stack: err?.stack,
-        });
+        const message = String(err?.message || event.message || 'Unknown client error');
+        if (isIgnorable(message)) return;
+        setFatalError({ message, stack: err?.stack });
       } catch {
         setFatalError({ message: String(event?.message || 'Unknown client error') });
       }
     };
     const onRejection = (event: PromiseRejectionEvent) => {
       const reason: any = (event as any)?.reason;
-      setFatalError({
-        message: String(reason?.message || reason || 'Unhandled promise rejection'),
-        stack: reason?.stack,
-      });
+      const message = String(reason?.message || reason || 'Unhandled promise rejection');
+      if (isIgnorable(message)) return;
+      setFatalError({ message, stack: reason?.stack });
     };
 
     window.addEventListener('error', onError);
@@ -132,24 +144,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // Streamlined Navigation - Minimal & Clean (Phantom-style)
   const navItems: NavItem[] = [
     {
-      name: 'Dashboard',
+      name: 'Command Center',
       href: '/dashboard/command-center',
       icon: '/icons/chart-cured-increasing.svg',
     },
     {
-      name: 'Clinical Intel',
+      name: 'Clinical Co-Pilot',
       href: '/dashboard/clinical-command',
       icon: '/icons/stethoscope.svg',
-    },
-    {
-      name: 'Validation',
-      href: '/dashboard/console',
-      icon: '/icons/diagnostics.svg',
-    },
-    {
-      name: 'Escalations',
-      href: '/dashboard/escalations',
-      icon: '/icons/crisis-response_center_person.svg',
     },
   ];
 
@@ -201,7 +203,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-gray-800 shadow-sm transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-20' : 'w-64'} bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
           <div className="flex flex-col h-full">
@@ -213,10 +215,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   alt="Holi Labs"
                   width={28}
                   height={28}
+                  style={{ width: 'auto', height: 'auto' }}
                 />
                 {!sidebarCollapsed && (
                   <span className="text-[15px] font-semibold tracking-[-0.02em] text-gray-900 dark:text-gray-100">
-                    Cortex
+                    Holi Labs
                   </span>
                 )}
               </Link>
@@ -272,8 +275,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     onMouseLeave={handleMouseLeave}
                     className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150
                       ${isActive
-                        ? 'bg-gray-100 dark:bg-gray-700/50 text-gray-900 dark:text-white'
-                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/25 hover:text-gray-900 dark:hover:text-white'
+                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                       }`}
                   >
                     <div className={`w-5 h-5 shrink-0 transition-opacity duration-150 ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
@@ -283,6 +286,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         width={20}
                         height={20}
                         className="dark:invert"
+                        style={{ width: 'auto', height: 'auto' }}
                       />
                     </div>
                     {!sidebarCollapsed && (
@@ -486,7 +490,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <div className={(sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64') + ' min-h-[100dvh] flex flex-col'}>
+        <div className={(sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950'}>
           {/* Top Mobile Header */}
           <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center justify-between h-16 px-4">
@@ -505,6 +509,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   alt="Holi Labs"
                   width={32}
                   height={32}
+                  style={{ width: 'auto', height: 'auto' }}
                 />
                 <span
                   className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"

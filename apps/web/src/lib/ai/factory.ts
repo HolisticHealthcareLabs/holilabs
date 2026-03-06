@@ -5,6 +5,7 @@ import { OllamaProvider, VLLMProvider, TogetherProvider } from "./providers";
 import { prisma } from "../prisma";
 import { decryptPHIWithVersion } from "../security/encryption";
 import logger from "@/lib/logger";
+import { Redis } from "@upstash/redis";
 // P2-005: Import unified types
 import {
     type UnifiedAITask,
@@ -24,6 +25,58 @@ export type ProviderType =
     | "ollama"
     | "vllm"
     | "together";
+
+// ---------------------------------------------------------------------------
+// Redis cache for workspace LLM configs (encrypted blob, TTL 300s)
+// ---------------------------------------------------------------------------
+let _redis: Redis | null = null;
+function getRedis(): Redis | null {
+    if (_redis) return _redis;
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        _redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        });
+    }
+    return _redis;
+}
+
+async function getWorkspaceEncryptedKey(
+    workspaceId: string,
+    provider: string
+): Promise<string | null> {
+    const cacheKey = `workspace_llm_config:${workspaceId}:${provider}`;
+    const redis = getRedis();
+
+    if (redis) {
+        try {
+            const cached = await redis.get<string>(cacheKey);
+            if (cached) return cached;
+        } catch {
+            // fall through to DB
+        }
+    }
+
+    const config = await prisma.workspaceLLMConfig.findUnique({
+        where: {
+            workspaceId_provider: { workspaceId, provider },
+            isActive: true,
+        } as any,
+        select: { encryptedKey: true },
+    });
+
+    if (!config) return null;
+
+    if (redis) {
+        try {
+            await redis.setex(cacheKey, 300, config.encryptedKey);
+        } catch {
+            // cache failure is non-fatal
+        }
+    }
+
+    return config.encryptedKey;
+}
 
 /**
  * Options for getProvider
@@ -65,15 +118,45 @@ export class AIProviderFactory {
     static async getProvider(
         userId: string,
         preferredProvider?: string,
-        options: GetProviderOptions = {}
+        options: GetProviderOptions & { workspaceId?: string } = {}
     ): Promise<AIProvider> {
-        const { strictBYOK = false } = options;
+        const { strictBYOK = false, workspaceId } = options;
 
         // 1. Check for local/self-hosted providers first (no API key needed)
         if (preferredProvider) {
             const localProvider = this.tryLocalProvider(preferredProvider);
             if (localProvider) {
                 return localProvider;
+            }
+        }
+
+        // 1b. Check workspace BYOK key (takes priority over user key)
+        if (workspaceId && preferredProvider) {
+            try {
+                const encryptedKey = await getWorkspaceEncryptedKey(workspaceId, preferredProvider);
+                if (encryptedKey) {
+                    const decrypted = await decryptPHIWithVersion(encryptedKey);
+                    if (decrypted) {
+                        logger.info({
+                            event: "ai_provider_workspace_byok_success",
+                            provider: preferredProvider,
+                        });
+                        return this.createProvider(preferredProvider, decrypted);
+                    }
+                }
+            } catch (err) {
+                logger.warn({
+                    event: "ai_provider_workspace_byok_failed",
+                    provider: preferredProvider,
+                    error: err instanceof Error ? err.message : String(err),
+                });
+                if (strictBYOK) {
+                    throw new BYOKError(
+                        "Workspace BYOK key decryption failed in strict mode.",
+                        preferredProvider,
+                        'decryption_failed'
+                    );
+                }
             }
         }
 

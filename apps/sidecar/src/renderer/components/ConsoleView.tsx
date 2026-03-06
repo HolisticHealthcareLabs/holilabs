@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { TrafficLightResult, TrafficLightSignal } from '../../types';
 import { PrescriptionSafetyPanel } from './PrescriptionSafetyPanel';
+import { FogNodePanel } from './FogNodePanel';
 
 interface ConsoleViewProps {
     onMinimize: () => void;
@@ -92,13 +93,16 @@ export const ConsoleView: React.FC<ConsoleViewProps> = ({
                     </div>
 
                     {/* System Health */}
-                    <div className="flex-1 bg-slate-900/50 border border-white/5 rounded-xl p-4 flex flex-col gap-3">
+                    <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 flex flex-col gap-3">
                         <h3 className="text-white/50 text-xs font-bold uppercase tracking-wider">System Health</h3>
                         <HealthRow label="Ontology Engine (SQLite)" status="healthy" />
                         <HealthRow label="Deep Edge Model" status="healthy" />
                         <HealthRow label="Privacy Vault" status="healthy" />
                         <HealthRow label="EHR Connectivity" status="warning" />
                     </div>
+
+                    {/* Fog Node (Ollama) */}
+                    <FogNodePanel />
                 </div>
 
                 {/* Center/Right: Safety Panel + Live Feed (9 cols) */}

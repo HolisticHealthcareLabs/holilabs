@@ -7,7 +7,15 @@ import { ScenarioSelector } from './ScenarioSelector';
 import { PatientSummary } from './PatientSummary';
 import { TrafficLight } from './TrafficLight';
 import { AlertList } from './AlertList';
-import { AttestationSim } from './AttestationSim';
+import dynamic from 'next/dynamic';
+
+const AttestationSim = dynamic(() => import('./AttestationSim').then(mod => mod.AttestationSim), {
+  ssr: false,
+});
+
+const SpotlightTutorial = dynamic(() => import('./SpotlightTutorial').then(mod => mod.SpotlightTutorial), {
+  ssr: false,
+});
 
 export function DemoPlayground() {
   const [selectedScenario, setSelectedScenario] = useState<DemoScenario | null>(null);
@@ -16,6 +24,10 @@ export function DemoPlayground() {
   const [signal, setSignal] = useState<TrafficLightSignal | 'off'>('off');
   const [overrideAlert, setOverrideAlert] = useState<CDSAlert | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Tutorial State
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
+  const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
 
   const handleReset = useCallback(() => {
     setSelectedScenario(null);
@@ -32,6 +44,16 @@ export function DemoPlayground() {
     setSignal('off');
     setOverrideAlert(null);
     setError(null);
+
+    // Trigger tutorial if they haven't seen it yet
+    if (!hasSeenTutorial) {
+      setIsTutorialActive(true);
+    }
+  }, [hasSeenTutorial]);
+
+  const handleCompleteTutorial = useCallback(() => {
+    setIsTutorialActive(false);
+    setHasSeenTutorial(true);
   }, []);
 
   const handleRunEvaluation = useCallback(async () => {
@@ -72,7 +94,12 @@ export function DemoPlayground() {
   const hasCriticalAlerts = evaluationResult?.alerts.some((a) => a.severity === 'critical') ?? false;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
+      <SpotlightTutorial
+        isActive={isTutorialActive}
+        onComplete={handleCompleteTutorial}
+      />
+
       {/* Dark hero header */}
       <section className="bg-[#1d1d1f] px-5 pt-20 pb-14 sm:pt-24 sm:pb-16">
         <div className="max-w-[980px] mx-auto text-center">
@@ -90,7 +117,7 @@ export function DemoPlayground() {
       </section>
 
       {/* Main content */}
-      <div className="max-w-[1080px] mx-auto px-5 py-10 sm:py-14">
+      <div className="max-w-[1080px] mx-auto px-5 py-10 sm:py-14 relative z-10">
         {/* Step 1: Select scenario */}
         <div className="mb-10">
           <ScenarioSelector
@@ -112,6 +139,7 @@ export function DemoPlayground() {
             {!evaluationResult && !isEvaluating && (
               <div className="text-center">
                 <button
+                  id="demo-run-evaluation"
                   onClick={handleRunEvaluation}
                   className="inline-flex items-center gap-2 rounded-full bg-[#0071e3] text-white text-[16px] font-semibold px-8 py-3.5 hover:bg-[#0077ed] transition-colors shadow-[0_4px_16px_rgba(0,113,227,0.2)] active:scale-[0.98]"
                   aria-label="Run safety check on selected patient"
@@ -128,7 +156,10 @@ export function DemoPlayground() {
             {isEvaluating && (
               <div className="text-center py-8">
                 <div className="inline-flex items-center gap-3">
-                  <div className="w-5 h-5 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                  <svg className="w-5 h-5 animate-spin text-[#0071e3]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
                   <span className="text-[15px] text-[#6e6e73]">Evaluating clinical rules...</span>
                 </div>
               </div>

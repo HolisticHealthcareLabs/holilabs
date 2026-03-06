@@ -129,6 +129,9 @@ model User {
   // BYOK API Keys
   apiKeys UserAPIKey[]
 
+  // WebAuthn / Biometric credentials
+  webAuthnCredentials WebAuthnCredential[]
+
   // CDSS V3
   clinicalEncounters ClinicalEncounter[]
 
@@ -6608,6 +6611,7 @@ model Workspace {
 
   members    WorkspaceMember[]
   apiKeys    WorkspaceAPIKey[]
+  llmConfigs WorkspaceLLMConfig[]
   devices    AgentDevice[]
   heartbeats AgentHeartbeat[]
   events     FleetEvent[]
@@ -6659,6 +6663,50 @@ model WorkspaceAPIKey {
   @@index([workspaceId])
   @@index([revokedAt])
   @@map("workspace_api_keys")
+}
+
+/**
+ * WorkspaceLLMConfig stores encrypted BYOK LLM API keys at the workspace level.
+ * One config per provider per workspace. Keys are encrypted at rest (AES-256-GCM).
+ */
+model WorkspaceLLMConfig {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  provider        String    // "gemini" | "anthropic" | "openai"
+  encryptedKey    String    @db.Text
+  isActive        Boolean   @default(true)
+  createdByUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId])
+  @@map("workspace_llm_configs")
+}
+
+/**
+ * WebAuthnCredential stores registered passkey/biometric credentials per user.
+ * Used for non-repudiation signing of prescriptions (NOM-024 / LGPD).
+ */
+model WebAuthnCredential {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String   @unique // Base64URL
+  publicKey    Bytes              // COSE-encoded
+  counter      BigInt   @default(0)
+  deviceType   String             // "singleDevice" | "multiDevice"
+  backedUp     Boolean  @default(false)
+  transports   String[]
+  name         String?            // user label e.g. "MacBook Touch ID"
+
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+  @@map("webauthn_credentials")
 }
 
 enum AgentDeviceType {

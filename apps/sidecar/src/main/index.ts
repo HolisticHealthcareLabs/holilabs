@@ -29,6 +29,7 @@ import { ResourceGuard, ResourceState } from './resource-guard';
 // import { EphemeralAudioProcessor } from '../audio/ephemeral-processor';
 // import { DeepgramService } from '../audio/deepgram-service';
 import { InputInjector } from './input-injector';
+import { OllamaManager } from './OllamaManager';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GLOBALS
@@ -38,6 +39,7 @@ let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 
 const ehrDetector = new EHRDetector();
+const ollamaManager = new OllamaManager();
 const vdiDetector = new VDIDetector();
 const accessibilityReader = new AccessibilityReader();
 const visionModule = new VisionModule();
@@ -389,6 +391,34 @@ function setupIPC(): void {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════════
+  // OLLAMA / FOG NODE IPC
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  // Return cached status synchronously — never triggers a live HTTP request.
+  // Background polling (with backoff) keeps lastStatus fresh.
+  ipcMain.handle('ollama:status', () => {
+    return ollamaManager.getLastStatus();
+  });
+
+  ipcMain.handle('ollama:list-models', () => {
+    return ollamaManager.listModels();
+  });
+
+  ipcMain.handle('ollama:pull-model', async (_event, name: string) => {
+    try {
+      await ollamaManager.pullModel(name, (pct) => {
+        mainWindow?.webContents.send('ollama:pull-progress', { name, pct });
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Pull failed',
+      };
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
   // SCRIBE IPC (PHASE 9) - DEPRECATED
   // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -505,7 +535,8 @@ async function setupAPIServer(): Promise<void> {
         version: ehrFingerprint.version,
       } : null,
       vdiEnvironment: vdiResult.isVDI ? vdiResult.environment : null,
-    };
+      ollamaStatus: ollamaManager.getLastStatus(),
+    } as any;
   });
 
   // Start the server
@@ -530,6 +561,9 @@ app.whenReady().then(async () => {
 
   // Initialize auto-updater (silent)
   initAutoUpdater();
+
+  // Start Ollama fog node polling
+  ollamaManager.start();
 
   // Control Plane heartbeats (org/workspace telemetry)
   await controlPlane.start();

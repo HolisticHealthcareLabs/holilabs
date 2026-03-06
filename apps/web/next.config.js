@@ -1,8 +1,12 @@
 const createNextIntlPlugin = require('next-intl/plugin');
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // standalone output bundles all dependencies into .next/standalone/
+  // and produces a self-contained server.js — required by the release pipeline.
   output: 'standalone',
   reactStrictMode: true,
   transpilePackages: ['@holi/deid', '@holi/dp', '@holi/utils', '@holi/schemas', '@prisma/extension-read-replicas'],
@@ -25,20 +29,19 @@ const nextConfig = {
   // Security headers are now managed by middleware (src/lib/security-headers.ts)
   // This provides a single source of truth and prevents header conflicts.
   // Removed duplicate configuration here to ensure headers are applied consistently.
-  // Remove console.log in production builds
+  // Strip console.log in production; keep error/warn/info for telemetry.
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn', 'info'], // Keep error, warn, info logs
-    } : false,
+    removeConsole: IS_PROD ? { exclude: ['error', 'warn', 'info'] } : false,
   },
-  // Production memory optimization
+
+  // No client-side source maps in production — reduces bundle size and avoids
+  // leaking internal paths to end users in the browser DevTools.
   productionBrowserSourceMaps: false,
-  // Optimize build for memory-constrained environments
-  ...(process.env.NODE_ENV === 'production' && {
+
+  // SWC minifier + deterministic build IDs for reproducible artifacts.
+  ...(IS_PROD && {
     swcMinify: true,
-    generateBuildId: async () => {
-      return process.env.BUILD_ID || `build-${Date.now()}`
-    },
+    generateBuildId: async () => process.env.BUILD_ID || `build-${Date.now()}`,
   }),
   async redirects() {
     return [

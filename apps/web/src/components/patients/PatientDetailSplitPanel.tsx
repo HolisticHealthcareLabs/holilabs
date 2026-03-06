@@ -57,6 +57,19 @@ export function PatientDetailSplitPanel({
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Patient>>({});
   const [showList, setShowList] = useState(true);
+  const [idCopied, setIdCopied] = useState(false);
+
+  const handleCopyPatientId = useCallback(async () => {
+    const idToCopy = patient?.tokenId ?? patient?.id ?? '';
+    if (!idToCopy) return;
+    try {
+      await navigator.clipboard.writeText(idToCopy);
+      setIdCopied(true);
+      setTimeout(() => setIdCopied(false), 1500);
+    } catch {
+      // clipboard API unavailable (e.g. non-secure context) — fail silently
+    }
+  }, [patient]);
 
   // Find current patient
   const patient = patients.find((p) => p.id === patientId);
@@ -334,6 +347,24 @@ export function PatientDetailSplitPanel({
                     <span className="text-sm text-neutral-600 dark:text-neutral-400 font-mono">
                       {patient.tokenId}
                     </span>
+                    <button
+                      onClick={handleCopyPatientId}
+                      title={idCopied ? 'Copied!' : 'Copy Patient ID'}
+                      aria-label={idCopied ? 'Patient ID copied' : 'Copy Patient ID to clipboard'}
+                      className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                    >
+                      {idCopied ? (
+                        /* Checkmark — confirms copy */
+                        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        /* Clipboard icon */
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      )}
+                    </button>
                     <Badge
                       variant={patient.isActive ? 'success' : 'default'}
                       size="sm"

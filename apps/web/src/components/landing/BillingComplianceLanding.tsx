@@ -23,11 +23,11 @@ function useFadeIn(delay = 0) {
   }, [delay]);
   const style: React.CSSProperties = visible
     ? {
-        opacity: 1,
-        transform: 'none',
-        transition:
-          'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)',
-      }
+      opacity: 1,
+      transform: 'none',
+      transition:
+        'opacity 0.9s cubic-bezier(0.16,1,0.3,1), transform 0.9s cubic-bezier(0.16,1,0.3,1)',
+    }
     : { opacity: 0, transform: 'translateY(28px)' };
   return { ref, style };
 }
@@ -39,6 +39,12 @@ const LOCALE_OPTIONS = [
 
 export function BillingComplianceLanding() {
   const t = useTranslations('landing.hero');
+  const tNav = useTranslations('landing.nav');
+  const tA = useTranslations('landing.featureA');
+  const tB = useTranslations('landing.featureB');
+  const tC = useTranslations('landing.featureC');
+  const tCta = useTranslations('landing.cta');
+  const tFoot = useTranslations('landing.footer');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -69,17 +75,17 @@ export function BillingComplianceLanding() {
   const heroContentRef = useRef<HTMLDivElement>(null);
 
   // ── Fade-in hooks (all unconditional) ─────────────────────────────────────
-  const featureALeft  = useFadeIn(0);
+  const featureALeft = useFadeIn(0);
   const featureARight = useFadeIn(120);
-  const featureBHead  = useFadeIn(0);
+  const featureBHead = useFadeIn(0);
   const bCard1 = useFadeIn(0);
   const bCard2 = useFadeIn(130);
   const bCard3 = useFadeIn(260);
-  const featureCHead  = useFadeIn(0);
+  const featureCHead = useFadeIn(0);
   const cCard1 = useFadeIn(0);
   const cCard2 = useFadeIn(130);
   const cCard3 = useFadeIn(260);
-  const ctaContent    = useFadeIn(0);
+  const ctaContent = useFadeIn(0);
 
   const bCards = [bCard1, bCard2, bCard3];
   const cCards = [cCard1, cCard2, cCard3];
@@ -145,15 +151,15 @@ export function BillingComplianceLanding() {
 
       if (res.ok) {
         setFormState('success');
-        setFormMsg('You\u2019re on the list. We\u2019ll be in touch within 48 hours.');
+        setFormMsg(tCta('successMsg'));
         setEmail('');
       } else {
         setFormState('error');
-        setFormMsg(data.error || 'Something went wrong. Please try again.');
+        setFormMsg(data.error || tCta('errorDefault'));
       }
     } catch {
       setFormState('error');
-      setFormMsg('Network error. Please try again.');
+      setFormMsg(tCta('errorNetwork'));
     }
   };
 
@@ -175,9 +181,9 @@ export function BillingComplianceLanding() {
         {menuOpen && (
           <div className="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center gap-8">
             {[
-              { label: 'How it works', href: '#how-it-works' },
-              { label: 'For hospitals', href: '#' },
-              { label: 'Pricing', href: '/pricing' },
+              { label: tNav('howItWorks'), href: '#how-it-works' },
+              { label: tNav('forHospitals'), href: '#' },
+              { label: tNav('pricing'), href: '/pricing' },
             ].map((item) => (
               <a
                 key={item.label}
@@ -193,16 +199,15 @@ export function BillingComplianceLanding() {
               onClick={() => setMenuOpen(false)}
               className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] hover:text-[#0071e3] transition-colors"
             >
-              Sign in
+              {tNav('signIn')}
             </a>
             <div className="flex gap-3 mt-2">
               {LOCALE_OPTIONS.map((opt) => (
                 <button
                   key={opt.code}
                   onClick={() => { router.replace(pathname, { locale: opt.code }); setMenuOpen(false); }}
-                  className={`text-[15px] font-medium px-3 py-1.5 rounded-full transition-colors ${
-                    locale === opt.code ? 'bg-[#0071e3] text-white' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
-                  }`}
+                  className={`text-[15px] font-medium px-3 py-1.5 rounded-full transition-colors ${locale === opt.code ? 'bg-[#0071e3] text-white' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                    }`}
                 >
                   {opt.label}
                 </button>
@@ -213,18 +218,17 @@ export function BillingComplianceLanding() {
               onClick={() => setMenuOpen(false)}
               className="mt-4 inline-flex rounded-full bg-[#0071e3] text-white text-[17px] font-semibold px-9 py-4 hover:bg-[#0077ed] transition-colors active:scale-[0.98]"
             >
-              Request access
+              {tNav('requestAccess')}
             </a>
           </div>
         )}
 
         {/* ── 1. Navigation ──────────────────────────────────────────────── */}
         <header
-          className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-            scrolled
+          className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${scrolled
               ? 'bg-white/90 backdrop-blur-xl shadow-[0_1px_0_0_rgba(0,0,0,0.08)]'
               : 'bg-transparent'
-          }`}
+            }`}
         >
           <nav className="max-w-[1120px] mx-auto flex items-center justify-between h-[52px] px-5">
             {/* Logo */}
@@ -236,9 +240,9 @@ export function BillingComplianceLanding() {
             {/* Desktop center links */}
             <div className="hidden md:flex items-center gap-7">
               {[
-                { label: 'How it works', href: '#how-it-works' },
-                { label: 'For hospitals', href: '#' },
-                { label: 'Pricing', href: '/pricing' },
+                { label: tNav('howItWorks'), href: '#how-it-works' },
+                { label: tNav('forHospitals'), href: '#' },
+                { label: tNav('pricing'), href: '/pricing' },
               ].map((item) => (
                 <a
                   key={item.label}
@@ -274,9 +278,8 @@ export function BillingComplianceLanding() {
                       <button
                         key={opt.code}
                         onClick={() => { router.replace(pathname, { locale: opt.code }); setLangOpen(false); }}
-                        className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
-                          locale === opt.code ? 'text-[#0071e3] font-semibold bg-blue-50/60' : 'text-[#1d1d1f] hover:bg-black/[0.04]'
-                        }`}
+                        className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${locale === opt.code ? 'text-[#0071e3] font-semibold bg-blue-50/60' : 'text-[#1d1d1f] hover:bg-black/[0.04]'
+                          }`}
                       >
                         {opt.name}
                       </button>
@@ -289,13 +292,13 @@ export function BillingComplianceLanding() {
                 href="/sign-in"
                 className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300 border ${scrolled ? 'border-black/15 hover:border-[#0071e3]/40' : 'border-white/25 hover:border-white/50'} rounded-full px-4 py-1.5`}
               >
-                Sign in
+                {tNav('signIn')}
               </a>
               <a
                 href="#access"
                 className="inline-flex items-center rounded-full bg-[#0071e3] text-white text-[13px] font-semibold px-5 py-2 hover:bg-[#0077ed] transition-colors active:scale-[0.98]"
               >
-                Request access
+                {tNav('requestAccess')}
               </a>
             </div>
 
@@ -307,19 +310,16 @@ export function BillingComplianceLanding() {
               aria-expanded={menuOpen}
             >
               <span
-                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${
-                  menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''
-                }`}
+                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${menuOpen ? 'rotate-45 translate-y-[6.5px]' : ''
+                  }`}
               />
               <span
-                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} transition-all duration-200 ${
-                  menuOpen ? 'opacity-0' : ''
-                }`}
+                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} transition-all duration-200 ${menuOpen ? 'opacity-0' : ''
+                  }`}
               />
               <span
-                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${
-                  menuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''
-                }`}
+                className={`block h-[1.5px] w-5 ${menuOpen ? 'bg-[#1d1d1f]' : navBurger} origin-center transition-all duration-200 ${menuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''
+                  }`}
               />
             </button>
           </nav>
@@ -401,19 +401,19 @@ export function BillingComplianceLanding() {
             {/* Copy */}
             <div ref={featureALeft.ref} style={featureALeft.style}>
               <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                The Cortex Cross-Reference Engine
+                {tA('eyebrow')}
               </p>
               <h2 className="text-[clamp(36px,5vw,52px)] font-semibold tracking-[-0.03em] leading-[1.05] text-[#1d1d1f] mb-6">
-                Catch the error before it becomes a glosa.
+                {tA('headline')}
               </h2>
               <p className="text-[19px] text-[#6e6e73] leading-[1.55] tracking-[-0.01em] mb-8">
-                Cortex runs every clinical decision through a global logic core that adapts to local mandates. Whether it&apos;s validating a dosage against international protocols or cross-referencing a prescription with country-specific codes (ICD-10, TUSS, SNOMED, etc.), we catch the mismatch at the source.
+                {tA('description')}
               </p>
               <a
                 href="#"
                 className="inline-flex items-center gap-1.5 text-[16px] text-[#0071e3] font-medium hover:text-[#0077ed] transition-colors"
               >
-                See the clinical signals
+                {tA('link')}
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -471,13 +471,13 @@ export function BillingComplianceLanding() {
             {/* Heading */}
             <div ref={featureBHead.ref} style={featureBHead.style} className="text-center mb-20">
               <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                For Physicians
+                {tB('eyebrow')}
               </p>
               <h2 className="text-[clamp(36px,5.5vw,60px)] font-semibold tracking-[-0.03em] leading-[1.05] text-white mb-6">
-                Your doctors won&apos;t even<br />notice it&apos;s there.
+                {tB('headline')}
               </h2>
               <p className="text-[21px] text-[#a1a1a6] leading-[1.5] tracking-[-0.01em] max-w-[560px] mx-auto">
-                No training. No new screens. No workflow disruption. Cortex runs silently alongside your existing systems and only speaks up when something is actually wrong.
+                {tB('description')}
               </p>
             </div>
 
@@ -485,19 +485,19 @@ export function BillingComplianceLanding() {
             <div className="grid sm:grid-cols-3 gap-4">
               {[
                 {
-                  stat: '< 90s',
-                  label: 'Median physician review',
-                  sub: 'No extra steps. Same workflow, safer outcomes.',
+                  stat: tB('stat1Value'),
+                  label: tB('stat1Label'),
+                  sub: tB('stat1Sub'),
                 },
                 {
-                  stat: '0 PHI',
-                  label: 'Patient data leaves your network',
-                  sub: 'LGPD-compliant by architecture, not by policy.',
+                  stat: tB('stat2Value'),
+                  label: tB('stat2Label'),
+                  sub: tB('stat2Sub'),
                 },
                 {
-                  stat: '24/7',
-                  label: 'Audit trail coverage',
-                  sub: 'Every clinical decision documented. Ready for any audit.',
+                  stat: tB('stat3Value'),
+                  label: tB('stat3Label'),
+                  sub: tB('stat3Sub'),
                 },
               ].map((card, i) => (
                 <div key={card.stat} ref={bCards[i]!.ref} style={bCards[i]!.style}>
@@ -520,22 +520,22 @@ export function BillingComplianceLanding() {
             {/* Heading */}
             <div ref={featureCHead.ref} style={featureCHead.style} className="text-center mb-12">
               <p className="text-[12px] font-semibold text-[#0071e3] uppercase tracking-[0.1em] mb-6">
-                Built for Latin America
+                {tC('eyebrow')}
               </p>
               <h2 className="text-[clamp(36px,5.5vw,60px)] font-semibold tracking-[-0.03em] leading-[1.05] text-[#1d1d1f] mb-6">
-                Not a US product with<br />a Spanish translation.
+                {tC('headline')}
               </h2>
               <p className="text-[21px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em] max-w-[620px] mx-auto mb-4">
-                Every rule, every code, every protocol — engineered from scratch for Latin American healthcare. Cortex validates prescriptions against local formularies, catches dangerous drug interactions in real time, and flags billing mismatches before they become denied claims.
+                {tC('description1')}
               </p>
               <p className="text-[17px] text-[#6e6e73] leading-[1.5] tracking-[-0.01em] max-w-[560px] mx-auto mb-8">
-                One engine. Three countries. Loaded with the specific clinical and regulatory libraries your region demands — from TUSS codes in Brazil to provincial formularies in Argentina.
+                {tC('description2')}
               </p>
               <a
                 href="/demo"
                 className="inline-flex items-center gap-1.5 text-[16px] text-[#0071e3] font-medium hover:text-[#0077ed] transition-colors"
               >
-                See it catch a real drug interaction
+                {tC('link')}
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -546,22 +546,22 @@ export function BillingComplianceLanding() {
             <div className="grid sm:grid-cols-3 gap-4 mt-16">
               {[
                 {
-                  country: 'Brazil',
+                  country: tC('brazilName'),
                   flag: '🇧🇷',
-                  badge: 'Pilot active',
-                  desc: 'LGPD-compliant. TUSS billing. ANVISA drug registry. Portuguese-native. Every prescription checked against local protocols.',
+                  badge: tC('brazilBadge'),
+                  desc: tC('brazilDesc'),
                 },
                 {
-                  country: 'Bolivia',
+                  country: tC('boliviaName'),
                   flag: '🇧🇴',
-                  badge: 'Pilot active',
-                  desc: 'Spanish-first. Ministry of Health standards. Local formulary integration. Built with Bolivian clinics, not adapted for them.',
+                  badge: tC('boliviaBadge'),
+                  desc: tC('boliviaDesc'),
                 },
                 {
-                  country: 'Argentina',
+                  country: tC('argentinaName'),
                   flag: '🇦🇷',
-                  badge: 'Coming 2026',
-                  desc: 'SNOMED CT. Provincial formulary. IOMA billing. Full regulatory coverage launching Q3 2026.',
+                  badge: tC('argentinaBadge'),
+                  desc: tC('argentinaDesc'),
                 },
               ].map((c, i) => (
                 <div key={c.country} ref={cCards[i]!.ref} style={cCards[i]!.style}>
@@ -586,10 +586,10 @@ export function BillingComplianceLanding() {
         <section id="access" className="bg-black py-36 px-5">
           <div ref={ctaContent.ref} style={ctaContent.style} className="max-w-[700px] mx-auto text-center">
             <h2 className="text-[clamp(36px,5.5vw,60px)] font-semibold tracking-[-0.03em] leading-[1.05] text-white mb-6">
-              How many claims did your hospital lose last month?
+              {tCta('headline')}
             </h2>
             <p className="text-[21px] text-[#a1a1a6] tracking-[-0.01em] mb-12">
-              Most administrators don&apos;t know. Cortex shows you in the first week.
+              {tCta('subhead')}
             </p>
 
             {/* Inline email form */}
@@ -611,7 +611,7 @@ export function BillingComplianceLanding() {
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); if (formState === 'error') setFormState('idle'); }}
-                  placeholder="your@hospital.com"
+                  placeholder={tCta('placeholder')}
                   required
                   className="flex-1 min-w-0 rounded-full px-5 py-4 bg-white/10 text-white placeholder-[#6e6e73] text-[15px] border border-white/20 focus:outline-none focus:border-white/50 transition-colors"
                 />
@@ -620,7 +620,7 @@ export function BillingComplianceLanding() {
                   disabled={formState === 'loading'}
                   className="rounded-full bg-white text-black text-[15px] font-semibold px-7 py-4 hover:bg-[#f5f5f7] transition-colors whitespace-nowrap active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {formState === 'loading' ? 'Sending...' : 'Request access'}
+                  {formState === 'loading' ? tCta('sending') : tCta('submit')}
                 </button>
               </form>
             )}
@@ -630,7 +630,7 @@ export function BillingComplianceLanding() {
             )}
 
             <p className="text-[12px] text-[#6e6e73] leading-relaxed">
-              No PHI collected on this form. LGPD-native. Response within 48 hours.
+              {tCta('disclaimer')}
             </p>
           </div>
         </section>
@@ -642,40 +642,40 @@ export function BillingComplianceLanding() {
               {/* Brand column */}
               <div className="col-span-2 md:col-span-1">
                 <p className="text-[15px] font-semibold text-white tracking-[-0.02em] mb-3">
-                  Cortex
+                  {tFoot('brand')}
                 </p>
                 <p className="text-[13px] text-[#6e6e73] leading-[1.55]">
-                  Clinical decision support<br />for Latin America.
+                  {tFoot('brandSub')}
                 </p>
               </div>
               {/* Link columns */}
               {[
                 {
-                  heading: 'Product',
+                  heading: tFoot('product'),
                   links: [
-                    { label: 'How it works', href: '#how-it-works' },
-                    { label: 'Pricing', href: '/pricing' },
-                    { label: 'Live Demo', href: '/demo' },
-                    { label: 'For hospitals', href: '#' },
-                    { label: 'Sign in', href: '/sign-in' },
+                    { label: tNav('howItWorks'), href: '#how-it-works' },
+                    { label: tNav('pricing'), href: '/pricing' },
+                    { label: tFoot('liveDemo'), href: '/demo' },
+                    { label: tNav('forHospitals'), href: '#' },
+                    { label: tNav('signIn'), href: '/sign-in' },
                   ],
                 },
                 {
-                  heading: 'Company',
+                  heading: tFoot('company'),
                   links: [
-                    { label: 'About', href: '#' },
-                    { label: 'Blog', href: '#' },
-                    { label: 'Careers', href: '#' },
-                    { label: 'Press', href: '#' },
+                    { label: tFoot('about'), href: '#' },
+                    { label: tFoot('blog'), href: '#' },
+                    { label: tFoot('careers'), href: '#' },
+                    { label: tFoot('press'), href: '#' },
                   ],
                 },
                 {
-                  heading: 'Legal',
+                  heading: tFoot('legal'),
                   links: [
-                    { label: 'Privacy', href: '#' },
-                    { label: 'Terms', href: '#' },
-                    { label: 'HIPAA policy', href: '#' },
-                    { label: 'LGPD policy', href: '#' },
+                    { label: tFoot('privacy'), href: '#' },
+                    { label: tFoot('terms'), href: '#' },
+                    { label: tFoot('hipaaPolicy'), href: '#' },
+                    { label: tFoot('lgpdPolicy'), href: '#' },
                   ],
                 },
               ].map((col) => (
@@ -700,10 +700,10 @@ export function BillingComplianceLanding() {
             </div>
             <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <p className="text-[12px] text-[#6e6e73]">
-                Copyright &copy; 2026 Holi Labs. All rights reserved.
+                {tFoot('copyright')}
               </p>
               <p className="text-[12px] text-[#6e6e73]">
-                HIPAA-aligned &middot; LGPD-native &middot; ANVISA-ready
+                {tFoot('badges')}
               </p>
             </div>
           </div>

@@ -12,7 +12,7 @@ export function PatientSummary({ context, patientName }: PatientSummaryProps) {
   const { demographics, conditions, medications, allergies, labResults, vitalSigns } = context.context;
 
   return (
-    <div className="bg-white rounded-2xl ring-1 ring-black/[0.06] shadow-sm overflow-hidden">
+    <div id="demo-patient-context" className="bg-white rounded-2xl ring-1 ring-black/[0.06] shadow-sm overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 bg-[#f5f5f7] border-b border-black/[0.06]">
         <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]">
@@ -75,11 +75,10 @@ export function PatientSummary({ context, patientName }: PatientSummaryProps) {
                   <li key={a.id} className="text-[14px] text-[#1d1d1f]">
                     <span className="font-medium">{a.allergen}</span>
                     {a.severity && (
-                      <span className={`ml-2 text-[11px] font-medium px-1.5 py-0.5 rounded-full ring-1 ${
-                        a.severity === 'life-threatening' || a.severity === 'severe'
+                      <span className={`ml-2 text-[11px] font-medium px-1.5 py-0.5 rounded-full ring-1 ${a.severity === 'life-threatening' || a.severity === 'severe'
                           ? 'text-red-700 bg-red-50 ring-red-200'
                           : 'text-amber-700 bg-amber-50 ring-amber-200'
-                      }`}>
+                        }`}>
                         {a.severity}
                       </span>
                     )}
@@ -105,13 +104,12 @@ export function PatientSummary({ context, patientName }: PatientSummaryProps) {
                       <span className="font-medium text-[#1d1d1f]">{lab.testName}</span>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <span className={`text-[14px] font-medium ${
-                        lab.interpretation === 'high' || lab.interpretation === 'critical'
+                      <span className={`text-[14px] font-medium ${lab.interpretation === 'high' || lab.interpretation === 'critical'
                           ? 'text-red-600'
                           : lab.interpretation === 'low'
                             ? 'text-amber-600'
                             : 'text-[#1d1d1f]'
-                      }`}>
+                        }`}>
                         {lab.value} {lab.unit}
                       </span>
                       {lab.interpretation && lab.interpretation !== 'normal' && (
