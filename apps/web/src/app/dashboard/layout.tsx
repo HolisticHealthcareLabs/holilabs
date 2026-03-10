@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useToolUsageTracker } from '@/hooks/useToolUsageTracker';
+import { CinematicTransition } from '@/components/dashboard/CinematicTransition';
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -23,6 +24,13 @@ import {
   BarChart3,
   ShieldCheck,
   Settings2,
+  User,
+  Lock,
+  SlidersHorizontal,
+  CreditCard,
+  Link2,
+  HelpCircle,
+  LogOut,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -439,68 +447,67 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            {/* Sidebar quick actions */}
+            {/* Quick actions: floating + button + search */}
             <div className="px-2.5 py-2.5 border-b border-gray-100 dark:border-gray-700/50">
-              {!showCollapsedSidebar ? (
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    className="w-full flex items-center gap-2 rounded-xl px-2.5 py-2 bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-700 transition-colors dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-                    aria-label="Search Patients"
-                  >
-                    <Search className="w-4 h-4 shrink-0" />
-                    <span className="text-[13px] flex-1 text-left">Search Patients...</span>
-                  </button>
+              <div className={`flex ${showCollapsedSidebar ? 'flex-col' : 'flex-row'} items-stretch gap-1.5`}>
+                {/* Floating + (Start Visit) */}
+                <div className={showCollapsedSidebar ? 'group/tip relative' : ''}>
                   <button
                     type="button"
                     onClick={handleStartEncounter}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl px-2.5 py-2 bg-gray-900 text-white text-[13px] font-semibold hover:bg-gray-800 transition-colors dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+                    aria-label="Start Visit"
+                    className={`
+                      inline-flex items-center justify-center
+                      bg-gray-900 text-white dark:bg-white dark:text-gray-900
+                      hover:bg-gray-800 dark:hover:bg-gray-200
+                      transition-all duration-200 plus-rotate
+                      ${showCollapsedSidebar
+                        ? 'w-full h-9 rounded-lg'
+                        : 'w-9 h-9 rounded-xl shrink-0'
+                      }
+                    `}
                   >
                     {isLaunchingEncounter ? (
-                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Plus className="w-4 h-4 shrink-0" />
+                      <Plus className="w-4 h-4" />
                     )}
-                    <span className="flex-1 text-left">{isLaunchingEncounter ? 'Opening Co-Pilot...' : 'Start Visit'}</span>
                   </button>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <div className="group/tip relative">
-                    <button
-                      type="button"
-                      className="w-full h-9 inline-flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-                      aria-label="Search Patients"
-                    >
-                      <Search className="w-4 h-4" />
-                    </button>
-                    <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
-                      <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
-                        Search Patients
-                      </div>
-                    </div>
-                  </div>
-                  <div className="group/tip relative">
-                    <button
-                      type="button"
-                      onClick={handleStartEncounter}
-                      className="w-full h-9 inline-flex items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
-                      aria-label="Start Visit"
-                    >
-                      {isLaunchingEncounter ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Plus className="w-4 h-4" />
-                      )}
-                    </button>
+                  {showCollapsedSidebar && (
                     <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
                       <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
                         {isLaunchingEncounter ? 'Opening Co-Pilot...' : 'Start Visit'}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              )}
+
+                {/* Search */}
+                <div className={showCollapsedSidebar ? 'group/tip relative' : 'flex-1 min-w-0'}>
+                  <button
+                    type="button"
+                    className={`
+                      flex items-center gap-2 bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-700
+                      transition-colors dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200
+                      ${showCollapsedSidebar
+                        ? 'w-full h-9 justify-center rounded-lg'
+                        : 'w-full rounded-xl px-2.5 py-2'
+                      }
+                    `}
+                    aria-label="Search Patients"
+                  >
+                    <Search className="w-4 h-4 shrink-0" />
+                    {!showCollapsedSidebar && <span className="text-[13px] flex-1 text-left truncate">Search Patients...</span>}
+                  </button>
+                  {showCollapsedSidebar && (
+                    <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
+                      <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
+                        Search Patients
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Navigation */}
@@ -537,14 +544,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                               }`}
                           >
-                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`} />
+                            <Icon className={`w-4 h-4 shrink-0 icon-animate ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`} />
                             {!showCollapsedSidebar && (
                               <span className={`text-[12.5px] truncate flex-1 ${isActive ? 'font-semibold' : 'font-medium'}`}>
                                 {item.label}
                               </span>
                             )}
                             {!showCollapsedSidebar && item.badge && (
-                              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[10px] font-semibold leading-none">
+                              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[10px] font-semibold leading-none badge-bounce">
                                 {item.badge}
                               </span>
                             )}
@@ -597,120 +604,50 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                       : 'left-4 right-4'
                       }`}
                   >
-                    {/* Settings Options */}
-                    <div className="px-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                      <p className="px-3 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                        Settings
-                      </p>
-
-                      <Link
-                        href="/dashboard/settings"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                      >
-                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <span className="text-lg">👤</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Profile</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">Personal information</p>
-                        </div>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/settings?tab=security"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                      >
-                        <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <span className="text-lg">🔐</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Password & Security</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">Change password, 2FA</p>
-                        </div>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/settings?tab=preferences"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                      >
-                        <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <span className="text-lg">⚙️</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Preferences</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">Language, theme, notifications</p>
-                        </div>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/settings?tab=privacy"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                      >
-                        <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <span className="text-lg">🔒</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Privacy & Data</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">Data sharing, HIPAA compliance</p>
-                        </div>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/settings?tab=billing"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                      >
-                        <div className="w-8 h-8 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <span className="text-lg">💳</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Billing & Subscription</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">Plan, invoices, payment</p>
-                        </div>
-                      </Link>
-
-                      <Link
-                        href="/dashboard/settings?tab=integrations"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                      >
-                        <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <span className="text-lg">🔗</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Integrations</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">Connected apps, API keys</p>
-                        </div>
-                      </Link>
+                    {/* Navigation */}
+                    <div className="px-1.5 py-1.5">
+                      {[
+                        { href: '/dashboard/settings',                label: 'Profile',          Icon: User },
+                        { href: '/dashboard/settings?tab=security',   label: 'Security',         Icon: Lock },
+                        { href: '/dashboard/settings?tab=preferences',label: 'Preferences',      Icon: SlidersHorizontal },
+                        { href: '/dashboard/settings?tab=privacy',    label: 'Privacy & Data',   Icon: ShieldCheck },
+                        { href: '/dashboard/settings?tab=billing',    label: 'Billing',          Icon: CreditCard },
+                        { href: '/dashboard/settings?tab=integrations',label: 'Integrations',    Icon: Link2 },
+                      ].map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
+                        >
+                          <item.Icon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          <span className="text-[13px] font-medium text-gray-700 dark:text-gray-200">{item.label}</span>
+                        </Link>
+                      ))}
                     </div>
 
-                    {/* Help Section */}
-                    <div className="px-2 py-2 border-b border-gray-200 dark:border-gray-700">
+                    <div className="mx-3 border-t border-gray-200 dark:border-gray-700" />
+
+                    {/* Help + Sign Out */}
+                    <div className="px-1.5 py-1.5">
                       <Link
                         href="/help"
                         onClick={() => setProfileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
                       >
-                        <span className="text-lg">❓</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">Help & Support</span>
+                        <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <span className="text-[13px] font-medium text-gray-700 dark:text-gray-200">Help & Support</span>
                       </Link>
-                    </div>
 
-                    {/* Sign Out */}
-                    <div className="px-2 pt-2">
                       <button
                         onClick={() => {
                           setProfileMenuOpen(false);
                           handleSignOut();
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-700 dark:text-red-400"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       >
-                        <span className="text-lg">🚪</span>
-                        <span className="text-sm font-semibold">Sign Out</span>
+                        <LogOut className="w-4 h-4 text-red-500 dark:text-red-400" />
+                        <span className="text-[13px] font-medium text-red-600 dark:text-red-400">Sign Out</span>
                       </button>
                     </div>
                   </div>
@@ -834,5 +771,9 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardContent>{children}</DashboardContent>;
+  return (
+    <CinematicTransition>
+      <DashboardContent>{children}</DashboardContent>
+    </CinematicTransition>
+  );
 }

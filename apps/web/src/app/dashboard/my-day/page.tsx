@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { motion } from 'framer-motion';
 import {
   Calendar, Clock, Stethoscope,
   User, FileText, CheckCircle2,
@@ -9,6 +10,12 @@ import {
 } from 'lucide-react';
 import { PatientQueue, type Appointment } from './_components/PatientQueue';
 import { TaskWidget, type TaskItem } from './_components/TaskWidget';
+import {
+  staggerContainer,
+  staggerItem,
+  scaleInCard,
+  slideDownHeader,
+} from '@/components/dashboard/CinematicTransition';
 
 // ---------------------------------------------------------------------------
 // Time-aware greeting
@@ -56,10 +63,53 @@ function getDoctorLastName(fullName?: string | null): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Mock data: LATAM clinic morning schedule
+// Persona schedule → Appointment adapter
 // ---------------------------------------------------------------------------
 
-const MOCK_APPOINTMENTS: Appointment[] = [
+interface PersonaScheduleItem {
+  firstName: string;
+  lastName: string;
+  age: number;
+  sex: 'M' | 'F';
+  chiefComplaint: string;
+  status: string;
+  time: string;
+}
+
+const STATUS_MAP: Record<string, Appointment['status']> = {
+  'in-progress':  'In Progress',
+  'arrived':      'Arrived',
+  'completed':    'Finished',
+  'scheduled':    'Scheduled',
+};
+
+function adaptPersonaSchedule(items: PersonaScheduleItem[]): Appointment[] {
+  return items.map((item, i) => {
+    const initials = `${item.firstName[0]}${item.lastName[0]}`.toUpperCase();
+    const rawStatus = item.status.toLowerCase();
+
+    // The second patient in the demo has a "pending signature" to show that task
+    const status: Appointment['status'] =
+      i === 1 ? 'Pending Signature' : (STATUS_MAP[rawStatus] ?? 'Scheduled');
+
+    return {
+      id:             `demo-apt-${i}`,
+      time:           item.time,
+      patientName:    `${item.firstName} ${item.lastName}`,
+      initials,
+      age:            item.age,
+      sex:            item.sex,
+      chiefComplaint: item.chiefComplaint,
+      status,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Default mock data (shown for non-ephemeral / non-demo sessions)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_APPOINTMENTS: Appointment[] = [
   {
     id: 'P002',
     time: '08:00 AM',
@@ -120,19 +170,9 @@ const MOCK_APPOINTMENTS: Appointment[] = [
     chiefComplaint: 'Post-stent follow-up, dual antiplatelet review',
     status: 'Scheduled',
   },
-  {
-    id: 'apt-007',
-    time: '11:15 AM',
-    patientName: 'Lucia Helena Barbosa',
-    initials: 'LB',
-    age: 58,
-    sex: 'F',
-    chiefComplaint: 'Heart failure optimization, BNP trending up',
-    status: 'Scheduled',
-  },
 ];
 
-const MOCK_TASKS: TaskItem[] = [
+const DEFAULT_TASKS: TaskItem[] = [
   {
     id: 'task-001',
     label: 'Unsigned SOAP Notes',
@@ -160,7 +200,7 @@ const MOCK_TASKS: TaskItem[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Summary stats derived from appointments
+// Summary stats
 // ---------------------------------------------------------------------------
 
 interface KpiCard {
@@ -221,6 +261,19 @@ function useKpiCards(appointments: Appointment[]): KpiCard[] {
 }
 
 // ---------------------------------------------------------------------------
+// Persona data shape (mirrors what /api/demo/provision stores in metadata)
+// ---------------------------------------------------------------------------
+
+interface WorkspacePersona {
+  disciplineSlug: string;
+  doctorTitle:    string;
+  doctorFirst:    string;
+  doctorLast:     string;
+  specialty:      string;
+  schedule:       PersonaScheduleItem[];
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -228,16 +281,62 @@ export default function MyDayPage() {
   const { data: session } = useSession();
   const [now, setNow] = useState<Date | null>(null);
   const [isClockReady, setIsClockReady] = useState(false);
+  const [personaSchedule, setPersonaSchedule] = useState<Appointment[] | null>(null);
+  const [personaSpecialty, setPersonaSpecialty] = useState<string | null>(null);
 
+  // Live clock
   useEffect(() => {
     const tick = () => setNow(new Date());
     tick();
     setIsClockReady(true);
-    const interval = window.setInterval(() => {
-      tick();
-    }, 60_000);
+    const interval = window.setInterval(tick, 60_000);
     return () => window.clearInterval(interval);
   }, []);
+
+  // If the session belongs to an ephemeral (demo) workspace, fetch persona data
+  const organizationId = (session?.user as { organizationId?: string } | undefined)?.organizationId;
+
+  useEffect(() => {
+    if (!organizationId) return;
+
+    let cancelled = false;
+
+    async function loadPersona() {
+      try {
+        const res = await fetch(`/api/workspace/current`);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+
+        const isEphemeral = data?.isEphemeral ?? false;
+        const persona: WorkspacePersona | undefined = data?.metadata?.persona;
+
+        if (isEphemeral && persona?.schedule?.length) {
+          if (!cancelled) {
+            setPersonaSchedule(adaptPersonaSchedule(persona.schedule));
+            setPersonaSpecialty(persona.specialty ?? null);
+          }
+        }
+      } catch {
+        // Silently fall back to default mock data
+      }
+    }
+
+    loadPersona();
+    return () => { cancelled = true; };
+  }, [organizationId]);
+
+  const appointments = personaSchedule ?? DEFAULT_APPOINTMENTS;
+  const tasks: TaskItem[] = [
+    {
+      id: 'task-001',
+      label: 'Unsigned SOAP Notes',
+      count: 1,
+      icon: 'signature',
+      urgency: 'high',
+      href: '/dashboard/clinical-command',
+    },
+    ...DEFAULT_TASKS.slice(1),
+  ];
 
   const userRole = String((session?.user as { role?: string } | undefined)?.role ?? 'CLINICIAN');
   const doctorLastName = getDoctorLastName(session?.user?.name);
@@ -245,13 +344,18 @@ export default function MyDayPage() {
   const todayLabel = isClockReady && now ? formatToday(now) : 'Loading local date';
   const localTimeLabel = isClockReady && now ? formatLocalTime(now) : '--:--';
   const timeZoneLabel = isClockReady && now ? formatTimeZone(now) : 'Detecting timezone';
-  const stats = useScheduleStats(MOCK_APPOINTMENTS);
-  const kpiCards = useKpiCards(MOCK_APPOINTMENTS);
+  const stats = useScheduleStats(appointments);
+  const kpiCards = useKpiCards(appointments);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <motion.div
+      className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header: greeting + date */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+      <motion.div variants={slideDownHeader} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             {greeting}{doctorLastName ? `, Dr. ${doctorLastName}` : ''}
@@ -259,6 +363,11 @@ export default function MyDayPage() {
           <p suppressHydrationWarning className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
             {todayLabel}
+            {personaSpecialty && (
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-semibold uppercase tracking-wide border border-cyan-200/60 dark:border-cyan-500/20">
+                {personaSpecialty} Demo
+              </span>
+            )}
           </p>
         </div>
 
@@ -287,15 +396,17 @@ export default function MyDayPage() {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Morning Huddle KPI cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {kpiCards.map((card) => (
-          <div
+      <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {kpiCards.map((card, i) => (
+          <motion.div
             key={card.label}
+            variants={scaleInCard}
             className={`
               rounded-2xl border bg-white dark:bg-gray-900 p-4
+              hover:scale-[1.02] hover:shadow-md transition-all duration-200
               ${card.border}
             `}
           >
@@ -308,35 +419,35 @@ export default function MyDayPage() {
             <p className={`text-3xl font-bold tabular-nums ${card.accent}`}>
               {card.value}
             </p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Grid: Schedule + Tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Patient queue: 2/3 */}
-        <div className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
+        <motion.div variants={staggerItem} className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Today&apos;s Schedule
             </h2>
             <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-              {MOCK_APPOINTMENTS.length} appointments
+              {appointments.length} appointments
             </span>
           </div>
-          <PatientQueue appointments={MOCK_APPOINTMENTS} userRole={userRole} />
-        </div>
+          <PatientQueue appointments={appointments} userRole={userRole} />
+        </motion.div>
 
         {/* Tasks: 1/3 */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
+        <motion.div variants={staggerItem} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
           <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-800">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Requires Attention
             </h2>
           </div>
-          <TaskWidget tasks={MOCK_TASKS} userRole={userRole} />
-        </div>
-      </div>
-    </div>
+          <TaskWidget tasks={tasks} userRole={userRole} />
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

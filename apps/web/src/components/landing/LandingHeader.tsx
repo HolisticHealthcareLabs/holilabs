@@ -82,27 +82,28 @@ export function LandingHeader() {
                     </Link>
 
                     {/* Center links */}
-                    <div className="hidden md:flex items-center gap-5 text-[13px] text-muted-foreground">
-                        <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
-                        <a href="#roadmap" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
-                        <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
+                    <div className="hidden md:flex items-center gap-5 text-[13px] text-muted-foreground min-w-0">
+                        <a href="#how-it-works" className="hover:text-foreground transition-colors whitespace-nowrap">{copy.header.howItWorks}</a>
+                        <a href="#roadmap" className="hover:text-foreground transition-colors whitespace-nowrap">{copy.header.audit}</a>
+                        <a href="#demo" className="hover:text-foreground transition-colors whitespace-nowrap">Contact</a>
                     </div>
 
-                    {/* Right actions */}
-                    <div className="flex items-center gap-1">
-                        <div className="hidden sm:block">
+                    {/* Right actions — shrink-0 prevents these from compressing nav links */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Language selector: only show on large screens where there's room */}
+                        <div className="hidden lg:block">
                             <LanguageSelector currentLocale={locale} compact />
                         </div>
                         <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
                         <Link
                             href="/auth/login"
-                            className="hidden lg:inline-flex text-[13px] text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5"
+                            className="hidden lg:inline-flex text-[13px] text-muted-foreground hover:text-foreground transition-colors px-2.5 py-1.5 whitespace-nowrap"
                         >
                             {copy.header.login}
                         </Link>
                         <Link
                             href="/auth/register"
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3.5 py-1.5 rounded-full transition-colors shadow-sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3.5 py-1.5 rounded-full transition-colors shadow-sm whitespace-nowrap"
                         >
                             <span className="hidden sm:inline">{copy.header.betaCta}</span>
                             <span className="sm:hidden">{copy.header.betaShort}</span>
@@ -110,12 +111,13 @@ export function LandingHeader() {
                     </div>
                 </div>
 
-                {/* Mobile nav row */}
-                <div className="flex md:hidden items-center justify-center gap-5 text-xs text-muted-foreground border-t border-border/40 py-2 px-3">
-                    <a href="#how-it-works" className="hover:text-foreground transition-colors">{copy.header.howItWorks}</a>
-                    <a href="#roadmap" className="hover:text-foreground transition-colors">{copy.header.audit}</a>
-                    <a href="#demo" className="hover:text-foreground transition-colors">Contact</a>
-                    <Link href="/auth/login" className="hover:text-foreground transition-colors">{copy.header.login}</Link>
+                {/* Mobile / tablet nav row — includes language selector at smaller sizes */}
+                <div className="flex md:hidden items-center justify-center gap-4 text-xs text-muted-foreground border-t border-border/40 py-2 px-3 flex-wrap">
+                    <a href="#how-it-works" className="hover:text-foreground transition-colors whitespace-nowrap">{copy.header.howItWorks}</a>
+                    <a href="#roadmap" className="hover:text-foreground transition-colors whitespace-nowrap">{copy.header.audit}</a>
+                    <a href="#demo" className="hover:text-foreground transition-colors whitespace-nowrap">Contact</a>
+                    <Link href="/auth/login" className="hover:text-foreground transition-colors whitespace-nowrap">{copy.header.login}</Link>
+                    <div className="lg:hidden"><LanguageSelector currentLocale={locale} compact /></div>
                 </div>
             </nav>
         </header>
