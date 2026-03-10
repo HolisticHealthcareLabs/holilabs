@@ -8,6 +8,7 @@
  */
 
 import { type NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from '@/i18n/routing';
 import { applySecurityHeaders, handleCORSPreflight } from '@/lib/security-headers';
@@ -47,6 +48,7 @@ const NON_LOCALE_PREFIXES = [
   '/enterprise',
   '/onboarding',
   '/download',
+  '/legal',
   '/_next',
   '/_vercel',
 ];
@@ -70,6 +72,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Fast path for RSC (React Server Component) fetches during client navigation.
+  // These are internal Next.js data requests and don't need CSP nonces or i18n.
+  const rscHeader = request.headers.get('rsc');
+  const nextAction = request.headers.get('next-action');
+  if (rscHeader || nextAction) {
+    return NextResponse.next();
+  }
+
   // ===== LOCALE ROUTING (next-intl) =====
   // Only apply to the landing page and locale-prefixed variants.
   // All other routes (dashboard, demo, api, etc.) bypass locale routing.
@@ -87,6 +97,21 @@ export async function middleware(request: NextRequest) {
     intlResponse.headers.set('x-pathname', pathname);
 
     return applySecurityHeaders(intlResponse, nonce);
+  }
+
+  // ===== ONBOARDING INTERCEPT (dashboard routes only) =====
+  if (pathname.startsWith('/dashboard')) {
+    try {
+      const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+      if (token && token.onboardingCompleted === false) {
+        const role = String(token.role ?? '').toUpperCase();
+        const target = role === 'ADMIN' ? '/onboarding/admin' : '/onboarding';
+        return NextResponse.redirect(new URL(target, request.url));
+      }
+    } catch {
+      // Token decode failed; let the request continue to the dashboard
+      // where the layout will handle unauthenticated users
+    }
   }
 
   // ===== LGPD ACCESS REASON ENFORCEMENT =====
@@ -145,5 +170,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|icon\\.svg|icon-.*\\.png|manifest\\.json|sw\\.js|workbox-.*|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|mp4|webm)).*)',
+  ],
 };

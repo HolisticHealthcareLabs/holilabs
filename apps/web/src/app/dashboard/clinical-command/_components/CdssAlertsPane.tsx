@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Info, CheckCircle2,
@@ -9,25 +10,7 @@ import {
   Clock, Heart, Brain, FileText,
 } from 'lucide-react';
 
-// ─── Inline SVG: billing-compliance check icon ────────────────────────────────
-// Lucide's FileCheck icon SVG path — inlined to avoid moduleResolution:bundler
-// issues with lucide-react@0.309.0's empty `exports:{}` field.
-function BillingCheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24" height="24" viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-      <path d="m9 15 2 2 4-4" />
-    </svg>
-  );
-}
+
 import { ClinicalChatBar, type PromptMode } from './ClinicalChatBar';
 import { useMicrophoneSTT } from './useMicrophoneSTT';
 
@@ -50,7 +33,7 @@ function buildSpecialtyPrefix(): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Self-Learning localStorage — click-frequency tracker
+// Self-Learning localStorage - click-frequency tracker
 //
 // Tracks how many times each Quick Action bubble is clicked.  On mount and
 // after every click the bubbles are re-sorted so the most-used action moves
@@ -58,6 +41,24 @@ function buildSpecialtyPrefix(): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CLICK_STORAGE_KEY = 'cdss-quick-action-clicks';
+
+function getDoctorLastNameLabel(fullName?: string | null): string | null {
+  if (!fullName) return null;
+
+  // Strip common LATAM/English doctor prefixes before parsing name parts.
+  const normalized = fullName
+    .replace(/^\s*(dr|dra|doctor|doctora)\.?\s+/i, '')
+    .trim();
+
+  if (!normalized) return null;
+
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return null;
+
+  // Prefer surname(s): everything after the first given name when available.
+  if (parts.length >= 2) return parts.slice(1).join(' ');
+  return parts[0];
+}
 
 function loadClickCounts(): Record<string, number> {
   if (typeof window === 'undefined') return {};
@@ -107,20 +108,42 @@ type ChatMessage = {
   rationale?: { confidence: number; reasoning: string };
 };
 
-/** Full LLM-ready payload — swap `simulateLLMResponse` for real endpoints. */
+/** Full LLM-ready payload -- swap `simulateLLMResponse` for real endpoints. */
 type LLMPayload = {
   model: ModelId;
   systemPrompt: string;
   transcript: string;
   patient: PatientCtx | null;
   userQuery: string;
+  cdssActionType?: CdssActionType;
 };
+
+type CdssActionType =
+  | 'LIFESTYLE_PREVENTION'
+  | 'RX_TIMELINE_SAFETY'
+  | 'DIFFERENTIAL_DX'
+  | 'DRAFT_HANDOUT';
 
 type QuickActionBubble = {
   id: string;
   label: string;
   Icon: React.FC<{ className?: string }>;
+  intentLabel: string;
+  cdssActionType?: CdssActionType;
   systemPrompt: string;
+};
+
+type ApiConversationMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+type ApiClinicalContext = {
+  age?: number;
+  sex?: string;
+  conditions: Array<{ label?: string; icd10Code?: string; status?: string }>;
+  medications: Array<{ name?: string; atcCode?: string; dose?: string; status?: string }>;
+  vitals: Array<{ name: string; value: string; unit?: string }>;
 };
 
 interface CdssAlertsPaneProps {
@@ -154,6 +177,8 @@ const QUICK_ACTIONS: QuickActionBubble[] = [
     id: 'rx-timeline',
     label: 'Rx Timeline & Safety',
     Icon: Clock,
+    intentLabel: 'Assessing Rx Timeline and Safety...',
+    cdssActionType: 'RX_TIMELINE_SAFETY',
     systemPrompt:
       'Analyze pharmaceutical history using ATC (Anatomical Therapeutic Chemical) codes. ' +
       'Identify contraindications, drug-drug interactions, and compliance issues. ' +
@@ -164,6 +189,8 @@ const QUICK_ACTIONS: QuickActionBubble[] = [
     id: 'lifestyle',
     label: 'Lifestyle & Prevention',
     Icon: Heart,
+    intentLabel: 'Building Lifestyle and Risk Reduction Plan...',
+    cdssActionType: 'LIFESTYLE_PREVENTION',
     systemPrompt:
       'Generate a comprehensive lifestyle and preventative care plan based on this encounter. ' +
       'Use SNOMED CT for recommended procedures, ICD-10/11 for active conditions, ' +
@@ -174,6 +201,8 @@ const QUICK_ACTIONS: QuickActionBubble[] = [
     id: 'differential',
     label: 'Differential Dx (ICD-10)',
     Icon: Brain,
+    intentLabel: 'Generating Differential Dx Context...',
+    cdssActionType: 'DIFFERENTIAL_DX',
     systemPrompt:
       'Suggest differential diagnoses ordered by probability using ICD-10/11 and SNOMED CT standards. ' +
       'Map pending investigations to LOINC codes. ' +
@@ -183,20 +212,12 @@ const QUICK_ACTIONS: QuickActionBubble[] = [
     id: 'handout',
     label: 'Draft Patient Handout',
     Icon: FileText,
-    // systemPrompt is unused for this bubble — it triggers the handout modal instead
+    intentLabel: 'Drafting Patient Handout...',
+    cdssActionType: 'DRAFT_HANDOUT',
     systemPrompt:
       'Draft a patient-friendly summary of this visit in Portuguese or Spanish ' +
       '(choose based on context). Use plain language, no medical jargon. ' +
       'Include key medications with lay explanations and follow-up instructions.',
-  },
-  {
-    id: 'cdi',
-    label: 'Check Billing Compliance',
-    Icon: BillingCheckIcon,
-    systemPrompt:
-      'Perform Ambient CDI. Analyze the current transcript and SOAP note against ' +
-      'LATAM clinical billing standards (CBHPM/TUSS). Identify any missing documentation ' +
-      'needed to justify the suspected ICD-10 codes. Do not use US CPT codes.',
   },
 ];
 
@@ -270,29 +291,6 @@ Queixa: dor precordial + dispneia + edema bilateral (5 dias)
 
 Proxima etapa: ECG + BNP + Troponina I seriada — URGENTE`;
 
-const LATAM_RESPONSE_CDI = `⚠️ CDI Alert — Ambient Clinical Documentation Improvement
-
-Para justificar código de consulta de alta complexidade e diagnóstico
-de ICC (ICD-10: I50.9), a seguinte documentação está AUSENTE ou INCOMPLETA:
-
-1. Resultado do ECG — documente achados específicos no campo OBJETIVO.
-   (Ex: "Ritmo sinusal, BRE de grau leve, sem supradesnível")
-   → Sem isso, a cobrança do código ECG (TUSS 40302270) pode ser glosada.
-
-2. Encaminhamento para Cardiologia — deve constar no campo PLANO.
-   (Ex: "Encaminhado para cardiologista Dr. X em caráter urgente")
-   → Necessário para justificar nível de complexidade da consulta.
-
-3. Estadiamento da ICC — documente fração de ejeção quando disponível.
-   LOINC: 18009-5 (Ecocardiograma — FEVE)
-
-4. Motivo da suspensão da Metformina — registrar formalmente no PLANO.
-   (ICD-10: N18.3 + risco de contraste = contraindicação documentada)
-
-Ação Recomendada: Revise e complemente os campos Objetivo e Plano antes
-de assinar e faturar esta consulta.
-
-Fonte: CBHPM 6ª Edição / ANS RN 465/2021 / CFM`;
 
 const LATAM_RESPONSE_HANDOUT = `Resumo da sua Consulta de Hoje
 (Para levar para casa)
@@ -333,34 +331,118 @@ ou diagnostico diferencial completo.`;
 // ─────────────────────────────────────────────────────────────────────────────
 // simulateLLMResponse
 //
-// Mock async pipeline — architecture is 100% ready to swap for real endpoints
-// (DeepSeek-R1 / OpenAI GPT).  Replace the setTimeout with a real fetch call.
+// Mock async pipeline -- architecture is 100% ready to swap for real endpoints
+// (DeepSeek-R1 / OpenAI GPT). Replace the setTimeout with a real fetch call.
+//
+// V2: Routes deterministically via cdssActionType (switch), falling back to
+// systemPrompt keyword heuristic only for free-text queries.
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function simulateLLMResponse(payload: LLMPayload): Promise<string> {
-  // Simulate ~850 ms network/inference latency
   await new Promise((r) => setTimeout(r, 850));
 
-  const sp = payload.systemPrompt.toLowerCase();
-
-  if (sp.includes('atc') || sp.includes('pharmaceutical history')) {
-    return LATAM_RESPONSE_RX;
-  }
-  if (sp.includes('lifestyle') || sp.includes('preventative')) {
-    return LATAM_RESPONSE_LIFESTYLE;
-  }
-  if (sp.includes('differential') || sp.includes('icd-10')) {
-    return LATAM_RESPONSE_DIFFERENTIAL;
-  }
-  if (sp.includes('handout') || sp.includes('patient-friendly')) {
-    return LATAM_RESPONSE_HANDOUT;
-  }
-  if (sp.includes('cdi') || sp.includes('ambient') || sp.includes('billing compliance') || sp.includes('cbhpm')) {
-    return LATAM_RESPONSE_CDI;
+  if (payload.cdssActionType) {
+    switch (payload.cdssActionType) {
+      case 'RX_TIMELINE_SAFETY':
+        return LATAM_RESPONSE_RX;
+      case 'LIFESTYLE_PREVENTION':
+        return LATAM_RESPONSE_LIFESTYLE;
+      case 'DIFFERENTIAL_DX':
+        return LATAM_RESPONSE_DIFFERENTIAL;
+      case 'DRAFT_HANDOUT':
+        return LATAM_RESPONSE_HANDOUT;
+    }
   }
 
-  // Generic follow-up from free-text input
   return LATAM_RESPONSE_GENERIC;
+}
+
+const KNOWN_MEDICATION_ATC: Record<string, { atcCode: string }> = {
+  metformin: { atcCode: 'A10BA02' },
+  lisinopril: { atcCode: 'C09AA03' },
+  atorvastatin: { atcCode: 'C10AA05' },
+  furosemide: { atcCode: 'C03CA01' },
+  aspirin: { atcCode: 'B01AC06' },
+  warfarin: { atcCode: 'B01AA03' },
+  digoxin: { atcCode: 'C01AA05' },
+  levothyroxine: { atcCode: 'H03AA01' },
+  omeprazole: { atcCode: 'A02BC01' },
+};
+
+const ICD10_REGEX = /\b[A-TV-Z][0-9]{2}(?:\.[0-9A-Z]{1,4})?\b/g;
+
+function uniqueList(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function parseAge(dob?: string): number | undefined {
+  if (!dob) return undefined;
+  const parsed = new Date(dob);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+
+  const now = new Date();
+  let age = now.getFullYear() - parsed.getFullYear();
+  const beforeBirthday =
+    now.getMonth() < parsed.getMonth() ||
+    (now.getMonth() === parsed.getMonth() && now.getDate() < parsed.getDate());
+  if (beforeBirthday) age -= 1;
+  return age >= 0 ? age : undefined;
+}
+
+function extractVitals(transcript: string): ApiClinicalContext['vitals'] {
+  const vitals: ApiClinicalContext['vitals'] = [];
+  const bloodPressure = transcript.match(/\bBP\s*(?:is|:)?\s*(\d{2,3})\/(\d{2,3})\s*mmHg\b/i);
+  const heartRate = transcript.match(/\bHR\s*(?:is|:)?\s*(\d{2,3})\s*bpm\b/i);
+  const spo2 = transcript.match(/\bSpO2\s*(?:is|:)?\s*(\d{2,3})\s*%/i);
+
+  if (bloodPressure) {
+    vitals.push({ name: 'Blood Pressure', value: `${bloodPressure[1]}/${bloodPressure[2]}`, unit: 'mmHg' });
+  }
+  if (heartRate) {
+    vitals.push({ name: 'Heart Rate', value: heartRate[1], unit: 'bpm' });
+  }
+  if (spo2) {
+    vitals.push({ name: 'SpO2', value: spo2[1], unit: '%' });
+  }
+
+  return vitals;
+}
+
+function buildClinicalContextFromTranscript(
+  selectedPatient: PatientCtx | null,
+  transcript: string
+): ApiClinicalContext {
+  const age = parseAge(selectedPatient?.dob);
+  const icd10Codes = uniqueList(transcript.match(ICD10_REGEX) ?? []);
+
+  const conditions = icd10Codes.map((code) => ({
+    icd10Code: code,
+    label: 'Condition captured from encounter transcript',
+    status: 'active',
+  }));
+
+  const lowered = transcript.toLowerCase();
+  const medications = Object.entries(KNOWN_MEDICATION_ATC)
+    .filter(([name]) => lowered.includes(name))
+    .map(([name, info]) => ({
+      name: name[0].toUpperCase() + name.slice(1),
+      atcCode: info.atcCode,
+      status: 'active',
+    }));
+
+  return {
+    age,
+    conditions,
+    medications,
+    vitals: extractVitals(transcript),
+  };
+}
+
+function toConversationHistory(messages: ChatMessage[]): ApiConversationMessage[] {
+  return messages.slice(-30).map((message) => ({
+    role: message.role === 'system' ? 'assistant' : 'user',
+    content: message.content,
+  }));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -584,13 +666,15 @@ export function CdssAlertsPane({
   hasTranscript,
   selectedPatient = null,
   transcript = '',
-  onOpenHandout,
   resetSignal = 0,
 }: CdssAlertsPaneProps) {
+  const { data: sessionData } = useSession();
   const activeCfg    = modelConfigs[activeModel];
   const isConfigured = activeCfg?.isConfigured ?? false;
   const syncEnabled  = isConfigured && patientSelected && hasTranscript && !isSyncing;
   const activeOption = MODEL_OPTIONS.find((m) => m.id === activeModel);
+
+  const doctorLastNameLabel = getDoctorLastNameLabel(sessionData?.user?.name);
 
   // ── Self-learning click counts (persisted in localStorage) ────────────────
   const [clickCounts, setClickCounts] = useState<Record<string, number>>(loadClickCounts);
@@ -600,6 +684,7 @@ export function CdssAlertsPane({
     () => [...QUICK_ACTIONS].sort((a, b) => (clickCounts[b.id] ?? 0) - (clickCounts[a.id] ?? 0)),
     [clickCounts]
   );
+  const topUsedBubbleId = sortedBubbles[0]?.id ?? null;
 
   function incrementClick(id: string) {
     const next = { ...clickCounts, [id]: (clickCounts[id] ?? 0) + 1 };
@@ -618,6 +703,7 @@ export function CdssAlertsPane({
   const { isListening, startListening, stopListening } = useMicrophoneSTT({
     onTranscript: (text) => setInputValue((prev) => prev ? `${prev} ${text}` : text),
     enabled: syncEnabled,
+    patientId: selectedPatient?.id ?? null,
   });
 
   function handleMicToggle() {
@@ -706,54 +792,84 @@ export function CdssAlertsPane({
   }, [chatMessages]);
 
   // ── Quick action bubble handler ────────────────────────────────────────────
-  // Bubbles are permanently clickable — no fade/disable after use.
+  // Iceberg UX: the chat only shows intent labels while backend receives
+  // de-identified context, transcript, and action-type trigger.
   async function handleBubbleClick(bubble: QuickActionBubble) {
-    if (isReplying || !syncEnabled) return;
+    if (isReplying || !syncEnabled || !selectedPatient) return;
 
-    // Track click for self-learning sort (persisted to localStorage)
     incrementClick(bubble.id);
 
-    // 'handout' bubble opens the external modal instead of writing to chat
-    if (bubble.id === 'handout') {
-      onOpenHandout?.();
-      return;
-    }
-
-    // All other bubbles: add user message + get LLM response
+    const intentMessage = bubble.intentLabel;
     const userMsg: ChatMessage = {
-      id:      `bubble-${Date.now()}`,
-      role:    'user',
-      content: bubble.label,
+      id: `bubble-${Date.now()}`,
+      role: 'user',
+      content: intentMessage,
     };
+
+    const historySnapshot = toConversationHistory([...chatMessages, userMsg]);
+    const patientContext = buildClinicalContextFromTranscript(selectedPatient, transcript);
     setChatMessages((prev) => [...prev, userMsg]);
     setIsReplying(true);
 
-    // Prepend "God-Like" specialty persona to prime the LLM with domain expertise
-    const payload: LLMPayload = {
-      model:        activeModel,
-      systemPrompt: buildSpecialtyPrefix() + bubble.systemPrompt,
-      transcript,
-      patient:      selectedPatient,
-      userQuery:    bubble.label,
-    };
+    try {
+      const apiResponse = await fetch('/api/cdss/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientId: selectedPatient.id,
+          model: activeModel,
+          message: intentMessage,
+          conversationHistory: historySnapshot,
+          cdssActionType: bubble.cdssActionType,
+          encounterTranscript: transcript,
+          patientContext,
+        }),
+      });
 
-    const response = await simulateLLMResponse(payload);
+      const data = await apiResponse.json();
+      if (!apiResponse.ok || !data.success) {
+        throw new Error(data.error || 'Unable to generate CDSS response');
+      }
 
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id:      `reply-bubble-${Date.now()}`,
-        role:    'system',
-        content: response,
-        rationale: {
-          confidence: 88,
-          reasoning:
-            'LATAM CDSS analysis using ICD-10/11, ATC classification (WHO), ' +
-            'SNOMED CT, and LOINC ontologies. Excludes US-centric CPT/RxNorm/NDC.',
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `reply-bubble-${Date.now()}`,
+          role: 'system',
+          content: data.data?.response ?? 'No response was generated.',
+          rationale: {
+            confidence: 90,
+            reasoning:
+              'Backend action prompt merged with de-identified context using ICD-10, ATC, vitals, and transcript cues.',
+          },
         },
-      },
-    ]);
-    setIsReplying(false);
+      ]);
+    } catch {
+      const fallbackPayload: LLMPayload = {
+        model: activeModel,
+        systemPrompt: buildSpecialtyPrefix() + bubble.systemPrompt,
+        transcript,
+        patient: selectedPatient,
+        userQuery: bubble.label,
+        cdssActionType: bubble.cdssActionType,
+      };
+      const fallbackResponse = await simulateLLMResponse(fallbackPayload);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `reply-bubble-fallback-${Date.now()}`,
+          role: 'system',
+          content: fallbackResponse,
+          rationale: {
+            confidence: 74,
+            reasoning:
+              'Fallback response used local mock pipeline after API route failure.',
+          },
+        },
+      ]);
+    } finally {
+      setIsReplying(false);
+    }
   }
 
   // ── Free-text chat handler ─────────────────────────────────────────────────
@@ -812,7 +928,7 @@ export function CdssAlertsPane({
       <div className="flex items-center flex-shrink-0">
         <h2 className="text-xs font-semibold uppercase tracking-wider
                        text-slate-500 dark:text-slate-400">
-          Clinical Decision Support (CDSS)
+          Co-Pilot
         </h2>
       </div>
 
@@ -854,14 +970,47 @@ export function CdssAlertsPane({
             <div ref={messagesEndRef} />
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-2 py-6">
-            <MessageSquare className="w-7 h-7 text-slate-300 dark:text-slate-700" />
-            <p className="text-xs text-center leading-relaxed
-                          text-slate-400 dark:text-slate-600">
-              No analysis yet.
-              <br />
-              Record a conversation and press Sync to begin.
-            </p>
+          <div className="flex flex-col items-center justify-center h-full gap-4 py-8 px-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="w-9 h-9 rounded-full flex items-center justify-center
+                         bg-gradient-to-br from-cyan-400/20 via-violet-400/15 to-blue-500/20
+                         dark:from-cyan-400/10 dark:via-violet-400/10 dark:to-blue-500/10
+                         border border-cyan-200/50 dark:border-cyan-500/20"
+            >
+              <MessageSquare className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+            </motion.div>
+
+            <div className="text-center space-y-1">
+              <motion.h3
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.1 }}
+                className="text-[26px] leading-tight font-medium tracking-[-0.02em]
+                           text-slate-300 dark:text-slate-300"
+              >
+                {doctorLastNameLabel ? `Hi Dr. ${doctorLastNameLabel}` : 'Hi there'}
+              </motion.h3>
+              <motion.h2
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.2 }}
+                className="text-[40px] leading-[1.05] font-medium tracking-[-0.03em]
+                           text-slate-100 dark:text-slate-100"
+              >
+                Where should we start?
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.28 }}
+                className="text-xs text-slate-500 dark:text-slate-500 mt-2"
+              >
+                Suggestions adapt to your most used clinical actions.
+              </motion.p>
+            </div>
           </div>
         )}
       </div>
@@ -871,9 +1020,9 @@ export function CdssAlertsPane({
            Horizontally scrollable with hidden scrollbar for clean overflow.
            Positioned between chat and input so flex-1 scroll is unaffected.
       ──────────────────────────────────────────────────────────────────────── */}
-      {syncEnabled && (
+      {(chatMessages.length === 0 || syncEnabled) && (
         <div
-          className="flex-shrink-0 flex gap-2 pb-0.5"
+          className="flex-shrink-0 flex gap-2.5 pb-0.5 pt-1"
           style={{ overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           aria-label="Quick clinical actions"
         >
@@ -884,20 +1033,29 @@ export function CdssAlertsPane({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05, duration: 0.2 }}
               onClick={() => handleBubbleClick(bubble)}
-              disabled={isReplying}
+              disabled={isReplying || !syncEnabled}
               aria-label={bubble.label}
               className="
-                flex items-center gap-1.5 whitespace-nowrap flex-shrink-0
-                bg-slate-800/50 hover:bg-slate-700/80
-                text-cyan-400 border border-slate-700/50
-                rounded-full px-3 py-1.5 text-[11px] font-medium
+                group flex items-center gap-2 whitespace-nowrap flex-shrink-0
+                bg-slate-900/55 hover:bg-slate-800/90
+                text-slate-200 border border-slate-700/50
+                rounded-full px-4 py-2 text-[12px] font-medium
                 transition-all
                 disabled:opacity-50 disabled:cursor-not-allowed
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
               "
+              title={syncEnabled ? `${bubble.label}${bubble.id === topUsedBubbleId ? ' - most used' : ''}` : 'Select patient and sync transcript to enable'}
             >
-              <bubble.Icon className="w-3 h-3 flex-shrink-0" />
+              <bubble.Icon className="w-3.5 h-3.5 flex-shrink-0 text-slate-400 group-hover:text-cyan-300 transition-colors" />
               {bubble.label}
+              {bubble.id === topUsedBubbleId && (
+                <span
+                  className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px]
+                             bg-cyan-500/15 text-cyan-300 border border-cyan-500/30"
+                >
+                  Top
+                </span>
+              )}
             </motion.button>
           ))}
         </div>

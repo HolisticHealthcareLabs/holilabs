@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from 'next-auth/react';
 import {
   Search, User, X, Eye, Heart, AlertTriangle, Clock, FileText,
-  Upload, Stethoscope, Calendar,
+  Upload, Stethoscope, Calendar, UserPlus,
 } from 'lucide-react';
+import { filterRecordsForOrganization } from '../../../../../../../packages/shared-kernel/src/types/auth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -13,6 +15,7 @@ import {
 
 export interface Patient {
   id: string;
+  organizationId: string;
   name: string;
   dob: string;
   mrn: string;
@@ -37,10 +40,10 @@ interface FacesheetData {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DEMO_PATIENTS: Patient[] = [
-  { id: 'P001', name: 'Robert Chen',    dob: '03/15/1958', mrn: 'MRN-001' },
-  { id: 'P002', name: 'Maria Santos',   dob: '07/22/1972', mrn: 'MRN-002' },
-  { id: 'P003', name: "James O'Brien",  dob: '11/08/1945', mrn: 'MRN-003' },
-  { id: 'P004', name: 'Sofia Reyes',    dob: '02/14/1985', mrn: 'MRN-004' },
+  { id: 'P001', organizationId: 'org-demo-clinic', name: 'Robert Chen',    dob: '03/15/1958', mrn: 'MRN-001' },
+  { id: 'P002', organizationId: 'org-demo-clinic', name: 'Maria Santos',   dob: '07/22/1972', mrn: 'MRN-002' },
+  { id: 'P003', organizationId: 'org-demo-clinic', name: "James O'Brien",  dob: '11/08/1945', mrn: 'MRN-003' },
+  { id: 'P004', organizationId: 'org-partner-hospital', name: 'Sofia Reyes',    dob: '02/14/1985', mrn: 'MRN-004' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -509,22 +512,56 @@ function PatientChartDrawer({
 
 interface PatientContextBarProps {
   onSelectPatient: (patient: Patient | null) => void;
+  /** When provided, auto-selects the matching patient on mount (deep link from My Day). */
+  initialPatientId?: string | null;
 }
 
-export function PatientContextBar({ onSelectPatient }: PatientContextBarProps) {
+export function PatientContextBar({ onSelectPatient, initialPatientId }: PatientContextBarProps) {
+  const { data: session } = useSession();
   const [query,       setQuery]       = useState('');
   const [open,        setOpen]        = useState(false);
   const [selected,    setSelected]    = useState<Patient | null>(null);
   const [chartOpen,   setChartOpen]   = useState(false);
-  /** When true, the chart drawer opens and scrolls to the External Records zone. */
   const [attachMode,  setAttachMode]  = useState(false);
+  const [showNewPatientForm, setShowNewPatientForm] = useState(false);
+  const [newPatientName, setNewPatientName] = useState('');
+  const [newPatientDob,  setNewPatientDob]  = useState('');
+  const [roster, setRoster] = useState<Patient[]>(DEMO_PATIENTS);
+  const activeOrganizationId = session?.user.organizationId ?? 'org-demo-clinic';
+  const organizationScopedRoster = filterRecordsForOrganization(roster, activeOrganizationId);
+
+  useEffect(() => {
+    if (!initialPatientId || selected) return;
+    const match = organizationScopedRoster.find((p) => p.id === initialPatientId);
+    if (match) {
+      setSelected(match);
+      onSelectPatient(match);
+    }
+  }, [initialPatientId, onSelectPatient, organizationScopedRoster, selected]);
 
   const filtered = query.trim()
-    ? DEMO_PATIENTS.filter((p) =>
+    ? organizationScopedRoster.filter((p) =>
         p.name.toLowerCase().includes(query.toLowerCase()) ||
         p.mrn.toLowerCase().includes(query.toLowerCase())
       )
-    : DEMO_PATIENTS;
+    : organizationScopedRoster;
+
+  function handleAddPatient() {
+    if (!newPatientName.trim()) return;
+    const id = `P${String(roster.length + 1).padStart(3, '0')}`;
+    const newPatient: Patient = {
+      id,
+      organizationId: activeOrganizationId,
+      name: newPatientName.trim(),
+      dob: newPatientDob || 'N/A',
+      mrn: `MRN-${String(roster.length + 1).padStart(3, '0')}`,
+    };
+    setRoster((prev) => [...prev, newPatient]);
+    select(newPatient);
+    setShowNewPatientForm(false);
+    setNewPatientName('');
+    setNewPatientDob('');
+  }
 
   function select(p: Patient) {
     setSelected(p);
@@ -595,6 +632,7 @@ export function PatientContextBar({ onSelectPatient }: PatientContextBarProps) {
                     type="text"
                     role="combobox"
                     aria-label="Search patients"
+                    aria-controls="patient-search-results"
                     aria-expanded={open}
                     aria-autocomplete="list"
                     placeholder="Search patients..."
@@ -616,6 +654,7 @@ export function PatientContextBar({ onSelectPatient }: PatientContextBarProps) {
 
                 {open && filtered.length > 0 && (
                   <ul
+                    id="patient-search-results"
                     role="listbox"
                     aria-label="Patient search results"
                     className="
@@ -701,7 +740,79 @@ export function PatientContextBar({ onSelectPatient }: PatientContextBarProps) {
             </>
           )}
 
-          {!selected && (
+          {!selected && !showNewPatientForm && (
+            <button
+              onClick={() => setShowNewPatientForm(true)}
+              className="
+                flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
+                text-slate-600 dark:text-slate-400
+                border border-dashed border-slate-300 dark:border-slate-600
+                hover:border-cyan-400 dark:hover:border-cyan-500
+                hover:text-cyan-600 dark:hover:text-cyan-400
+                transition-colors
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
+              "
+            >
+              <UserPlus className="w-3 h-3" />
+              Add Patient
+            </button>
+          )}
+
+          {showNewPatientForm && !selected && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Full name"
+                value={newPatientName}
+                onChange={(e) => setNewPatientName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddPatient(); }}
+                autoFocus
+                className="
+                  px-2.5 py-1.5 text-xs rounded-lg w-36
+                  bg-white dark:bg-slate-900
+                  border border-slate-200 dark:border-slate-600
+                  text-slate-700 dark:text-slate-300
+                  placeholder-slate-400
+                  focus:outline-none focus:ring-2 focus:ring-cyan-400
+                "
+              />
+              <input
+                type="text"
+                placeholder="DOB (MM/DD/YYYY)"
+                value={newPatientDob}
+                onChange={(e) => setNewPatientDob(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddPatient(); }}
+                className="
+                  px-2.5 py-1.5 text-xs rounded-lg w-32
+                  bg-white dark:bg-slate-900
+                  border border-slate-200 dark:border-slate-600
+                  text-slate-700 dark:text-slate-300
+                  placeholder-slate-400
+                  focus:outline-none focus:ring-2 focus:ring-cyan-400
+                "
+              />
+              <button
+                onClick={handleAddPatient}
+                disabled={!newPatientName.trim()}
+                className="
+                  px-2.5 py-1.5 text-[11px] font-semibold rounded-lg
+                  bg-cyan-600 text-white hover:bg-cyan-500
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-colors
+                "
+              >
+                Add
+              </button>
+              <button
+                onClick={() => { setShowNewPatientForm(false); setNewPatientName(''); setNewPatientDob(''); }}
+                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+
+          {!selected && !showNewPatientForm && (
             <p className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:block">
               Select a patient to enable recording &amp; CDSS sync.
             </p>

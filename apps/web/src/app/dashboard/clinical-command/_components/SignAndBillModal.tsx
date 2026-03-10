@@ -1,36 +1,49 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, Loader2, TrendingUp, AlertTriangle } from 'lucide-react';
+import { X, CheckCircle2, Loader2, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mock billing data — LATAM/CBHPM/TUSS format
-// (No US AMA CPT codes per CMIO policy)
+// Types matching the Zod schema from /api/billing/analyze
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MOCK_DIAGNOSES = [
-  { code: 'I50.9', label: 'Heart Failure, Unspecified',       severity: 'critical' as const },
-  { code: 'E11.9', label: 'Type 2 Diabetes Mellitus',         severity: 'warning'  as const },
-  { code: 'I10',   label: 'Essential Hypertension',           severity: 'warning'  as const },
-  { code: 'N18.3', label: 'Chronic Kidney Disease, Stage 3',  severity: 'info'     as const },
-];
+interface ExtractedDiagnosis {
+  code: string;
+  name: string;
+  type: 'primary' | 'secondary' | 'complication';
+}
 
-const MOCK_SERVICES = [
-  { code: 'CBHPM 31603017', label: 'Consulta Médica — Alta Complexidade',      value: 'R$ 250,00' },
-  { code: 'TUSS 40302270',  label: 'Eletrocardiograma 12 derivações (urgente)', value: 'R$  60,00' },
-  { code: 'TUSS 40302262',  label: 'Troponina I — Dosagem seriada',            value: 'R$  40,00' },
-];
+interface SuggestedService {
+  code: string;
+  name: string;
+  system: 'CBHPM' | 'TUSS';
+  estimatedValueBRL: number;
+}
 
-const ESTIMATED_TOTAL = 'R$ 350,00';
+interface BillingAnalysisData {
+  extractedDiagnoses: ExtractedDiagnosis[];
+  suggestedServices: SuggestedService[];
+  totalEstimatedValue: number;
+  cdiWarnings: string[];
+}
 
-const SEVERITY_CHIP: Record<'critical' | 'warning' | 'info', string> = {
-  critical: 'bg-red-500/15 text-red-400 border border-red-500/30',
-  warning:  'bg-amber-500/15 text-amber-400 border border-amber-500/30',
-  info:     'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
+// ─────────────────────────────────────────────────────────────────────────────
+// Severity mapping for diagnosis chips
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DIAGNOSIS_TYPE_CHIP: Record<ExtractedDiagnosis['type'], string> = {
+  primary:      'bg-red-500/15 text-red-400 border border-red-500/30',
+  secondary:    'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+  complication: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
 };
 
-type SubmitState = 'idle' | 'loading' | 'success';
+function formatBRL(value: number): string {
+  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+type SubmitState = 'idle' | 'syncing_to_ehr' | 'success' | 'ehr_error';
+type FetchState = 'idle' | 'loading' | 'loaded' | 'error';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -39,40 +52,122 @@ type SubmitState = 'idle' | 'loading' | 'success';
 interface SignAndBillModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Called after successful claim approval — triggers the Great Reset. */
+  /** Called after successful claim approval -- triggers the Great Reset. */
   onComplete: () => void;
+  /** SOAP note text for billing analysis. */
+  soapNote?: string;
+  /** Encounter transcript for billing analysis. */
+  transcript?: string;
+  /** Minimal patient demographics for billing context. */
+  patientData?: { age?: number; sex?: string };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function SignAndBillModal({ isOpen, onClose, onComplete }: SignAndBillModalProps) {
+export function SignAndBillModal({
+  isOpen,
+  onClose,
+  onComplete,
+  soapNote = '',
+  transcript = '',
+  patientData,
+}: SignAndBillModalProps) {
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
+  const [fetchState, setFetchState] = useState<FetchState>('idle');
+  const [analysisData, setAnalysisData] = useState<BillingAnalysisData | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Close on Escape key
+  const fetchBillingAnalysis = useCallback(async () => {
+    setFetchState('loading');
+    setFetchError(null);
+
+    try {
+      const res = await fetch('/api/billing/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ soapNote, transcript, patientData: patientData ?? {} }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Billing analysis request failed');
+      }
+
+      setAnalysisData(json.data as BillingAnalysisData);
+      setFetchState('loaded');
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : 'Unable to load billing analysis');
+      setFetchState('error');
+    }
+  }, [soapNote, transcript, patientData]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setSubmitState('idle');
+    setFetchState('idle');
+    setAnalysisData(null);
+    setFetchError(null);
+    fetchBillingAnalysis();
+  }, [isOpen, fetchBillingAnalysis]);
+
   useEffect(() => {
     if (!isOpen) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && submitState === 'idle') onClose();
+      if (e.key === 'Escape' && (submitState === 'idle' || submitState === 'ehr_error')) onClose();
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose, submitState]);
 
-  // Reset state when modal reopens
-  useEffect(() => {
-    if (isOpen) setSubmitState('idle');
-  }, [isOpen]);
-
   async function handleApprove() {
-    if (submitState !== 'idle') return;
-    setSubmitState('loading');
-    await new Promise((r) => setTimeout(r, 1500));
-    setSubmitState('success');
-    await new Promise((r) => setTimeout(r, 900));
-    onComplete();
+    if (submitState !== 'idle' && submitState !== 'ehr_error') return;
+    setSubmitState('syncing_to_ehr');
+
+    try {
+      const exportPayload = {
+        patientId: patientData?.age != null ? `CPF-DEMO-${patientData.age}` : 'CPF-DEMO-000',
+        providerId: 'CRM-SP-123456',
+        soapNote: soapNote || transcript || 'No clinical note provided',
+        diagnoses: diagnoses.map((dx) => ({
+          code: dx.code,
+          name: dx.name,
+          type: dx.type,
+        })),
+        billingCodes: services.map((svc) => ({
+          code: svc.code,
+          name: svc.name,
+          system: svc.system,
+          estimatedValueBRL: svc.estimatedValueBRL,
+        })),
+      };
+
+      const res = await fetch('/api/interop/fhir/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(exportPayload),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'EHR export request failed');
+      }
+
+      setSubmitState('success');
+      await new Promise((r) => setTimeout(r, 2000));
+      onComplete();
+    } catch {
+      setSubmitState('ehr_error');
+    }
   }
+
+  const diagnoses = analysisData?.extractedDiagnoses ?? [];
+  const services = analysisData?.suggestedServices ?? [];
+  const totalValue = analysisData?.totalEstimatedValue ?? 0;
+  const cdiWarnings = analysisData?.cdiWarnings ?? [];
 
   return (
     <AnimatePresence>
@@ -86,7 +181,7 @@ export function SignAndBillModal({ isOpen, onClose, onComplete }: SignAndBillMod
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[90] bg-slate-900/80 backdrop-blur-sm"
-            onClick={() => submitState === 'idle' && onClose()}
+            onClick={() => (submitState === 'idle' || submitState === 'ehr_error') && onClose()}
             aria-hidden="true"
           />
 
@@ -114,13 +209,13 @@ export function SignAndBillModal({ isOpen, onClose, onComplete }: SignAndBillMod
               <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-800">
                 <div>
                   <h2 className="text-base font-semibold text-white">
-                    Sign &amp; Bill — Claim Review
+                    Sign &amp; Bill - Claim Review
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    LATAM billing standards · CBHPM / TUSS · No CPT codes
+                    LATAM billing standards / CBHPM / TUSS / No CPT codes
                   </p>
                 </div>
-                {submitState === 'idle' && (
+                {(submitState === 'idle' || submitState === 'ehr_error') && (
                   <button
                     onClick={onClose}
                     aria-label="Close billing modal"
@@ -138,84 +233,125 @@ export function SignAndBillModal({ isOpen, onClose, onComplete }: SignAndBillMod
               {/* Body */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-                {/* Extracted Diagnoses */}
-                <section>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                    Extracted Diagnoses
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {MOCK_DIAGNOSES.map((dx) => (
-                      <span
-                        key={dx.code}
-                        className={`
-                          inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                          text-xs font-medium ${SEVERITY_CHIP[dx.severity]}
-                        `}
-                      >
-                        <span className="font-bold font-mono">{dx.code}</span>
-                        <span className="text-[10px] opacity-80">— {dx.label}</span>
-                      </span>
-                    ))}
+                {/* Loading state */}
+                {fetchState === 'loading' && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                    <p className="text-xs text-slate-500">Analyzing clinical documentation...</p>
                   </div>
-                </section>
+                )}
 
-                {/* Suggested Services */}
-                <section>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                    Suggested Services (CBHPM / TUSS)
-                  </p>
-                  <div className="space-y-2">
-                    {MOCK_SERVICES.map((svc) => (
-                      <div
-                        key={svc.code}
-                        className="
-                          flex items-center justify-between px-3 py-2.5
-                          bg-slate-800 border border-slate-700/60 rounded-xl
-                        "
-                      >
-                        <div>
-                          <p className="text-xs font-medium text-slate-200">{svc.label}</p>
-                          <p className="text-[10px] font-mono text-slate-500 mt-0.5">{svc.code}</p>
-                        </div>
-                        <span className="text-sm font-bold text-cyan-400 font-mono flex-shrink-0">
-                          {svc.value}
-                        </span>
+                {/* Error state */}
+                {fetchState === 'error' && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <AlertTriangle className="w-6 h-6 text-amber-400" />
+                    <p className="text-xs text-amber-400/80">{fetchError}</p>
+                    <button
+                      onClick={fetchBillingAnalysis}
+                      className="
+                        inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                        bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs
+                        transition-colors
+                      "
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Retry
+                    </button>
+                  </div>
+                )}
+
+                {/* Loaded state */}
+                {fetchState === 'loaded' && analysisData && (
+                  <>
+                    {/* Extracted Diagnoses */}
+                    <section>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        Extracted Diagnoses
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {diagnoses.map((dx) => (
+                          <span
+                            key={dx.code}
+                            className={`
+                              inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                              text-xs font-medium ${DIAGNOSIS_TYPE_CHIP[dx.type]}
+                            `}
+                          >
+                            <span className="font-bold font-mono">{dx.code}</span>
+                            <span className="text-[10px] opacity-80">- {dx.name}</span>
+                          </span>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </section>
+                    </section>
 
-                {/* Revenue capture summary */}
-                <section className="
-                  flex items-center gap-3 px-4 py-3
-                  bg-emerald-500/8 border border-emerald-500/20 rounded-xl
-                ">
-                  <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <div>
-                    <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider font-semibold">
-                      Estimated Claim Value
-                    </p>
-                    <p className="text-lg font-bold text-emerald-400 mt-0.5">{ESTIMATED_TOTAL}</p>
-                  </div>
-                </section>
+                    {/* Suggested Services */}
+                    <section>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                        Suggested Services (CBHPM / TUSS)
+                      </p>
+                      <div className="space-y-2">
+                        {services.map((svc) => (
+                          <div
+                            key={svc.code}
+                            className="
+                              flex items-center justify-between px-3 py-2.5
+                              bg-slate-800 border border-slate-700/60 rounded-xl
+                            "
+                          >
+                            <div>
+                              <p className="text-xs font-medium text-slate-200">{svc.name}</p>
+                              <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+                                {svc.system} {svc.code}
+                              </p>
+                            </div>
+                            <span className="text-sm font-bold text-cyan-400 font-mono flex-shrink-0">
+                              {formatBRL(svc.estimatedValueBRL)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
 
-                {/* CDI advisory */}
-                <div className="
-                  flex items-start gap-2.5 px-3.5 py-3
-                  bg-amber-500/8 border border-amber-500/20 rounded-xl
-                ">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-amber-400/80 leading-relaxed">
-                    <span className="font-bold">CDI Note:</span> To support high-complexity code for
-                    I50.9 (CHF), ensure BNP and echocardiogram results are documented in the
-                    Objective section before submission.
-                  </p>
-                </div>
+                    {/* Revenue capture summary */}
+                    <section className="
+                      flex items-center gap-3 px-4 py-3
+                      bg-emerald-500/8 border border-emerald-500/20 rounded-xl
+                    ">
+                      <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      <div>
+                        <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider font-semibold">
+                          Estimated Claim Value
+                        </p>
+                        <p className="text-lg font-bold text-emerald-400 mt-0.5">{formatBRL(totalValue)}</p>
+                      </div>
+                    </section>
+
+                    {/* CDI advisory warnings */}
+                    {cdiWarnings.length > 0 && (
+                      <div className="space-y-2">
+                        {cdiWarnings.map((warning, idx) => (
+                          <div
+                            key={idx}
+                            className="
+                              flex items-start gap-2.5 px-3.5 py-3
+                              bg-amber-500/8 border border-amber-500/20 rounded-xl
+                            "
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-[11px] text-amber-400/80 leading-relaxed">
+                              <span className="font-bold">CDI:</span> {warning}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Footer */}
               <div className="flex-shrink-0 px-6 py-4 border-t border-slate-800 flex items-center gap-3">
-                {submitState === 'idle' && (
+                {(submitState === 'idle' || submitState === 'ehr_error') && (
                   <button
                     onClick={onClose}
                     className="
@@ -231,9 +367,12 @@ export function SignAndBillModal({ isOpen, onClose, onComplete }: SignAndBillMod
 
                 <motion.button
                   onClick={handleApprove}
-                  disabled={submitState !== 'idle'}
-                  whileHover={submitState === 'idle' ? { scale: 1.02 } : {}}
-                  whileTap={submitState === 'idle' ? { scale: 0.97 } : {}}
+                  disabled={
+                    (submitState !== 'idle' && submitState !== 'ehr_error') ||
+                    (submitState === 'idle' && fetchState !== 'loaded')
+                  }
+                  whileHover={submitState === 'idle' || submitState === 'ehr_error' ? { scale: 1.02 } : {}}
+                  whileTap={submitState === 'idle' || submitState === 'ehr_error' ? { scale: 0.97 } : {}}
                   aria-label="Approve and submit billing claim"
                   className={`
                     flex-[2] py-3 rounded-xl text-sm font-semibold
@@ -242,21 +381,29 @@ export function SignAndBillModal({ isOpen, onClose, onComplete }: SignAndBillMod
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
                     ${submitState === 'success'
                       ? 'bg-emerald-600 text-white'
-                      : submitState === 'loading'
+                      : submitState === 'syncing_to_ehr'
                         ? 'bg-cyan-600/60 text-white cursor-not-allowed'
-                        : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-lg shadow-cyan-500/20'
+                        : submitState === 'ehr_error'
+                          ? 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/20'
+                          : fetchState !== 'loaded'
+                            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white shadow-lg shadow-cyan-500/20'
                     }
                   `}
                 >
-                  {submitState === 'loading' && (
+                  {submitState === 'syncing_to_ehr' && (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   )}
                   {submitState === 'success' && (
                     <CheckCircle2 className="w-4 h-4" />
                   )}
-                  {submitState === 'idle'    && 'Approve & Submit Claim'}
-                  {submitState === 'loading' && 'Submitting…'}
-                  {submitState === 'success' && 'Claim Approved!'}
+                  {submitState === 'ehr_error' && (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  {submitState === 'idle'           && 'Approve & Submit Claim'}
+                  {submitState === 'syncing_to_ehr' && 'Pushing to EHR...'}
+                  {submitState === 'success'        && 'Successfully Pushed to EHR'}
+                  {submitState === 'ehr_error'      && 'Failed to Sync to EHR - Retry'}
                 </motion.button>
               </div>
             </div>

@@ -21,7 +21,7 @@ const CONSENT_DOCUMENTS: ConsentDocument[] = [
   {
     type: 'TERMS_OF_SERVICE',
     title: 'Terms of Service',
-    description: 'Legal agreement for using HoliLabs services',
+    description: 'Legal agreement for using Holi Labs services',
     required: true,
     documentPath: '/legal/terms-of-service',
     version: '1.0',
@@ -174,7 +174,7 @@ export default function ConsentAcceptanceFlow({
             Consent Acceptance Required
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Please review and accept the following documents to continue using HoliLabs
+            Please review and accept the following documents to continue using Holi Labs
           </p>
 
           {/* Progress Bar */}

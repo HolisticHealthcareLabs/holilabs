@@ -564,14 +564,9 @@ body {
   min-height: calc(var(--vh, 1vh) * 100);
 }
 
-/* Firefox: Flexbox min-height Fix */
-.flex {
-  min-height: 0;
-  min-width: 0;
-}
-
-.flex>* {
-  min-height: 0;
+/* Firefox: Flex item overflow fix */
+/* Keep flex-item width shrink behavior without collapsing container height. */
+.flex > * {
   min-width: 0;
 }
 

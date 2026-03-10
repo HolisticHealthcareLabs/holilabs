@@ -150,39 +150,25 @@ export function useSessionTimeout(options: SessionTimeoutOptions = {}) {
   }, [clearTimers, router, redirectTo]);
 
   useEffect(() => {
-    // List of events that indicate user activity
-    const events = [
-      'mousedown',
-      'mousemove',
-      'keydown',
-      'scroll',
-      'touchstart',
-      'click',
-    ];
+    const events = ['mousedown', 'keydown', 'touchstart'] as const;
 
-    // Throttle function to avoid too many resets
     let lastReset = Date.now();
-    const throttleMs = 1000; // Only reset once per second
+    const THROTTLE_MS = 30_000;
 
     const handleActivity = () => {
       const now = Date.now();
-      if (now - lastReset > throttleMs) {
+      if (now - lastReset > THROTTLE_MS && !showWarning) {
         lastReset = now;
-        if (!showWarning) {
-          resetTimeout();
-        }
+        resetTimeout();
       }
     };
 
-    // Add event listeners
     events.forEach((event) => {
-      window.addEventListener(event, handleActivity);
+      window.addEventListener(event, handleActivity, { passive: true });
     });
 
-    // Initial timeout
     resetTimeout();
 
-    // Cleanup
     return () => {
       events.forEach((event) => {
         window.removeEventListener(event, handleActivity);

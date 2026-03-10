@@ -41,6 +41,7 @@ export default function ClinicianRegisterPage() {
   const [devInboxFile, setDevInboxFile] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'verified' | 'failed' | null>(null);
   const [enableDemoMode, setEnableDemoMode] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
 
   useEffect(() => {
     // Only show Google OAuth if the provider is actually configured in NextAuth.
@@ -65,7 +66,11 @@ export default function ClinicianRegisterPage() {
     e.preventDefault();
     setError(null);
 
-    // Validate passwords match
+    if (!termsAgreed) {
+      setError('Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -656,9 +661,41 @@ export default function ClinicianRegisterPage() {
               />
             </div>
 
+            <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={termsAgreed}
+                onChange={(e) => setTermsAgreed(e.target.checked)}
+                disabled={isLoading}
+                className="mt-0.5 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50 shrink-0"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                I agree to Holi Labs&apos;{' '}
+                <a
+                  href="/legal/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  Terms of Service
+                </a>{' '}
+                and{' '}
+                <a
+                  href="/legal/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 dark:hover:text-blue-300"
+                >
+                  Privacy Policy
+                </a>
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !termsAgreed}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-2.5 sm:py-3 px-5 sm:px-6 text-sm sm:text-base rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? 'Submitting...' : 'Request Access'}

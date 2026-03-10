@@ -1,859 +1,104 @@
 'use client';
-export const dynamic = 'force-dynamic';
 
-/**
- * Advanced Analytics Dashboard
- *
- * Features:
- * - Interactive line charts for trends
- * - Bar charts for comparisons
- * - Donut charts for distributions
- * - Heat maps for activity patterns
- * - Export functionality
- * - Real-time data updates
- * - Linear/Notion inspired design
- */
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Users, Stethoscope, FileText, DollarSign,
+  TrendingUp, TrendingDown, Minus,
+  Download, Calendar,
+} from 'lucide-react';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { exportAnalyticsToExcel } from '@/lib/export/excel-export';
-import { exportAnalyticsToPDF } from '@/lib/export/pdf-export';
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface OverviewMetrics {
+  totalPatients: number;
+  activePatients: number;
+  totalConsultations: number;
+  totalPrescriptions: number;
+  revenue: number;
+  avgConsultationTime: number;
+}
+
+interface GrowthTrends {
+  patientsGrowth: number;
+  consultationsGrowth: number;
+  revenueGrowth: number;
+}
+
+interface ChartPoint {
+  date: string;
+  value: number;
+}
+
+interface DiagnosisEntry {
+  code: string;
+  name: string;
+  count: number;
+}
+
+interface DemographicBand {
+  ageGroup: string;
+  count: number;
+  percentage: number;
+}
+
+interface AppointmentType {
+  type: string;
+  count: number;
+  percentage: number;
+}
+
+interface HeatmapCell {
+  day: string;
+  hour: number;
+  intensity: number;
+}
 
 interface AnalyticsData {
-  overview: {
-    totalPatients: number;
-    activePatients: number;
-    totalConsultations: number;
-    totalPrescriptions: number;
-    totalForms: number;
-    completedForms: number;
-    revenue: number;
-    avgConsultationTime: number;
-  };
-  trends: {
-    patientsGrowth: number;
-    consultationsGrowth: number;
-    formsGrowth: number;
-    revenueGrowth: number;
-  };
-  chartData: {
-    consultations: { date: string; count: number }[];
-    patients: { date: string; count: number }[];
-    revenue: { date: string; amount: number }[];
-  };
-  recentActivity: {
-    date: string;
-    consultations: number;
-    newPatients: number;
-    formsSent: number;
-  }[];
-  topDiagnoses: {
-    code: string;
-    name: string;
-    count: number;
-  }[];
-  formCompletionRate: {
-    sent: number;
-    completed: number;
-    pending: number;
-    rate: number;
-  };
-  patientDemographics: {
-    ageGroup: string;
-    count: number;
-    percentage: number;
-  }[];
-  appointmentTypes: {
-    type: string;
-    count: number;
-    percentage: number;
-  }[];
-  activityHeatmap: {
-    day: string;
-    hour: number;
-    intensity: number;
-  }[];
+  overview: OverviewMetrics;
+  trends: GrowthTrends;
+  chartData: ChartPoint[];
+  topDiagnoses: DiagnosisEntry[];
+  demographics: DemographicBand[];
+  appointmentTypes: AppointmentType[];
+  heatmap: HeatmapCell[];
 }
 
-export default function AnalyticsPage() {
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
-  const [selectedChart, setSelectedChart] = useState<'consultations' | 'patients' | 'revenue'>('consultations');
-  const [exporting, setExporting] = useState(false);
+type UnknownRecord = Record<string, unknown>;
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
+// ---------------------------------------------------------------------------
+// Mock data generator
+// ---------------------------------------------------------------------------
 
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/analytics/dashboard?range=${timeRange}`);
-      if (!response.ok) {
-        // Use mock data if API fails
-        setAnalytics(generateMockData());
-        return;
-      }
-      const data = await response.json();
-      setAnalytics(data);
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-      // Use mock data on error
-      setAnalytics(generateMockData());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const exportData = async (format: 'csv' | 'pdf' | 'excel') => {
-    if (!analytics) return;
-
-    setExporting(true);
-    try {
-      let blob: Blob;
-      let filename: string;
-
-      if (format === 'csv') {
-        // Simple CSV export
-        const csvData = generateCSV(analytics);
-        blob = new Blob([csvData], { type: 'text/csv' });
-        filename = `analytics-${timeRange}-${Date.now()}.csv`;
-      } else if (format === 'excel') {
-        // Excel export with formatting
-        blob = await exportAnalyticsToExcel(analytics, timeRange);
-        filename = `analytics-${timeRange}-${Date.now()}.xlsx`;
-      } else if (format === 'pdf') {
-        // PDF export with charts
-        blob = await exportAnalyticsToPDF(analytics, timeRange);
-        filename = `analytics-${timeRange}-${Date.now()}.pdf`;
-      } else {
-        throw new Error('Invalid format');
-      }
-
-      // Download file
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export error:', error);
-      alert('Error al exportar datos');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const generateCSV = (data: AnalyticsData): string => {
-    const headers = ['Métrica', 'Valor'];
-    const rows = [
-      ['Total Pacientes', data.overview.totalPatients],
-      ['Pacientes Activos', data.overview.activePatients],
-      ['Consultas', data.overview.totalConsultations],
-      ['Prescripciones', data.overview.totalPrescriptions],
-      ['Formularios Enviados', data.overview.totalForms],
-      ['Formularios Completados', data.overview.completedForms],
-    ];
-
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    return csv;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gradient-to-r from-blue-600 to-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Cargando analíticas...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!analytics) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">No hay datos disponibles</p>
-        </div>
-      </div>
-    );
-  }
-
-  const getGrowthColor = (growth: number) => {
-    if (growth > 0) return 'text-green-600';
-    if (growth < 0) return 'text-red-600';
-    return 'text-gray-600';
-  };
-
-  const getGrowthIcon = (growth: number) => {
-    if (growth > 0) return '↑';
-    if (growth < 0) return '↓';
-    return '→';
-  };
-
-  return (
-    <div className="space-y-6 pb-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Analíticas Avanzadas</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Métricas y tendencias de tu práctica médica
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Export Menu */}
-          <div className="relative group">
-            <button
-              disabled={exporting}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium flex items-center gap-2"
-            >
-              <span>{exporting ? '⏳' : '📥'}</span>
-              <span>{exporting ? 'Exportando...' : 'Exportar'}</span>
-            </button>
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-              <button
-                onClick={() => exportData('csv')}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
-              >
-                📄 Exportar CSV
-              </button>
-              <button
-                onClick={() => exportData('excel')}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                📊 Exportar Excel
-              </button>
-              <button
-                onClick={() => exportData('pdf')}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
-              >
-                📑 Exportar PDF
-              </button>
-            </div>
-          </div>
-
-          {/* Time Range Selector */}
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
-            {[
-              { value: '7d', label: '7d' },
-              { value: '30d', label: '30d' },
-              { value: '90d', label: '90d' },
-              { value: 'all', label: 'Todo' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setTimeRange(option.value as any)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  timeRange === option.value
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          icon="👥"
-          title="Total Pacientes"
-          value={analytics.overview.totalPatients}
-          subtitle={`${analytics.overview.activePatients} activos`}
-          growth={analytics.trends.patientsGrowth}
-          delay={0}
-          gradient="from-blue-500 to-cyan-500"
-        />
-        <MetricCard
-          icon="🩺"
-          title="Consultas"
-          value={analytics.overview.totalConsultations}
-          subtitle={`~${analytics.overview.avgConsultationTime} min promedio`}
-          growth={analytics.trends.consultationsGrowth}
-          delay={0.1}
-          gradient="from-green-500 to-emerald-500"
-        />
-        <MetricCard
-          icon="💊"
-          title="Prescripciones"
-          value={analytics.overview.totalPrescriptions}
-          subtitle={`${(analytics.overview.totalPrescriptions / Math.max(analytics.overview.totalConsultations, 1)).toFixed(1)} por consulta`}
-          growth={undefined}
-          delay={0.2}
-          gradient="from-purple-500 to-pink-500"
-        />
-        <MetricCard
-          icon="💰"
-          title="Ingresos"
-          value={`$${analytics.overview.revenue.toLocaleString()}`}
-          subtitle="Este período"
-          growth={analytics.trends.revenueGrowth}
-          delay={0.3}
-          gradient="from-orange-500 to-red-500"
-        />
-      </div>
-
-      {/* Main Chart */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Tendencias</h2>
-            <div className="flex items-center gap-2">
-              {[
-                { value: 'consultations', label: 'Consultas', icon: '🩺' },
-                { value: 'patients', label: 'Pacientes', icon: '👥' },
-                { value: 'revenue', label: 'Ingresos', icon: '💰' },
-              ].map((chart) => (
-                <button
-                  key={chart.value}
-                  onClick={() => setSelectedChart(chart.value as any)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    selectedChart === chart.value
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <span className="mr-1">{chart.icon}</span>
-                  {chart.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="p-6">
-          <LineChart
-            data={analytics.chartData[selectedChart]}
-            color={
-              selectedChart === 'consultations' ? '#10b981' :
-              selectedChart === 'patients' ? '#3b82f6' : '#f59e0b'
-            }
-          />
-        </div>
-      </div>
-
-      {/* Three Column Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form Completion */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Formularios</h2>
-          <DonutChart
-            data={[
-              { label: 'Completados', value: analytics.formCompletionRate.completed, color: '#10b981' },
-              { label: 'Pendientes', value: analytics.formCompletionRate.pending, color: '#f59e0b' },
-            ]}
-            centerText={`${analytics.formCompletionRate.rate}%`}
-            centerSubtext="Completados"
-          />
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-gray-600 dark:text-gray-400">Completados</span>
-              </div>
-              <span className="font-semibold text-gray-900 dark:text-white">{analytics.formCompletionRate.completed}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                <span className="text-gray-600 dark:text-gray-400">Pendientes</span>
-              </div>
-              <span className="font-semibold text-gray-900 dark:text-white">{analytics.formCompletionRate.pending}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Patient Demographics */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Demografía</h2>
-          <div className="space-y-3">
-            {analytics.patientDemographics.map((demo, index) => (
-              <div key={demo.ageGroup}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{demo.ageGroup}</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {demo.count} ({demo.percentage}%)
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${demo.percentage}%` }}
-                    transition={{ duration: 0.8, delay: index * 0.1 }}
-                    className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Appointment Types */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Tipos de Cita</h2>
-          <div className="space-y-3">
-            {analytics.appointmentTypes.map((type, index) => (
-              <div key={type.type} className="flex items-center gap-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg flex items-center justify-center">
-                  <span className="text-lg">
-                    {type.type === 'Consulta' ? '🩺' :
-                     type.type === 'Seguimiento' ? '📋' :
-                     type.type === 'Emergencia' ? '🚨' : '📅'}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{type.type}</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{type.percentage}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${type.percentage}%` }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                      className="h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-                    />
-                  </div>
-                </div>
-                <span className="text-sm font-bold text-gray-900 dark:text-white">{type.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Activity Heatmap */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Mapa de Calor - Actividad por Hora</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          Visualiza los horarios más concurridos de tu práctica
-        </p>
-        <ActivityHeatmap data={analytics.activityHeatmap} />
-      </div>
-
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Diagnoses */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Diagnósticos Más Frecuentes</h2>
-          {analytics.topDiagnoses.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-              No hay diagnósticos registrados
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {analytics.topDiagnoses.slice(0, 8).map((diagnosis, index) => (
-                <motion.div
-                  key={diagnosis.code}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">{index + 1}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{diagnosis.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{diagnosis.code}</p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">{diagnosis.count}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">casos</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Recent Activity Timeline */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Actividad Reciente</h2>
-          {analytics.recentActivity.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-              No hay actividad reciente
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {analytics.recentActivity.slice(0, 10).map((activity, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                >
-                  <div className="flex-shrink-0 w-12 text-center">
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
-                      {new Date(activity.date).getDate()}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(activity.date).toLocaleDateString('es-ES', { month: 'short' })}
-                    </div>
-                  </div>
-                  <div className="flex-1 flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">🩺</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{activity.consultations}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">👤</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{activity.newPatients}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">📋</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{activity.formsSent}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Metric Card Component
-function MetricCard({
-  icon,
-  title,
-  value,
-  subtitle,
-  growth,
-  delay,
-  gradient,
-}: {
-  icon: string;
-  title: string;
-  value: number | string;
-  subtitle: string;
-  growth?: number;
-  delay: number;
-  gradient: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:shadow-xl transition-shadow"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center text-2xl shadow-lg`}>
-          {icon}
-        </div>
-        {growth !== undefined && (
-          <span className={`text-sm font-bold ${growth > 0 ? 'text-green-600' : growth < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-            {growth > 0 ? '↑' : growth < 0 ? '↓' : '→'} {Math.abs(growth)}%
-          </span>
-        )}
-      </div>
-      <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-1">{title}</h3>
-      <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{subtitle}</p>
-    </motion.div>
-  );
-}
-
-// Line Chart Component
-function LineChart({ data, color }: { data: { date: string; count?: number; amount?: number }[]; color: string }) {
-  if (!data || data.length === 0) {
-    return <div className="h-64 flex items-center justify-center text-gray-500">No hay datos para mostrar</div>;
-  }
-
-  const values = data.map(d => d.count || d.amount || 0);
-  const maxValue = Math.max(...values, 1);
-  const minValue = Math.min(...values);
-  const range = maxValue - minValue || 1;
-
-  const width = 800;
-  const height = 300;
-  const padding = 40;
-
-  const points = data.map((d, i) => {
-    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
-    const value = d.count || d.amount || 0;
-    const y = height - padding - ((value - minValue) / range) * (height - padding * 2);
-    return { x, y, value, date: d.date };
+function generateMockData(): AnalyticsData {
+  const chartData: ChartPoint[] = Array.from({ length: 30 }, (_, i) => {
+    const day = i + 1;
+    const month = day <= 28 ? '02' : '03';
+    const normalizedDay = day <= 28 ? day : day - 28;
+    const date = `2026-${month}-${String(normalizedDay).padStart(2, '0')}`;
+    const value = 10 + ((i * 7) % 9) + (i % 4);
+    return { date, value };
   });
 
-  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaD = `${pathD} L ${points[points.length - 1].x} ${height - padding} L ${padding} ${height - padding} Z`;
-
-  return (
-    <div className="relative">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-        {/* Grid Lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
-          <line
-            key={ratio}
-            x1={padding}
-            y1={padding + ratio * (height - padding * 2)}
-            x2={width - padding}
-            y2={padding + ratio * (height - padding * 2)}
-            stroke="#e5e7eb"
-            strokeWidth="1"
-            strokeDasharray="4 4"
-          />
-        ))}
-
-        {/* Area under line */}
-        <defs>
-          <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.05" />
-          </linearGradient>
-        </defs>
-        <path d={areaD} fill={`url(#gradient-${color})`} />
-
-        {/* Line */}
-        <motion.path
-          d={pathD}
-          fill="none"
-          stroke={color}
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.5, ease: 'easeInOut' }}
-        />
-
-        {/* Points */}
-        {points.map((point, i) => (
-          <motion.circle
-            key={i}
-            cx={point.x}
-            cy={point.y}
-            r="5"
-            fill={color}
-            stroke="white"
-            strokeWidth="2"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: (i / points.length) * 1.5, duration: 0.2 }}
-            className="cursor-pointer hover:r-7 transition-all"
-          >
-            <title>{`${point.date}: ${point.value}`}</title>
-          </motion.circle>
-        ))}
-
-        {/* X-axis labels */}
-        {points.map((point, i) => {
-          if (i % Math.ceil(points.length / 6) === 0) {
-            return (
-              <text
-                key={i}
-                x={point.x}
-                y={height - padding + 20}
-                textAnchor="middle"
-                fontSize="12"
-                fill="#9ca3af"
-              >
-                {new Date(point.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
-              </text>
-            );
-          }
-          return null;
-        })}
-
-        {/* Y-axis labels */}
-        {[0, 0.5, 1].map((ratio) => {
-          const value = Math.round(minValue + ratio * range);
-          return (
-            <text
-              key={ratio}
-              x={padding - 10}
-              y={padding + (1 - ratio) * (height - padding * 2)}
-              textAnchor="end"
-              fontSize="12"
-              fill="#9ca3af"
-              dominantBaseline="middle"
-            >
-              {value}
-            </text>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-// Donut Chart Component
-function DonutChart({
-  data,
-  centerText,
-  centerSubtext,
-}: {
-  data: { label: string; value: number; color: string }[];
-  centerText: string;
-  centerSubtext: string;
-}) {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  const size = 200;
-  const strokeWidth = 30;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  let currentOffset = 0;
-
-  return (
-    <div className="flex justify-center">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* Background circle */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth={strokeWidth}
-        />
-
-        {/* Data segments */}
-        {data.map((item, index) => {
-          const percentage = item.value / total;
-          const segmentLength = circumference * percentage;
-          const segment = (
-            <motion.circle
-              key={index}
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={item.color}
-              strokeWidth={strokeWidth}
-              strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
-              strokeDashoffset={-currentOffset}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              initial={{ strokeDashoffset: -circumference }}
-              animate={{ strokeDashoffset: -currentOffset }}
-              transition={{ duration: 1, delay: index * 0.2 }}
-            />
-          );
-          currentOffset += segmentLength;
-          return segment;
-        })}
-
-        {/* Center text */}
-        <text
-          x={size / 2}
-          y={size / 2 - 8}
-          textAnchor="middle"
-          fontSize="32"
-          fontWeight="bold"
-          fill="#111827"
-        >
-          {centerText}
-        </text>
-        <text
-          x={size / 2}
-          y={size / 2 + 20}
-          textAnchor="middle"
-          fontSize="14"
-          fill="#6b7280"
-        >
-          {centerSubtext}
-        </text>
-      </svg>
-    </div>
-  );
-}
-
-// Activity Heatmap Component
-function ActivityHeatmap({ data }: { data: { day: string; hour: number; intensity: number }[] }) {
-  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-  const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM - 7 PM
-
-  const getIntensity = (day: string, hour: number) => {
-    const cell = data.find(d => d.day === day && d.hour === hour);
-    return cell ? cell.intensity : 0;
-  };
-
-  const getColor = (intensity: number) => {
-    if (intensity === 0) return 'bg-gray-100 dark:bg-gray-700';
-    if (intensity < 3) return 'bg-blue-200 dark:bg-blue-900/30';
-    if (intensity < 6) return 'bg-blue-400 dark:bg-blue-700/50';
-    if (intensity < 9) return 'bg-blue-600 dark:bg-blue-600/70';
-    return 'bg-blue-800 dark:bg-blue-500';
-  };
-
-  return (
-    <div className="overflow-x-auto">
-      <div className="inline-block min-w-full">
-        <div className="flex gap-1">
-          <div className="flex flex-col gap-1 pt-6">
-            {days.map(day => (
-              <div key={day} className="h-8 flex items-center justify-end pr-2 text-xs text-gray-600 dark:text-gray-400 font-medium w-12">
-                {day}
-              </div>
-            ))}
-          </div>
-          <div>
-            <div className="flex gap-1 mb-1">
-              {hours.map(hour => (
-                <div key={hour} className="w-8 text-center text-xs text-gray-600 dark:text-gray-400">
-                  {hour}
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col gap-1">
-              {days.map(day => (
-                <div key={day} className="flex gap-1">
-                  {hours.map(hour => {
-                    const intensity = getIntensity(day, hour);
-                    return (
-                      <motion.div
-                        key={`${day}-${hour}`}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: Math.random() * 0.5 }}
-                        className={`w-8 h-8 rounded ${getColor(intensity)} cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all`}
-                        title={`${day} ${hour}:00 - ${intensity} consultas`}
-                      />
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-          <span>Menos</span>
-          <div className="flex gap-1">
-            {[0, 3, 6, 9, 12].map(intensity => (
-              <div key={intensity} className={`w-4 h-4 rounded ${getColor(intensity)}`} />
-            ))}
-          </div>
-          <span>Más</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Mock Data Generator
-function generateMockData(): AnalyticsData {
-  const now = new Date();
-  const chartData = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date(now);
-    date.setDate(date.getDate() - (29 - i));
-    return {
-      date: date.toISOString(),
-      count: Math.floor(Math.random() * 20) + 5,
-      amount: Math.floor(Math.random() * 5000) + 1000,
-    };
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const hours = Array.from({ length: 12 }, (_, i) => i + 8);
+  const heatmap: HeatmapCell[] = [];
+  days.forEach((day) => {
+    hours.forEach((hour, hourIndex) => {
+      const isWeekend = day === 'Sat' || day === 'Sun';
+      const isPeak = hour >= 10 && hour <= 14;
+      const dayIndex = days.indexOf(day);
+      let intensity = 0;
+      if (!isWeekend) {
+        intensity = isPeak
+          ? 7 + ((dayIndex + hourIndex) % 3)
+          : 3 + ((dayIndex * 2 + hourIndex) % 3);
+      } else {
+        intensity = (dayIndex + hourIndex) % 3;
+      }
+      heatmap.push({ day, hour, intensity });
+    });
   });
 
   return {
@@ -862,87 +107,511 @@ function generateMockData(): AnalyticsData {
       activePatients: 186,
       totalConsultations: 423,
       totalPrescriptions: 315,
-      totalForms: 89,
-      completedForms: 67,
       revenue: 125430,
       avgConsultationTime: 32,
     },
     trends: {
       patientsGrowth: 12.5,
       consultationsGrowth: 8.3,
-      formsGrowth: 15.2,
       revenueGrowth: 18.7,
     },
-    chartData: {
-      consultations: chartData.map(d => ({ date: d.date, count: d.count })),
-      patients: chartData.map(d => ({ date: d.date, count: Math.floor(d.count * 0.6) })),
-      revenue: chartData.map(d => ({ date: d.date, amount: d.amount })),
-    },
-    recentActivity: chartData.slice(-14).map(d => ({
-      date: d.date,
-      consultations: d.count || 0,
-      newPatients: Math.floor(Math.random() * 5),
-      formsSent: Math.floor(Math.random() * 8),
-    })),
+    chartData,
     topDiagnoses: [
-      { code: 'J06.9', name: 'Infección respiratoria aguda superior', count: 45 },
-      { code: 'K21.9', name: 'Enfermedad por reflujo gastroesofágico', count: 32 },
-      { code: 'M54.5', name: 'Lumbalgia', count: 28 },
-      { code: 'E11.9', name: 'Diabetes mellitus tipo 2', count: 24 },
-      { code: 'I10', name: 'Hipertensión esencial', count: 21 },
-      { code: 'J45.9', name: 'Asma', count: 18 },
-      { code: 'E78.5', name: 'Hiperlipidemia', count: 15 },
-      { code: 'M79.1', name: 'Mialgia', count: 12 },
+      { code: 'I10', name: 'Essential Hypertension', count: 42 },
+      { code: 'E11.9', name: 'Type 2 Diabetes Mellitus', count: 31 },
+      { code: 'I48.91', name: 'Atrial Fibrillation', count: 24 },
+      { code: 'I50.9', name: 'Heart Failure', count: 19 },
+      { code: 'E78.5', name: 'Dyslipidemia', count: 17 },
+      { code: 'N18.3', name: 'CKD Stage 3', count: 14 },
+      { code: 'I25.10', name: 'Coronary Artery Disease', count: 11 },
+      { code: 'E03.9', name: 'Hypothyroidism', count: 9 },
     ],
-    formCompletionRate: {
-      sent: 89,
-      completed: 67,
-      pending: 22,
-      rate: 75,
-    },
-    patientDemographics: [
-      { ageGroup: '0-17', count: 35, percentage: 14 },
-      { ageGroup: '18-35', count: 72, percentage: 29 },
-      { ageGroup: '36-50', count: 82, percentage: 33 },
-      { ageGroup: '51-65', count: 42, percentage: 17 },
-      { ageGroup: '66+', count: 16, percentage: 7 },
+    demographics: [
+      { ageGroup: '18-35', count: 38, percentage: 15 },
+      { ageGroup: '36-50', count: 62, percentage: 25 },
+      { ageGroup: '51-65', count: 84, percentage: 34 },
+      { ageGroup: '66-80', count: 48, percentage: 19 },
+      { ageGroup: '80+', count: 15, percentage: 7 },
     ],
     appointmentTypes: [
-      { type: 'Consulta', count: 245, percentage: 58 },
-      { type: 'Seguimiento', count: 127, percentage: 30 },
-      { type: 'Emergencia', count: 34, percentage: 8 },
-      { type: 'Preventiva', count: 17, percentage: 4 },
+      { type: 'Follow-up Visit', count: 178, percentage: 42 },
+      { type: 'New Patient', count: 89, percentage: 21 },
+      { type: 'Urgent / Same-day', count: 68, percentage: 16 },
+      { type: 'Procedure', count: 51, percentage: 12 },
+      { type: 'Telehealth', count: 37, percentage: 9 },
     ],
-    activityHeatmap: generateHeatmapData(),
+    heatmap,
   };
 }
 
-function generateHeatmapData() {
-  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-  const hours = Array.from({ length: 12 }, (_, i) => i + 8);
-  const data: { day: string; hour: number; intensity: number }[] = [];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  days.forEach(day => {
-    hours.forEach(hour => {
-      // Weekend has lower intensity
-      const isWeekend = day === 'Sáb' || day === 'Dom';
-      // Peak hours 10-14
-      const isPeakHour = hour >= 10 && hour <= 14;
+function formatCurrency(val: number): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+}
 
-      let intensity = 0;
-      if (!isWeekend) {
-        if (isPeakHour) {
-          intensity = Math.floor(Math.random() * 5) + 7; // 7-12
-        } else {
-          intensity = Math.floor(Math.random() * 4) + 3; // 3-7
+function GrowthBadge({ value }: { value: number }) {
+  if (value > 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+        <TrendingUp className="w-3 h-3" /> +{value}%
+      </span>
+    );
+  }
+  if (value < 0) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-red-600 dark:text-red-400">
+        <TrendingDown className="w-3 h-3" /> {value}%
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-gray-400">
+      <Minus className="w-3 h-3" /> 0%
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mini SVG line chart (no external lib)
+// ---------------------------------------------------------------------------
+
+function SparklineChart({ data, color }: { data: ChartPoint[]; color: string }) {
+  if (!data.length) return null;
+
+  const values = data.map((d) => d.value);
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
+
+  const w = 600;
+  const h = 180;
+  const px = 32;
+  const py = 20;
+
+  const pts = values.map((v, i) => ({
+    x: px + (i / (values.length - 1)) * (w - px * 2),
+    y: h - py - ((v - min) / range) * (h - py * 2),
+  }));
+
+  const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const area = `${line} L ${pts[pts.length - 1].x} ${h - py} L ${px} ${h - py} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id={`ag-${color}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      {[0, 0.5, 1].map((r) => (
+        <line
+          key={r}
+          x1={px} y1={py + r * (h - py * 2)}
+          x2={w - px} y2={py + r * (h - py * 2)}
+          stroke="currentColor" className="text-gray-200 dark:text-gray-700" strokeWidth="1" strokeDasharray="4 4"
+        />
+      ))}
+      <path d={area} fill={`url(#ag-${color})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} stroke="white" strokeWidth="1.5" className="opacity-0 hover:opacity-100 transition-opacity">
+          <title>{data[i].date}: {data[i].value}</title>
+        </circle>
+      ))}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Heatmap
+// ---------------------------------------------------------------------------
+
+const HEAT_COLORS = [
+  'bg-gray-100 dark:bg-gray-800',
+  'bg-blue-100 dark:bg-blue-900/30',
+  'bg-blue-300 dark:bg-blue-700/50',
+  'bg-blue-500 dark:bg-blue-600/70',
+  'bg-blue-700 dark:bg-blue-500',
+];
+
+function heatColor(intensity: number): string {
+  if (intensity === 0) return HEAT_COLORS[0];
+  if (intensity < 3) return HEAT_COLORS[1];
+  if (intensity < 6) return HEAT_COLORS[2];
+  if (intensity < 9) return HEAT_COLORS[3];
+  return HEAT_COLORS[4];
+}
+
+function asRecord(value: unknown): UnknownRecord | null {
+  return typeof value === 'object' && value !== null ? (value as UnknownRecord) : null;
+}
+
+function asNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeAnalyticsData(input: unknown, fallback: AnalyticsData): AnalyticsData {
+  const root = asRecord(input);
+  if (!root) return fallback;
+
+  const overview = asRecord(root.overview);
+  const trends = asRecord(root.trends);
+
+  const recentActivity = Array.isArray(root.recentActivity) ? root.recentActivity : [];
+  const chartData = recentActivity
+    .map((entry) => {
+      const row = asRecord(entry);
+      if (!row) return null;
+      const rawDate = typeof row.date === 'string' ? row.date : '';
+      const date = rawDate ? rawDate.split('T')[0] : '';
+      const value = asNumber(row.consultations, NaN);
+      if (!date || !Number.isFinite(value)) return null;
+      return { date, value };
+    })
+    .filter((row): row is ChartPoint => row !== null);
+
+  const topDiagnosesRaw = Array.isArray(root.topDiagnoses) ? root.topDiagnoses : fallback.topDiagnoses;
+  const topDiagnoses = topDiagnosesRaw
+    .map((entry) => {
+      const row = asRecord(entry);
+      if (!row || typeof row.code !== 'string' || typeof row.name !== 'string') return null;
+      return {
+        code: row.code,
+        name: row.name,
+        count: asNumber(row.count, 0),
+      };
+    })
+    .filter((row): row is DiagnosisEntry => row !== null);
+
+  return {
+    overview: {
+      totalPatients: asNumber(overview?.totalPatients, fallback.overview.totalPatients),
+      activePatients: asNumber(overview?.activePatients, fallback.overview.activePatients),
+      totalConsultations: asNumber(overview?.totalConsultations, fallback.overview.totalConsultations),
+      totalPrescriptions: asNumber(overview?.totalPrescriptions, fallback.overview.totalPrescriptions),
+      revenue: asNumber(overview?.revenue, fallback.overview.revenue),
+      avgConsultationTime: asNumber(overview?.avgConsultationTime, fallback.overview.avgConsultationTime),
+    },
+    trends: {
+      patientsGrowth: asNumber(trends?.patientsGrowth, fallback.trends.patientsGrowth),
+      consultationsGrowth: asNumber(trends?.consultationsGrowth, fallback.trends.consultationsGrowth),
+      revenueGrowth: asNumber(trends?.revenueGrowth, fallback.trends.revenueGrowth),
+    },
+    chartData: chartData.length ? chartData : fallback.chartData,
+    topDiagnoses: topDiagnoses.length ? topDiagnoses : fallback.topDiagnoses,
+    demographics: fallback.demographics,
+    appointmentTypes: fallback.appointmentTypes,
+    heatmap: fallback.heatmap,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+type TimeRange = '7d' | '30d' | '90d';
+
+export default function AnalyticsPage() {
+  const [data, setData] = useState<AnalyticsData>(() => generateMockData());
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/analytics/dashboard?range=${timeRange}`);
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        if (!cancelled) {
+          setData((prev) => normalizeAnalyticsData(json, prev));
         }
-      } else {
-        intensity = Math.floor(Math.random() * 3); // 0-3
-      }
+      } catch { /* mock data already showing */ }
+    })();
+    return () => { cancelled = true; };
+  }, [timeRange]);
 
-      data.push({ day, hour, intensity });
-    });
-  });
+  const { overview, trends } = data;
 
-  return data;
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const hours = Array.from({ length: 12 }, (_, i) => i + 8);
+
+  const heatmapLookup = useMemo(() => {
+    const map = new Map<string, number>();
+    (data.heatmap ?? []).forEach((c) => map.set(`${c.day}-${c.hour}`, c.intensity));
+    return map;
+  }, [data.heatmap]);
+
+  async function handleExportCSV() {
+    const rows = [
+      ['Metric', 'Value'],
+      ['Total Patients', String(overview.totalPatients)],
+      ['Active Patients', String(overview.activePatients)],
+      ['Consultations', String(overview.totalConsultations)],
+      ['Prescriptions', String(overview.totalPrescriptions)],
+      ['Revenue (BRL)', String(overview.revenue)],
+      ['Avg Consultation (min)', String(overview.avgConsultationTime)],
+    ];
+    const csv = rows.map((r) => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-${timeRange}-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            Analytics
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Practice performance metrics and clinical trends
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+            {(['7d', '30d', '90d'] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setTimeRange(r)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  timeRange === r
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <KPICard
+          icon={Users} label="Total Patients" value={String(overview.totalPatients)}
+          sub={`${overview.activePatients} active`}
+          growth={trends.patientsGrowth}
+          accent="text-blue-600 dark:text-blue-400" border="border-blue-200/60 dark:border-blue-500/20"
+          iconBg="bg-blue-50 dark:bg-blue-500/10"
+        />
+        <KPICard
+          icon={Stethoscope} label="Consultations" value={String(overview.totalConsultations)}
+          sub={`~${overview.avgConsultationTime} min avg`}
+          growth={trends.consultationsGrowth}
+          accent="text-emerald-600 dark:text-emerald-400" border="border-emerald-200/60 dark:border-emerald-500/20"
+          iconBg="bg-emerald-50 dark:bg-emerald-500/10"
+        />
+        <KPICard
+          icon={FileText} label="Prescriptions" value={String(overview.totalPrescriptions)}
+          sub={`${(overview.totalPrescriptions / Math.max(overview.totalConsultations, 1)).toFixed(1)} per visit`}
+          accent="text-violet-600 dark:text-violet-400" border="border-violet-200/60 dark:border-violet-500/20"
+          iconBg="bg-violet-50 dark:bg-violet-500/10"
+        />
+        <KPICard
+          icon={DollarSign} label="Revenue" value={formatCurrency(overview.revenue)}
+          sub="Current period"
+          growth={trends.revenueGrowth}
+          accent="text-amber-600 dark:text-amber-400" border="border-amber-200/60 dark:border-amber-500/20"
+          iconBg="bg-amber-50 dark:bg-amber-500/10"
+        />
+      </div>
+
+      {/* Trend Chart */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Consultation Trend</h2>
+          <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
+            <Calendar className="w-3 h-3" />
+            Last {timeRange === '7d' ? '7' : timeRange === '30d' ? '30' : '90'} days
+          </div>
+        </div>
+        <div className="p-5">
+          <SparklineChart data={data.chartData} color="#3b82f6" />
+        </div>
+      </div>
+
+      {/* Three-column: Diagnoses, Demographics, Appointment Types */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Top Diagnoses */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Top Diagnoses (ICD-10)</h2>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {data.topDiagnoses.slice(0, 6).map((dx, i) => (
+              <div key={dx.code} className="flex items-center gap-3 px-5 py-3">
+                <span className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{dx.name}</p>
+                  <p className="text-[10px] font-mono text-gray-400 dark:text-gray-500">{dx.code}</p>
+                </div>
+                <span className="text-sm font-bold tabular-nums text-gray-700 dark:text-gray-300">{dx.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Demographics */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Patient Demographics</h2>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            {data.demographics.map((band) => (
+              <div key={band.ageGroup}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{band.ageGroup}</span>
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 tabular-nums">
+                    {band.count} ({band.percentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
+                  <div
+                    className="h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 transition-all duration-500"
+                    style={{ width: `${band.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Appointment Types */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Visit Types</h2>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {data.appointmentTypes.map((t) => (
+              <div key={t.type} className="flex items-center gap-3 px-5 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{t.type}</p>
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1 mt-1.5">
+                    <div
+                      className="h-1 rounded-full bg-violet-500 dark:bg-violet-400 transition-all duration-500"
+                      style={{ width: `${t.percentage}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm font-bold tabular-nums text-gray-700 dark:text-gray-300">{t.count}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">{t.percentage}%</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Activity Heatmap */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Clinic Activity Heatmap</h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Consultation density by day and hour</p>
+        </div>
+        <div className="p-5 overflow-x-auto">
+          <div className="inline-block min-w-full">
+            <div className="flex gap-1">
+              <div className="flex flex-col gap-1 pt-5">
+                {days.map((d) => (
+                  <div key={d} className="h-7 flex items-center justify-end pr-2 text-[11px] text-gray-500 dark:text-gray-400 font-medium w-10">
+                    {d}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div className="flex gap-1 mb-1">
+                  {hours.map((h) => (
+                    <div key={h} className="w-7 text-center text-[10px] text-gray-400 dark:text-gray-500">{h}</div>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-1">
+                  {days.map((day) => (
+                    <div key={day} className="flex gap-1">
+                      {hours.map((hour) => (
+                        <div
+                          key={`${day}-${hour}`}
+                          className={`w-7 h-7 rounded ${heatColor(heatmapLookup.get(`${day}-${hour}`) ?? 0)} transition-colors`}
+                          title={`${day} ${hour}:00 - ${heatmapLookup.get(`${day}-${hour}`) ?? 0} consultations`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-gray-400 dark:text-gray-500">
+              <span>Less</span>
+              <div className="flex gap-0.5">
+                {HEAT_COLORS.map((c, i) => (
+                  <div key={i} className={`w-4 h-4 rounded ${c}`} />
+                ))}
+              </div>
+              <span>More</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// KPI Card
+// ---------------------------------------------------------------------------
+
+function KPICard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  growth,
+  accent,
+  border,
+  iconBg,
+}: {
+  icon: React.FC<{ className?: string }>;
+  label: string;
+  value: string;
+  sub: string;
+  growth?: number;
+  accent: string;
+  border: string;
+  iconBg: string;
+}) {
+  return (
+    <div className={`rounded-2xl border bg-white dark:bg-gray-900 p-4 ${border}`}>
+      <div className="flex items-center justify-between mb-2.5">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconBg}`}>
+          <Icon className={`w-4 h-4 ${accent}`} />
+        </div>
+        {growth !== undefined && <GrowthBadge value={growth} />}
+      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+        {label}
+      </p>
+      <p className={`text-2xl font-bold tabular-nums ${accent}`}>{value}</p>
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{sub}</p>
+    </div>
+  );
 }

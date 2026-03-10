@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import type { Step } from 'react-joyride';
-import { Stethoscope, Star, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Stethoscope, Star, RefreshCw, Layers } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TranscriptPane, type Segment } from './_components/TranscriptPane';
 import { SoapNotePane } from './_components/SoapNotePane';
-import { CdssAlertsPane, type CDSCard, type ModelId, type ModelConfig } from './_components/CdssAlertsPane';
 import { PatientContextBar, type Patient } from './_components/PatientContextBar';
-import { PatientHandoutModal } from './_components/PatientHandoutModal';
-import { SignAndBillModal } from './_components/SignAndBillModal';
+import type { CDSCard, ModelId, ModelConfig } from './_components/CdssAlertsPane';
+import type { ConsentRecord, ClinicalEntity } from '../../../../../../packages/shared-kernel/src/types/clinical-ui';
+
+const CdssAlertsPane = lazy(() => import('./_components/CdssAlertsPane').then(m => ({ default: m.CdssAlertsPane })));
+const PatientHandoutModal = lazy(() => import('./_components/PatientHandoutModal').then(m => ({ default: m.PatientHandoutModal })));
+const SignAndBillModal = lazy(() => import('./_components/SignAndBillModal').then(m => ({ default: m.SignAndBillModal })));
+const ContextDrawer = lazy(() => import('./_components/ContextDrawer').then(m => ({ default: m.ContextDrawer })));
 
 // Lazy-load react-joyride — browser-only, never rendered until after mount.
 // Using React.lazy + isMounted guard instead of next/dynamic({ssr:false}) to avoid
@@ -72,20 +77,62 @@ const TRANSCRIPT_CHUNKS: Segment[] = [
 
 const STREAM_INTERVAL_MS = 1200;
 
+// Ambient Audio Engine constants
+const TAIL_DELAY_MS = 1500;
+const MIN_TRANSCRIPT_WORDS = 10;
+
+export type AmbientState =
+  | 'idle'
+  | 'recording'
+  | 'finalizing_audio'
+  | 'generating_soap'
+  | 'completed'
+  | 'error';
+
+function countTranscriptWords(segs: Segment[]): number {
+  return segs
+    .filter((s): s is { kind: 'text'; text: string } => s.kind === 'text')
+    .map((s) => s.text)
+    .join(' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .length;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ClinicalCommandCenterPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // ── Deep link: auto-select patient from My Day schedule ─────────────────
+  const incomingPatientId = searchParams.get('patientId');
+
+  useEffect(() => {
+    if (!incomingPatientId) return;
+    // Clean the URL so the query param does not force re-selection on later navigations
+    router.replace('/dashboard/clinical-command', { scroll: false });
+  }, [incomingPatientId, router]);
+
   // ── Patient context ───────────────────────────────────────────────────────
   const [selectedPatient,  setSelectedPatient]  = useState<Patient | null>(null);
-  // Key-based reset forces PatientContextBar to remount (clears internal state)
   const [patientResetKey,  setPatientResetKey]  = useState(0);
 
-  // ── Transcript state ──────────────────────────────────────────────────────
-  const [segments,    setSegments]    = useState<Segment[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const chunkIndexRef                 = useRef(0);
+  // ── Ambient Audio Engine: Finite State Machine ───────────────────────────
+  const [ambientState,  setAmbientState]  = useState<AmbientState>('idle');
+  const [segments,      setSegments]      = useState<Segment[]>([]);
+  const [soapError,     setSoapError]     = useState<string | null>(null);
+  const [toastMessage,  setToastMessage]  = useState<string | null>(null);
+  const chunkIndexRef    = useRef(0);
+  const encounterIdRef   = useRef('');
+  const segmentsRef      = useRef(segments);
+  segmentsRef.current    = segments;
+  const ambientStateRef  = useRef(ambientState);
+  ambientStateRef.current = ambientState;
+
+  const isRecording = ambientState === 'recording';
 
   // ── Model + workspace config ──────────────────────────────────────────────
   const [activeModel,  setActiveModel]  = useState<ModelId>('anthropic');
@@ -97,6 +144,43 @@ export default function ClinicalCommandCenterPage() {
   const [cdssAlerts, setCdssAlerts] = useState<CDSCard[]>([]);
   const [isSyncing,  setIsSyncing]  = useState(false);
   const [syncError,  setSyncError]  = useState<string | null>(null);
+
+  // ── LGPD Consent Ledger (RUTH: immutable audit heuristic) ───────────────
+  const [patientConsent, setPatientConsent] = useState<ConsentRecord>({
+    granted: false,
+    timestamp: null,
+    method: 'digital',
+  });
+
+  const grantConsent = useCallback((method: 'verbal' | 'digital') => {
+    setPatientConsent({
+      granted: true,
+      timestamp: new Date().toISOString(),
+      method,
+    });
+  }, []);
+
+  const revokeConsent = useCallback(() => {
+    setPatientConsent({ granted: false, timestamp: null, method: 'digital' });
+  }, []);
+
+  // ── Extracted Clinical Entities (ELENA: negative space heuristic) ──────
+  const [extractedEntities, setExtractedEntities] = useState<ClinicalEntity[]>([]);
+
+  const rejectEntity = useCallback((id: string) => {
+    setExtractedEntities((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, status: 'rejected' as const } : e)),
+    );
+  }, []);
+
+  const restoreEntity = useCallback((id: string) => {
+    setExtractedEntities((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, status: 'active' as const } : e)),
+    );
+  }, []);
+
+  // ── Context Drawer visibility ──────────────────────────────────────────
+  const [isContextDrawerOpen, setIsContextDrawerOpen] = useState(false);
 
   // ── Chat reset signal (Great Reset target) ────────────────────────────────
   const [resetSignal, setResetSignal] = useState(0);
@@ -173,12 +257,19 @@ export default function ClinicalCommandCenterPage() {
   }, []);
 
   // ── Transcript streaming simulation ──────────────────────────────────────
+  // Keeps streaming during both 'recording' and 'finalizing_audio' to allow
+  // any in-flight audio chunks to arrive before the word-count guardrail fires.
+  const isStreaming = ambientState === 'recording' || ambientState === 'finalizing_audio';
+
   useEffect(() => {
-    if (!isRecording) return;
+    if (!isStreaming) return;
 
     const id = setInterval(() => {
       if (chunkIndexRef.current >= TRANSCRIPT_CHUNKS.length) {
-        setIsRecording(false);
+        clearInterval(id);
+        if (ambientStateRef.current === 'recording') {
+          setAmbientState('finalizing_audio');
+        }
         return;
       }
       const chunk = TRANSCRIPT_CHUNKS[chunkIndexRef.current];
@@ -187,31 +278,171 @@ export default function ClinicalCommandCenterPage() {
     }, STREAM_INTERVAL_MS);
 
     return () => clearInterval(id);
-  }, [isRecording]);
+  }, [isStreaming]);
 
-  // ── Auto-sync once streaming completes ───────────────────────────────────
+  // ── Demo entity extraction: drip-feed entities as transcript progresses ─
+  const DEMO_ENTITY_SCHEDULE: Record<number, ClinicalEntity[]> = useMemo(() => ({
+    3: [
+      { id: 'ent-001', category: 'SNOMED', code: '29857009', label: 'Chest tightness', confidence: 'high', status: 'active' },
+    ],
+    5: [
+      { id: 'ent-002', category: 'ICD-10', code: 'N18.3', label: 'CKD Stage 3', confidence: 'high', status: 'active' },
+      { id: 'ent-003', category: 'ICD-10', code: 'E11.9', label: 'Type 2 Diabetes Mellitus', confidence: 'high', status: 'active' },
+    ],
+    7: [
+      { id: 'ent-004', category: 'SNOMED', code: '23583003', label: 'Bilateral ankle oedema', confidence: 'medium', status: 'active' },
+    ],
+    9: [
+      { id: 'ent-005', category: 'ATC', code: 'A10BA02', label: 'Metformin 1000mg', confidence: 'high', status: 'active' },
+      { id: 'ent-006', category: 'ATC', code: 'C09AA03', label: 'Lisinopril 10mg', confidence: 'high', status: 'active' },
+      { id: 'ent-007', category: 'ATC', code: 'C03CA01', label: 'Furosemide 40mg', confidence: 'medium', status: 'active' },
+      { id: 'ent-008', category: 'ATC', code: 'C10AA05', label: 'Atorvastatin 40mg', confidence: 'high', status: 'active' },
+      { id: 'ent-009', category: 'ATC', code: 'B01AC06', label: 'Aspirin (low-dose)', confidence: 'medium', status: 'active' },
+    ],
+    11: [
+      { id: 'ent-010', category: 'SNOMED', code: '67569000', label: 'Bibasilar pulmonary crackles', confidence: 'high', status: 'active' },
+      { id: 'ent-011', category: 'ICD-10', code: 'I50.9', label: 'Heart failure, unspecified', confidence: 'high', status: 'active' },
+    ],
+    14: [
+      { id: 'ent-012', category: 'LOINC', code: '10839-9', label: 'Troponin I', confidence: 'high', status: 'active' },
+      { id: 'ent-013', category: 'LOINC', code: '42637-9', label: 'BNP', confidence: 'high', status: 'active' },
+      { id: 'ent-014', category: 'LOINC', code: '33914-3', label: 'eGFR', confidence: 'medium', status: 'active' },
+    ],
+  }), []);
+
+  const injectedEntityIdsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
-    const streamingComplete =
-      !isRecording &&
-      segments.length >= TRANSCRIPT_CHUNKS.length &&
-      segments.length > 0;
+    const schedule = DEMO_ENTITY_SCHEDULE[segments.length];
+    if (!schedule) return;
 
-    if (streamingComplete && selectedPatient && !hasAutoSyncedRef.current) {
+    const newEntities = schedule.filter(
+      (e) => !injectedEntityIdsRef.current.has(e.id),
+    );
+    if (newEntities.length === 0) return;
+
+    for (const e of newEntities) injectedEntityIdsRef.current.add(e.id);
+    setExtractedEntities((prev) => [...prev, ...newEntities]);
+  }, [segments.length, DEMO_ENTITY_SCHEDULE]);
+
+  // ── FSM Effect: finalizing_audio -> word-count guardrail ─────────────────
+  // After the tail delay, checks transcript length. If fewer than
+  // MIN_TRANSCRIPT_WORDS, returns to idle with a toast warning.
+  // Otherwise, transitions to generating_soap for automatic SOAP trigger.
+  useEffect(() => {
+    if (ambientState !== 'finalizing_audio') return;
+
+    const timeoutId = setTimeout(() => {
+      const wordCount = countTranscriptWords(segmentsRef.current);
+      if (wordCount < MIN_TRANSCRIPT_WORDS) {
+        setAmbientState('idle');
+        setToastMessage('Transcript too short to generate notes.');
+      } else {
+        setAmbientState('generating_soap');
+      }
+    }, TAIL_DELAY_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [ambientState]);
+
+  // ── FSM Effect: generating_soap -> fire SOAP generation API ────────────
+  // Zero-click trigger: fires automatically when the transcript is valid.
+  // Falls back to demo content if the API endpoint is not yet deployed.
+  useEffect(() => {
+    if (ambientState !== 'generating_soap') return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const SOAP_TIMEOUT_MS = 20_000;
+    const timeoutId = setTimeout(() => controller.abort(), SOAP_TIMEOUT_MS);
+
+    (async () => {
+      const transcript = segmentsRef.current
+        .filter((s): s is { kind: 'text'; text: string } => s.kind === 'text')
+        .map((s) => s.text)
+        .join('');
+
+      try {
+        const res = await fetch('/api/soap/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            transcript,
+            encounterId: encounterIdRef.current,
+            patientId: selectedPatient?.id ?? 'demo-patient-001',
+          }),
+        });
+
+        clearTimeout(timeoutId);
+        if (cancelled) return;
+
+        if (res.ok) {
+          setAmbientState('completed');
+        } else {
+          // API returned non-200: graceful demo fallback
+          await new Promise((r) => setTimeout(r, 2200));
+          if (!cancelled) setAmbientState('completed');
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (cancelled) return;
+
+        if (err instanceof Error && err.name === 'AbortError') {
+          setSoapError(
+            'SOAP generation timed out. Your transcript has been preserved.'
+          );
+          setAmbientState('error');
+        } else {
+          // Network error or endpoint not deployed: demo fallback
+          await new Promise((r) => setTimeout(r, 2200));
+          if (!cancelled) setAmbientState('completed');
+        }
+      }
+    })();
+
+    return () => { cancelled = true; controller.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ambientState]);
+
+  // ── FSM Effect: completed -> trigger CDSS sync ─────────────────────────
+  useEffect(() => {
+    if (ambientState !== 'completed') return;
+    if (!hasAutoSyncedRef.current && selectedPatient) {
       hasAutoSyncedRef.current = true;
       handleSync();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRecording, segments.length, selectedPatient]);
+  }, [ambientState, selectedPatient]);
+
+  // ── Toast auto-dismiss ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!toastMessage) return;
+    const id = setTimeout(() => setToastMessage(null), 4000);
+    return () => clearTimeout(id);
+  }, [toastMessage]);
 
   function toggleRecord() {
-    if (isRecording) {
-      setIsRecording(false);
-    } else {
+    if (ambientState === 'recording') {
+      setAmbientState('finalizing_audio');
+    } else if (
+      ambientState === 'idle' ||
+      ambientState === 'completed' ||
+      ambientState === 'error'
+    ) {
       setSegments([]);
       chunkIndexRef.current = 0;
       hasAutoSyncedRef.current = false;
-      setIsRecording(true);
+      setSoapError(null);
+      setToastMessage(null);
+      encounterIdRef.current = `enc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setAmbientState('recording');
     }
+  }
+
+  function handleRetryGeneration() {
+    setSoapError(null);
+    setAmbientState('generating_soap');
   }
 
   // ── Live Sync → CDSS endpoint ─────────────────────────────────────────────
@@ -299,18 +530,25 @@ export default function ClinicalCommandCenterPage() {
     }
   }
 
-  // ── The Great Reset — called after billing claim is approved ─────────────
+  // ── The Great Reset: called after billing claim is approved ─────────────
   function handleBillingComplete() {
-    setIsRecording(false);
+    setAmbientState('idle');
     setSegments([]);
     chunkIndexRef.current = 0;
     hasAutoSyncedRef.current = false;
+    injectedEntityIdsRef.current.clear();
+    encounterIdRef.current = '';
     setCdssAlerts([]);
     setSyncError(null);
-    setResetSignal((s) => s + 1);     // clears CdssAlertsPane chat state
+    setSoapError(null);
+    setToastMessage(null);
+    setResetSignal((s) => s + 1);
     setSelectedPatient(null);
-    setPatientResetKey((k) => k + 1); // remounts PatientContextBar → clears its chip
+    setPatientResetKey((k) => k + 1);
     setIsBillingModalOpen(false);
+    setPatientConsent({ granted: false, timestamp: null, method: 'digital' });
+    setExtractedEntities([]);
+    setIsContextDrawerOpen(false);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -346,16 +584,41 @@ export default function ClinicalCommandCenterPage() {
         </Suspense>
       )}
 
-      {/* ── Modals (rendered at root to avoid z-index conflicts) ─────────── */}
-      <PatientHandoutModal
-        isOpen={isHandoutModalOpen}
-        onClose={() => setIsHandoutModalOpen(false)}
-      />
-      <SignAndBillModal
-        isOpen={isBillingModalOpen}
-        onClose={() => setIsBillingModalOpen(false)}
-        onComplete={handleBillingComplete}
-      />
+      {/* ── Modals (lazy-loaded, rendered at root to avoid z-index conflicts) */}
+      <Suspense fallback={null}>
+        <PatientHandoutModal
+          isOpen={isHandoutModalOpen}
+          onClose={() => setIsHandoutModalOpen(false)}
+        />
+      </Suspense>
+      <Suspense fallback={null}>
+        <SignAndBillModal
+          isOpen={isBillingModalOpen}
+          onClose={() => setIsBillingModalOpen(false)}
+          onComplete={handleBillingComplete}
+          soapNote=""
+          transcript={segments
+            .filter((s) => s.kind === 'text')
+            .map((s) => (s as { kind: 'text'; text: string }).text)
+            .join(' ')}
+          patientData={selectedPatient ? {
+            age: selectedPatient.dob
+              ? Math.floor((Date.now() - new Date(selectedPatient.dob).getTime()) / 31557600000)
+              : undefined,
+          } : undefined}
+        />
+      </Suspense>
+
+      {/* ── Context Drawer (Hallucination Shield) ─────────────────────────── */}
+      <Suspense fallback={null}>
+        <ContextDrawer
+          isOpen={isContextDrawerOpen}
+          onClose={() => setIsContextDrawerOpen(false)}
+          entities={extractedEntities}
+          onRejectEntity={rejectEntity}
+          onRestoreEntity={restoreEntity}
+        />
+      </Suspense>
 
       {/* ── Top header ─────────────────────────────────────────────────────── */}
       <header className="
@@ -369,12 +632,40 @@ export default function ClinicalCommandCenterPage() {
             Clinical Command Center
           </h1>
           <p className="text-xs mt-0.5 text-slate-500">
-            Live Transcription · SOAP Note · CDSS Alerts
+            Live Transcription · Ambient SOAP · Co-Pilot
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Layout toggle — cycles pane arrangement, persisted to localStorage */}
+          {/* Context Drawer toggle */}
+          <button
+            onClick={() => setIsContextDrawerOpen((o) => !o)}
+            title="Toggle Clinical Context Drawer"
+            aria-label="Toggle Clinical Context Drawer"
+            className={`
+              flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium
+              border transition-colors
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
+              ${isContextDrawerOpen
+                ? 'text-cyan-600 dark:text-cyan-400 border-cyan-400/50 dark:border-cyan-400/40 bg-cyan-50/50 dark:bg-cyan-400/5'
+                : 'text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-400/40 dark:hover:border-cyan-400/30'
+              }
+            `}
+          >
+            <Layers className="w-3 h-3" />
+            Context
+            {extractedEntities.filter((e) => e.status === 'active').length > 0 && (
+              <span className="
+                text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none
+                bg-cyan-100 dark:bg-cyan-500/20
+                text-cyan-700 dark:text-cyan-400
+              ">
+                {extractedEntities.filter((e) => e.status === 'active').length}
+              </span>
+            )}
+          </button>
+
+          {/* Layout toggle: cycles pane arrangement, persisted to localStorage */}
           <button
             onClick={cycleLayout}
             title={layoutMode === 'default' ? 'Switch to transcript-right layout' : 'Switch to default layout'}
@@ -412,13 +703,6 @@ export default function ClinicalCommandCenterPage() {
             Quick Tour
           </button>
 
-          <span className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full
-                           text-emerald-700 dark:text-emerald-400
-                           bg-emerald-50 dark:bg-emerald-400/8
-                           border border-emerald-200 dark:border-emerald-400/20">
-            <span className="w-1.5 h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse" />
-            HIPAA / LGPD · De-id Active
-          </span>
         </div>
       </header>
 
@@ -426,6 +710,7 @@ export default function ClinicalCommandCenterPage() {
       <PatientContextBar
         key={patientResetKey}
         onSelectPatient={setSelectedPatient}
+        initialPatientId={incomingPatientId}
       />
 
       {/* ── Main split-pane layout ────────────────────────────────────────────
@@ -451,8 +736,12 @@ export default function ClinicalCommandCenterPage() {
           <TranscriptPane
             segments={segments}
             isRecording={isRecording}
+            isFinalizing={ambientState === 'finalizing_audio'}
             onToggleRecord={toggleRecord}
-            disabled={!selectedPatient}
+            disabled={!selectedPatient || ambientState === 'generating_soap'}
+            consentRecord={patientConsent}
+            onGrantConsent={grantConsent}
+            onRevokeConsent={revokeConsent}
           />
         </motion.div>
 
@@ -467,11 +756,16 @@ export default function ClinicalCommandCenterPage() {
               segmentCount={segments.length}
               patientSelected={!!selectedPatient}
               onSignAndBill={() => setIsBillingModalOpen(true)}
+              isGeneratingSoap={ambientState === 'generating_soap'}
+              isCompleted={ambientState === 'completed'}
+              soapError={soapError}
+              onRetry={handleRetryGeneration}
             />
           </div>
 
           {/* CDSS — 2/3 of column height */}
           <div id="cdss-pane" className="min-h-0" style={{ flex: '2 0 0' }}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading CDSS...</div>}>
             <CdssAlertsPane
               activeModel={activeModel}
               modelConfigs={modelConfigs}
@@ -490,9 +784,33 @@ export default function ClinicalCommandCenterPage() {
               onOpenHandout={() => setIsHandoutModalOpen(true)}
               resetSignal={resetSignal}
             />
+            </Suspense>
           </div>
         </motion.div>
       </main>
+
+      {/* Toast notification: word-count guardrail feedback */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.25 }}
+            className="
+              fixed bottom-6 left-1/2 -translate-x-1/2 z-50
+              px-5 py-3 rounded-xl shadow-lg
+              bg-amber-50 dark:bg-amber-900/90
+              border border-amber-200 dark:border-amber-600/50
+              text-amber-800 dark:text-amber-200
+              text-sm font-medium
+            "
+            role="alert"
+          >
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

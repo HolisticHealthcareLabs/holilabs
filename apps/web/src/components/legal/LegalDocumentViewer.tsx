@@ -160,7 +160,7 @@ export default function LegalDocumentViewer({
           </div>
           {/* Decorative - low contrast intentional for last updated timestamp */}
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            Last Updated: December 15, 2025
+            Last Updated: March 10, 2026
           </div>
         </div>
 
@@ -185,7 +185,7 @@ export default function LegalDocumentViewer({
           </p>
           {/* Decorative - low contrast intentional for copyright notice */}
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
-            © {new Date().getFullYear()} HoliLabs, Inc. All rights reserved.
+            © {new Date().getFullYear()} Holi Labs. All rights reserved.
           </p>
         </div>
       </div>

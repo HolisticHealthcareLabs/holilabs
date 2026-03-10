@@ -3,13 +3,15 @@ import { headers } from 'next/headers';
 import './globals.css';
 import '@/styles/print.css';
 import '@/styles/mobile.css';
-import OfflineIndicator from '@/components/OfflineIndicator';
+import dynamic from 'next/dynamic';
 import { Providers } from '@/components/Providers';
-import { IOSInstallPrompt } from '@/components/IOSInstallPrompt';
 import { SkipLink } from '@/components/SkipLink';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { CookieConsentBanner } from '@/components/CookieConsentBanner';
 import { themeInitScript } from '@/scripts/theme-init';
+
+const OfflineIndicator = dynamic(() => import('@/components/OfflineIndicator'), { ssr: false });
+const IOSInstallPrompt = dynamic(() => import('@/components/IOSInstallPrompt').then(m => m.IOSInstallPrompt ? { default: m.IOSInstallPrompt } : m), { ssr: false });
+const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner').then(m => ({ default: m.CookieConsentBanner })), { ssr: false });
 // Validate environment variables at app startup
 import '@/lib/env';
 
@@ -142,7 +144,7 @@ export default async function RootLayout({
             <CookieConsentBanner />
             <main
               id="main-content"
-              className="min-h-[100dvh] pb-[var(--holi-cookie-banner-h,0px)] transition-[padding] duration-200"
+              className="min-h-[100dvh] bg-background pb-[var(--holi-cookie-banner-h,0px)] transition-[padding] duration-200"
             >
               {children}
             </main>

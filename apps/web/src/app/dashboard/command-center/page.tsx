@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   AlertTriangle,
   Clock,
@@ -8,15 +9,9 @@ import {
   RefreshCw,
   ShieldAlert,
 } from 'lucide-react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+import { filterRecordsForOrganization } from '../../../../../../packages/shared-kernel/src/types/auth';
+
+const LazyTrendChart = lazy(() => import('./_TrendChart'));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +19,7 @@ type EscalationStatus = 'OPEN' | 'BREACHED' | 'RESOLVED';
 
 interface EscalationRecord {
   id: string;
+  organizationId: string;
   status: EscalationStatus;
   reason: string;
   channel: string | null;
@@ -43,7 +39,7 @@ interface EscalationCounts {
   resolved: number;
 }
 
-// ─── Mock trend data (7 days) — replaced by real data when available ──────────
+// ─── Mock trend data (7 days) ─────────────────────────────────────────────────
 
 function buildTrendData(counts: EscalationCounts) {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -53,6 +49,91 @@ function buildTrendData(counts: EscalationCounts) {
     breached: Math.max(0, counts.breached + Math.round(Math.cos(i) * 1)),
     resolved: Math.max(0, counts.resolved - 2 + i),
   }));
+}
+
+const MOCK_ESCALATIONS: EscalationRecord[] = [
+  {
+    organizationId: 'org-demo-clinic',
+    id: 'esc-001', status: 'BREACHED', reason: 'Troponin results pending > 4h',
+    channel: 'In-App', attempt: 2,
+    slaDeadline: new Date(Date.now() - 2 * 3600000).toISOString(),
+    resolvedAt: null, resolution: null,
+    createdAt: new Date(Date.now() - 5 * 3600000).toISOString(),
+    scheduledReminder: { templateName: 'Critical Lab Follow-up', channel: 'SMS + In-App' },
+    patient: { id: 'P003', firstName: 'James', lastName: "O'Brien" },
+    resolvedByUser: null,
+  },
+  {
+    organizationId: 'org-demo-clinic',
+    id: 'esc-002', status: 'OPEN', reason: 'INR out of therapeutic range',
+    channel: 'SMS', attempt: 1,
+    slaDeadline: new Date(Date.now() + 1.5 * 3600000).toISOString(),
+    resolvedAt: null, resolution: null,
+    createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+    scheduledReminder: { templateName: 'Anticoagulation Alert', channel: 'SMS' },
+    patient: { id: 'P003', firstName: 'James', lastName: "O'Brien" },
+    resolvedByUser: null,
+  },
+  {
+    organizationId: 'org-demo-clinic',
+    id: 'esc-003', status: 'OPEN', reason: 'eGFR trending below 40',
+    channel: 'In-App', attempt: 1,
+    slaDeadline: new Date(Date.now() + 6 * 3600000).toISOString(),
+    resolvedAt: null, resolution: null,
+    createdAt: new Date(Date.now() - 1 * 3600000).toISOString(),
+    scheduledReminder: { templateName: 'Renal Function Decline', channel: 'In-App' },
+    patient: { id: 'P008', firstName: 'Carlos', lastName: 'Eduardo Mendes' },
+    resolvedByUser: null,
+  },
+  {
+    organizationId: 'org-partner-hospital',
+    id: 'esc-004', status: 'OPEN', reason: 'Missed follow-up: post-stent dual antiplatelet review',
+    channel: 'WhatsApp', attempt: 1,
+    slaDeadline: new Date(Date.now() + 12 * 3600000).toISOString(),
+    resolvedAt: null, resolution: null,
+    createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
+    scheduledReminder: { templateName: 'Post-Procedure Follow-up', channel: 'WhatsApp' },
+    patient: { id: 'P006', firstName: 'Fernando', lastName: 'Augusto Vieira' },
+    resolvedByUser: null,
+  },
+  {
+    organizationId: 'org-demo-clinic',
+    id: 'esc-005', status: 'RESOLVED', reason: 'BP above 160/95 for 3 consecutive readings',
+    channel: 'Phone', attempt: 2,
+    slaDeadline: new Date(Date.now() - 48 * 3600000).toISOString(),
+    resolvedAt: new Date(Date.now() - 24 * 3600000).toISOString(),
+    resolution: 'Patient seen in urgent visit. Lisinopril increased to 20 mg. Follow-up in 72h.',
+    createdAt: new Date(Date.now() - 72 * 3600000).toISOString(),
+    scheduledReminder: { templateName: 'Hypertensive Urgency', channel: 'Phone + In-App' },
+    patient: { id: 'P001', firstName: 'Robert', lastName: 'Chen' },
+    resolvedByUser: { id: 'U001', firstName: 'Ricardo', lastName: 'Silva' },
+  },
+  {
+    organizationId: 'org-partner-hospital',
+    id: 'esc-006', status: 'RESOLVED', reason: 'HbA1c > 8.0% - requires medication adjustment',
+    channel: 'SMS', attempt: 1,
+    slaDeadline: new Date(Date.now() - 96 * 3600000).toISOString(),
+    resolvedAt: new Date(Date.now() - 72 * 3600000).toISOString(),
+    resolution: 'Metformin dose increased. Patient enrolled in diabetes education program.',
+    createdAt: new Date(Date.now() - 120 * 3600000).toISOString(),
+    scheduledReminder: { templateName: 'Glycemic Control Alert', channel: 'SMS' },
+    patient: { id: 'P002', firstName: 'Maria', lastName: 'Santos' },
+    resolvedByUser: { id: 'U001', firstName: 'Ricardo', lastName: 'Silva' },
+  },
+];
+
+const MOCK_COUNTS: EscalationCounts = {
+  open: MOCK_ESCALATIONS.filter((e) => e.status === 'OPEN').length,
+  breached: MOCK_ESCALATIONS.filter((e) => e.status === 'BREACHED').length,
+  resolved: MOCK_ESCALATIONS.filter((e) => e.status === 'RESOLVED').length,
+};
+
+function countEscalations(records: EscalationRecord[]): EscalationCounts {
+  return {
+    open: records.filter((record) => record.status === 'OPEN').length,
+    breached: records.filter((record) => record.status === 'BREACHED').length,
+    resolved: records.filter((record) => record.status === 'RESOLVED').length,
+  };
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
@@ -90,31 +171,67 @@ function formatDeadline(deadline: string, status: EscalationStatus) {
   return `${h}h ${m}m remaining`;
 }
 
+// ─── SVG Spinner ──────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <svg className="w-7 h-7 animate-spin text-amber-400" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <circle cx="14" cy="14" r="11" stroke="currentColor" strokeOpacity={0.25} strokeWidth={2.5} />
+      <circle cx="14" cy="14" r="11" stroke="currentColor" strokeWidth={2.5}
+              strokeDasharray={69.1} strokeDashoffset={51.8} strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CommandCenterPage() {
-  const [escalations,     setEscalations]     = useState<EscalationRecord[]>([]);
-  const [counts,          setCounts]          = useState<EscalationCounts>({ open: 0, breached: 0, resolved: 0 });
-  const [loading,         setLoading]         = useState(true);
+  const { data: session } = useSession();
+  const [escalations,     setEscalations]     = useState<EscalationRecord[]>(MOCK_ESCALATIONS);
+  const [loading,         setLoading]         = useState(false);
   const [resolvingId,     setResolvingId]     = useState<string | null>(null);
   const [resolutionText,  setResolutionText]  = useState('');
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [selectedId,      setSelectedId]      = useState<string | null>(null);
+  const activeOrganizationId = session?.user.organizationId ?? 'org-demo-clinic';
+  const scopedMockEscalations = useMemo(
+    () => filterRecordsForOrganization(MOCK_ESCALATIONS, activeOrganizationId),
+    [activeOrganizationId]
+  );
+  const scopedEscalations = useMemo(
+    () => filterRecordsForOrganization(escalations, activeOrganizationId),
+    [escalations, activeOrganizationId]
+  );
+  const effectiveCounts = useMemo(
+    () => countEscalations(scopedEscalations),
+    [scopedEscalations]
+  );
 
   const fetchEscalations = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await fetch('/api/escalations');
+      const res = await fetch('/api/escalations');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      setEscalations(json.data ?? []);
-      setCounts(json.counts ?? { open: 0, breached: 0, resolved: 0 });
+      const data = Array.isArray(json.data) ? json.data : [];
+      const tenantSafeData = data.filter(
+        (record): record is EscalationRecord =>
+          typeof record === 'object' &&
+          record !== null &&
+          typeof (record as { organizationId?: unknown }).organizationId === 'string'
+      );
+      if (tenantSafeData.length > 0) {
+        const scopedData = filterRecordsForOrganization(tenantSafeData, activeOrganizationId);
+        setEscalations(scopedData);
+      } else {
+        setEscalations(scopedMockEscalations);
+      }
     } catch {
-      // keep empty state
+      setEscalations(scopedMockEscalations);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeOrganizationId, scopedMockEscalations]);
 
   useEffect(() => { fetchEscalations(); }, [fetchEscalations]);
 
@@ -144,25 +261,25 @@ export default function CommandCenterPage() {
     setShowResolveModal(true);
   };
 
-  const trendData = buildTrendData(counts);
+  const trendData = buildTrendData(effectiveCounts);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <ShieldAlert className="w-6 h-6 text-amber-600" />
             Command Center
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Escalation queue · Trend analytics · SLA monitoring
           </p>
         </div>
         <button
           onClick={fetchEscalations}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -171,107 +288,77 @@ export default function CommandCenterPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-none">
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4 text-amber-500" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Open</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Open</span>
           </div>
-          <p className="text-4xl font-bold text-amber-700">{counts.open}</p>
-          <p className="text-xs text-gray-400 mt-1">Awaiting action</p>
+          <p className="text-4xl font-bold text-amber-700">{effectiveCounts.open}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Awaiting action</p>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-none">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-red-500" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Breached SLAs</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Breached SLAs</span>
           </div>
-          <p className="text-4xl font-bold text-red-700">{counts.breached}</p>
-          <p className="text-xs text-gray-400 mt-1">Past deadline</p>
+          <p className="text-4xl font-bold text-red-700">{effectiveCounts.breached}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Past deadline</p>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-none">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle2 className="w-4 h-4 text-green-500" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolved</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Resolved</span>
           </div>
-          <p className="text-4xl font-bold text-green-700">{counts.resolved}</p>
-          <p className="text-xs text-gray-400 mt-1">All time</p>
+          <p className="text-4xl font-bold text-green-700">{effectiveCounts.resolved}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">All time</p>
         </div>
       </div>
 
-      {/* Trend chart */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-none">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Escalation Trend — Last 7 Days</h2>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorOpen" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.15} />
-                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}    />
-              </linearGradient>
-              <linearGradient id="colorBreached" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#ef4444" stopOpacity={0.15} />
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}    />
-              </linearGradient>
-              <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.15} />
-                <stop offset="95%" stopColor="#22c55e" stopOpacity={0}    />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-            <Tooltip
-              contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12 }}
-              labelStyle={{ fontWeight: 600 }}
-            />
-            <Area type="monotone" dataKey="open"     stroke="#f59e0b" fill="url(#colorOpen)"     strokeWidth={2} dot={false} />
-            <Area type="monotone" dataKey="breached"  stroke="#ef4444" fill="url(#colorBreached)" strokeWidth={2} dot={false} />
-            <Area type="monotone" dataKey="resolved"  stroke="#22c55e" fill="url(#colorResolved)" strokeWidth={2} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
-        <div className="flex gap-4 mt-3 justify-end">
-          {[{ color: '#f59e0b', label: 'Open' }, { color: '#ef4444', label: 'Breached' }, { color: '#22c55e', label: 'Resolved' }].map(({ color, label }) => (
-            <span key={label} className="flex items-center gap-1.5 text-xs text-gray-500">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-              {label}
-            </span>
-          ))}
+      {/* Trend chart (lazy-loaded to avoid shipping recharts on first paint) */}
+      <Suspense fallback={
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-none">
+          <div className="h-[200px] flex items-center justify-center">
+            <Spinner />
+          </div>
         </div>
-      </div>
+      }>
+        <LazyTrendChart data={trendData} />
+      </Suspense>
 
       {/* Recent escalations table */}
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-none overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">Recent Escalations</h2>
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Recent Escalations</h2>
         </div>
 
-        {loading ? (
+        {loading && scopedEscalations.length === 0 ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-7 h-7 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <Spinner />
           </div>
-        ) : escalations.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+        ) : scopedEscalations.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 dark:text-gray-500">
             <ShieldAlert className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm font-medium">No escalations</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {escalations.slice(0, 10).map((esc) => (
-              <div key={esc.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {scopedEscalations.slice(0, 10).map((esc) => (
+              <div key={esc.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <StatusBadge status={esc.status} />
-                    <span className="text-sm font-medium text-gray-900 truncate">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {esc.scheduledReminder.templateName}
                     </span>
                     {esc.channel && (
-                      <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
                         {esc.channel}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-400">
+                  <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
                     {esc.patient && (
                       <span>{esc.patient.firstName} {esc.patient.lastName}</span>
                     )}
@@ -303,19 +390,19 @@ export default function CommandCenterPage() {
       {/* Resolve modal */}
       {showResolveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Resolve Escalation</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resolve Escalation</h3>
             <textarea
               value={resolutionText}
               onChange={(e) => setResolutionText(e.target.value)}
               placeholder="Resolution notes (optional)"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500/40 focus:border-green-500 outline-none resize-none"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-green-500/40 focus:border-green-500 outline-none resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={() => { setShowResolveModal(false); setSelectedId(null); }}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
               >
                 Cancel
               </button>

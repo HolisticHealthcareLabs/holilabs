@@ -93,3 +93,94 @@ export async function completeOnboarding(formData: FormData): Promise<Onboarding
     };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Admin onboarding: jurisdiction, billing, disciplines, front-desk invite
+// ---------------------------------------------------------------------------
+
+const AdminOnboardingSchema = z.object({
+  jurisdiction: z.string().min(1, 'Jurisdiction is required'),
+  billingStandard: z.string().min(1, 'Billing standard is required'),
+  disciplines: z.string().min(1, 'At least one discipline is required'),
+  frontDeskEmail: z.string().email().optional().or(z.literal('')),
+});
+
+type AdminOnboardingResult =
+  | { success: true }
+  | { success: false; error: string };
+
+export async function completeAdminOnboarding(formData: FormData): Promise<AdminOnboardingResult> {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id || !session.user.email) {
+      return { success: false, error: 'You must be signed in to complete onboarding.' };
+    }
+
+    const raw = {
+      jurisdiction: formData.get('jurisdiction'),
+      billingStandard: formData.get('billingStandard'),
+      disciplines: formData.get('disciplines'),
+      frontDeskEmail: formData.get('frontDeskEmail') || '',
+    };
+
+    const validation = AdminOnboardingSchema.safeParse(raw);
+    if (!validation.success) {
+      return { success: false, error: validation.error.errors[0]?.message || 'Invalid input.' };
+    }
+
+    const { jurisdiction, billingStandard, disciplines, frontDeskEmail } = validation.data;
+
+    const workspaceMembership = await prisma.workspaceMember.findFirst({
+      where: { userId: session.user.id },
+      select: { workspaceId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (workspaceMembership) {
+      await prisma.workspace.update({
+        where: { id: workspaceMembership.workspaceId },
+        data: {
+          metadata: {
+            jurisdiction,
+            billingStandard,
+            disciplines: disciplines.split(',').map((d) => d.trim()).filter(Boolean),
+            configuredAt: new Date().toISOString(),
+          },
+        },
+      });
+    }
+
+    const username = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { username: true, firstName: true, lastName: true, email: true },
+    });
+
+    const finalUsername = username?.username
+      || await generateUsername(
+          username?.email || session.user.email,
+          username?.firstName || 'Admin',
+          username?.lastName || ''
+        );
+
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        onboardingCompleted: true,
+        username: finalUsername,
+      },
+    });
+
+    if (frontDeskEmail && frontDeskEmail.includes('@')) {
+      console.log(`[Admin Onboarding] Front desk invite queued: ${frontDeskEmail}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[Admin Onboarding] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unexpected error occurred.',
+    };
+  }
+}

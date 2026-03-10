@@ -78,19 +78,8 @@ export function DemoGuidedTour() {
 
   return (
     <>
-      {/* Trigger button */}
-      {!active && (
-        <button
-          onClick={start}
-          className="fixed bottom-6 right-6 z-[9000] flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-full shadow-xl shadow-blue-600/25 transition-all hover:scale-105"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Quick Tour
-        </button>
-      )}
+      {/* Floating trigger button removed (Tour is accessible via the outlined
+           Quick Tour button in the page header). Tour overlay logic preserved below. */}
 
       {/* Tour overlay */}
       <AnimatePresence>

@@ -5,13 +5,19 @@ import { BillingComplianceLanding } from '@/components/landing/BillingCompliance
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const session = await auth();
+  try {
+    const session = await auth();
 
-  if (session?.user) {
-    if (session.user.onboardingCompleted) {
-      redirect('/dashboard/prevention');
-    } else {
-      redirect('/onboarding');
+    if (session?.user) {
+      if (session.user.onboardingCompleted) {
+        redirect('/dashboard/prevention');
+      } else {
+        redirect('/onboarding');
+      }
+    }
+  } catch (error: unknown) {
+    if (error instanceof Error && 'digest' in error) {
+      throw error;
     }
   }
 

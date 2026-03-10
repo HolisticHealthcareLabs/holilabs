@@ -14,6 +14,8 @@ import { applySecurityHeaders } from './security-headers';
 import { Redis } from '@upstash/redis';
 import crypto from 'crypto';
 import { auditBuffer } from './audit-buffer';
+import { getOrCreateWorkspaceForUser } from '@/lib/workspace';
+import { normalizeTenantRole, type TenantUserRole } from '../../../../../packages/shared-kernel/src/types/auth';
 
 // ============================================================================
 // TYPES
@@ -31,6 +33,11 @@ export interface ApiContext {
     id: string;
     email: string;
     role: string;
+    tenantRole?: TenantUserRole;
+    workspaceRole?: string;
+    organizationId: string;
+    organizationName?: string;
+    organizationType?: 'CLINIC' | 'HOSPITAL';
   };
 }
 
@@ -269,6 +276,11 @@ export function requireAuth() {
           id: 'test-user-id',
           email: 'test@example.com',
           role: 'CLINICIAN',
+          tenantRole: 'CLINICIAN',
+          workspaceRole: 'MEMBER',
+          organizationId: 'org-demo-clinic',
+          organizationName: 'Demo Clinic',
+          organizationType: 'CLINIC',
         };
         return next();
       }
@@ -297,10 +309,24 @@ export function requireAuth() {
           });
 
           if (dbUser) {
+            const workspaceContext = await getOrCreateWorkspaceForUser(dbUser.id);
+            const workspace = await prisma.workspace.findUnique({
+              where: { id: workspaceContext.workspaceId },
+              select: { id: true, name: true },
+            });
+
             context.user = {
               id: dbUser.id,
               email: dbUser.email,
               role: dbUser.role,
+              tenantRole: normalizeTenantRole({
+                userRole: dbUser.role,
+                workspaceRole: workspaceContext.role,
+              }),
+              workspaceRole: workspaceContext.role,
+              organizationId: workspaceContext.workspaceId,
+              organizationName: workspace?.name ?? 'Default Organization',
+              organizationType: 'CLINIC',
             };
 
             log.debug({
@@ -369,11 +395,31 @@ export function requireAuth() {
         );
       }
 
+      const workspaceContext = await getOrCreateWorkspaceForUser(dbUser.id);
+      const workspace = await prisma.workspace.findUnique({
+        where: { id: workspaceContext.workspaceId },
+        select: { id: true, name: true },
+      });
+
       // Attach validated user to context
       context.user = {
         id: dbUser.id,
         email: dbUser.email,
         role: dbUser.role,
+        tenantRole:
+          (session.user.tenantRole as TenantUserRole | undefined) ??
+          normalizeTenantRole({
+            userRole: dbUser.role,
+            workspaceRole: workspaceContext.role,
+          }),
+        workspaceRole:
+          (session.user.workspaceRole as string | undefined) ?? workspaceContext.role,
+        organizationId:
+          (session.user.organizationId as string | undefined) ?? workspaceContext.workspaceId,
+        organizationName:
+          (session.user.organizationName as string | undefined) ?? workspace?.name ?? 'Default Organization',
+        organizationType:
+          (session.user.organizationType as 'CLINIC' | 'HOSPITAL' | undefined) ?? 'CLINIC',
       };
 
       log.debug({

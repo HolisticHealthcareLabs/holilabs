@@ -1,37 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 
-/**
- * Hook to track and retrieve tool usage statistics for intelligent defaulting
- */
+const STORAGE_KEY = 'holi.toolUsage';
+
+function readStats(): Record<string, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 export function useToolUsageTracker() {
-    const [usageStats, setUsageStats] = useState<Record<string, number>>({});
+  const statsRef = useRef<Record<string, number> | null>(null);
 
-    useEffect(() => {
-        const raw = localStorage.getItem('holi.toolUsage');
-        if (raw) {
-            try {
-                setUsageStats(JSON.parse(raw));
-            } catch (e) {
-                console.error('Failed to parse tool usage stats', e);
-            }
-        }
-    }, []);
+  function getStats(): Record<string, number> {
+    if (statsRef.current === null) {
+      statsRef.current = readStats();
+    }
+    return statsRef.current;
+  }
 
-    const bumpUsage = (toolId: string) => {
-        const newStats = {
-            ...usageStats,
-            [toolId]: (usageStats[toolId] || 0) + 1
-        };
-        setUsageStats(newStats);
-        localStorage.setItem('holi.toolUsage', JSON.stringify(newStats));
-    };
+  const bumpUsage = useCallback((toolId: string) => {
+    const current = getStats();
+    const updated = { ...current, [toolId]: (current[toolId] || 0) + 1 };
+    statsRef.current = updated;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // storage full or restricted
+    }
+  }, []);
 
-    const getMostUsed = (limit: number = 3) => {
-        return Object.entries(usageStats)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, limit)
-            .map(([id]) => id);
-    };
+  const getMostUsed = useCallback((limit: number = 3): string[] => {
+    return Object.entries(getStats())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, limit)
+      .map(([id]) => id);
+  }, []);
 
-    return { usageStats, bumpUsage, getMostUsed };
+  return { usageStats: getStats(), bumpUsage, getMostUsed };
 }
