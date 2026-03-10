@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { HeartPulse, XCircle, Loader2, Shield, ShieldCheck } from 'lucide-react';
 import { maskPHI, PHI_TOKEN_REGEX } from '@/lib/deid';
 import { useTranscriptAudio, type AudioLanguage } from './useTranscriptAudio';
+import { AudioWaveform } from './AudioWaveform';
 import type { ConsentRecord } from '../../../../../../../packages/shared-kernel/src/types/clinical-ui';
 
 // ---------------------------------------------------------------------------
@@ -28,6 +29,8 @@ interface TranscriptPaneProps {
   consentRecord: ConsentRecord;
   onGrantConsent: (method: 'verbal' | 'digital') => void;
   onRevokeConsent: () => void;
+  /** Volume level from 0 to 1 for the waveform visualizer */
+  volume?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,6 +144,7 @@ export function TranscriptPane({
   consentRecord,
   onGrantConsent,
   onRevokeConsent,
+  volume = 0,
 }: TranscriptPaneProps) {
   const consentMissing = !consentRecord.timestamp;
   const buttonDisabled = disabled || isFinalizing || consentMissing;
@@ -165,18 +169,21 @@ export function TranscriptPane({
             Live Meeting Notes
           </h2>
           {isRecording && (
-            <motion.span
-              animate={{ opacity: [1, 0.2, 1] }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-              className="flex items-center gap-1 text-[10px] font-bold
-                         text-red-500 dark:text-red-400
-                         bg-red-50 dark:bg-red-400/10
-                         px-2 py-0.5 rounded-full border border-red-200 dark:border-red-500/20"
-              aria-label="Recording"
-            >
-              <span className="w-1.5 h-1.5 bg-red-500 dark:bg-red-400 rounded-full" />
-              REC
-            </motion.span>
+            <div className="flex items-center gap-3">
+              <motion.span
+                animate={{ opacity: [1, 0.2, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                className="flex items-center gap-1 text-[10px] font-bold
+                           text-red-500 dark:text-red-400
+                           bg-red-50 dark:bg-red-400/10
+                           px-2 py-0.5 rounded-full border border-red-200 dark:border-red-500/20"
+                aria-label="Recording"
+              >
+                <span className="w-1.5 h-1.5 bg-red-500 dark:bg-red-400 rounded-full" />
+                REC
+              </motion.span>
+              <AudioWaveform isRecording={isRecording} volume={volume} />
+            </div>
           )}
           {isFinalizing && (
             <motion.span

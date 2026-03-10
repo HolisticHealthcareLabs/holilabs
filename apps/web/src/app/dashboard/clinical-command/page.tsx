@@ -6,6 +6,8 @@ import type { Step } from 'react-joyride';
 import { Stethoscope, Star, RefreshCw, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TranscriptPane, type Segment } from './_components/TranscriptPane';
+import { useMicrophoneSTT } from './_components/useMicrophoneSTT';
+import { useClinicalContext } from './_components/useClinicalContext';
 import { SoapNotePane } from './_components/SoapNotePane';
 import { PatientContextBar, type Patient } from './_components/PatientContextBar';
 import type { CDSCard, ModelId, ModelConfig } from './_components/CdssAlertsPane';
@@ -120,32 +122,7 @@ export default function ClinicalCommandCenterPage() {
   const [selectedPatient,  setSelectedPatient]  = useState<Patient | null>(null);
   const [patientResetKey,  setPatientResetKey]  = useState(0);
 
-  // ── Ambient Audio Engine: Finite State Machine ───────────────────────────
-  const [ambientState,  setAmbientState]  = useState<AmbientState>('idle');
-  const [segments,      setSegments]      = useState<Segment[]>([]);
-  const [soapError,     setSoapError]     = useState<string | null>(null);
-  const [toastMessage,  setToastMessage]  = useState<string | null>(null);
-  const chunkIndexRef    = useRef(0);
-  const encounterIdRef   = useRef('');
-  const segmentsRef      = useRef(segments);
-  segmentsRef.current    = segments;
-  const ambientStateRef  = useRef(ambientState);
-  ambientStateRef.current = ambientState;
-
-  const isRecording = ambientState === 'recording';
-
-  // ── Model + workspace config ──────────────────────────────────────────────
-  const [activeModel,  setActiveModel]  = useState<ModelId>('anthropic');
-  const [modelConfigs, setModelConfigs] = useState<Partial<Record<ModelId, ModelConfig>>>({
-    anthropic: { isConfigured: true, isActive: true },
-  });
-
-  // ── CDSS state ────────────────────────────────────────────────────────────
-  const [cdssAlerts, setCdssAlerts] = useState<CDSCard[]>([]);
-  const [isSyncing,  setIsSyncing]  = useState(false);
-  const [syncError,  setSyncError]  = useState<string | null>(null);
-
-  // ── LGPD Consent Ledger (RUTH: immutable audit heuristic) ───────────────
+  // ── LGPD Consent Ledger — must be declared BEFORE useMicrophoneSTT ──────────
   const [patientConsent, setPatientConsent] = useState<ConsentRecord>({
     granted: false,
     timestamp: null,
@@ -163,6 +140,119 @@ export default function ClinicalCommandCenterPage() {
   const revokeConsent = useCallback(() => {
     setPatientConsent({ granted: false, timestamp: null, method: 'digital' });
   }, []);
+
+  // ── Prior Authorization tracking ─────────────────────────────────────────
+  const [preAuthAcknowledged, setPreAuthAcknowledged] = useState(false);
+
+  // ── Ambient Audio Engine: Finite State Machine ───────────────────────────
+  const [ambientState,  setAmbientState]  = useState<AmbientState>('idle');
+  const [segments,      setSegments]      = useState<Segment[]>([]);
+  const [soapError,     setSoapError]     = useState<string | null>(null);
+  const [toastMessage,  setToastMessage]  = useState<string | null>(null);
+  const encounterIdRef   = useRef('');
+  const segmentsRef      = useRef(segments);
+  segmentsRef.current    = segments;
+  const ambientStateRef  = useRef(ambientState);
+  ambientStateRef.current = ambientState;
+
+  // ── Real Microphone STT Integration ───────────────────────────────────────
+  const handleTranscript = useCallback((text: string, isFinal: boolean) => {
+    if (!text.trim()) return;
+    
+    // Simple heuristic to assign speaker based on question marks or context
+    // In a real app, Deepgram Diarization would provide the speaker labels
+    const isQuestion = text.includes('?');
+    const speakerPrefix = isQuestion ? 'Doctor: ' : 'Patient: ';
+    
+    setSegments(prev => {
+      // If it's interim, we could update the last segment, but for simplicity
+      // and to match the existing UI, we'll just append final segments.
+      if (isFinal) {
+        return [...prev, { kind: 'text', text: `\n${speakerPrefix}${text}` }];
+      }
+      return prev;
+    });
+  }, []);
+
+  const {
+    isListening,
+    startListening,
+    stopListening,
+    error: micError,
+    volume
+  } = useMicrophoneSTT({
+    onTranscript: handleTranscript,
+    language: 'en',
+    patientId: selectedPatient?.id,
+    enabled: !!selectedPatient && patientConsent.granted,
+  });
+
+  // Sync mic state with ambient state
+  useEffect(() => {
+    if (isListening && ambientState !== 'recording') {
+      setAmbientState('recording');
+    } else if (!isListening && ambientState === 'recording') {
+      setAmbientState('finalizing_audio');
+    }
+  }, [isListening, ambientState]);
+
+  useEffect(() => {
+    if (micError) {
+      setToastMessage(`Microphone error: ${micError}`);
+      setAmbientState('error');
+    }
+  }, [micError]);
+
+  const isRecording = ambientState === 'recording';
+
+  // ── Model + workspace config ──────────────────────────────────────────────
+  const [activeModel,  setActiveModel]  = useState<ModelId>('anthropic');
+  const [modelConfigs, setModelConfigs] = useState<Partial<Record<ModelId, ModelConfig>>>({
+    anthropic: { isConfigured: true, isActive: true },
+  });
+
+  // ── CDSS state ────────────────────────────────────────────────────────────
+  const [cdssAlerts, setCdssAlerts] = useState<CDSCard[]>([]);
+  const [isSyncing,  setIsSyncing]  = useState(false);
+  const [syncError,  setSyncError]  = useState<string | null>(null);
+
+  // ── Clinical Context Pre-Scan (fires on consent grant, NOT selection) ─────
+  const { context: clinicalContext, isScanning: isContextScanning } = useClinicalContext({
+    patientId: selectedPatient?.id ?? null,
+    encounterId: encounterIdRef.current,
+    consentGranted: patientConsent.granted,
+  });
+
+  // When the pre-scan returns risk flags + interactions, inject them as CDSS alerts
+  useEffect(() => {
+    if (!clinicalContext) return;
+
+    const contextAlerts: CDSCard[] = [];
+
+    // Risk flags → CDSS cards
+    for (const flag of clinicalContext.riskFlags) {
+      contextAlerts.push({
+        summary: flag.flag,
+        detail: flag.detail,
+        indicator: flag.severity === 'critical' ? 'critical' : flag.severity === 'warning' ? 'warning' : 'info',
+        source: { label: 'Pre-Scan Context Engine' },
+      });
+    }
+
+    // Drug interactions → CDSS cards
+    for (const ix of clinicalContext.interactionMatrix) {
+      contextAlerts.push({
+        summary: `Drug Interaction: ${ix.drug1} + ${ix.drug2}`,
+        detail: ix.description,
+        indicator: ix.severity === 'critical' ? 'critical' : ix.severity === 'major' ? 'warning' : 'info',
+        source: { label: 'Pre-Scan Context Engine' },
+      });
+    }
+
+    if (contextAlerts.length > 0) {
+      setCdssAlerts(contextAlerts);
+    }
+  }, [clinicalContext]);
 
   // ── Extracted Clinical Entities (ELENA: negative space heuristic) ──────
   const [extractedEntities, setExtractedEntities] = useState<ClinicalEntity[]>([]);
@@ -256,29 +346,7 @@ export default function ClinicalCommandCenterPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Transcript streaming simulation ──────────────────────────────────────
-  // Keeps streaming during both 'recording' and 'finalizing_audio' to allow
-  // any in-flight audio chunks to arrive before the word-count guardrail fires.
-  const isStreaming = ambientState === 'recording' || ambientState === 'finalizing_audio';
-
-  useEffect(() => {
-    if (!isStreaming) return;
-
-    const id = setInterval(() => {
-      if (chunkIndexRef.current >= TRANSCRIPT_CHUNKS.length) {
-        clearInterval(id);
-        if (ambientStateRef.current === 'recording') {
-          setAmbientState('finalizing_audio');
-        }
-        return;
-      }
-      const chunk = TRANSCRIPT_CHUNKS[chunkIndexRef.current];
-      setSegments((prev) => [...prev, chunk]);
-      chunkIndexRef.current += 1;
-    }, STREAM_INTERVAL_MS);
-
-    return () => clearInterval(id);
-  }, [isStreaming]);
+  // ── Transcript streaming simulation removed in favor of real Deepgram STT ──
 
   // ── Demo entity extraction: drip-feed entities as transcript progresses ─
   const DEMO_ENTITY_SCHEDULE: Record<number, ClinicalEntity[]> = useMemo(() => ({
@@ -424,19 +492,20 @@ export default function ClinicalCommandCenterPage() {
 
   function toggleRecord() {
     if (ambientState === 'recording') {
-      setAmbientState('finalizing_audio');
+      stopListening();
     } else if (
       ambientState === 'idle' ||
       ambientState === 'completed' ||
       ambientState === 'error'
     ) {
       setSegments([]);
-      chunkIndexRef.current = 0;
       hasAutoSyncedRef.current = false;
       setSoapError(null);
       setToastMessage(null);
       encounterIdRef.current = `enc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      setAmbientState('recording');
+      
+      // Start the real microphone
+      startListening();
     }
   }
 
@@ -547,6 +616,7 @@ export default function ClinicalCommandCenterPage() {
     setPatientResetKey((k) => k + 1);
     setIsBillingModalOpen(false);
     setPatientConsent({ granted: false, timestamp: null, method: 'digital' });
+    setPreAuthAcknowledged(false);
     setExtractedEntities([]);
     setIsContextDrawerOpen(false);
   }
@@ -625,14 +695,24 @@ export default function ClinicalCommandCenterPage() {
         flex-shrink-0 px-6 py-4 border-b flex items-center justify-between
         border-slate-200 dark:border-slate-800
       ">
-        <div>
+        <div className="header-entrance">
           <h1 className="font-semibold text-base flex items-center gap-2
                          text-slate-900 dark:text-white">
             <Stethoscope className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
             Clinical Command Center
           </h1>
-          <p className="text-xs mt-0.5 text-slate-500">
+          <p className="text-xs mt-0.5 text-slate-500 flex items-center gap-2">
             Live Transcription · Ambient SOAP · Co-Pilot
+            {isContextScanning && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-[10px] font-semibold text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-500/20 animate-pulse">
+                Scanning patient context...
+              </span>
+            )}
+            {clinicalContext && !isContextScanning && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
+                Context ready
+              </span>
+            )}
           </p>
         </div>
 
@@ -709,29 +789,46 @@ export default function ClinicalCommandCenterPage() {
       {/* ── Patient context bar ─────────────────────────────────────────────── */}
       <PatientContextBar
         key={patientResetKey}
-        onSelectPatient={setSelectedPatient}
+        onSelectPatient={(p) => { setSelectedPatient(p); setPreAuthAcknowledged(false); }}
         initialPatientId={incomingPatientId}
       />
 
-      {/* ── Main split-pane layout ────────────────────────────────────────────
-           Left col:  TranscriptPane (full height)   id: live-meeting-notes
-           Right col: flex column split proportionally:
-             • SoapNotePane   ~1/3 height              id: soap-note-pane
-             • CdssAlertsPane ~2/3 height              id: cdss-pane
-      ──────────────────────────────────────────────────────────────────────── */}
-      {/*
-        ── Main split-pane layout ────────────────────────────────────────────
-        Layout modes (persisted to localStorage):
-          'default'          → Transcript left  | SOAP + CDSS right
-          'transcript-right' → SOAP + CDSS left | Transcript right
-        framer-motion `layout` prop animates the position swap smoothly.
-      */}
-      <main className="flex-1 grid grid-cols-2 gap-4 p-4 min-h-0">
-        {/* Transcript pane */}
+      {/* ── Pre-Authorization Safety Banner ─────────────────────────────────── */}
+      {selectedPatient && !preAuthAcknowledged && (
+        <div className="mx-3 mb-0 flex items-start gap-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-4 py-3">
+          <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Prior Authorization — Unverified</p>
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+              No prior authorization has been confirmed for <strong>{selectedPatient.name}</strong>. Before proceeding, verify that all required procedures are pre-authorized by the payer. Performing or billing unauthorized services may expose you to claim denial and legal liability.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="/dashboard/billing"
+              className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors"
+            >
+              Send Pre-Auth
+            </a>
+            <button
+              onClick={() => setPreAuthAcknowledged(true)}
+              className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20"
+            >
+              Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 3-Column Layout: Transcript | SOAP (center stage) | Co-Pilot ──── */}
+      <main className="flex-1 flex gap-3 p-3 min-h-0">
+        {/* ── Col 1: Live Meeting Notes (narrow — secondary focus) ──────── */}
         <motion.div
           layout
           id="live-meeting-notes"
-          className={`min-h-0 ${layoutMode === 'transcript-right' ? 'order-2' : 'order-1'}`}
+          className="hidden md:flex min-h-0 w-[28%] shrink-0"
         >
           <TranscriptPane
             segments={segments}
@@ -742,52 +839,105 @@ export default function ClinicalCommandCenterPage() {
             consentRecord={patientConsent}
             onGrantConsent={grantConsent}
             onRevokeConsent={revokeConsent}
+            volume={volume}
           />
         </motion.div>
 
-        {/* SOAP + CDSS column */}
+        {/* ── Col 2: SOAP Note (center stage — primary deliverable) ─────── */}
         <motion.div
           layout
-          className={`flex flex-col gap-4 min-h-0 ${layoutMode === 'transcript-right' ? 'order-1' : 'order-2'}`}
+          id="soap-note-pane"
+          className="min-h-0 flex-1 min-w-0"
         >
-          {/* SOAP Note — 1/3 of column height */}
-          <div id="soap-note-pane" className="min-h-0 overflow-hidden" style={{ flex: '1 0 0' }}>
-            <SoapNotePane
-              segmentCount={segments.length}
-              patientSelected={!!selectedPatient}
-              onSignAndBill={() => setIsBillingModalOpen(true)}
-              isGeneratingSoap={ambientState === 'generating_soap'}
-              isCompleted={ambientState === 'completed'}
-              soapError={soapError}
-              onRetry={handleRetryGeneration}
-            />
-          </div>
+          <SoapNotePane
+            segmentCount={segments.length}
+            patientSelected={!!selectedPatient}
+            onSignAndBill={() => setIsBillingModalOpen(true)}
+            isGeneratingSoap={ambientState === 'generating_soap'}
+            isCompleted={ambientState === 'completed'}
+            soapError={soapError}
+            onRetry={handleRetryGeneration}
+          />
+        </motion.div>
 
-          {/* CDSS — 2/3 of column height */}
-          <div id="cdss-pane" className="min-h-0" style={{ flex: '2 0 0' }}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading CDSS...</div>}>
-            <CdssAlertsPane
-              activeModel={activeModel}
-              modelConfigs={modelConfigs}
-              onModelChange={setActiveModel}
-              cdssAlerts={cdssAlerts}
-              isSyncing={isSyncing}
-              onSync={handleSync}
-              syncError={syncError}
-              patientSelected={!!selectedPatient}
-              hasTranscript={segments.length > 0}
-              selectedPatient={selectedPatient}
-              transcript={segments
-                .filter((s) => s.kind === 'text')
-                .map((s) => (s as { kind: 'text'; text: string }).text)
-                .join('')}
-              onOpenHandout={() => setIsHandoutModalOpen(true)}
-              resetSignal={resetSignal}
-            />
-            </Suspense>
-          </div>
+        {/* ── Col 3: AI Co-Pilot (full height — room to breathe) ───────── */}
+        <motion.div
+          layout
+          id="cdss-pane"
+          className="hidden lg:flex min-h-0 w-[34%] shrink-0"
+        >
+          <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading Co-Pilot...</div>}>
+          <CdssAlertsPane
+            activeModel={activeModel}
+            modelConfigs={modelConfigs}
+            onModelChange={setActiveModel}
+            cdssAlerts={cdssAlerts}
+            isSyncing={isSyncing}
+            onSync={handleSync}
+            syncError={syncError}
+            patientSelected={!!selectedPatient}
+            hasTranscript={segments.length > 0}
+            selectedPatient={selectedPatient}
+            transcript={segments
+              .filter((s) => s.kind === 'text')
+              .map((s) => (s as { kind: 'text'; text: string }).text)
+              .join('')}
+            onOpenHandout={() => setIsHandoutModalOpen(true)}
+            resetSignal={resetSignal}
+          />
+          </Suspense>
         </motion.div>
       </main>
+
+      {/* ── Mobile: stacked single-column fallback ──────────────────────── */}
+      <div className="md:hidden flex-1 flex flex-col gap-3 p-3 min-h-0 overflow-y-auto">
+        <div id="live-meeting-notes-mobile">
+          <TranscriptPane
+            segments={segments}
+            isRecording={isRecording}
+            isFinalizing={ambientState === 'finalizing_audio'}
+            onToggleRecord={toggleRecord}
+            disabled={!selectedPatient || ambientState === 'generating_soap'}
+            consentRecord={patientConsent}
+            onGrantConsent={grantConsent}
+            onRevokeConsent={revokeConsent}
+            volume={volume}
+          />
+        </div>
+        <div>
+          <SoapNotePane
+            segmentCount={segments.length}
+            patientSelected={!!selectedPatient}
+            onSignAndBill={() => setIsBillingModalOpen(true)}
+            isGeneratingSoap={ambientState === 'generating_soap'}
+            isCompleted={ambientState === 'completed'}
+            soapError={soapError}
+            onRetry={handleRetryGeneration}
+          />
+        </div>
+        <div>
+          <Suspense fallback={<div className="flex items-center justify-center h-40 text-slate-500 text-sm">Loading Co-Pilot...</div>}>
+          <CdssAlertsPane
+            activeModel={activeModel}
+            modelConfigs={modelConfigs}
+            onModelChange={setActiveModel}
+            cdssAlerts={cdssAlerts}
+            isSyncing={isSyncing}
+            onSync={handleSync}
+            syncError={syncError}
+            patientSelected={!!selectedPatient}
+            hasTranscript={segments.length > 0}
+            selectedPatient={selectedPatient}
+            transcript={segments
+              .filter((s) => s.kind === 'text')
+              .map((s) => (s as { kind: 'text'; text: string }).text)
+              .join('')}
+            onOpenHandout={() => setIsHandoutModalOpen(true)}
+            resetSignal={resetSignal}
+          />
+          </Suspense>
+        </div>
+      </div>
 
       {/* Toast notification: word-count guardrail feedback */}
       <AnimatePresence>

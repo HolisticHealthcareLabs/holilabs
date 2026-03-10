@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
+        <div className="header-entrance">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             Analytics
           </h1>
@@ -410,27 +410,27 @@ export default function AnalyticsPage() {
           sub={`${overview.activePatients} active`}
           growth={trends.patientsGrowth}
           accent="text-blue-600 dark:text-blue-400" border="border-blue-200/60 dark:border-blue-500/20"
-          iconBg="bg-blue-50 dark:bg-blue-500/10"
+          iconBg="bg-blue-50 dark:bg-blue-500/10" index={1}
         />
         <KPICard
           icon={Stethoscope} label="Consultations" value={String(overview.totalConsultations)}
           sub={`~${overview.avgConsultationTime} min avg`}
           growth={trends.consultationsGrowth}
           accent="text-emerald-600 dark:text-emerald-400" border="border-emerald-200/60 dark:border-emerald-500/20"
-          iconBg="bg-emerald-50 dark:bg-emerald-500/10"
+          iconBg="bg-emerald-50 dark:bg-emerald-500/10" index={2}
         />
         <KPICard
           icon={FileText} label="Prescriptions" value={String(overview.totalPrescriptions)}
           sub={`${(overview.totalPrescriptions / Math.max(overview.totalConsultations, 1)).toFixed(1)} per visit`}
           accent="text-violet-600 dark:text-violet-400" border="border-violet-200/60 dark:border-violet-500/20"
-          iconBg="bg-violet-50 dark:bg-violet-500/10"
+          iconBg="bg-violet-50 dark:bg-violet-500/10" index={3}
         />
         <KPICard
           icon={DollarSign} label="Revenue" value={formatCurrency(overview.revenue)}
           sub="Current period"
           growth={trends.revenueGrowth}
           accent="text-amber-600 dark:text-amber-400" border="border-amber-200/60 dark:border-amber-500/20"
-          iconBg="bg-amber-50 dark:bg-amber-500/10"
+          iconBg="bg-amber-50 dark:bg-amber-500/10" index={4}
         />
       </div>
 
@@ -589,6 +589,7 @@ function KPICard({
   accent,
   border,
   iconBg,
+  index = 1,
 }: {
   icon: React.FC<{ className?: string }>;
   label: string;
@@ -598,20 +599,21 @@ function KPICard({
   accent: string;
   border: string;
   iconBg: string;
+  index?: number;
 }) {
   return (
-    <div className={`rounded-2xl border bg-white dark:bg-gray-900 p-4 ${border}`}>
+    <div className={`rounded-2xl border bg-white dark:bg-gray-900 p-4 overflow-hidden min-w-0 card-entrance card-entrance-${index} hover:scale-[1.02] hover:shadow-md transition-all duration-200 ${border}`}>
       <div className="flex items-center justify-between mb-2.5">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconBg}`}>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
           <Icon className={`w-4 h-4 ${accent}`} />
         </div>
         {growth !== undefined && <GrowthBadge value={growth} />}
       </div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1 truncate">
         {label}
       </p>
-      <p className={`text-2xl font-bold tabular-nums ${accent}`}>{value}</p>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{sub}</p>
+      <p className={`text-base sm:text-xl lg:text-2xl font-bold tabular-nums truncate leading-tight ${accent}`}>{value}</p>
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">{sub}</p>
     </div>
   );
 }

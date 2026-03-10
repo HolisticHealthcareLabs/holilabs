@@ -400,7 +400,7 @@ export default function ClaimsIntelligencePage() {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
+        <div className="header-entrance">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
             Claims Intelligence
           </h1>
@@ -420,76 +420,38 @@ export default function ClaimsIntelligencePage() {
             <Send className="w-3.5 h-3.5" />
             New Authorization
           </button>
-          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Region</span>
-          <select
-            value={selectedCountry}
-            onChange={(e) => setSelectedCountry(e.target.value as CountryCode)}
-            className="
-              px-3 py-1.5 text-xs font-medium rounded-lg
-              bg-white dark:bg-gray-900
-              border border-gray-200 dark:border-gray-700
-              text-gray-700 dark:text-gray-300
-              focus:outline-none focus:ring-2 focus:ring-gray-400
-            "
-          >
-            {(Object.keys(COUNTRY_LABELS) as CountryCode[]).map((code) => (
-              <option key={code} value={code}>{COUNTRY_LABELS[code]}</option>
-            ))}
-          </select>
         </div>
       </div>
 
       {/* Billing Standard Banner */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-            Billing Standard: {billingInfo.label}
-          </span>
-        </div>
-        <span className="text-[11px] text-gray-400 dark:text-gray-500">
-          {COUNTRY_LABELS[selectedCountry]} regulatory framework
+      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 px-4 py-3 flex items-center gap-2.5">
+        <FileCheck className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
+        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+          Billing Standard: {billingInfo.label}
         </span>
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-blue-200/60 dark:border-blue-500/20 bg-white dark:bg-gray-900 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Total Billed</span>
-          </div>
-          <p className="text-2xl font-bold tabular-nums text-blue-600 dark:text-blue-400">
-            {formatCurrency(stats.totalBilled, stats.currency)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-500/20 bg-white dark:bg-gray-900 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Approval Rate</span>
-          </div>
-          <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {stats.approvalRate}%
-          </p>
-        </div>
-        <div className="rounded-2xl border border-red-200/60 dark:border-red-500/20 bg-white dark:bg-gray-900 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Denied</span>
-          </div>
-          <p className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">
-            {stats.deniedCount}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-amber-200/60 dark:border-amber-500/20 bg-white dark:bg-gray-900 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">CDI Alerts</span>
-          </div>
-          <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">
-            {stats.cdiAlerts}
-          </p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { icon: BarChart3, label: 'Total Billed', value: formatCurrency(stats.totalBilled, stats.currency), accent: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200/60 dark:border-blue-500/20' },
+          { icon: TrendingUp, label: 'Approval Rate', value: `${stats.approvalRate}%`, accent: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-200/60 dark:border-emerald-500/20' },
+          { icon: XCircle, label: 'Denied', value: String(stats.deniedCount), accent: 'text-red-600 dark:text-red-400', border: 'border-red-200/60 dark:border-red-500/20' },
+          { icon: AlertTriangle, label: 'CDI Alerts', value: String(stats.cdiAlerts), accent: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200/60 dark:border-amber-500/20' },
+        ].map((kpi, i) => {
+          const Icon = kpi.icon;
+          return (
+            <div key={kpi.label} className={`rounded-2xl border ${kpi.border} bg-white dark:bg-gray-900 px-2 py-3 sm:p-4 flex flex-col items-center justify-center text-center overflow-hidden min-w-0 card-entrance card-entrance-${i + 1} hover:scale-[1.02] hover:shadow-md transition-all duration-200`}>
+              <div className="flex items-center gap-1 sm:gap-1.5 mb-1.5 sm:mb-2 max-w-full">
+                <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${kpi.accent}`} />
+                <span className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 truncate leading-none">{kpi.label}</span>
+              </div>
+              <p className={`text-base sm:text-xl md:text-2xl font-bold tabular-nums leading-tight w-full truncate ${kpi.accent}`}>
+                {kpi.value}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Filters */}
