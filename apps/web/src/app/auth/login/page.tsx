@@ -76,7 +76,6 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAgreed,  setTermsAgreed]  = useState(false);
   const [isLoading,    setIsLoading]    = useState(false);
-  const [demoLoading,  setDemoLoading]  = useState(false);
   const [error,        setError]        = useState<string | null>(null);
 
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
@@ -86,25 +85,9 @@ function LoginContent() {
     signIn('google', { callbackUrl });
   }
 
-  // ── Interactive demo (ephemeral sandbox) ────────────────────────────────────
-  async function handleDemo() {
-    setError(null);
-    setDemoLoading(true);
-    try {
-      const res = await fetch('/api/demo/provision', { method: 'POST' });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        setError(data.error || 'Failed to provision demo. Please try again.');
-        setDemoLoading(false);
-        return;
-      }
-
-      router.push(data.redirectTo || '/dashboard/my-day');
-    } catch {
-      setError('Connection error. Please try again.');
-      setDemoLoading(false);
-    }
+  // ── Interactive demo → navigate to the setup survey ────────────────────────
+  function handleDemo() {
+    router.push('/demo/setup');
   }
 
   // ── Credentials sign-in ─────────────────────────────────────────────────────
@@ -133,7 +116,7 @@ function LoginContent() {
     }
   }
 
-  const submitDisabled = isLoading || demoLoading || !email || !password || !termsAgreed;
+  const submitDisabled = isLoading || !email || !password || !termsAgreed;
 
   return (
     <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-center px-4 pb-[var(--holi-cookie-banner-h,0px)]">
@@ -190,7 +173,7 @@ function LoginContent() {
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          disabled={isLoading || demoLoading}
+          disabled={isLoading}
           className="
             w-full flex items-center justify-center gap-3
             border border-gray-300 rounded-xl
@@ -209,7 +192,7 @@ function LoginContent() {
         <button
           type="button"
           onClick={handleDemo}
-          disabled={isLoading || demoLoading}
+          disabled={isLoading}
           className="
             mt-3 w-full flex items-center justify-center gap-2
             border border-gray-300 rounded-xl
@@ -220,18 +203,14 @@ function LoginContent() {
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400
           "
         >
-          {demoLoading ? (
-            <span className="text-gray-500">Launching demo...</span>
-          ) : (
-            <>
-              {/* Play icon */}
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Try Interactive Demo
-            </>
-          )}
+          <>
+            {/* Play icon */}
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Launch Interactive Demo
+          </>
         </button>
 
         {/* Consent line under Google button */}
@@ -271,7 +250,7 @@ function LoginContent() {
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading || demoLoading}
+              disabled={isLoading}
               className="
                 w-full px-4 py-3 rounded-xl border border-gray-300
                 text-sm text-gray-900 placeholder:text-gray-400
@@ -299,7 +278,7 @@ function LoginContent() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading || demoLoading}
+                disabled={isLoading}
                 className="
                   w-full px-4 py-3 pr-11 rounded-xl border border-gray-300
                   text-sm text-gray-900 placeholder:text-gray-400

@@ -353,8 +353,8 @@ export function BillingComplianceLanding() {
               {t('headline')}
             </h1>
 
-            {/* Subhead */}
-            <p className="text-[clamp(17px,2.2vw,22px)] text-white/55 tracking-[-0.01em] leading-[1.45] mb-10 max-w-[540px]">
+            {/* Subhead — forced line breaks on lg+, natural wrap on mobile */}
+            <p className="text-[clamp(17px,2.2vw,22px)] text-white/55 tracking-[-0.01em] leading-[1.45] mb-10 max-w-[620px] lg:whitespace-pre-line">
               {t('subhead')}
             </p>
 
@@ -678,10 +678,10 @@ export function BillingComplianceLanding() {
                 {
                   heading: tFoot('legal'),
                   links: [
-                    { label: tFoot('privacy'), href: '#' },
-                    { label: tFoot('terms'), href: '#' },
-                    { label: tFoot('hipaaPolicy'), href: '#' },
-                    { label: tFoot('lgpdPolicy'), href: '#' },
+                    { label: tFoot('privacy'), href: '/legal/privacy-policy' },
+                    { label: tFoot('terms'), href: '/legal/terms-of-service' },
+                    { label: tFoot('hipaaPolicy'), href: '/legal/hipaa-notice' },
+                    { label: tFoot('lgpdPolicy'), href: '/legal/consent' },
                   ],
                 },
               ].map((col) => (
