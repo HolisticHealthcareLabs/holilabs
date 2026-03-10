@@ -13,6 +13,8 @@ import GoogleProvider from 'next-auth/providers/google';
 import crypto from 'crypto';
 import logger from '@/lib/logger';
 import { UserRole } from '@prisma/client';
+import { getOrCreateWorkspaceForUser } from '@/lib/workspace';
+import { normalizeTenantRole } from '../../../../packages/shared-kernel/src/types/auth';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -84,10 +86,24 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (dbUser) {
+          const workspaceContext = await getOrCreateWorkspaceForUser(dbUser.id);
+          const workspace = await prisma.workspace.findUnique({
+            where: { id: workspaceContext.workspaceId },
+            select: { id: true, name: true },
+          });
+
           token.id = dbUser.id;
           token.firstName = dbUser.firstName;
           token.lastName = dbUser.lastName;
           token.role = dbUser.role;
+          token.workspaceRole = workspaceContext.role;
+          token.organizationId = workspaceContext.workspaceId;
+          token.organizationName = workspace?.name ?? 'Default Organization';
+          token.organizationType = 'CLINIC';
+          token.tenantRole = normalizeTenantRole({
+            userRole: dbUser.role,
+            workspaceRole: workspaceContext.role,
+          });
         }
 
         logger.info({
@@ -120,6 +136,23 @@ export const authOptions: NextAuthOptions = {
         token.refreshToken = account.refresh_token;
       }
 
+      if (token.id && !token.organizationId) {
+        const workspaceContext = await getOrCreateWorkspaceForUser(String(token.id));
+        const workspace = await prisma.workspace.findUnique({
+          where: { id: workspaceContext.workspaceId },
+          select: { id: true, name: true },
+        });
+
+        token.workspaceRole = workspaceContext.role;
+        token.organizationId = workspaceContext.workspaceId;
+        token.organizationName = workspace?.name ?? 'Default Organization';
+        token.organizationType = 'CLINIC';
+        token.tenantRole = normalizeTenantRole({
+          userRole: typeof token.role === 'string' ? token.role : null,
+          workspaceRole: workspaceContext.role,
+        });
+      }
+
       return token;
     },
 
@@ -130,6 +163,11 @@ export const authOptions: NextAuthOptions = {
         session.user.firstName = token.firstName as string;
         session.user.lastName = token.lastName as string;
         session.user.role = token.role as any;
+        session.user.workspaceRole = token.workspaceRole as string | undefined;
+        session.user.organizationId = token.organizationId as string | undefined;
+        session.user.organizationName = token.organizationName as string | undefined;
+        session.user.organizationType = token.organizationType as 'CLINIC' | 'HOSPITAL' | undefined;
+        session.user.tenantRole = token.tenantRole as 'ORG_ADMIN' | 'CLINICIAN' | 'BILLING' | undefined;
       }
 
       return session;

@@ -195,7 +195,7 @@ export function BillingComplianceLanding() {
               </a>
             ))}
             <a
-              href="/sign-in"
+              href="/auth/login"
               onClick={() => setMenuOpen(false)}
               className="text-[28px] font-semibold tracking-[-0.02em] text-[#1d1d1f] hover:text-[#0071e3] transition-colors"
             >
@@ -230,15 +230,21 @@ export function BillingComplianceLanding() {
               : 'bg-transparent'
             }`}
         >
-          <nav className="max-w-[1120px] mx-auto flex items-center justify-between h-[52px] px-5">
+          <nav className="relative w-full flex items-center h-[52px] px-5 md:px-8 lg:px-10">
             {/* Logo */}
-            <a href="/" className={`flex-shrink-0 text-[17px] font-semibold tracking-[-0.02em] ${navText} transition-colors duration-300`}>
-              Cortex{' '}
-              <span className={`${navMuted} font-normal text-[15px] transition-colors duration-300`}>by Holi Labs</span>
+            <a href="/" className={`flex-shrink-0 flex items-center gap-2 text-[17px] font-semibold tracking-[-0.02em] ${navText} transition-colors duration-300`}>
+              {/* Double-helix H mark — uses currentColor so it inherits scroll-aware nav text color */}
+              <svg className="h-[22px] w-auto" viewBox="20 100 555 670" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <line x1="244.03" y1="369.32" x2="350.47" y2="369.32" stroke="currentColor" strokeLinecap="round" strokeWidth="58"/>
+                <line x1="244.03" y1="453.65" x2="350.47" y2="453.65" stroke="currentColor" strokeLinecap="round" strokeWidth="58"/>
+                <path fill="currentColor" d="m545.36,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z"/>
+                <path fill="currentColor" d="m202.39,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z"/>
+              </svg>
+              Holi Labs
             </a>
 
             {/* Desktop center links */}
-            <div className="hidden md:flex items-center gap-7">
+            <div className="hidden md:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
               {[
                 { label: tNav('howItWorks'), href: '#how-it-works' },
                 { label: tNav('forHospitals'), href: '#' },
@@ -255,7 +261,7 @@ export function BillingComplianceLanding() {
             </div>
 
             {/* Desktop right: lang + sign in + CTA */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-3 ml-auto">
               {/* Language switcher */}
               <div className="relative" onClick={(e) => e.stopPropagation()}>
                 <button
@@ -289,7 +295,7 @@ export function BillingComplianceLanding() {
               </div>
 
               <a
-                href="/sign-in"
+                href="/auth/login"
                 className={`text-[13px] ${navText} hover:text-[#0071e3] transition-colors duration-300 border ${scrolled ? 'border-black/15 hover:border-[#0071e3]/40' : 'border-white/25 hover:border-white/50'} rounded-full px-4 py-1.5`}
               >
                 {tNav('signIn')}
@@ -304,7 +310,7 @@ export function BillingComplianceLanding() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden flex flex-col gap-[5px] p-2 z-50"
+              className="md:hidden ml-auto flex flex-col gap-[5px] p-2 z-50"
               onClick={() => setMenuOpen((v) => !v)}
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
@@ -327,15 +333,15 @@ export function BillingComplianceLanding() {
 
         {/* ── 2. Hero (dark with background image + integrated trust bar) ── */}
         <section
-          className="relative flex flex-col items-center justify-center text-center px-5 pt-[52px] overflow-hidden"
+          className="relative flex flex-col items-start justify-between text-left w-full min-h-[100dvh] px-12 md:px-24 pt-[52px] overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(15,15,20,0.82) 0%, rgba(15,15,20,0.90) 60%, rgba(15,15,20,0.96) 100%), url('/cortex-bg.jpeg')`,
+            backgroundImage: `linear-gradient(90deg, rgba(15,15,20,0.95) 0%, rgba(15,15,20,0.60) 50%, rgba(15,15,20,0.20) 100%), url('/holilabsv2.jpeg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         >
           {/* Hero content — parallax wrapper */}
-          <div ref={heroContentRef} className="relative z-10 max-w-[760px] mx-auto pt-24 pb-8 sm:pt-32 sm:pb-12 lg:pt-40 lg:pb-16">
+          <div ref={heroContentRef} className="relative z-10 max-w-3xl pt-24 pb-8 sm:pt-32 sm:pb-12 lg:pt-40 lg:pb-16">
             {/* Eyebrow pill */}
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 backdrop-blur-sm px-4 py-[7px] mb-8 shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-[#34c759] flex-shrink-0" aria-hidden="true" />
@@ -343,17 +349,17 @@ export function BillingComplianceLanding() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-[clamp(40px,7.5vw,76px)] font-semibold tracking-[-0.035em] leading-[1.05] text-white mb-6">
+            <h1 className="text-[clamp(40px,7.5vw,76px)] font-semibold tracking-[-0.035em] leading-[1.05] text-white mb-6 whitespace-pre-line">
               {t('headline')}
             </h1>
 
             {/* Subhead */}
-            <p className="text-[clamp(17px,2.2vw,22px)] text-white/55 tracking-[-0.01em] leading-[1.45] mb-10 max-w-[540px] mx-auto">
+            <p className="text-[clamp(17px,2.2vw,22px)] text-white/55 tracking-[-0.01em] leading-[1.45] mb-10 max-w-[540px]">
               {t('subhead')}
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-start gap-4 mb-4">
               <a
                 href="#access"
                 className="inline-flex items-center rounded-full bg-[#0071e3] text-white text-[17px] font-semibold px-8 py-[14px] hover:bg-[#0077ed] transition-colors shadow-[0_4px_24px_rgba(0,113,227,0.28)] active:scale-[0.98]"
@@ -373,7 +379,7 @@ export function BillingComplianceLanding() {
           </div>
 
           {/* ── Trust bar (inside hero, dark-themed, seamless) ─────────── */}
-          <div className="relative z-10 w-full border-t border-white/[0.08] mt-auto">
+          <div className="relative z-10 w-full border-t border-white/[0.08]">
             <div className="max-w-[980px] mx-auto px-5 py-4">
               <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                 {([
@@ -657,7 +663,7 @@ export function BillingComplianceLanding() {
                     { label: tNav('pricing'), href: '/pricing' },
                     { label: tFoot('liveDemo'), href: '/demo' },
                     { label: tNav('forHospitals'), href: '#' },
-                    { label: tNav('signIn'), href: '/sign-in' },
+                    { label: tNav('signIn'), href: '/auth/login' },
                   ],
                 },
                 {

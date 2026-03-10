@@ -1,5 +1,4 @@
 'use client';
-export const dynamic = 'force-dynamic';
 
 
 /**
@@ -11,6 +10,21 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import {
+  AlertTriangle,
+  Bell,
+  Building2,
+  ChevronRight,
+  CreditCard,
+  FileBadge2,
+  Home,
+  Link2,
+  Lock,
+  Search,
+  ShieldCheck,
+  UserCircle2,
+  Users2,
+} from 'lucide-react';
 
 type OnboardingProfile = import('@/app/api/onboarding/profile/route').OnboardingProfile;
 type ProtocolMode = NonNullable<OnboardingProfile['protocolMode']>;
@@ -28,14 +42,119 @@ function normalizeProtocolMode(value: unknown): ProtocolMode {
   return 'HYBRID_70_30';
 }
 
+type TeamMemberRole = 'ORG_ADMIN' | 'CLINICIAN' | 'BILLING';
+type TeamMemberStatus = 'ACTIVE' | 'PENDING';
+
+interface TeamMember {
+  id: string;
+  email: string;
+  name: string;
+  role: TeamMemberRole;
+  status: TeamMemberStatus;
+  organizationId: string;
+}
+
+const ROLE_OPTIONS: Array<{ value: TeamMemberRole; label: string }> = [
+  { value: 'CLINICIAN', label: 'Clinician' },
+  { value: 'BILLING', label: 'Billing' },
+  { value: 'ORG_ADMIN', label: 'Admin' },
+];
+
+const ROLE_STYLES: Record<TeamMemberRole, string> = {
+  ORG_ADMIN: 'bg-slate-900 text-white',
+  CLINICIAN: 'bg-blue-100 text-blue-700',
+  BILLING: 'bg-violet-100 text-violet-700',
+};
+
+const STATUS_STYLES: Record<TeamMemberStatus, string> = {
+  ACTIVE: 'bg-emerald-100 text-emerald-700',
+  PENDING: 'bg-amber-100 text-amber-700',
+};
+
+type SettingsSection =
+  | 'home'
+  | 'personal'
+  | 'security'
+  | 'license'
+  | 'integrations'
+  | 'privacy'
+  | 'team'
+  | 'billing';
+
+function getInitials(value: string): string {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'TM';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+}
+
+function humanizeInviteName(email: string): string {
+  const localPart = email.split('@')[0] ?? 'Pending Invite';
+  return localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ') || 'Pending Invite';
+}
+
+function buildInitialTeamMembers(activeOrganizationId: string): TeamMember[] {
+  return [
+    {
+      id: 'team-001',
+      email: 'admin@holilabs.xyz',
+      name: 'Nicola Caprirolo Teran',
+      role: 'ORG_ADMIN',
+      status: 'ACTIVE',
+      organizationId: activeOrganizationId,
+    },
+    {
+      id: 'team-002',
+      email: 'dr.silva@holilabs.xyz',
+      name: 'Ricardo Silva',
+      role: 'CLINICIAN',
+      status: 'ACTIVE',
+      organizationId: activeOrganizationId,
+    },
+    {
+      id: 'team-003',
+      email: 'billing@holilabs.xyz',
+      name: 'Billing Desk',
+      role: 'BILLING',
+      status: 'ACTIVE',
+      organizationId: activeOrganizationId,
+    },
+    {
+      id: 'team-004',
+      email: 'new.clinician@holilabs.xyz',
+      name: 'New Clinician',
+      role: 'CLINICIAN',
+      status: 'PENDING',
+      organizationId: activeOrganizationId,
+    },
+  ];
+}
+
 export default function SettingsPage() {
   const { data: session } = useSession();
   const userRole = String((session?.user as { role?: string } | undefined)?.role ?? '').toUpperCase();
-  const canEditRolloutContext = ['OWNER', 'ADMIN', 'DOCTOR', 'PHYSICIAN'].includes(userRole);
+  const tenantRole = String((session?.user as { tenantRole?: string } | undefined)?.tenantRole ?? 'CLINICIAN').toUpperCase();
+  const organizationId = (session?.user as { organizationId?: string } | undefined)?.organizationId ?? 'org-demo-clinic';
+  const organizationName = (session?.user as { organizationName?: string } | undefined)?.organizationName ?? 'Demo Clinic';
+  const organizationType = (session?.user as { organizationType?: string } | undefined)?.organizationType ?? 'CLINIC';
+  const canManageClinic = tenantRole === 'ORG_ADMIN';
+  const canEditRolloutContext = canManageClinic;
 
-  const [activeTab, setActiveTab] = useState<'ai' | 'communications' | 'preferences'>('ai');
+  const [activeTab, setActiveTab] = useState<SettingsSection>('home');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() =>
+    buildInitialTeamMembers(organizationId)
+  );
+  const [teamMessage, setTeamMessage] = useState('');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<TeamMemberRole>('CLINICIAN');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   // AI Settings
   const [aiConfig, setAiConfig] = useState({
@@ -97,6 +216,16 @@ export default function SettingsPage() {
       .catch((err) => console.error('Failed to load settings:', err));
   }, []);
 
+  useEffect(() => {
+    setTeamMembers(buildInitialTeamMembers(organizationId));
+  }, [organizationId]);
+
+  useEffect(() => {
+    if (!teamMessage) return;
+    const timeoutId = window.setTimeout(() => setTeamMessage(''), 3500);
+    return () => window.clearTimeout(timeoutId);
+  }, [teamMessage]);
+
   const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage('');
@@ -146,427 +275,360 @@ export default function SettingsPage() {
     }
   };
 
+  const visibleTeamMembers = teamMembers.filter(
+    (member) => member.organizationId === organizationId
+  );
+
+  const handleInviteMember = async () => {
+    const normalizedEmail = inviteEmail.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      setTeamMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setIsSendingInvite(true);
+    setTeamMessage('');
+
+    await new Promise((resolve) => window.setTimeout(resolve, 900));
+
+    const newMember: TeamMember = {
+      id: `team-${Date.now()}`,
+      email: normalizedEmail,
+      name: humanizeInviteName(normalizedEmail),
+      role: inviteRole,
+      status: 'PENDING',
+      organizationId,
+    };
+
+    setTeamMembers((prev) => [newMember, ...prev]);
+    setInviteEmail('');
+    setInviteRole('CLINICIAN');
+    setIsSendingInvite(false);
+    setIsInviteModalOpen(false);
+    setTeamMessage(`Invite sent to ${normalizedEmail}.`);
+  };
+
+  const navigationItems: Array<{
+    id: SettingsSection;
+    label: string;
+    icon: typeof Home;
+    accent: string;
+    available: boolean;
+  }> = [
+    { id: 'home', label: 'Home', icon: Home, accent: 'bg-blue-100 text-blue-700', available: true },
+    { id: 'personal', label: 'Personal info', icon: UserCircle2, accent: 'bg-emerald-100 text-emerald-700', available: true },
+    { id: 'security', label: 'Security & sign-in', icon: ShieldCheck, accent: 'bg-sky-100 text-sky-700', available: false },
+    { id: 'license', label: 'Clinical license', icon: FileBadge2, accent: 'bg-amber-100 text-amber-700', available: false },
+    { id: 'integrations', label: 'Third-party apps & services', icon: Link2, accent: 'bg-indigo-100 text-indigo-700', available: true },
+    { id: 'privacy', label: 'Data & privacy', icon: Lock, accent: 'bg-violet-100 text-violet-700', available: true },
+    { id: 'team', label: 'People & sharing', icon: Users2, accent: 'bg-pink-100 text-pink-700', available: canManageClinic },
+    { id: 'billing', label: 'Wallet & subscriptions', icon: CreditCard, accent: 'bg-orange-100 text-orange-700', available: false },
+  ];
+
+  const saveFeedbackTone = saveMessage.includes('✅')
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : 'border-red-200 bg-red-50 text-red-700';
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Configuración</h1>
-          <p className="text-gray-600">
-            Configura las integraciones de IA, comunicaciones y preferencias
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <button
-                onClick={() => setActiveTab('ai')}
-                className={`w-full text-left px-4 py-3 border-b border-gray-200 transition ${
-                  activeTab === 'ai'
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'hover:bg-gray-50 text-gray-700'
-                }`}
-              >
-                Inteligencia Artificial
-              </button>
-              <button
-                onClick={() => setActiveTab('communications')}
-                className={`w-full text-left px-4 py-3 border-b border-gray-200 transition ${
-                  activeTab === 'communications'
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'hover:bg-gray-50 text-gray-700'
-                }`}
-              >
-                Comunicaciones
-              </button>
-              <button
-                onClick={() => setActiveTab('preferences')}
-                className={`w-full text-left px-4 py-3 transition ${
-                  activeTab === 'preferences'
-                    ? 'bg-primary/10 text-primary font-semibold'
-                    : 'hover:bg-gray-50 text-gray-700'
-                }`}
-              >
-                Preferencias
-              </button>
+    <div className="min-h-screen bg-[#1f1f1c] text-white">
+      <div className="mx-auto flex w-full max-w-7xl gap-8 px-6 py-8">
+        <aside className="hidden w-[280px] shrink-0 xl:block">
+          <div className="sticky top-8 space-y-2">
+            <div className="mb-6 px-4 text-[28px] font-semibold tracking-tight text-white">
+              Cortex Account
             </div>
-          </div>
-
-          {/* Content */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              {/* AI Settings */}
-              {activeTab === 'ai' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                      Configuración de IA Médica
-                    </h2>
-                    <p className="text-sm text-gray-600 mb-6">
-                      Conecta tu asistente de IA para análisis de historiales médicos y planes de prevención
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          Modo de protocolo clínico (determinístico primero)
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          Se comparte con onboarding y contexto operativo para mantener reglas consistentes en toda la plataforma.
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          rolloutContext.protocolMode === 'DETERMINISTIC_100'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-amber-100 text-amber-700'
-                        }`}
-                      >
-                        {rolloutContext.protocolMode === 'DETERMINISTIC_100'
-                          ? 'Determinístico'
-                          : rolloutContext.protocolMode === 'HYBRID_70_30'
-                            ? 'Híbrido'
-                            : 'No definido'}
-                      </span>
-                    </div>
-                    <div className="mt-3">
-                      <select
-                        value={rolloutContext.protocolMode}
-                        disabled={!canEditRolloutContext}
-                        onChange={(e) => {
-                          const nextProtocolMode = normalizeProtocolMode(e.target.value);
-                          setRolloutContext((prev) => ({ ...prev, protocolMode: nextProtocolMode }));
-                          setAiConfig((prev) => ({ ...prev, protocolMode: nextProtocolMode }));
-                        }}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
-                      >
-                        <option value="DETERMINISTIC_100">Determinístico estricto (100% reglas)</option>
-                        <option value="HYBRID_70_30">Híbrido recomendado (70% determinístico / 30% probabilístico)</option>
-                        <option value="UNKNOWN">No definido</option>
-                      </select>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {canEditRolloutContext
-                          ? 'Visible para operaciones y analítica usando la misma clave protocolMode.'
-                          : `Solo OWNER/ADMIN/DOCTOR pueden editar (rol actual: ${userRole || 'UNKNOWN'}).`}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* BYOK Toggle */}
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          Bring Your Own Key (BYOK)
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          Opción avanzada para organizaciones que requieren control de claves. Recomendado: modo compartido de Holi Labs durante piloto.
-                        </p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={aiConfig.useCustomApiKey}
-                          onChange={(e) =>
-                            setAiConfig({ ...aiConfig, useCustomApiKey: e.target.checked })
-                          }
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
-                  </div>
-
-                  {!aiConfig.useCustomApiKey && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <p className="text-sm text-green-800">
-                        ✅ <strong>Modo Compartido:</strong> Usarás las claves API de Holi Labs (incluidas en tu suscripción). Límites de uso aplican según tu plan.
-                      </p>
-                    </div>
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition-colors ${
+                    isActive
+                      ? 'bg-white/8 text-white'
+                      : 'text-white/72 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${item.accent}`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm font-medium">
+                    {item.label}
+                  </span>
+                  {!item.available && (
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">
+                      Coming Soon
+                    </span>
                   )}
+                </button>
+              );
+            })}
+          </div>
+        </aside>
 
-                  {aiConfig.useCustomApiKey && (
-                    <>
-                      {/* Provider Selection */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Proveedor de IA Principal
-                        </label>
-                        <select
-                          value={aiConfig.provider}
-                          onChange={(e) => setAiConfig({ ...aiConfig, provider: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
-                          <option value="gemini">Google Gemini 1.5 Flash (Recomendado - Costo-efectivo)</option>
-                          <option value="claude">Claude 3.5 Sonnet (Mayor calidad clínica)</option>
-                          <option value="openai">OpenAI GPT-4 Turbo</option>
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">
-                          💡 Gemini 1.5 Flash: ~$50/mes | Claude: ~$150/mes | GPT-4: ~$100/mes
-                        </p>
+        <div className="min-w-0 flex-1">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-6 flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-5 py-4 text-white/55">
+              <Search className="h-5 w-5 shrink-0" />
+              <input
+                type="text"
+                value=""
+                readOnly
+                aria-label="Search account settings"
+                placeholder="Search Cortex Account"
+                className="w-full bg-transparent text-base text-white/85 outline-none placeholder:text-white/38"
+              />
+            </div>
+
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-28 w-28 items-center justify-center rounded-full bg-[#014751] text-5xl font-semibold text-white shadow-lg">
+                {(session?.user?.name || session?.user?.email || 'C').charAt(0).toUpperCase()}
+              </div>
+              <h1 className="text-5xl font-semibold tracking-tight text-white">
+                {session?.user?.name || 'Your account'}
+              </h1>
+              <p className="mt-2 text-lg text-white/65">
+                {session?.user?.email || 'No email on file'}
+              </p>
+            </div>
+
+            {activeTab === 'home' && (
+              <div className="space-y-6">
+                <div className="rounded-[32px] border border-red-500/20 bg-[#a61d18] px-8 py-7 shadow-xl">
+                  <div className="flex items-center justify-between gap-6">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white">
+                          <AlertTriangle className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <p className="text-lg font-semibold text-white">Security review recommended</p>
+                          <p className="mt-1 text-sm text-white/80">
+                            Review organization access, team invites, and privacy settings before rollout.
+                          </p>
+                        </div>
                       </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('privacy')}
+                      className="shrink-0 rounded-full bg-white/85 px-5 py-3 text-sm font-semibold text-[#7f1612] transition-colors hover:bg-white"
+                    >
+                      Review settings
+                    </button>
+                  </div>
+                </div>
 
-                      {/* Gemini API Key */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Google Gemini API Key {aiConfig.provider === 'gemini' && <span className="text-red-500">*</span>}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Organization</p>
+                    <p className="mt-3 text-xl font-semibold text-white">{organizationName}</p>
+                    <p className="mt-1 text-sm text-white/55">{organizationType}</p>
+                  </div>
+                  <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Role</p>
+                    <p className="mt-3 text-xl font-semibold text-white">{tenantRole}</p>
+                    <p className="mt-1 text-sm text-white/55">Scoped to your current workspace</p>
+                  </div>
+                  <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Pending invites</p>
+                    <p className="mt-3 text-xl font-semibold text-white">
+                      {visibleTeamMembers.filter((member) => member.status === 'PENDING').length}
+                    </p>
+                    <p className="mt-1 text-sm text-white/55">Awaiting onboarding completion</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'personal' && (
+              <div className="space-y-4">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Personal info</p>
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Full name</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.name || 'Unknown'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Email</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.email || 'Unknown'}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Organization ID</p>
+                      <p className="mt-2 font-mono text-sm text-white">{organizationId}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-sm text-white/50">Tenant role</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{tenantRole}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'integrations' && (
+              <div className="space-y-6">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Third-party apps & services</p>
+                      <h2 className="mt-3 text-2xl font-semibold text-white">AI provider settings</h2>
+                      <p className="mt-2 text-sm text-white/60">
+                        Connect your preferred model provider and manage keys for this workspace.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-white/70">
+                      {aiConfig.useCustomApiKey ? 'BYOK enabled' : 'Shared mode'}
+                    </span>
+                  </div>
+
+                  <div className="mt-6 space-y-5">
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-base font-semibold text-white">Bring Your Own Key</p>
+                          <p className="mt-1 text-sm text-white/55">
+                            Use workspace-managed API credentials instead of the shared environment.
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={aiConfig.useCustomApiKey}
+                            onChange={(e) =>
+                              setAiConfig({ ...aiConfig, useCustomApiKey: e.target.checked })
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="h-6 w-11 rounded-full bg-white/15 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-blue-600 peer-checked:after:translate-x-full" />
                         </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-white/75">
+                        Preferred provider
+                      </label>
+                      <select
+                        value={aiConfig.provider}
+                        onChange={(e) => setAiConfig({ ...aiConfig, provider: e.target.value })}
+                        className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
+                      >
+                        <option value="gemini" className="bg-[#1f1f1c]">Google Gemini 1.5 Flash</option>
+                        <option value="claude" className="bg-[#1f1f1c]">Claude 3.5 Sonnet</option>
+                        <option value="openai" className="bg-[#1f1f1c]">OpenAI GPT-4 Turbo</option>
+                      </select>
+                    </div>
+
+                    {aiConfig.useCustomApiKey && (
+                      <div className="grid gap-4">
                         <input
                           type="password"
                           value={aiConfig.geminiApiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, geminiApiKey: e.target.value })}
-                          placeholder="AIzaSy..."
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                          placeholder="Google Gemini API key"
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Obtén tu clave en{' '}
-                          <a
-                            href="https://aistudio.google.com/app/apikey"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            aistudio.google.com/apikey
-                          </a>{' '}
-                          (Gratis: 15 requests/min)
-                        </p>
-                      </div>
-
-                      {/* Anthropic API Key */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Anthropic Claude API Key {aiConfig.provider === 'claude' && <span className="text-red-500">*</span>}
-                        </label>
                         <input
                           type="password"
                           value={aiConfig.anthropicKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, anthropicKey: e.target.value })}
-                          placeholder="sk-ant-api03-..."
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                          placeholder="Anthropic API key"
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Obtén tu clave en{' '}
-                          <a
-                            href="https://console.anthropic.com/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            console.anthropic.com
-                          </a>{' '}
-                          (HIPAA compliant)
-                        </p>
-                      </div>
-
-                      {/* OpenAI API Key */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          OpenAI API Key {aiConfig.provider === 'openai' && <span className="text-red-500">*</span>}
-                        </label>
                         <input
                           type="password"
                           value={aiConfig.openaiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, openaiKey: e.target.value })}
-                          placeholder="sk-..."
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                          placeholder="OpenAI API key"
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Obtén tu clave en{' '}
-                          <a
-                            href="https://platform.openai.com/api-keys"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            platform.openai.com
-                          </a>
-                        </p>
+                        <input
+                          type="password"
+                          value={aiConfig.deepgramApiKey}
+                          onChange={(e) => setAiConfig({ ...aiConfig, deepgramApiKey: e.target.value })}
+                          placeholder="Deepgram API key"
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
+                        />
                       </div>
+                    )}
 
-                      {/* Transcription Keys */}
-                      <div className="border-t border-gray-200 pt-6">
-                        <h3 className="font-semibold text-gray-900 mb-4">
-                          🎙️ Transcripción de Audio (Opcional)
-                        </h3>
-
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Deepgram API Key (Recomendado para español)
-                            </label>
-                            <input
-                              type="password"
-                              value={aiConfig.deepgramApiKey}
-                              onChange={(e) =>
-                                setAiConfig({ ...aiConfig, deepgramApiKey: e.target.value })
-                              }
-                              placeholder="••••••••••••••••••"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Obtén tu clave en{' '}
-                              <a
-                                href="https://console.deepgram.com/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                              >
-                                console.deepgram.com
-                              </a>{' '}
-                              (~$0.0043/min)
-                            </p>
-                          </div>
-                        </div>
+                    {saveMessage && (
+                      <div className={`rounded-2xl border px-4 py-3 text-sm ${saveFeedbackTone}`}>
+                        {saveMessage}
                       </div>
-                    </>
-                  )}
+                    )}
 
-                  {/* Info Box - Security & De-identification */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="font-semibold text-blue-900 mb-3">
-                      Seguridad y Privacidad Médica (BYOK)
-                    </h3>
-                    <p className="text-sm text-blue-800 mb-3">
-                      Las claves API te permiten usar IA de manera segura y privada:
-                    </p>
-                    <ul className="text-sm text-blue-800 space-y-2">
-                      <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold">✓</span>
-                        <span>Información médica <strong>de-identificada</strong> con AWS Comprehend Medical (F1 &gt; 0.95)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold">✓</span>
-                        <span>API keys <strong>encriptadas en reposo</strong> con AES-256 en PostgreSQL</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold">✓</span>
-                        <span>Cumplimiento HIPAA con Anthropic Claude (BAA disponible)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold">✓</span>
-                        <span>Control total: tus keys, tus costos, sin límites de uso</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold">✓</span>
-                        <span>Auditoría completa de acceso a API keys (CREATED, ACCESSED, ROTATED, FAILED)</span>
-                      </li>
-                    </ul>
-                    <div className="mt-4 pt-4 border-t border-blue-200">
-                      <p className="text-xs text-blue-900 leading-relaxed">
-                        <strong>Seguridad de Claves:</strong> API keys nunca se almacenan en texto plano. Se encriptan usando el encryption master key de tu organización antes de guardarlas en la base de datos. Solo usuarios autorizados pueden acceder a ellas, y cada acceso se registra para auditoría.
-                      </p>
-                      <p className="text-xs text-blue-700 mt-2">
-                        <strong>Basado en:</strong> GitHub Models BYOK, Auth0 Tenant Key Management, OpenAI Best Practices
-                      </p>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#1f1f1c] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isSaving ? 'Saving...' : 'Save changes'}
+                      </button>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Communications Settings */}
-              {activeTab === 'communications' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                      Configuración de Comunicaciones
-                    </h2>
-                    <p className="text-sm text-gray-600 mb-6">
-                      Define el canal de contacto del usuario. La infraestructura de envío (WhatsApp/Email) se gestiona por Holi Labs.
-                    </p>
-                  </div>
+            {activeTab === 'privacy' && (
+              <div className="space-y-6">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Data & privacy</p>
+                  <h2 className="mt-3 text-2xl font-semibold text-white">Workspace privacy controls</h2>
+                  <p className="mt-2 text-sm text-white/60">
+                    Tune outreach, rollout context, and compliance settings for your tenant.
+                  </p>
 
-                  <div className="border-b border-gray-200 pb-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">Canal de contacto</h3>
-
-                    <div className="space-y-4">
+                  <div className="mt-6 space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Teléfono en archivo
-                        </label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">Phone on file</label>
                         <input
                           type="tel"
                           value={commsConfig.contactPhone}
-                          onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, contactPhone: e.target.value })
-                          }
+                          onChange={(e) => setCommsConfig({ ...commsConfig, contactPhone: e.target.value })}
                           placeholder="+59170000000"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Email en archivo (login)
-                        </label>
-                        <input
-                          type="email"
-                          value={commsConfig.contactEmail}
-                          onChange={(e) =>
-                            setCommsConfig({
-                              ...commsConfig,
-                              contactEmail: e.target.value,
-                            })
-                          }
-                          placeholder="doctor@clinic.com"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Canal preferido
-                        </label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">Preferred channel</label>
                         <select
                           value={commsConfig.preferredChannel}
-                          onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, preferredChannel: e.target.value })
-                          }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                          onChange={(e) => setCommsConfig({ ...commsConfig, preferredChannel: e.target.value })}
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         >
-                          <option value="whatsapp">WhatsApp</option>
-                          <option value="email">Email</option>
+                          <option value="whatsapp" className="bg-[#1f1f1c]">WhatsApp</option>
+                          <option value="email" className="bg-[#1f1f1c]">Email</option>
                         </select>
                       </div>
+                    </div>
 
-                      <label className="flex items-center gap-3">
+                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+                      <label className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-base font-semibold text-white">Automated reminders</p>
+                          <p className="mt-1 text-sm text-white/55">
+                            Allow appointment reminders and workflow nudges for this account.
+                          </p>
+                        </div>
                         <input
                           type="checkbox"
                           checked={commsConfig.remindersEnabled}
-                          onChange={(e) =>
-                            setCommsConfig({ ...commsConfig, remindersEnabled: e.target.checked })
-                          }
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                          onChange={(e) => setCommsConfig({ ...commsConfig, remindersEnabled: e.target.checked })}
+                          className="h-4 w-4 rounded border-white/20 bg-transparent text-white focus:ring-white/20"
                         />
-                        <span className="text-sm text-gray-700">Permitir recordatorios automáticos</span>
                       </label>
                     </div>
-                    <p className="text-xs text-gray-500 mt-4">No pedimos credenciales de Twilio o Resend al usuario final. Esa configuración vive en la infraestructura de Holi Labs.</p>
-                  </div>
-                </div>
-              )}
 
-              {/* Preferences */}
-              {activeTab === 'preferences' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Preferencias</h2>
-                    <p className="text-sm text-gray-600 mb-6">
-                      Personaliza tu experiencia en Holi Labs
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border border-gray-200 p-4 space-y-4">
-                    <h3 className="font-semibold text-gray-900">Contexto operativo de rollout</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Compliance country
-                        </label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">Compliance country</label>
                         <select
                           value={rolloutContext.complianceCountry}
                           disabled={!canEditRolloutContext}
@@ -576,46 +638,40 @@ export default function SettingsPage() {
                               complianceCountry: e.target.value as ComplianceCountry,
                             }))
                           }
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10 disabled:opacity-50"
                         >
-                          <option value="BOLIVIA">Bolivia</option>
-                          <option value="BRAZIL">Brazil</option>
-                          <option value="ARGENTINA">Argentina</option>
-                          <option value="MEXICO">Mexico</option>
-                          <option value="COLOMBIA">Colombia</option>
-                          <option value="CHILE">Chile</option>
-                          <option value="PERU">Peru</option>
-                          <option value="OTHER">Other</option>
-                          <option value="UNKNOWN">Not sure</option>
+                          <option value="BOLIVIA" className="bg-[#1f1f1c]">Bolivia</option>
+                          <option value="BRAZIL" className="bg-[#1f1f1c]">Brazil</option>
+                          <option value="ARGENTINA" className="bg-[#1f1f1c]">Argentina</option>
+                          <option value="MEXICO" className="bg-[#1f1f1c]">Mexico</option>
+                          <option value="COLOMBIA" className="bg-[#1f1f1c]">Colombia</option>
+                          <option value="CHILE" className="bg-[#1f1f1c]">Chile</option>
+                          <option value="PERU" className="bg-[#1f1f1c]">Peru</option>
+                          <option value="OTHER" className="bg-[#1f1f1c]">Other</option>
+                          <option value="UNKNOWN" className="bg-[#1f1f1c]">Not sure</option>
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Protocol mode
-                        </label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">Protocol mode</label>
                         <select
                           value={rolloutContext.protocolMode}
                           disabled={!canEditRolloutContext}
                           onChange={(e) => {
                             const nextProtocolMode = normalizeProtocolMode(e.target.value);
-                            setRolloutContext((prev) => ({
-                              ...prev,
-                              protocolMode: nextProtocolMode,
-                            }));
+                            setRolloutContext((prev) => ({ ...prev, protocolMode: nextProtocolMode }));
                             setAiConfig((prev) => ({ ...prev, protocolMode: nextProtocolMode }));
                           }}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+                          className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10 disabled:opacity-50"
                         >
-                          <option value="DETERMINISTIC_100">Deterministic-first (100%)</option>
-                          <option value="HYBRID_70_30">Hybrid (70/30)</option>
-                          <option value="UNKNOWN">Unknown</option>
+                          <option value="DETERMINISTIC_100" className="bg-[#1f1f1c]">Deterministic-first (100%)</option>
+                          <option value="HYBRID_70_30" className="bg-[#1f1f1c]">Hybrid (70/30)</option>
+                          <option value="UNKNOWN" className="bg-[#1f1f1c]">Unknown</option>
                         </select>
                       </div>
                     </div>
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Insurance / payer focus
-                      </label>
+                      <label className="mb-2 block text-sm font-medium text-white/75">Insurance / payer focus</label>
                       <input
                         type="text"
                         value={rolloutContext.insurerFocus}
@@ -624,56 +680,208 @@ export default function SettingsPage() {
                           setRolloutContext((prev) => ({ ...prev, insurerFocus: e.target.value }))
                         }
                         placeholder="e.g., CNS, SUS, private payer list"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500"
+                        className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10 disabled:opacity-50"
                       />
                     </div>
-                    <p className="text-xs text-gray-500">
-                      These values are synced with onboarding profile and reused by downstream operational context.
-                    </p>
+
                     {!canEditRolloutContext && (
-                      <p className="text-xs font-medium text-amber-700">
-                        Read-only access for role {userRole || 'UNKNOWN'}.
-                      </p>
+                      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                        Read-only access for role {tenantRole || userRole || 'UNKNOWN'}.
+                      </div>
                     )}
-                  </div>
 
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      🚧 Más opciones de preferencias próximamente (idioma, zona horaria, notificaciones, etc.)
-                    </p>
-                  </div>
-                </div>
-              )}
+                    {saveMessage && (
+                      <div className={`rounded-2xl border px-4 py-3 text-sm ${saveFeedbackTone}`}>
+                        {saveMessage}
+                      </div>
+                    )}
 
-              {/* Save Button */}
-              <div className="flex items-center justify-between pt-6 border-t border-gray-200 mt-8">
-                {saveMessage && (
-                  <p
-                    className={`text-sm font-medium ${
-                      saveMessage.includes('✅') ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
-                    {saveMessage}
-                  </p>
-                )}
-                <div className="ml-auto">
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className={`px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg transition-all ${
-                      isSaving
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-lg hover:scale-105'
-                    }`}
-                  >
-                    {isSaving ? 'Guardando...' : 'Guardar Configuración'}
-                  </button>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#1f1f1c] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isSaving ? 'Saving...' : 'Save changes'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {activeTab === 'team' && (
+              <div className="space-y-6">
+                {canManageClinic ? (
+                  <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">People & sharing</p>
+                        <h2 className="mt-3 text-2xl font-semibold text-white">Team members</h2>
+                        <p className="mt-2 text-sm text-white/60">
+                          Invite and manage organization members inside this tenant boundary.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsInviteModalOpen(true)}
+                        className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#1f1f1c] transition-colors hover:bg-white/90"
+                      >
+                        Invite member
+                      </button>
+                    </div>
+
+                    {teamMessage && (
+                      <div className={`mt-5 rounded-2xl border px-4 py-3 text-sm ${
+                        teamMessage.toLowerCase().includes('valid')
+                          ? 'border-amber-200 bg-amber-50 text-amber-700'
+                          : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      }`}>
+                        {teamMessage}
+                      </div>
+                    )}
+
+                    <div className="mt-6 overflow-hidden rounded-[24px] border border-white/10">
+                      <div className="grid grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)_minmax(0,0.9fr)] gap-4 bg-white/[0.03] px-5 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                        <span>Member</span>
+                        <span>Role</span>
+                        <span>Status</span>
+                      </div>
+                      <div className="divide-y divide-white/8">
+                        {visibleTeamMembers.map((member) => (
+                          <div
+                            key={member.id}
+                            className="grid grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)_minmax(0,0.9fr)] gap-4 px-5 py-4"
+                          >
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#014751] text-sm font-semibold text-white">
+                                {getInitials(member.name)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-white">{member.name}</p>
+                                <p className="truncate text-sm text-white/55">{member.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${ROLE_STYLES[member.role]}`}>
+                                {member.role === 'ORG_ADMIN' ? 'Admin' : member.role === 'CLINICIAN' ? 'Clinician' : 'Billing'}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[member.status]}`}>
+                                {member.status === 'ACTIVE' ? 'Active' : 'Pending'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">People & sharing</p>
+                    <h2 className="mt-3 text-2xl font-semibold text-white">Team management</h2>
+                    <p className="mt-2 text-sm text-white/60">
+                      Coming Soon for clinicians. Organization admins manage access and sharing controls.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(activeTab === 'security' || activeTab === 'license' || activeTab === 'billing') && (
+              <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                  {activeTab === 'security'
+                    ? 'Security & sign-in'
+                    : activeTab === 'license'
+                      ? 'Clinical license'
+                      : 'Wallet & subscriptions'}
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold text-white">Coming Soon</h2>
+                <p className="mt-2 text-sm text-white/60">
+                  This section has been reserved in the new account dashboard and will be enabled once the underlying product surface is available.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {canManageClinic && isInviteModalOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => {
+              if (isSendingInvite) return;
+              setIsInviteModalOpen(false);
+            }}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200">
+              <div className="border-b border-slate-200 px-5 py-4">
+                <h3 className="text-lg font-semibold text-slate-900">Invite Member</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  New members join as pending users inside {organizationName}.
+                </p>
+              </div>
+              <div className="space-y-4 px-5 py-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="clinician@clinic.com"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    disabled={isSendingInvite}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value as TeamMemberRole)}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    disabled={isSendingInvite}
+                  >
+                    {ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                  This invite will be stamped to organization ID: <span className="font-mono text-slate-900">{organizationId}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={() => setIsInviteModalOpen(false)}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
+                  disabled={isSendingInvite}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleInviteMember}
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isSendingInvite}
+                >
+                  {isSendingInvite ? 'Sending Invite...' : 'Send Invite'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

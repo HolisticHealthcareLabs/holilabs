@@ -9,8 +9,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Consent Forms | HoliLabs',
-  description: 'HoliLabs consent forms for EHR, telemedicine, data sharing, and marketing communications',
+  title: 'Consent Forms | Holi Labs',
+  description: "Holi Labs' consent forms for EHR, telemedicine, data sharing, and marketing communications",
 };
 
 export default function ConsentFormsPage() {
@@ -35,7 +35,7 @@ export default function ConsentFormsPage() {
     },
     {
       title: 'Marketing Communications Consent',
-      description: 'Opt-in to receive marketing and promotional communications from HoliLabs.',
+      description: 'Opt-in to receive marketing and promotional communications from Holi Labs.',
       href: '/legal/consent/marketing-communications-consent.md',
       icon: '📧',
     },
@@ -49,7 +49,7 @@ export default function ConsentFormsPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Consent Forms</h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
             Review and download our consent forms. These forms are required for various aspects of
-            your care and communication with HoliLabs.
+            your care and communication with Holi Labs.
           </p>
         </div>
 
@@ -150,7 +150,7 @@ export default function ConsentFormsPage() {
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-600">
           <p>
-            © {new Date().getFullYear()} HoliLabs, Inc. All rights reserved.
+            © {new Date().getFullYear()} Holi Labs. All rights reserved.
           </p>
         </div>
       </div>

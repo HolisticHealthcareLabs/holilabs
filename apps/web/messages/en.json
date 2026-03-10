@@ -397,15 +397,15 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Now in pilot — Bolivia & Brazil",
-      "headline": "Stop losing revenue your hospital has already earned.",
-      "subhead": "Cortex catches billing errors, drug interactions, and compliance gaps before they cost you. Built for Latin American healthcare.",
-      "ctaPrimary": "See what you're missing",
-      "ctaSecondary": "Try Live Demo",
+      "eyebrow": "Clinical AI for Latin America",
+      "headline": "The Future of\nClinical Co-Pilots.",
+      "subhead": "Eradicate physician burnout and stop revenue leakage at the source. Automate structured clinical documentation, real-time diagnostic safety, and medical billing compliance.",
+      "ctaPrimary": "See it in action",
+      "ctaSecondary": "Book a demo",
       "trustLgpd": "LGPD-native",
       "trustAnvisa": "ANVISA-ready",
       "trustDeterministic": "Every alert traceable",
-      "trustSpeed": "<90s per review",
+      "trustSpeed": "< 90s per review",
       "trustPhi": "Zero PHI in the cloud"
     },
     "nav": {
@@ -416,55 +416,55 @@
       "requestAccess": "Request access"
     },
     "featureA": {
-      "eyebrow": "The Cortex Cross-Reference Engine",
-      "headline": "Catch the error before it becomes a glosa.",
-      "description": "Cortex runs every clinical decision through a global logic core that adapts to local mandates. Whether it's validating a dosage against international protocols or cross-referencing a prescription with country-specific codes (ICD-10, TUSS, SNOMED, etc.), we catch the mismatch at the source.",
-      "link": "See the clinical signals"
+      "eyebrow": "Ambient AI Scribe",
+      "headline": "Listen once. Your notes write themselves.",
+      "description": "Holi Labs listens to every patient encounter and builds structured SOAP notes in real time — automatically populating Subjective, Objective, Assessment, and Plan as the conversation unfolds. PHI is de-identified before it ever touches a server.",
+      "link": "See the live demo"
     },
     "featureB": {
-      "eyebrow": "For Physicians",
-      "headline": "Your doctors won't even notice it's there.",
-      "description": "No training. No new screens. No workflow disruption. Cortex runs silently alongside your existing systems and only speaks up when something is actually wrong.",
+      "eyebrow": "Clinical Decision Support",
+      "headline": "Your patients deserve a second set of eyes.",
+      "description": "Drug interactions. Dosage limits. Formulary compliance. Our CDSS engine runs every clinical decision against global protocols and local mandates — silently, in real time, without adding a single step to the doctor's workflow.",
       "stat1Value": "< 90s",
       "stat1Label": "Median physician review",
-      "stat1Sub": "No extra steps. Same workflow, safer outcomes.",
+      "stat1Sub": "Same workflow. Safer outcomes.",
       "stat2Value": "0 PHI",
       "stat2Label": "Patient data leaves your network",
       "stat2Sub": "LGPD-compliant by architecture, not by policy.",
       "stat3Value": "24/7",
-      "stat3Label": "Audit trail coverage",
-      "stat3Sub": "Every clinical decision documented. Ready for any audit."
+      "stat3Label": "Continuous audit coverage",
+      "stat3Sub": "Every clinical decision documented and traceable."
     },
     "featureC": {
-      "eyebrow": "Built for Latin America",
-      "headline": "Not a US product with a Spanish translation.",
-      "description1": "Every rule, every code, every protocol — engineered from scratch for Latin American healthcare. Cortex validates prescriptions against local formularies, catches dangerous drug interactions in real time, and flags billing mismatches before they become denied claims.",
-      "description2": "One engine. Three countries. Loaded with the specific clinical and regulatory libraries your region demands — from TUSS codes in Brazil to provincial formularies in Argentina.",
-      "link": "See it catch a real drug interaction",
+      "eyebrow": "For Hospital Administrators",
+      "headline": "Stop losing revenue you've already earned.",
+      "description1": "Up to 30% of submitted claims in Latin America are rejected or reduced due to documentation gaps. Holi Labs flags every missing piece before your claim leaves the building.",
+      "description2": "ICD-10 validation. TUSS code verification. Ambient CDI that catches documentation gaps in seconds — not after the denial letter arrives.",
+      "link": "See billing intelligence",
       "brazilName": "Brazil",
-      "brazilBadge": "Pilot active",
-      "brazilDesc": "LGPD-compliant. TUSS billing. ANVISA drug registry. Portuguese-native. Every prescription checked against local protocols.",
+      "brazilBadge": "Active",
+      "brazilDesc": "TUSS billing codes. ANVISA drug registry. CBHPM procedure validation. LGPD-native. Full Portuguese support.",
       "boliviaName": "Bolivia",
-      "boliviaBadge": "Pilot active",
-      "boliviaDesc": "Spanish-first. Ministry of Health standards. Local formulary integration. Built with Bolivian clinics, not adapted for them.",
+      "boliviaBadge": "Active",
+      "boliviaDesc": "Ministry of Health standards. Spanish-first. Local formulary integration. Built with Bolivian clinics from day one.",
       "argentinaName": "Argentina",
-      "argentinaBadge": "Coming 2026",
-      "argentinaDesc": "SNOMED CT. Provincial formulary. IOMA billing. Full regulatory coverage launching Q3 2026."
+      "argentinaBadge": "Coming Q3 2026",
+      "argentinaDesc": "SNOMED CT. Provincial formulary. IOMA billing validation. Full regulatory coverage launching Q3 2026."
     },
     "cta": {
       "headline": "How many claims did your hospital lose last month?",
-      "subhead": "Most administrators don't know. Cortex shows you in the first week.",
+      "subhead": "Most administrators can't answer that. Holi Labs shows you in the first week.",
       "placeholder": "your@hospital.com",
       "submit": "Request access",
       "sending": "Sending...",
       "successMsg": "You're on the list. We'll be in touch within 48 hours.",
       "errorDefault": "Something went wrong. Please try again.",
       "errorNetwork": "Network error. Please try again.",
-      "disclaimer": "No PHI collected on this form. LGPD-native. Response within 48 hours."
+      "disclaimer": "No PHI collected. LGPD-native. Response within 48 hours."
     },
     "footer": {
-      "brand": "Cortex",
-      "brandSub": "Clinical decision support for Latin America.",
+      "brand": "Holi Labs",
+      "brandSub": "Clinical AI for Latin American healthcare.",
       "product": "Product",
       "company": "Company",
       "legal": "Legal",

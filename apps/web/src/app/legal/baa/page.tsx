@@ -9,8 +9,8 @@ import { Metadata } from 'next';
 import LegalDocumentViewer from '@/components/legal/LegalDocumentViewer';
 
 export const metadata: Metadata = {
-  title: 'Business Associate Agreement | HoliLabs',
-  description: 'HoliLabs Business Associate Agreement - HIPAA-compliant BAA for covered entities',
+  title: 'Business Associate Agreement | Holi Labs',
+  description: "Holi Labs' Business Associate Agreement - HIPAA-compliant BAA for covered entities",
 };
 
 export default function BAAPage() {
@@ -18,7 +18,7 @@ export default function BAAPage() {
     <LegalDocumentViewer
       documentPath="/legal/business-associate-agreement.md"
       title="Business Associate Agreement"
-      description="HIPAA-compliant Business Associate Agreement for covered entities using HoliLabs services."
+      description="HIPAA-compliant Business Associate Agreement for covered entities using Holi Labs services."
     />
   );
 }

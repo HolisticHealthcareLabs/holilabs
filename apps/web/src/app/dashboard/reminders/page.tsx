@@ -1,19 +1,12 @@
 'use client';
 
-/**
- * Reminders Management Dashboard
- *
- * Tabs: Templates | Scheduled | Sent | Failed
- * Features: Statistics cards, table views, actions (cancel/pause/resume/retry)
- *
- * Note: Configured as dynamic route to prevent SSR issues with react-pdf in child components
- */
-
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import {
+  Calendar, Send, AlertTriangle, Clock,
+  FileText, CheckCircle2, XCircle,
+} from 'lucide-react';
 
-// Dynamically import components that may use react-pdf (SSR-incompatible)
 const MessageTemplateEditor = dynamic(() => import('@/components/messaging/MessageTemplateEditor'), { ssr: false });
 const ScheduledRemindersTable = dynamic(() => import('@/components/messaging/ScheduledRemindersTable'), { ssr: false });
 const SentRemindersTable = dynamic(() => import('@/components/messaging/SentRemindersTable'), { ssr: false });
@@ -33,12 +26,18 @@ interface Stats {
   } | null;
 }
 
+const TAB_CONFIG: Array<{ id: Tab; label: string; Icon: typeof FileText }> = [
+  { id: 'templates', label: 'Templates', Icon: FileText },
+  { id: 'scheduled', label: 'Scheduled', Icon: Calendar },
+  { id: 'sent', label: 'Sent', Icon: CheckCircle2 },
+  { id: 'failed', label: 'Failed', Icon: AlertTriangle },
+];
+
 export default function RemindersPage() {
   const [activeTab, setActiveTab] = useState<Tab>('templates');
   const [stats, setStats] = useState<Stats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Fetch statistics
   useEffect(() => {
     fetchStats();
   }, []);
@@ -63,211 +62,123 @@ export default function RemindersPage() {
     const diff = new Date(date).getTime() - now.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (hours > 24) {
-      const days = Math.floor(hours / 24);
-      return `${days}d ${hours % 24}h`;
-    } else if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    } else {
-      return `${minutes}m`;
-    }
+    if (hours > 24) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
   };
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'templates', label: 'Templates', icon: '📝' },
-    { id: 'scheduled', label: 'Scheduled', icon: '📅' },
-    { id: 'sent', label: 'Sent', icon: '✅' },
-    { id: 'failed', label: 'Failed', icon: '⚠️' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Reminder Management
-        </h1>
-        <p className="text-gray-600">
-          Create templates, schedule reminders, and track delivery
-        </p>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            Inbox
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Reminder templates, scheduled messages, and delivery tracking
+          </p>
+        </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Scheduled */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-lg p-6 border border-blue-100"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Total Scheduled</p>
-              {loadingStats ? (
-                <div className="h-8 w-16 bg-gray-200 animate-pulse rounded"></div>
-              ) : (
-                <h3 className="text-3xl font-bold text-blue-600">
-                  {stats?.totalScheduled || 0}
-                </h3>
-              )}
-            </div>
-            <div className="text-4xl">📅</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="rounded-2xl border border-blue-200/60 dark:border-blue-500/20 bg-white dark:bg-gray-900 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Scheduled</span>
           </div>
-        </motion.div>
+          {loadingStats ? (
+            <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          ) : (
+            <p className="text-2xl font-bold tabular-nums text-blue-600 dark:text-blue-400">
+              {stats?.totalScheduled ?? 0}
+            </p>
+          )}
+        </div>
 
-        {/* Sent Today */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl shadow-lg p-6 border border-green-100"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Sent Today</p>
-              {loadingStats ? (
-                <div className="h-8 w-16 bg-gray-200 animate-pulse rounded"></div>
-              ) : (
-                <>
-                  <h3 className="text-3xl font-bold text-green-600">
-                    {stats?.sentToday || 0}
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {stats?.successRate || 100}% success rate
-                  </p>
-                </>
-              )}
-            </div>
-            <div className="text-4xl">✅</div>
+        <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-500/20 bg-white dark:bg-gray-900 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Sent Today</span>
           </div>
-        </motion.div>
+          {loadingStats ? (
+            <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          ) : (
+            <>
+              <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {stats?.sentToday ?? 0}
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                {stats?.successRate ?? 100}% success rate
+              </p>
+            </>
+          )}
+        </div>
 
-        {/* Failed This Week */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-lg p-6 border border-red-100"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Failed This Week</p>
-              {loadingStats ? (
-                <div className="h-8 w-16 bg-gray-200 animate-pulse rounded"></div>
-              ) : (
-                <h3 className="text-3xl font-bold text-red-600">
-                  {stats?.failedThisWeek || 0}
-                </h3>
-              )}
-            </div>
-            <div className="text-4xl">⚠️</div>
+        <div className="rounded-2xl border border-red-200/60 dark:border-red-500/20 bg-white dark:bg-gray-900 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Failed</span>
           </div>
-        </motion.div>
+          {loadingStats ? (
+            <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          ) : (
+            <p className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-400">
+              {stats?.failedThisWeek ?? 0}
+            </p>
+          )}
+        </div>
 
-        {/* Next Scheduled */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl shadow-lg p-6 border border-purple-100"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 mb-1">Next Scheduled</p>
-              {loadingStats ? (
-                <div className="h-8 w-16 bg-gray-200 animate-pulse rounded"></div>
-              ) : stats?.nextScheduled ? (
-                <>
-                  <h3 className="text-2xl font-bold text-purple-600">
-                    {formatTimeUntil(stats.nextScheduled.scheduledFor)}
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1 truncate">
-                    {stats.nextScheduled.templateName}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-gray-400">None scheduled</p>
-              )}
-            </div>
-            <div className="text-4xl">⏰</div>
+        <div className="rounded-2xl border border-violet-200/60 dark:border-violet-500/20 bg-white dark:bg-gray-900 p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Next</span>
           </div>
-        </motion.div>
+          {loadingStats ? (
+            <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          ) : stats?.nextScheduled ? (
+            <>
+              <p className="text-2xl font-bold tabular-nums text-violet-600 dark:text-violet-400">
+                {formatTimeUntil(stats.nextScheduled.scheduledFor)}
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">
+                {stats.nextScheduled.templateName}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500">None scheduled</p>
+          )}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-1 p-2">
-            {tabs.map((tab) => (
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="flex items-center gap-1.5 px-5 py-3 border-b border-gray-100 dark:border-gray-800">
+          {TAB_CONFIG.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const TabIcon = tab.Icon;
+            return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium rounded-lg transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+                className={`
+                  inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                  ${isActive
+                    ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 shadow-sm'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }
+                `}
               >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
+                <TabIcon className="w-3.5 h-3.5" />
+                {tab.label}
               </button>
-            ))}
-          </nav>
+            );
+          })}
         </div>
 
-        {/* Tab Content */}
-        <div className="p-6">
-          <AnimatePresence mode="wait">
-            {activeTab === 'templates' && (
-              <motion.div
-                key="templates"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <MessageTemplateEditor />
-              </motion.div>
-            )}
-
-            {activeTab === 'scheduled' && (
-              <motion.div
-                key="scheduled"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ScheduledRemindersTable onUpdate={fetchStats} />
-              </motion.div>
-            )}
-
-            {activeTab === 'sent' && (
-              <motion.div
-                key="sent"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <SentRemindersTable />
-              </motion.div>
-            )}
-
-            {activeTab === 'failed' && (
-              <motion.div
-                key="failed"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <FailedRemindersTable onUpdate={fetchStats} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="p-5">
+          {activeTab === 'templates' && <MessageTemplateEditor />}
+          {activeTab === 'scheduled' && <ScheduledRemindersTable onUpdate={fetchStats} />}
+          {activeTab === 'sent' && <SentRemindersTable />}
+          {activeTab === 'failed' && <FailedRemindersTable onUpdate={fetchStats} />}
         </div>
       </div>
     </div>

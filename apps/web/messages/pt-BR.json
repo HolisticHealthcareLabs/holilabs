@@ -397,15 +397,15 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Em piloto — Bolívia e Brasil",
-      "headline": "Pare de perder a receita que seu hospital já conquistou.",
-      "subhead": "O Cortex detecta erros de faturamento, interações medicamentosas e falhas de conformidade antes que custem caro. Feito para a saúde latino-americana.",
-      "ctaPrimary": "Veja o que está perdendo",
-      "ctaSecondary": "Teste o Demo",
+      "eyebrow": "IA Clínica para a América Latina",
+      "headline": "Seus médicos cuidam dos pacientes. Nós cuidamos do resto.",
+      "subhead": "A Holi Labs escuta cada consulta, escreve notas clínicas perfeitas, detecta interações medicamentosas em tempo real e garante que cada cobrança seja aprovada, automaticamente.",
+      "ctaPrimary": "Ver em ação",
+      "ctaSecondary": "Agendar demonstração",
       "trustLgpd": "Nativo LGPD",
       "trustAnvisa": "Pronto para ANVISA",
       "trustDeterministic": "Cada alerta rastreável",
-      "trustSpeed": "<90s por revisão",
+      "trustSpeed": "< 90s por revisão",
       "trustPhi": "Zero PHI na nuvem"
     },
     "nav": {
@@ -416,55 +416,55 @@
       "requestAccess": "Solicitar acesso"
     },
     "featureA": {
-      "eyebrow": "O Motor de Referência Cruzada Cortex",
-      "headline": "Detecte o erro antes que se torne uma glosa.",
-      "description": "O Cortex passa cada decisão clínica por um motor lógico global que se adapta às normas locais. Seja validando uma dosagem contra protocolos internacionais ou cruzando uma prescrição com códigos específicos do país (CID-10, TUSS, SNOMED, etc.), detectamos a inconsistência na origem.",
-      "link": "Veja os sinais clínicos"
+      "eyebrow": "Transcrição Clínica com IA",
+      "headline": "Escute uma vez. Suas notas se escrevem sozinhas.",
+      "description": "A Holi Labs escuta cada consulta e monta notas SOAP estruturadas em tempo real — preenchendo automaticamente Subjetivo, Objetivo, Avaliação e Plano à medida que a conversa acontece. Nenhum dado do paciente (PHI) sai da sua rede.",
+      "link": "Ver a demonstração ao vivo"
     },
     "featureB": {
-      "eyebrow": "Para Médicos",
-      "headline": "Seus médicos nem vão perceber que está lá.",
-      "description": "Sem treinamento. Sem novas telas. Sem interrupção do fluxo de trabalho. O Cortex funciona silenciosamente ao lado dos seus sistemas existentes e só se manifesta quando algo está realmente errado.",
+      "eyebrow": "Suporte à Decisão Clínica",
+      "headline": "Seus pacientes merecem um segundo par de olhos.",
+      "description": "Interações medicamentosas. Limites de dosagem. Conformidade com formulários. Nosso motor CDSS verifica cada decisão clínica contra protocolos globais e normas locais — silenciosamente, em tempo real, sem adicionar nenhuma etapa ao fluxo do médico.",
       "stat1Value": "< 90s",
       "stat1Label": "Revisão médica mediana",
-      "stat1Sub": "Sem passos extras. Mesmo fluxo, resultados mais seguros.",
+      "stat1Sub": "Mesmo fluxo. Resultados mais seguros.",
       "stat2Value": "0 PHI",
       "stat2Label": "Dados de pacientes saem da sua rede",
       "stat2Sub": "Conformidade com LGPD por arquitetura, não por política.",
       "stat3Value": "24/7",
-      "stat3Label": "Cobertura de trilha de auditoria",
-      "stat3Sub": "Cada decisão clínica documentada. Pronto para qualquer auditoria."
+      "stat3Label": "Cobertura de auditoria contínua",
+      "stat3Sub": "Cada decisão clínica documentada e rastreável."
     },
     "featureC": {
-      "eyebrow": "Feito para a América Latina",
-      "headline": "Não é um produto americano com tradução para o espanhol.",
-      "description1": "Cada regra, cada código, cada protocolo — projetado do zero para a saúde latino-americana. O Cortex valida prescrições contra formulários locais, detecta interações medicamentosas perigosas em tempo real e sinaliza inconsistências de faturamento antes que se tornem negativas.",
-      "description2": "Um motor. Três países. Carregado com as bibliotecas clínicas e regulatórias específicas que sua região exige — dos códigos TUSS no Brasil aos formulários provinciais na Argentina.",
-      "link": "Veja o Cortex detectar uma interação medicamentosa real",
+      "eyebrow": "Para Gestores Hospitalares",
+      "headline": "Pare de perder receita que já foi sua.",
+      "description1": "Até 30% das cobranças na América Latina são glosadas por lacunas na documentação. A Holi Labs identifica cada informação faltante antes que sua cobrança saia do hospital.",
+      "description2": "Validação CID-10. Verificação de códigos TUSS. CDI ambiente que detecta lacunas em segundos — não depois que a carta de glosa chegar.",
+      "link": "Ver inteligência de faturamento",
       "brazilName": "Brasil",
-      "brazilBadge": "Piloto ativo",
-      "brazilDesc": "Conformidade com LGPD. Faturamento TUSS. Registro de medicamentos ANVISA. Nativo em português. Cada prescrição verificada contra protocolos locais.",
+      "brazilBadge": "Ativo",
+      "brazilDesc": "Códigos TUSS. Registro ANVISA. Validação CBHPM. Nativo LGPD. Suporte completo em português.",
       "boliviaName": "Bolívia",
-      "boliviaBadge": "Piloto ativo",
-      "boliviaDesc": "Espanhol nativo. Normas do Ministério da Saúde. Integração com formulários locais. Construído com clínicas bolivianas, não adaptado para elas.",
+      "boliviaBadge": "Ativo",
+      "boliviaDesc": "Normas do Ministério da Saúde. Espanhol nativo. Integração com formulários locais. Construído com clínicas bolivianas desde o início.",
       "argentinaName": "Argentina",
-      "argentinaBadge": "Em breve 2026",
-      "argentinaDesc": "SNOMED CT. Formulário provincial. Faturamento IOMA. Cobertura regulatória completa no Q3 2026."
+      "argentinaBadge": "Em breve T3 2026",
+      "argentinaDesc": "SNOMED CT. Formulário provincial. Validação IOMA. Cobertura regulatória completa no T3 2026."
     },
     "cta": {
-      "headline": "Quantas glosas seu hospital perdeu no mês passado?",
-      "subhead": "A maioria dos administradores não sabe. O Cortex mostra na primeira semana.",
+      "headline": "Quantas cobranças seu hospital perdeu no mês passado?",
+      "subhead": "A maioria dos gestores não sabe responder. A Holi Labs mostra na primeira semana.",
       "placeholder": "seu@hospital.com",
       "submit": "Solicitar acesso",
       "sending": "Enviando...",
       "successMsg": "Você está na lista. Entraremos em contato em até 48 horas.",
       "errorDefault": "Algo deu errado. Tente novamente.",
       "errorNetwork": "Erro de conexão. Tente novamente.",
-      "disclaimer": "Nenhum PHI coletado neste formulário. Nativo LGPD. Resposta em até 48 horas."
+      "disclaimer": "Nenhum PHI coletado. Nativo LGPD. Resposta em até 48 horas."
     },
     "footer": {
-      "brand": "Cortex",
-      "brandSub": "Suporte à decisão clínica para a América Latina.",
+      "brand": "Holi Labs",
+      "brandSub": "IA clínica para a saúde da América Latina.",
       "product": "Produto",
       "company": "Empresa",
       "legal": "Jurídico",

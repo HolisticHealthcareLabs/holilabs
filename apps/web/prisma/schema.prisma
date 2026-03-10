@@ -35,6 +35,7 @@ model User {
   npi               String? // National Provider Identifier (US only)
   username            String?   @unique
   onboardingCompleted Boolean   @default(false)
+  isEphemeral         Boolean   @default(false)
 
   // Security
   passwordHash   String? // Optional for OAuth-only users
@@ -6603,6 +6604,10 @@ model Workspace {
   // Non-PHI configuration (onboarding profile, rollout preferences, tags, etc.)
   metadata Json?
 
+  // Ephemeral demo sandbox fields
+  isEphemeral Boolean   @default(false)
+  expiresAt   DateTime?
+
   createdByUserId String?
   createdByUser   User?   @relation("WorkspaceCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
@@ -6617,6 +6622,7 @@ model Workspace {
   events     FleetEvent[]
 
   @@index([createdAt])
+  @@index([isEphemeral, expiresAt])
   @@map("workspaces")
 }
 
@@ -7755,4 +7761,166 @@ enum WaitlistEntryStatus {
   APPROVED
   REJECTED
   COMPLETED // Account created — link cannot be reused
+}
+
+// ============================================================================
+// DYNAMIC CONTENT MATRIX
+// Versioned, multi-tenant clinical playbooks, intake scripts, and templates
+// stored as structured JSONB rather than hardcoded TypeScript files.
+// ============================================================================
+
+enum DisciplineStatus {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+}
+
+enum ContentKind {
+  CLINICAL_PLAYBOOK
+  INTAKE_SCRIPT
+  OPERATIONAL_TEMPLATE
+  SOAP_TEMPLATE
+  ASSESSMENT_TEMPLATE
+  PROCEDURE_NOTE
+}
+
+enum ContentLifecycleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  DEPRECATED
+  ARCHIVED
+}
+
+enum PersonaKind {
+  ORG_ADMIN
+  CLINICIAN
+  BILLING
+  NURSE
+  FRONT_DESK
+  PHYSICAL_THERAPIST
+}
+
+enum BlockKind {
+  FORM_SECTION
+  CHECKLIST
+  DECISION_TREE
+  QUESTION_SET
+  TASK_LIST
+  ALERT_RULE
+  EDUCATION_CARD
+  TEMPLATE_FIELDSET
+  VARIABLE_GROUP
+}
+
+model Discipline {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  displayName String
+  description String?
+  status      DisciplineStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  tenantLinks  TenantDiscipline[]
+  contentLinks DisciplineContentMap[]
+
+  @@index([status])
+  @@map("disciplines")
+}
+
+model TenantDiscipline {
+  id           String   @id @default(cuid())
+  tenantId     String
+  disciplineId String
+  selectedAt   DateTime @default(now())
+  selectedById String?
+  isPrimary    Boolean  @default(false)
+
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, disciplineId])
+  @@index([tenantId])
+  @@index([disciplineId])
+  @@map("tenant_disciplines")
+}
+
+model ContentDefinition {
+  id              String                 @id @default(cuid())
+  canonicalKey    String
+  kind            ContentKind
+  title           String
+  summary         String?
+  personaTarget   PersonaKind            @default(CLINICIAN)
+  lifecycleStatus ContentLifecycleStatus @default(DRAFT)
+  version         Int                    @default(1)
+  locale          String                 @default("en")
+  schemaPayload   Json
+  metadata        Json?
+  effectiveFrom   DateTime?
+  effectiveTo     DateTime?
+  createdById     String?
+  publishedById   String?
+  publishedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  disciplineLinks DisciplineContentMap[]
+  blockLinks      ContentDefinitionBlock[]
+
+  @@unique([canonicalKey, version, locale])
+  @@index([kind, lifecycleStatus, personaTarget])
+  @@index([canonicalKey, lifecycleStatus])
+  @@map("content_definitions")
+}
+
+model ContentBlock {
+  id            String    @id @default(cuid())
+  blockKey      String    @unique
+  kind          BlockKind
+  title         String
+  schemaPayload Json
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  contentLinks ContentDefinitionBlock[]
+
+  @@index([kind])
+  @@map("content_blocks")
+}
+
+model ContentDefinitionBlock {
+  id                  String  @id @default(cuid())
+  contentDefinitionId String
+  contentBlockId      String
+  ordinal             Int
+  overridePayload     Json?
+  isRequired          Boolean @default(true)
+
+  contentDefinition ContentDefinition @relation(fields: [contentDefinitionId], references: [id], onDelete: Cascade)
+  contentBlock      ContentBlock      @relation(fields: [contentBlockId], references: [id], onDelete: Cascade)
+
+  @@unique([contentDefinitionId, contentBlockId, ordinal])
+  @@index([contentDefinitionId, ordinal])
+  @@map("content_definition_blocks")
+}
+
+model DisciplineContentMap {
+  id                  String   @id @default(cuid())
+  disciplineId        String
+  contentDefinitionId String
+  priority            Int      @default(100)
+  isRequired          Boolean  @default(true)
+  overlapGroup        String?
+  activationRules     Json?
+  createdAt           DateTime @default(now())
+
+  discipline        Discipline        @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  contentDefinition ContentDefinition @relation(fields: [contentDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([disciplineId, contentDefinitionId])
+  @@index([disciplineId, priority])
+  @@index([contentDefinitionId])
+  @@map("discipline_content_maps")
 }

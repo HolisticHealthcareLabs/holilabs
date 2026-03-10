@@ -1,36 +1,123 @@
 'use client';
 
-// Force dynamic rendering for dashboard (requires authentication)
-
-
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo, lazy, Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import NotificationPrompt from '@/components/NotificationPrompt';
-import NotificationCenter from '@/components/notifications/NotificationCenter';
-import { GlobalSearch } from '@/components/search/GlobalSearch';
-import LanguageSelector from '@/components/LanguageSelector';
-import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
-import { SessionTimeoutWarning } from '@/components/SessionTimeoutWarning';
-import { LoadingScreen } from '@/components/LoadingScreen';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useToolUsageTracker } from '@/hooks/useToolUsageTracker';
-import { DemoGuidedTour } from '@/components/demo/DemoGuidedTour';
-import { ChevronRight } from 'lucide-react';
+import {
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Plus,
+  Loader2,
+  CalendarDays,
+  Sparkles,
+  Users,
+  Inbox,
+  Activity,
+  FileCheck,
+  BarChart3,
+  ShieldCheck,
+  Settings2,
+  type LucideIcon,
+} from 'lucide-react';
 
-interface NavItem {
-  name: string;
+const NotificationPrompt = lazy(() => import('@/components/NotificationPrompt'));
+const NotificationCenter = lazy(() => import('@/components/notifications/NotificationCenter'));
+const GlobalSearch = lazy(() => import('@/components/search/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
+const SessionTimeoutWarning = lazy(() => import('@/components/SessionTimeoutWarning').then(m => ({ default: m.SessionTimeoutWarning })));
+const DemoGuidedTour = lazy(() => import('@/components/demo/DemoGuidedTour').then(m => ({ default: m.DemoGuidedTour })));
+
+interface SidebarNavItem {
+  key: string;
+  label: string;
   href: string;
-  icon: string;
-  badge?: number;
-  gradient?: string;
-  hoverGradient?: string;
-  shadowColor?: string;
-  subItems?: NavItem[];
+  icon: LucideIcon;
+  badge?: string;
 }
+
+interface SidebarNavGroup {
+  heading: string;
+  items: SidebarNavItem[];
+}
+
+const DASHBOARD_MODULE_PRELOADERS = [
+  () => import('@/app/dashboard/my-day/page'),
+  () => import('@/app/dashboard/clinical-command/page'),
+  () => import('@/app/dashboard/patients/page'),
+  () => import('@/app/dashboard/reminders/page'),
+  () => import('@/app/dashboard/command-center/page'),
+  () => import('@/app/dashboard/billing/page'),
+  () => import('@/app/dashboard/analytics/page'),
+  () => import('@/app/dashboard/auditor/page'),
+  () => import('@/app/dashboard/settings/page'),
+  () => import('@/app/dashboard/clinical-command/_components/CdssAlertsPane'),
+  () => import('@/app/dashboard/clinical-command/_components/PatientContextBar'),
+  () => import('@/app/dashboard/clinical-command/_components/SoapNotePane'),
+  () => import('@/app/dashboard/clinical-command/_components/TranscriptPane'),
+  () => import('@/app/dashboard/command-center/_TrendChart'),
+  () => import('framer-motion'),
+  () => import('react-joyride'),
+];
+
+function DashboardBrand({
+  showWordmark = true,
+  className = '',
+}: {
+  showWordmark?: boolean;
+  className?: string;
+}) {
+  return (
+    <Link href="/dashboard/my-day" className={`flex min-w-0 items-center gap-2 ${className}`.trim()}>
+      <svg
+        className="h-8 w-7 shrink-0"
+        viewBox="20 100 555 670"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <line x1="244.03" y1="369.32" x2="350.47" y2="369.32" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+        <line x1="244.03" y1="453.65" x2="350.47" y2="453.65" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+        <path fill="currentColor" d="m545.36,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z" />
+        <path fill="currentColor" d="m202.39,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z" />
+      </svg>
+      {showWordmark && (
+        <span className="whitespace-nowrap text-sm font-semibold leading-none tracking-[-0.02em]">
+          Holi Labs
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function SessionTimeoutGuard() {
+  const { showWarning, timeRemaining, extendSession, logout } = useSessionTimeout({
+    timeoutMs: 15 * 60 * 1000,
+    warningMs: 2 * 60 * 1000,
+    redirectTo: '/auth/login',
+  });
+
+  if (!showWarning) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <SessionTimeoutWarning
+        isOpen={showWarning}
+        timeRemaining={timeRemaining}
+        onExtend={extendSession}
+        onLogout={logout}
+      />
+    </Suspense>
+  );
+}
+
+const MemoizedMain = memo(function MemoizedMain({ children }: { children: React.ReactNode }) {
+  return <main className="flex-1 min-h-0">{children}</main>;
+});
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -40,23 +127,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [fatalError, setFatalError] = useState<{ message: string; stack?: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false);
   const [sidebarPeekOpen, setSidebarPeekOpen] = useState(false);
   const sidebarPeekCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [showLoadingScreen, setShowLoadingScreen] = useState(false); // Disabled by default
-  const [isInitialLoad, setIsInitialLoad] = useState(false);
+  const [isLaunchingEncounter, setIsLaunchingEncounter] = useState(false);
   const { locale, t } = useLanguage();
   const { usageStats, bumpUsage, getMostUsed } = useToolUsageTracker();
-  const [hoveredTool, setHoveredTool] = useState<string | null>(null);
-  const [hoveredRect, setHoveredRect] = useState<{ top: number; height: number } | null>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasWarmedDashboardModulesRef = useRef(false);
 
-  // Session timeout (15 min idle for HIPAA compliance)
-  const { showWarning, timeRemaining, extendSession, logout } = useSessionTimeout({
-    timeoutMs: 15 * 60 * 1000, // 15 minutes
-    warningMs: 2 * 60 * 1000,  // 2 minute warning
-    redirectTo: '/sign-in',
-  });
+  // Session timeout is isolated into <SessionTimeoutGuard /> to avoid
+  // countdown-driven re-renders from cascading into the entire layout.
 
   useEffect(() => {
     // Hard failsafe: surface client-side crashes even if the dev overlay doesn't show.
@@ -100,12 +181,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Check if this is the initial load (after sign in)
-    const hasSeenLoading = sessionStorage.getItem('hasSeenLoadingScreen');
-    if (hasSeenLoading) {
-      setShowLoadingScreen(false);
-      setIsInitialLoad(false);
-    }
+    const syncViewportState = () => {
+      setIsDesktopViewport(window.innerWidth >= 1024);
+    };
+
+    syncViewportState();
+    window.addEventListener('resize', syncViewportState);
+    return () => window.removeEventListener('resize', syncViewportState);
   }, []);
 
   useEffect(() => {
@@ -123,6 +205,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const showCollapsedSidebar = sidebarCollapsed && isDesktopViewport;
+
   useEffect(() => {
     if (status === 'loading') return;
 
@@ -133,31 +217,154 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     // Unauthenticated: send to login, preserving where they were going.
     const callbackUrl = pathname || '/dashboard';
-    router.push(`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+    router.push(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }, [status, session, router, pathname]);
 
-  const handleLoadingComplete = () => {
-    setShowLoadingScreen(false);
-    sessionStorage.setItem('hasSeenLoadingScreen', 'true');
-  };
+  useEffect(() => {
+    // Reset quick-action loading state once route changes complete.
+    setIsLaunchingEncounter(false);
+  }, [pathname]);
 
-  // Streamlined Navigation - Minimal & Clean (Phantom-style)
-  const navItems: NavItem[] = [
+  useEffect(() => {
+    // Warm up key dashboard routes in the background so window switches feel instant.
+    const hotRoutes = [
+      '/dashboard/my-day',
+      '/dashboard/clinical-command',
+      '/dashboard/patients',
+      '/dashboard/reminders',
+      '/dashboard/command-center',
+      '/dashboard/billing',
+      '/dashboard/analytics',
+      '/dashboard/auditor',
+      '/dashboard/settings',
+    ];
+
+    let cancelled = false;
+
+    const prefetchRoutes = () => {
+      if (cancelled) return;
+      hotRoutes.forEach((route) => {
+        try {
+          router.prefetch(route);
+        } catch {
+          // no-op
+        }
+      });
+    };
+
+    const idleApi = window as unknown as {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (idleApi.requestIdleCallback) {
+      const idleId = idleApi.requestIdleCallback(prefetchRoutes);
+      return () => {
+        cancelled = true;
+        if (idleApi.cancelIdleCallback) idleApi.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(prefetchRoutes, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (hasWarmedDashboardModulesRef.current) return;
+    hasWarmedDashboardModulesRef.current = true;
+
+    let cancelled = false;
+    const timeoutIds: number[] = [];
+    const idleApi = window as unknown as {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    const warmModules = () => {
+      DASHBOARD_MODULE_PRELOADERS.forEach((loadModule, index) => {
+        const timeoutId = window.setTimeout(() => {
+          if (cancelled) return;
+          void loadModule().catch(() => undefined);
+        }, index * 120);
+        timeoutIds.push(timeoutId);
+      });
+    };
+
+    if (idleApi.requestIdleCallback) {
+      const idleId = idleApi.requestIdleCallback(warmModules);
+      return () => {
+        cancelled = true;
+        timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+        if (idleApi.cancelIdleCallback) idleApi.cancelIdleCallback(idleId);
+      };
+    }
+
+    const timeoutId = window.setTimeout(warmModules, 200);
+    timeoutIds.push(timeoutId);
+    return () => {
+      cancelled = true;
+      timeoutIds.forEach((id) => window.clearTimeout(id));
+    };
+  }, []);
+
+  const sidebarGroups: SidebarNavGroup[] = [
     {
-      name: 'Command Center',
-      href: '/dashboard/command-center',
-      icon: '/icons/chart-cured-increasing.svg',
+      heading: 'CLINICAL WORKSPACE',
+      items: [
+        { key: 'my-day', label: 'My Day', href: '/dashboard/my-day', icon: CalendarDays },
+        { key: 'clinical-copilot', label: 'Co-Pilot', href: '/dashboard/clinical-command', icon: Sparkles },
+        { key: 'patients', label: 'Patients', href: '/dashboard/patients', icon: Users },
+        { key: 'inbox', label: 'Inbox', href: '/dashboard/reminders', icon: Inbox, badge: '3' },
+      ],
     },
     {
-      name: 'Clinical Co-Pilot',
-      href: '/dashboard/clinical-command',
-      icon: '/icons/stethoscope.svg',
+      heading: 'REVENUE & OPS',
+      items: [
+        { key: 'command-center', label: 'Command Center', href: '/dashboard/command-center', icon: Activity },
+        { key: 'claims-intelligence', label: 'Claims Intelligence', href: '/dashboard/billing', icon: FileCheck },
+        { key: 'analytics', label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+      ],
+    },
+    {
+      heading: 'ADMINISTRATION',
+      items: [
+        { key: 'audit-compliance', label: 'Audit & Compliance', href: '/dashboard/auditor', icon: ShieldCheck },
+        { key: 'settings-team', label: 'Settings & Team', href: '/dashboard/settings', icon: Settings2 },
+      ],
     },
   ];
 
+  const activeNavKey = (() => {
+    const currentPath = pathname || '';
+    if (currentPath === '/dashboard' || currentPath.includes('/dashboard/my-day')) return 'my-day';
+    if (currentPath.includes('/dashboard/clinical-command')) return 'clinical-copilot';
+    if (currentPath.includes('/dashboard/command-center')) return 'command-center';
+    if (currentPath.includes('/dashboard/billing')) return 'claims-intelligence';
+    if (currentPath.includes('/dashboard/analytics')) return 'analytics';
+    if (currentPath.includes('/dashboard/reminders')) return 'inbox';
+    if (currentPath.includes('/dashboard/patients')) return 'patients';
+    if (currentPath.includes('/dashboard/auditor') || currentPath.includes('/dashboard/admin/audit-logs')) return 'audit-compliance';
+    if (currentPath.includes('/dashboard/settings')) return 'settings-team';
+    return 'my-day';
+  })();
+
   const handleSignOut = async () => {
     // Clear NextAuth session and return to login
-    await signOut({ redirect: true, callbackUrl: '/sign-in' });
+    await signOut({ redirect: true, callbackUrl: '/auth/login' });
+  };
+
+  const handleStartEncounter = () => {
+    if (isLaunchingEncounter) return;
+    setIsLaunchingEncounter(true);
+    try {
+      router.prefetch('/dashboard/clinical-command');
+    } catch {
+      // no-op
+    }
+    router.push('/dashboard/clinical-command');
   };
 
   return (
@@ -187,129 +394,182 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Loading Screen - shown only on initial load after sign in */}
-      {showLoadingScreen && isInitialLoad && (
-        <LoadingScreen onComplete={handleLoadingComplete} />
-      )}
-
       <div className="min-h-[100dvh] bg-gray-50 dark:bg-gray-900">
         {/* Mobile Sidebar Backdrop */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-transparent z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 ${sidebarCollapsed ? 'w-20' : 'w-64'} bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`fixed inset-y-0 left-0 z-50 isolate overflow-hidden ${showCollapsedSidebar ? 'lg:w-[68px]' : 'w-[248px] sm:w-[272px] lg:w-[248px]'} bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
-          <div className="flex flex-col h-full">
+          <div className="relative z-10 flex flex-col h-full">
             {/* Logo */}
-            <div className="flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-gray-700/50">
-              <Link href="/dashboard" className="flex items-center gap-2">
-                <Image
-                  src="/logos/Logo 1_Light.svg"
-                  alt="Holi Labs"
-                  width={28}
-                  height={28}
-                  style={{ width: 'auto', height: 'auto' }}
+            <div className="relative z-20 flex items-center justify-between h-13 px-3 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900">
+              {!showCollapsedSidebar ? (
+                <DashboardBrand
+                  showWordmark
+                  className="text-gray-900 dark:text-white"
                 />
-                {!sidebarCollapsed && (
-                  <span className="text-[15px] font-semibold tracking-[-0.02em] text-gray-900 dark:text-gray-100">
-                    Holi Labs
-                  </span>
+              ) : (
+                <div className="w-8 h-8" aria-hidden="true" />
+              )}
+              <button
+                onClick={() => {
+                  if (isDesktopViewport) {
+                    setSidebarCollapsed((v) => !v);
+                  } else {
+                    setSidebarOpen(false);
+                  }
+                }}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                title={showCollapsedSidebar ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-label={showCollapsedSidebar ? 'Expand sidebar' : 'Close sidebar'}
+              >
+                {showCollapsedSidebar ? (
+                  <PanelLeftOpen className="w-4 h-4" />
+                ) : (
+                  <PanelLeftClose className="w-4 h-4" />
                 )}
-              </Link>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="lg:hidden text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                aria-label="Close navigation menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setSidebarCollapsed((v) => !v)}
-                className="hidden lg:inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${sidebarCollapsed ? '' : 'rotate-180'}`} />
               </button>
             </div>
 
-            {/* Navigation - Minimal (Phantom-style) */}
-            <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
-              {navItems.map((item) => {
-                const currentPath = pathname || '';
-                const isActive = currentPath === item.href || (item.href !== '/dashboard' && currentPath.startsWith(item.href));
-
-                const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
-                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setHoveredTool(item.name);
-                  setHoveredRect({ top: rect.top, height: rect.height });
-                };
-
-                const handleMouseLeave = () => {
-                  hoverTimeoutRef.current = setTimeout(() => {
-                    setHoveredTool(null);
-                    setHoveredRect(null);
-                  }, 200);
-                };
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => {
-                      setSidebarOpen(false);
-                      setSidebarPeekOpen(false);
-                      bumpUsage(item.name);
-                    }}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150
-                      ${isActive
-                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                      }`}
+            {/* Sidebar quick actions */}
+            <div className="px-2.5 py-2.5 border-b border-gray-100 dark:border-gray-700/50">
+              {!showCollapsedSidebar ? (
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    className="w-full flex items-center gap-2 rounded-xl px-2.5 py-2 bg-white text-gray-500 border border-gray-200 hover:bg-gray-50 hover:text-gray-700 transition-colors dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    aria-label="Search Patients"
                   >
-                    <div className={`w-5 h-5 shrink-0 transition-opacity duration-150 ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
-                      <Image
-                        src={item.icon}
-                        alt=""
-                        width={20}
-                        height={20}
-                        className="dark:invert"
-                        style={{ width: 'auto', height: 'auto' }}
-                      />
-                    </div>
-                    {!sidebarCollapsed && (
-                      <span className={`text-[13px] truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
-                        {item.name}
-                      </span>
+                    <Search className="w-4 h-4 shrink-0" />
+                    <span className="text-[13px] flex-1 text-left">Search Patients...</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStartEncounter}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl px-2.5 py-2 bg-gray-900 text-white text-[13px] font-semibold hover:bg-gray-800 transition-colors dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+                  >
+                    {isLaunchingEncounter ? (
+                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    ) : (
+                      <Plus className="w-4 h-4 shrink-0" />
                     )}
-                  </Link>
-                );
-              })}
+                    <span className="flex-1 text-left">{isLaunchingEncounter ? 'Opening Co-Pilot...' : 'Start Visit'}</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="group/tip relative">
+                    <button
+                      type="button"
+                      className="w-full h-9 inline-flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                      aria-label="Search Patients"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
+                    <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
+                      <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
+                        Search Patients
+                      </div>
+                    </div>
+                  </div>
+                  <div className="group/tip relative">
+                    <button
+                      type="button"
+                      onClick={handleStartEncounter}
+                      className="w-full h-9 inline-flex items-center justify-center rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-colors dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
+                      aria-label="Start Visit"
+                    >
+                      {isLaunchingEncounter ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                    </button>
+                    <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
+                      <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
+                        {isLaunchingEncounter ? 'Opening Co-Pilot...' : 'Start Visit'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-3">
+              {sidebarGroups.map((group) => (
+                <div key={group.heading} className="mb-4 last:mb-0">
+                  {!sidebarCollapsed && (
+                    <p className="px-2 mb-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-[0.16em] dark:text-gray-400">
+                      {group.heading}
+                    </p>
+                  )}
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeNavKey === item.key;
+
+                      return (
+                        <div key={item.key} className={showCollapsedSidebar ? 'group/tip relative' : ''}>
+                          <Link
+                            href={item.href}
+                            prefetch
+                            onClick={() => {
+                              setSidebarOpen(false);
+                              setSidebarPeekOpen(false);
+                              bumpUsage(item.label);
+                            }}
+                            onMouseEnter={() => {
+                              if (item.href.startsWith('/')) {
+                                try { router.prefetch(item.href); } catch { /* no-op */ }
+                              }
+                            }}
+                            className={`group flex items-center ${showCollapsedSidebar ? 'justify-center' : 'gap-2.5'} px-2.5 py-2 rounded-xl transition-colors duration-150 ${isActive
+                              ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold shadow-sm'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                              }`}
+                          >
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`} />
+                            {!showCollapsedSidebar && (
+                              <span className={`text-[12.5px] truncate flex-1 ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                                {item.label}
+                              </span>
+                            )}
+                            {!showCollapsedSidebar && item.badge && (
+                              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-red-500 text-white text-[10px] font-semibold leading-none">
+                                {item.badge}
+                              </span>
+                            )}
+                          </Link>
+                          {showCollapsedSidebar && (
+                            <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
+                              <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
+                                {item.label}
+                                {item.badge && (
+                                  <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-[9px] font-bold leading-none">
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
 
-            {/* Collapsed sidebar tooltip */}
-            {hoveredTool && hoveredRect && sidebarCollapsed && (
-              <div
-                className="fixed left-20 z-[60] pointer-events-none"
-                style={{ top: hoveredRect.top + (hoveredRect.height / 2) }}
-              >
-                <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg -translate-y-1/2 ml-1.5 whitespace-nowrap shadow-lg">
-                  {hoveredTool}
-                </div>
-              </div>
-            )}
+            {/* Tooltips are now CSS-only via group-hover/tip on each item */}
 
             {/* Slide-up animation for profile menu */}
             <style jsx>{`
@@ -321,7 +581,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           `}</style>
 
             {/* User Profile with Dropdown Menu */}
-            <div className={`relative border-t border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'p-3' : 'p-4'}`}>
+            <div className={`relative mt-auto border-t border-gray-200 dark:border-gray-700 ${showCollapsedSidebar ? 'p-2' : 'p-3'}`}>
               {/* Profile Menu Dropdown - Expands Upward */}
               {profileMenuOpen && (
                 <>
@@ -332,7 +592,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   />
                   {/* Menu */}
                   <div
-                    className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 animate-slideUp ${sidebarCollapsed
+                    className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 animate-slideUp ${showCollapsedSidebar
                       ? 'left-full ml-3 w-80'
                       : 'left-4 right-4'
                       }`}
@@ -460,15 +720,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               {/* Profile Button */}
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors group`}
+                className={`w-full flex items-center ${showCollapsedSidebar ? 'justify-center' : 'gap-2.5'} p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors group`}
               >
-                <div className="w-9 h-9 bg-gray-900 dark:bg-gray-600 rounded-full flex items-center justify-center text-white text-[13px] font-semibold shrink-0">
+                <div className="w-8 h-8 bg-gray-900 dark:bg-gray-600 rounded-full flex items-center justify-center text-white text-[12px] font-semibold shrink-0">
                   {(user?.name || user?.email || '?').charAt(0).toUpperCase()}
                 </div>
-                {!sidebarCollapsed && (
+                {!showCollapsedSidebar && (
                   <>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="text-[13px] font-semibold text-gray-900 dark:text-white truncate">
+                      <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate">
                         {user?.name || user?.email?.split('@')[0] || 'User'}
                       </p>
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
@@ -490,7 +750,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <div className={(sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950'}>
+        <div className={(showCollapsedSidebar ? 'lg:pl-[68px]' : 'lg:pl-[248px]') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950'}>
           {/* Top Mobile Header */}
           <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
             <div className="flex items-center justify-between h-16 px-4">
@@ -503,28 +763,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div className="flex items-center gap-2.5">
-                <Image
-                  src="/logos/Logo 1_Light.svg"
-                  alt="Holi Labs"
-                  width={32}
-                  height={32}
-                  style={{ width: 'auto', height: 'auto' }}
-                />
-                <span
-                  className="text-lg tracking-tight text-gray-900 dark:text-[#E5E4E2]"
-                  style={{
-                    fontWeight: 600,
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  Holi Labs
-                </span>
-              </div>
+              <div className="flex-1" aria-hidden="true" />
               <div className="flex items-center gap-2">
-                <LanguageSelector currentLocale={locale} />
-                <GlobalSearch />
-                <NotificationCenter />
+                <Suspense fallback={null}>
+                  <GlobalSearch />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <NotificationCenter />
+                </Suspense>
                 <ThemeToggle />
               </div>
             </div>
@@ -554,33 +800,30 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <LanguageSelector currentLocale={locale} />
-                <GlobalSearch />
-                <NotificationCenter />
+                <Suspense fallback={null}>
+                  <GlobalSearch />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <NotificationCenter />
+                </Suspense>
                 <ThemeToggle />
               </div>
             </div>
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 min-h-0">
-            {children}
-          </main>
+          <MemoizedMain>{children}</MemoizedMain>
         </div>
 
-        {/* Notification Permission Prompt */}
-        <NotificationPrompt />
+        <Suspense fallback={null}>
+          <NotificationPrompt />
+        </Suspense>
 
-        {/* Investor Demo Tour */}
-        <DemoGuidedTour />
+        <Suspense fallback={null}>
+          <DemoGuidedTour />
+        </Suspense>
 
-        {/* Session Timeout Warning Modal */}
-        <SessionTimeoutWarning
-          isOpen={showWarning}
-          timeRemaining={timeRemaining}
-          onExtend={extendSession}
-          onLogout={logout}
-        />
+        <SessionTimeoutGuard />
       </div>
     </>
   );
@@ -591,9 +834,5 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <LanguageProvider>
-      <DashboardContent>{children}</DashboardContent>
-    </LanguageProvider>
-  );
+  return <DashboardContent>{children}</DashboardContent>;
 }

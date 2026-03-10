@@ -9,8 +9,8 @@ import { Metadata } from 'next';
 import LegalDocumentViewer from '@/components/legal/LegalDocumentViewer';
 
 export const metadata: Metadata = {
-  title: 'HIPAA Notice of Privacy Practices | HoliLabs',
-  description: 'HoliLabs HIPAA Notice of Privacy Practices - Your rights and our responsibilities',
+  title: 'HIPAA Notice of Privacy Practices | Holi Labs',
+  description: "Holi Labs' HIPAA Notice of Privacy Practices - Your rights and our responsibilities",
 };
 
 export default function HIPAANoticePage() {

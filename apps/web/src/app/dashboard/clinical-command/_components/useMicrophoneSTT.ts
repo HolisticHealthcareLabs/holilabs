@@ -13,6 +13,10 @@
  */
 
 import { useRef, useState, useCallback, useEffect } from 'react';
+import {
+  offlineAudioQueue,
+  type OfflineAudioOperation,
+} from '@/lib/scribe/offline-audio-queue';
 
 export type STTLanguage = 'en' | 'es' | 'pt';
 
@@ -20,6 +24,7 @@ interface UseMicrophoneSTTOptions {
   onTranscript: (text: string) => void;
   language?: STTLanguage;
   enabled?: boolean;
+  patientId?: string | null;
 }
 
 export interface UseMicrophoneSTTReturn {
@@ -30,13 +35,14 @@ export interface UseMicrophoneSTTReturn {
   isSupported:    boolean;
 }
 
-// Poll interval for fetching final transcript (ms)
 const POLL_INTERVAL_MS = 1500;
+const POLL_TIMEOUT_MS = 45_000;
 
 export function useMicrophoneSTT({
   onTranscript,
   language = 'en',
   enabled = true,
+  patientId = null,
 }: UseMicrophoneSTTOptions): UseMicrophoneSTTReturn {
   const isSupported =
     typeof window !== 'undefined' &&
@@ -50,25 +56,15 @@ export function useMicrophoneSTT({
   const mediaRecorderRef  = useRef<MediaRecorder | null>(null);
   const streamRef         = useRef<MediaStream | null>(null);
   const sessionIdRef      = useRef<string | null>(null);
-  const pollTimerRef      = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hardTimeoutRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chunkIndexRef     = useRef(0);
-
-  // ── Shared cleanup for poll timer + hard timeout ──────────────────────────
-  function clearPollAndTimeout() {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
-    if (hardTimeoutRef.current) {
-      clearTimeout(hardTimeoutRef.current);
-      hardTimeoutRef.current = null;
-    }
-  }
+  const isMountedRef      = useRef(true);
+  const isFlushingRef     = useRef(false);
+  const deliveredSessionsRef = useRef<Set<string>>(new Set());
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       stopListening();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -76,48 +72,162 @@ export function useMicrophoneSTT({
 
   // ── Create a new scribe session ───────────────────────────────────────────
   async function createSession(): Promise<string> {
+    if (!patientId) {
+      throw new Error('Select a patient before starting voice capture');
+    }
+
     const res = await fetch('/api/scribe/sessions', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ language, model: 'nova-2-medical' }),
+      body:    JSON.stringify({
+        language,
+        model: 'nova-2-medical',
+        patientId,
+        accessReason: 'DIRECT_PATIENT_CARE',
+        accessPurpose: 'CDSS_VOICE_COMMAND',
+      }),
     });
     if (!res.ok) throw new Error(`Session create failed: ${res.status}`);
-    const data = await res.json() as { id: string };
-    return data.id;
+    const payload = await res.json() as { id?: string; data?: { id?: string } };
+    const id = payload.data?.id ?? payload.id;
+    if (!id) throw new Error('Session create failed: invalid response');
+    return id;
   }
 
   // ── Upload a single audio chunk ───────────────────────────────────────────
-  async function uploadChunk(sessionId: string, blob: Blob, index: number) {
+  async function uploadChunk(sessionId: string, blob: Blob, index: number): Promise<void> {
     const form = new FormData();
     form.append('audio', blob, `chunk-${index}.webm`);
     form.append('chunkIndex', String(index));
 
-    await fetch(`/api/scribe/sessions/${sessionId}/audio`, {
+    const response = await fetch(`/api/scribe/sessions/${sessionId}/audio`, {
       method: 'POST',
       body:   form,
     });
+    if (!response.ok) {
+      throw new Error(`Audio upload failed (${response.status})`);
+    }
   }
 
-  // ── Poll session for transcript results ───────────────────────────────────
-  async function pollSession(sessionId: string) {
+  async function finalizeSession(sessionId: string): Promise<void> {
+    const response = await fetch(`/api/scribe/sessions/${sessionId}/finalize`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error(`Session finalize failed (${response.status})`);
+    }
+  }
+
+  async function pollSessionUntilComplete(sessionId: string): Promise<void> {
+    if (deliveredSessionsRef.current.has(sessionId)) return;
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < POLL_TIMEOUT_MS) {
+      if (!isMountedRef.current) return;
+      if (!navigator.onLine) return;
+
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+
+      if (!isMountedRef.current) return;
+
+      await tryFetchTranscript(sessionId);
+      if (deliveredSessionsRef.current.has(sessionId)) return;
+    }
+  }
+
+  async function tryFetchTranscript(sessionId: string): Promise<void> {
     try {
       const res = await fetch(`/api/scribe/sessions/${sessionId}`);
       if (!res.ok) return;
 
-      const data = await res.json() as { transcript?: string; status?: string };
+      const payload = await res.json() as {
+        transcript?: string;
+        status?: string;
+        data?: {
+          status?: string;
+          transcript?: string;
+          transcription?: {
+            rawText?: string;
+          };
+        };
+      };
 
-      if (data.transcript) {
-        onTranscript(data.transcript);
+      const status = payload.data?.status ?? payload.status;
+      const transcript =
+        payload.data?.transcription?.rawText ??
+        payload.data?.transcript ??
+        payload.transcript;
+
+      if (transcript && !deliveredSessionsRef.current.has(sessionId)) {
+        deliveredSessionsRef.current.add(sessionId);
+        onTranscript(transcript);
       }
 
-      // Stop polling when session is finalized — also disarms the hard timeout
-      if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-        clearPollAndTimeout();
+      if (status === 'FAILED') {
+        deliveredSessionsRef.current.add(sessionId);
       }
     } catch {
-      // Network errors during polling are non-fatal
+      // Network errors are expected during unstable connectivity.
     }
   }
+
+  const processOfflineQueue = useCallback(async () => {
+    if (!navigator.onLine) return;
+    if (isFlushingRef.current) return;
+
+    isFlushingRef.current = true;
+
+    try {
+      const ops = await offlineAudioQueue.getRunnableOperations();
+      for (const op of ops) {
+        if (!navigator.onLine) break;
+        await processOperation(op);
+      }
+      await offlineAudioQueue.pruneCompleted().catch(() => {});
+    } finally {
+      isFlushingRef.current = false;
+    }
+  }, [onTranscript]);
+
+  const processOperation = useCallback(async (op: OfflineAudioOperation): Promise<void> => {
+    try {
+      if (op.kind === 'audio_chunk') {
+        await uploadChunk(op.sessionId, op.audioBlob, op.chunkIndex);
+        await offlineAudioQueue.markCompleted(op.id);
+        return;
+      }
+
+      const hasPendingChunks = await offlineAudioQueue.hasPendingSessionOperations(op.sessionId);
+      if (hasPendingChunks) return;
+
+      await finalizeSession(op.sessionId);
+      await pollSessionUntilComplete(op.sessionId);
+      await offlineAudioQueue.markCompleted(op.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown sync error';
+      await offlineAudioQueue.markRetry(op.id, message);
+      if (isMountedRef.current) setError(message);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const onOnline = () => {
+      if (isMountedRef.current) setError(null);
+      void processOfflineQueue();
+    };
+
+    window.addEventListener('online', onOnline);
+
+    if (navigator.onLine) {
+      void processOfflineQueue();
+    }
+
+    return () => {
+      window.removeEventListener('online', onOnline);
+    };
+  }, [processOfflineQueue]);
 
   // ── startListening ────────────────────────────────────────────────────────
   const startListening = useCallback(async () => {
@@ -145,30 +255,24 @@ export function useMicrophoneSTT({
 
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data.size > 0 && sessionIdRef.current) {
-          uploadChunk(sessionIdRef.current, e.data, chunkIndexRef.current++).catch(console.error);
+          offlineAudioQueue.enqueueChunk({
+            sessionId: sessionIdRef.current,
+            chunkIndex: chunkIndexRef.current++,
+            audioBlob: e.data,
+            mimeType,
+          }).then(() => {
+            if (navigator.onLine) {
+              void processOfflineQueue();
+            }
+          }).catch((queueErr) => {
+            const message = queueErr instanceof Error ? queueErr.message : 'Failed to queue audio chunk';
+            if (isMountedRef.current) setError(message);
+          });
         }
       };
 
       recorder.start(2000); // collect 2-second chunks
       setIsListening(true);
-
-      // 4. Begin polling for transcript
-      pollTimerRef.current = setInterval(() => {
-        if (sessionIdRef.current) pollSession(sessionIdRef.current);
-      }, POLL_INTERVAL_MS);
-
-      // 5. Hard timeout circuit breaker — 15 s
-      // If the backend never returns COMPLETED/FAILED within 15 s, force-reset.
-      const STT_HARD_TIMEOUT_MS = 15_000;
-      hardTimeoutRef.current = setTimeout(() => {
-        clearPollAndTimeout();
-        setIsListening(false);
-        setError('STT did not respond within 15 s — microphone stopped automatically. Please try again.');
-        // Release mic so the browser indicator light goes off
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
-        mediaRecorderRef.current = null;
-      }, STT_HARD_TIMEOUT_MS);
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Microphone access denied';
@@ -176,34 +280,53 @@ export function useMicrophoneSTT({
       console.error('[useMicrophoneSTT] startListening error:', err);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSupported, enabled, isListening, language]);
+  }, [isSupported, enabled, isListening, language, patientId, processOfflineQueue]);
 
   // ── stopListening ─────────────────────────────────────────────────────────
   const stopListening = useCallback(() => {
-    // Disarm poll timer and hard-timeout circuit breaker
-    clearPollAndTimeout();
-
-    // Stop recorder + collect final chunk
+    const sessionId = sessionIdRef.current;
     const recorder = mediaRecorderRef.current;
-    if (recorder && recorder.state !== 'inactive') {
+
+    if (sessionId && recorder && recorder.state !== 'inactive') {
+      recorder.onstop = () => {
+        void offlineAudioQueue.enqueueFinalize({ sessionId }).then(() => {
+          if (navigator.onLine) {
+            void processOfflineQueue();
+          }
+        }).catch((queueErr) => {
+          const message = queueErr instanceof Error ? queueErr.message : 'Failed to queue finalize request';
+          if (isMountedRef.current) setError(message);
+        });
+      };
       recorder.requestData();
       recorder.stop();
+    } else if (sessionId) {
+      void offlineAudioQueue.enqueueFinalize({ sessionId }).then(() => {
+        if (navigator.onLine) {
+          void processOfflineQueue();
+        }
+      }).catch((queueErr) => {
+        const message = queueErr instanceof Error ? queueErr.message : 'Failed to queue finalize request';
+        if (isMountedRef.current) setError(message);
+      });
     }
+
     mediaRecorderRef.current = null;
 
     // Release mic track
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
 
-    // Finalize session (fire-and-forget)
-    const sessionId = sessionIdRef.current;
-    if (sessionId) {
-      fetch(`/api/scribe/sessions/${sessionId}/finalize`, { method: 'POST' }).catch(console.error);
-      sessionIdRef.current = null;
-    }
+    sessionIdRef.current = null;
 
     setIsListening(false);
-  }, []);
+  }, [processOfflineQueue]);
 
-  return { isListening, startListening, stopListening, error, isSupported };
+  return {
+    isListening,
+    startListening,
+    stopListening,
+    error,
+    isSupported,
+  };
 }

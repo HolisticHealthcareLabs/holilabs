@@ -1,14 +1,5 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { redirect } from 'next/navigation';
 
 export default function DashboardPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/dashboard/clinical-command');
-  }, [router]);
-
-  return null;
+  redirect('/dashboard/my-day');
 }

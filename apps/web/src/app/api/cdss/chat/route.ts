@@ -1,19 +1,3 @@
-/**
- * CDSS V3 - Chat API
- *
- * POST /api/cdss/chat - Clinical chat with smart suggestions
- *
- * This endpoint:
- * 1. Receives clinical conversation messages
- * 2. De-identifies all content (PHI safety)
- * 3. Generates AI response with clinical context
- * 4. Extracts smart suggestions based on conversation
- *
- * SECURITY: All input is de-identified BEFORE being sent to LLM.
- *
- * PRD Reference: Section 2.6 Smart Suggestions
- */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession } from '@/lib/auth';
@@ -21,40 +5,89 @@ import { createDeidService } from '@/lib/services/deid.service';
 import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import Anthropic from '@anthropic-ai/sdk';
+import { chat } from '@/lib/ai/chat';
+import {
+  buildCdssSystemPrompt,
+  buildDeidentifiedClinicalContext,
+  type CdssActionType,
+  type DeidentifiedClinicalInput,
+} from '../../../../../../../packages/shared-kernel/src/clinical/prompt-engine';
 
 export const dynamic = 'force-dynamic';
 
-// Request validation schema
+const CdssActionTypeSchema = z.enum([
+  'LIFESTYLE_PREVENTION',
+  'RX_TIMELINE_SAFETY',
+  'DIFFERENTIAL_DX',
+  'DRAFT_HANDOUT',
+]);
+
+const ClinicalConditionSchema = z.object({
+  label: z.string().optional(),
+  icd10Code: z.string().optional(),
+  status: z.string().optional(),
+});
+
+const ClinicalMedicationSchema = z.object({
+  name: z.string().optional(),
+  atcCode: z.string().optional(),
+  dose: z.string().optional(),
+  schedule: z.string().optional(),
+  status: z.string().optional(),
+});
+
+const ClinicalVitalSchema = z.object({
+  name: z.string().min(1),
+  value: z.string().min(1),
+  unit: z.string().optional(),
+  collectedAt: z.string().optional(),
+});
+
+const SoapDraftSchema = z.object({
+  subjective: z.string().optional(),
+  objective: z.string().optional(),
+  assessment: z.string().optional(),
+  plan: z.string().optional(),
+});
+
+const PatientContextSchema = z.object({
+  age: z.number().int().min(0).max(130).optional(),
+  sex: z.string().optional(),
+  conditions: z.array(ClinicalConditionSchema).default([]),
+  medications: z.array(ClinicalMedicationSchema).default([]),
+  vitals: z.array(ClinicalVitalSchema).default([]),
+  soapDraft: SoapDraftSchema.optional(),
+});
+
 const ChatRequestSchema = z.object({
   patientId: z.string().min(1, 'Patient ID is required'),
   encounterId: z.string().optional(),
   message: z.string().min(1, 'Message is required').max(4000, 'Message too long'),
-  conversationHistory: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    content: z.string(),
-  })).max(50, 'Conversation history too long').default([]),
+  conversationHistory: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string(),
+      })
+    )
+    .max(50, 'Conversation history too long')
+    .default([]),
+  model: z.enum(['anthropic', 'openai', 'gemini']).default('anthropic'),
+  cdssActionType: CdssActionTypeSchema.optional(),
+  encounterTranscript: z.string().max(25000).optional(),
+  patientContext: PatientContextSchema.optional(),
+  soapDraft: SoapDraftSchema.optional(),
 });
 
-type ChatRequest = z.infer<typeof ChatRequestSchema>;
+type Suggestion = {
+  label: string;
+  type: 'calculator' | 'order' | 'lab' | 'alert' | 'reference';
+  action: string;
+  payload?: Record<string, string>;
+};
 
-// Suggestion schema for response
-const SuggestionSchema = z.object({
-  label: z.string(),
-  type: z.enum(['calculator', 'order', 'lab', 'alert', 'reference']),
-  action: z.string(),
-  payload: z.record(z.string()).optional(),
-});
-
-type Suggestion = z.infer<typeof SuggestionSchema>;
-
-/**
- * Extract clinical suggestions from conversation content
- */
 function extractSuggestions(content: string): Suggestion[] {
   const suggestions: Suggestion[] = [];
-
-  // Pattern matching for common clinical suggestions
   const patterns: Array<{ regex: RegExp; suggestion: Omit<Suggestion, 'payload'> }> = [
     { regex: /ACS risk|acute coronary|chest pain.*risk/i, suggestion: { label: 'ACS Risk Calculator', type: 'calculator', action: 'calculate_acs_risk' } },
     { regex: /ECG|EKG|electrocardiogram/i, suggestion: { label: 'Order ECG', type: 'order', action: 'order_ecg' } },
@@ -69,56 +102,74 @@ function extractSuggestions(content: string): Suggestion[] {
     { regex: /creatinine clearance|GFR|kidney function|renal function/i, suggestion: { label: 'Calculate GFR', type: 'calculator', action: 'calculate_gfr' } },
     { regex: /mammogram|breast cancer screen/i, suggestion: { label: 'Order Mammogram', type: 'order', action: 'order_mammogram' } },
     { regex: /blood pressure|hypertension|BP management/i, suggestion: { label: 'BP Management Guidelines', type: 'reference', action: 'view_bp_guidelines' } },
-    { regex: /PSA|prostate screen/i, suggestion: { label: 'Order PSA', type: 'lab', action: 'order_psa' } },
-    { regex: /CT scan|computed tomography/i, suggestion: { label: 'Order CT', type: 'order', action: 'order_ct' } },
-    { regex: /MRI|magnetic resonance/i, suggestion: { label: 'Order MRI', type: 'order', action: 'order_mri' } },
-    { regex: /x-ray|chest x-ray|XR/i, suggestion: { label: 'Order X-Ray', type: 'order', action: 'order_xray' } },
-    { regex: /CBC|complete blood count|blood count/i, suggestion: { label: 'Order CBC', type: 'lab', action: 'order_cbc' } },
-    { regex: /BMP|basic metabolic|metabolic panel/i, suggestion: { label: 'Order BMP', type: 'lab', action: 'order_bmp' } },
-    { regex: /TSH|thyroid function|thyroid screen/i, suggestion: { label: 'Order TSH', type: 'lab', action: 'order_tsh' } },
   ];
 
   patterns.forEach(({ regex, suggestion }) => {
-    if (regex.test(content)) {
-      // Avoid duplicates
-      if (!suggestions.some(s => s.action === suggestion.action)) {
-        suggestions.push(suggestion);
-      }
+    if (regex.test(content) && !suggestions.some((current) => current.action === suggestion.action)) {
+      suggestions.push(suggestion);
     }
   });
 
-  return suggestions.slice(0, 5); // Max 5 suggestions
+  return suggestions.slice(0, 5);
 }
 
-/**
- * POST /api/cdss/chat
- *
- * Clinical chat with AI response and smart suggestions
- */
-export async function POST(request: NextRequest) {
-  let anthropic: Anthropic | null = null;
+function calculateAge(dateValue: Date | string | null | undefined): number | undefined {
+  if (!dateValue) return undefined;
+  const dob = new Date(dateValue);
+  if (Number.isNaN(dob.getTime())) return undefined;
 
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const beforeBirthday =
+    now.getMonth() < dob.getMonth() ||
+    (now.getMonth() === dob.getMonth() && now.getDate() < dob.getDate());
+
+  if (beforeBirthday) age -= 1;
+  return age >= 0 ? age : undefined;
+}
+
+function mergeClinicalInput(
+  dbInput: DeidentifiedClinicalInput,
+  requestInput: DeidentifiedClinicalInput,
+  soapDraft?: z.infer<typeof SoapDraftSchema>
+): DeidentifiedClinicalInput {
+  return {
+    age: requestInput.age ?? dbInput.age,
+    sex: requestInput.sex ?? dbInput.sex,
+    conditions: [...(dbInput.conditions ?? []), ...(requestInput.conditions ?? [])],
+    medications: [...(dbInput.medications ?? []), ...(requestInput.medications ?? [])],
+    vitals: requestInput.vitals?.length ? requestInput.vitals : dbInput.vitals,
+    soapDraft: requestInput.soapDraft ?? soapDraft ?? dbInput.soapDraft,
+  };
+}
+
+function buildDefaultSystemPrompt(clinicalContext: string): string {
+  return [
+    'You are a physician-facing clinical reasoning assistant.',
+    'Use concise, evidence-based responses with guideline references when applicable.',
+    'Return differential considerations, medication safety checks, and next-step data requests when relevant.',
+    'If key data is missing, return INSUFFICIENT_DATA and list required inputs.',
+    'Do not output direct identifiers.',
+    '',
+    'De-identified Clinical Context:',
+    clinicalContext,
+    '',
+    'Safety note: This output supports clinician reasoning. Final decisions remain with the treating clinician.',
+  ].join('\n');
+}
+
+export async function POST(request: NextRequest) {
   try {
-    // Check authentication
     const session = await getServerSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const providerId = session.user.id;
-
-    // Parse and validate request body
     let body: unknown;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { success: false, error: 'Invalid JSON body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
     }
 
     const validationResult = ChatRequestSchema.safeParse(body);
@@ -133,9 +184,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { patientId, encounterId, message, conversationHistory } = validationResult.data;
+    const {
+      patientId,
+      encounterId,
+      message,
+      conversationHistory,
+      model,
+      cdssActionType,
+      encounterTranscript,
+      patientContext,
+      soapDraft,
+    } = validationResult.data;
 
-    // Verify patient exists
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
       select: {
@@ -145,107 +205,86 @@ export async function POST(request: NextRequest) {
         diagnoses: {
           where: { status: 'ACTIVE' },
           select: { description: true },
-          take: 10,
+          take: 12,
         },
         medications: {
           where: { isActive: true },
           select: { name: true },
-          take: 10,
+          take: 12,
         },
       },
     });
 
-    if (!patient) {
-      return NextResponse.json(
-        { success: false, error: 'Patient not found' },
-        { status: 404 }
-      );
+    if (!patient && !patientContext) {
+      return NextResponse.json({ success: false, error: 'Patient not found' }, { status: 404 });
     }
 
-    logger.info({
-      event: 'cdss_chat_request',
-      patientId,
-      encounterId,
-      providerId,
-      messageLength: message.length,
-      historyLength: conversationHistory.length,
-    });
+    const dbClinicalInput: DeidentifiedClinicalInput = {
+      age: calculateAge(patient?.dateOfBirth),
+      sex: patient?.gender ?? undefined,
+      conditions: (patient?.diagnoses ?? []).map((diagnosis) => ({
+        label: diagnosis.description,
+      })),
+      medications: (patient?.medications ?? []).map((medication) => ({
+        name: medication.name,
+      })),
+    };
 
-    // SECURITY: De-identify all content before LLM processing
+    const mergedClinicalInput = mergeClinicalInput(
+      dbClinicalInput,
+      patientContext ?? {},
+      soapDraft
+    );
+
+    const deidentifiedClinicalContext = buildDeidentifiedClinicalContext(
+      mergedClinicalInput,
+      encounterTranscript ?? ''
+    );
+
+    const systemPrompt = cdssActionType
+      ? buildCdssSystemPrompt(cdssActionType as CdssActionType, deidentifiedClinicalContext)
+      : buildDefaultSystemPrompt(deidentifiedClinicalContext);
+
     const deidService = createDeidService();
-
-    // De-identify current message
     const safeMessage = await deidService.redact(message);
-
-    // De-identify conversation history
     const safeHistory = await Promise.all(
-      conversationHistory.map(async (msg) => ({
-        role: msg.role,
-        content: await deidService.redact(msg.content),
+      conversationHistory.map(async (historyMessage) => ({
+        role: historyMessage.role,
+        content: await deidService.redact(historyMessage.content),
       }))
     );
 
-    // Calculate patient age
-    const birthDate = new Date(patient.dateOfBirth);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
+    const provider =
+      model === 'anthropic'
+        ? 'claude'
+        : model === 'openai'
+          ? 'openai'
+          : 'gemini';
 
-    // Build patient context (no PHI - just clinical context)
-    const patientContext = {
-      age,
-      gender: patient.gender,
-      conditions: patient.diagnoses.map(d => d.description),
-      medications: patient.medications.map(m => m.name),
-    };
-
-    // Initialize Anthropic client
-    anthropic = new Anthropic();
-
-    // Build messages for Anthropic
-    const systemPrompt = `You are a clinical decision support assistant for physicians. You provide helpful, evidence-based guidance during patient encounters.
-
-PATIENT CONTEXT (de-identified):
-- Age: ${patientContext.age}
-- Gender: ${patientContext.gender}
-- Active Conditions: ${patientContext.conditions.join(', ') || 'None documented'}
-- Current Medications: ${patientContext.medications.join(', ') || 'None documented'}
-
-GUIDELINES:
-1. Be concise and clinically relevant
-2. Suggest appropriate clinical tools (calculators, orders, labs) when relevant
-3. Reference evidence-based guidelines (USPSTF, ACC/AHA, etc.) when applicable
-4. Never make definitive diagnoses - provide differential considerations
-5. Always recommend proper clinical evaluation
-6. If discussing medications or tests, mention common considerations
-7. Keep responses under 200 words unless more detail is specifically needed
-
-Remember: You are assisting a qualified physician, not replacing clinical judgment.`;
-
-    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-      ...safeHistory.map(msg => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      })),
-      { role: 'user' as const, content: safeMessage },
-    ];
-
-    // Call Anthropic API
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages,
+    const aiResult = await chat({
+      provider,
+      systemPrompt,
+      temperature: 0.2,
+      maxTokens: 1200,
+      messages: [
+        ...safeHistory.map((historyMessage) => ({
+          role: historyMessage.role,
+          content: historyMessage.content,
+        })),
+        { role: 'user', content: safeMessage },
+      ],
     });
 
-    // Extract text response
-    const textBlock = response.content.find(block => block.type === 'text');
-    const aiResponse = textBlock && 'text' in textBlock ? textBlock.text : 'I apologize, but I was unable to generate a response.';
+    if (!aiResult.success || !aiResult.message) {
+      return NextResponse.json(
+        { success: false, error: aiResult.error || 'Failed to generate clinical response' },
+        { status: 503 }
+      );
+    }
 
-    // Extract suggestions from conversation
-    const combinedContent = `${safeMessage} ${aiResponse}`;
-    const suggestions = extractSuggestions(combinedContent);
+    const aiResponse = aiResult.message;
+    const suggestions = extractSuggestions(`${safeMessage} ${aiResponse}`);
 
-    // HIPAA Audit Log
     await createAuditLog({
       action: 'CREATE',
       resource: 'CDSSChatMessage',
@@ -255,7 +294,8 @@ Remember: You are assisting a qualified physician, not replacing clinical judgme
         messageLength: message.length,
         responseLength: aiResponse.length,
         suggestionsCount: suggestions.length,
-        // Note: We do NOT log the actual message content (PHI risk)
+        cdssActionType: cdssActionType ?? null,
+        provider,
       },
       success: true,
     });
@@ -264,9 +304,11 @@ Remember: You are assisting a qualified physician, not replacing clinical judgme
       event: 'cdss_chat_response',
       patientId,
       encounterId,
-      providerId,
+      providerId: session.user.id,
+      provider,
       responseLength: aiResponse.length,
       suggestionsCount: suggestions.length,
+      cdssActionType: cdssActionType ?? null,
     });
 
     return NextResponse.json({
@@ -274,6 +316,7 @@ Remember: You are assisting a qualified physician, not replacing clinical judgme
       data: {
         response: aiResponse,
         suggestions,
+        disclaimer: 'Clinical reasoning support only. Final decisions remain with the treating clinician.',
       },
     });
   } catch (error) {
@@ -282,21 +325,8 @@ Remember: You are assisting a qualified physician, not replacing clinical judgme
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    // Check for specific Anthropic errors
-    if (error instanceof Anthropic.APIError) {
-      if (error.status === 429) {
-        return NextResponse.json(
-          { success: false, error: 'Service temporarily unavailable. Please try again.' },
-          { status: 503 }
-        );
-      }
-    }
-
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to process chat message',
-      },
+      { success: false, error: 'Failed to process chat message' },
       { status: 500 }
     );
   }

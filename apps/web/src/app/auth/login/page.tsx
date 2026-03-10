@@ -86,23 +86,21 @@ function LoginContent() {
     signIn('google', { callbackUrl });
   }
 
-  // ── Interactive demo ────────────────────────────────────────────────────────
+  // ── Interactive demo (ephemeral sandbox) ────────────────────────────────────
   async function handleDemo() {
     setError(null);
     setDemoLoading(true);
     try {
-      const result = await signIn('credentials', {
-        email:    'dr.silva@holilabs.xyz',
-        password: 'Cortex2026!',
-        redirect: false,
-        callbackUrl: '/dashboard/command-center',
-      });
-      if (!result || result.error) {
-        setError('Demo account not found. Run: npx tsx prisma/seed-demo.ts');
+      const res = await fetch('/api/demo/provision', { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Failed to provision demo. Please try again.');
         setDemoLoading(false);
         return;
       }
-      router.push(result.url || '/dashboard');
+
+      router.push(data.redirectTo || '/dashboard/my-day');
     } catch {
       setError('Connection error. Please try again.');
       setDemoLoading(false);
@@ -138,24 +136,24 @@ function LoginContent() {
   const submitDisabled = isLoading || demoLoading || !email || !password || !termsAgreed;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+    <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-center px-4 pb-[var(--holi-cookie-banner-h,0px)]">
       {/* Wordmark */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="mb-10 flex items-center gap-2.5"
+        className="mb-10 flex flex-col items-center gap-3"
       >
-        <div className="relative w-7 h-7">
+        <div className="relative w-11 h-11">
           <Image
             src="/logos/Logo 1_Dark.svg"
             alt="Holi Labs"
-            width={28}
-            height={28}
+            width={44}
+            height={44}
             className="w-full h-full object-contain"
           />
         </div>
-        <span className="text-[15px] font-semibold tracking-tight text-gray-900">
+        <span className="text-[20px] leading-none font-semibold tracking-tight text-gray-900">
           Holi Labs
         </span>
       </motion.div>
@@ -223,10 +221,7 @@ function LoginContent() {
           "
         >
           {demoLoading ? (
-            <>
-              <Spinner />
-              <span>Launching demo…</span>
-            </>
+            <span className="text-gray-500">Launching demo...</span>
           ) : (
             <>
               {/* Play icon */}
@@ -242,11 +237,11 @@ function LoginContent() {
         {/* Consent line under Google button */}
         <p className="mt-4 text-[12px] text-gray-500 leading-relaxed">
           By clicking &ldquo;Sign in with Google&rdquo; I agree to the{' '}
-          <a href="/legal/terms" className="underline underline-offset-2 hover:text-gray-700">
+          <a href="/legal/terms-of-service" className="underline underline-offset-2 hover:text-gray-700">
             Terms of Service
           </a>
           , and acknowledge Holi Labs&apos;{' '}
-          <a href="/legal/privacy" className="underline underline-offset-2 hover:text-gray-700">
+          <a href="/legal/privacy-policy" className="underline underline-offset-2 hover:text-gray-700">
             Privacy Policy
           </a>
           .
@@ -357,7 +352,7 @@ function LoginContent() {
             <span className="text-[13px] text-gray-600 leading-relaxed">
               I agree to the{' '}
               <a
-                href="/legal/terms"
+                href="/legal/terms-of-service"
                 onClick={(e) => e.stopPropagation()}
                 className="underline underline-offset-2 hover:text-gray-900"
               >
@@ -365,7 +360,7 @@ function LoginContent() {
               </a>
               , and acknowledge Holi Labs&apos;{' '}
               <a
-                href="/legal/privacy"
+                href="/legal/privacy-policy"
                 onClick={(e) => e.stopPropagation()}
                 className="underline underline-offset-2 hover:text-gray-900"
               >
@@ -419,8 +414,8 @@ export default function ClinicianLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <span className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-gray-900 animate-spin" />
+        <div className="min-h-[100dvh] bg-white flex items-center justify-center pb-[var(--holi-cookie-banner-h,0px)]">
+          <Spinner size={24} />
         </div>
       }
     >
