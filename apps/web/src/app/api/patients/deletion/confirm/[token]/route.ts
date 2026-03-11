@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { sendDeletionCompletedEmail } from '@/lib/email/deletion-emails';
 import { logger } from '@/lib/logger';
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/patients/deletion/confirm/[token]
  * Get deletion request details by confirmation token (for preview)
  */
-export const GET = async (
+export const GET = createPublicRoute(async (
   request: NextRequest,
   { params }: { params: { token: string } }
 ) => {
@@ -108,13 +109,13 @@ export const GET = async (
       { status: 500 }
     );
   }
-};
+});
 
 /**
  * POST /api/patients/deletion/confirm/[token]
  * Confirm and execute patient data deletion
  */
-export const POST = async (
+export const POST = createPublicRoute(async (
   request: NextRequest,
   { params }: { params: { token: string } }
 ) => {
@@ -349,4 +350,4 @@ export const POST = async (
       { status: 500 }
     );
   }
-};
+});

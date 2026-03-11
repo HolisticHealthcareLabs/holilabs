@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 
@@ -20,28 +20,12 @@ interface PairDeviceRequest {
   verificationCode?: string;
 }
 
-interface PairDeviceResponse {
-  success: boolean;
-  deviceId?: string;
-  sessionToken?: string;
-  expiresAt?: number;
-  error?: string;
-}
-
-export async function POST(request: NextRequest): Promise<NextResponse<PairDeviceResponse>> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const body: PairDeviceRequest = await request.json();
     const { qrPayload, verificationCode } = body;
+    const userId = context.user!.id;
 
-    // Validate QR payload
     if (!qrPayload || !qrPayload.sessionId || !qrPayload.deviceId) {
       return NextResponse.json(
         { success: false, error: 'Invalid QR payload' },
@@ -49,7 +33,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<PairDevic
       );
     }
 
-    // Check expiry
     if (qrPayload.expiresAt <= Date.now()) {
       return NextResponse.json(
         { success: false, error: 'QR code has expired' },
@@ -57,15 +40,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<PairDevic
       );
     }
 
-    // Verify user matches
-    if (qrPayload.userId !== session.user.id) {
+    if (qrPayload.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'User mismatch' },
         { status: 403 }
       );
     }
 
-    // Optional: Verify pairing code if provided
     if (verificationCode && verificationCode !== qrPayload.pairingCode) {
       return NextResponse.json(
         { success: false, error: 'Invalid verification code' },
@@ -73,14 +54,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<PairDevic
       );
     }
 
-    // Generate session token
     const sessionToken = `${qrPayload.sessionId}-${Date.now()}-${Math.random().toString(36).substring(2)}`;
-    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
-    // Store device pairing in database
     await prisma.devicePairing.create({
       data: {
-        userId: session.user.id,
+        userId,
         deviceId: qrPayload.deviceId,
         deviceType: qrPayload.deviceType,
         sessionToken,
@@ -88,8 +67,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PairDevic
       },
     });
 
-    // Log pairing event
-    logger.info('[QR] Device paired', { deviceId: qrPayload.deviceId, userId: session.user.id });
+    logger.info('[QR] Device paired', { deviceId: qrPayload.deviceId, userId });
 
     return NextResponse.json({
       success: true,
@@ -97,29 +75,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<PairDevic
       sessionToken,
       expiresAt,
     });
-  } catch (error) {
-    console.error('Device pairing error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
-    // Get all paired devices for user
     const devices = await prisma.devicePairing.findMany({
       where: {
-        userId: session.user.id,
+        userId,
         expiresAt: { gt: new Date() },
         isActive: true,
       },
@@ -138,24 +106,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       success: true,
       devices,
     });
-  } catch (error) {
-    console.error('Get paired devices error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
-export async function DELETE(request: NextRequest): Promise<NextResponse> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
@@ -167,25 +127,21 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Revoke device pairing
     await prisma.devicePairing.deleteMany({
       where: {
-        userId: session.user.id,
+        userId,
         deviceId,
       },
     });
 
-    logger.info('[QR] Device unpaired', { deviceId, userId: session.user.id });
+    logger.info('[QR] Device unpaired', { deviceId, userId });
 
     return NextResponse.json({
       success: true,
       message: 'Device unpaired successfully',
     });
-  } catch (error) {
-    console.error('Device unpairing error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);

@@ -18,6 +18,7 @@ import { CronMonitor } from '@/lib/cron/monitoring';
 import logger from '@/lib/logger';
 import { getServerSession } from '@/lib/auth';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/cron/health
  * Returns health metrics for all cron jobs
  */
-export async function GET(request: NextRequest) {
+async function getCronHealth(request: NextRequest) {
   try {
     // Authentication check
     // TODO: Uncomment when auth is needed
@@ -170,3 +171,5 @@ export async function POST(request: NextRequest) {
     return safeErrorResponse(error, { userMessage: 'Failed to get job details' });
   }
 }
+
+export const POST = createPublicRoute(postCronHealthDetails);

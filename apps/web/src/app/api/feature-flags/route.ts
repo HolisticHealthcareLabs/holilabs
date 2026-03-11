@@ -6,46 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth/auth';
-import { verifyInternalAgentToken } from '@/lib/hash';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// AUTH HELPER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function authenticateRequest(
-  req: NextRequest
-): Promise<{ userId: string } | null> {
-  const internalToken = req.headers.get('X-Agent-Internal-Token');
-
-  if (internalToken && verifyInternalAgentToken(internalToken)) {
-    const userEmail = req.headers.get('X-Agent-User-Email');
-    const headerUserId = req.headers.get('X-Agent-User-Id');
-
-    if (userEmail) {
-      const dbUser = await prisma.user.findFirst({
-        where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-        select: { id: true },
-      });
-      if (dbUser) return { userId: dbUser.id };
-    }
-  }
-
-  const session = await auth();
-  const userId = (session?.user as { id?: string })?.id;
-  if (!userId) return null;
-  return { userId };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// VALIDATION
-// ═══════════════════════════════════════════════════════════════════════════════
 
 const createFlagSchema = z.object({
   name: z.string().min(1).max(100).regex(/^[a-z0-9_.-]+$/i, 'Flag name must be alphanumeric with dots, underscores, or hyphens'),
@@ -62,17 +29,8 @@ const listFlagsSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// GET: List feature flags
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+export const GET = createProtectedRoute(
+  async (req: NextRequest) => {
     const searchParams = Object.fromEntries(req.nextUrl.searchParams);
     const validation = listFlagsSchema.safeParse(searchParams);
 
@@ -114,27 +72,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         hasMore: offset + flags.length < total,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'feature_flags_api_error',
-      method: 'GET',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return NextResponse.json({ error: 'Failed to list feature flags' }, { status: 500 });
+  },
+  {
+    roles: ['ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// POST: Create feature flag
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+export const POST = createProtectedRoute(
+  async (req: NextRequest) => {
     const body = await req.json();
     const validation = createFlagSchema.safeParse(body);
 
@@ -145,7 +91,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check for duplicate flag name within scope
     const existing = await prisma.featureFlag.findFirst({
       where: {
         name: validation.data.name,
@@ -189,12 +134,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { success: true, data: flag },
       { status: 201 }
     );
-  } catch (error) {
-    logger.error({
-      event: 'feature_flags_api_error',
-      method: 'POST',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return NextResponse.json({ error: 'Failed to create feature flag' }, { status: 500 });
+  },
+  {
+    roles: ['ADMIN'],
   }
-}
+);

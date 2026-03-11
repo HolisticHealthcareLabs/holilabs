@@ -8,10 +8,13 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@deepgram/sdk';
 import { createHash } from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
+
+async function getDeepgramHealth() {
   try {
     // Check if API key is configured
     if (!process.env.DEEPGRAM_API_KEY) {
@@ -86,3 +89,5 @@ export async function GET() {
     }, { status: 500 });
   }
 }
+
+export const GET = createPublicRoute(getDeepgramHealth, { rateLimit: RATE_LIMIT });

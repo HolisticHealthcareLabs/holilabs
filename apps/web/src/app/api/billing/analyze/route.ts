@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { createDeidService } from '@/lib/services/deid.service';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { chat } from '@/lib/ai/chat';
 
 export const dynamic = 'force-dynamic';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Zod Schemas (GORDON: CBHPM/TUSS + BRL localization)
-// ─────────────────────────────────────────────────────────────────────────────
 
 const ExtractedDiagnosisSchema = z.object({
   code: z.string().min(1),
@@ -45,10 +41,6 @@ const BillingAnalyzeRequestSchema = z.object({
     .default({}),
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Billing Auditor System Prompt (ARCHIE + GORDON)
-// ─────────────────────────────────────────────────────────────────────────────
-
 const BILLING_SYSTEM_PROMPT = [
   'You are a LATAM Medical Billing Auditor specializing in Brazilian healthcare reimbursement.',
   '',
@@ -82,10 +74,6 @@ const BILLING_SYSTEM_PROMPT = [
   'References: CBHPM 6a Edicao / ANS RN 465/2021 / CFM',
 ].join('\n');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Fallback mock for offline / demo mode
-// ─────────────────────────────────────────────────────────────────────────────
-
 const MOCK_BILLING_ANALYSIS: BillingAnalysisOutput = {
   extractedDiagnoses: [
     { code: 'I50.9', name: 'Insuficiencia Cardiaca, nao especificada', type: 'primary' },
@@ -106,16 +94,9 @@ const MOCK_BILLING_ANALYSIS: BillingAnalysisOutput = {
   ],
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST Handler
-// ─────────────────────────────────────────────────────────────────────────────
-
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user?.id;
 
     let body: unknown;
     try {
@@ -134,7 +115,6 @@ export async function POST(request: NextRequest) {
 
     const { soapNote, transcript, patientData } = validation.data;
 
-    // ── RUTH: Zero-Trust De-identification ────────────────────────────────
     const deidService = createDeidService();
     const [safeSoapNote, safeTranscript] = await deidService.redactBatch([soapNote, transcript]);
 
@@ -202,7 +182,7 @@ export async function POST(request: NextRequest) {
     await createAuditLog({
       action: 'CREATE',
       resource: 'BillingAnalysis',
-      resourceId: session.user.id,
+      resourceId: userId!,
       details: {
         diagnosesCount: analysisResult.extractedDiagnoses.length,
         servicesCount: analysisResult.suggestedServices.length,
@@ -214,19 +194,13 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'billing_analysis_complete',
-      providerId: session.user.id,
+      providerId: userId,
       diagnosesCount: analysisResult.extractedDiagnoses.length,
       servicesCount: analysisResult.suggestedServices.length,
       totalEstimatedValue: analysisResult.totalEstimatedValue,
     });
 
     return NextResponse.json({ success: true, data: analysisResult });
-  } catch (error) {
-    logger.error({
-      event: 'billing_analysis_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json({ success: false, error: 'Failed to analyze billing' }, { status: 500 });
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

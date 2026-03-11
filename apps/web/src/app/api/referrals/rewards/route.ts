@@ -8,42 +8,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { claimReferralReward, checkAndGrantReward } from '@/lib/referral';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * GET /api/referrals/rewards
- *
- * Get user's pending and claimed rewards
- */
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Authentication check
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 401 }
-      );
-    }
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
-    const userId = session.user.id;
-
-    // Check if user is eligible for new rewards
     const eligibilityCheck = await checkAndGrantReward(userId);
 
-    // Get all user's rewards
     const rewards = await prisma.referralReward.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
 
-    // Audit log
     await createAuditLog(
       {
         action: 'READ',
@@ -71,38 +53,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         expiresAt: r.expiresAt,
       })),
     });
-  } catch (error) {
-    console.error('[Referral Rewards API] Error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get rewards',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
-/**
- * POST /api/referrals/rewards
- *
- * Claim a pending reward
- */
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Authentication check
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
-    const userId = session.user.id;
-
-    // Parse request body
     const body = await request.json();
 
     if (!body.rewardId) {
@@ -112,10 +73,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Claim reward
     const claimedReward = await claimReferralReward(body.rewardId, userId);
 
-    // Audit log
     await createAuditLog(
       {
         action: 'UPDATE',
@@ -141,15 +100,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         claimedAt: claimedReward.claimedAt,
       },
     });
-  } catch (error) {
-    console.error('[Referral Rewards API] Error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to claim reward',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);

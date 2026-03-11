@@ -1,54 +1,19 @@
 /**
  * Feature Flag API - Single Resource
  *
- * Full CRUD for feature flags used in clinical/AI feature toggling.
- *
  * GET /api/feature-flags/[id] - Get flag details
  * PUT /api/feature-flags/[id] - Update flag
  * DELETE /api/feature-flags/[id] - Delete flag
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth/auth';
-import { verifyInternalAgentToken } from '@/lib/hash';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// AUTH HELPER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function authenticateRequest(
-  req: NextRequest
-): Promise<{ userId: string } | null> {
-  const internalToken = req.headers.get('X-Agent-Internal-Token');
-
-  if (internalToken && verifyInternalAgentToken(internalToken)) {
-    const userEmail = req.headers.get('X-Agent-User-Email');
-    const headerUserId = req.headers.get('X-Agent-User-Id');
-
-    if (userEmail) {
-      const dbUser = await prisma.user.findFirst({
-        where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-        select: { id: true },
-      });
-      if (dbUser) return { userId: dbUser.id };
-    }
-  }
-
-  const session = await auth();
-  const userId = (session?.user as { id?: string })?.id;
-  if (!userId) return null;
-  return { userId };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// VALIDATION
-// ═══════════════════════════════════════════════════════════════════════════════
 
 const updateFlagSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -59,21 +24,10 @@ const updateFlagSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// GET: Get single flag
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
-  try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+export const GET = createProtectedRoute(
+  async (req: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const { id } = params;
 
     const flag = await prisma.featureFlag.findUnique({
       where: { id },
@@ -84,31 +38,18 @@ export async function GET(
     }
 
     return NextResponse.json({ success: true, data: flag });
-  } catch (error) {
-    logger.error({
-      event: 'feature_flag_api_error',
-      method: 'GET',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return NextResponse.json({ error: 'Failed to get feature flag' }, { status: 500 });
+  },
+  {
+    roles: ['ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PUT: Update flag
-// ═══════════════════════════════════════════════════════════════════════════════
+export const PUT = createProtectedRoute(
+  async (req: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const { id } = params;
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
-  try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
     const body = await req.json();
     const validation = updateFlagSchema.safeParse(body);
 
@@ -157,31 +98,16 @@ export async function PUT(
     });
 
     return NextResponse.json({ success: true, data: updated });
-  } catch (error) {
-    logger.error({
-      event: 'feature_flag_api_error',
-      method: 'PUT',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return NextResponse.json({ error: 'Failed to update feature flag' }, { status: 500 });
+  },
+  {
+    roles: ['ADMIN'],
   }
-}
+);
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// DELETE: Delete flag
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
-  try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+export const DELETE = createProtectedRoute(
+  async (req: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const { id } = params;
 
     const flag = await prisma.featureFlag.findUnique({
       where: { id },
@@ -215,12 +141,8 @@ export async function DELETE(
       success: true,
       message: 'Feature flag deleted',
     });
-  } catch (error) {
-    logger.error({
-      event: 'feature_flag_api_error',
-      method: 'DELETE',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return NextResponse.json({ error: 'Failed to delete feature flag' }, { status: 500 });
+  },
+  {
+    roles: ['ADMIN'],
   }
-}
+);

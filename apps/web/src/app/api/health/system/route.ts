@@ -7,8 +7,11 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
+
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
 interface ServiceHealth {
   status: 'healthy' | 'degraded' | 'error';
@@ -269,3 +272,5 @@ export async function GET() {
 
   return NextResponse.json(response, { status: statusCode });
 }
+
+export const GET = createPublicRoute(getSystemHealth, { rateLimit: RATE_LIMIT });

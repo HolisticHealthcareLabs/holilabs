@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { NotificationType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
@@ -21,23 +21,14 @@ export const dynamic = 'force-dynamic';
  * POST /api/prevention/notifications/mark-all-read
  * Mark all prevention notifications as read
  */
-export async function POST(request: NextRequest) {
-  const start = performance.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
+    const userId = context.user?.id;
 
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    // Update all unread prevention notifications for this user
     const result = await prisma.notification.updateMany({
       where: {
-        recipientId: session.user.id,
+        recipientId: userId,
         type: { in: Object.keys(NOTIFICATION_TEMPLATES) as NotificationType[] },
         readAt: null,
       },
@@ -50,14 +41,13 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'notifications_marked_all_read',
-      userId: session.user.id,
+      userId,
       count: result.count,
       latencyMs: elapsed.toFixed(2),
     });
 
-    // HIPAA Audit
     await auditUpdate('Notification', 'bulk', request, {
-      userId: session.user.id,
+      userId: userId!,
       markedReadCount: result.count,
       action: 'notifications_bulk_marked_read',
     });
@@ -71,21 +61,6 @@ export async function POST(request: NextRequest) {
         latencyMs: Math.round(elapsed),
       },
     });
-  } catch (error) {
-    const elapsed = performance.now() - start;
-
-    logger.error({
-      event: 'mark_all_read_error',
-      error: error instanceof Error ? error.message : String(error),
-      latencyMs: elapsed.toFixed(2),
-    });
-
-    return NextResponse.json(
-      {
-        error: 'Failed to mark notifications as read',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

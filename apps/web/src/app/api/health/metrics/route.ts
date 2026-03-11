@@ -17,8 +17,11 @@ import { NextResponse } from 'next/server';
 import { getAllCircuitBreakerStats } from '@/lib/resilience/circuit-breaker';
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
+
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
 const logger = createLogger({ route: '/api/health/metrics' });
 
@@ -302,3 +305,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = createPublicRoute(getMetrics, { rateLimit: RATE_LIMIT });

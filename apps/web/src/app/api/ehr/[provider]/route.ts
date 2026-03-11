@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import {
   getConnectionStatus,
   disconnectProvider,
@@ -24,14 +23,11 @@ const VALID_PROVIDERS: EhrProviderId[] = ['epic', 'cerner', 'athena', 'medplum']
 /**
  * GET - Get connection status for a provider
  */
-export async function GET(
-  request: NextRequest,
-  context: any
-) {
-  try {
-    const { provider } = await context.params;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const provider = params.provider;
 
-    // Validate provider
     if (!VALID_PROVIDERS.includes(provider as EhrProviderId)) {
       return NextResponse.json(
         { success: false, error: `Invalid provider: ${provider}` },
@@ -40,23 +36,11 @@ export async function GET(
     }
 
     const providerId = provider as EhrProviderId;
+    const userId = context.user!.id;
 
-    // Require authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
-    // Get provider config
     const config = getProviderConfig(providerId);
+    const status = await getConnectionStatus(userId, providerId);
 
-    // Get connection status
-    const status = await getConnectionStatus(session.user.id, providerId);
-
-    // Audit log
     await createAuditLog({
       action: 'READ',
       resource: 'EhrSession',
@@ -81,30 +65,21 @@ export async function GET(
         status,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'ehr_status_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to get connection status' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * DELETE - Disconnect from a provider
  */
-export async function DELETE(
-  request: NextRequest,
-  context: any
-) {
-  try {
-    const { provider } = await context.params;
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const provider = params.provider;
 
-    // Validate provider
     if (!VALID_PROVIDERS.includes(provider as EhrProviderId)) {
       return NextResponse.json(
         { success: false, error: `Invalid provider: ${provider}` },
@@ -113,20 +88,10 @@ export async function DELETE(
     }
 
     const providerId = provider as EhrProviderId;
+    const userId = context.user!.id;
 
-    // Require authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
+    await disconnectProvider(userId, providerId);
 
-    // Disconnect provider
-    await disconnectProvider(session.user.id, providerId);
-
-    // Audit log
     await createAuditLog({
       action: 'DELETE',
       resource: 'EhrSession',
@@ -141,22 +106,15 @@ export async function DELETE(
     logger.info({
       event: 'ehr_disconnected',
       providerId,
-      userId: session.user.id,
+      userId,
     });
 
     return NextResponse.json({
       success: true,
       message: `Disconnected from ${providerId}`,
     });
-  } catch (error) {
-    logger.error({
-      event: 'ehr_disconnect_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to disconnect' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);

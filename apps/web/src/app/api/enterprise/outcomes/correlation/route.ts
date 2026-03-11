@@ -8,10 +8,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateEnterpriseKey } from '@/lib/enterprise/auth';
 import { outcomeTrackerService } from '@/services/outcome-tracker.service';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+async function getOutcomeCorrelation(request: NextRequest) {
   const auth = validateEnterpriseKey(request);
   if (!auth.authorized) return auth.response!;
 
@@ -26,3 +27,5 @@ export async function GET(request: NextRequest) {
     meta: { apiVersion: '1.0.0', generatedAt: new Date().toISOString() },
   });
 }
+
+export const GET = createPublicRoute(getOutcomeCorrelation);

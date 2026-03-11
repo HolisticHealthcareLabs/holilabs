@@ -13,6 +13,7 @@ import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 // Query parameters schema
@@ -41,7 +42,8 @@ const CreateAppointmentSchema = z.object({
   urgency: z.enum(['ROUTINE', 'URGENT', 'EMERGENCY']).default('ROUTINE'),
 });
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
@@ -181,9 +183,12 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
@@ -337,4 +342,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

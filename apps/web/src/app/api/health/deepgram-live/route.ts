@@ -10,11 +10,14 @@
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
 import { MedicalAudioStreamer } from '@/lib/transcription/MedicalAudioStreamer';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 20;
 
-export async function GET() {
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
+
+async function getDeepgramLiveHealth() {
   if (!process.env.DEEPGRAM_API_KEY) {
     return NextResponse.json({ ok: false, error: 'DEEPGRAM_API_KEY not configured' }, { status: 500 });
   }
@@ -93,5 +96,7 @@ export async function GET() {
     });
   });
 }
+
+export const GET = createPublicRoute(getDeepgramLiveHealth, { rateLimit: RATE_LIMIT });
 
 

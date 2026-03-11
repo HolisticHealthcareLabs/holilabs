@@ -6,37 +6,23 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import { checkRateLimit } from '@/lib/rate-limit';
-import { logger } from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * GET /api/appointments/templates/[id]
  * Fetches a single notification template by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Apply rate limiting - 60 requests per minute for appointments
-    const rateLimitResponse = await checkRateLimit(request, 'appointments');
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params.id;
+    if (!templateId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: 'Template ID required' },
+        { status: 400 }
       );
     }
-
-    const templateId = params.id;
 
     const template = await prisma.notificationTemplate.findUnique({
       where: { id: templateId },
@@ -62,46 +48,31 @@ export async function GET(
       success: true,
       data: { template },
     });
-  } catch (error) {
-    logger.error({
-      event: 'appointment_template_fetch_failed',
-      templateId: params.id,
-      error: (error instanceof Error ? error.message : String(error)),
-    });
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch template' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * PATCH /api/appointments/templates/[id]
  * Updates a notification template
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Apply rate limiting - 60 requests per minute for appointments
-    const rateLimitResponse = await checkRateLimit(request, 'appointments');
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params.id;
+    if (!templateId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: 'Template ID required' },
+        { status: 400 }
       );
     }
 
-    const templateId = params.id;
     const body = await request.json();
+    const userId = context.user!.id;
 
-    // Verify template exists
     const existingTemplate = await prisma.notificationTemplate.findUnique({
       where: { id: templateId },
     });
@@ -113,7 +84,6 @@ export async function PATCH(
       );
     }
 
-    // If setting as default, unset other defaults of same type/channel/level
     if (body.isDefault === true) {
       await prisma.notificationTemplate.updateMany({
         where: {
@@ -130,12 +100,11 @@ export async function PATCH(
       });
     }
 
-    // Update template
     const updatedTemplate = await prisma.notificationTemplate.update({
       where: { id: templateId },
       data: {
         ...body,
-        updatedBy: (session.user as any).id,
+        updatedBy: userId,
         updatedAt: new Date(),
       },
       include: {
@@ -149,10 +118,9 @@ export async function PATCH(
       },
     });
 
-    // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
+        userId,
         action: 'UPDATE',
         resource: 'NotificationTemplate',
         resourceId: templateId,
@@ -169,45 +137,30 @@ export async function PATCH(
       data: { template: updatedTemplate },
       message: 'Template updated successfully',
     });
-  } catch (error) {
-    logger.error({
-      event: 'appointment_template_update_failed',
-      templateId: params.id,
-      error: (error instanceof Error ? error.message : String(error)),
-    });
-    return NextResponse.json(
-      { success: false, error: 'Failed to update template' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    rateLimit: { windowMs: 60_000, maxRequests: 60 },
   }
-}
+);
 
 /**
  * DELETE /api/appointments/templates/[id]
  * Deletes a notification template
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Apply rate limiting - 60 requests per minute for appointments
-    const rateLimitResponse = await checkRateLimit(request, 'appointments');
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params.id;
+    if (!templateId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: 'Template ID required' },
+        { status: 400 }
       );
     }
 
-    const templateId = params.id;
+    const userId = context.user!.id;
 
-    // Verify template exists
     const template = await prisma.notificationTemplate.findUnique({
       where: { id: templateId },
     });
@@ -219,7 +172,6 @@ export async function DELETE(
       );
     }
 
-    // Prevent deletion of default templates
     if (template.isDefault) {
       return NextResponse.json(
         { success: false, error: 'Cannot delete default template. Set another template as default first.' },
@@ -227,15 +179,13 @@ export async function DELETE(
       );
     }
 
-    // Delete template
     await prisma.notificationTemplate.delete({
       where: { id: templateId },
     });
 
-    // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
+        userId,
         action: 'DELETE',
         resource: 'NotificationTemplate',
         resourceId: templateId,
@@ -253,15 +203,9 @@ export async function DELETE(
       success: true,
       message: 'Template deleted successfully',
     });
-  } catch (error) {
-    logger.error({
-      event: 'appointment_template_delete_failed',
-      templateId: params.id,
-      error: (error instanceof Error ? error.message : String(error)),
-    });
-    return NextResponse.json(
-      { success: false, error: 'Failed to delete template' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    rateLimit: { windowMs: 60_000, maxRequests: 60 },
   }
-}
+);

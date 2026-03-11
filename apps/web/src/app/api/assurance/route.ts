@@ -19,10 +19,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { verifyInternalAgentToken } from '@/lib/hash';
 import {
   assuranceCaptureService,
   type AssuranceEventInput,
@@ -31,6 +30,8 @@ import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
+
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
@@ -78,70 +79,29 @@ const listEventsSchema = z.object({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTH HELPER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function authenticateRequest(
-  req: NextRequest
-): Promise<{ userId: string; clinicId?: string } | null> {
-  // Check for internal agent token first
-  const internalToken = req.headers.get('X-Agent-Internal-Token');
-
-  if (internalToken && verifyInternalAgentToken(internalToken)) {
-    const userEmail = req.headers.get('X-Agent-User-Email');
-    const headerUserId = req.headers.get('X-Agent-User-Id');
-
-    if (userEmail) {
-      const dbUser = await prisma.user.findFirst({
-        where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-        select: { id: true },
-      });
-
-      if (dbUser) {
-        return { userId: dbUser.id };
-      }
-    }
-  }
-
-  // Fall back to session auth
-  const session = await auth();
-  const userId = (session?.user as { id?: string })?.id;
-
-  if (!userId) {
-    return null;
-  }
-
-  return { userId };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // POST: Capture Assurance Event
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const POST = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse> => {
+    try {
+      const body = await req.json();
+      const validation = captureEventSchema.safeParse(body);
 
-    const body = await req.json();
-    const validation = captureEventSchema.safeParse(body);
+      if (!validation.success) {
+        return NextResponse.json(
+          {
+            error: 'Validation error',
+            details: validation.error.errors.map((e) => ({
+              path: e.path.join('.'),
+              message: e.message,
+            })),
+          },
+          { status: 400 }
+        );
+      }
 
-    if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: validation.error.errors.map((e) => ({
-            path: e.path.join('.'),
-            message: e.message,
-          })),
-        },
-        { status: 400 }
-      );
-    }
-
-    const input: AssuranceEventInput = {
+      const input: AssuranceEventInput = {
       patientId: validation.data.patientId,
       encounterId: validation.data.encounterId,
       eventType: validation.data.eventType,
@@ -199,19 +159,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET: List Assurance Events
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
+export const GET = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const searchParams = Object.fromEntries(req.nextUrl.searchParams);
     const validation = listEventsSchema.safeParse(searchParams);
 
@@ -285,19 +243,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DELETE: Delete Assurance Event (with cascade)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function DELETE(req: NextRequest): Promise<NextResponse> {
+export const DELETE = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = req.nextUrl;
     const eventId = searchParams.get('id');
     const hard = searchParams.get('hard') === 'true';
@@ -383,19 +339,17 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PATCH: Record Human Decision
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function PATCH(req: NextRequest): Promise<NextResponse> {
+export const PATCH = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await req.json();
     const validation = recordDecisionSchema.safeParse(body);
 
@@ -467,4 +421,6 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);

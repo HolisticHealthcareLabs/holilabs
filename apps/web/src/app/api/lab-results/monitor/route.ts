@@ -5,11 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
 import { monitorLabResult } from '@/lib/prevention/lab-result-monitors';
 import { z } from 'zod';
 import { createAuditLog } from '@/lib/audit';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,4 +103,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

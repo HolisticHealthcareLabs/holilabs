@@ -9,15 +9,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import { verifyInternalAgentToken } from '@/lib/hash';
-import { prisma } from '@/lib/prisma';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import type { PatientContext } from '@holilabs/shared-types';
 
 export const dynamic = 'force-dynamic';
+
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 const diagnosisSchema = z.object({
   id: z.string().optional(),
@@ -86,35 +86,11 @@ const requestSchema = z.object({
   conflictResolution: z.enum(['highest_priority', 'most_recent', 'merge_all']).optional().default('highest_priority'),
 });
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export const POST = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse> => {
   const startTime = Date.now();
 
   try {
-    // Authenticate
-    let userId: string | undefined;
-    const internalToken = req.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalAgentToken(internalToken)) {
-      const userEmail = req.headers.get('X-Agent-User-Email');
-      const headerUserId = req.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
-
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as { id?: string })?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Validate request
     const body = await req.json();
     const validation = requestSchema.safeParse(body);
@@ -191,7 +167,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);
 
 interface MergeInput {
   patientId: string;

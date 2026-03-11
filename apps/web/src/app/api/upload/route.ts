@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { uploadFile, type MulterFile } from '@/lib/storage/file-storage';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -15,36 +14,16 @@ import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-export async function POST(request: NextRequest) {
-  try {
-    // Rate limiting for file uploads
-    const rateLimitError = await checkRateLimit(request, 'upload');
-    if (rateLimitError) return rateLimitError;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      // Rate limiting for file uploads
+      const rateLimitError = await checkRateLimit(request, 'upload');
+      if (rateLimitError) return rateLimitError;
 
-    // Authenticate user (clinician or patient)
-    const clinicianSession = await getServerSession(authOptions);
-    let userId: string;
-    let userType: 'clinician' | 'patient';
+      const userId = context.user!.id;
 
-    if (clinicianSession?.user?.id) {
-      userId = clinicianSession.user.id;
-      userType = 'clinician';
-    } else {
-      // Try patient session
-      try {
-        const { requirePatientSession } = await import('@/lib/auth/patient-session');
-        const patientSession = await requirePatientSession();
-        userId = patientSession.patientId;
-        userType = 'patient';
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: 'No autorizado' },
-          { status: 401 }
-        );
-      }
-    }
-
-    // Parse multipart form data
+      // Parse multipart form data
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
@@ -82,14 +61,14 @@ export async function POST(request: NextRequest) {
     // Upload to storage
     const result = await uploadFile(multerFile, {
       userId,
-      userType,
+      userType: 'clinician',
       generateThumbnail: true,
     });
 
     logger.info({
       event: 'file_uploaded',
       userId,
-      userType,
+      userType: 'clinician',
       filename: file.name,
       fileSize: result.fileSize,
     });
@@ -116,7 +95,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 // Configure route segment to handle large files
 export const dynamic = 'force-dynamic';

@@ -16,6 +16,7 @@ import bcrypt from 'bcryptjs';
 import { sendWelcomeEmail } from '@/lib/email';
 import { generateUsername } from '@/lib/auth/username';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,11 +34,12 @@ function mapClinicianRole(role: string) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  const rateLimitResponse = await checkRateLimit(request, 'auth');
-  if (rateLimitResponse) return rateLimitResponse;
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
+    const rateLimitResponse = await checkRateLimit(request, 'auth');
+    if (rateLimitResponse) return rateLimitResponse;
 
-  try {
+    try {
     const validation = await withValidation(registrationSchema)(request);
 
     if (!validation.success) {
@@ -226,4 +228,6 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 15 * 60 * 1000, maxRequests: 10 } }
+);

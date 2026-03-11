@@ -13,6 +13,7 @@ import {
   createCredentialVerificationRecord,
   type SupportedCountry,
 } from '@/lib/medical-license-verification';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,14 +27,15 @@ const verifyLicenseSchema = z.object({
   userId: z.string().optional(), // Optional: for logged-in users
 });
 
-export async function POST(request: NextRequest) {
-  // Apply rate limiting
-  const rateLimitResponse = await checkRateLimit(request, 'auth');
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
+    // Apply rate limiting
+    const rateLimitResponse = await checkRateLimit(request, 'auth');
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
 
-  try {
+    try {
     // Parse and validate request body
     const body = await request.json();
     const validation = verifyLicenseSchema.safeParse(body);
@@ -122,4 +124,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 15 * 60 * 1000, maxRequests: 10 } }
+);

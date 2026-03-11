@@ -4,10 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import { checkRateLimit } from '@/lib/rate-limit';
 import { notifyAppointmentReminder } from '@/lib/notifications/whatsapp';
 import { sendEmail } from '@/lib/notifications/email';
 import { sendSMS } from '@/lib/notifications/sms';
@@ -15,7 +13,6 @@ import { sendPushNotification } from '@/lib/notifications/send-push';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 type NotificationChannel = 'whatsapp' | 'email' | 'sms' | 'push' | 'in-app' | 'all';
 type NotificationType = 'payment_reminder' | 'appointment_reminder' | 'followup';
@@ -24,26 +21,17 @@ type NotificationType = 'payment_reminder' | 'appointment_reminder' | 'followup'
  * POST /api/appointments/[id]/notify
  * Sends notification to patient via specified channel(s)
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Apply rate limiting - 60 requests per minute for appointments
-    const rateLimitResponse = await checkRateLimit(request, 'appointments');
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const appointmentId = params.id;
+    if (!appointmentId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: 'Appointment ID required' },
+        { status: 400 }
       );
     }
 
-    const appointmentId = params.id;
     const body = await request.json();
     const {
       channel,
@@ -55,7 +43,6 @@ export async function POST(
       followUpNumber?: number;
     };
 
-    // Validation
     if (!channel) {
       return NextResponse.json(
         { success: false, error: 'channel is required' },
@@ -63,7 +50,6 @@ export async function POST(
       );
     }
 
-    // Fetch appointment with patient and clinician details
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
       include: {
@@ -86,7 +72,6 @@ export async function POST(
     const patient = appointment.patient;
     const preferences = patient.preferences;
 
-    // Build notification message
     const appointmentDate = format(appointment.startTime, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
     const appointmentTime = format(appointment.startTime, 'HH:mm', { locale: es });
 
@@ -106,8 +91,8 @@ export async function POST(
 
     const results: any[] = [];
     const channels = channel === 'all' ? ['whatsapp', 'email', 'push'] : [channel];
+    const userId = context.user!.id;
 
-    // Send via each channel
     for (const ch of channels) {
       try {
         if (ch === 'whatsapp' && patient.phone && preferences?.whatsappEnabled) {
@@ -129,7 +114,7 @@ export async function POST(
           });
           results.push({ channel: 'email', success: emailResult });
         } else if (ch === 'sms' && patient.phone && preferences?.smsEnabled) {
-          const smsResult = await sendSMS({ to: patient.phone, message }); // Fixed: use object params
+          const smsResult = await sendSMS({ to: patient.phone, message });
           results.push({ channel: 'sms', success: smsResult });
         } else if ((ch === 'push' || ch === 'in-app') && preferences?.pushEnabled) {
           const pushResult = await sendPushNotification({
@@ -140,7 +125,7 @@ export async function POST(
               data: {
                 appointmentId,
                 type,
-                userType: 'PATIENT', // Moved to data
+                userType: 'PATIENT',
               },
             },
           });
@@ -151,14 +136,13 @@ export async function POST(
           event: 'appointment_notification_channel_failed',
           appointmentId,
           channel: ch,
-          userId: (session.user as any).id,
+          userId,
           error: error instanceof Error ? error.message : String(error),
         });
         results.push({ channel: ch, success: false, error: error instanceof Error ? error.message : String(error) });
       }
     }
 
-    // Update appointment with follow-up count if this is a follow-up
     if (type === 'followup') {
       await prisma.appointment.update({
         where: { id: appointmentId },
@@ -168,10 +152,9 @@ export async function POST(
       });
     }
 
-    // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
+        userId,
         action: 'NOTIFY',
         resource: 'Appointment',
         resourceId: appointmentId,
@@ -190,15 +173,9 @@ export async function POST(
       data: { results },
       message: 'Notifications sent',
     });
-  } catch (error) {
-    logger.error({
-      event: 'appointment_notifications_failed',
-      appointmentId: params.id,
-      error: (error instanceof Error ? error.message : String(error)),
-    });
-    return NextResponse.json(
-      { success: false, error: 'Failed to send notifications' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    rateLimit: { windowMs: 60_000, maxRequests: 60 },
   }
-}
+);

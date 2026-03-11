@@ -34,6 +34,7 @@ import {
   buildAuthorizationUrl,
   generateStateToken,
 } from '@/lib/fhir/smart-client';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 // Force dynamic rendering - this endpoint handles OAuth state
 export const dynamic = 'force-dynamic';
@@ -51,7 +52,7 @@ const DEFAULT_SCOPES = 'launch patient/*.read openid fhirUser';
  * Initiates SMART on FHIR authorization flow.
  * Called by EHR when user launches the app.
  */
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(async (request: NextRequest) => {
   const startTime = Date.now();
 
   try {
@@ -250,4 +251,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

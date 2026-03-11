@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 
@@ -25,7 +26,7 @@ export const runtime = 'nodejs';
  * Receives security violation reports from browsers.
  * No authentication required (publicly accessible for browser reporting).
  */
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     const reports = await request.json();
 
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     return new NextResponse(null, { status: 204 });
   }
-}
+});
 
 /**
  * GET /api/security-reports
@@ -108,14 +109,14 @@ export async function POST(request: NextRequest) {
  * Health check endpoint (not for browser reporting).
  * Returns 200 OK to confirm endpoint is accessible.
  */
-export async function GET() {
+export const GET = createPublicRoute(async () => {
   return NextResponse.json({
     status: 'ok',
     message: 'Security reports endpoint is operational',
     accepts: ['POST'],
     reportTypes: ['csp-violation', 'coep', 'coop', 'nel', 'crash'],
   });
-}
+});
 
 /**
  * IMPORTANT NOTES:

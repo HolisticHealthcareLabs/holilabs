@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { isResendConfigured, sendWaitlistConfirmation } from '@/lib/email/resend';
+import { createPublicRoute } from '@/lib/api/middleware';
 
-export async function POST(request: Request) {
+export const POST = createPublicRoute(async (request: Request) => {
   try {
     const body = await request.json();
     const { email, name, organization, plan } = body;
@@ -70,4 +71,4 @@ export async function POST(request: Request) {
     });
     return safeErrorResponse(error, { userMessage: 'Failed to join waitlist. Please try again.' });
   }
-}
+});

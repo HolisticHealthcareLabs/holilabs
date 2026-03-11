@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { _prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +36,7 @@ type HeartbeatPayload = {
  *
  * Body is intentionally non-PHI.
  */
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   if (!_prisma) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 });
 
   const token = getBearerToken(request);
@@ -116,5 +117,5 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ success: true }, { status: 200 });
-}
+});
 

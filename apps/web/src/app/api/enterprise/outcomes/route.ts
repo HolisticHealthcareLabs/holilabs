@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateEnterpriseKey } from '@/lib/enterprise/auth';
 import { outcomeTrackerService, type PatientOutcomeType } from '@/services/outcome-tracker.service';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ const VALID_OUTCOME_TYPES: PatientOutcomeType[] = [
   'RESOLVED',
 ];
 
-export async function POST(request: NextRequest) {
+async function postOutcomes(request: NextRequest) {
   const auth = validateEnterpriseKey(request);
   if (!auth.authorized) return auth.response!;
 
@@ -59,3 +60,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = createPublicRoute(postOutcomes);

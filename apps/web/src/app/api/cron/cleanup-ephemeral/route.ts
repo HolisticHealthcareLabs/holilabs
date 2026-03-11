@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 const BATCH_SIZE = 25;
 const CRON_SECRET = process.env.CRON_SECRET || '';
@@ -101,7 +102,7 @@ async function deleteEphemeralTenant(
   return { dbRows, storageObjects };
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+async function postCleanupEphemeral(request: NextRequest): Promise<NextResponse> {
   const authHeader = request.headers.get('authorization');
   if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -185,3 +186,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
+
+export const POST = createPublicRoute(postCleanupEphemeral);

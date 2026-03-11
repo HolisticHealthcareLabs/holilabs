@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
+
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
 async function checkUrl(url: string, timeoutMs: number) {
   const controller = new AbortController();
@@ -16,7 +19,7 @@ async function checkUrl(url: string, timeoutMs: number) {
   }
 }
 
-export async function GET() {
+async function getPresidioHealth() {
   const analyzerBase = process.env.PRESIDIO_ANALYZER_URL || 'http://localhost:5001';
   const anonymizerBase = process.env.PRESIDIO_ANONYMIZER_URL || 'http://localhost:5002';
   const timeoutMs = Number(process.env.PRESIDIO_TIMEOUT_MS || 8000);
@@ -38,5 +41,7 @@ export async function GET() {
     { status: ok ? 200 : 503 }
   );
 }
+
+export const GET = createPublicRoute(getPresidioHealth, { rateLimit: RATE_LIMIT });
 
 

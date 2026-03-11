@@ -12,8 +12,9 @@
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
-export async function GET() {
+export const GET = createPublicRoute(async () => {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
@@ -96,4 +97,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

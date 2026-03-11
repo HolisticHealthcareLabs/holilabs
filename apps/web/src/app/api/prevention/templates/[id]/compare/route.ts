@@ -6,15 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
 
 type FieldDifference = {
   field: string;
@@ -23,17 +17,11 @@ type FieldDifference = {
   changed: boolean;
 };
 
-/**
- * Deep comparison helper for arrays
- */
 function arraysEqual(a: any[], b: any[]): boolean {
   if (a.length !== b.length) return false;
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/**
- * Compare two template data objects and return differences
- */
 function compareTemplateData(oldData: any, newData: any): FieldDifference[] {
   const fields = [
     'templateName',
@@ -55,16 +43,11 @@ function compareTemplateData(oldData: any, newData: any): FieldDifference[] {
 
     let changed = false;
 
-    // Handle array comparisons
     if (Array.isArray(oldValue) && Array.isArray(newValue)) {
       changed = !arraysEqual(oldValue, newValue);
-    }
-    // Handle object/null comparisons
-    else if (typeof oldValue === 'object' || typeof newValue === 'object') {
+    } else if (typeof oldValue === 'object' || typeof newValue === 'object') {
       changed = JSON.stringify(oldValue) !== JSON.stringify(newValue);
-    }
-    // Handle primitive comparisons
-    else {
+    } else {
       changed = oldValue !== newValue;
     }
 
@@ -79,28 +62,24 @@ function compareTemplateData(oldData: any, newData: any): FieldDifference[] {
   return differences;
 }
 
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
+
 /**
  * POST - Compare two versions
  */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
     const body = await request.json();
     const { versionId1, versionId2, compareWithCurrent = false } = body;
 
-    // Validation
     if (!versionId1 || typeof versionId1 !== 'string') {
       return NextResponse.json(
         { success: false, error: 'versionId1 is required' },
@@ -115,7 +94,6 @@ export async function POST(
       );
     }
 
-    // Fetch first version
     const version1 = await prisma.preventionPlanTemplateVersion.findUnique({
       where: { id: versionId1 },
       include: {
@@ -143,7 +121,6 @@ export async function POST(
     let version2Meta: any;
 
     if (compareWithCurrent) {
-      // Compare with current template state
       const currentTemplate = await prisma.preventionPlanTemplate.findUnique({
         where: { id: templateId },
       });
@@ -179,7 +156,6 @@ export async function POST(
         createdAt: currentTemplate.updatedAt,
       };
     } else {
-      // Compare with another version
       const version2 = await prisma.preventionPlanTemplateVersion.findUnique({
         where: { id: versionId2 },
         include: {
@@ -214,13 +190,12 @@ export async function POST(
       };
     }
 
-    // Compare the two versions
     const differences = compareTemplateData(version1.templateData, version2Data);
     const changedFields = differences.filter((d) => d.changed);
 
     logger.info({
       event: 'template_versions_compared',
-      userId: session.user.id,
+      userId,
       templateId,
       versionId1,
       versionId2: compareWithCurrent ? 'current' : versionId2,
@@ -249,18 +224,6 @@ export async function POST(
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'compare_template_versions_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to compare versions',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

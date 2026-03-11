@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { ContentMatrixService } from '@/services/content-matrix.service';
 import type { PersonaKind } from '@prisma/client';
+
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 function normalizePersona(role?: string | null): PersonaKind {
   if (!role) return 'CLINICIAN';
@@ -22,45 +24,39 @@ function specialtyToSlug(specialty: string): string {
     .replace(/[^a-z0-9-]/g, '');
 }
 
-export async function GET() {
-  try {
-    const session = await auth();
+export const GET = createProtectedRoute(
+  async (_request: NextRequest, context: { user?: { role?: string; organizationId?: string; specialty?: string } }) => {
+    try {
+      const user = context.user as Record<string, unknown> | undefined;
+      const tenantId = (user?.organizationId as string | undefined) ?? 'org-demo-clinic';
+      const persona = normalizePersona(user?.role as string | undefined);
 
-    if (!session?.user) {
+      const rawSpecialty = (user?.specialty as string | undefined) ?? '';
+      const disciplineSlugs = rawSpecialty
+        .split(',')
+        .map((s) => specialtyToSlug(s))
+        .filter(Boolean);
+
+      const result = await ContentMatrixService.resolve({
+        tenantId,
+        persona,
+        disciplineSlugs,
+      });
+
+      return NextResponse.json(result);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to resolve content matrix';
+
       return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
+        {
+          error: message,
+          definitions: [],
+          totalDefinitions: 0,
+        },
+        { status: 500 }
       );
     }
-
-    const user = session.user as Record<string, unknown>;
-    const tenantId = (user.organizationId as string | undefined) ?? 'org-demo-clinic';
-    const persona = normalizePersona(user.role as string | undefined);
-
-    const rawSpecialty = (user.specialty as string | undefined) ?? '';
-    const disciplineSlugs = rawSpecialty
-      .split(',')
-      .map((s) => specialtyToSlug(s))
-      .filter(Boolean);
-
-    const result = await ContentMatrixService.resolve({
-      tenantId,
-      persona,
-      disciplineSlugs,
-    });
-
-    return NextResponse.json(result);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to resolve content matrix';
-
-    return NextResponse.json(
-      {
-        error: message,
-        definitions: [],
-        totalDefinitions: 0,
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

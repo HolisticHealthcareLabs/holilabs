@@ -5,45 +5,49 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { FormStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
+    try {
+      const { searchParams } = new URL(request.url);
+      const status = searchParams.get('status');
 
-    const where = status && status !== 'all' ? { status: status as FormStatus } : {};
+      const where = status && status !== 'all' ? { status: status as FormStatus } : {};
 
-    const forms = await prisma.formInstance.findMany({
-      where,
-      orderBy: { sentAt: 'desc' },
-      include: {
-        patient: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
+      const forms = await prisma.formInstance.findMany({
+        where,
+        orderBy: { sentAt: 'desc' },
+        include: {
+          patient: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          template: {
+            select: {
+              id: true,
+              title: true,
+              category: true,
+            },
           },
         },
-        template: {
-          select: {
-            id: true,
-            title: true,
-            category: true,
-          },
-        },
-      },
-    });
+      });
 
-    return NextResponse.json({ success: true, forms }, { status: 200 });
-  } catch (error) {
-    console.error('Error fetching sent forms:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch sent forms' },
-      { status: 500 }
-    );
-  }
-}
+      return NextResponse.json({ success: true, forms }, { status: 200 });
+    } catch (error) {
+      console.error('Error fetching sent forms:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch sent forms' },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

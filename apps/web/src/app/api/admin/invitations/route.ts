@@ -2,10 +2,11 @@
  * Admin API - Invitation Code Management
  * 
  * Generate invitation codes for friends/family
- * Requires admin authentication
+ * Requires admin authentication (ADMIN_API_KEY)
  */
 
 import { NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { PrismaClient } from '@prisma/client';
 import logger from '@/lib/logger';
 
@@ -26,7 +27,7 @@ function isAdmin(request: Request): boolean {
 }
 
 // GET - List all invitation codes
-export async function GET(request: Request) {
+export const GET = createPublicRoute(async (request: Request) => {
   try {
     if (!isAdmin(request)) {
       return NextResponse.json(
@@ -96,10 +97,10 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+});
 
 // POST - Generate new invitation code
-export async function POST(request: Request) {
+export const POST = createPublicRoute(async (request: Request) => {
   try {
     if (!isAdmin(request)) {
       return NextResponse.json(
@@ -203,10 +204,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE - Deactivate invitation code
-export async function DELETE(request: Request) {
+export const DELETE = createPublicRoute(async (request: Request) => {
   try {
     if (!isAdmin(request)) {
       return NextResponse.json(
@@ -255,5 +256,5 @@ export async function DELETE(request: Request) {
       { status: 500 }
     );
   }
-}
+});
 

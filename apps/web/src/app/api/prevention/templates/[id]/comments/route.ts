@@ -8,8 +8,9 @@
  * Adds a new comment to the template
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import {
@@ -18,32 +19,21 @@ import {
 } from '@/lib/socket-server';
 import { SocketEvent, NotificationPriority } from '@/lib/socket/events';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 /**
  * GET - Retrieve all comments for a template
  */
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
-
-    // Verify template exists and user has access
     const template = await prisma.preventionPlanTemplate.findUnique({
       where: { id: templateId },
       select: { id: true, templateName: true, createdBy: true },
@@ -56,13 +46,12 @@ export async function GET(
       );
     }
 
-    // Check if user has access (owner or shared with them)
     const hasAccess =
-      template.createdBy === session.user.id ||
+      template.createdBy === userId ||
       (await prisma.preventionTemplateShare.findFirst({
         where: {
           templateId,
-          sharedWith: session.user.id,
+          sharedWith: userId,
         },
       }));
 
@@ -73,7 +62,6 @@ export async function GET(
       );
     }
 
-    // Fetch comments
     const comments = await prisma.preventionTemplateComment.findMany({
       where: { templateId },
       include: {
@@ -94,7 +82,7 @@ export async function GET(
 
     logger.info({
       event: 'template_comments_retrieved',
-      userId: session.user.id,
+      userId,
       templateId,
       commentCount: comments.length,
     });
@@ -114,44 +102,26 @@ export async function GET(
         })),
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'get_template_comments_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve comments',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);
 
 /**
  * POST - Add a new comment to the template
  */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
     const body = await request.json();
     const { content, mentions = [] } = body;
 
-    // Validation
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return NextResponse.json(
         { success: false, error: 'Comment content is required' },
@@ -173,7 +143,6 @@ export async function POST(
       );
     }
 
-    // Verify template exists and user has access
     const template = await prisma.preventionPlanTemplate.findUnique({
       where: { id: templateId },
       select: { id: true, templateName: true, createdBy: true },
@@ -186,13 +155,12 @@ export async function POST(
       );
     }
 
-    // Check if user has access (owner or shared with them)
     const hasAccess =
-      template.createdBy === session.user.id ||
+      template.createdBy === userId ||
       (await prisma.preventionTemplateShare.findFirst({
         where: {
           templateId,
-          sharedWith: session.user.id,
+          sharedWith: userId,
         },
       }));
 
@@ -203,11 +171,10 @@ export async function POST(
       );
     }
 
-    // Create comment
     const comment = await prisma.preventionTemplateComment.create({
       data: {
         templateId,
-        userId: session.user.id,
+        userId: userId!,
         content: content.trim(),
         mentions,
       },
@@ -224,14 +191,13 @@ export async function POST(
       },
     });
 
-    // Create audit log
     const ipAddress = request.headers.get('x-forwarded-for') ||
                       request.headers.get('x-real-ip') ||
                       'unknown';
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: userId!,
         action: 'CREATE',
         resource: 'prevention_template',
         resourceId: templateId,
@@ -242,13 +208,12 @@ export async function POST(
 
     logger.info({
       event: 'template_comment_created',
-      userId: session.user.id,
+      userId,
       templateId,
       commentId: comment.id,
       hasMentions: mentions.length > 0,
     });
 
-    // Emit real-time notification
     const notification = {
       id: crypto.randomUUID(),
       event: SocketEvent.COMMENT_ADDED,
@@ -258,20 +223,18 @@ export async function POST(
       data: {
         templateId,
         commentId: comment.id,
-        userId: session.user.id,
+        userId,
         timestamp: new Date(),
       },
       timestamp: new Date(),
     };
 
-    // Notify template owner if not the commenter
-    if (template.createdBy !== session.user.id) {
+    if (template.createdBy !== userId) {
       emitPreventionEventToUser(template.createdBy, SocketEvent.COMMENT_ADDED, notification);
     }
 
-    // Notify mentioned users
     for (const mentionedUserId of mentions) {
-      if (mentionedUserId !== session.user.id) {
+      if (mentionedUserId !== userId) {
         const mentionNotification = {
           ...notification,
           title: 'Te Mencionaron',
@@ -282,7 +245,6 @@ export async function POST(
       }
     }
 
-    // Notify all collaborators
     emitPreventionEventToAll(SocketEvent.COMMENT_ADDED, notification);
 
     return NextResponse.json({
@@ -298,18 +260,6 @@ export async function POST(
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'create_template_comment_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to create comment',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

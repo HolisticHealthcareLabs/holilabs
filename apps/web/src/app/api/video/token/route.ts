@@ -15,45 +15,28 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { AccessToken } from 'livekit-server-sdk';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 import { auditCreate } from '@/lib/audit';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
-// Request validation schema
 const TokenRequestSchema = z.object({
   roomId: z.string().min(1, 'roomId is required'),
   userName: z.string().min(1, 'userName is required'),
   userType: z.enum(['clinician', 'patient']),
 });
 
-// LiveKit configuration from environment
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://localhost:7880';
 
-/**
- * POST /api/video/token
- * Generate LiveKit access token for video room
- */
-export async function POST(request: NextRequest) {
-  const start = performance.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
+    const userId = context.user!.id;
 
-  try {
-    // Verify authentication
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    // Validate LiveKit configuration
     if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
       logger.error({
         event: 'livekit_config_missing',
@@ -67,7 +50,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse and validate request body
     let body: unknown;
     try {
       body = await request.json();
@@ -92,27 +74,23 @@ export async function POST(request: NextRequest) {
 
     const { roomId, userName, userType } = validation.data;
 
-    // Create access token with identity based on session + userType
-    const identity = `${userType}_${session.user.id}`;
+    const identity = `${userType}_${userId}`;
     const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
       identity,
       name: userName,
-      ttl: '2h', // Token valid for 2 hours
+      ttl: '2h',
     });
 
-    // Grant room access with permissions based on user type
     at.addGrant({
       room: roomId,
       roomJoin: true,
       canPublish: true,
       canSubscribe: true,
-      // Clinicians can record and manage participants
       canPublishData: true,
       roomRecord: userType === 'clinician',
       roomAdmin: userType === 'clinician',
     });
 
-    // Generate token
     const token = await at.toJwt();
 
     const elapsed = performance.now() - start;
@@ -121,17 +99,16 @@ export async function POST(request: NextRequest) {
       event: 'livekit_token_generated',
       roomId,
       userType,
-      userId: session.user.id,
+      userId,
       identity,
       latencyMs: elapsed.toFixed(2),
     });
 
-    // HIPAA Audit
     await auditCreate('VideoToken', roomId, request, {
       action: 'video_token_generated',
       roomId,
       userType,
-      userId: session.user.id,
+      userId,
       identity,
     });
 
@@ -147,21 +124,9 @@ export async function POST(request: NextRequest) {
         latencyMs: Math.round(elapsed),
       },
     });
-  } catch (error) {
-    const elapsed = performance.now() - start;
-
-    logger.error({
-      event: 'livekit_token_error',
-      error: error instanceof Error ? error.message : String(error),
-      latencyMs: elapsed.toFixed(2),
-    });
-
-    return NextResponse.json(
-      {
-        error: 'Failed to generate video token',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    allowPatientAuth: true,
   }
-}
+);

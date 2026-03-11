@@ -10,11 +10,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { breachOverdueEscalations } from '@/lib/escalations/escalation-service';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-export async function GET(request: NextRequest) {
+async function getEscalations(request: NextRequest) {
   const startTime = Date.now();
 
   try {
@@ -63,6 +64,5 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  return GET(request);
-}
+export const GET = createPublicRoute(getEscalations);
+export const POST = createPublicRoute((req) => getEscalations(req));

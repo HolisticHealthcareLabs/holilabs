@@ -14,10 +14,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { verifyInternalAgentToken } from '@/lib/hash';
 import {
   tissReconciliationService,
   type TissRecord,
@@ -26,6 +25,8 @@ import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
+
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VALIDATION SCHEMAS
@@ -68,51 +69,12 @@ const statsQuerySchema = z.object({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTH HELPER
-// ═══════════════════════════════════════════════════════════════════════════════
-
-async function authenticateRequest(
-  req: NextRequest
-): Promise<{ userId: string } | null> {
-  const internalToken = req.headers.get('X-Agent-Internal-Token');
-
-  if (internalToken && verifyInternalAgentToken(internalToken)) {
-    const userEmail = req.headers.get('X-Agent-User-Email');
-    const headerUserId = req.headers.get('X-Agent-User-Id');
-
-    if (userEmail) {
-      const dbUser = await prisma.user.findFirst({
-        where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-        select: { id: true },
-      });
-
-      if (dbUser) {
-        return { userId: dbUser.id };
-      }
-    }
-  }
-
-  const session = await auth();
-  const userId = (session?.user as { id?: string })?.id;
-
-  if (!userId) {
-    return null;
-  }
-
-  return { userId };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // POST: Ingest TISS Records and Reconcile
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export const POST = createProtectedRoute(
+  async (req: NextRequest, context: { user?: { id: string } }): Promise<NextResponse> => {
   try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await req.json();
     const validation = ingestBatchSchema.safeParse(body);
 
@@ -135,7 +97,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       event: 'tiss_ingest_started',
       recordCount: records.length,
       source,
-      userId: authResult.userId,
+      userId: context.user?.id,
     });
 
     // Process the batch
@@ -196,19 +158,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET: Get Reconciliation Stats or List Pending
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
+export const GET = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const searchParams = Object.fromEntries(req.nextUrl.searchParams);
     const action = searchParams.action;
 
@@ -296,19 +256,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PATCH: Manual Link
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function PATCH(req: NextRequest): Promise<NextResponse> {
+export const PATCH = createProtectedRoute(
+  async (req: NextRequest, context: { user?: { id: string } }): Promise<NextResponse> => {
   try {
-    const authResult = await authenticateRequest(req);
-    if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await req.json();
     const validation = manualLinkSchema.safeParse(body);
 
@@ -356,7 +314,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
         details: {
           action: 'manual_link',
           eventId,
-          userId: authResult.userId,
+          userId: context.user?.id,
         },
         success: true,
       },
@@ -380,4 +338,6 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+},
+  { roles: [...ROLES] }
+);

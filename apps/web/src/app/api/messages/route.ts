@@ -6,9 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { emitNewMessage, emitUnreadCountUpdate } from '@/lib/socket-server';
 import { notifyNewMessage } from '@/lib/notifications';
@@ -22,101 +20,29 @@ export const dynamic = 'force-dynamic';
 /**
  * GET - Get conversations for a user
  */
-export async function GET(request: NextRequest) {
-  try {
-    // Rate limiting
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    // Check if it's a clinician or patient request
-    const clinicianSession = await getServerSession(authOptions);
+    const userId = context.user?.id;
+    const isPatient = context.user?.role === 'PATIENT';
 
-    if (clinicianSession?.user?.id) {
-      // Get clinician's conversations
+    if (isPatient) {
       const messages = await prisma.message.findMany({
         where: {
-          OR: [
-            { fromUserId: clinicianSession.user.id, fromUserType: 'CLINICIAN' },
-            { toUserId: clinicianSession.user.id, toUserType: 'CLINICIAN' },
-          ],
-          archivedAt: null,
-        },
-        include: {
-          patient: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-      });
-
-      // Group by patient to create conversations
-      const conversationsMap = new Map();
-
-      for (const message of messages) {
-        const key = message.patientId;
-
-        if (!conversationsMap.has(key)) {
-          conversationsMap.set(key, {
-            id: key,
-            patientId: message.patientId,
-            patientName: `${message.patient.firstName} ${message.patient.lastName}`,
-            patientAvatar: null,
-            lastMessage: message.body,
-            lastMessageAt: message.createdAt,
-            unreadCount: 0,
-            messages: [],
-          });
-        }
-
-        const conversation = conversationsMap.get(key);
-        conversation.messages.push(message);
-
-        // Count unread messages (messages TO the clinician that haven't been read)
-        if (message.toUserId === clinicianSession.user.id && !message.readAt) {
-          conversation.unreadCount++;
-        }
-      }
-
-      const conversations = Array.from(conversationsMap.values());
-
-      // HIPAA Audit Log: Clinician accessed patient message conversations
-      await createAuditLog({
-        action: 'READ',
-        resource: 'Message',
-        resourceId: 'conversations',
-        details: {
-          conversationsCount: conversations.length,
-          messagesCount: messages.length,
-          accessType: 'MESSAGE_CONVERSATIONS_LIST',
-        },
-        success: true,
-      });
-
-      return NextResponse.json({
-        success: true,
-        data: { conversations },
-      });
-    }
-
-    // Try patient session
-    try {
-      const patientSession = await requirePatientSession();
-
-      // Get patient's conversations
-      const messages = await prisma.message.findMany({
-        where: {
-          patientId: patientSession.patientId,
+          patientId: userId,
           archivedAt: null,
         },
         orderBy: { createdAt: 'desc' },
         take: limit,
       });
 
-      // For patients, there's typically one conversation with their assigned clinician
       const patient = await prisma.patient.findUnique({
-        where: { id: patientSession.patientId },
+        where: { id: userId },
         include: { assignedClinician: true },
       });
 
@@ -127,17 +53,16 @@ export async function GET(request: NextRequest) {
         clinicianAvatar: null,
         lastMessage: messages[0]?.body || 'Inicia una conversación',
         lastMessageAt: messages[0]?.createdAt || new Date(),
-        unreadCount: messages.filter(m => m.toUserId === patientSession.patientId && !m.readAt).length,
+        unreadCount: messages.filter(m => m.toUserId === userId && !m.readAt).length,
         messages,
       }] : [];
 
-      // HIPAA Audit Log: Patient accessed message conversations
       await createAuditLog({
         action: 'READ',
         resource: 'Message',
-        resourceId: patientSession.patientId,
+        resourceId: userId,
         details: {
-          patientId: patientSession.patientId,
+          patientId: userId,
           conversationsCount: conversations.length,
           messagesCount: messages.length,
           accessType: 'PATIENT_MESSAGE_CONVERSATIONS_LIST',
@@ -149,31 +74,77 @@ export async function GET(request: NextRequest) {
         success: true,
         data: { conversations },
       });
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado' },
-        { status: 401 }
-      );
     }
-  } catch (error) {
-    logger.error({
-      event: 'get_messages_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
+
+    // Clinician path
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { fromUserId: userId, fromUserType: 'CLINICIAN' },
+          { toUserId: userId, toUserType: 'CLINICIAN' },
+        ],
+        archivedAt: null,
+      },
+      include: {
+        patient: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
     });
 
-    return NextResponse.json(
-      { success: false, error: 'Error al obtener mensajes' },
-      { status: 500 }
-    );
+    const conversationsMap = new Map();
+    for (const message of messages) {
+      const key = message.patientId;
+      if (!conversationsMap.has(key)) {
+        conversationsMap.set(key, {
+          id: key,
+          patientId: message.patientId,
+          patientName: `${message.patient.firstName} ${message.patient.lastName}`,
+          patientAvatar: null,
+          lastMessage: message.body,
+          lastMessageAt: message.createdAt,
+          unreadCount: 0,
+          messages: [],
+        });
+      }
+      const conversation = conversationsMap.get(key);
+      conversation.messages.push(message);
+      if (message.toUserId === userId && !message.readAt) {
+        conversation.unreadCount++;
+      }
+    }
+
+    const conversations = Array.from(conversationsMap.values());
+
+    await createAuditLog({
+      action: 'READ',
+      resource: 'Message',
+      resourceId: 'conversations',
+      details: {
+        conversationsCount: conversations.length,
+        messagesCount: messages.length,
+        accessType: 'MESSAGE_CONVERSATIONS_LIST',
+      },
+      success: true,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: { conversations },
+    });
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * POST - Send a new message
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Rate limiting for message sending
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'messages');
     if (rateLimitError) return rateLimitError;
 
@@ -187,38 +158,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if it's a clinician or patient request
-    const clinicianSession = await getServerSession(authOptions);
-
-    let fromUserId: string;
-    let fromUserType: 'CLINICIAN' | 'PATIENT';
+    const fromUserId = context.user?.id;
+    const fromUserType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
     let fromUserName: string;
 
-    if (clinicianSession?.user?.id) {
-      fromUserId = clinicianSession.user.id;
-      fromUserType = 'CLINICIAN';
-
+    if (fromUserType === 'CLINICIAN') {
       const clinician = await prisma.user.findUnique({
         where: { id: fromUserId },
       });
       fromUserName = `Dr. ${clinician?.firstName || 'Doctor'} ${clinician?.lastName || ''}`;
     } else {
-      // Try patient session
-      try {
-        const patientSession = await requirePatientSession();
-        fromUserId = patientSession.patientId;
-        fromUserType = 'PATIENT';
-
-        const patient = await prisma.patient.findUnique({
-          where: { id: fromUserId },
-        });
-        fromUserName = `${patient?.firstName || 'Paciente'} ${patient?.lastName || ''}`;
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: 'No autorizado' },
-          { status: 401 }
-        );
-      }
+      const patient = await prisma.patient.findUnique({
+        where: { id: fromUserId },
+      });
+      fromUserName = `${patient?.firstName || 'Paciente'} ${patient?.lastName || ''}`;
     }
 
     // Create message
@@ -319,15 +272,10 @@ export async function POST(request: NextRequest) {
       success: true,
       data: { message },
     });
-  } catch (error) {
-    logger.error({
-      event: 'send_message_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Error al enviar mensaje' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);

@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute, type ApiContext } from '@/lib/api/middleware';
 import { _prisma } from '@/lib/prisma';
 import { getOrCreateWorkspaceForUser } from '@/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const session = await auth();
-  const userId = session?.user?.id;
+export const GET = createProtectedRoute(async (_request, context: ApiContext) => {
+  const userId = context.user?.id;
 
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -118,5 +117,5 @@ export async function GET() {
     },
     { status: 200 }
   );
-}
+});
 

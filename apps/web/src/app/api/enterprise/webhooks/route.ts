@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateEnterpriseKey } from '@/lib/enterprise/auth';
 import { webhookDispatcher, type WebhookEventType } from '@/lib/enterprise/webhook-dispatcher';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ const VALID_EVENTS: WebhookEventType[] = [
   'BULK_ASSESSMENT_COMPLETED',
 ];
 
-export async function POST(request: NextRequest) {
+async function postWebhooks(request: NextRequest) {
   const auth = validateEnterpriseKey(request);
   if (!auth.authorized) return auth.response!;
 
@@ -77,7 +78,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export const POST = createPublicRoute(postWebhooks);
+
+async function getWebhooks(request: NextRequest) {
   const auth = validateEnterpriseKey(request);
   if (!auth.authorized) return auth.response!;
 
@@ -91,7 +94,9 @@ export async function GET(request: NextRequest) {
   });
 }
 
-export async function DELETE(request: NextRequest) {
+export const GET = createPublicRoute(getWebhooks);
+
+async function deleteWebhooks(request: NextRequest) {
   const auth = validateEnterpriseKey(request);
   if (!auth.authorized) return auth.response!;
 
@@ -123,3 +128,5 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
+export const DELETE = createPublicRoute(deleteWebhooks);

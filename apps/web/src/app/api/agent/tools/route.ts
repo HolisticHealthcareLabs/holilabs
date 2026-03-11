@@ -8,7 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getToolSchemas, getToolsByCategory, searchTools, getAllRegisteredTools } from '@/lib/mcp';
+import { createProtectedRoute } from '@/lib/api/middleware';
+import { getToolsByCategory, searchTools, getAllRegisteredTools } from '@/lib/mcp';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,8 @@ export const dynamic = 'force-dynamic';
  * - q: Search tools by name or description
  * - format: 'full' | 'minimal' (default: 'full')
  */
-export async function GET(request: NextRequest) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     try {
         const { searchParams } = new URL(request.url);
         const category = searchParams.get('category');
@@ -81,7 +83,9 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], skipCsrf: true }
+);
 
 /**
  * POST /api/agent/tools
@@ -89,7 +93,8 @@ export async function GET(request: NextRequest) {
  * Execute a tool (for testing purposes)
  * In production, tools should be called via the MCP protocol
  */
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     try {
         const body = await request.json();
         const { tool, input } = body;
@@ -147,4 +152,6 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], skipCsrf: true }
+);

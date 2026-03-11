@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { aggregateDailyCorrections, aggregateCorrectionsRange } from '@/lib/jobs/correction-aggregation';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
@@ -27,7 +28,7 @@ export const maxDuration = 300; // 5 minutes max
  * - endDate: ISO date string (for custom mode)
  * - secret: Authorization secret (from env)
  */
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     // Authorization check (prevent unauthorized job execution)
     const authHeader = request.headers.get('authorization');
@@ -95,14 +96,14 @@ export async function POST(request: NextRequest) {
     console.error('❌ [Job] Error running correction aggregation:', error);
     return safeErrorResponse(error, { userMessage: 'Failed to run correction aggregation job' });
   }
-}
+});
 
 /**
  * GET /api/jobs/aggregate-corrections
  *
  * Get status/info about the aggregation job
  */
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(async () => {
   return NextResponse.json({
     job: 'correction-aggregation',
     description: 'RLHF correction aggregation background job',
@@ -120,4 +121,4 @@ export async function GET(request: NextRequest) {
     },
     status: 'active',
   });
-}
+});

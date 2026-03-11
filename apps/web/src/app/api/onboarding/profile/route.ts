@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import { _prisma } from '@/lib/prisma';
+import { createProtectedRoute } from '@/lib/api/middleware';
+import { prisma, _prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { getOrCreateWorkspaceForUser } from '@/lib/workspace';
 
@@ -162,73 +162,77 @@ function mergeWorkspaceMetadata(
   } as Prisma.InputJsonValue;
 }
 
-export async function GET() {
-  const session = await auth();
-  const userId = session?.user?.id;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
+    if (!_prisma) return NextResponse.json({ error: 'DB unavailable' }, { status: 501 });
 
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!_prisma) return NextResponse.json({ error: 'DB unavailable' }, { status: 501 });
+    const { workspaceId } = await getOrCreateWorkspaceForUser(userId);
 
-  const { workspaceId } = await getOrCreateWorkspaceForUser(userId);
+    const ws = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { metadata: true },
+    });
 
-  const ws = await _prisma.workspace.findUnique({
-    where: { id: workspaceId },
-    select: { metadata: true },
-  });
+    const profile =
+      ws?.metadata && typeof ws.metadata === 'object' && ws.metadata !== null
+        ? profileFromMetadata(ws.metadata)
+        : null;
 
-  const profile =
-    ws?.metadata && typeof ws.metadata === 'object' && ws.metadata !== null
-      ? profileFromMetadata(ws.metadata)
-      : null;
+    return NextResponse.json(
+      {
+        success: true,
+        data: profile ?? null,
+        context: profile
+          ? {
+              complianceCountry: profile.complianceCountry ?? 'UNKNOWN',
+              insurerFocus: profile.insurerFocus ?? '',
+              protocolMode: profile.protocolMode ?? 'UNKNOWN',
+              deterministicFirst: profile.protocolMode === 'DETERMINISTIC_100',
+            }
+          : null,
+      },
+      { status: 200 }
+    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
+  }
+);
 
-  return NextResponse.json(
-    {
-      success: true,
-      data: profile ?? null,
-      context: profile
-        ? {
-            complianceCountry: profile.complianceCountry ?? 'UNKNOWN',
-            insurerFocus: profile.insurerFocus ?? '',
-            protocolMode: profile.protocolMode ?? 'UNKNOWN',
-            deterministicFirst: profile.protocolMode === 'DETERMINISTIC_100',
-          }
-        : null,
-    },
-    { status: 200 }
-  );
-}
+export const PUT = createProtectedRoute(
+  async (req: NextRequest, context: any) => {
+    const userId = context.user!.id;
+    if (!_prisma) return NextResponse.json({ error: 'DB unavailable' }, { status: 501 });
 
-export async function PUT(req: NextRequest) {
-  const session = await auth();
-  const userId = session?.user?.id;
+    const body = (await req.json().catch(() => null)) as
+      | { profile?: OnboardingProfile | null }
+      | OnboardingProfile
+      | null;
+    const payload =
+      body && typeof body === 'object' && 'profile' in body
+        ? ((body as { profile?: unknown }).profile ?? null)
+        : body;
+    const incomingProfile = sanitizeProfile(payload);
 
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!_prisma) return NextResponse.json({ error: 'DB unavailable' }, { status: 501 });
+    const { workspaceId } = await getOrCreateWorkspaceForUser(userId);
 
-  const body = (await req.json().catch(() => null)) as
-    | { profile?: OnboardingProfile | null }
-    | OnboardingProfile
-    | null;
-  const payload =
-    body && typeof body === 'object' && 'profile' in body
-      ? ((body as { profile?: unknown }).profile ?? null)
-      : body;
-  const incomingProfile = sanitizeProfile(payload);
+    const existing = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { metadata: true },
+    });
+    const currentProfile = profileFromMetadata(existing?.metadata ?? null);
+    const profile = mergeProfiles(currentProfile, incomingProfile);
 
-  const { workspaceId } = await getOrCreateWorkspaceForUser(userId);
+    await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { metadata: mergeWorkspaceMetadata(existing?.metadata ?? null, profile) },
+    });
 
-  const existing = await _prisma.workspace.findUnique({
-    where: { id: workspaceId },
-    select: { metadata: true },
-  });
-  const currentProfile = profileFromMetadata(existing?.metadata ?? null);
-  const profile = mergeProfiles(currentProfile, incomingProfile);
-
-  await _prisma.workspace.update({
-    where: { id: workspaceId },
-    data: { metadata: mergeWorkspaceMetadata(existing?.metadata ?? null, profile) },
-  });
-
-  return NextResponse.json({ success: true, data: profile }, { status: 200 });
-}
-
+    return NextResponse.json({ success: true, data: profile }, { status: 200 });
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+  }
+);

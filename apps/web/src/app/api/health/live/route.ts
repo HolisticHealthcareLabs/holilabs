@@ -10,10 +10,13 @@
 import { NextResponse } from 'next/server';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
+
+async function getLive() {
   try {
     // Simple liveness check - if we can respond, we're alive
     const healthData = {
@@ -57,3 +60,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = createPublicRoute(getLive, { rateLimit: RATE_LIMIT });

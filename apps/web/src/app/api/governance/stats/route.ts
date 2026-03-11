@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,8 @@ export const dynamic = 'force-dynamic';
  * GET /api/governance/stats
  * Returns aggregated safety statistics for the Mission Control dashboard
  */
-export async function GET(request: NextRequest) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     try {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -64,4 +66,6 @@ export async function GET(request: NextRequest) {
             error: 'Failed to fetch safety stats'
         }, { status: 500 });
     }
-}
+  },
+  { roles: ['ADMIN'] }
+);

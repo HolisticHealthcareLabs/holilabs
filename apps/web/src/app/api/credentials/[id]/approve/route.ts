@@ -1,19 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { VerificationStatus } from '@prisma/client';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 /**
  * POST /api/credentials/[id]/approve
  * Admin endpoint to approve or reject a credential
  */
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
-    const { id } = params;
+    const { id } = context.params ?? {};
     const body = await request.json();
-    const { action, adminId, adminNotes } = body;
+    const { action, adminNotes } = body;
+    const adminId = context.user?.id;
 
     // Validate action
     if (!action || !['approve', 'reject'].includes(action)) {
@@ -23,23 +23,10 @@ export async function POST(
       );
     }
 
-    // Validate admin
     if (!adminId) {
       return NextResponse.json(
-        { error: 'adminId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check if admin exists and has ADMIN role
-    const admin = await prisma.user.findUnique({
-      where: { id: adminId },
-    });
-
-    if (!admin || admin.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Admin role required.' },
-        { status: 403 }
+        { error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -102,4 +89,6 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);

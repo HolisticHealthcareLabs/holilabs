@@ -10,8 +10,10 @@ import { cookies } from 'next/headers';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
 import { getPatientSession } from '@/lib/auth/patient-session';
+import { createPublicRoute } from '@/lib/api/middleware';
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Get current session before clearing it (for audit log)
     const session = await getPatientSession();
@@ -60,4 +62,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 15 * 60 * 1000, maxRequests: 10 } }
+);

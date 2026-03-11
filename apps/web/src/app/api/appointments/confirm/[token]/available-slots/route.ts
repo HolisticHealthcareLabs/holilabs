@@ -4,15 +4,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { getAppointmentByToken, getAvailableSlots } from '@/lib/appointments/confirmation';
 import { addDays } from 'date-fns';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
 
-export async function GET(
+export const GET = createPublicRoute(async (
   request: NextRequest,
   { params }: { params: { token: string } }
-) {
+) => {
   try {
     const { token } = params;
 
@@ -90,4 +91,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

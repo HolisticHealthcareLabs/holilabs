@@ -18,6 +18,7 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { getPreventionNotificationService } from '@/lib/services/prevention-notification.service';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ interface ScreeningWithPatient {
  * POST /api/prevention/notifications/cron/send-reminders
  * Process and send scheduled screening reminders
  */
-export async function POST(request: NextRequest) {
+async function postSendReminders(request: NextRequest) {
   const start = performance.now();
 
   try {
@@ -349,3 +350,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = createPublicRoute(postSendReminders);

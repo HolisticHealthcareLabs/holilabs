@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ function pick(assets: any[], pred: (name: string) => boolean) {
   return typeof a?.browser_download_url === 'string' ? a.browser_download_url : undefined;
 }
 
-export async function GET() {
+export const GET = createPublicRoute(async () => {
   // Public repo access (no auth). If you want higher rate limits, set GITHUB_TOKEN server-side.
   const owner = process.env.SIDECAR_RELEASE_OWNER || 'holilabs';
   const repo = process.env.SIDECAR_RELEASE_REPO || 'holilabsv2';
@@ -82,5 +83,5 @@ export async function GET() {
   } catch {
     return NextResponse.json({ assets: {} satisfies SidecarDownloadInfo['assets'] }, { status: 200 });
   }
-}
+});
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -41,7 +42,12 @@ function normalizeRole(role?: string): string {
   return map[role ?? ''] ?? 'CLINICIAN';
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export const POST = createPublicRoute(async (request: NextRequest): Promise<NextResponse> => {
+  // Gate behind non-production for security
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Demo provision is disabled in production' }, { status: 404 });
+  }
+
   let body: { role?: string; disciplines?: string[]; jurisdiction?: string } = {};
   try {
     body = await request.json();
@@ -191,4 +197,4 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+});

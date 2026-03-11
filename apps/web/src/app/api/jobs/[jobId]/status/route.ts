@@ -16,6 +16,7 @@ import {
 import { QueueName } from '@/lib/queue/config';
 import logger from '@/lib/logger';
 import type { JobStatusResponse } from '@/lib/queue/types';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,13 +33,10 @@ const queueGetters = {
  * Retrieves the current status of an async job.
  * Searches across all CDSS queues to find the job.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
-  try {
-    const { jobId } = params;
-
+export const GET = createPublicRoute(
+  async (request: NextRequest, context: any) => {
+    const { jobId } = context.params ?? { jobId: '' };
+    try {
     if (!jobId) {
       return NextResponse.json(
         {
@@ -105,7 +103,7 @@ export async function GET(
   } catch (error) {
     logger.error({
       event: 'job_status_error',
-      jobId: params.jobId,
+      jobId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
@@ -117,4 +115,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

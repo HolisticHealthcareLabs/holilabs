@@ -6,40 +6,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { getUnreadCount } from '@/lib/notifications';
 import logger from '@/lib/logger';
 import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
-export async function GET(request: NextRequest) {
-  try {
-    // Check if it's a clinician or patient request
-    const clinicianSession = await auth();
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const userId = context.user?.id;
+      const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
-    if (clinicianSession?.user?.id) {
       // Demo mode (DB-FREE)
-      if (isDemoClinician(clinicianSession.user.id, clinicianSession.user.email ?? null)) {
+      if (userType === 'CLINICIAN' && userId && isDemoClinician(userId, context.user?.email ?? null)) {
         const count = getSyntheticNotifications().filter((n) => !n.isRead).length;
         return NextResponse.json({ success: true, data: { count } }, { status: 200 });
       }
 
-      // Clinician unread count
-      const count = await getUnreadCount(clinicianSession.user.id, 'CLINICIAN');
-
-      return NextResponse.json(
-        {
-          success: true,
-          data: { count },
-        },
-        { status: 200 }
-      );
-    }
-
-    // Try patient session
-    try {
-      const patientSession = await requirePatientSession();
-      const count = await getUnreadCount(patientSession.patientId, 'PATIENT');
+      const count = await getUnreadCount(userId!, userType);
 
       return NextResponse.json(
         {
@@ -49,27 +33,19 @@ export async function GET(request: NextRequest) {
         { status: 200 }
       );
     } catch (error) {
-      // Not a patient either
+      logger.error({
+        event: 'unread_count_fetch_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
+          error: 'Error al cargar conteo de notificaciones.',
         },
-        { status: 401 }
+        { status: 500 }
       );
     }
-  } catch (error) {
-    logger.error({
-      event: 'unread_count_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar conteo de notificaciones.',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'PATIENT'], skipCsrf: true }
+);

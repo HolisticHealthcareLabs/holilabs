@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { triggerImmediateCorrectionAggregation } from '@/lib/queue/scheduler';
 import { getCorrectionAggregationQueue } from '@/lib/queue/queues';
 import logger from '@/lib/logger';
@@ -21,10 +22,8 @@ const TriggerJobSchema = z.object({
   endDate: z.string().datetime().optional(),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(async (request: NextRequest) => {
   try {
-    // TODO: Add admin authentication middleware
-    // const session = await requireAdminSession();
 
     const body = await request.json();
     const validation = TriggerJobSchema.safeParse(body);
@@ -91,13 +90,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['ADMIN'] });
 
-export async function GET(request: NextRequest) {
+export const GET = createProtectedRoute(async () => {
   try {
-    // TODO: Add admin authentication middleware
-    // const session = await requireAdminSession();
-
     const queue = getCorrectionAggregationQueue();
 
     // Get job counts
@@ -174,4 +170,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['ADMIN'] });

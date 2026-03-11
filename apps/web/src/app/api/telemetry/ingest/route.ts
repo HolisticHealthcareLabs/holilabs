@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
 import { requireSecret } from '@/lib/security/require-secret';
 import logger from '@/lib/logger';
 
 const EDGE_SECRET = requireSecret('EDGE_SECRET');
 
-export async function POST(req: NextRequest) {
+export const POST = createPublicRoute(async (req: NextRequest) => {
     try {
         const signature = req.headers.get('X-Signature');
         const nodeId = req.headers.get('X-Node-ID');
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
         logger.error('[Telemetry] Ingest error', { error });
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
-}
+});
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
     const hmac = crypto.createHmac('sha256', secret);

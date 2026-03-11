@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { RulesManifest } from '@/lib/governance/rules-manifest';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import {
   getActiveContentBundle,
   getActiveSignoffRecord,
@@ -58,7 +59,7 @@ const metricDefinitions: Record<MetricKey, MetricDefinition> = {
   },
 };
 
-function readFilters(request: Request): ConsoleFilters {
+function readFilters(request: NextRequest): ConsoleFilters {
   const { searchParams } = new URL(request.url);
   return {
     country: searchParams.get('country') ?? 'all',
@@ -68,7 +69,8 @@ function readFilters(request: Request): ConsoleFilters {
   };
 }
 
-export async function GET(request: Request) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   const version = RulesManifest.getActiveManifest();
   const filters = readFilters(request);
 
@@ -102,4 +104,6 @@ export async function GET(request: Request) {
       notes: signoffRecord.notes ?? null,
     },
   });
-}
+  },
+  { roles: ['ADMIN'] }
+);

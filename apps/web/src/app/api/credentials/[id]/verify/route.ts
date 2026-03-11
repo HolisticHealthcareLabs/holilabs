@@ -1,19 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { VerificationMethod, VerificationResult, VerificationStatus } from '@prisma/client';
 import { verifyNPI } from '@/lib/nppes/npi-verification';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 /**
  * POST /api/credentials/[id]/verify
  * Initiate verification for a credential
  * Supports multiple verification methods
  */
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
-    const { id } = params;
+    const { id } = context.params ?? {};
     const body = await request.json();
     const { verificationMethod, autoVerify = true } = body;
 
@@ -108,7 +107,9 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);
 
 /**
  * Determine appropriate verification method based on credential type

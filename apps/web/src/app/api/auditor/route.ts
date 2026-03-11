@@ -2,32 +2,37 @@
  * Revenue Gap Auditor API
  *
  * Endpoints:
- * - GET /api/auditor/summary - Get revenue gap summary
- * - GET /api/auditor/patient/:id - Get gaps for a specific patient
- * - POST /api/auditor/scan - Trigger a scan for a patient
+ * - GET /api/auditor - Get revenue gap summary
+ * - POST /api/auditor - Trigger a scan for a patient
  *
  * @module api/auditor
  */
 
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
+import { auditorService } from '@/services/auditor/auditor.service';
+import logger from '@/lib/logger';
+
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auditorService } from '@/services/auditor/auditor.service';
-import type { RevenueGapSummary } from '@/services/auditor/types';
-import logger from '@/lib/logger';
+function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(cents / 100);
+}
 
 /**
  * GET /api/auditor - Get revenue gap summary
  */
-export async function GET(request: NextRequest) {
-  try {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const { searchParams } = new URL(request.url);
     const clinicId = searchParams.get('clinicId') || undefined;
     const patientId = searchParams.get('patientId');
     const lookbackHours = parseInt(searchParams.get('lookbackHours') || '24', 10);
 
     if (patientId) {
-      // Get gaps for specific patient
       const gaps = await auditorService.findRevenueGaps(patientId, { lookbackHours });
 
       return NextResponse.json({
@@ -44,7 +49,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get summary for clinic
     const summary = await auditorService.getSummary(clinicId, { lookbackHours });
 
     return NextResponse.json({
@@ -70,27 +74,15 @@ export async function GET(request: NextRequest) {
         })),
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'auditor_api_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to get revenue gap data',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['ADMIN'] }
+);
 
 /**
  * POST /api/auditor - Trigger a scan for a patient
  */
-export async function POST(request: NextRequest) {
-  try {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const body = await request.json();
     const { patientId, lookbackHours = 24 } = body;
 
@@ -104,10 +96,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Scan recent notes
     const scanResults = await auditorService.scanRecentNotes(patientId, { lookbackHours });
-
-    // Find revenue gaps
     const gaps = await auditorService.findRevenueGaps(patientId, { lookbackHours });
 
     logger.info({
@@ -154,28 +143,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'auditor_scan_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to scan patient notes',
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Format currency in BRL
- */
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(cents / 100);
-}
+  },
+  { roles: ['ADMIN'] }
+);

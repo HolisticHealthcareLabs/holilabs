@@ -10,11 +10,12 @@
  *   curl https://your-app.ondigitalocean.app/api/monitoring-status
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import logger from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
-export async function GET() {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const checks = {
       posthog: {
@@ -179,4 +180,6 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);

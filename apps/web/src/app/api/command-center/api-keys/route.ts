@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute, type ApiContext } from '@/lib/api/middleware';
 import { _prisma } from '@/lib/prisma';
 import { requireWorkspaceAdmin } from '@/lib/workspace';
 
@@ -14,9 +14,8 @@ function sha256Hex(input: string) {
  * GET: list active keys (no plaintext)
  * POST: create a new key (returns plaintext token once)
  */
-export async function GET() {
-  const session = await auth();
-  const userId = session?.user?.id;
+export const GET = createProtectedRoute(async (_request, context: ApiContext) => {
+  const userId = context.user?.id;
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!_prisma) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 });
 
@@ -34,11 +33,10 @@ export async function GET() {
   });
 
   return NextResponse.json({ success: true, data: keys }, { status: 200 });
-}
+});
 
-export async function POST(request: NextRequest) {
-  const session = await auth();
-  const userId = session?.user?.id;
+export const POST = createProtectedRoute(async (request: NextRequest, context: ApiContext) => {
+  const userId = context.user?.id;
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!_prisma) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 });
 
@@ -74,5 +72,5 @@ export async function POST(request: NextRequest) {
     },
     { status: 201 }
   );
-}
+});
 

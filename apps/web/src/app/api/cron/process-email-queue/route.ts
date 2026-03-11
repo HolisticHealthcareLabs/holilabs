@@ -26,6 +26,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processEmailQueue } from '@/lib/email/email-service';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max execution time
@@ -61,7 +62,7 @@ function isValidCronIP(ip: string | null): boolean {
   return false;
 }
 
-export async function POST(request: NextRequest) {
+async function postProcessEmailQueue(request: NextRequest) {
   const startTime = Date.now();
   let retryCount = 0;
   const maxRetries = 3;
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET method only allowed for testing in development
-export async function GET(request: NextRequest) {
+async function getProcessEmailQueue(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
     logger.warn({
       event: 'cron_invalid_method',
@@ -205,5 +206,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return POST(request);
+  return postProcessEmailQueue(request);
 }
+
+export const POST = createPublicRoute(postProcessEmailQueue);
+export const GET = createPublicRoute(getProcessEmailQueue);

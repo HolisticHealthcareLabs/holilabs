@@ -8,8 +8,11 @@
 
 import { NextResponse } from 'next/server';
 import { getHealthMetrics } from '@/lib/integrations/monitoring';
+import { createPublicRoute } from '@/lib/api/middleware';
 
-export async function GET() {
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
+
+async function getRxnavHealth() {
   try {
     const metrics = getHealthMetrics();
 
@@ -31,3 +34,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = createPublicRoute(getRxnavHealth, { rateLimit: RATE_LIMIT });

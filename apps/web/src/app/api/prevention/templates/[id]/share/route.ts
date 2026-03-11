@@ -11,8 +11,9 @@
  * Removes sharing access for a user
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import {
@@ -20,32 +21,21 @@ import {
 } from '@/lib/socket-server';
 import { SocketEvent, NotificationPriority } from '@/lib/socket/events';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 /**
  * GET - Retrieve list of users template is shared with
  */
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
-
-    // Verify template exists and user is the owner
     const template = await prisma.preventionPlanTemplate.findUnique({
       where: { id: templateId },
       select: { id: true, templateName: true, createdBy: true },
@@ -58,14 +48,13 @@ export async function GET(
       );
     }
 
-    if (template.createdBy !== session.user.id) {
+    if (template.createdBy !== userId) {
       return NextResponse.json(
         { success: false, error: 'Only template owner can view sharing list' },
         { status: 403 }
       );
     }
 
-    // Fetch shares
     const shares = await prisma.preventionTemplateShare.findMany({
       where: { templateId },
       include: {
@@ -93,7 +82,7 @@ export async function GET(
 
     logger.info({
       event: 'template_shares_retrieved',
-      userId: session.user.id,
+      userId,
       templateId,
       shareCount: shares.length,
     });
@@ -114,45 +103,27 @@ export async function GET(
         })),
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'get_template_shares_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve shares',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);
 
 /**
  * POST - Share template with a user
  */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
     const body = await request.json();
-    const { userId, permission = 'VIEW', message, expiresAt } = body;
+    const { userId: targetUserId, permission = 'VIEW', message, expiresAt } = body;
 
-    // Validation
-    if (!userId || typeof userId !== 'string') {
+    if (!targetUserId || typeof targetUserId !== 'string') {
       return NextResponse.json(
         { success: false, error: 'userId is required' },
         { status: 400 }
@@ -166,14 +137,13 @@ export async function POST(
       );
     }
 
-    if (userId === session.user.id) {
+    if (targetUserId === userId) {
       return NextResponse.json(
         { success: false, error: 'Cannot share template with yourself' },
         { status: 400 }
       );
     }
 
-    // Verify template exists and user is the owner or has ADMIN permission
     const template = await prisma.preventionPlanTemplate.findUnique({
       where: { id: templateId },
       select: { id: true, templateName: true, createdBy: true },
@@ -186,11 +156,11 @@ export async function POST(
       );
     }
 
-    const isOwner = template.createdBy === session.user.id;
+    const isOwner = template.createdBy === userId;
     const hasAdminAccess = await prisma.preventionTemplateShare.findFirst({
       where: {
         templateId,
-        sharedWith: session.user.id,
+        sharedWith: userId,
         permission: 'ADMIN',
       },
     });
@@ -202,9 +172,8 @@ export async function POST(
       );
     }
 
-    // Verify target user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: targetUserId },
       select: { id: true, firstName: true, lastName: true, email: true },
     });
 
@@ -215,18 +184,22 @@ export async function POST(
       );
     }
 
-    // Create or update share
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true },
+    });
+
     const share = await prisma.preventionTemplateShare.upsert({
       where: {
         templateId_sharedWith: {
           templateId,
-          sharedWith: userId,
+          sharedWith: targetUserId,
         },
       },
       create: {
         templateId,
-        sharedBy: session.user.id,
-        sharedWith: userId,
+        sharedBy: userId!,
+        sharedWith: targetUserId,
         permission,
         message,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
@@ -248,14 +221,13 @@ export async function POST(
       },
     });
 
-    // Create audit log
     const ipAddress = request.headers.get('x-forwarded-for') ||
                       request.headers.get('x-real-ip') ||
                       'unknown';
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: userId!,
         action: 'CREATE',
         resource: 'prevention_template',
         resourceId: templateId,
@@ -266,30 +238,33 @@ export async function POST(
 
     logger.info({
       event: 'template_shared',
-      userId: session.user.id,
+      userId,
       templateId,
-      sharedWith: userId,
+      sharedWith: targetUserId,
       permission,
     });
 
-    // Emit real-time notification to the user receiving the share
+    const sharerName = currentUser
+      ? `${currentUser.firstName} ${currentUser.lastName}`.trim() || context.user?.email
+      : context.user?.email || 'Usuario';
+
     const notification = {
       id: crypto.randomUUID(),
       event: SocketEvent.TEMPLATE_SHARED,
       title: 'Plantilla Compartida',
-      message: `${session.user.firstName} ${session.user.lastName} compartió "${template.templateName}" contigo`,
+      message: `${sharerName} compartió "${template.templateName}" contigo`,
       priority: NotificationPriority.MEDIUM,
       data: {
         templateId,
         shareId: share.id,
         permission,
-        sharedBy: session.user.id,
+        sharedBy: userId,
         timestamp: new Date(),
       },
       timestamp: new Date(),
     };
 
-    emitPreventionEventToUser(userId, SocketEvent.TEMPLATE_SHARED, notification);
+    emitPreventionEventToUser(targetUserId, SocketEvent.TEMPLATE_SHARED, notification);
 
     return NextResponse.json({
       success: true,
@@ -304,51 +279,33 @@ export async function POST(
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'share_template_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to share template',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);
 
 /**
  * DELETE - Remove sharing access
  */
-export async function DELETE(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const unshareUserId = searchParams.get('userId');
 
-    if (!userId) {
+    if (!unshareUserId) {
       return NextResponse.json(
         { success: false, error: 'userId query parameter is required' },
         { status: 400 }
       );
     }
 
-    // Verify template exists and user has permission
     const template = await prisma.preventionPlanTemplate.findUnique({
       where: { id: templateId },
       select: { id: true, templateName: true, createdBy: true },
@@ -361,27 +318,26 @@ export async function DELETE(
       );
     }
 
-    const isOwner = template.createdBy === session.user.id;
+    const isOwner = template.createdBy === userId;
     const hasAdminAccess = await prisma.preventionTemplateShare.findFirst({
       where: {
         templateId,
-        sharedWith: session.user.id,
+        sharedWith: userId,
         permission: 'ADMIN',
       },
     });
 
-    if (!isOwner && !hasAdminAccess && session.user.id !== userId) {
+    if (!isOwner && !hasAdminAccess && userId !== unshareUserId) {
       return NextResponse.json(
         { success: false, error: 'Permission denied' },
         { status: 403 }
       );
     }
 
-    // Delete share
     const deletedShare = await prisma.preventionTemplateShare.deleteMany({
       where: {
         templateId,
-        sharedWith: userId,
+        sharedWith: unshareUserId,
       },
     });
 
@@ -392,14 +348,13 @@ export async function DELETE(
       );
     }
 
-    // Create audit log
     const ipAddress = request.headers.get('x-forwarded-for') ||
                       request.headers.get('x-real-ip') ||
                       'unknown';
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: userId!,
         action: 'DELETE',
         resource: 'prevention_template',
         resourceId: templateId,
@@ -410,9 +365,9 @@ export async function DELETE(
 
     logger.info({
       event: 'template_unshared',
-      userId: session.user.id,
+      userId,
       templateId,
-      unsharedWith: userId,
+      unsharedWith: unshareUserId,
     });
 
     return NextResponse.json({
@@ -421,18 +376,6 @@ export async function DELETE(
         deleted: deletedShare.count,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'unshare_template_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to remove sharing access',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

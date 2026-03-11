@@ -5,8 +5,9 @@
  * Reverts a template to a specific version
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import {
@@ -14,34 +15,24 @@ import {
 } from '@/lib/socket-server';
 import { SocketEvent, NotificationPriority } from '@/lib/socket/events';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 /**
  * POST - Revert template to a specific version
  */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
     const body = await request.json();
     const { versionId, createSnapshot = true } = body;
 
-    // Validation
     if (!versionId || typeof versionId !== 'string') {
       return NextResponse.json(
         { success: false, error: 'versionId is required' },
@@ -49,9 +40,7 @@ export async function POST(
       );
     }
 
-    // Use transaction for atomicity
     const result = await prisma.$transaction(async (tx) => {
-      // Get the version to revert to
       const targetVersion = await tx.preventionPlanTemplateVersion.findUnique({
         where: { id: versionId },
       });
@@ -64,7 +53,6 @@ export async function POST(
         throw new Error('Version does not belong to this template');
       }
 
-      // Get current template state
       const currentTemplate = await tx.preventionPlanTemplate.findUnique({
         where: { id: templateId },
       });
@@ -73,7 +61,6 @@ export async function POST(
         throw new Error('Template not found');
       }
 
-      // Optionally create a snapshot of current state before reverting
       let preRevertSnapshot = null;
       if (createSnapshot) {
         const latestVersion = await tx.preventionPlanTemplateVersion.findFirst({
@@ -108,15 +95,13 @@ export async function POST(
             versionLabel: `Pre-revert snapshot (v${nextVersionNumber})`,
             templateData: currentTemplateData,
             changeLog: `Automatic snapshot before reverting to version ${targetVersion.versionNumber}`,
-            createdBy: session.user.id,
+            createdBy: userId!,
           },
         });
       }
 
-      // Extract data from target version
       const versionData = targetVersion.templateData as any;
 
-      // Update template with version data
       const updatedTemplate = await tx.preventionPlanTemplate.update({
         where: { id: templateId },
         data: {
@@ -129,19 +114,17 @@ export async function POST(
           goals: versionData.goals,
           recommendations: versionData.recommendations,
           isActive: versionData.isActive,
-          // Note: useCount is not reverted
           updatedAt: new Date(),
         },
       });
 
-      // Create audit log
       const ipAddress = request.headers.get('x-forwarded-for') ||
                         request.headers.get('x-real-ip') ||
                         'unknown';
 
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: userId!,
           action: 'ROLLBACK',
           resource: 'prevention_template',
           resourceId: templateId,
@@ -159,14 +142,13 @@ export async function POST(
 
     logger.info({
       event: 'template_reverted',
-      userId: session.user.id,
+      userId,
       templateId,
       versionId,
       targetVersionNumber: result.targetVersion.versionNumber,
       snapshotCreated: !!result.preRevertSnapshot,
     });
 
-    // Emit real-time notification
     const notification = {
       id: crypto.randomUUID(),
       event: SocketEvent.TEMPLATE_UPDATED,
@@ -177,7 +159,7 @@ export async function POST(
         templateId,
         versionId,
         versionNumber: result.targetVersion.versionNumber,
-        userId: session.user.id,
+        userId,
         timestamp: new Date(),
       },
       timestamp: new Date(),
@@ -204,18 +186,6 @@ export async function POST(
         } : null,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'revert_template_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to revert template',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

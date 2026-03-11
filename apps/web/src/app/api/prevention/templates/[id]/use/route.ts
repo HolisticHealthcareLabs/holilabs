@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -15,24 +14,19 @@ export const dynamic = 'force-dynamic';
  * POST /api/prevention/templates/[id]/use
  * Create a new prevention plan from a template
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ error: 'Template ID required' }, { status: 400 });
     }
 
     const body = await request.json();
     const { patientId, planName, customizations } = body;
 
-    // Validate required fields
     if (!patientId) {
       return NextResponse.json(
         { error: 'Patient ID is required' },
@@ -40,9 +34,8 @@ export async function POST(
       );
     }
 
-    // Get template
     const template = await prisma.preventionPlanTemplate.findUnique({
-      where: { id: params.id },
+      where: { id: templateId },
     });
 
     if (!template) {
@@ -59,7 +52,6 @@ export async function POST(
       );
     }
 
-    // Create plan from template
     const newPlan = await prisma.preventionPlan.create({
       data: {
         patientId,
@@ -75,7 +67,7 @@ export async function POST(
         statusChanges: [
           {
             timestamp: new Date().toISOString(),
-            userId: session.user.id,
+            userId: userId!,
             fromStatus: null,
             toStatus: 'ACTIVE',
             reason: 'created_from_template',
@@ -85,9 +77,8 @@ export async function POST(
       },
     });
 
-    // Increment template use count
     await prisma.preventionPlanTemplate.update({
-      where: { id: params.id },
+      where: { id: templateId },
       data: {
         useCount: {
           increment: 1,
@@ -105,15 +96,6 @@ export async function POST(
         templateName: template.templateName,
       },
     });
-  } catch (error) {
-    console.error('Error creating plan from template:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Failed to create plan from template',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

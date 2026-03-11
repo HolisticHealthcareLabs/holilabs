@@ -5,8 +5,9 @@
  * Soft deletes multiple templates in a single transaction
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import {
@@ -14,21 +15,15 @@ import {
 } from '@/lib/socket-server';
 import { SocketEvent, NotificationPriority } from '@/lib/socket/events';
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user?.id;
 
     const body = await request.json();
     const { templateIds } = body;
 
-    // Validation
     if (!Array.isArray(templateIds) || templateIds.length === 0) {
       return NextResponse.json(
         { success: false, error: 'templateIds array is required and must not be empty' },
@@ -43,28 +38,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use Prisma transaction for atomicity
     const result = await prisma.$transaction(async (tx) => {
-      // Get template names before deletion for audit log
       const templates = await tx.preventionPlanTemplate.findMany({
         where: { id: { in: templateIds } },
         select: { id: true, templateName: true },
       });
 
-      // Delete all templates (hard delete for now, can change to soft delete)
       const deleted = await tx.preventionPlanTemplate.deleteMany({
         where: {
           id: { in: templateIds },
         },
       });
 
-      // Create audit logs
       const ipAddress = request.headers.get('x-forwarded-for') ||
                         request.headers.get('x-real-ip') ||
                         'unknown';
 
       const auditLogs = templates.map((template) => ({
-        userId: session.user.id,
+        userId: userId!,
         action: 'DELETE' as const,
         resource: 'prevention_template' as const,
         resourceId: template.id,
@@ -81,11 +72,10 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'bulk_templates_deleted',
-      userId: session.user.id,
+      userId,
       count: result.deleted,
     });
 
-    // Emit real-time notification
     const notification = {
       id: crypto.randomUUID(),
       event: SocketEvent.BULK_OPERATION_COMPLETED,
@@ -95,7 +85,7 @@ export async function POST(request: NextRequest) {
       data: {
         operation: 'delete',
         count: result.deleted,
-        userId: session.user.id,
+        userId,
         timestamp: new Date(),
       },
       timestamp: new Date(),
@@ -110,18 +100,6 @@ export async function POST(request: NextRequest) {
         templates: result.templates,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'bulk_delete_templates_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete templates',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -17,7 +17,6 @@ import { getPreventionNotificationService } from '@/lib/services/prevention-noti
 
 export const dynamic = 'force-dynamic';
 
-// Default preferences structure
 const DEFAULT_PREVENTION_PREFERENCES = {
   conditionDetected: {
     enabled: true,
@@ -26,7 +25,7 @@ const DEFAULT_PREVENTION_PREFERENCES = {
   screeningReminder: {
     enabled: true,
     channels: { in_app: true, push: true, email: true, sms: true },
-    reminderDays: [7, 3, 1], // Days before screening to send reminders
+    reminderDays: [7, 3, 1],
   },
   screeningOverdue: {
     enabled: true,
@@ -42,7 +41,6 @@ const DEFAULT_PREVENTION_PREFERENCES = {
   },
 };
 
-// Preference schema
 const PreferencesSchema = z.object({
   conditionDetected: z
     .object({
@@ -113,228 +111,13 @@ const PreferencesSchema = z.object({
   quietHours: z
     .object({
       enabled: z.boolean().optional(),
-      start: z.string().optional(), // "22:00"
-      end: z.string().optional(), // "07:00"
+      start: z.string().optional(),
+      end: z.string().optional(),
       timezone: z.string().optional(),
     })
     .optional(),
 });
 
-/**
- * GET /api/prevention/notifications/preferences
- * Get current user's notification preferences
- */
-export async function GET(request: NextRequest) {
-  const start = performance.now();
-
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    // Try to get clinician preferences first, then patient preferences
-    let preferences: Record<string, unknown> = {};
-    let preferencesSource: 'clinician' | 'patient' | 'default' = 'default';
-
-    // Check clinician preferences
-    const clinicianPrefs = await prisma.clinicianPreferences.findUnique({
-      where: { clinicianId: session.user.id },
-    });
-
-    if (clinicianPrefs) {
-      // Map individual boolean fields to preferences object
-      preferences = {
-        email: clinicianPrefs.emailEnabled,
-        sms: clinicianPrefs.smsEnabled,
-        push: clinicianPrefs.pushEnabled,
-        whatsapp: clinicianPrefs.whatsappEnabled,
-      };
-      preferencesSource = 'clinician';
-    }
-    // If no clinician preferences, defaults will be used (preferencesSource = 'default')
-
-    // Merge with defaults
-    const mergedPreferences = deepMerge(DEFAULT_PREVENTION_PREFERENCES, preferences);
-
-    const elapsed = performance.now() - start;
-
-    logger.info({
-      event: 'notification_preferences_fetched',
-      userId: session.user.id,
-      source: preferencesSource,
-      latencyMs: elapsed.toFixed(2),
-    });
-
-    // HIPAA Audit
-    await auditView('NotificationPreferences', session.user.id, request, {
-      source: preferencesSource,
-      action: 'preferences_viewed',
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        preferences: mergedPreferences,
-        source: preferencesSource,
-      },
-      meta: {
-        latencyMs: Math.round(elapsed),
-      },
-    });
-  } catch (error) {
-    logger.error({
-      event: 'preferences_fetch_error',
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return NextResponse.json(
-      { error: 'Failed to fetch preferences' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PATCH /api/prevention/notifications/preferences
- * Update notification preferences
- */
-export async function PATCH(request: NextRequest) {
-  const start = performance.now();
-
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const validation = PreferencesSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Invalid preferences data', details: validation.error.errors },
-        { status: 400 }
-      );
-    }
-
-    const newPreferences = validation.data;
-
-    // Map incoming preferences to individual boolean fields
-    const updateData: Record<string, boolean | string | null> = {};
-
-    // Map channel preferences to individual fields
-    if (newPreferences.conditionDetected?.channels) {
-      if (newPreferences.conditionDetected.channels.email !== undefined) {
-        updateData.emailEnabled = newPreferences.conditionDetected.channels.email;
-      }
-      if (newPreferences.conditionDetected.channels.sms !== undefined) {
-        updateData.smsEnabled = newPreferences.conditionDetected.channels.sms;
-      }
-      if (newPreferences.conditionDetected.channels.push !== undefined) {
-        updateData.pushEnabled = newPreferences.conditionDetected.channels.push;
-      }
-    }
-
-    // Apply screeningReminder channel preferences (more granular)
-    if (newPreferences.screeningReminder?.channels) {
-      if (newPreferences.screeningReminder.channels.email !== undefined) {
-        updateData.emailEnabled = newPreferences.screeningReminder.channels.email;
-      }
-      if (newPreferences.screeningReminder.channels.sms !== undefined) {
-        updateData.smsEnabled = newPreferences.screeningReminder.channels.sms;
-      }
-      if (newPreferences.screeningReminder.channels.push !== undefined) {
-        updateData.pushEnabled = newPreferences.screeningReminder.channels.push;
-      }
-    }
-
-    // Quiet hours settings
-    if (newPreferences.quietHours) {
-      if (newPreferences.quietHours.enabled !== undefined) {
-        updateData.quietHoursEnabled = newPreferences.quietHours.enabled;
-      }
-      if (newPreferences.quietHours.start !== undefined) {
-        updateData.quietHoursStart = newPreferences.quietHours.start;
-      }
-      if (newPreferences.quietHours.end !== undefined) {
-        updateData.quietHoursEnd = newPreferences.quietHours.end;
-      }
-      if (newPreferences.quietHours.timezone !== undefined) {
-        updateData.timezone = newPreferences.quietHours.timezone;
-      }
-    }
-
-    // Check if clinician preferences exist
-    const clinicianPrefs = await prisma.clinicianPreferences.findUnique({
-      where: { clinicianId: session.user.id },
-    });
-
-    if (clinicianPrefs) {
-      // Update existing clinician preferences
-      await prisma.clinicianPreferences.update({
-        where: { clinicianId: session.user.id },
-        data: updateData,
-      });
-    } else {
-      // Create new clinician preferences
-      await prisma.clinicianPreferences.create({
-        data: {
-          clinicianId: session.user.id,
-          ...updateData,
-        },
-      });
-    }
-
-    // Sync with Novu if configured
-    const notificationService = getPreventionNotificationService();
-    await syncPreferencesWithNovu(notificationService, session.user.id, newPreferences);
-
-    const elapsed = performance.now() - start;
-
-    logger.info({
-      event: 'notification_preferences_updated',
-      userId: session.user.id,
-      latencyMs: elapsed.toFixed(2),
-    });
-
-    // HIPAA Audit
-    await auditUpdate('NotificationPreferences', session.user.id, request, {
-      changes: Object.keys(newPreferences),
-      action: 'preferences_updated',
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Preferences updated successfully',
-      meta: {
-        latencyMs: Math.round(elapsed),
-      },
-    });
-  } catch (error) {
-    logger.error({
-      event: 'preferences_update_error',
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return NextResponse.json(
-      { error: 'Failed to update preferences' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * Deep merge two objects
- */
 function deepMerge(
   target: Record<string, unknown>,
   source: Record<string, unknown>
@@ -359,9 +142,6 @@ function deepMerge(
   return result;
 }
 
-/**
- * Sync preferences with Novu
- */
 async function syncPreferencesWithNovu(
   service: ReturnType<typeof getPreventionNotificationService>,
   userId: string,
@@ -386,7 +166,6 @@ async function syncPreferencesWithNovu(
       }
     }
   } catch (error) {
-    // Log but don't fail - Novu sync is not critical
     logger.warn({
       event: 'novu_sync_warning',
       error: error instanceof Error ? error.message : String(error),
@@ -394,3 +173,165 @@ async function syncPreferencesWithNovu(
     });
   }
 }
+
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
+
+/**
+ * GET /api/prevention/notifications/preferences
+ */
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
+    const userId = context.user?.id;
+
+    let preferences: Record<string, unknown> = {};
+    let preferencesSource: 'clinician' | 'patient' | 'default' = 'default';
+
+    const clinicianPrefs = await prisma.clinicianPreferences.findUnique({
+      where: { clinicianId: userId },
+    });
+
+    if (clinicianPrefs) {
+      preferences = {
+        email: clinicianPrefs.emailEnabled,
+        sms: clinicianPrefs.smsEnabled,
+        push: clinicianPrefs.pushEnabled,
+        whatsapp: clinicianPrefs.whatsappEnabled,
+      };
+      preferencesSource = 'clinician';
+    }
+
+    const mergedPreferences = deepMerge(DEFAULT_PREVENTION_PREFERENCES, preferences);
+
+    const elapsed = performance.now() - start;
+
+    logger.info({
+      event: 'notification_preferences_fetched',
+      userId,
+      source: preferencesSource,
+      latencyMs: elapsed.toFixed(2),
+    });
+
+    await auditView('NotificationPreferences', userId!, request, {
+      source: preferencesSource,
+      action: 'preferences_viewed',
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        preferences: mergedPreferences,
+        source: preferencesSource,
+      },
+      meta: {
+        latencyMs: Math.round(elapsed),
+      },
+    });
+  },
+  { roles: [...ROLES] }
+);
+
+/**
+ * PATCH /api/prevention/notifications/preferences
+ */
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
+    const userId = context.user?.id;
+
+    const body = await request.json();
+    const validation = PreferencesSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid preferences data', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const newPreferences = validation.data;
+    const updateData: Record<string, boolean | string | null> = {};
+
+    if (newPreferences.conditionDetected?.channels) {
+      if (newPreferences.conditionDetected.channels.email !== undefined) {
+        updateData.emailEnabled = newPreferences.conditionDetected.channels.email;
+      }
+      if (newPreferences.conditionDetected.channels.sms !== undefined) {
+        updateData.smsEnabled = newPreferences.conditionDetected.channels.sms;
+      }
+      if (newPreferences.conditionDetected.channels.push !== undefined) {
+        updateData.pushEnabled = newPreferences.conditionDetected.channels.push;
+      }
+    }
+
+    if (newPreferences.screeningReminder?.channels) {
+      if (newPreferences.screeningReminder.channels.email !== undefined) {
+        updateData.emailEnabled = newPreferences.screeningReminder.channels.email;
+      }
+      if (newPreferences.screeningReminder.channels.sms !== undefined) {
+        updateData.smsEnabled = newPreferences.screeningReminder.channels.sms;
+      }
+      if (newPreferences.screeningReminder.channels.push !== undefined) {
+        updateData.pushEnabled = newPreferences.screeningReminder.channels.push;
+      }
+    }
+
+    if (newPreferences.quietHours) {
+      if (newPreferences.quietHours.enabled !== undefined) {
+        updateData.quietHoursEnabled = newPreferences.quietHours.enabled;
+      }
+      if (newPreferences.quietHours.start !== undefined) {
+        updateData.quietHoursStart = newPreferences.quietHours.start;
+      }
+      if (newPreferences.quietHours.end !== undefined) {
+        updateData.quietHoursEnd = newPreferences.quietHours.end;
+      }
+      if (newPreferences.quietHours.timezone !== undefined) {
+        updateData.timezone = newPreferences.quietHours.timezone;
+      }
+    }
+
+    const clinicianPrefs = await prisma.clinicianPreferences.findUnique({
+      where: { clinicianId: userId },
+    });
+
+    if (clinicianPrefs) {
+      await prisma.clinicianPreferences.update({
+        where: { clinicianId: userId },
+        data: updateData,
+      });
+    } else {
+      await prisma.clinicianPreferences.create({
+        data: {
+          clinicianId: userId!,
+          ...updateData,
+        },
+      });
+    }
+
+    const notificationService = getPreventionNotificationService();
+    await syncPreferencesWithNovu(notificationService, userId!, newPreferences);
+
+    const elapsed = performance.now() - start;
+
+    logger.info({
+      event: 'notification_preferences_updated',
+      userId,
+      latencyMs: elapsed.toFixed(2),
+    });
+
+    await auditUpdate('NotificationPreferences', userId!, request, {
+      changes: Object.keys(newPreferences),
+      action: 'preferences_updated',
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Preferences updated successfully',
+      meta: {
+        latencyMs: Math.round(elapsed),
+      },
+    });
+  },
+  { roles: [...ROLES] }
+);

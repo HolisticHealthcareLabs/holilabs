@@ -37,6 +37,7 @@ import {
   createLaunchContext,
   encodeSmartSession,
 } from '@/lib/fhir/smart-client';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 // Force dynamic rendering - this endpoint handles OAuth state
 export const dynamic = 'force-dynamic';
@@ -52,7 +53,7 @@ const SMART_SESSION_COOKIE = 'smart_session';
  * Completes SMART on FHIR authorization flow.
  * Called by EHR after user authorizes the app.
  */
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(async (request: NextRequest) => {
   const startTime = Date.now();
 
   try {
@@ -289,4 +290,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

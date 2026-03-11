@@ -9,15 +9,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET = createPublicRoute(
+  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
 
+    const params = await Promise.resolve(context.params ?? {});
     const { id } = params;
 
     if (!id) {
@@ -122,16 +122,17 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PATCH = createPublicRoute(
+  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
 
+    const params = await Promise.resolve(context.params ?? {});
     const { id } = params;
     const body = await request.json();
     const { action } = body;
@@ -300,4 +301,6 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

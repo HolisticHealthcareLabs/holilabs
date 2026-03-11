@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { createAuditLog } from '@/lib/audit';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,8 @@ const SelectProviderSchema = z.object({
   clinicianId: z.string().min(1),
 });
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   const session = await requirePatientSession();
 
   const sp = request.nextUrl.searchParams;
@@ -85,9 +87,12 @@ export async function GET(request: NextRequest) {
     },
     { status: 200 }
   );
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
   const session = await requirePatientSession();
   const body = await request.json().catch(() => ({}));
   const parsed = SelectProviderSchema.safeParse(body);
@@ -133,6 +138,8 @@ export async function POST(request: NextRequest) {
     { success: true, message: 'Clinician selected', clinicianId: clinician.id },
     { status: 200 }
   );
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
 

@@ -6,25 +6,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user?.id;
 
     const body = await request.json();
     const { templateIds, format = 'json' } = body;
 
-    // Validation
     if (!Array.isArray(templateIds) || templateIds.length === 0) {
       return NextResponse.json(
         { success: false, error: 'templateIds array is required and must not be empty' },
@@ -46,7 +40,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch templates
     const templates = await prisma.preventionPlanTemplate.findMany({
       where: {
         id: { in: templateIds },
@@ -70,21 +63,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true, email: true },
+    });
+
     logger.info({
       event: 'bulk_templates_exported',
-      userId: session.user.id,
+      userId,
       count: templates.length,
       format,
     });
 
-    // JSON Export
     if (format === 'json') {
       const exportData = {
         exportDate: new Date().toISOString(),
         exportedBy: {
-          id: session.user.id,
-          name: session.user.name,
-          email: session.user.email,
+          id: currentUser?.id ?? userId,
+          name: currentUser ? `${currentUser.firstName} ${currentUser.lastName}`.trim() : undefined,
+          email: currentUser?.email ?? context.user?.email,
         },
         templateCount: templates.length,
         templates: templates.map((t) => ({
@@ -113,7 +110,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // CSV Export
     if (format === 'csv') {
       const headers = [
         'ID',
@@ -149,7 +145,6 @@ export async function POST(request: NextRequest) {
         t.createdByUser ? `${t.createdByUser.firstName} ${t.createdByUser.lastName}` : '',
       ]);
 
-      // Escape CSV values
       const escapeCsvValue = (value: any): string => {
         if (value === null || value === undefined) return '';
         const str = String(value);
@@ -172,23 +167,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Should never reach here
     return NextResponse.json(
       { success: false, error: 'Invalid format' },
       { status: 400 }
     );
-  } catch (error) {
-    logger.error({
-      event: 'bulk_export_templates_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to export templates',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

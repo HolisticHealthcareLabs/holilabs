@@ -10,13 +10,12 @@ import { PrismaClient } from '@prisma/client';
 import { getCurrentUser } from '@/lib/auth/server';
 import { InvoicePDF, type InvoiceData } from '@/lib/invoices/pdf-generator';
 import { generateCFDIQRCode } from '@/lib/invoices/cfdi-generator';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 const prisma = new PrismaClient();
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET = createPublicRoute(
+  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
   try {
     // Verify authentication
     const user = await getCurrentUser();
@@ -28,6 +27,7 @@ export async function GET(
       );
     }
 
+    const params = await Promise.resolve(context.params ?? {});
     const invoiceId = params.id;
 
     // Fetch invoice with all relations
@@ -127,4 +127,6 @@ export async function GET(
   } finally {
     await prisma.$disconnect();
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

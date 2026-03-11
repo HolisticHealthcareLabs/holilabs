@@ -10,6 +10,10 @@ import { NextRequest } from 'next/server';
 
 let mockCookieSet: jest.Mock;
 
+jest.mock('@/lib/api/middleware', () => ({
+  createPublicRoute: (handler: (req: NextRequest, ctx?: any) => Promise<Response>) => handler,
+}));
+
 jest.mock('@/lib/auth/otp', () => ({
   verifyOTP: jest.fn(),
 }));

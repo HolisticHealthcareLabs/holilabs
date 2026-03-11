@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import logger from '@/lib/logger';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -75,7 +76,8 @@ interface Message {
   content: string;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const body = await request.json();
     const { messages } = body;
@@ -169,4 +171,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

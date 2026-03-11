@@ -7,10 +7,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPatientSession, getCurrentPatient } from '@/lib/auth/patient-session';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Get current session
     const session = await getPatientSession();
@@ -66,4 +68,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

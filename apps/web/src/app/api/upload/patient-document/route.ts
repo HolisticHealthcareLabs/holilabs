@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import {
   encryptFile,
@@ -18,7 +19,6 @@ import {
   isAllowedFileSize,
 } from '@/lib/encryption';
 import { uploadToR2, generateStorageKey } from '@/lib/storage/r2-client';
-import { getServerSession } from '@/lib/auth';
 import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
@@ -26,18 +26,10 @@ export const dynamic = 'force-dynamic';
 // Maximum file size (50MB)
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
-export async function POST(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const formData = await request.formData();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const formData = await request.formData();
 
     const file = formData.get('file') as File;
     const patientId = formData.get('patientId') as string;
@@ -140,7 +132,7 @@ export async function POST(request: NextRequest) {
         documentHash: fileHash,
         storageUrl: storageKey,
         documentType: documentType as any,
-        uploadedBy: session.user.role || 'clinician',
+        uploadedBy: context.user?.role || 'clinician',
       },
     });
 
@@ -186,4 +178,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

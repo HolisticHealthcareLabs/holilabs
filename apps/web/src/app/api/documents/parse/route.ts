@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { createDocumentService } from '@/lib/services/document.service';
 import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
@@ -52,18 +52,10 @@ const ALLOWED_MIME_TYPES = [
  * Upload a document and queue it for sandboxed parsing.
  * Returns job ID for status polling.
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const formData = await request.formData();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const formData = await request.formData();
 
     const file = formData.get('file') as File | null;
     const patientId = formData.get('patientId') as string | null;
@@ -162,7 +154,7 @@ export async function POST(request: NextRequest) {
       mimeType: file.type,
       fileSizeBytes: file.size,
       encounterId: encounterId || undefined,
-      uploadedBy: session.user.id,
+      uploadedBy: context.user?.id ?? '',
     });
 
     // HIPAA Audit Log
@@ -214,4 +206,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

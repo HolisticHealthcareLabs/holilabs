@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as https from 'https';
+import { createPublicRoute } from '@/lib/api/middleware';
+
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
 /**
  * SSL Certificate Health Check
@@ -9,7 +12,7 @@ import * as https from 'https';
  *
  * @returns Certificate information and expiry status
  */
-export async function GET(request: NextRequest) {
+async function getSslHealth(request: NextRequest) {
   const domain = process.env.NEXT_PUBLIC_APP_URL?.replace('https://', '').replace('http://', '') || 'localhost';
 
   // Skip SSL check in development
@@ -88,6 +91,8 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = createPublicRoute(getSslHealth, { rateLimit: RATE_LIMIT });
 
 /**
  * Get certificate information for a domain

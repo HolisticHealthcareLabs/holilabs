@@ -6,26 +6,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
-    const recordingId = params.id;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const recordingId = context.params?.id;
 
     // Get recording session
     const recording = await prisma.scribeSession.findUnique({
@@ -47,7 +35,7 @@ export async function POST(
     }
 
     // Verify ownership
-    if (recording.appointment?.clinician?.id !== (session.user as any).id) {
+    if (recording.appointment?.clinician?.id !== context.user!.id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para detener esta grabación' },
         { status: 403 }
@@ -96,8 +84,8 @@ export async function POST(
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
-        userEmail: session.user.email || '',
+        userId: context.user!.id,
+        userEmail: context.user!.email || '',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'UPDATE',
         resource: 'RecordingSession',
@@ -112,7 +100,7 @@ export async function POST(
 
     logger.info({
       event: 'recording_stopped',
-      userId: (session.user as any).id,
+      userId: context.user!.id,
       recordingId,
       durationSeconds,
     });
@@ -139,4 +127,6 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

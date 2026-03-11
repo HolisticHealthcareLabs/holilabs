@@ -30,6 +30,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendRemindersForTomorrow } from '@/lib/notifications/appointment-reminders';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max execution time
@@ -65,7 +66,7 @@ function isValidCronIP(ip: string | null): boolean {
   return false;
 }
 
-export async function GET(request: NextRequest) {
+async function getSendAppointmentReminders(request: NextRequest) {
   const startTime = Date.now();
   let retryCount = 0;
   const maxRetries = 3;
@@ -197,6 +198,5 @@ export async function GET(request: NextRequest) {
 }
 
 // Allow POST as well for manual triggering
-export async function POST(request: NextRequest) {
-  return GET(request);
-}
+export const GET = createPublicRoute(getSendAppointmentReminders);
+export const POST = createPublicRoute((req) => getSendAppointmentReminders(req));

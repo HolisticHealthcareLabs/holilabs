@@ -9,8 +9,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPatientSession } from '@/lib/auth/patient-session';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     const session = await getPatientSession();
     if (!session) {
@@ -102,4 +104,6 @@ export async function GET(request: NextRequest) {
     logger.error({ error }, 'Error fetching access log');
     return NextResponse.json({ error: 'Failed to fetch access log' }, { status: 500 });
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

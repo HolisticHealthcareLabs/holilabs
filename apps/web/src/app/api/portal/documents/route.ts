@@ -13,6 +13,7 @@ import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 // Query parameters schema
@@ -31,7 +32,8 @@ const CreateDocumentSchema = z.object({
   fileSize: z.number().int().positive('El tamaño del archivo debe ser mayor a 0'),
 });
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
@@ -168,7 +170,9 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
 // TODO: POST handler disabled - needs schema update to match Prisma Document model
 // The current implementation references fields (title, description, fileUrl, etc.) that don't exist in the schema

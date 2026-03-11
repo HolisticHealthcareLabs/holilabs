@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { autoGenerateScreeningReminders } from '@/lib/prevention/screening-triggers';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max execution time
@@ -196,6 +197,5 @@ export async function GET(request: NextRequest) {
  * POST /api/cron/screening-triggers
  * Alternative method for triggering execution (useful for manual testing)
  */
-export async function POST(request: NextRequest) {
-  return GET(request);
-}
+export const GET = createPublicRoute(getScreeningTriggers);
+export const POST = createPublicRoute((req) => getScreeningTriggers(req));

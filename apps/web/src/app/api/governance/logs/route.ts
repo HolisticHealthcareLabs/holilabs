@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,8 @@ export const dynamic = 'force-dynamic';
  * GET /api/governance/logs
  * Returns the last 50 governance logs with events for the Mission Control dashboard
  */
-export async function GET(request: NextRequest) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     try {
         // Check if the GovernanceLog model exists in Prisma schema
         // If not, return mock data for demo purposes
@@ -61,4 +63,6 @@ export async function GET(request: NextRequest) {
             error: 'Failed to fetch governance logs'
         }, { status: 500 });
     }
-}
+  },
+  { roles: ['ADMIN'] }
+);

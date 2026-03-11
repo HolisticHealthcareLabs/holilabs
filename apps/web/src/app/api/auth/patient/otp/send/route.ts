@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { generateOTP } from '@/lib/auth/otp';
 import logger from '@/lib/logger';
@@ -18,7 +19,7 @@ const SendOTPSchema = z.object({
   channel: z.enum(['SMS', 'WHATSAPP']).optional().default('SMS'),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   // Apply rate limiting - 5 requests per 15 minutes for auth endpoints
   const rateLimitResponse = await checkRateLimit(request, 'auth');
   if (rateLimitResponse) {
@@ -95,4 +96,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

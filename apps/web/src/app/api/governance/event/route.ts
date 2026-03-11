@@ -1,5 +1,5 @@
-
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { governance } from '@/lib/governance/governance.service';
 import {
     emitGovernanceLogEvent,
@@ -17,7 +17,8 @@ import type {
     GovernanceOverrideEvent,
 } from '@/lib/socket/events';
 
-export async function POST(req: NextRequest) {
+export const POST = createProtectedRoute(
+    async (req: NextRequest, context: any) => {
     try {
         const body = await req.json() as unknown;
         const validation = validateGovernanceEventRequest(body);
@@ -188,4 +189,6 @@ export async function POST(req: NextRequest) {
         console.error('[Governance] API Error:', error);
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
-}
+    },
+    { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

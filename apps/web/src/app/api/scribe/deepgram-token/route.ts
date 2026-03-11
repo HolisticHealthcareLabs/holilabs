@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { createAuditLog } from '@/lib/audit';
 
 /**
@@ -16,8 +16,8 @@ import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  try {
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
     const allowBrowserToken =
       String(process.env.ALLOW_DEEPGRAM_BROWSER_TOKEN || '').toLowerCase() === 'true';
 
@@ -32,16 +32,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify authentication
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Get Deepgram API key from environment
     const apiKey = process.env.DEEPGRAM_API_KEY;
 
     if (!apiKey) {
@@ -52,7 +42,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // HIPAA Audit Log: Transcription service token accessed
     await createAuditLog({
       action: 'ACCESS',
       resource: 'TranscriptionService',
@@ -68,11 +57,9 @@ export async function GET(request: NextRequest) {
       token: apiKey,
       success: true,
     });
-  } catch (error) {
-    console.error('Error fetching Deepgram token:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);

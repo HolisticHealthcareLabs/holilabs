@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/doctors/search
  * Search for doctors by location, specialty, name, etc.
  */
-export async function GET(request: Request) {
-  try {
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
 
-    // Search parameters
     const query = searchParams.get('q') || '';
     const specialty = searchParams.get('specialty');
     const location = searchParams.get('location');
@@ -18,12 +18,10 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '12');
     const skip = (page - 1) * limit;
 
-    // Build where clause
     const where: any = {
-      role: { in: ['CLINICIAN', 'ADMIN'] }, // Only show providers
+      role: { in: ['CLINICIAN', 'ADMIN'] },
     };
 
-    // Text search (name or email)
     if (query) {
       where.OR = [
         { firstName: { contains: query, mode: 'insensitive' } },
@@ -32,15 +30,10 @@ export async function GET(request: Request) {
       ];
     }
 
-    // Specialty filter
     if (specialty) {
       where.specialty = { contains: specialty, mode: 'insensitive' };
     }
 
-    // Location filter (would need to add location fields to User model)
-    // For now, this is a placeholder
-
-    // Get doctors with credentials
     const [doctors, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -69,7 +62,6 @@ export async function GET(request: Request) {
       prisma.user.count({ where }),
     ]);
 
-    // Calculate verification status for each doctor
     const doctorsWithStats = doctors.map((doctor) => {
       const verifiedCount = doctor.credentials.filter(
         (c) => c.verificationStatus === 'VERIFIED' || c.verificationStatus === 'AUTO_VERIFIED'
@@ -86,7 +78,6 @@ export async function GET(request: Request) {
       };
     });
 
-    // Filter by verified if requested
     const filteredDoctors = verified
       ? doctorsWithStats.filter((d) => d.isVerified)
       : doctorsWithStats;
@@ -101,11 +92,9 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error: any) {
-    console.error('Error searching doctors:', error);
-    return NextResponse.json(
-      { error: 'Failed to search doctors' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
