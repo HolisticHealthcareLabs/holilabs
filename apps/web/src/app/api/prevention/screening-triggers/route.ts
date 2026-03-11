@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import {
   generateDueScreenings,
@@ -26,28 +25,20 @@ const TriggerSchema = z.object({
  * POST /api/prevention/screening-triggers
  * Generate screening reminders for a specific patient
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const body = await request.json();
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
+      // Check for batch generation request
+      if (body.batch === true) {
+        // Admin-only for batch generation
+        const user = await prisma?.user.findUnique({
+          where: { id: context.user?.id ?? '' },
+          select: { role: true },
+        });
 
-    const body = await request.json();
-
-    // Check for batch generation request
-    if (body.batch === true) {
-      // Admin-only for batch generation
-      const user = await prisma?.user.findUnique({
-        where: { id: session.user.id },
-        select: { role: true },
-      });
-
-      if (user?.role !== 'ADMIN') {
+        if (user?.role !== 'ADMIN') {
         return NextResponse.json(
           { error: 'Admin access required for batch generation' },
           { status: 403 }
@@ -84,7 +75,7 @@ export async function POST(request: NextRequest) {
     // Create reminders
     const remindersCreated = await createScreeningReminders(
       patientId,
-      session.user.id
+      context.user?.id ?? ''
     );
 
     return NextResponse.json({
@@ -114,24 +105,18 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/prevention/screening-triggers?patientId=xxx
  * Get due screenings for a patient (without creating reminders)
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
+    try {
+      const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
 
     if (!patientId) {
@@ -172,4 +157,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

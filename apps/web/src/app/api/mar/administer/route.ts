@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { getMinutesLate, getDoseStatus } from '@/lib/mar/schedule-generator';
 import { logAuditEvent } from '@/lib/audit';
@@ -15,17 +14,10 @@ import { safeErrorResponse } from '@/lib/api/safe-error-response';
  */
 
 // POST: Record medication administration
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const body = await request.json();
     const {
       scheduleId,
       medicationId,
@@ -80,7 +72,7 @@ export async function POST(request: NextRequest) {
         doseGiven,
         route,
         site,
-        administeredBy: session.user.id,
+        administeredBy: context.user?.id ?? '',
         witnessedBy,
         barcodeScanned: barcodeScanned || false,
         patientIdVerified: patientIdVerified || false,
@@ -127,8 +119,8 @@ export async function POST(request: NextRequest) {
         },
       },
       request,
-      session.user.id,
-      session.user.email || undefined
+      context.user?.id ?? '',
+      context.user?.email || undefined
     );
 
     // If adverse reaction, create urgent notification
@@ -148,27 +140,22 @@ export async function POST(request: NextRequest) {
       administration,
       message: getAdministrationMessage(status, administration.medication.name),
     });
-  } catch (error) {
-    logger.error({
-      event: 'mar_administration_failed',
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return safeErrorResponse(error, { userMessage: 'Failed to record administration' });
-  }
-}
+    } catch (error) {
+      logger.error({
+        event: 'mar_administration_failed',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return safeErrorResponse(error, { userMessage: 'Failed to record administration' });
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE'] }
+);
 
 // GET: Fetch administration records (MAR view)
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
     const medicationId = searchParams.get('medicationId');
     const startDate = searchParams.get('startDate');
@@ -259,8 +246,8 @@ export async function GET(request: NextRequest) {
         },
       },
       request,
-      session.user.id,
-      session.user.email || undefined
+      context.user?.id ?? '',
+      context.user?.email || undefined
     );
 
     return NextResponse.json({
@@ -276,14 +263,16 @@ export async function GET(request: NextRequest) {
         adverseReactions: administrations.filter((a) => a.adverseReaction).length,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'mar_fetch_failed',
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return safeErrorResponse(error, { userMessage: 'Failed to fetch MAR' });
-  }
-}
+    } catch (error) {
+      logger.error({
+        event: 'mar_fetch_failed',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return safeErrorResponse(error, { userMessage: 'Failed to fetch MAR' });
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE'] }
+);
 
 // Helper function to generate user-friendly message
 function getAdministrationMessage(status: string, medicationName: string): string {

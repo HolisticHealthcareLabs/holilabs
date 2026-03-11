@@ -38,8 +38,8 @@ export interface ConsentStatus {
 const CONSENT_TYPES: ConsentType[] = [
   {
     id: 'treatment_access',
-    name: 'Treatment & Medical Care',
-    description: 'Allow doctors to access your medical records for diagnosis and treatment. Required for receiving medical care.',
+    name: 'Clinical Care Access',
+    description: 'Allow doctors to access your medical records for clinical care and consultations. Required for receiving medical care.',
     required: true,
     category: 'TREATMENT',
     icon: '🏥',

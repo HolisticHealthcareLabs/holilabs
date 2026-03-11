@@ -2,32 +2,17 @@
  * Send Form API
  *
  * POST /api/forms/send - Send a form to a patient
+ *
+ * Auth: createProtectedRoute (session or X-Agent-Internal-Token from agent gateway)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/lib/auth/auth';
 import { sendFormNotificationEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
-
-/**
- * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
- */
-function verifyInternalToken(token: string | null): boolean {
-  if (!token) return false;
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
-  const now = Math.floor(Date.now() / 60000);
-  for (const timestamp of [now, now - 1]) {
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(`agent-internal:${timestamp}`)
-      .digest('hex');
-    if (token === expected) return true;
-  }
-  return false;
-}
 
 function generateAccessToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -37,35 +22,15 @@ function generateDataHash(data: any): string {
   return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Authenticate user (internal token or session)
-    let userId: string | undefined;
-    const internalToken = request.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = request.headers.get('X-Agent-User-Email');
-      const headerUserId = request.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const userId = context.user?.id;
+      if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-    }
 
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
+      const body = await request.json();
     const { patientId, templateId, expiresAt, message } = body;
 
     // Validate inputs
@@ -171,14 +136,16 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error('Error sending form:', error);
-    return NextResponse.json(
-      {
-        error: 'Failed to send form',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
-}
+    } catch (error) {
+      console.error('Error sending form:', error);
+      return NextResponse.json(
+        {
+          error: 'Failed to send form',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

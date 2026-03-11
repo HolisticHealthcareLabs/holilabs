@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 import { CredentialType, VerificationStatus } from '@prisma/client';
 import crypto from 'crypto';
 
@@ -7,7 +9,8 @@ import crypto from 'crypto';
  * GET /api/credentials
  * List all credentials for a user
  */
-export async function GET(request: Request) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -35,19 +38,22 @@ export async function GET(request: Request) {
       credentials,
     });
   } catch (error: any) {
-    console.error('Error fetching credentials:', error);
+    logger.error({ error }, 'Error fetching credentials');
     return NextResponse.json(
       { error: 'Failed to fetch credentials' },
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);
 
 /**
  * POST /api/credentials
  * Create a new credential (with or without document upload)
  */
-export async function POST(request: Request) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const body = await request.json();
     const {
@@ -131,10 +137,12 @@ export async function POST(request: Request) {
       credential,
     });
   } catch (error: any) {
-    console.error('Error creating credential:', error);
+    logger.error({ error }, 'Error creating credential');
     return NextResponse.json(
       { error: 'Failed to create credential' },
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);

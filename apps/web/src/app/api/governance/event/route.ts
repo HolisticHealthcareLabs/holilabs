@@ -7,6 +7,7 @@ import {
     emitGovernanceBlockedEvent,
 } from '@/lib/socket-server';
 import { v4 as uuidv4 } from 'uuid';
+import logger from '@/lib/logger';
 import {
     validateGovernanceEventRequest,
 } from '@/lib/governance/shared-types';
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
         const event = validation.data;
 
         // Phase 0: Setup / Telemetry Check
-        console.log('[Governance] API Event Received:', event.type, event);
+        logger.info('[Governance] API Event Received', { type: event.type, eventId: event.id });
 
         if (event.type === 'OVERRIDE') {
             // Phase 1: Liability Check

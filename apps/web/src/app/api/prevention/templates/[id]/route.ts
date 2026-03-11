@@ -8,8 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -18,23 +17,17 @@ export const dynamic = 'force-dynamic';
  * GET /api/prevention/templates/[id]
  * Get a specific template by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const templateId = context.params?.id;
+      if (!templateId) {
+        return NextResponse.json({ error: 'Template ID required' }, { status: 400 });
+      }
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const template = await prisma.preventionPlanTemplate.findUnique({
-      where: { id: params.id },
-    });
+      const template = await prisma.preventionPlanTemplate.findUnique({
+        where: { id: templateId },
+      });
 
     if (!template) {
       return NextResponse.json(
@@ -58,27 +51,23 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * PUT /api/prevention/templates/[id]
  * Update a template (automatically creates version snapshot)
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const PUT = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const templateId = context.params?.id;
+      if (!templateId) {
+        return NextResponse.json({ error: 'Template ID required' }, { status: 400 });
+      }
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+      const body = await request.json();
     const {
       templateName,
       planType,
@@ -98,7 +87,7 @@ export async function PUT(
     const result = await prisma.$transaction(async (tx) => {
       // Check if template exists
       const existingTemplate = await tx.preventionPlanTemplate.findUnique({
-        where: { id: params.id },
+        where: { id: templateId },
       });
 
       if (!existingTemplate) {
@@ -140,7 +129,7 @@ export async function PUT(
       if (createVersion && changedFields.length > 0) {
         // Get current max version number
         const latestVersion = await tx.preventionPlanTemplateVersion.findFirst({
-          where: { templateId: params.id },
+          where: { templateId },
           orderBy: { versionNumber: 'desc' },
           select: { versionNumber: true },
         });
@@ -167,13 +156,13 @@ export async function PUT(
 
         newVersion = await tx.preventionPlanTemplateVersion.create({
           data: {
-            templateId: params.id,
+            templateId,
             versionNumber: nextVersionNumber,
             versionLabel: versionLabel || `v${nextVersionNumber}`,
             templateData,
             changeLog: changeLog || `Updated ${changedFields.join(', ')}`,
             changedFields,
-            createdBy: session.user.id,
+            createdBy: context.user?.id ?? '',
           },
         });
       }
@@ -194,7 +183,7 @@ export async function PUT(
       if (isActive !== undefined) updateData.isActive = isActive;
 
       const updatedTemplate = await tx.preventionPlanTemplate.update({
-        where: { id: params.id },
+        where: { id: templateId },
         data: updateData,
       });
 
@@ -205,10 +194,10 @@ export async function PUT(
 
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: context.user?.id ?? '',
           action: 'UPDATE',
           resource: 'prevention_template',
-          resourceId: params.id,
+          resourceId: templateId,
           details: `Updated template "${updatedTemplate.templateName}"${
             changedFields.length > 0 ? `: ${changedFields.join(', ')}` : ''
           }`,
@@ -247,30 +236,26 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * DELETE /api/prevention/templates/[id]
  * Delete a template (soft delete by setting isActive to false)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const templateId = context.params?.id;
+      if (!templateId) {
+        return NextResponse.json({ error: 'Template ID required' }, { status: 400 });
+      }
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    // Check if template exists
-    const existingTemplate = await prisma.preventionPlanTemplate.findUnique({
-      where: { id: params.id },
-    });
+      // Check if template exists
+      const existingTemplate = await prisma.preventionPlanTemplate.findUnique({
+        where: { id: templateId },
+      });
 
     if (!existingTemplate) {
       return NextResponse.json(
@@ -281,7 +266,7 @@ export async function DELETE(
 
     // Soft delete by setting isActive to false
     const deletedTemplate = await prisma.preventionPlanTemplate.update({
-      where: { id: params.id },
+      where: { id: templateId },
       data: {
         isActive: false,
         updatedAt: new Date(),
@@ -304,4 +289,6 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

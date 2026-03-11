@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -16,18 +15,10 @@ export const dynamic = 'force-dynamic';
  * GET /api/prevention/reminders
  * Get all preventive care reminders with optional filters
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const searchParams = request.nextUrl.searchParams;
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
+    try {
+      const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
     const priority = searchParams.get('priority');
     const screeningType = searchParams.get('screeningType');
@@ -142,24 +133,18 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * PATCH /api/prevention/reminders
  * Update a specific reminder's status
  */
-export async function PATCH(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const body = await request.json();
     const { reminderId, action, reason } = body;
 
     if (!reminderId || !action) {
@@ -186,12 +171,12 @@ export async function PATCH(request: NextRequest) {
       case 'complete':
         updateData.status = 'COMPLETED';
         updateData.completedAt = new Date();
-        updateData.completedBy = session.user.id;
+        updateData.completedBy = context.user?.id ?? '';
         break;
       case 'dismiss':
         updateData.status = 'DISMISSED';
         updateData.dismissedAt = new Date();
-        updateData.dismissedBy = session.user.id;
+        updateData.dismissedBy = context.user?.id ?? '';
         updateData.dismissalReason = reason || null;
         break;
       case 'schedule':
@@ -225,4 +210,6 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

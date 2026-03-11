@@ -11,11 +11,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { preventionEngine, type TranscriptFindings } from '@/lib/services';
 import logger from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,30 +71,12 @@ const ProcessFindingsSchema = z.object({
  *   errors?: string[]
  * }
  */
-export async function POST(request: NextRequest) {
-  const requestStart = Date.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    const requestStart = Date.now();
 
-  try {
-    // Authentication check
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    // Restrict to ADMIN and CLINICIAN roles
-    const userRole = (session.user as { role?: string }).role;
-    if (userRole && !['ADMIN', 'PHYSICIAN', 'NURSE', 'CLINICIAN'].includes(userRole)) {
-      return NextResponse.json(
-        { error: 'Forbidden - Insufficient permissions' },
-        { status: 403 }
-      );
-    }
-
-    // Parse and validate request body
+    try {
+      // Parse and validate request body
     const body = await request.json();
     const validation = ProcessFindingsSchema.safeParse(body);
 
@@ -103,7 +84,7 @@ export async function POST(request: NextRequest) {
       logger.warn({
         event: 'prevention_process_validation_failed',
         errors: validation.error.errors,
-        userId: session.user.id,
+        userId: context.user?.id,
       });
 
       return NextResponse.json(
@@ -121,7 +102,7 @@ export async function POST(request: NextRequest) {
       event: 'prevention_process_started',
       patientId,
       encounterId,
-      userId: session.user.id,
+      userId: context.user?.id,
       diagnosesCount: findings.diagnoses.length,
       symptomsCount: findings.symptoms.length,
     });
@@ -139,7 +120,7 @@ export async function POST(request: NextRequest) {
       event: 'prevention_process_completed',
       patientId,
       encounterId,
-      userId: session.user.id,
+      userId: context.user?.id,
       processingTimeMs: result.processingTimeMs,
       totalRequestTimeMs: totalRequestTime,
       recommendationsCount: result.recommendations.length,
@@ -179,7 +160,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/prevention/process
@@ -187,18 +170,10 @@ export async function POST(request: NextRequest) {
  * Health check for the Prevention Engine service.
  * Returns status and configuration information.
  */
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json({
+export const GET = createProtectedRoute(
+  async () => {
+    try {
+      return NextResponse.json({
       success: true,
       service: 'Prevention Engine',
       status: 'healthy',
@@ -237,4 +212,6 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

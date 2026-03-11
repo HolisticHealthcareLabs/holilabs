@@ -320,27 +320,27 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const sidebarGroups: SidebarNavGroup[] = [
     {
-      heading: 'CLINICAL WORKSPACE',
+      heading: t('dashboard.sidebar.clinicalWorkspace'),
       items: [
-        { key: 'my-day', label: 'My Day', href: '/dashboard/my-day', icon: CalendarDays },
-        { key: 'clinical-copilot', label: 'Co-Pilot', href: '/dashboard/clinical-command', icon: Sparkles },
-        { key: 'patients', label: 'Patients', href: '/dashboard/patients', icon: Users },
-        { key: 'inbox', label: 'Inbox', href: '/dashboard/reminders', icon: Inbox, badge: '3' },
+        { key: 'my-day', label: t('dashboard.sidebar.myDay'), href: '/dashboard/my-day', icon: CalendarDays },
+        { key: 'clinical-copilot', label: t('dashboard.sidebar.coPilot'), href: '/dashboard/clinical-command', icon: Sparkles },
+        { key: 'patients', label: t('dashboard.sidebar.patients'), href: '/dashboard/patients', icon: Users },
+        { key: 'inbox', label: t('dashboard.sidebar.inbox'), href: '/dashboard/reminders', icon: Inbox, badge: '3' },
       ],
     },
     {
-      heading: 'REVENUE & OPS',
+      heading: t('dashboard.sidebar.revenueOps'),
       items: [
-        { key: 'command-center', label: 'Command Center', href: '/dashboard/command-center', icon: Activity },
-        { key: 'claims-intelligence', label: 'Claims Intelligence', href: '/dashboard/billing', icon: FileCheck },
-        { key: 'analytics', label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+        { key: 'command-center', label: t('dashboard.sidebar.commandCenter'), href: '/dashboard/command-center', icon: Activity },
+        { key: 'claims-intelligence', label: t('dashboard.sidebar.claimsIntelligence'), href: '/dashboard/billing', icon: FileCheck },
+        { key: 'analytics', label: t('dashboard.sidebar.analytics'), href: '/dashboard/analytics', icon: BarChart3 },
       ],
     },
     {
-      heading: 'ADMINISTRATION',
+      heading: t('dashboard.sidebar.administration'),
       items: [
-        { key: 'audit-compliance', label: 'Audit & Compliance', href: '/dashboard/auditor', icon: ShieldCheck },
-        { key: 'settings-team', label: 'Settings & Team', href: '/dashboard/settings', icon: Settings2 },
+        { key: 'audit-compliance', label: t('dashboard.sidebar.auditCompliance'), href: '/dashboard/auditor', icon: ShieldCheck },
+        { key: 'settings-team', label: t('dashboard.sidebar.settingsTeam'), href: '/dashboard/settings', icon: Settings2 },
       ],
     },
   ];
@@ -382,16 +382,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <div className="max-w-3xl mx-auto space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold">Dashboard crashed</h2>
+                <h2 className="text-xl font-bold">{t('dashboard.error.crashed')}</h2>
                 <p className="text-sm text-gray-600">
-                  This is a failsafe overlay so we can see the real error.
+                  {t('dashboard.error.failsafeOverlay')}
                 </p>
               </div>
               <button
                 className="px-4 py-2 rounded-lg bg-gray-900 text-white"
                 onClick={() => window.location.reload()}
               >
-                Reload
+                {t('dashboard.error.reload')}
               </button>
             </div>
             <pre className="text-xs bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-auto whitespace-pre-wrap">
@@ -476,7 +476,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   {showCollapsedSidebar && (
                     <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
                       <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
-                        {isLaunchingEncounter ? 'Opening Co-Pilot...' : 'Start Visit'}
+                        {isLaunchingEncounter ? t('dashboard.sidebar.openingCoPilot') : t('dashboard.sidebar.startVisit')}
                       </div>
                     </div>
                   )}
@@ -607,12 +607,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     {/* Navigation */}
                     <div className="px-1.5 py-1.5">
                       {[
-                        { href: '/dashboard/settings',                label: 'Profile',          Icon: User },
-                        { href: '/dashboard/settings?tab=security',   label: 'Security',         Icon: Lock },
-                        { href: '/dashboard/settings?tab=preferences',label: 'Preferences',      Icon: SlidersHorizontal },
-                        { href: '/dashboard/settings?tab=privacy',    label: 'Privacy & Data',   Icon: ShieldCheck },
-                        { href: '/dashboard/settings?tab=billing',    label: 'Billing',          Icon: CreditCard },
-                        { href: '/dashboard/settings?tab=integrations',label: 'Integrations',    Icon: Link2 },
+                        { href: '/dashboard/settings',                label: t('dashboard.profile.profile'),      Icon: User },
+                        { href: '/dashboard/settings?tab=security',   label: t('dashboard.profile.security'),     Icon: Lock },
+                        { href: '/dashboard/settings?tab=preferences',label: t('dashboard.profile.preferences'),  Icon: SlidersHorizontal },
+                        { href: '/dashboard/settings?tab=privacy',    label: t('dashboard.profile.privacyData'),  Icon: ShieldCheck },
+                        { href: '/dashboard/settings?tab=billing',    label: t('dashboard.profile.billing'),      Icon: CreditCard },
+                        { href: '/dashboard/settings?tab=integrations',label: t('dashboard.profile.integrations'),Icon: Link2 },
                       ].map((item) => (
                         <Link
                           key={item.href}
@@ -636,7 +636,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
                       >
                         <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                        <span className="text-[13px] font-medium text-gray-700 dark:text-gray-200">Help & Support</span>
+                        <span className="text-[13px] font-medium text-gray-700 dark:text-gray-200">{t('dashboard.profile.helpSupport')}</span>
                       </Link>
 
                       <button
@@ -647,7 +647,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       >
                         <LogOut className="w-4 h-4 text-red-500 dark:text-red-400" />
-                        <span className="text-[13px] font-medium text-red-600 dark:text-red-400">Sign Out</span>
+                        <span className="text-[13px] font-medium text-red-600 dark:text-red-400">{t('dashboard.profile.signOut')}</span>
                       </button>
                     </div>
                   </div>
@@ -729,9 +729,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                       session.user.role === 'PHYSICIAN' ? 'bg-blue-500' :
                       'bg-gray-400'
                     }`} />
-                    {session.user.role === 'ADMIN' ? 'Administrator' :
-                     session.user.role === 'PHYSICIAN' ? 'Clinician' :
-                     session.user.role === 'NURSE' ? 'Nurse' :
+                    {session.user.role === 'ADMIN' ? t('dashboard.roles.administrator') :
+                     session.user.role === 'PHYSICIAN' ? t('dashboard.roles.clinician') :
+                     session.user.role === 'NURSE' ? t('dashboard.roles.nurse') :
                      session.user.role}
                   </span>
                 )}

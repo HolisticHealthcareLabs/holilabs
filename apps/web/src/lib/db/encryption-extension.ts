@@ -57,21 +57,21 @@ const PHI_FIELDS_CONFIG: Record<string, string[]> = {
     'lastName',
     'email',
     'phone',
-    'dateOfBirth', // HIPAA identifier - must be encrypted
+    // dateOfBirth excluded: DateTime type, cannot be stored as ciphertext string
     'address',
+    'primaryContactName',
     'primaryContactPhone',
     'primaryContactEmail',
     'primaryContactAddress',
     'secondaryContactPhone',
     'secondaryContactEmail',
+    'emergencyContactName',
     'emergencyContactPhone',
     // Brazilian national IDs (CRITICAL for LGPD compliance)
     'cpf',
     'rg',
     'cns',
-    // Medical Record Numbers
-    'mrn',
-    'externalMrn',
+    // mrn/externalMrn excluded: used in @unique indexes, encrypted values break lookups
   ],
   PatientUser: [
     'email', // HIPAA identifier - patient portal login email
@@ -151,10 +151,16 @@ function isPHIField(modelName: string, fieldName: string): boolean {
  * @param data - Input data object
  * @returns Data object with PHI fields encrypted
  */
+function isEncryptionConfigured(): boolean {
+  return !!(process.env.ENCRYPTION_KEY || process.env.USE_AWS_SECRETS === 'true');
+}
+
 async function encryptPHIFields(
   modelName: string,
   data: Record<string, any>
 ): Promise<Record<string, any>> {
+  if (!isEncryptionConfigured()) return data;
+
   const encrypted: Record<string, any> = { ...data };
   const phiFields = PHI_FIELDS_CONFIG[modelName] || [];
 
@@ -203,6 +209,7 @@ async function decryptPHIFields(
   result: Record<string, any> | null
 ): Promise<Record<string, any> | null> {
   if (!result) return null;
+  if (!isEncryptionConfigured()) return result;
 
   const decrypted: Record<string, any> = { ...result };
   const phiFields = PHI_FIELDS_CONFIG[modelName] || [];
@@ -215,7 +222,7 @@ async function decryptPHIFields(
       if (typeof ciphertext !== 'string') {
         continue;
       }
-      if (!/^v\\d+:/.test(ciphertext)) {
+      if (!/^v\d+:/.test(ciphertext)) {
         continue;
       }
 

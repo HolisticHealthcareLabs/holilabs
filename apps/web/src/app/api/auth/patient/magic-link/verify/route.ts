@@ -11,6 +11,7 @@ import { verifyMagicLink } from '@/lib/auth/magic-link';
 import logger from '@/lib/logger';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Validation schema
 const VerifyMagicLinkSchema = z.object({
@@ -45,7 +46,9 @@ async function createSessionToken(patientUser: any): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate request body
+    const rateLimitResponse = await checkRateLimit(request, 'auth');
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await request.json();
     const validation = VerifyMagicLinkSchema.safeParse(body);
 
@@ -131,6 +134,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitResponse = await checkRateLimit(request, 'auth');
+    if (rateLimitResponse) return rateLimitResponse;
+
     const searchParams = request.nextUrl.searchParams;
     const token = searchParams.get('token');
 

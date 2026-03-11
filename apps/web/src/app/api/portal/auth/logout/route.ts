@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { clearPatientSession } from '@/lib/auth/patient-session';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error logging out:', error);
+    logger.error({ error }, 'Error logging out');
     return NextResponse.json(
       {
         error: 'Failed to logout',

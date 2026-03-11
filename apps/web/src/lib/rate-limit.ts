@@ -128,23 +128,27 @@ export async function applyRateLimit(
 ): Promise<{ success: boolean; response?: NextResponse }> {
   const limiter = rateLimiters[limiterType];
 
-  // If Redis is not configured, allow all requests (dev mode)
   if (!limiter) {
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug({
-        event: 'rate_limit_disabled',
+    if (process.env.NODE_ENV === 'production') {
+      logger.error({
+        event: 'rate_limit_not_configured_production',
         limiterType,
-        message: 'Rate limiting is disabled (Redis not configured)',
-      });
-      return { success: true };
-    } else {
-      logger.warn({
-        event: 'rate_limit_not_configured',
-        limiterType,
-        message: 'Rate limiting is not configured in production!',
-      });
-      return { success: true };
+      }, 'Rate limiting Redis not configured in production — blocking request');
+
+      return {
+        success: false,
+        response: NextResponse.json(
+          { success: false, error: 'Service temporarily unavailable' },
+          { status: 503 },
+        ),
+      };
     }
+
+    logger.debug({
+      event: 'rate_limit_disabled',
+      limiterType,
+    }, 'Rate limiting disabled (Redis not configured in development)');
+    return { success: true };
   }
 
   try {
@@ -207,7 +211,16 @@ export async function applyRateLimit(
       limiterType,
     });
 
-    // On error, allow the request to proceed (fail open)
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        success: false,
+        response: NextResponse.json(
+          { success: false, error: 'Service temporarily unavailable' },
+          { status: 503 },
+        ),
+      };
+    }
+
     return { success: true };
   }
 }

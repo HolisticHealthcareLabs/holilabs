@@ -3,13 +3,14 @@ import { auth } from '@/lib/auth/auth';
 import * as crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { requireSecret } from '@/lib/security/require-secret';
 
 /**
  * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
  */
 function verifyInternalToken(token: string | null): boolean {
   if (!token) return false;
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const secret = requireSecret('NEXTAUTH_SECRET');
   const now = Math.floor(Date.now() / 60000);
   for (const timestamp of [now, now - 1]) {
     const expected = crypto

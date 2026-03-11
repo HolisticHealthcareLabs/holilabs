@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { createDeidService } from '@/lib/services/deid.service';
 import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
@@ -158,14 +158,10 @@ function buildDefaultSystemPrompt(clinicalContext: string): string {
   ].join('\n');
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    let body: unknown;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      let body: unknown;
     try {
       body = await request.json();
     } catch {
@@ -304,7 +300,7 @@ export async function POST(request: NextRequest) {
       event: 'cdss_chat_response',
       patientId,
       encounterId,
-      providerId: session.user.id,
+      providerId: context.user?.id,
       provider,
       responseLength: aiResponse.length,
       suggestionsCount: suggestions.length,
@@ -329,5 +325,7 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Failed to process chat message' },
       { status: 500 }
     );
-  }
-}
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -24,21 +23,10 @@ interface StatusChangeHistory {
  * POST /api/prevention/plans/[planId]/status/undo
  * Undo the last status change (within 24 hours)
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { planId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const planId = params.planId;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
 
     // Get the existing prevention plan
     const preventionPlan = await prisma.preventionPlan.findUnique({
@@ -87,7 +75,7 @@ export async function POST(
     // Create undo entry for history
     const undoEntry: StatusChangeHistory = {
       timestamp: new Date().toISOString(),
-      userId: session.user.id,
+      userId: context.user?.id ?? '',
       fromStatus: preventionPlan.status,
       toStatus: previousStatus,
       reason: 'undo_last_change',
@@ -159,27 +147,18 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/prevention/plans/[planId]/status/undo/check
  * Check if the last status change can be undone
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { planId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const planId = params.planId;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
 
     // Get the existing prevention plan
     const preventionPlan = await prisma.preventionPlan.findUnique({
@@ -247,4 +226,6 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

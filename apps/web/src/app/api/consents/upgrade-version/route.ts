@@ -7,9 +7,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { upgradeConsentVersion } from '@/lib/consent/version-manager';
 
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const body = await request.json();
     const { patientId, consentType, signatureData } = body;
@@ -38,4 +40,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

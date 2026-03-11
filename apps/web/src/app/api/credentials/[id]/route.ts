@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 import { VerificationStatus } from '@prisma/client';
 
 /**
  * GET /api/credentials/[id]
  * Get a specific credential by ID
  */
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
-    const { id } = params;
+    const id = context.params?.id;
 
     const credential = await prisma.providerCredential.findUnique({
       where: { id },
@@ -43,24 +43,24 @@ export async function GET(
       credential,
     });
   } catch (error: any) {
-    console.error('Error fetching credential:', error);
+    logger.error({ error }, 'Error fetching credential');
     return NextResponse.json(
       { error: 'Failed to fetch credential' },
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);
 
 /**
  * PATCH /api/credentials/[id]
  * Update a credential
  */
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
-    const { id } = params;
+    const id = context.params?.id;
     const body = await request.json();
 
     // Check if credential exists
@@ -101,24 +101,24 @@ export async function PATCH(
       credential,
     });
   } catch (error: any) {
-    console.error('Error updating credential:', error);
+    logger.error({ error }, 'Error updating credential');
     return NextResponse.json(
       { error: 'Failed to update credential' },
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);
 
 /**
  * DELETE /api/credentials/[id]
  * Delete a credential
  */
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
-    const { id } = params;
+    const id = context.params?.id;
 
     // Check if credential exists
     const existingCredential = await prisma.providerCredential.findUnique({
@@ -142,10 +142,12 @@ export async function DELETE(
       message: 'Credential deleted successfully',
     });
   } catch (error: any) {
-    console.error('Error deleting credential:', error);
+    logger.error({ error }, 'Error deleting credential');
     return NextResponse.json(
       { error: 'Failed to delete credential' },
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);

@@ -12,7 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -67,18 +67,10 @@ const DOMAIN_TO_PLAN_TYPE: Record<string, string> = {
   hormonal: 'COMPREHENSIVE',
 };
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const body = await request.json();
     const validation = AddToPlanSchema.safeParse(body);
 
     if (!validation.success) {
@@ -139,7 +131,7 @@ export async function POST(request: NextRequest) {
           status: 'ACTIVE',
           goals: [],
           recommendations: [],
-          reviewedBy: session.user.id,
+          reviewedBy: context.user?.id,
           reviewedAt: new Date(),
           aiGeneratedBy: 'prevention-hub',
           aiConfidence: 0.85,
@@ -154,7 +146,7 @@ export async function POST(request: NextRequest) {
         planId: newPlan.id,
         patientId,
         planType,
-        createdBy: session.user.id,
+        createdBy: context.user?.id,
       });
 
       // HIPAA Audit: Log plan creation
@@ -162,7 +154,7 @@ export async function POST(request: NextRequest) {
         patientId,
         planType,
         planName,
-        createdBy: session.user.id,
+        createdBy: context.user?.id,
         action: 'prevention_plan_created',
       });
     }
@@ -189,7 +181,7 @@ export async function POST(request: NextRequest) {
       description: intervention.description || '',
       priority: intervention.priority || 'MEDIUM',
       addedAt: new Date().toISOString(),
-      addedBy: session.user.id,
+      addedBy: context.user?.id,
     };
 
     // Get existing goals and add new one
@@ -216,7 +208,7 @@ export async function POST(request: NextRequest) {
           goal: newGoal,
           previousGoalsCount: existingGoals.length,
         },
-        changedBy: session.user.id,
+        changedBy: context.user?.id,
         changeReason: `Added intervention: ${intervention.name}`,
       },
     });
@@ -248,7 +240,7 @@ export async function POST(request: NextRequest) {
           ],
           triggeringFindings: triggeringFindings || {
             source: 'manual_add',
-            addedBy: session.user.id,
+            addedBy: context.user?.id,
           },
           confidence: 1.0, // Manual addition has full confidence
           sourceType: 'manual',
@@ -272,7 +264,7 @@ export async function POST(request: NextRequest) {
       patientId,
       intervention: intervention.name,
       domain: intervention.domain,
-      addedBy: session.user.id,
+      addedBy: context.user?.id,
       planWasCreated,
       encounterLinkId,
     });
@@ -284,7 +276,7 @@ export async function POST(request: NextRequest) {
       interventionType: intervention.type,
       domain: intervention.domain,
       version: currentVersion,
-      changedBy: session.user.id,
+      changedBy: context.user?.id,
       action: 'intervention_added',
       encounterLinked: !!encounterLinkId,
     });
@@ -319,4 +311,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

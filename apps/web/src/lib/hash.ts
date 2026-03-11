@@ -11,13 +11,14 @@
  */
 
 import * as crypto from 'crypto';
+import { requireSecret } from '@/lib/security/require-secret';
 
 /**
  * Salt key for patient ID hashing
  * CRITICAL: This must be kept secret and never logged
  * In production, this should be loaded from a secure vault (AWS KMS, HashiCorp Vault)
  */
-const PATIENT_HASH_SALT = process.env.PATIENT_HASH_SALT || 'holi-lgpd-salt-change-in-production';
+const PATIENT_HASH_SALT = requireSecret('PATIENT_HASH_SALT');
 
 /**
  * De-identify a patient ID using salted SHA256 hash
@@ -82,7 +83,7 @@ export function hashData(data: unknown): string {
  * @returns HMAC-SHA256 signature
  */
 export function generateHmac(message: string, secret?: string): string {
-  const key = secret || process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const key = secret || requireSecret('NEXTAUTH_SECRET');
   return crypto
     .createHmac('sha256', key)
     .update(message)

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession, authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 interface PairDeviceRequest {
   qrPayload: {
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<PairDevic
     });
 
     // Log pairing event
-    console.log(`Device paired: ${qrPayload.deviceId} for user ${session.user.id}`);
+    logger.info('[QR] Device paired', { deviceId: qrPayload.deviceId, userId: session.user.id });
 
     return NextResponse.json({
       success: true,
@@ -174,7 +175,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       },
     });
 
-    console.log(`Device unpaired: ${deviceId} for user ${session.user.id}`);
+    logger.info('[QR] Device unpaired', { deviceId, userId: session.user.id });
 
     return NextResponse.json({
       success: true,

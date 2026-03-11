@@ -16,6 +16,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import logger from '@/lib/logger';
 
 const LoginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -50,30 +51,32 @@ export const authConfig: NextAuthConfig = {
 
           const { email, password } = validation.data;
 
-          // Demo users — DB-free login for demos and testing
-          if (email === 'dr.silva@holilabs.xyz' && password === 'Cortex2026!') {
-            return {
-              id: 'demo-dr-silva-id',
-              email: 'dr.silva@holilabs.xyz',
-              name: 'Dr. Ricardo Silva',
-              role: 'CLINICIAN',
-              firstName: 'Ricardo',
-              lastName: 'Silva',
-              username: 'dr.silva',
-              onboardingCompleted: true,
-            };
-          }
-          if (email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#') {
-            return {
-              id: 'demo-clinician-id',
-              email: 'demo-clinician@holilabs.xyz',
-              name: 'Demo Clinician',
-              role: 'CLINICIAN',
-              firstName: 'Demo',
-              lastName: 'Clinician',
-              username: 'democlinician',
-              onboardingCompleted: true,
-            };
+          // Demo users — DB-free login for demos and testing (disabled in production)
+          if (process.env.NODE_ENV !== 'production') {
+            if (email === 'dr.silva@holilabs.xyz' && password === 'Cortex2026!') {
+              return {
+                id: 'demo-dr-silva-id',
+                email: 'dr.silva@holilabs.xyz',
+                name: 'Dr. Ricardo Silva',
+                role: 'CLINICIAN',
+                firstName: 'Ricardo',
+                lastName: 'Silva',
+                username: 'dr.silva',
+                onboardingCompleted: true,
+              };
+            }
+            if (email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#') {
+              return {
+                id: 'demo-clinician-id',
+                email: 'demo-clinician@holilabs.xyz',
+                name: 'Demo Clinician',
+                role: 'CLINICIAN',
+                firstName: 'Demo',
+                lastName: 'Clinician',
+                username: 'democlinician',
+                onboardingCompleted: true,
+              };
+            }
           }
 
           const user = await prisma.user.findUnique({
@@ -116,7 +119,7 @@ export const authConfig: NextAuthConfig = {
             onboardingCompleted: user.onboardingCompleted,
           };
         } catch (error) {
-          console.error('[Auth] Authorization error:', error);
+          logger.error('[Auth] Authorization error', { error });
           return null;
         }
       },
@@ -205,22 +208,22 @@ export const authConfig: NextAuthConfig = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 15 * 60,
-    updateAge: 5 * 60,
+    maxAge: 60 * 60, // 1 hour — aligned with jwt.maxAge for clinical workflows
+    updateAge: 5 * 60, // Sliding window: refresh every 5 min of activity
   },
 
   jwt: {
-    maxAge: 8 * 60 * 60,
+    maxAge: 60 * 60, // 1 hour — must match session.maxAge to prevent ghost tokens
   },
 
   useSecureCookies: process.env.NODE_ENV === 'production',
 
   events: {
     async signIn({ user, account }) {
-      console.log(`[Auth] User ${user.id} signed in via ${account?.provider}`);
+      logger.info('[Auth] User signed in', { userId: user.id, provider: account?.provider });
     },
     async signOut() {
-      console.log('[Auth] User signed out');
+      logger.info('[Auth] User signed out');
     },
   },
 };

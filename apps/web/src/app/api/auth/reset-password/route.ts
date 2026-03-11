@@ -14,6 +14,7 @@ import { getPasswordResetService } from '@/lib/auth/password-reset';
 import { getClientIp, getUserAgent } from '@/lib/auth/session-security';
 import logger from '@/lib/logger';
 import { z } from 'zod';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Request password reset schema
 const RequestResetSchema = z.object({
@@ -172,6 +173,9 @@ export async function PUT(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const rateLimitResponse = await checkRateLimit(request, 'auth');
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 

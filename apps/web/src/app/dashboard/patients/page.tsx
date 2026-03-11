@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   MoreHorizontal, X, User, UserPlus, AlertTriangle,
@@ -488,6 +489,7 @@ type RiskFilter = 'all' | RiskLevel;
 
 export default function PatientsPage() {
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState<RiskFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('name');
@@ -605,7 +607,7 @@ export default function PatientsPage() {
           "
         >
           <UserPlus className="w-4 h-4" />
-          Add Patient
+          {t('dashboard.patients.addPatient')}
         </button>
       </div>
 
@@ -615,7 +617,7 @@ export default function PatientsPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name, MRN, or diagnosis..."
+            placeholder={t('dashboard.patients.searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="
@@ -655,11 +657,11 @@ export default function PatientsPage() {
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         {/* Column headers */}
         <div className="grid grid-cols-[2fr_1fr_1.5fr_1fr_1fr_40px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-          <SortableHeader label="Patient" sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label="Age / Sex" sortKey="age" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label="Primary Dx" sortKey="diagnosis" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label="Last Visit" sortKey="lastVisit" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label="Risk" sortKey="risk" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('dashboard.patients.patient')} sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('dashboard.patients.ageSex')} sortKey="age" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('dashboard.patients.primaryDx')} sortKey="diagnosis" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('dashboard.patients.lastVisit')} sortKey="lastVisit" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('dashboard.patients.risk')} sortKey="risk" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
           <span />
         </div>
 
@@ -670,7 +672,7 @@ export default function PatientsPage() {
               <User className="w-6 h-6 text-gray-400 dark:text-gray-500" />
             </div>
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-              No patients found
+              {t('dashboard.patients.noPatients')}
             </h3>
             <p className="text-xs text-gray-400 dark:text-gray-500 text-center max-w-xs mb-4">
               Adjust your search or filters, or add a new patient to your panel.
@@ -680,7 +682,7 @@ export default function PatientsPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             >
               <UserPlus className="w-3 h-3" />
-              Add New Patient
+              {t('dashboard.patients.registerNewPatient')}
             </button>
           </div>
         ) : (
@@ -803,7 +805,7 @@ export default function PatientsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-lg">
               <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">Register New Patient</h2>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">{t('dashboard.patients.registerNewPatient')}</h2>
                 <button onClick={() => setShowAddForm(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                   <X className="w-4 h-4" />
                 </button>

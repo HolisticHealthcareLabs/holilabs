@@ -34,7 +34,8 @@ function useFadeIn(delay = 0) {
 
 const LOCALE_OPTIONS = [
   { code: 'en', label: 'EN', name: 'English' },
-  { code: 'pt-BR', label: 'PT', name: 'Portugues' },
+  { code: 'pt-BR', label: 'PT', name: 'Português' },
+  { code: 'es', label: 'ES', name: 'Español' },
 ] as const;
 
 export function BillingComplianceLanding() {
@@ -267,7 +268,7 @@ export function BillingComplianceLanding() {
                 <button
                   onClick={() => setLangOpen((v) => !v)}
                   className={`flex items-center gap-1 text-[13px] font-medium ${navMuted} hover:${navText} transition-colors duration-300 px-2 py-1 rounded-md hover:bg-white/[0.08]`}
-                  aria-label="Change language"
+                  aria-label={tNav('changeLanguage')}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
                     <circle cx="12" cy="12" r="10" />
@@ -312,7 +313,7 @@ export function BillingComplianceLanding() {
             <button
               className="md:hidden ml-auto flex flex-col gap-[5px] p-2 z-50"
               onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={menuOpen ? tNav('closeMenu') : tNav('openMenu')}
               aria-expanded={menuOpen}
             >
               <span
@@ -434,7 +435,7 @@ export function BillingComplianceLanding() {
                   <div className="relative -mt-12">
                     <img
                       src="/cortex-engine.jpeg"
-                      alt="Cortex Cross-Reference Engine"
+                      alt={tA('imageAlt')}
                       className="w-full block"
                     />
                     {/* Radial gradient mask to blend edges */}

@@ -4,9 +4,11 @@
  * POST /api/users - Create new user in Prisma database
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -15,7 +17,8 @@ export const dynamic = 'force-dynamic';
  * POST /api/users
  * Create new user profile (called after Supabase signup)
  */
-export async function POST(request: Request) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const body = await request.json();
 
@@ -66,7 +69,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error creating user:', error);
+    logger.error({ error }, 'Error creating user');
 
     // Handle unique constraint violations
     if ((error as any).code === 'P2002') {
@@ -78,4 +81,6 @@ export async function POST(request: Request) {
 
     return safeErrorResponse(error, { userMessage: 'Failed to create user' });
   }
-}
+  },
+  { roles: ['ADMIN'] }
+);

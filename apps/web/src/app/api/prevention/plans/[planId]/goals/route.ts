@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -25,21 +24,10 @@ const UpdateGoalSchema = z.object({
  * PATCH /api/prevention/plans/[planId]/goals
  * Update a specific goal in a prevention plan
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { planId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const planId = params.planId;
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
     const body = await request.json();
     const validation = UpdateGoalSchema.safeParse(body);
 
@@ -83,7 +71,7 @@ export async function PATCH(
       ...updatedGoals[goalIndex],
       ...updates,
       updatedAt: new Date().toISOString(),
-      updatedBy: session.user.id,
+      updatedBy: context.user?.id,
     };
 
     // Check if all goals are completed
@@ -124,111 +112,104 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * POST /api/prevention/plans/[planId]/goals/bulk
  * Bulk update multiple goals at once
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { planId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
+      const body = await request.json();
 
-    if (!session?.user?.id) {
+      const { goalIndices, status } = body as {
+        goalIndices: number[];
+        status: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'DEFERRED';
+      };
+
+      if (!Array.isArray(goalIndices) || !status) {
+        return NextResponse.json(
+          { error: 'Invalid request: goalIndices array and status required' },
+          { status: 400 }
+        );
+      }
+
+      // Get the existing prevention plan
+      const preventionPlan = await prisma.preventionPlan.findUnique({
+        where: { id: planId },
+      });
+
+      if (!preventionPlan) {
+        return NextResponse.json(
+          { error: 'Prevention plan not found' },
+          { status: 404 }
+        );
+      }
+
+      // Get goals array from database
+      const goals = preventionPlan.goals as any[];
+
+      if (!Array.isArray(goals)) {
+        return NextResponse.json(
+          { error: 'Invalid goals data structure' },
+          { status: 500 }
+        );
+      }
+
+      // Update multiple goals
+      const updatedGoals = goals.map((goal, index) => {
+        if (goalIndices.includes(index)) {
+          return {
+            ...goal,
+            status,
+            updatedAt: new Date().toISOString(),
+            updatedBy: context.user?.id,
+          };
+        }
+        return goal;
+      });
+
+      // Check if all goals are completed
+      const allCompleted = updatedGoals.every((g) => g.status === 'COMPLETED');
+      const newPlanStatus = allCompleted ? 'COMPLETED' : preventionPlan.status;
+
+      // Update the prevention plan
+      const updatedPlan = await prisma.preventionPlan.update({
+        where: { id: planId },
+        data: {
+          goals: updatedGoals,
+          status: newPlanStatus as any,
+          updatedAt: new Date(),
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `${goalIndices.length} goals updated successfully`,
+        data: {
+          planId: updatedPlan.id,
+          updatedCount: goalIndices.length,
+          planStatus: newPlanStatus,
+          allGoalsCompleted: allCompleted,
+          completedCount: updatedGoals.filter((g) => g.status === 'COMPLETED').length,
+          totalCount: updatedGoals.length,
+        },
+      });
+    } catch (error) {
+      console.error('Error bulk updating prevention plan goals:', error);
+
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const planId = params.planId;
-    const body = await request.json();
-
-    const { goalIndices, status } = body as {
-      goalIndices: number[];
-      status: 'PENDING' | 'COMPLETED' | 'IN_PROGRESS' | 'DEFERRED';
-    };
-
-    if (!Array.isArray(goalIndices) || !status) {
-      return NextResponse.json(
-        { error: 'Invalid request: goalIndices array and status required' },
-        { status: 400 }
-      );
-    }
-
-    // Get the existing prevention plan
-    const preventionPlan = await prisma.preventionPlan.findUnique({
-      where: { id: planId },
-    });
-
-    if (!preventionPlan) {
-      return NextResponse.json(
-        { error: 'Prevention plan not found' },
-        { status: 404 }
-      );
-    }
-
-    // Get goals array from database
-    const goals = preventionPlan.goals as any[];
-
-    if (!Array.isArray(goals)) {
-      return NextResponse.json(
-        { error: 'Invalid goals data structure' },
+        {
+          error: 'Failed to bulk update goals',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
         { status: 500 }
       );
     }
-
-    // Update multiple goals
-    const updatedGoals = goals.map((goal, index) => {
-      if (goalIndices.includes(index)) {
-        return {
-          ...goal,
-          status,
-          updatedAt: new Date().toISOString(),
-          updatedBy: session.user.id,
-        };
-      }
-      return goal;
-    });
-
-    // Check if all goals are completed
-    const allCompleted = updatedGoals.every((g) => g.status === 'COMPLETED');
-    const newPlanStatus = allCompleted ? 'COMPLETED' : preventionPlan.status;
-
-    // Update the prevention plan
-    const updatedPlan = await prisma.preventionPlan.update({
-      where: { id: planId },
-      data: {
-        goals: updatedGoals,
-        status: newPlanStatus as any,
-        updatedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: `${goalIndices.length} goals updated successfully`,
-      data: {
-        planId: updatedPlan.id,
-        updatedCount: goalIndices.length,
-        planStatus: newPlanStatus,
-        allGoalsCompleted: allCompleted,
-        completedCount: updatedGoals.filter((g) => g.status === 'COMPLETED').length,
-        totalCount: updatedGoals.length,
-      },
-    });
-  } catch (error) {
-    console.error('Error bulk updating prevention plan goals:', error);
-
-    return NextResponse.json(
-      {
-        error: 'Failed to bulk update goals',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

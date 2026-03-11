@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -33,21 +33,12 @@ const MarkCompleteSchema = z.object({
  * POST /api/prevention/hub/mark-complete
  * Mark a screening or plan goal as completed
  */
-export async function POST(request: NextRequest) {
-  const start = performance.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
 
-  try {
-    // Verify authentication
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    // Parse and validate request body
+    try {
+      // Parse and validate request body
     let body: unknown;
     try {
       body = await request.json();
@@ -95,7 +86,7 @@ export async function POST(request: NextRequest) {
         type: 'screening',
         interventionId,
         patientId: screening.patientId,
-        userId: session.user.id,
+        userId: context.user?.id,
         latencyMs: elapsed.toFixed(2),
       });
 
@@ -104,7 +95,7 @@ export async function POST(request: NextRequest) {
         action: 'intervention_marked_complete',
         type: 'screening',
         patientId: screening.patientId,
-        completedBy: session.user.id,
+        completedBy: context.user?.id,
       });
 
       return NextResponse.json({
@@ -172,7 +163,7 @@ export async function POST(request: NextRequest) {
           interventionId,
           planId: potentialPlanId,
           patientId: plan.patientId,
-          userId: session.user.id,
+          userId: context.user?.id,
           latencyMs: elapsed.toFixed(2),
         });
 
@@ -182,7 +173,7 @@ export async function POST(request: NextRequest) {
           type: 'plan_goal',
           planId: potentialPlanId,
           patientId: plan.patientId,
-          completedBy: session.user.id,
+          completedBy: context.user?.id,
         });
 
         return NextResponse.json({
@@ -226,4 +217,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

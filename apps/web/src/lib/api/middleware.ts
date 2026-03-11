@@ -11,6 +11,7 @@ import { handlePreflight, applyCorsHeaders } from './cors';
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from '@/lib/request-id';
 import { logger, createLogger, logError } from '@/lib/logger';
 import { applySecurityHeaders } from './security-headers';
+import { requireSecret } from '@/lib/security/require-secret';
 import { Redis } from '@upstash/redis';
 import crypto from 'crypto';
 import { auditBuffer } from './audit-buffer';
@@ -57,7 +58,7 @@ export interface RateLimitConfig {
 function verifyInternalToken(token: string | null): boolean {
   if (!token) return false;
 
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const secret = requireSecret('NEXTAUTH_SECRET');
   const now = Math.floor(Date.now() / 60000);
 
   // Check current and previous minute (handles clock skew)

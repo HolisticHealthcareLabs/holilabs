@@ -13,11 +13,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
 import { createPreventionService } from '@/lib/services/prevention.service';
 import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createProtectedRoute, requirePatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,21 +26,9 @@ export const dynamic = 'force-dynamic';
  *
  * Retrieves actionable prevention alerts for a patient.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { patientId: string } }
-) {
-  try {
-    // Check authentication
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { patientId } = params;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const patientId = context.params?.patientId;
 
     if (!patientId) {
       return NextResponse.json(
@@ -49,6 +37,7 @@ export async function GET(
       );
     }
 
+    try {
     // Verify patient exists
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
@@ -65,7 +54,7 @@ export async function GET(
     logger.info({
       event: 'alerts_fetch_start',
       patientId,
-      userId: session.user.id,
+      userId: context.user!.id,
     });
 
     // Get alerts from prevention service
@@ -98,7 +87,7 @@ export async function GET(
   } catch (error) {
     logger.error({
       event: 'alerts_fetch_error',
-      patientId: params.patientId,
+      patientId: context.params?.patientId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
@@ -110,4 +99,6 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], customMiddlewares: [requirePatientAccess()] }
+);

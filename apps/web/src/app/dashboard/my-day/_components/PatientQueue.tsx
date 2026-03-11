@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { CalendarDays, ChevronRight, Play, ChevronDown } from 'lucide-react';
 import { updateAppointmentStatus } from '@/app/actions/schedule';
 
@@ -39,6 +40,14 @@ const STATUS_STYLE: Record<AppointmentStatus, { bg: string; text: string; dot: s
   'Pending Signature': { bg: 'bg-amber-50 dark:bg-amber-500/10',    text: 'text-amber-700 dark:text-amber-300',   dot: 'bg-amber-500' },
 };
 
+const STATUS_TO_KEY: Record<AppointmentStatus, string> = {
+  Scheduled: 'dashboard.myDay.scheduled',
+  Arrived: 'dashboard.myDay.arrived',
+  'In Progress': 'dashboard.myDay.inProgress',
+  Finished: 'dashboard.myDay.finished',
+  'Pending Signature': 'dashboard.myDay.pendingSignature',
+};
+
 const AVATAR_COLORS = [
   'bg-cyan-600', 'bg-violet-600', 'bg-rose-600',
   'bg-teal-600', 'bg-amber-600', 'bg-indigo-600',
@@ -69,6 +78,7 @@ interface PatientQueueProps {
 
 export function PatientQueue({ appointments, userRole = 'CLINICIAN' }: PatientQueueProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<QueueFilter>('All');
   const [isPending, startTransition] = useTransition();
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -205,7 +215,7 @@ export function PatientQueue({ appointments, userRole = 'CLINICIAN' }: PatientQu
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer border ${style.bg} ${style.text} border-current/20 hover:opacity-80 disabled:opacity-50`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-                      {apt.status}
+                      {t(STATUS_TO_KEY[apt.status])}
                       <ChevronDown className="w-3 h-3" />
                     </button>
 
@@ -223,7 +233,7 @@ export function PatientQueue({ appointments, userRole = 'CLINICIAN' }: PatientQu
                               className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                             >
                               <span className={`w-2 h-2 rounded-full ${targetStyle.dot}`} />
-                              {targetStatus}
+                              {t(STATUS_TO_KEY[targetStatus])}
                             </button>
                           );
                         })}
@@ -233,7 +243,7 @@ export function PatientQueue({ appointments, userRole = 'CLINICIAN' }: PatientQu
                 ) : (
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold flex-shrink-0 ${style.bg} ${style.text}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-                    {apt.status}
+                    {t(STATUS_TO_KEY[apt.status])}
                   </span>
                 )}
 

@@ -5,9 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { checkPatientConsentExpiration, findExpiredConsents, expireConsent } from '@/lib/consent/expiration-checker';
+import logger from '@/lib/logger';
 
 // Consent type metadata (matches ConsentManagementPanel expectations)
 const CONSENT_METADATA: Record<string, any> = {
@@ -83,7 +85,8 @@ function getConsentMetadata(type: string) {
 /**
  * GET /api/consents?patientId={id}
  */
-export async function GET(request: NextRequest) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
@@ -143,12 +146,15 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching consents:', error);
     return NextResponse.json({ error: 'Failed to fetch consents' }, { status: 500 });
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * POST /api/consents
  */
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const body = await request.json();
     const { patientId, consentTypeId, granted, version } = body;
@@ -230,7 +236,7 @@ export async function POST(request: NextRequest) {
             });
           }
 
-          console.log(`✅ Reactivated data access grant for patient ${patientId}`);
+          logger.info('[Consents] Reactivated data access grant', { patientId });
         }
       }
     } else if (existingConsent && !granted) {
@@ -257,7 +263,7 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        console.log(`🔒 Revoked all data access grants for patient ${patientId} due to consent revocation`);
+        logger.info('[Consents] Revoked all data access grants due to consent revocation', { patientId });
       }
     } else if (!existingConsent && granted) {
       // Create new
@@ -332,4 +338,6 @@ Date: ${new Date().toLocaleDateString()}
     console.error('Error updating consent:', error);
     return NextResponse.json({ error: 'Failed to update consent' }, { status: 500 });
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

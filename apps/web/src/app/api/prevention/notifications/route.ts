@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { NotificationType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
@@ -55,20 +55,12 @@ const SendNotificationSchema = z.object({
  * GET /api/prevention/notifications
  * Fetch notifications for the current user
  */
-export async function GET(request: NextRequest) {
-  const start = performance.now();
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
 
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
+    try {
+      const { searchParams } = new URL(request.url);
     const queryParams = {
       type: searchParams.get('type') || undefined,
       unreadOnly: searchParams.get('unreadOnly') === 'true',
@@ -87,7 +79,7 @@ export async function GET(request: NextRequest) {
     const { type, unreadOnly, limit, offset } = validation.data;
 
     // Build query conditions
-    const where: Record<string, unknown> = { recipientId: session.user.id };
+    const where: Record<string, unknown> = { recipientId: context.user?.id };
 
     if (type) {
       where.type = type;
@@ -126,7 +118,7 @@ export async function GET(request: NextRequest) {
       prisma.notification.count({ where }),
       prisma.notification.count({
         where: {
-          recipientId: session.user.id,
+          recipientId: context.user?.id,
           type: { in: Object.keys(NOTIFICATION_TEMPLATES) as NotificationType[] },
           readAt: null,
         },
@@ -137,14 +129,14 @@ export async function GET(request: NextRequest) {
 
     logger.info({
       event: 'notifications_fetched',
-      userId: session.user.id,
+      userId: context.user?.id,
       count: notifications.length,
       unreadCount,
       latencyMs: elapsed.toFixed(2),
     });
 
     // HIPAA Audit
-    await auditView('Notification', session.user.id, request, {
+    await auditView('Notification', context.user?.id ?? '', request, {
       notificationCount: notifications.length,
       action: 'notifications_viewed',
     });
@@ -182,26 +174,20 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * POST /api/prevention/notifications
  * Send a prevention notification (internal use or admin)
  */
-export async function POST(request: NextRequest) {
-  const start = performance.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
 
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+    try {
+      const body = await request.json();
     const validation = SendNotificationSchema.safeParse(body);
 
     if (!validation.success) {
@@ -264,7 +250,7 @@ export async function POST(request: NextRequest) {
       type,
       recipientId,
       success: result.success,
-      sentBy: session.user.id,
+      sentBy: context.user?.id,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -272,7 +258,7 @@ export async function POST(request: NextRequest) {
     await auditCreate('Notification', result.id, request, {
       type,
       recipientId,
-      sentBy: session.user.id,
+      sentBy: context.user?.id,
       action: 'notification_sent',
     });
 
@@ -303,4 +289,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

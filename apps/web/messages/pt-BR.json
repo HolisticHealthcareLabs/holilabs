@@ -413,10 +413,14 @@
       "forHospitals": "Para hospitais",
       "pricing": "Preços",
       "signIn": "Entrar",
-      "requestAccess": "Solicitar acesso"
+      "requestAccess": "Solicitar acesso",
+      "changeLanguage": "Mudar idioma",
+      "closeMenu": "Fechar menu",
+      "openMenu": "Abrir menu"
     },
     "featureA": {
       "eyebrow": "Transcrição Clínica com IA",
+      "imageAlt": "Motor de Referência Cruzada Cortex",
       "headline": "Escute uma vez. Suas notas se escrevem sozinhas.",
       "description": "A Holi Labs escuta cada consulta e monta notas SOAP estruturadas em tempo real — preenchendo automaticamente Subjetivo, Objetivo, Avaliação e Plano à medida que a conversa acontece. Nenhum dado do paciente (PHI) sai da sua rede.",
       "link": "Ver a demonstração ao vivo"
@@ -483,8 +487,8 @@
   },
   "pricing": {
     "hero": {
-      "eyebrow": "Precos",
-      "headline": "Precos transparentes para cada tamanho de hospital.",
+      "eyebrow": "Preços",
+      "headline": "Preços transparentes para cada tamanho de hospital.",
       "subhead": "Sem taxas ocultas. Sem cobranças por consulta. Um preço previsível por profissional."
     },
     "toggle": {
@@ -572,6 +576,114 @@
       "headline": "Ainda não tem certeza? Veja em ação.",
       "subhead": "Teste o demo ao vivo — sem cadastro necessário.",
       "button": "Teste o Demo"
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "clinicalWorkspace": "ÁREA CLÍNICA",
+      "revenueOps": "RECEITA E OPERAÇÕES",
+      "administration": "ADMINISTRAÇÃO",
+      "myDay": "Meu Dia",
+      "coPilot": "Co-Piloto",
+      "patients": "Pacientes",
+      "inbox": "Caixa de Entrada",
+      "commandCenter": "Central de Comando",
+      "claimsIntelligence": "Inteligência de Faturamento",
+      "analytics": "Análises",
+      "auditCompliance": "Auditoria e Conformidade",
+      "settingsTeam": "Configurações e Equipe",
+      "startVisit": "Iniciar Consulta",
+      "openingCoPilot": "Abrindo Co-Piloto...",
+      "searchPatients": "Buscar Pacientes...",
+      "expandSidebar": "Expandir barra lateral",
+      "collapseSidebar": "Recolher barra lateral",
+      "closeSidebar": "Fechar barra lateral"
+    },
+    "profile": {
+      "profile": "Perfil",
+      "security": "Segurança",
+      "preferences": "Preferências",
+      "privacyData": "Privacidade e Dados",
+      "billing": "Faturamento",
+      "integrations": "Integrações",
+      "helpSupport": "Ajuda e Suporte",
+      "signOut": "Sair"
+    },
+    "roles": {
+      "administrator": "Administrador",
+      "clinician": "Médico",
+      "nurse": "Enfermeiro(a)",
+      "physician": "Médico(a)",
+      "receptionist": "Recepcionista",
+      "staff": "Funcionário"
+    },
+    "error": {
+      "crashed": "O painel travou",
+      "failsafeOverlay": "Esta é uma sobreposição de segurança para exibir o erro real.",
+      "reload": "Recarregar"
+    },
+    "myDay": {
+      "goodMorning": "Bom dia",
+      "goodAfternoon": "Boa tarde",
+      "goodEvening": "Boa noite",
+      "inProgress": "Em Andamento",
+      "completed": "Concluído",
+      "scheduled": "Agendado",
+      "arrived": "Chegou",
+      "finished": "Finalizado",
+      "pendingSignature": "Assinatura Pendente",
+      "noAppointments": "Nenhuma consulta agendada",
+      "todaySchedule": "Agenda de Hoje",
+      "upcomingTasks": "Tarefas Próximas",
+      "recentNotes": "Notas Recentes"
+    },
+    "patients": {
+      "addPatient": "Adicionar Paciente",
+      "registerNewPatient": "Registrar Novo Paciente",
+      "searchPlaceholder": "Buscar por nome, prontuário ou diagnóstico...",
+      "noPatients": "Nenhum paciente encontrado",
+      "firstName": "Nome",
+      "lastName": "Sobrenome",
+      "dateOfBirth": "Data de Nascimento",
+      "gender": "Gênero",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "patient": "Paciente",
+      "ageSex": "Idade / Sexo",
+      "primaryDx": "Diagnóstico Principal",
+      "lastVisit": "Última Consulta",
+      "risk": "Risco",
+      "showing": "Mostrando {from}-{to} de {total} pacientes"
+    },
+    "settings": {
+      "searchCortex": "Buscar Conta Cortex",
+      "yourAccount": "Sua conta",
+      "noEmail": "Nenhum e-mail cadastrado",
+      "securityReview": "Revisão de segurança recomendada",
+      "reviewSettings": "Revisar configurações",
+      "organization": "Organização",
+      "role": "Função",
+      "pendingInvites": "Convites pendentes",
+      "aiProviders": "Provedores de IA",
+      "geminiApiKey": "Chave API Google Gemini",
+      "anthropicApiKey": "Chave API Anthropic",
+      "openaiApiKey": "Chave API OpenAI",
+      "deepgramApiKey": "Chave API Deepgram"
+    },
+    "billing": {
+      "searchClaims": "Buscar guias, pacientes, convênios...",
+      "clinicalRationale": "Forneça justificativa clínica conforme política do convênio..."
+    },
+    "commandCenter": {
+      "resolutionNotes": "Notas de resolução (opcional)",
+      "criticalLabFollowUp": "Acompanhamento de Exame Crítico"
+    },
+    "analytics": {
+      "consultationTrend": "Tendência de Consultas",
+      "patientDemographics": "Demografia dos Pacientes",
+      "visitTypes": "Tipos de Consulta",
+      "clinicHeatmap": "Mapa de Atividade da Clínica",
+      "heatmapDescription": "Densidade de consultas por dia e hora"
     }
   }
 }

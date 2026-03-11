@@ -173,7 +173,7 @@ export function encrypt(plaintext: any): EncryptedData {
       authTag: authTag.toString('hex'),
     };
   } catch (error: any) {
-    console.error('Encryption error:', error.message);
+    logger.error({ error }, 'Encryption error');
     throw new Error('Failed to encrypt data');
   }
 }
@@ -207,7 +207,7 @@ export function decrypt(encryptedData: EncryptedData): any {
       return decrypted;
     }
   } catch (error: any) {
-    console.error('Decryption error:', error.message);
+    logger.error({ error }, 'Decryption error');
     throw new Error('Failed to decrypt data');
   }
 }
@@ -419,7 +419,7 @@ export function encryptPHI(plaintext: string | null): string | null {
     // Format: iv:authTag:encryptedData (legacy format without version)
     return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
   } catch (error: any) {
-    console.error('PHI encryption error:', error.message);
+    logger.error({ error }, 'PHI encryption error (legacy)');
     throw new Error('Failed to encrypt PHI');
   }
 }
@@ -458,7 +458,7 @@ export function decryptPHI(ciphertext: string | null): string | null {
 
     return decrypted;
   } catch (error: any) {
-    console.error('PHI decryption error:', error.message);
+    logger.error({ error }, 'PHI decryption error (legacy)');
     throw new Error('Failed to decrypt PHI');
   }
 }
@@ -483,7 +483,7 @@ export function encryptBuffer(buffer: Buffer): Buffer {
     // Format: iv (16 bytes) + authTag (16 bytes) + encrypted data
     return Buffer.concat([iv, authTag, encrypted]);
   } catch (error: any) {
-    console.error('Buffer encryption error:', error.message);
+    logger.error({ error }, 'Buffer encryption error');
     throw new Error('Failed to encrypt buffer');
   }
 }
@@ -507,7 +507,7 @@ export function decryptBuffer(encryptedBuffer: Buffer): Buffer {
       decipher.final(),
     ]);
   } catch (error: any) {
-    console.error('Buffer decryption error:', error.message);
+    logger.error({ error }, 'Buffer decryption error');
     throw new Error('Failed to decrypt buffer');
   }
 }

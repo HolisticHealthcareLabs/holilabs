@@ -394,5 +394,296 @@
       "dashboard": "Te llevo al Dashboard principal donde puedes ver un resumen de tus pacientes activos, citas programadas, prescripciones pendientes, y más."
     },
     "defaultResponse": "Entiendo que buscas \"{query}\".\n\nPuedo ayudarte con:\n• **Prevención**: Sistema longitudinal de 30 años con alertas automáticas\n• **AI Scribe**: Transcripción y notas SOAP en tiempo real (ahorra 3-4h/día)\n• **CDSS**: 12+ reglas de soporte clínico con protocolos WHO/PAHO\n• **Pacientes**: Portal completo que reduce llamadas en 40%\n• **E-Prescribing**: Firma digital a 8+ farmacias integradas\n\n¿Sobre cuál te gustaría saber más?"
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "IA Clínica para América Latina",
+      "headline": "El Futuro de los\nCo-Pilotos Clínicos.",
+      "subhead": "Elimine el agotamiento médico y detenga la fuga de ingresos\nen su origen.\nAutomatice la documentación clínica, la seguridad diagnóstica en tiempo real y\nel cumplimiento de facturación médica.",
+      "ctaPrimary": "Ver en acción",
+      "ctaSecondary": "Agendar demostración",
+      "trustLgpd": "Nativo LGPD",
+      "trustAnvisa": "Listo para ANVISA",
+      "trustDeterministic": "Cada alerta rastreable",
+      "trustSpeed": "< 90s por revisión",
+      "trustPhi": "Cero PHI en la nube"
+    },
+    "nav": {
+      "howItWorks": "Cómo funciona",
+      "forHospitals": "Para hospitales",
+      "pricing": "Precios",
+      "signIn": "Iniciar sesión",
+      "requestAccess": "Solicitar acceso",
+      "changeLanguage": "Cambiar idioma",
+      "closeMenu": "Cerrar menú",
+      "openMenu": "Abrir menú"
+    },
+    "featureA": {
+      "eyebrow": "Escriba Clínico con IA",
+      "imageAlt": "Motor de Referencia Cruzada Cortex",
+      "headline": "Escuche una vez. Sus notas se escriben solas.",
+      "description": "Holi Labs escucha cada consulta y genera notas SOAP estructuradas en tiempo real — completando automáticamente Subjetivo, Objetivo, Evaluación y Plan mientras la conversación avanza. La PHI se desidentifica antes de tocar cualquier servidor.",
+      "link": "Ver la demostración en vivo"
+    },
+    "featureB": {
+      "eyebrow": "Soporte a Decisiones Clínicas",
+      "headline": "Sus pacientes merecen un segundo par de ojos.",
+      "description": "Interacciones medicamentosas. Límites de dosificación. Cumplimiento de formulario. Nuestro motor CDSS evalúa cada decisión clínica contra protocolos globales y mandatos locales — silenciosamente, en tiempo real, sin agregar un solo paso al flujo del médico.",
+      "stat1Value": "< 90s",
+      "stat1Label": "Revisión médica promedio",
+      "stat1Sub": "Mismo flujo de trabajo. Resultados más seguros.",
+      "stat2Value": "0 PHI",
+      "stat2Label": "Datos del paciente salen de su red",
+      "stat2Sub": "Cumplimiento LGPD por arquitectura, no por política.",
+      "stat3Value": "24/7",
+      "stat3Label": "Cobertura de auditoría continua",
+      "stat3Sub": "Cada decisión clínica documentada y rastreable."
+    },
+    "featureC": {
+      "eyebrow": "Para Administradores Hospitalarios",
+      "headline": "Deje de perder ingresos que ya ganó.",
+      "description1": "Hasta el 30% de las reclamaciones enviadas en América Latina son rechazadas o reducidas por brechas en la documentación. Holi Labs señala cada pieza faltante antes de que su reclamo salga del edificio.",
+      "description2": "Validación ICD-10. Verificación de códigos TUSS. CDI ambiental que detecta brechas de documentación en segundos — no después de que llegue la carta de denegación.",
+      "link": "Ver inteligencia de facturación",
+      "brazilName": "Brasil",
+      "brazilBadge": "Activo",
+      "brazilDesc": "Códigos de facturación TUSS. Registro de medicamentos ANVISA. Validación de procedimientos CBHPM. Nativo LGPD. Soporte completo en portugués.",
+      "boliviaName": "Bolivia",
+      "boliviaBadge": "Activo",
+      "boliviaDesc": "Estándares del Ministerio de Salud. Español primero. Integración de formulario local. Construido con clínicas bolivianas desde el primer día.",
+      "argentinaName": "Argentina",
+      "argentinaBadge": "Próximamente T3 2026",
+      "argentinaDesc": "SNOMED CT. Formulario provincial. Validación de facturación IOMA. Cobertura regulatoria completa lanzando T3 2026."
+    },
+    "cta": {
+      "headline": "¿Cuántos reclamos perdió su hospital el mes pasado?",
+      "subhead": "La mayoría de los administradores no pueden responder eso. Holi Labs se lo muestra en la primera semana.",
+      "placeholder": "su@hospital.com",
+      "submit": "Solicitar acceso",
+      "sending": "Enviando...",
+      "successMsg": "Está en la lista. Nos pondremos en contacto en 48 horas.",
+      "errorDefault": "Algo salió mal. Inténtelo de nuevo.",
+      "errorNetwork": "Error de red. Inténtelo de nuevo.",
+      "disclaimer": "No se recopila PHI. Nativo LGPD. Respuesta en 48 horas."
+    },
+    "footer": {
+      "brand": "Holi Labs",
+      "brandSub": "IA Clínica para la salud en América Latina.",
+      "product": "Producto",
+      "company": "Empresa",
+      "legal": "Legal",
+      "about": "Acerca de",
+      "blog": "Blog",
+      "careers": "Carreras",
+      "press": "Prensa",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "hipaaPolicy": "Política HIPAA",
+      "lgpdPolicy": "Política LGPD",
+      "liveDemo": "Demo en Vivo",
+      "copyright": "Copyright © 2026 Holi Labs. Todos los derechos reservados.",
+      "badges": "Alineado a HIPAA · Nativo LGPD · Listo para ANVISA"
+    }
+  },
+  "pricing": {
+    "hero": {
+      "eyebrow": "Precios",
+      "headline": "Precios transparentes para cada tamaño de hospital.",
+      "subhead": "Sin cargos ocultos. Sin cobros por consulta. Un precio predecible por profesional."
+    },
+    "toggle": {
+      "monthly": "Mensual",
+      "annually": "Anual",
+      "save": "Ahorra 20%"
+    },
+    "currency": "Precios mostrados en USD. Facturación en moneda local (BRL, BOB) disponible.",
+    "tiers": {
+      "safety": {
+        "name": "Cortex Safety",
+        "priceMonthly": "$59",
+        "priceAnnual": "$49",
+        "period": "/profesional/mes",
+        "description": "Verificaciones de seguridad esenciales para clínicas con 5-50 profesionales.",
+        "cta": "Iniciar piloto",
+        "features": [
+          "Verificación de interacciones medicamentosas en tiempo real",
+          "Validación de códigos de facturación (TUSS / ICD-10 / SNOMED)",
+          "Pista de auditoría compatible con LGPD",
+          "Análisis de seguridad básicos",
+          "Soporte por correo electrónico"
+        ]
+      },
+      "complete": {
+        "name": "Cortex Complete",
+        "badge": "Más popular",
+        "priceMonthly": "$89",
+        "priceAnnual": "$75",
+        "period": "/profesional/mes",
+        "description": "Plataforma completa para hospitales con 50-500 camas.",
+        "cta": "Solicitar acceso",
+        "features": [
+          "Todo en Safety, más:",
+          "Protocolos de prevención y detección de brechas en tamizaje",
+          "Centro de Comando Clínico",
+          "Portal del paciente",
+          "Análisis avanzados e informes",
+          "Soporte prioritario"
+        ]
+      },
+      "governance": {
+        "name": "Cortex Governance",
+        "price": "Personalizado",
+        "period": "",
+        "description": "Gobernanza empresarial para aseguradoras y operadoras.",
+        "cta": "Hablar con ventas",
+        "features": [
+          "Todo en Complete, más:",
+          "Panel de reducción de glosas",
+          "Análisis de reclamos y seguimiento de denegaciones",
+          "Consola de gobernanza",
+          "Acceso API dedicado",
+          "Integraciones personalizadas",
+          "Gerente de cuenta dedicado"
+        ]
+      }
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "items": [
+        {
+          "question": "¿Necesito reemplazar mi HCE actual?",
+          "answer": "No. Cortex funciona silenciosamente junto a sus sistemas existentes a través de nuestra API o portal web."
+        },
+        {
+          "question": "¿Los datos del paciente cumplen con LGPD?",
+          "answer": "Sí. Procesamos reglas usando una arquitectura local o datos desidentificados. Cero PHI se almacena en nuestra nube."
+        },
+        {
+          "question": "¿Qué tan rápida es la implementación?",
+          "answer": "La integración API puede ser implementada por su equipo de TI en menos de 48 horas."
+        },
+        {
+          "question": "¿Soportan códigos de facturación locales?",
+          "answer": "Sí, el motor Cortex soporta nativamente TUSS, SUS e ICD-10 con referencia cruzada."
+        },
+        {
+          "question": "¿Podemos ejecutar un piloto antes de comprometernos?",
+          "answer": "Sí, ofrecemos un piloto retrospectivo de 14 días para mostrarle exactamente cuántas glosas habríamos detectado."
+        }
+      ]
+    },
+    "cta": {
+      "headline": "¿Aún no está seguro? Véalo en acción.",
+      "subhead": "Pruebe la demostración en vivo — sin registro necesario.",
+      "button": "Probar Demo en Vivo"
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "clinicalWorkspace": "ÁREA CLÍNICA",
+      "revenueOps": "INGRESOS Y OPERACIONES",
+      "administration": "ADMINISTRACIÓN",
+      "myDay": "Mi Día",
+      "coPilot": "Co-Piloto",
+      "patients": "Pacientes",
+      "inbox": "Bandeja de Entrada",
+      "commandCenter": "Centro de Comando",
+      "claimsIntelligence": "Inteligencia de Facturación",
+      "analytics": "Análisis",
+      "auditCompliance": "Auditoría y Cumplimiento",
+      "settingsTeam": "Configuración y Equipo",
+      "startVisit": "Iniciar Consulta",
+      "openingCoPilot": "Abriendo Co-Piloto...",
+      "searchPatients": "Buscar Pacientes...",
+      "expandSidebar": "Expandir barra lateral",
+      "collapseSidebar": "Contraer barra lateral",
+      "closeSidebar": "Cerrar barra lateral"
+    },
+    "profile": {
+      "profile": "Perfil",
+      "security": "Seguridad",
+      "preferences": "Preferencias",
+      "privacyData": "Privacidad y Datos",
+      "billing": "Facturación",
+      "integrations": "Integraciones",
+      "helpSupport": "Ayuda y Soporte",
+      "signOut": "Cerrar Sesión"
+    },
+    "roles": {
+      "administrator": "Administrador",
+      "clinician": "Médico",
+      "nurse": "Enfermero(a)",
+      "physician": "Médico(a)",
+      "receptionist": "Recepcionista",
+      "staff": "Personal"
+    },
+    "error": {
+      "crashed": "El panel se detuvo",
+      "failsafeOverlay": "Esta es una capa de seguridad para mostrar el error real.",
+      "reload": "Recargar"
+    },
+    "myDay": {
+      "goodMorning": "Buenos días",
+      "goodAfternoon": "Buenas tardes",
+      "goodEvening": "Buenas noches",
+      "inProgress": "En Progreso",
+      "completed": "Completado",
+      "scheduled": "Programado",
+      "arrived": "Llegó",
+      "finished": "Finalizado",
+      "pendingSignature": "Firma Pendiente",
+      "noAppointments": "No hay citas programadas",
+      "todaySchedule": "Agenda de Hoy",
+      "upcomingTasks": "Tareas Próximas",
+      "recentNotes": "Notas Recientes"
+    },
+    "patients": {
+      "addPatient": "Agregar Paciente",
+      "registerNewPatient": "Registrar Nuevo Paciente",
+      "searchPlaceholder": "Buscar por nombre, expediente o diagnóstico...",
+      "noPatients": "No se encontraron pacientes",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "dateOfBirth": "Fecha de Nacimiento",
+      "gender": "Género",
+      "email": "Correo Electrónico",
+      "phone": "Teléfono",
+      "patient": "Paciente",
+      "ageSex": "Edad / Sexo",
+      "primaryDx": "Diagnóstico Principal",
+      "lastVisit": "Última Consulta",
+      "risk": "Riesgo",
+      "showing": "Mostrando {from}-{to} de {total} pacientes"
+    },
+    "settings": {
+      "searchCortex": "Buscar Cuenta Cortex",
+      "yourAccount": "Su cuenta",
+      "noEmail": "Sin correo registrado",
+      "securityReview": "Revisión de seguridad recomendada",
+      "reviewSettings": "Revisar configuración",
+      "organization": "Organización",
+      "role": "Rol",
+      "pendingInvites": "Invitaciones pendientes",
+      "aiProviders": "Proveedores de IA",
+      "geminiApiKey": "Clave API Google Gemini",
+      "anthropicApiKey": "Clave API Anthropic",
+      "openaiApiKey": "Clave API OpenAI",
+      "deepgramApiKey": "Clave API Deepgram"
+    },
+    "billing": {
+      "searchClaims": "Buscar reclamos, pacientes, pagadores...",
+      "clinicalRationale": "Proporcione justificación clínica según política del pagador..."
+    },
+    "commandCenter": {
+      "resolutionNotes": "Notas de resolución (opcional)",
+      "criticalLabFollowUp": "Seguimiento de Laboratorio Crítico"
+    },
+    "analytics": {
+      "consultationTrend": "Tendencia de Consultas",
+      "patientDemographics": "Demografía de Pacientes",
+      "visitTypes": "Tipos de Consulta",
+      "clinicHeatmap": "Mapa de Actividad de la Clínica",
+      "heatmapDescription": "Densidad de consultas por día y hora"
+    }
   }
 }

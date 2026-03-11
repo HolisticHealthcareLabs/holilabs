@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -31,18 +30,10 @@ interface BulkOperationResult {
  * POST /api/prevention/plans/bulk
  * Perform bulk operations on multiple prevention plans
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const body = await request.json();
     const { operation, planIds, params } = body;
 
     // Validate input
@@ -88,7 +79,7 @@ export async function POST(request: NextRequest) {
             // Create new history entry
             const newEntry: StatusChangeHistory = {
               timestamp: new Date().toISOString(),
-              userId: session.user.id,
+              userId: context.user?.id ?? '',
               fromStatus: plan.status,
               toStatus: params.status,
               reason: params.reason || undefined,
@@ -108,11 +99,11 @@ export async function POST(request: NextRequest) {
             // Add status-specific fields
             if (params.status === 'COMPLETED') {
               updateData.completedAt = new Date();
-              updateData.completedBy = session.user.id;
+              updateData.completedBy = context.user?.id ?? '';
               updateData.completionReason = params.reason || null;
             } else if (params.status === 'DEACTIVATED') {
               updateData.deactivatedAt = new Date();
-              updateData.deactivatedBy = session.user.id;
+              updateData.deactivatedBy = context.user?.id ?? '';
               updateData.deactivationReason = params.reason || null;
             }
 
@@ -164,7 +155,7 @@ export async function POST(request: NextRequest) {
             // Create new history entry
             const newEntry: StatusChangeHistory = {
               timestamp: new Date().toISOString(),
-              userId: session.user.id,
+              userId: context.user?.id ?? '',
               fromStatus: plan.status,
               toStatus: 'DEACTIVATED',
               reason: 'bulk_archive',
@@ -180,7 +171,7 @@ export async function POST(request: NextRequest) {
                 status: 'DEACTIVATED',
                 statusChanges: updatedHistory as any,
                 deactivatedAt: new Date(),
-                deactivatedBy: session.user.id,
+                deactivatedBy: context.user?.id ?? '',
                 deactivationReason: 'bulk_archive',
                 updatedAt: new Date(),
               },
@@ -344,4 +335,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

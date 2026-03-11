@@ -89,8 +89,7 @@ model User {
   // Credential Verification
   credentials ProviderCredential[]
 
-  // Medical Imaging
-  patientMedicalImages  MedicalImage[]    @relation("PatientMedicalImages")
+  // Medical Imaging (provider and upload roles only — patient images belong to Patient model)
   providerMedicalImages MedicalImage[]    @relation("ProviderMedicalImages")
   uploadedMedicalImages MedicalImage[]    @relation("UploadedMedicalImages")
   imageAccessLogs       ImageAccessLog[]
@@ -1079,6 +1078,9 @@ model Patient {
   riskScores         RiskScore[]
   nutritionPlans     NutritionPlan[]
   exercisePlans      ExercisePlan[]
+
+  // Medical Imaging
+  medicalImages MedicalImage[] @relation("PatientMedicalImages")
 
   // AI Quality Control (Phase 2.3)
   aiContentFeedback      AIContentFeedback[]
@@ -5202,7 +5204,7 @@ model MedicalImage {
 
   // Clinical Context
   patientId String?
-  patient   User?   @relation("PatientMedicalImages", fields: [patientId], references: [id], onDelete: SetNull)
+  patient   Patient? @relation("PatientMedicalImages", fields: [patientId], references: [id], onDelete: SetNull)
 
   providerId String?
   provider   User?   @relation("ProviderMedicalImages", fields: [providerId], references: [id], onDelete: SetNull)
