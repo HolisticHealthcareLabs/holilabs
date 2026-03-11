@@ -8,8 +8,11 @@ import { NextResponse } from 'next/server';
 import { S3Client, HeadBucketCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
+
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
 // Storage configuration
 function getStorageConfig() {
@@ -22,7 +25,7 @@ function getStorageConfig() {
   };
 }
 
-export async function GET() {
+async function getStorageHealth() {
   const config = getStorageConfig();
 
   try {
@@ -148,3 +151,5 @@ export async function GET() {
     }, { status: 500 });
   }
 }
+
+export const GET = createPublicRoute(getStorageHealth, { rateLimit: RATE_LIMIT });

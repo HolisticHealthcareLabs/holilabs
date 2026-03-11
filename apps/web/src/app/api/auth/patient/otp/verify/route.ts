@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { verifyOTP } from '@/lib/auth/otp';
 import logger from '@/lib/logger';
@@ -45,7 +46,7 @@ async function createSessionToken(patientUser: any): Promise<string> {
   return token;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     const rateLimitResponse = await checkRateLimit(request, 'auth');
     if (rateLimitResponse) return rateLimitResponse;
@@ -129,4 +130,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

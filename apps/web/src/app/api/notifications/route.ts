@@ -6,109 +6,58 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { getNotifications } from '@/lib/notifications';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
 import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const unreadOnly = searchParams.get('unreadOnly') === 'true';
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const searchParams = request.nextUrl.searchParams;
+      const limit = parseInt(searchParams.get('limit') || '50');
+      const offset = parseInt(searchParams.get('offset') || '0');
+      const unreadOnly = searchParams.get('unreadOnly') === 'true';
 
-    // Check if it's a clinician or patient request
-    const clinicianSession = await auth();
+      const userId = context.user?.id;
+      const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
-    if (clinicianSession?.user?.id) {
       // Demo mode (DB-FREE)
-      if (isDemoClinician(clinicianSession.user.id, clinicianSession.user.email ?? null)) {
+      if (userType === 'CLINICIAN' && userId && isDemoClinician(userId, context.user?.email ?? null)) {
         const all = getSyntheticNotifications();
         const filtered = unreadOnly ? all.filter((n) => !n.isRead) : all;
         const page = filtered.slice(offset, offset + limit);
         return NextResponse.json({ success: true, data: page }, { status: 200 });
       }
 
-      // Clinician notifications
-      const notifications = await getNotifications(
-        clinicianSession.user.id,
-        'CLINICIAN',
-        {
-          limit,
-          offset,
-          unreadOnly,
-        }
-      );
+      // Clinician or patient notifications
+      const notifications = await getNotifications(userId!, userType, {
+        limit,
+        offset,
+        unreadOnly,
+      });
 
       logger.info({
         event: 'notifications_fetched',
-        userId: clinicianSession.user.id,
-        userType: 'CLINICIAN',
+        userId: userType === 'PATIENT' ? undefined : userId,
+        patientId: userType === 'PATIENT' ? userId : undefined,
+        userType,
         count: notifications.length,
       });
 
-      // HIPAA Audit Log: Clinician accessed notifications
+      // HIPAA Audit Log
       await createAuditLog({
         action: 'READ',
         resource: 'Notification',
-        resourceId: clinicianSession.user.id,
+        resourceId: userId!,
         details: {
-          userType: 'CLINICIAN',
+          userType,
           notificationsCount: notifications.length,
           unreadOnly,
           limit,
           offset,
-          accessType: 'NOTIFICATION_LIST',
-        },
-        success: true,
-      });
-
-      return NextResponse.json(
-        {
-          success: true,
-          data: notifications,
-        },
-        { status: 200 }
-      );
-    }
-
-    // Try patient session
-    try {
-      const patientSession = await requirePatientSession();
-
-      const notifications = await getNotifications(
-        patientSession.patientId,
-        'PATIENT',
-        {
-          limit,
-          offset,
-          unreadOnly,
-        }
-      );
-
-      logger.info({
-        event: 'notifications_fetched',
-        patientId: patientSession.patientId,
-        userType: 'PATIENT',
-        count: notifications.length,
-      });
-
-      // HIPAA Audit Log: Patient accessed notifications
-      await createAuditLog({
-        action: 'READ',
-        resource: 'Notification',
-        resourceId: patientSession.patientId,
-        details: {
-          userType: 'PATIENT',
-          patientId: patientSession.patientId,
-          notificationsCount: notifications.length,
-          unreadOnly,
-          limit,
-          offset,
-          accessType: 'PATIENT_NOTIFICATION_LIST',
+          accessType: userType === 'PATIENT' ? 'PATIENT_NOTIFICATION_LIST' : 'NOTIFICATION_LIST',
         },
         success: true,
       });
@@ -121,27 +70,19 @@ export async function GET(request: NextRequest) {
         { status: 200 }
       );
     } catch (error) {
-      // Not a patient either
+      logger.error({
+        event: 'notifications_fetch_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
+          error: 'Error al cargar notificaciones.',
         },
-        { status: 401 }
+        { status: 500 }
       );
     }
-  } catch (error) {
-    logger.error({
-      event: 'notifications_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar notificaciones.',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'PATIENT'], skipCsrf: true }
+);

@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import {
   exchangeCodeForToken,
   EhrProviderId,
@@ -26,10 +27,10 @@ const VALID_PROVIDERS: EhrProviderId[] = ['epic', 'cerner', 'athena', 'medplum']
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-export async function GET(
+export const GET = createPublicRoute(async (
   request: NextRequest,
   context: any
-) {
+) => {
   const { provider } = await context.params;
 
   // Validate provider
@@ -147,7 +148,7 @@ export async function GET(
       '/dashboard/settings/integrations'
     );
   }
-}
+});
 
 /**
  * Helper to redirect with error message

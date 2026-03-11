@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 // Public endpoint — called by the onboarding welcome page to verify a lead
-export async function GET(
+export const GET = createPublicRoute(async (
   _request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+  context: { params?: Record<string, string> | Promise<Record<string, string>> }
+) => {
+  const params = await Promise.resolve(context.params ?? {});
+  const id = params.id;
 
   if (!id) {
     return NextResponse.json({ valid: false });
@@ -37,4 +39,4 @@ export async function GET(
       plan: entry.plan,
     },
   });
-}
+});

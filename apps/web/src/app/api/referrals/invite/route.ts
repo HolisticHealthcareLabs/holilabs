@@ -7,8 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { trackReferralInvitation, getOrCreateReferralCode } from '@/lib/referral';
 import { createAuditLog } from '@/lib/audit';
 
@@ -19,26 +18,11 @@ interface InviteRequest {
   personalMessage?: string;
 }
 
-/**
- * POST /api/referrals/invite
- *
- * Send referral invitations to email addresses
- */
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Authentication check
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
+    const user = context.user!;
 
-    const userId = session.user.id;
-    const user = session.user as any;
-
-    // Parse request body
     const body: InviteRequest = await request.json();
 
     if (!body.emails || body.emails.length === 0) {
@@ -48,7 +32,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Validate email addresses
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const invalidEmails = body.emails.filter((email) => !emailRegex.test(email));
 
@@ -62,14 +45,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Get user's referral code
     const referralCode = await getOrCreateReferralCode(
       userId,
-      user.firstName || 'User',
-      user.lastName || 'Name'
+      (user as any).firstName || 'User',
+      (user as any).lastName || 'Name'
     );
 
-    // Track invitations
     const invitations = await Promise.all(
       body.emails.map(async (email) => {
         return trackReferralInvitation(referralCode.id, email, {
@@ -80,17 +61,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })
     );
 
-    // TODO: Send actual email invitations
-    // This would integrate with your email service (Resend, SendGrid, etc.)
-    // For now, we just track the invitation in the database
-
-    // Example email content:
-    // Subject: Dr. {firstName} {lastName} invites you to try Holi Labs
-    // Body: {personalMessage}
-    //       Try Holi Labs with my referral code: {referralCode.code}
-    //       Get 14 days free trial: https://holilabs.com/signup?ref={referralCode.code}
-
-    // Audit log
     await createAuditLog(
       {
         action: 'CREATE',
@@ -116,15 +86,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })),
       referralUrl: `${process.env.NEXT_PUBLIC_APP_URL}/signup?ref=${referralCode.code}`,
     });
-  } catch (error) {
-    console.error('[Referral Invite API] Error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to send invitations',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);

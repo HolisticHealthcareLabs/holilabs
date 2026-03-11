@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
@@ -38,7 +39,8 @@ const uploadSchema = z.object({
   ]),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Get authenticated patient
     const session = await requirePatientSession();
@@ -221,4 +223,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

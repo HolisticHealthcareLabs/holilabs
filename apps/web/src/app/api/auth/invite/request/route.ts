@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email/resend';
 import { InviteEmail } from '@/components/email/InviteEmail';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://holilabs.xyz';
 
@@ -18,7 +19,8 @@ const inviteRequestSchema = z.object({
  * POST /api/auth/invite/request
  * Handles beta access requests from the landing page.
  */
-export async function POST(req: NextRequest) {
+export const POST = createPublicRoute(
+    async (req: NextRequest) => {
     try {
         const body = await req.json();
         const validated = inviteRequestSchema.safeParse(body);
@@ -77,4 +79,6 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
-}
+    },
+    { rateLimit: { windowMs: 15 * 60 * 1000, maxRequests: 10 } }
+);

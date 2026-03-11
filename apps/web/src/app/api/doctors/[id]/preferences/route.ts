@@ -5,41 +5,25 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-// FIXME: Old rate limiting API - needs refactor
-// import { rateLimit } from '@/lib/rate-limit';
-
-// FIXME: Old rate limiting - commented out for now
-// const limiter = rateLimit({
-//   interval: 60 * 1000,
-//   uniqueTokenPerInterval: 500,
-// });
 
 /**
  * GET /api/doctors/[id]/preferences
  * Fetches doctor scheduling preferences
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 60, 'DOCTOR_PREFERENCES_GET');
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const doctorId = params.id;
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!doctorId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: 'Doctor ID required' },
+        { status: 400 }
       );
     }
 
-    const doctorId = params.id;
-
-    // Verify doctor exists
     const doctor = await prisma.user.findUnique({
       where: { id: doctorId },
       select: { id: true, role: true },
@@ -59,7 +43,6 @@ export async function GET(
       );
     }
 
-    // Fetch preferences
     const preferences = await prisma.doctorPreferences.findUnique({
       where: { doctorId },
       include: {
@@ -74,14 +57,13 @@ export async function GET(
       },
     });
 
-    // If no preferences exist, return default values
     if (!preferences) {
       return NextResponse.json({
         success: true,
         data: {
           preferences: {
             doctorId,
-            workingDays: [1, 2, 3, 4, 5], // Monday-Friday
+            workingDays: [1, 2, 3, 4, 5],
             workingHoursStart: '09:00',
             workingHoursEnd: '17:00',
             minimumAdvanceNotice: 24,
@@ -108,39 +90,33 @@ export async function GET(
       success: true,
       data: { preferences },
     });
-  } catch (error: any) {
-    console.error('Error fetching doctor preferences:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch preferences' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * PATCH /api/doctors/[id]/preferences
  * Updates or creates doctor scheduling preferences
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // FIXME: Rate limiting disabled - needs refactor
-    // await limiter.check(request, 30, 'DOCTOR_PREFERENCES_PATCH');
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const doctorId = params.id;
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!doctorId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: 'Doctor ID required' },
+        { status: 400 }
       );
     }
 
-    const doctorId = params.id;
     const body = await request.json();
+    const userId = context.user!.id;
+    const userRole = context.user!.role;
 
-    // Verify doctor exists
     const doctor = await prisma.user.findUnique({
       where: { id: doctorId },
       select: { id: true, role: true },
@@ -160,15 +136,13 @@ export async function PATCH(
       );
     }
 
-    // Authorization: Only the doctor themselves or admin can update preferences
-    if ((session.user as any).role !== 'ADMIN' && (session.user as any).id !== doctorId) {
+    if (userRole !== 'ADMIN' && userId !== doctorId) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: You can only update your own preferences' },
         { status: 403 }
       );
     }
 
-    // Validation
     if (body.workingDays && !Array.isArray(body.workingDays)) {
       return NextResponse.json(
         { success: false, error: 'workingDays must be an array' },
@@ -183,7 +157,6 @@ export async function PATCH(
       );
     }
 
-    // Upsert preferences (create if not exists, update if exists)
     const preferences = await prisma.doctorPreferences.upsert({
       where: { doctorId },
       create: {
@@ -206,10 +179,9 @@ export async function PATCH(
       },
     });
 
-    // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
+        userId,
         action: 'UPDATE',
         resource: 'DoctorPreferences',
         resourceId: preferences.id,
@@ -227,11 +199,8 @@ export async function PATCH(
       data: { preferences },
       message: 'Preferences updated successfully',
     });
-  } catch (error: any) {
-    console.error('Error updating doctor preferences:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to update preferences' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);

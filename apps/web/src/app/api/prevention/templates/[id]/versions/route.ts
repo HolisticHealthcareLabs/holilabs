@@ -8,8 +8,9 @@
  * Creates a new version snapshot of the template
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import {
@@ -17,32 +18,21 @@ import {
 } from '@/lib/socket-server';
 import { SocketEvent, NotificationPriority } from '@/lib/socket/events';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 /**
  * GET - Retrieve version history for a template
  */
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
-
-    // Verify template exists
     const template = await prisma.preventionPlanTemplate.findUnique({
       where: { id: templateId },
       select: { id: true, templateName: true },
@@ -55,7 +45,6 @@ export async function GET(
       );
     }
 
-    // Fetch all versions
     const versions = await prisma.preventionPlanTemplateVersion.findMany({
       where: { templateId },
       include: {
@@ -75,7 +64,7 @@ export async function GET(
 
     logger.info({
       event: 'template_versions_retrieved',
-      userId: session.user.id,
+      userId,
       templateId,
       versionCount: versions.length,
     });
@@ -96,44 +85,26 @@ export async function GET(
         })),
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'get_template_versions_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve versions',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);
 
 /**
  * POST - Create a new version snapshot
  */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!templateId) {
+      return NextResponse.json({ success: false, error: 'Template ID required' }, { status: 400 });
     }
 
-    const { id: templateId } = context.params;
     const body = await request.json();
     const { versionLabel, changeLog, changedFields } = body;
 
-    // Validation
     if (changeLog && typeof changeLog !== 'string') {
       return NextResponse.json(
         { success: false, error: 'changeLog must be a string' },
@@ -148,9 +119,7 @@ export async function POST(
       );
     }
 
-    // Use transaction for atomicity
     const result = await prisma.$transaction(async (tx) => {
-      // Get current template
       const template = await tx.preventionPlanTemplate.findUnique({
         where: { id: templateId },
         include: {
@@ -164,7 +133,6 @@ export async function POST(
         throw new Error('Template not found');
       }
 
-      // Get current max version number
       const latestVersion = await tx.preventionPlanTemplateVersion.findFirst({
         where: { templateId },
         orderBy: { versionNumber: 'desc' },
@@ -173,7 +141,6 @@ export async function POST(
 
       const nextVersionNumber = (latestVersion?.versionNumber || 0) + 1;
 
-      // Create snapshot
       const templateData = {
         id: template.id,
         templateName: template.templateName,
@@ -191,7 +158,6 @@ export async function POST(
         updatedAt: template.updatedAt,
       };
 
-      // Create version record
       const version = await tx.preventionPlanTemplateVersion.create({
         data: {
           templateId,
@@ -200,7 +166,7 @@ export async function POST(
           templateData,
           changeLog,
           changedFields: changedFields || null,
-          createdBy: session.user.id,
+          createdBy: userId!,
         },
         include: {
           createdByUser: {
@@ -209,14 +175,13 @@ export async function POST(
         },
       });
 
-      // Create audit log
       const ipAddress = request.headers.get('x-forwarded-for') ||
                         request.headers.get('x-real-ip') ||
                         'unknown';
 
       await tx.auditLog.create({
         data: {
-          userId: session.user.id,
+          userId: userId!,
           action: 'CREATE',
           resource: 'prevention_template',
           resourceId: templateId,
@@ -230,12 +195,11 @@ export async function POST(
 
     logger.info({
       event: 'template_version_created',
-      userId: session.user.id,
+      userId,
       templateId,
       versionNumber: result.version.versionNumber,
     });
 
-    // Emit real-time notification
     const notification = {
       id: crypto.randomUUID(),
       event: SocketEvent.TEMPLATE_UPDATED,
@@ -246,7 +210,7 @@ export async function POST(
         templateId,
         versionId: result.version.id,
         versionNumber: result.version.versionNumber,
-        userId: session.user.id,
+        userId,
         timestamp: new Date(),
       },
       timestamp: new Date(),
@@ -268,18 +232,6 @@ export async function POST(
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'create_template_version_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to create version',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

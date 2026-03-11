@@ -17,6 +17,7 @@ import crypto from 'crypto';
 import { auditBuffer } from './audit-buffer';
 import { getOrCreateWorkspaceForUser } from '@/lib/workspace';
 import { normalizeTenantRole, type TenantUserRole } from '../../../../../packages/shared-kernel/src/types/auth';
+import { getPatientSession } from '@/lib/auth/patient-session';
 
 // ============================================================================
 // TYPES
@@ -366,6 +367,30 @@ export function requireAuth() {
 
       // Validate session exists and has user
       if (!session || !session.user || !session.user.id) {
+        // Fallback: try patient session (for dual clinician/patient routes like notifications)
+        const { getPatientSession } = await import('@/lib/auth/patient-session');
+        const patientSession = await getPatientSession();
+
+        if (patientSession) {
+          context.user = {
+            id: patientSession.patientId,
+            email: patientSession.email,
+            role: 'PATIENT',
+            organizationId: 'patient-portal',
+            organizationName: 'Patient Portal',
+            organizationType: 'CLINIC',
+          };
+
+          log.debug({
+            event: 'auth_success',
+            userId: patientSession.patientId,
+            role: 'PATIENT',
+            source: 'patient-session',
+          }, 'Patient session authentication successful');
+
+          return next();
+        }
+
         log.warn({
           event: 'auth_session_missing',
           path: request.url,
@@ -439,6 +464,44 @@ export function requireAuth() {
         { status: 500 }
       );
     }
+  };
+}
+
+/**
+ * Dual-auth middleware: clinician (NextAuth) OR patient session.
+ * For routes that serve both clinician and patient portals.
+ * Sets context.user for either type; use context.user?.id for the actor ID.
+ */
+export function requireAuthOrPatientSession() {
+  return async (request: NextRequest, context: ApiContext, next: () => Promise<NextResponse>) => {
+    let clinicianAuthPassed = false;
+    const wrappedNext = async () => {
+      clinicianAuthPassed = true;
+      return next();
+    };
+
+    const authResult = await requireAuth()(request, context, wrappedNext);
+    if (clinicianAuthPassed) return authResult;
+
+    // Clinician auth failed; try patient session
+    const log = createLogger({ requestId: context.requestId });
+    const patientSession = await getPatientSession();
+    if (patientSession) {
+      context.user = {
+        id: patientSession.patientId,
+        email: patientSession.email,
+        role: 'PATIENT',
+        organizationId: 'patient-portal',
+      };
+      log.debug({
+        event: 'patient_auth_success',
+        patientId: patientSession.patientId,
+      }, 'Patient session authentication successful');
+      return next();
+    }
+
+    log.warn({ event: 'auth_session_missing', path: request.url }, 'No valid clinician or patient session');
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   };
 }
 
@@ -919,6 +982,7 @@ export function createProtectedRoute(
     customMiddlewares?: Middleware[]; // Custom middleware (e.g., exportRateLimit)
     audit?: { action: string; resource: string };
     skipCsrf?: boolean; // Option to disable CSRF for specific routes (e.g., GET-only)
+    allowPatientAuth?: boolean; // Allow patient session as fallback (dual-auth routes)
   }
 ) {
   return async (request: NextRequest, context: ApiContext) => {
@@ -933,7 +997,8 @@ export function createProtectedRoute(
       return preflightResponse;
     }
 
-    const middlewares: Middleware[] = [requireAuth()];
+    const authMiddleware = options?.allowPatientAuth ? requireAuthOrPatientSession() : requireAuth();
+    const middlewares: Middleware[] = [authMiddleware];
 
     // Add CSRF protection by default for all protected routes (skip only if explicitly disabled)
     if (!options?.skipCsrf) {
@@ -950,7 +1015,10 @@ export function createProtectedRoute(
     }
 
     if (options?.roles) {
-      middlewares.push(requireRole(...options.roles));
+      const roles = options.allowPatientAuth
+        ? [...options.roles, 'PATIENT' as UserRole]
+        : options.roles;
+      middlewares.push(requireRole(...roles));
     }
 
     if (options?.audit) {
@@ -978,10 +1046,11 @@ export function createPublicRoute(
     rateLimit?: RateLimitConfig;
   }
 ) {
-  return async (request: NextRequest, context: ApiContext) => {
+  return async (request: NextRequest, context?: ApiContext) => {
+    const ctx = context ?? {};
     // Generate or extract request ID
     const requestId = getOrCreateRequestId(request.headers);
-    context.requestId = requestId;
+    ctx.requestId = requestId;
 
     // Handle CORS preflight
     const preflightResponse = handlePreflight(request);
@@ -997,7 +1066,7 @@ export function createPublicRoute(
     }
 
     const composedHandler = withErrorHandling(compose(...middlewares)(handler));
-    let response = await composedHandler(request, context);
+    let response = await composedHandler(request, ctx);
 
     // Apply request ID, CORS, and security headers to response
     response.headers.set(REQUEST_ID_HEADER, requestId);

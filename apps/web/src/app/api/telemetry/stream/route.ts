@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { auth } from '@/lib/auth/auth';
 import { getSyntheticTelemetryEvents, isDemoClinician } from '@/lib/demo/synthetic';
 
@@ -166,7 +167,7 @@ function applyFilters(events: StreamEvent[], filters: TelemetryFilterState): Str
   });
 }
 
-export async function GET(request: Request) {
+export const GET = createPublicRoute(async (request: Request) => {
   const session = await auth();
   const userId = session?.user?.id ?? null;
   const email = session?.user?.email ?? null;
@@ -186,5 +187,5 @@ export async function GET(request: Request) {
 
   // For now, return empty rather than hard-coding localhost ports.
   return NextResponse.json([], { status: 200 });
-}
+});
 

@@ -10,6 +10,7 @@ import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import crypto from 'crypto';
 
@@ -26,14 +27,13 @@ const ShareRequestSchema = z.object({
   password: z.string().min(6).optional(),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const POST = createPublicRoute(
+  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
 
+    const params = await Promise.resolve(context.params ?? {});
     const recordId = params.id;
 
     // Verify record exists and belongs to patient
@@ -198,7 +198,7 @@ export async function POST(
     logger.error({
       event: 'medical_record_share_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      recordId: params.id,
+      recordId: (await Promise.resolve(context.params ?? {})).id,
     });
 
     return NextResponse.json(
@@ -209,17 +209,18 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
 // GET - List all active shares for a record
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET = createPublicRoute(
+  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
 
+    const params = await Promise.resolve(context.params ?? {});
     const recordId = params.id;
 
     // Verify record belongs to patient
@@ -301,7 +302,7 @@ export async function GET(
     logger.error({
       event: 'list_shares_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      recordId: params.id,
+      recordId: (await Promise.resolve(context.params ?? {})).id,
     });
 
     return NextResponse.json(
@@ -312,4 +313,6 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

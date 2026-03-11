@@ -29,6 +29,7 @@ import { validateEnterpriseKey } from '@/lib/enterprise/auth';
 import { checkRateLimit, SINGLE_ASSESSMENT_LIMIT } from '@/lib/enterprise/rate-limiter';
 import { dataFlywheelService } from '@/services/data-flywheel.service';
 import { enterpriseUsageMeter } from '@/lib/enterprise/usage-meter';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,7 +72,7 @@ function validateRequest(body: unknown): body is RiskAssessmentRequest {
 // HANDLER
 // =============================================================================
 
-export async function POST(request: NextRequest) {
+async function postRiskAssessment(request: NextRequest) {
   const startTime = Date.now();
 
   // Step 1: Auth — reject immediately if key is wrong
@@ -178,3 +179,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = createPublicRoute(postRiskAssessment);

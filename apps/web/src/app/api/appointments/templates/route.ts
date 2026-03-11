@@ -5,62 +5,30 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import { checkRateLimit } from '@/lib/rate-limit';
 
 /**
  * GET /api/appointments/templates
  * Lists all notification templates with optional filtering
  */
-export async function GET(request: NextRequest) {
-  try {
-    // Apply rate limiting - 60 requests per minute for appointments
-    const rateLimitResponse = await checkRateLimit(request, 'appointments');
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
-    const level = searchParams.get('level'); // 'CLINIC' or 'DOCTOR'
+    const level = searchParams.get('level');
     const doctorId = searchParams.get('doctorId');
-    const channel = searchParams.get('channel'); // 'WHATSAPP', 'EMAIL', 'SMS', 'PUSH', 'IN_APP'
-    const type = searchParams.get('type'); // 'REMINDER', 'CONFIRMATION', 'CANCELLATION', etc.
+    const channel = searchParams.get('channel');
+    const type = searchParams.get('type');
     const isActive = searchParams.get('isActive');
 
-    // Build filter query
     const where: any = {};
 
-    if (level) {
-      where.level = level;
-    }
+    if (level) where.level = level;
+    if (doctorId) where.doctorId = doctorId;
+    if (channel) where.channel = channel;
+    if (type) where.type = type;
+    if (isActive !== null) where.isActive = isActive === 'true';
 
-    if (doctorId) {
-      where.doctorId = doctorId;
-    }
-
-    if (channel) {
-      where.channel = channel;
-    }
-
-    if (type) {
-      where.type = type;
-    }
-
-    if (isActive !== null) {
-      where.isActive = isActive === 'true';
-    }
-
-    // Fetch templates
     const templates = await prisma.notificationTemplate.findMany({
       where,
       include: {
@@ -73,7 +41,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [
-        { level: 'asc' }, // CLINIC first, then DOCTOR
+        { level: 'asc' },
         { isDefault: 'desc' },
         { name: 'asc' },
       ],
@@ -84,35 +52,19 @@ export async function GET(request: NextRequest) {
       data: { templates },
       message: `Found ${templates.length} template(s)`,
     });
-  } catch (error: any) {
-    console.error('Error fetching notification templates:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch templates' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * POST /api/appointments/templates
  * Creates a new notification template
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Apply rate limiting - 60 requests per minute for appointments
-    const rateLimitResponse = await checkRateLimit(request, 'appointments');
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const body = await request.json();
     const {
       name,
@@ -130,7 +82,6 @@ export async function POST(request: NextRequest) {
       isDefault = false,
     } = body;
 
-    // Validation
     if (!name || !type || !channel || !templateBody) {
       return NextResponse.json(
         { success: false, error: 'name, type, channel, and body are required' },
@@ -138,7 +89,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If level is DOCTOR, doctorId is required
     if (level === 'DOCTOR' && !doctorId) {
       return NextResponse.json(
         { success: false, error: 'doctorId is required for doctor-level templates' },
@@ -146,7 +96,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If setting as default, unset other defaults of same type/channel/level
+    const userId = context.user!.id;
+
     if (isDefault) {
       await prisma.notificationTemplate.updateMany({
         where: {
@@ -162,7 +113,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create template
     const template = await prisma.notificationTemplate.create({
       data: {
         name,
@@ -186,8 +136,8 @@ export async function POST(request: NextRequest) {
         requireConfirmation,
         isActive,
         isDefault,
-        createdBy: (session.user as any).id,
-        updatedBy: (session.user as any).id,
+        createdBy: userId,
+        updatedBy: userId,
       },
       include: {
         doctor: {
@@ -200,10 +150,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Audit log
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
+        userId,
         action: 'CREATE',
         resource: 'NotificationTemplate',
         resourceId: template.id,
@@ -224,11 +173,9 @@ export async function POST(request: NextRequest) {
       data: { template },
       message: 'Template created successfully',
     });
-  } catch (error: any) {
-    console.error('Error creating notification template:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create template' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    rateLimit: { windowMs: 60_000, maxRequests: 60 },
   }
-}
+);

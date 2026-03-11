@@ -7,30 +7,25 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ appointmentId: string }> }
-) {
-  try {
-    const { appointmentId } = await context.params;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const { appointmentId } = params;
+    const userId = context.user!.id;
 
-    // Verify authentication
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
+    if (!appointmentId) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: 'Appointment ID required' },
+        { status: 400 }
       );
     }
 
-    // Fetch appointment with patient and clinician details
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
       include: {
@@ -65,17 +60,14 @@ export async function GET(
       );
     }
 
-    // Check user access - must be the clinician or the patient
-    const isClinicianAccess = appointment.clinicianId === session.user.id;
-
-    // For patient access, check if the session user matches the patient's patientUser
-    const isPatientAccess = appointment.patient.patientUser?.id === session.user.id;
+    const isClinicianAccess = appointment.clinicianId === userId;
+    const isPatientAccess = appointment.patient.patientUser?.id === userId;
 
     if (!isClinicianAccess && !isPatientAccess) {
       logger.warn({
         event: 'video_appointment_access_denied',
         appointmentId,
-        userId: session.user.id,
+        userId,
         clinicianId: appointment.clinicianId,
         patientUserId: appointment.patient.patientUser?.id,
       });
@@ -86,7 +78,6 @@ export async function GET(
       );
     }
 
-    // Check if appointment is telehealth type
     if (appointment.type !== 'TELEHEALTH') {
       return NextResponse.json(
         { error: 'This is not a telehealth appointment' },
@@ -94,7 +85,6 @@ export async function GET(
       );
     }
 
-    // Check appointment status
     const validStatuses = ['SCHEDULED', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS'];
     if (!validStatuses.includes(appointment.status)) {
       return NextResponse.json(
@@ -103,21 +93,17 @@ export async function GET(
       );
     }
 
-    // Build clinician display name
     const clinicianName = `${appointment.clinician.firstName} ${appointment.clinician.lastName}`.trim() || 'Doctor';
     const patientName = `${appointment.patient.firstName} ${appointment.patient.lastName}`.trim();
 
-    // Determine user type and name
     const userType = isClinicianAccess ? 'clinician' : 'patient';
     const userName = isClinicianAccess ? clinicianName : patientName;
-
-    // Get the other participant's name
     const otherParticipantName = isClinicianAccess ? patientName : clinicianName;
 
     logger.info({
       event: 'video_appointment_fetched',
       appointmentId,
-      userId: session.user.id,
+      userId,
       userType,
     });
 
@@ -135,15 +121,10 @@ export async function GET(
         meetingUrl: appointment.meetingUrl,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'video_appointment_error',
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return NextResponse.json(
-      { error: 'Failed to fetch appointment details' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);

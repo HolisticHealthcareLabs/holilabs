@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { encryptToken } from '@/lib/calendar/token-encryption';
 import { logger } from '@/lib/logger';
@@ -13,7 +14,7 @@ import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
@@ -144,4 +145,4 @@ export async function GET(request: NextRequest) {
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/appointments?error=callback_failed`
     );
   }
-}
+});

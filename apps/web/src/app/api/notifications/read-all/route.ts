@@ -6,20 +6,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { markAllNotificationsAsRead } from '@/lib/notifications';
 import logger from '@/lib/logger';
 import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
-export async function PUT(request: NextRequest) {
-  try {
-    // Check if it's a clinician or patient request
-    const clinicianSession = await auth();
+export const PUT = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const userId = context.user?.id;
+      const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
-    if (clinicianSession?.user?.id) {
       // Demo mode (DB-FREE)
-      if (isDemoClinician(clinicianSession.user.id, clinicianSession.user.email ?? null)) {
+      if (userType === 'CLINICIAN' && userId && isDemoClinician(userId, context.user?.email ?? null)) {
         const count = getSyntheticNotifications().filter((n) => !n.isRead).length;
         return NextResponse.json(
           {
@@ -31,31 +30,7 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      // Mark all clinician notifications as read
-      const result = await markAllNotificationsAsRead(
-        clinicianSession.user.id,
-        'CLINICIAN'
-      );
-
-      return NextResponse.json(
-        {
-          success: true,
-          message: 'Todas las notificaciones marcadas como leídas',
-          data: { count: result.count },
-        },
-        { status: 200 }
-      );
-    }
-
-    // Try patient session
-    try {
-      const patientSession = await requirePatientSession();
-
-      // Mark all patient notifications as read
-      const result = await markAllNotificationsAsRead(
-        patientSession.patientId,
-        'PATIENT'
-      );
+      const result = await markAllNotificationsAsRead(userId!, userType);
 
       return NextResponse.json(
         {
@@ -66,27 +41,19 @@ export async function PUT(request: NextRequest) {
         { status: 200 }
       );
     } catch (error) {
-      // Not a patient either
+      logger.error({
+        event: 'mark_all_notifications_read_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       return NextResponse.json(
         {
           success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
+          error: 'Error al marcar notificaciones como leídas.',
         },
-        { status: 401 }
+        { status: 500 }
       );
     }
-  } catch (error) {
-    logger.error({
-      event: 'mark_all_notifications_read_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al marcar notificaciones como leídas.',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'PATIENT'], skipCsrf: true }
+);

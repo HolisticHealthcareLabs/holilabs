@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import {
   generateAppointmentICS,
@@ -12,20 +13,22 @@ import {
   type AppointmentData,
 } from '@/lib/calendar/ics-generator';
 import { logger } from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 /**
  * GET /api/appointments/[id]/export-calendar
  * Export appointment as .ics calendar file
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
     const appointmentId = params.id;
+    if (!appointmentId) {
+      return NextResponse.json(
+        { success: false, error: 'Appointment ID required' },
+        { status: 400 }
+      );
+    }
 
-    // Fetch appointment with patient and clinician details
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
       include: {
@@ -41,11 +44,6 @@ export async function GET(
       );
     }
 
-    // Check authorization - either patient or clinician can export
-    // Note: In production, add proper auth check here
-    // For now, allowing access for demo purposes
-
-    // Prepare appointment data for ICS generation
     const appointmentData: AppointmentData = {
       id: appointment.id,
       startTime: appointment.startTime,
@@ -56,13 +54,9 @@ export async function GET(
       type: appointment.type || undefined,
     };
 
-    // Generate ICS file content
     const icsContent = generateAppointmentICS(appointmentData);
-
-    // Generate filename
     const filename = generateICSFilename(appointmentData);
 
-    // Return ICS file as download
     return new NextResponse(icsContent, {
       status: 200,
       headers: {
@@ -71,15 +65,9 @@ export async function GET(
         'Cache-Control': 'no-cache',
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'appointment_calendar_export_failed',
-      appointmentId: params.id,
-      error: (error instanceof Error ? error.message : String(error)),
-    });
-    return NextResponse.json(
-      { success: false, error: 'Failed to generate calendar export' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);

@@ -10,29 +10,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext } from '@/lib/cds/types';
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const body = await request.json();
 
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-
-    // Build CDS context for order-sign hook
-    const cdsContext: CDSContext = {
-      patientId: body.context.patientId,
-      encounterId: body.context.encounterId,
-      userId: body.context.userId || session.user.id,
+      // Build CDS context for order-sign hook
+      const cdsContext: CDSContext = {
+        patientId: body.context.patientId,
+        encounterId: body.context.encounterId,
+        userId: body.context.userId || context.user?.id,
       hookInstance: body.hookInstance,
       hookType: 'order-sign',
       context: body.context,
@@ -54,13 +45,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(response);
-
-  } catch (error) {
-    console.error('❌ [CDS Hooks] order-sign error:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
-}
+      return NextResponse.json(response);
+    } catch (error) {
+      console.error('❌ [CDS Hooks] order-sign error:', error);
+      return NextResponse.json(
+        { error: 'Internal Server Error' },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

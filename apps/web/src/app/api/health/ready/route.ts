@@ -14,8 +14,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
+
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
 interface HealthCheckResult {
   service: string;
@@ -248,3 +251,5 @@ export async function GET() {
     );
   }
 }
+
+export const GET = createPublicRoute(getReady, { rateLimit: RATE_LIMIT });

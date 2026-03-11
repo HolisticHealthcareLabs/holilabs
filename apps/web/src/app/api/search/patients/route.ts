@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import prisma from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
@@ -14,18 +14,10 @@ import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Get search query
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      // Get search query
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q')?.trim();
     const limit = parseInt(searchParams.get('limit') || '10');
@@ -134,4 +126,6 @@ export async function GET(request: NextRequest) {
     });
     return safeErrorResponse(error, { userMessage: 'Failed to search patients' });
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], skipCsrf: true }
+);

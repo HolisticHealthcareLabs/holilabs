@@ -13,12 +13,15 @@
  */
 
 import { NextRequest } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { GET as _GET, POST as _POST } from '@/lib/auth/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 
-export { _GET as GET };
+export const GET = createPublicRoute(async (request: NextRequest, context: any) => {
+  return _GET(request, context);
+});
 
-export async function POST(request: NextRequest, context: any) {
+export const POST = createPublicRoute(async (request: NextRequest, context: any) => {
   const isCredentialsCallback = request.nextUrl.pathname.includes('/callback/credentials');
 
   if (isCredentialsCallback) {
@@ -27,4 +30,4 @@ export async function POST(request: NextRequest, context: any) {
   }
 
   return _POST(request, context);
-}
+});

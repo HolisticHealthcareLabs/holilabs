@@ -29,6 +29,7 @@ import { checkRateLimit, BULK_ASSESSMENT_LIMIT } from '@/lib/enterprise/rate-lim
 import { dataFlywheelService } from '@/services/data-flywheel.service';
 import { enterpriseUsageMeter } from '@/lib/enterprise/usage-meter';
 import { webhookDispatcher } from '@/lib/enterprise/webhook-dispatcher';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,7 +101,7 @@ function classifyCohort(scores: number[]): { tier: RiskTier; label: string } {
 // HANDLER
 // =============================================================================
 
-export async function POST(request: NextRequest) {
+async function postBulkAssessment(request: NextRequest) {
   const startTime = Date.now();
 
   // Auth
@@ -261,3 +262,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = createPublicRoute(postBulkAssessment);

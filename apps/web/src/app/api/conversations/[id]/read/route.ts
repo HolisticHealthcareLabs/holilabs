@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -17,11 +16,8 @@ export const dynamic = 'force-dynamic';
 /**
  * POST - Mark messages as read up to a specific message
  */
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
@@ -29,26 +25,8 @@ export async function POST(
     const body = await request.json();
     const { messageId } = body; // Optional: Mark all messages up to this ID as read
 
-    // Determine reader identity
-    const clinicianSession = await getServerSession(authOptions);
-    let readerId: string;
-    let readerType: 'CLINICIAN' | 'PATIENT';
-
-    if (clinicianSession?.user?.id) {
-      readerId = clinicianSession.user.id;
-      readerType = 'CLINICIAN';
-    } else {
-      try {
-        const patientSession = await requirePatientSession();
-        readerId = patientSession.patientId;
-        readerType = 'PATIENT';
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-    }
+    const readerId = context.user?.id;
+    const readerType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
     // Verify user is a participant
     const participant = await prisma.conversationParticipant.findFirst({
@@ -193,15 +171,10 @@ export async function POST(
         readAt: now,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'mark_read_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to mark messages as read' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);

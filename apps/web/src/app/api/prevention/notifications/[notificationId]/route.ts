@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -17,32 +17,26 @@ import { auditView, auditUpdate } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
-interface RouteParams {
-  params: Promise<{ notificationId: string }>;
-}
-
 const UpdateNotificationSchema = z.object({
   read: z.boolean().optional(),
 });
+
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 /**
  * GET /api/prevention/notifications/[notificationId]
  * Get details of a specific notification
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
+    const params = await Promise.resolve(context.params ?? {});
+    const notificationId = params?.notificationId;
+    const userId = context.user?.id;
 
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
+    if (!notificationId) {
+      return NextResponse.json({ error: 'Notification ID required' }, { status: 400 });
     }
-
-    const { notificationId } = await params;
 
     const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
@@ -52,16 +46,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    // Verify ownership
-    if (notification.recipientId !== session.user.id) {
+    if (notification.recipientId !== userId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const elapsed = performance.now() - start;
 
-    // HIPAA Audit
     await auditView('Notification', notificationId, request, {
-      userId: session.user.id,
+      userId: userId!,
       action: 'notification_viewed',
     });
 
@@ -70,37 +62,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       data: notification,
       meta: { latencyMs: Math.round(elapsed) },
     });
-  } catch (error) {
-    logger.error({
-      event: 'notification_fetch_error',
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return NextResponse.json(
-      { error: 'Failed to fetch notification' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);
 
 /**
  * PATCH /api/prevention/notifications/[notificationId]
  * Update notification (mark read/unread)
  */
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
+    const params = await Promise.resolve(context.params ?? {});
+    const notificationId = params?.notificationId;
+    const userId = context.user?.id;
 
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
+    if (!notificationId) {
+      return NextResponse.json({ error: 'Notification ID required' }, { status: 400 });
     }
-
-    const { notificationId } = await params;
 
     const body = await request.json();
     const validation = UpdateNotificationSchema.safeParse(body);
@@ -112,7 +91,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Verify notification exists and belongs to user
     const existing = await prisma.notification.findUnique({
       where: { id: notificationId },
     });
@@ -121,7 +99,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    if (existing.recipientId !== session.user.id) {
+    if (existing.recipientId !== userId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -142,14 +120,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     logger.info({
       event: 'notification_updated',
       notificationId,
-      userId: session.user.id,
+      userId,
       read,
       latencyMs: elapsed.toFixed(2),
     });
 
-    // HIPAA Audit
     await auditUpdate('Notification', notificationId, request, {
-      userId: session.user.id,
+      userId: userId!,
       read,
       action: read ? 'notification_marked_read' : 'notification_marked_unread',
     });
@@ -159,39 +136,25 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       data: updated,
       meta: { latencyMs: Math.round(elapsed) },
     });
-  } catch (error) {
-    logger.error({
-      event: 'notification_update_error',
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return NextResponse.json(
-      { error: 'Failed to update notification' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);
 
 /**
  * DELETE /api/prevention/notifications/[notificationId]
  * Delete a notification
  */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
+    const params = await Promise.resolve(context.params ?? {});
+    const notificationId = params?.notificationId;
+    const userId = context.user?.id;
 
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
+    if (!notificationId) {
+      return NextResponse.json({ error: 'Notification ID required' }, { status: 400 });
     }
 
-    const { notificationId } = await params;
-
-    // Verify notification exists and belongs to user
     const existing = await prisma.notification.findUnique({
       where: { id: notificationId },
     });
@@ -200,7 +163,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    if (existing.recipientId !== session.user.id) {
+    if (existing.recipientId !== userId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -213,7 +176,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     logger.info({
       event: 'notification_deleted',
       notificationId,
-      userId: session.user.id,
+      userId,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -222,15 +185,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       message: 'Notification deleted',
       meta: { latencyMs: Math.round(elapsed) },
     });
-  } catch (error) {
-    logger.error({
-      event: 'notification_delete_error',
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    return NextResponse.json(
-      { error: 'Failed to delete notification' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

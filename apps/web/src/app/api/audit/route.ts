@@ -5,50 +5,21 @@
  * POST /api/audit - Create audit log entry
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
-// Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/audit
  * Retrieve audit logs with filtering and pagination
- *
- * Query params:
- * - page: number (default: 1)
- * - limit: number (default: 50, max: 100)
- * - action: string (filter by action)
- * - resource: string (filter by resource)
- * - userEmail: string (filter by user email)
- * - startDate: ISO date string
- * - endDate: ISO date string
- * - success: boolean
+ * Admin only.
  */
-export async function GET(request: Request) {
-  try {
-    // Check authentication - only admins can view audit logs
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Verify admin role
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    // Parse query parameters
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
@@ -59,7 +30,6 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('endDate');
     const successParam = searchParams.get('success');
 
-    // Build filter
     const where: any = {};
 
     if (action) {
@@ -94,10 +64,8 @@ export async function GET(request: Request) {
       where.success = successParam === 'true';
     }
 
-    // Get total count
     const total = await prisma.auditLog.count({ where });
 
-    // Get paginated results
     const logs = await prisma.auditLog.findMany({
       where,
       orderBy: {
@@ -117,48 +85,25 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'audit_logs_fetch_failed',
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return safeErrorResponse(error, { userMessage: 'Failed to fetch audit logs' });
-  }
-}
+  },
+  { roles: ['ADMIN'] }
+);
 
 /**
  * POST /api/audit
  * Create audit log entry for compliance
- *
- * ⚠️ SECURITY: Authentication required to prevent audit log manipulation
- * Note: This endpoint should only be used for manual audit entries.
- * System-generated audit logs should use the auditView() function from @/lib/audit
+ * Admin only.
  */
-export async function POST(request: Request) {
-  try {
-    // Check authentication - only authenticated users can create audit logs
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Verify admin role for manual audit log creation
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden - Admin access required for manual audit logs' },
-        { status: 403 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user?.id;
+    const userEmail = context.user?.email;
 
     const body = await request.json();
 
-    // Use authenticated user's email (prevent spoofing)
     const auditLog = await prisma.auditLog.create({
       data: {
-        userEmail: session.user.email, // ✅ Use authenticated email, not from body
+        userEmail: userEmail ?? 'unknown',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: body.action,
         resource: body.resource,
@@ -168,10 +113,9 @@ export async function POST(request: Request) {
       },
     });
 
-    // Log the manual audit creation
     logger.info({
       event: 'manual_audit_log_created',
-      userId: session.user.id,
+      userId,
       auditLogId: auditLog.id,
       action: body.action,
       resource: body.resource,
@@ -181,11 +125,6 @@ export async function POST(request: Request) {
       { success: true, data: auditLog },
       { status: 201 }
     );
-  } catch (error) {
-    logger.error({
-      event: 'audit_log_create_failed',
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return safeErrorResponse(error, { userMessage: 'Failed to create audit log' });
-  }
-}
+  },
+  { roles: ['ADMIN'] }
+);

@@ -7,43 +7,25 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { getOrCreateReferralCode, getReferralStats } from '@/lib/referral';
 import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * GET /api/referrals/code
- *
- * Returns user's referral code and statistics
- */
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Authentication check
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
-        { status: 401 }
-      );
-    }
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
+    const user = context.user!;
 
-    const userId = session.user.id;
-    const user = session.user as any;
-
-    // Get or create referral code
     const referralCode = await getOrCreateReferralCode(
       userId,
-      user.firstName || 'User',
-      user.lastName || 'Name'
+      (user as any).firstName || 'User',
+      (user as any).lastName || 'Name'
     );
 
-    // Get detailed stats
     const stats = await getReferralStats(userId);
 
-    // Audit log
     await createAuditLog(
       {
         action: 'READ',
@@ -69,15 +51,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       },
       stats,
     });
-  } catch (error) {
-    console.error('[Referral Code API] Error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get referral code',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);

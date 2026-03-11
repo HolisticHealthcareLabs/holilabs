@@ -10,18 +10,18 @@ import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import crypto from 'crypto';
 import { z } from 'zod';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 // Password verification schema
 const PasswordSchema = z.object({
   password: z.string(),
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { shareToken: string } }
-) {
-  try {
+export const GET = createPublicRoute(
+  async (request: NextRequest, context: any) => {
+    const params = context.params ?? { shareToken: '' };
     const shareToken = params.shareToken;
+    try {
 
     // Hash the provided token for lookup
     const shareTokenHash = crypto
@@ -234,4 +234,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

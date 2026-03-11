@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { auth } from '@/lib/auth';
 
-export async function GET() {
+export const GET = createProtectedRoute(
+  async () => {
   const session = await auth();
   
   if (!session?.user) {
@@ -28,4 +30,6 @@ export async function GET() {
     model: 'nova-2-medical',
     language: 'en'
   });
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

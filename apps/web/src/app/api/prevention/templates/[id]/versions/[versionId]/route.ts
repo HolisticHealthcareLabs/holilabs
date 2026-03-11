@@ -6,41 +6,31 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 
-interface RouteContext {
-  params: {
-    id: string;
-    versionId: string;
-  };
-}
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 /**
  * GET - Retrieve a specific version's complete data
  */
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params?.id;
+    const versionId = params?.versionId;
+    const userId = context.user?.id;
 
-    if (!session?.user) {
+    if (!templateId || !versionId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { success: false, error: 'Template ID and version ID required' },
+        { status: 400 }
       );
     }
 
-    const { id: templateId, versionId } = context.params;
-
-    // Fetch version with full template data
     const version = await prisma.preventionPlanTemplateVersion.findUnique({
-      where: {
-        id: versionId,
-      },
+      where: { id: versionId },
       include: {
         template: {
           select: {
@@ -66,7 +56,6 @@ export async function GET(
       );
     }
 
-    // Verify version belongs to the template
     if (version.templateId !== templateId) {
       return NextResponse.json(
         { success: false, error: 'Version does not belong to this template' },
@@ -76,7 +65,7 @@ export async function GET(
 
     logger.info({
       event: 'template_version_retrieved',
-      userId: session.user.id,
+      userId,
       templateId,
       versionId,
       versionNumber: version.versionNumber,
@@ -97,18 +86,6 @@ export async function GET(
         createdAt: version.createdAt,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'get_template_version_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve version',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

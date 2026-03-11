@@ -7,8 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -19,11 +18,8 @@ export const dynamic = 'force-dynamic';
 /**
  * GET - Get conversation details with paginated messages
  */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
@@ -33,26 +29,8 @@ export async function GET(
     const cursor = searchParams.get('cursor');
     const direction = searchParams.get('direction') || 'before'; // 'before' or 'after'
 
-    // Determine user identity
-    const clinicianSession = await getServerSession(authOptions);
-    let userId: string;
-    let userType: 'CLINICIAN' | 'PATIENT';
-
-    if (clinicianSession?.user?.id) {
-      userId = clinicianSession.user.id;
-      userType = 'CLINICIAN';
-    } else {
-      try {
-        const patientSession = await requirePatientSession();
-        userId = patientSession.patientId;
-        userType = 'PATIENT';
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-    }
+    const userId = context.user?.id;
+    const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
     // Verify user is a participant
     const participant = await prisma.conversationParticipant.findFirst({
@@ -229,27 +207,19 @@ export async function GET(
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'get_conversation_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch conversation' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * PATCH - Update conversation settings for the user
  */
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
@@ -257,26 +227,8 @@ export async function PATCH(
     const body = await request.json();
     const { isMuted, isPinned, isArchived } = body;
 
-    // Determine user identity
-    const clinicianSession = await getServerSession(authOptions);
-    let userId: string;
-    let userType: 'CLINICIAN' | 'PATIENT';
-
-    if (clinicianSession?.user?.id) {
-      userId = clinicianSession.user.id;
-      userType = 'CLINICIAN';
-    } else {
-      try {
-        const patientSession = await requirePatientSession();
-        userId = patientSession.patientId;
-        userType = 'PATIENT';
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-    }
+    const userId = context.user?.id;
+    const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
     // Find participant record
     const participant = await prisma.conversationParticipant.findFirst({
@@ -330,52 +282,26 @@ export async function PATCH(
       success: true,
       data: { updated: true },
     });
-  } catch (error) {
-    logger.error({
-      event: 'update_conversation_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to update conversation' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * DELETE - Leave conversation (soft delete participant)
  */
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
     const { id: conversationId } = await context.params;
 
-    // Determine user identity
-    const clinicianSession = await getServerSession(authOptions);
-    let userId: string;
-    let userType: 'CLINICIAN' | 'PATIENT';
-
-    if (clinicianSession?.user?.id) {
-      userId = clinicianSession.user.id;
-      userType = 'CLINICIAN';
-    } else {
-      try {
-        const patientSession = await requirePatientSession();
-        userId = patientSession.patientId;
-        userType = 'PATIENT';
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-    }
+    const userId = context.user?.id;
+    const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
     // Find participant record
     const participant = await prisma.conversationParticipant.findFirst({
@@ -427,15 +353,10 @@ export async function DELETE(
       success: true,
       data: { left: true },
     });
-  } catch (error) {
-    logger.error({
-      event: 'leave_conversation_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to leave conversation' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);

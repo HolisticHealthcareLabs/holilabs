@@ -25,8 +25,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma, checkDatabaseHealth } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
+
+const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
 interface CheckDetail {
   status: 'up' | 'down' | 'degraded';
@@ -48,7 +51,7 @@ interface HealthStatus {
   environment?: string;
 }
 
-export async function GET(request: NextRequest) {
+async function getHealth(request: NextRequest) {
   const startTime = Date.now();
 
   try {
@@ -128,6 +131,8 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = createPublicRoute(getHealth, { rateLimit: RATE_LIMIT });
 
 /**
  * Check database connectivity and performance

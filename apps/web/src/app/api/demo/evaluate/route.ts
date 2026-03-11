@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { CDSEngine } from '@/lib/cds/engines/cds-engine';
 import { evaluateDOACRule } from '@/lib/clinical/safety/doac-evaluator';
 import { DEMO_SCENARIOS, SCENARIO_IDS } from '@/lib/demo/demo-scenarios';
@@ -51,7 +52,7 @@ if (typeof globalThis !== 'undefined') {
 
 // ─── POST handler ────────────────────────────────────────────────────────────
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     // Rate limit by IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -149,4 +150,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

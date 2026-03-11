@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { getPasswordResetService } from '@/lib/auth/password-reset';
 import { getClientIp, getUserAgent } from '@/lib/auth/session-security';
 import logger from '@/lib/logger';
@@ -44,7 +45,7 @@ const ValidateTokenSchema = z.object({
  * POST /api/auth/reset-password/request
  * Request a password reset email
  */
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     const body = await request.json();
 
@@ -101,13 +102,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * PUT /api/auth/reset-password
  * Reset password with token
  */
-export async function PUT(request: NextRequest) {
+export const PUT = createPublicRoute(async (request: NextRequest) => {
   try {
     const body = await request.json();
 
@@ -165,13 +166,13 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * GET /api/auth/reset-password/validate
  * Validate a reset token
  */
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(async (request: NextRequest) => {
   try {
     const rateLimitResponse = await checkRateLimit(request, 'auth');
     if (rateLimitResponse) return rateLimitResponse;
@@ -210,4 +211,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

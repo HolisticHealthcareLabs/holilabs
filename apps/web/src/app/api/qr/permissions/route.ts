@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import type { PermissionScope } from '@/lib/qr/types';
 import logger from '@/lib/logger';
@@ -19,18 +19,22 @@ interface UpdatePermissionsRequest {
   permissions: PermissionScope[];
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+const VALID_PERMISSIONS: PermissionScope[] = [
+  'READ_PATIENT_DATA',
+  'WRITE_NOTES',
+  'VIEW_TRANSCRIPT',
+  'CONTROL_RECORDING',
+  'ACCESS_DIAGNOSIS',
+  'VIEW_MEDICATIONS',
+  'EDIT_SOAP_NOTES',
+  'FULL_ACCESS',
+];
 
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const body: GrantPermissionsRequest = await request.json();
     const { deviceId, permissions } = body;
+    const userId = context.user!.id;
 
     if (!deviceId || !Array.isArray(permissions)) {
       return NextResponse.json(
@@ -39,19 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Validate permissions
-    const validPermissions: PermissionScope[] = [
-      'READ_PATIENT_DATA',
-      'WRITE_NOTES',
-      'VIEW_TRANSCRIPT',
-      'CONTROL_RECORDING',
-      'ACCESS_DIAGNOSIS',
-      'VIEW_MEDICATIONS',
-      'EDIT_SOAP_NOTES',
-      'FULL_ACCESS',
-    ];
-
-    const invalidPerms = permissions.filter(p => !validPermissions.includes(p));
+    const invalidPerms = permissions.filter((p) => !VALID_PERMISSIONS.includes(p));
     if (invalidPerms.length > 0) {
       return NextResponse.json(
         { success: false, error: `Invalid permissions: ${invalidPerms.join(', ')}` },
@@ -59,11 +51,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Find the device pairing
     const devicePairing = await prisma.devicePairing.findFirst({
       where: {
         deviceId,
-        userId: session.user.id,
+        userId,
         isActive: true,
       },
     });
@@ -75,12 +66,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Delete existing permissions
     await prisma.devicePermission.deleteMany({
       where: { devicePairingId: devicePairing.id },
     });
 
-    // Create new permissions
     await prisma.devicePermission.createMany({
       data: permissions.map((permission) => ({
         devicePairingId: devicePairing.id,
@@ -97,34 +86,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       grantedAt: Date.now(),
       expiresAt: Date.now() + 24 * 60 * 60 * 1000,
     });
-  } catch (error) {
-    console.error('Grant permissions error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
 
     if (deviceId) {
-      // Get permissions for specific device
       const devicePairing = await prisma.devicePairing.findFirst({
         where: {
           deviceId,
-          userId: session.user.id,
+          userId,
           isActive: true,
         },
         include: {
@@ -145,10 +124,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         permissions: devicePairing.permissions.map((p) => p.permission),
       });
     } else {
-      // Get all device permissions for user
       const devicePairings = await prisma.devicePairing.findMany({
         where: {
-          userId: session.user.id,
+          userId,
           isActive: true,
         },
         include: {
@@ -166,27 +144,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         })),
       });
     }
-  } catch (error) {
-    console.error('Get permissions error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);
 
-export async function PUT(request: NextRequest): Promise<NextResponse> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+export const PUT = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const body: UpdatePermissionsRequest = await request.json();
     const { deviceId, permissions } = body;
+    const userId = context.user!.id;
 
     if (!deviceId || !Array.isArray(permissions)) {
       return NextResponse.json(
@@ -195,11 +164,10 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Find the device pairing
     const devicePairing = await prisma.devicePairing.findFirst({
       where: {
         deviceId,
-        userId: session.user.id,
+        userId,
         isActive: true,
       },
     });
@@ -211,12 +179,10 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Delete existing permissions
     await prisma.devicePermission.deleteMany({
       where: { devicePairingId: devicePairing.id },
     });
 
-    // Create new permissions
     await prisma.devicePermission.createMany({
       data: permissions.map((permission) => ({
         devicePairingId: devicePairing.id,
@@ -232,24 +198,15 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       permissions,
       updatedAt: Date.now(),
     });
-  } catch (error) {
-    console.error('Update permissions error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);
 
-export async function DELETE(request: NextRequest): Promise<NextResponse> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
@@ -261,11 +218,10 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Find the device pairing
     const devicePairing = await prisma.devicePairing.findFirst({
       where: {
         deviceId,
-        userId: session.user.id,
+        userId,
         isActive: true,
       },
     });
@@ -277,7 +233,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Revoke all permissions for device
     await prisma.devicePermission.deleteMany({
       where: { devicePairingId: devicePairing.id },
     });
@@ -289,11 +244,8 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       message: 'Permissions revoked successfully',
       deviceId,
     });
-  } catch (error) {
-    console.error('Revoke permissions error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);

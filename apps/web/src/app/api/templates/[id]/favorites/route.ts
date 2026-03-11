@@ -5,29 +5,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * POST /api/templates/[id]/favorites
- * Add template to favorites
- */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params.id;
+    const userId = context.user!.id;
+
+    if (!templateId) {
+      return NextResponse.json(
+        { error: 'Template ID required' },
+        { status: 400 }
+      );
     }
 
-    const userId = (session.user as any).id;
-    const { id: templateId } = params;
-
-    // Check if template exists
     const template = await prisma.clinicalTemplate.findUnique({
       where: { id: templateId },
     });
@@ -39,7 +34,6 @@ export async function POST(
       );
     }
 
-    // Check if already favorited
     const existing = await prisma.templateFavorite.findUnique({
       where: {
         userId_templateId: {
@@ -56,7 +50,6 @@ export async function POST(
       );
     }
 
-    // Get current max sort order for user's favorites
     const maxSortOrder = await prisma.templateFavorite.aggregate({
       where: { userId },
       _max: { sortOrder: true },
@@ -64,7 +57,6 @@ export async function POST(
 
     const nextSortOrder = (maxSortOrder._max.sortOrder || 0) + 1;
 
-    // Create favorite
     const favorite = await prisma.templateFavorite.create({
       data: {
         userId,
@@ -78,33 +70,25 @@ export async function POST(
       data: favorite,
       message: 'Template added to favorites',
     }, { status: 201 });
-  } catch (error) {
-    console.error('Error adding favorite:', error);
-    return NextResponse.json(
-      { error: 'Failed to add favorite' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);
 
-/**
- * DELETE /api/templates/[id]/favorites
- * Remove template from favorites
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const params = await Promise.resolve(context.params ?? {});
+    const templateId = params.id;
+    const userId = context.user!.id;
+
+    if (!templateId) {
+      return NextResponse.json(
+        { error: 'Template ID required' },
+        { status: 400 }
+      );
     }
 
-    const userId = (session.user as any).id;
-    const { id: templateId } = params;
-
-    // Check if favorited
     const favorite = await prisma.templateFavorite.findUnique({
       where: {
         userId_templateId: {
@@ -121,7 +105,6 @@ export async function DELETE(
       );
     }
 
-    // Remove favorite
     await prisma.templateFavorite.delete({
       where: {
         userId_templateId: {
@@ -135,11 +118,8 @@ export async function DELETE(
       success: true,
       message: 'Template removed from favorites',
     });
-  } catch (error) {
-    console.error('Error removing favorite:', error);
-    return NextResponse.json(
-      { error: 'Failed to remove favorite' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);

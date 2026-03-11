@@ -9,32 +9,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { markNotificationAsRead, deleteNotification } from '@/lib/notifications';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
 import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic';
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const notificationId = params.id;
+export const PUT = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const params = await Promise.resolve(context.params ?? {});
+      const notificationId = params?.id;
 
-    // Check if it's a clinician or patient request
-    const clinicianSession = await auth();
-    let userId: string;
-    let userType: 'CLINICIAN' | 'PATIENT';
-
-    if (clinicianSession?.user?.id) {
-      userId = clinicianSession.user.id;
-      userType = 'CLINICIAN';
+      const userId = context.user?.id;
+      const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
       // Demo mode (DB-FREE): accept mark-as-read without DB
-      if (isDemoClinician(userId, clinicianSession.user.email ?? null)) {
+      if (userType === 'CLINICIAN' && userId && isDemoClinician(userId, context.user?.email ?? null)) {
         const existing = getSyntheticNotifications().find((n) => n.id === notificationId);
         if (!existing) {
           return NextResponse.json({ success: false, error: 'Notificación no encontrada' }, { status: 404 });
@@ -48,110 +40,91 @@ export async function PUT(
           { status: 200 }
         );
       }
-    } else {
-      try {
-        const patientSession = await requirePatientSession();
-        userId = patientSession.patientId;
-        userType = 'PATIENT';
-      } catch (error) {
+
+      // Verify notification belongs to user
+      const notification = await prisma.notification.findUnique({
+        where: { id: notificationId },
+      });
+
+      if (!notification) {
         return NextResponse.json(
           {
             success: false,
-            error: 'No autorizado. Por favor, inicia sesión.',
+            error: 'Notificación no encontrada',
           },
-          { status: 401 }
+          { status: 404 }
         );
       }
-    }
 
-    // Verify notification belongs to user
-    const notification = await prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
+      if (
+        notification.recipientId !== userId ||
+        notification.recipientType !== userType
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'No tienes permiso para actualizar esta notificación',
+          },
+          { status: 403 }
+        );
+      }
 
-    if (!notification) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Notificación no encontrada',
+      // Mark as read
+      const updated = await markNotificationAsRead(notificationId);
+
+      // HIPAA Audit Log: Notification marked as read
+      await createAuditLog({
+        action: 'UPDATE',
+        resource: 'Notification',
+        resourceId: notificationId,
+        details: {
+          userType,
+          notificationId,
+          action: 'mark_as_read',
+          accessType: 'NOTIFICATION_UPDATE',
         },
-        { status: 404 }
-      );
-    }
-
-    if (
-      notification.recipientId !== userId ||
-      notification.recipientType !== userType
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No tienes permiso para actualizar esta notificación',
-        },
-        { status: 403 }
-      );
-    }
-
-    // Mark as read
-    const updated = await markNotificationAsRead(notificationId);
-
-    // HIPAA Audit Log: Notification marked as read
-    await createAuditLog({
-      action: 'UPDATE',
-      resource: 'Notification',
-      resourceId: notificationId,
-      details: {
-        userType,
-        notificationId,
-        action: 'mark_as_read',
-        accessType: 'NOTIFICATION_UPDATE',
-      },
-      success: true,
-    });
-
-    return NextResponse.json(
-      {
         success: true,
-        message: 'Notificación marcada como leída',
-        data: updated,
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    logger.error({
-      event: 'notification_update_error',
-      notificationId: params.id,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+      });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al actualizar notificación.',
-      },
-      { status: 500 }
-    );
-  }
-}
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Notificación marcada como leída',
+          data: updated,
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      const errParams = await Promise.resolve(context.params ?? {});
+      logger.error({
+        event: 'notification_update_error',
+        notificationId: errParams?.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const notificationId = params.id;
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Error al actualizar notificación.',
+        },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'PATIENT'], skipCsrf: true }
+);
 
-    // Check if it's a clinician or patient request
-    const clinicianSession = await auth();
-    let userId: string;
-    let userType: 'CLINICIAN' | 'PATIENT';
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const params = await Promise.resolve(context.params ?? {});
+      const notificationId = params?.id;
 
-    if (clinicianSession?.user?.id) {
-      userId = clinicianSession.user.id;
-      userType = 'CLINICIAN';
+      const userId = context.user?.id;
+      const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
       // Demo mode (DB-FREE): accept delete without DB
-      if (isDemoClinician(userId, clinicianSession.user.email ?? null)) {
+      if (userType === 'CLINICIAN' && userId && isDemoClinician(userId, context.user?.email ?? null)) {
         const existing = getSyntheticNotifications().find((n) => n.id === notificationId);
         if (!existing) {
           return NextResponse.json({ success: false, error: 'Notificación no encontrada' }, { status: 404 });
@@ -161,87 +134,75 @@ export async function DELETE(
           { status: 200 }
         );
       }
-    } else {
-      try {
-        const patientSession = await requirePatientSession();
-        userId = patientSession.patientId;
-        userType = 'PATIENT';
-      } catch (error) {
+
+      // Verify notification belongs to user
+      const notification = await prisma.notification.findUnique({
+        where: { id: notificationId },
+      });
+
+      if (!notification) {
         return NextResponse.json(
           {
             success: false,
-            error: 'No autorizado. Por favor, inicia sesión.',
+            error: 'Notificación no encontrada',
           },
-          { status: 401 }
+          { status: 404 }
         );
       }
-    }
 
-    // Verify notification belongs to user
-    const notification = await prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
+      if (
+        notification.recipientId !== userId ||
+        notification.recipientType !== userType
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'No tienes permiso para eliminar esta notificación',
+          },
+          { status: 403 }
+        );
+      }
 
-    if (!notification) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Notificación no encontrada',
+      // Delete notification
+      await deleteNotification(notificationId);
+
+      // HIPAA Audit Log: Notification deleted
+      await createAuditLog({
+        action: 'DELETE',
+        resource: 'Notification',
+        resourceId: notificationId,
+        details: {
+          userType,
+          notificationId,
+          action: 'delete',
+          accessType: 'NOTIFICATION_DELETE',
         },
-        { status: 404 }
-      );
-    }
-
-    if (
-      notification.recipientId !== userId ||
-      notification.recipientType !== userType
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No tienes permiso para eliminar esta notificación',
-        },
-        { status: 403 }
-      );
-    }
-
-    // Delete notification
-    await deleteNotification(notificationId);
-
-    // HIPAA Audit Log: Notification deleted
-    await createAuditLog({
-      action: 'DELETE',
-      resource: 'Notification',
-      resourceId: notificationId,
-      details: {
-        userType,
-        notificationId,
-        action: 'delete',
-        accessType: 'NOTIFICATION_DELETE',
-      },
-      success: true,
-    });
-
-    return NextResponse.json(
-      {
         success: true,
-        message: 'Notificación eliminada',
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    logger.error({
-      event: 'notification_delete_error',
-      notificationId: params.id,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+      });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al eliminar notificación.',
-      },
-      { status: 500 }
-    );
-  }
-}
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Notificación eliminada',
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      const errParams = await Promise.resolve(context.params ?? {});
+      logger.error({
+        event: 'notification_delete_error',
+        notificationId: errParams?.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Error al eliminar notificación.',
+        },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'PATIENT'], skipCsrf: true }
+);

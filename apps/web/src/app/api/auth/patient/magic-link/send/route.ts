@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { generateMagicLink, sendMagicLinkEmail } from '@/lib/auth/magic-link';
 import logger from '@/lib/logger';
@@ -17,7 +18,7 @@ const SendMagicLinkSchema = z.object({
   email: z.string().email('Por favor ingresa un email válido'),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   // Apply rate limiting - 5 requests per 15 minutes for auth endpoints
   const rateLimitResponse = await checkRateLimit(request, 'auth');
   if (rateLimitResponse) {
@@ -155,4 +156,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

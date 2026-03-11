@@ -6,11 +6,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
 import { verifyRecordingConsent } from '@/lib/consent/recording-consent';
 
 const StartRecordingSchema = z.object({
@@ -30,18 +29,12 @@ const StartRecordingSchema = z.object({
   accessPurpose: z.string().optional(), // Free-text explanation
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    // Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const userId = context.user!.id;
 
-    // Parse and validate request
+      // Parse and validate request
     const body = await request.json();
     const validation = StartRecordingSchema.safeParse(body);
 
@@ -74,7 +67,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (appointment.clinician.id !== (session.user as any).id) {
+    if (appointment.clinician.id !== userId) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para grabar esta cita' },
         { status: 403 }
@@ -145,8 +138,8 @@ export async function POST(request: NextRequest) {
     // Create audit log with access reason (HIPAA §164.502(b) Minimum Necessary)
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
-        userEmail: session.user.email || '',
+        userId,
+        userEmail: context.user?.email || '',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
         resource: 'RecordingSession',
@@ -163,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'recording_started',
-      userId: (session.user as any).id,
+      userId,
       recordingId: recording.id,
       appointmentId,
       patientId,
@@ -191,4 +184,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

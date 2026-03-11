@@ -11,9 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
@@ -108,335 +106,147 @@ async function fetchPaginatedMessages(
 /**
  * GET - Get messages for a conversation with cursor-based pagination
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { conversationId: string } }
-) {
-  try {
-    const { conversationId } = params;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const { conversationId } = await context.params;
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50');
     const cursor = searchParams.get('cursor') || undefined;
     const direction = (searchParams.get('direction') || 'before') as 'before' | 'after';
 
-    // Check if it's a clinician or patient request
-    const clinicianSession = await getServerSession(authOptions);
+    const userId = context.user?.id;
+    const isPatient = context.user?.role === 'PATIENT';
 
-    if (clinicianSession?.user?.id) {
-      // Get messages for this patient (conversationId is patientId for clinicians)
-      const result = await fetchPaginatedMessages(conversationId, {
-        limit,
-        cursor,
-        direction,
-      });
+    const patientIdForQuery = isPatient ? userId : conversationId;
 
-      // Get unread count for this conversation
-      const unreadCount = await prisma.message.count({
-        where: {
-          patientId: conversationId,
-          toUserId: clinicianSession.user.id,
-          readAt: null,
-          archivedAt: null,
-        },
-      });
-
-      // HIPAA Audit Log: Clinician accessed patient messages
-      await createAuditLog({
-        action: 'READ',
-        resource: 'Message',
-        resourceId: conversationId,
-        details: {
-          patientId: conversationId,
-          messagesCount: result.messages.length,
-          accessType: 'MESSAGE_CONVERSATION_DETAIL',
-          pagination: { cursor, direction, limit },
-        },
-        success: true,
-      });
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          messages: result.messages,
-          pagination: result.pagination,
-          unreadCount,
-        },
-      });
-    }
-
-    // Try patient session
-    try {
-      const patientSession = await requirePatientSession();
-
-      // Get messages between patient and their clinician
-      const result = await fetchPaginatedMessages(patientSession.patientId, {
-        limit,
-        cursor,
-        direction,
-      });
-
-      // Get unread count for patient
-      const unreadCount = await prisma.message.count({
-        where: {
-          patientId: patientSession.patientId,
-          toUserId: patientSession.patientId,
-          readAt: null,
-          archivedAt: null,
-        },
-      });
-
-      // HIPAA Audit Log: Patient accessed their messages
-      await createAuditLog({
-        action: 'READ',
-        resource: 'Message',
-        resourceId: patientSession.patientId,
-        details: {
-          patientId: patientSession.patientId,
-          conversationId,
-          messagesCount: result.messages.length,
-          accessType: 'PATIENT_MESSAGE_CONVERSATION_DETAIL',
-          pagination: { cursor, direction, limit },
-        },
-        success: true,
-      });
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          messages: result.messages,
-          pagination: result.pagination,
-          unreadCount,
-        },
-      });
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-  } catch (error) {
-    logger.error({
-      event: 'get_conversation_messages_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      conversationId: params.conversationId,
+    const result = await fetchPaginatedMessages(patientIdForQuery, {
+      limit,
+      cursor,
+      direction,
     });
 
-    return NextResponse.json(
-      { success: false, error: 'Error al obtener mensajes' },
-      { status: 500 }
-    );
+    const unreadCount = await prisma.message.count({
+      where: {
+        patientId: patientIdForQuery,
+        toUserId: userId,
+        readAt: null,
+        archivedAt: null,
+      },
+    });
+
+    await createAuditLog({
+      action: 'READ',
+      resource: 'Message',
+      resourceId: patientIdForQuery,
+      details: {
+        patientId: patientIdForQuery,
+        conversationId,
+        messagesCount: result.messages.length,
+        accessType: isPatient ? 'PATIENT_MESSAGE_CONVERSATION_DETAIL' : 'MESSAGE_CONVERSATION_DETAIL',
+        pagination: { cursor, direction, limit },
+      },
+      success: true,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        messages: result.messages,
+        pagination: result.pagination,
+        unreadCount,
+      },
+    });
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * PATCH - Mark all messages in conversation as read
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { conversationId: string } }
-) {
-  try {
-    const { conversationId } = params;
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const { conversationId } = await context.params;
     const readAt = new Date();
 
-    // Check if it's a clinician or patient request
-    const clinicianSession = await getServerSession(authOptions);
+    const userId = context.user?.id;
+    const isPatient = context.user?.role === 'PATIENT';
+    const patientIdForQuery = isPatient ? userId : conversationId;
 
-    if (clinicianSession?.user?.id) {
-      // Get unread message IDs before marking as read
-      const unreadMessages = await prisma.message.findMany({
-        where: {
-          patientId: conversationId,
-          toUserId: clinicianSession.user.id,
-          readAt: null,
-        },
-        select: { id: true, fromUserId: true, fromUserType: true },
-      });
-
-      const messageIds = unreadMessages.map((m) => m.id);
-
-      if (messageIds.length > 0) {
-        // Mark messages from this patient as read
-        await prisma.message.updateMany({
-          where: {
-            id: { in: messageIds },
-          },
-          data: {
-            readAt,
-          },
-        });
-
-        // Emit read receipt to conversation room
-        emitReadReceipt({
-          conversationId,
-          readerId: clinicianSession.user.id,
-          readerType: 'CLINICIAN',
-          messageIds,
-          readAt,
-        });
-
-        // Notify each sender that their messages were read
-        const senderGroups = unreadMessages.reduce((acc, msg) => {
-          const key = `${msg.fromUserType}:${msg.fromUserId}`;
-          if (!acc[key]) {
-            acc[key] = { userId: msg.fromUserId, userType: msg.fromUserType as 'CLINICIAN' | 'PATIENT' };
-          }
-          return acc;
-        }, {} as Record<string, { userId: string; userType: 'CLINICIAN' | 'PATIENT' }>);
-
-        // Emit unread count update (now 0 for this clinician)
-        emitUnreadCountUpdate(
-          clinicianSession.user.id,
-          'CLINICIAN',
-          conversationId,
-          0
-        );
-
-        // Update search index to mark messages as read
-        try {
-          await Promise.all(
-            messageIds.map((id) => updateMessageIndex({ id, isRead: true }))
-          );
-        } catch (searchError) {
-          logger.warn({
-            event: 'message_search_update_error',
-            messageIds,
-            error: searchError instanceof Error ? searchError.message : 'Unknown error',
-          });
-        }
-      }
-
-      logger.info({
-        event: 'conversation_marked_read',
-        userId: clinicianSession.user.id,
-        userType: 'clinician',
-        conversationId,
-        messagesMarked: messageIds.length,
-      });
-
-      // HIPAA Audit Log: Clinician marked conversation as read
-      await createAuditLog({
-        action: 'UPDATE',
-        resource: 'Message',
-        resourceId: conversationId,
-        details: {
-          patientId: conversationId,
-          action: 'mark_conversation_read',
-          messagesMarked: messageIds.length,
-          accessType: 'MESSAGE_MARK_READ',
-        },
-        success: true,
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: 'Conversación marcada como leída',
-        data: { messagesMarked: messageIds.length },
-      });
-    }
-
-    // Try patient session
-    try {
-      const patientSession = await requirePatientSession();
-
-      // Get unread message IDs before marking as read
-      const unreadMessages = await prisma.message.findMany({
-        where: {
-          patientId: patientSession.patientId,
-          toUserId: patientSession.patientId,
-          readAt: null,
-        },
-        select: { id: true, fromUserId: true, fromUserType: true },
-      });
-
-      const messageIds = unreadMessages.map((m) => m.id);
-
-      if (messageIds.length > 0) {
-        // Mark messages from clinician as read
-        await prisma.message.updateMany({
-          where: {
-            id: { in: messageIds },
-          },
-          data: {
-            readAt,
-          },
-        });
-
-        // Emit read receipt to conversation room
-        emitReadReceipt({
-          conversationId: patientSession.patientId,
-          readerId: patientSession.patientId,
-          readerType: 'PATIENT',
-          messageIds,
-          readAt,
-        });
-
-        // Emit unread count update (now 0 for this patient)
-        emitUnreadCountUpdate(
-          patientSession.patientId,
-          'PATIENT',
-          patientSession.patientId,
-          0
-        );
-
-        // Update search index to mark messages as read
-        try {
-          await Promise.all(
-            messageIds.map((id) => updateMessageIndex({ id, isRead: true }))
-          );
-        } catch (searchError) {
-          logger.warn({
-            event: 'message_search_update_error',
-            messageIds,
-            error: searchError instanceof Error ? searchError.message : 'Unknown error',
-          });
-        }
-      }
-
-      logger.info({
-        event: 'conversation_marked_read',
-        patientId: patientSession.patientId,
-        userType: 'patient',
-        conversationId,
-        messagesMarked: messageIds.length,
-      });
-
-      // HIPAA Audit Log: Patient marked conversation as read
-      await createAuditLog({
-        action: 'UPDATE',
-        resource: 'Message',
-        resourceId: patientSession.patientId,
-        details: {
-          patientId: patientSession.patientId,
-          conversationId,
-          action: 'mark_conversation_read',
-          messagesMarked: messageIds.length,
-          accessType: 'PATIENT_MESSAGE_MARK_READ',
-        },
-        success: true,
-      });
-
-      return NextResponse.json({
-        success: true,
-        message: 'Conversación marcada como leída',
-        data: { messagesMarked: messageIds.length },
-      });
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-  } catch (error) {
-    logger.error({
-      event: 'mark_conversation_read_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      conversationId: params.conversationId,
+    const unreadMessages = await prisma.message.findMany({
+      where: {
+        patientId: patientIdForQuery,
+        toUserId: userId,
+        readAt: null,
+      },
+      select: { id: true, fromUserId: true, fromUserType: true },
     });
 
-    return NextResponse.json(
-      { success: false, error: 'Error al marcar conversación como leída' },
-      { status: 500 }
-    );
+    const messageIds = unreadMessages.map((m) => m.id);
+
+    if (messageIds.length > 0) {
+      await prisma.message.updateMany({
+        where: { id: { in: messageIds } },
+        data: { readAt },
+      });
+
+      emitReadReceipt({
+        conversationId: patientIdForQuery,
+        readerId: userId,
+        readerType: isPatient ? 'PATIENT' : 'CLINICIAN',
+        messageIds,
+        readAt,
+      });
+
+      emitUnreadCountUpdate(userId, isPatient ? 'PATIENT' : 'CLINICIAN', patientIdForQuery, 0);
+
+      try {
+        await Promise.all(
+          messageIds.map((id) => updateMessageIndex({ id, isRead: true }))
+        );
+      } catch (searchError) {
+        logger.warn({
+          event: 'message_search_update_error',
+          messageIds,
+          error: searchError instanceof Error ? searchError.message : 'Unknown error',
+        });
+      }
+    }
+
+    logger.info({
+      event: 'conversation_marked_read',
+      userId,
+      userType: isPatient ? 'patient' : 'clinician',
+      conversationId,
+      messagesMarked: messageIds.length,
+    });
+
+    await createAuditLog({
+      action: 'UPDATE',
+      resource: 'Message',
+      resourceId: patientIdForQuery,
+      details: {
+        patientId: patientIdForQuery,
+        conversationId,
+        action: 'mark_conversation_read',
+        messagesMarked: messageIds.length,
+        accessType: isPatient ? 'PATIENT_MESSAGE_MARK_READ' : 'MESSAGE_MARK_READ',
+      },
+      success: true,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Conversación marcada como leída',
+      data: { messagesMarked: messageIds.length },
+    });
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);

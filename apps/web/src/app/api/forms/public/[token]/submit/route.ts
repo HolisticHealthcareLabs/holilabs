@@ -5,18 +5,23 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { sendFormCompletionEmail } from '@/lib/email';
 import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(
+export const POST = createPublicRoute(async (
   request: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  context: { params?: Record<string, string> | Promise<Record<string, string>> }
+) => {
+  const params = await Promise.resolve(context.params ?? {});
+  const token = params.token;
   try {
-    const { token } = params;
+    if (!token) {
+      return NextResponse.json({ error: 'Token is required' }, { status: 400 });
+    }
     const body = await request.json();
     const { responses, signatureDataUrl } = body;
 
@@ -143,4 +148,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});

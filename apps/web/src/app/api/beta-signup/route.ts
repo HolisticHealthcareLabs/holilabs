@@ -7,10 +7,11 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 const prisma = new PrismaClient();
 
-export async function POST(request: Request) {
+export const POST = createPublicRoute(async (request: Request) => {
   try {
     const body = await request.json();
     const {
@@ -189,4 +190,4 @@ export async function POST(request: Request) {
 
     return safeErrorResponse(error, { userMessage: 'Error al procesar tu registro. Por favor intenta de nuevo.' });
   }
-}
+});

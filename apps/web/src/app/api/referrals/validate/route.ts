@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { validateReferralCode } from '@/lib/referral';
 import { createAuditLog } from '@/lib/audit';
 
@@ -21,7 +22,7 @@ interface ValidateRequest {
  *
  * Validate a referral code (public endpoint, no auth required)
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
+export const POST = createPublicRoute(async (request: NextRequest): Promise<NextResponse> => {
   try {
     // Parse request body
     const body: ValidateRequest = await request.json();
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+});
 
 function getReferralRewardDescription(rewardType: string, rewardValue: number): string {
   switch (rewardType) {

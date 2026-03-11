@@ -8,13 +8,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: NextRequest) {
-  const session = await requirePatientSession();
+export const GET = createPublicRoute(
+  async (_request: NextRequest) => {
+    const session = await requirePatientSession();
 
-  const notifications = await prisma.notification.findMany({
+    const notifications = await prisma.notification.findMany({
     where: {
       recipientId: session.patientId,
       recipientType: 'PATIENT',
@@ -40,6 +42,6 @@ export async function GET(_request: NextRequest) {
     }));
 
   return NextResponse.json({ success: true, data: { accessRequests } }, { status: 200 });
-}
-
-
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 /**
  * POST /api/auth/login
@@ -9,7 +10,8 @@ import { env } from '@/lib/env';
  *
  * This removes hardcoded `localhost:3001` usage in the browser.
  */
-export async function POST(req: NextRequest) {
+export const POST = createPublicRoute(
+  async (req: NextRequest) => {
   const body = await req.json().catch(() => null);
 
   if (!body || typeof body.email !== 'string' || typeof body.password !== 'string') {
@@ -35,5 +37,7 @@ export async function POST(req: NextRequest) {
       { status: 502 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 15 * 60 * 1000, maxRequests: 10 } }
+);
 

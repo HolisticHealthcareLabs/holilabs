@@ -5,8 +5,9 @@
  * Activates multiple templates in a single transaction
  */
 
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import {
@@ -14,21 +15,15 @@ import {
 } from '@/lib/socket-server';
 import { SocketEvent, NotificationPriority } from '@/lib/socket/events';
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user?.id;
 
     const body = await request.json();
     const { templateIds } = body;
 
-    // Validation
     if (!Array.isArray(templateIds) || templateIds.length === 0) {
       return NextResponse.json(
         { success: false, error: 'templateIds array is required and must not be empty' },
@@ -43,9 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use Prisma transaction for atomicity
     const result = await prisma.$transaction(async (tx) => {
-      // Update all templates
       const updated = await tx.preventionPlanTemplate.updateMany({
         where: {
           id: { in: templateIds },
@@ -56,7 +49,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create audit logs for each template
       const templates = await tx.preventionPlanTemplate.findMany({
         where: { id: { in: templateIds } },
         select: { id: true, templateName: true },
@@ -67,7 +59,7 @@ export async function POST(request: NextRequest) {
                         'unknown';
 
       const auditLogs = templates.map((template) => ({
-        userId: session.user.id,
+        userId: userId!,
         action: 'UPDATE' as const,
         resource: 'prevention_template' as const,
         resourceId: template.id,
@@ -84,11 +76,10 @@ export async function POST(request: NextRequest) {
 
     logger.info({
       event: 'bulk_templates_activated',
-      userId: session.user.id,
+      userId,
       count: result.updated,
     });
 
-    // Emit real-time notification
     const notification = {
       id: crypto.randomUUID(),
       event: SocketEvent.BULK_OPERATION_COMPLETED,
@@ -98,7 +89,7 @@ export async function POST(request: NextRequest) {
       data: {
         operation: 'activate',
         count: result.updated,
-        userId: session.user.id,
+        userId,
         timestamp: new Date(),
       },
       timestamp: new Date(),
@@ -113,18 +104,6 @@ export async function POST(request: NextRequest) {
         templates: result.templates,
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'bulk_activate_templates_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to activate templates',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: [...ROLES] }
+);

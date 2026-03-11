@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import {
@@ -24,12 +25,13 @@ export const dynamic = 'force-dynamic';
 
 const VALID_PROVIDERS: EhrProviderId[] = ['epic', 'cerner', 'athena', 'medplum'];
 
-export async function GET(
+export const GET = createPublicRoute(async (
   request: NextRequest,
   context: any
-) {
+) => {
   try {
-    const { provider } = await context.params;
+    const params = await Promise.resolve(context.params ?? {});
+    const provider = (params as { provider?: string }).provider;
 
     // Validate provider
     if (!VALID_PROVIDERS.includes(provider as EhrProviderId)) {
@@ -106,4 +108,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

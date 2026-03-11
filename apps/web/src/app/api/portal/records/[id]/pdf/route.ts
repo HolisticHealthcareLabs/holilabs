@@ -10,18 +10,18 @@ import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { renderToStream } from '@react-pdf/renderer';
 import { SOAPNotePDF } from '@/components/pdf/SOAPNotePDF';
 import React from 'react';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET = createPublicRoute(
+  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
 
+    const params = await Promise.resolve(context.params ?? {});
     const recordId = params.id;
 
     // Fetch record with full details
@@ -154,7 +154,7 @@ export async function GET(
     logger.error({
       event: 'patient_record_pdf_export_error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      recordId: params.id,
+      recordId: (await Promise.resolve(context.params ?? {})).id,
     });
 
     return NextResponse.json(
@@ -165,4 +165,6 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

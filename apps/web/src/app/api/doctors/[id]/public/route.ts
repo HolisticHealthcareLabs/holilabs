@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 /**
  * GET /api/doctors/[id]/public
  * Get public profile of a doctor for booking
  */
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { id } = params;
-
-    // Get doctor with public information
-    const doctor = await prisma.user.findUnique({
-      where: { id },
-      select: {
+export const GET = createPublicRoute(
+  async (request: Request, context: any) => {
+    const { id } = context.params ?? { id: '' };
+    try {
+      // Get doctor with public information
+      const doctor = await prisma.user.findUnique({
+        where: { id },
+        select: {
         id: true,
         firstName: true,
         lastName: true,
@@ -55,45 +53,46 @@ export async function GET(
           },
         },
       },
-    });
+      });
 
-    if (!doctor) {
+      if (!doctor) {
+        return NextResponse.json(
+          { error: 'Doctor not found' },
+          { status: 404 }
+        );
+      }
+
+      // Calculate stats
+      const verifiedCount = doctor.credentials.length;
+      const hasAvailability = doctor.providerAvailability.length > 0;
+
+      // Generate booking link
+      const bookingLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/book/${doctor.id}`;
+
+      return NextResponse.json({
+        success: true,
+        doctor: {
+          id: doctor.id,
+          name: `Dr. ${doctor.firstName} ${doctor.lastName}`,
+          firstName: doctor.firstName,
+          lastName: doctor.lastName,
+          specialty: doctor.specialty,
+          licenseNumber: doctor.licenseNumber,
+          npi: doctor.npi,
+          isVerified: verifiedCount > 0,
+          verifiedCredentials: verifiedCount,
+          credentials: doctor.credentials,
+          availability: doctor.providerAvailability,
+          hasAvailability,
+          bookingLink,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error fetching doctor profile:', error);
       return NextResponse.json(
-        { error: 'Doctor not found' },
-        { status: 404 }
+        { error: 'Failed to fetch doctor profile' },
+        { status: 500 }
       );
     }
-
-    // Calculate stats
-    const verifiedCount = doctor.credentials.length;
-    const hasAvailability = doctor.providerAvailability.length > 0;
-
-    // Generate booking link
-    const bookingLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/book/${doctor.id}`;
-
-    return NextResponse.json({
-      success: true,
-      doctor: {
-        id: doctor.id,
-        name: `Dr. ${doctor.firstName} ${doctor.lastName}`,
-        firstName: doctor.firstName,
-        lastName: doctor.lastName,
-        specialty: doctor.specialty,
-        licenseNumber: doctor.licenseNumber,
-        npi: doctor.npi,
-        isVerified: verifiedCount > 0,
-        verifiedCredentials: verifiedCount,
-        credentials: doctor.credentials,
-        availability: doctor.providerAvailability,
-        hasAvailability,
-        bookingLink,
-      },
-    });
-  } catch (error: any) {
-    console.error('Error fetching doctor profile:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch doctor profile' },
-      { status: 500 }
-    );
   }
-}
+);

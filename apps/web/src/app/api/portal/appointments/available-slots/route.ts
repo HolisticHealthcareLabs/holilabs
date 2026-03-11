@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { addMinutes, format, isBefore, isAfter, parse } from 'date-fns';
 
@@ -27,7 +28,8 @@ interface TimeSlot {
   reason?: string; // Why unavailable
 }
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Authenticate patient
     await requirePatientSession();
@@ -204,4 +206,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

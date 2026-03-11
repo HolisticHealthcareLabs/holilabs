@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import {
   getAvailableProviders,
   getAllConnectionStatuses,
@@ -16,23 +15,13 @@ import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
-    // Get all configured providers
     const availableProviders = getAvailableProviders();
+    const connectionStatuses = await getAllConnectionStatuses(userId);
 
-    // Get connection status for each provider
-    const connectionStatuses = await getAllConnectionStatuses(session.user.id);
-
-    // Build provider list with status
     const providers = availableProviders.map((provider) => {
       const status = connectionStatuses.find((s) => s.providerId === provider.id);
 
@@ -55,7 +44,6 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Audit log
     await createAuditLog({
       action: 'READ',
       resource: 'EhrProvider',
@@ -72,11 +60,9 @@ export async function GET(request: NextRequest) {
       success: true,
       data: { providers },
     });
-  } catch (error) {
-    console.error('Error fetching EHR providers:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch providers' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);

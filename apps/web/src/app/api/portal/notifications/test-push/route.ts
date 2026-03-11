@@ -6,8 +6,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { sendTestNotification } from '@/lib/notifications/send-push';
+import { createPublicRoute } from '@/lib/api/middleware';
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Authenticate patient
     const session = await requirePatientSession();
@@ -44,4 +46,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

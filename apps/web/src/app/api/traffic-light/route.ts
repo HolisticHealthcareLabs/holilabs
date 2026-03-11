@@ -18,6 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { auth } from '@/lib/auth/auth';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
@@ -163,7 +164,7 @@ async function authenticateRequest(
 // POST: Evaluate Traffic Light
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export const POST = createPublicRoute(async (req: NextRequest): Promise<NextResponse> => {
   const startTime = Date.now();
 
   try {
@@ -285,7 +286,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     return safeErrorResponse(error, { userMessage: 'Failed to evaluate traffic light' });
   }
-}
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // OVERRIDE HANDLER
@@ -431,7 +432,7 @@ async function handleOverride(
 // GET: Get Active Rules (Admin)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
+export const GET = createPublicRoute(async (req: NextRequest): Promise<NextResponse> => {
   try {
     const authResult = await authenticateRequest(req);
     if (!authResult) {
@@ -498,4 +499,4 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     return safeErrorResponse(error, { userMessage: 'Failed to get rules' });
   }
-}
+});

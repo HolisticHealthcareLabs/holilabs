@@ -8,8 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -42,51 +41,12 @@ function levenshteinDistance(str1: string, str2: string): number {
  * POST /api/ai/feedback
  * Submit feedback on AI-generated content
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const body = await request.json();
 
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-
-    const {
-      contentType,
-      contentId,
-      sectionType,
-      isCorrect,
-      rating,
-      originalText,
-      editedText,
-      aiConfidence,
-      patientId,
-      sessionId,
-      feedbackNotes,
-      timeToReview,
-    } = body;
-
-    // Validation
-    if (!contentType || !contentId || typeof isCorrect !== 'boolean' || !originalText) {
-      return NextResponse.json(
-        { error: 'Missing required fields: contentType, contentId, isCorrect, originalText' },
-        { status: 400 }
-      );
-    }
-
-    // Calculate edit distance if edited text provided
-    let editDistance: number | undefined;
-    if (editedText && editedText !== originalText) {
-      editDistance = levenshteinDistance(originalText, editedText);
-    }
-
-    // Create feedback record
-    const feedback = await prisma.aIContentFeedback.create({
-      data: {
+      const {
         contentType,
         contentId,
         sectionType,
@@ -94,155 +54,181 @@ export async function POST(request: NextRequest) {
         rating,
         originalText,
         editedText,
-        editDistance,
         aiConfidence,
-        clinicianId: session.user.id,
         patientId,
         sessionId,
         feedbackNotes,
         timeToReview,
-      },
-    });
+      } = body;
 
-    logger.info({
-      event: 'ai_feedback_submitted',
-      clinicianId: session.user.id,
-      contentType,
-      contentId,
-      isCorrect,
-      editDistance,
-      rating,
-    });
+      // Validation
+      if (!contentType || !contentId || typeof isCorrect !== 'boolean' || !originalText) {
+        return NextResponse.json(
+          { error: 'Missing required fields: contentType, contentId, isCorrect, originalText' },
+          { status: 400 }
+        );
+      }
 
-    // If feedback is negative and edit distance is significant, auto-flag for review queue
-    if (!isCorrect && editDistance && editDistance > 10) {
-      logger.warn({
-        event: 'ai_feedback_significant_edit',
+      // Calculate edit distance if edited text provided
+      let editDistance: number | undefined;
+      if (editedText && editedText !== originalText) {
+        editDistance = levenshteinDistance(originalText, editedText);
+      }
+
+      // Create feedback record
+      const feedback = await prisma.aIContentFeedback.create({
+        data: {
+          contentType,
+          contentId,
+          sectionType,
+          isCorrect,
+          rating,
+          originalText,
+          editedText,
+          editDistance,
+          aiConfidence,
+          clinicianId: context.user!.id,
+          patientId,
+          sessionId,
+          feedbackNotes,
+          timeToReview,
+        },
+      });
+
+      logger.info({
+        event: 'ai_feedback_submitted',
+        clinicianId: context.user?.id,
         contentType,
         contentId,
+        isCorrect,
         editDistance,
-        clinicianId: session.user.id,
+        rating,
       });
+
+      // If feedback is negative and edit distance is significant, auto-flag for review queue
+      if (!isCorrect && editDistance && editDistance > 10) {
+        logger.warn({
+          event: 'ai_feedback_significant_edit',
+          contentType,
+          contentId,
+          editDistance,
+          clinicianId: context.user?.id,
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        feedback: {
+          id: feedback.id,
+          isCorrect: feedback.isCorrect,
+          editDistance: feedback.editDistance,
+        },
+      });
+
+    } catch (error) {
+      logger.error({
+        event: 'ai_feedback_submit_failed',
+        error: (error instanceof Error ? error.message : String(error)),
+      });
+      return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
     }
-
-    return NextResponse.json({
-      success: true,
-      feedback: {
-        id: feedback.id,
-        isCorrect: feedback.isCorrect,
-        editDistance: feedback.editDistance,
-      },
-    });
-
-  } catch (error) {
-    logger.error({
-      event: 'ai_feedback_submit_failed',
-      error: (error instanceof Error ? error.message : String(error)),
-    });
-    return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/ai/feedback
  * Get feedback analytics and recent feedback items
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const { searchParams } = new URL(request.url);
+      const contentType = searchParams.get('contentType');
+      const contentId = searchParams.get('contentId');
+      const clinicianId = searchParams.get('clinicianId') || context.user?.id;
+      const limit = parseInt(searchParams.get('limit') || '50');
 
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+      // Build query filters
+      const where: any = {};
+      if (contentType) where.contentType = contentType;
+      if (contentId) where.contentId = contentId;
+      if (clinicianId) where.clinicianId = clinicianId;
 
-    const { searchParams } = new URL(request.url);
-    const contentType = searchParams.get('contentType');
-    const contentId = searchParams.get('contentId');
-    const clinicianId = searchParams.get('clinicianId') || session.user.id;
-    const limit = parseInt(searchParams.get('limit') || '50');
-
-    // Build query filters
-    const where: any = {};
-    if (contentType) where.contentType = contentType;
-    if (contentId) where.contentId = contentId;
-    if (clinicianId) where.clinicianId = clinicianId;
-
-    // Fetch feedback items
-    const feedbackItems = await prisma.aIContentFeedback.findMany({
-      where,
-      take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        clinician: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
+      // Fetch feedback items
+      const feedbackItems = await prisma.aIContentFeedback.findMany({
+        where,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          clinician: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // Calculate summary statistics
-    const totalFeedback = feedbackItems.length;
-    const correctCount = feedbackItems.filter(f => f.isCorrect).length;
-    const incorrectCount = feedbackItems.filter(f => !f.isCorrect).length;
-    const accuracyRate = totalFeedback > 0 ? correctCount / totalFeedback : 0;
+      // Calculate summary statistics
+      const totalFeedback = feedbackItems.length;
+      const correctCount = feedbackItems.filter(f => f.isCorrect).length;
+      const incorrectCount = feedbackItems.filter(f => !f.isCorrect).length;
+      const accuracyRate = totalFeedback > 0 ? correctCount / totalFeedback : 0;
 
-    const avgEditDistance = feedbackItems
-      .filter(f => f.editDistance !== null)
-      .reduce((sum, f) => sum + (f.editDistance || 0), 0) / Math.max(incorrectCount, 1);
+      const avgEditDistance = feedbackItems
+        .filter(f => f.editDistance !== null)
+        .reduce((sum, f) => sum + (f.editDistance || 0), 0) / Math.max(incorrectCount, 1);
 
-    const avgConfidence = feedbackItems
-      .filter(f => f.aiConfidence !== null)
-      .reduce((sum, f) => sum + (f.aiConfidence || 0), 0) / totalFeedback || 0;
+      const avgConfidence = feedbackItems
+        .filter(f => f.aiConfidence !== null)
+        .reduce((sum, f) => sum + (f.aiConfidence || 0), 0) / totalFeedback || 0;
 
-    const avgConfidenceWhenCorrect = feedbackItems
-      .filter(f => f.isCorrect && f.aiConfidence !== null)
-      .reduce((sum, f) => sum + (f.aiConfidence || 0), 0) / Math.max(correctCount, 1);
+      const avgConfidenceWhenCorrect = feedbackItems
+        .filter(f => f.isCorrect && f.aiConfidence !== null)
+        .reduce((sum, f) => sum + (f.aiConfidence || 0), 0) / Math.max(correctCount, 1);
 
-    const avgConfidenceWhenIncorrect = feedbackItems
-      .filter(f => !f.isCorrect && f.aiConfidence !== null)
-      .reduce((sum, f) => sum + (f.aiConfidence || 0), 0) / Math.max(incorrectCount, 1);
+      const avgConfidenceWhenIncorrect = feedbackItems
+        .filter(f => !f.isCorrect && f.aiConfidence !== null)
+        .reduce((sum, f) => sum + (f.aiConfidence || 0), 0) / Math.max(incorrectCount, 1);
 
-    return NextResponse.json({
-      success: true,
-      summary: {
-        totalFeedback,
-        correctCount,
-        incorrectCount,
-        accuracyRate,
-        avgEditDistance: isNaN(avgEditDistance) ? 0 : avgEditDistance,
-        avgConfidence: isNaN(avgConfidence) ? 0 : avgConfidence,
-        avgConfidenceWhenCorrect: isNaN(avgConfidenceWhenCorrect) ? 0 : avgConfidenceWhenCorrect,
-        avgConfidenceWhenIncorrect: isNaN(avgConfidenceWhenIncorrect) ? 0 : avgConfidenceWhenIncorrect,
-      },
-      items: feedbackItems.map(item => ({
-        id: item.id,
-        contentType: item.contentType,
-        contentId: item.contentId,
-        sectionType: item.sectionType,
-        isCorrect: item.isCorrect,
-        rating: item.rating,
-        editDistance: item.editDistance,
-        aiConfidence: item.aiConfidence,
-        clinician: item.clinician,
-        feedbackNotes: item.feedbackNotes,
-        timeToReview: item.timeToReview,
-        createdAt: item.createdAt,
-      })),
-    });
-
-  } catch (error) {
-    logger.error({
-      event: 'ai_feedback_fetch_failed',
-      error: (error instanceof Error ? error.message : String(error)),
-    });
-    return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
-  }
-}
+      return NextResponse.json({
+        success: true,
+        summary: {
+          totalFeedback,
+          correctCount,
+          incorrectCount,
+          accuracyRate,
+          avgEditDistance: isNaN(avgEditDistance) ? 0 : avgEditDistance,
+          avgConfidence: isNaN(avgConfidence) ? 0 : avgConfidence,
+          avgConfidenceWhenCorrect: isNaN(avgConfidenceWhenCorrect) ? 0 : avgConfidenceWhenCorrect,
+          avgConfidenceWhenIncorrect: isNaN(avgConfidenceWhenIncorrect) ? 0 : avgConfidenceWhenIncorrect,
+        },
+        items: feedbackItems.map(item => ({
+          id: item.id,
+          contentType: item.contentType,
+          contentId: item.contentId,
+          sectionType: item.sectionType,
+          isCorrect: item.isCorrect,
+          rating: item.rating,
+          editDistance: item.editDistance,
+          aiConfidence: item.aiConfidence,
+          clinician: item.clinician,
+          feedbackNotes: item.feedbackNotes,
+          timeToReview: item.timeToReview,
+          createdAt: item.createdAt,
+        })),
+      });
+    } catch (error) {
+      logger.error({
+        event: 'ai_feedback_fetch_failed',
+        error: (error instanceof Error ? error.message : String(error)),
+      });
+      return safeErrorResponse(error, { userMessage: 'Internal Server Error' });
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

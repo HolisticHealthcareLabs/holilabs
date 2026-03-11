@@ -7,10 +7,12 @@
  * @returns {object} Current performance metrics
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 
-export async function GET() {
+export const GET = createProtectedRoute(
+  async () => {
   try {
     const metrics = cdsEngine.getMetrics();
 
@@ -104,13 +106,16 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * Reset metrics (useful for testing)
  * POST /api/cds/metrics with { action: 'reset' }
  */
-export async function POST(request: Request) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
   try {
     const body = await request.json();
 
@@ -143,4 +148,6 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

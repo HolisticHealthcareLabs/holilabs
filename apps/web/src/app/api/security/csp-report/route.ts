@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 /**
  * CSP Violation Report Endpoint
@@ -10,7 +11,7 @@ import { safeErrorResponse } from '@/lib/api/safe-error-response';
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP#violation_report_syntax
  */
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     const report = await request.json();
 
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Still return 204 to prevent browser retries
     return new NextResponse(null, { status: 204 });
   }
-}
+});
 
 // Allow POST without authentication (public endpoint for browsers)
 export const dynamic = 'force-dynamic';

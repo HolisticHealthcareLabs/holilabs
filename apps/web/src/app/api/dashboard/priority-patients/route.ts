@@ -10,11 +10,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import prisma from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
+
+const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
 interface PriorityPatient {
   id: string;
@@ -177,181 +179,179 @@ function checkAbnormalVitals(vitals: {
  * GET /api/dashboard/priority-patients
  * Fetch prioritized list of patients
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: { user?: { id: string } }) => {
+    try {
+      const userId = context.user?.id!;
+      const { searchParams } = new URL(request.url);
+      const limit = parseInt(searchParams.get('limit') || '20');
+      const minScore = parseInt(searchParams.get('minScore') || '0');
 
-    const userId = (session.user as any).id;
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const minScore = parseInt(searchParams.get('minScore') || '0');
-
-    // Fetch patients with relevant data
-    const patients = await prisma.patient.findMany({
-      where: {
-        primaryCaregiverId: userId,
-        isActive: true,
-      },
-      include: {
-        painAssessments: {
-          orderBy: { assessedAt: 'desc' },
-          take: 1,
+      // Fetch patients with relevant data
+      const patients = await prisma.patient.findMany({
+        where: {
+          primaryCaregiverId: userId,
+          isActive: true,
         },
-        appointments: {
-          where: {
-            startTime: {
-              gte: new Date(new Date().setHours(0, 0, 0, 0)),
-              lt: new Date(new Date().setHours(23, 59, 59, 999)),
-            },
-            status: {
-              notIn: ['CANCELLED', 'COMPLETED'],
-            },
+        include: {
+          painAssessments: {
+            orderBy: { assessedAt: 'desc' },
+            take: 1,
           },
-          orderBy: { startTime: 'asc' },
-          take: 1,
-        },
-        soapNotes: {
-          where: {
-            OR: [
-              { status: 'DRAFT' },
-              {
-                status: 'PENDING_REVIEW',
-                createdAt: {
-                  lt: new Date(Date.now() - 24 * 60 * 60 * 1000), // Older than 24 hours
-                },
+          appointments: {
+            where: {
+              startTime: {
+                gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                lt: new Date(new Date().setHours(23, 59, 59, 999)),
               },
-            ],
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        carePlans: {
-          where: {
-            targetDate: {
-              lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due within 7 days
+              status: {
+                notIn: ['CANCELLED', 'COMPLETED'],
+              },
             },
-            status: {
-              notIn: ['COMPLETED', 'CANCELLED'],
+            orderBy: { startTime: 'asc' },
+            take: 1,
+          },
+          soapNotes: {
+            where: {
+              OR: [
+                { status: 'DRAFT' },
+                {
+                  status: 'PENDING_REVIEW',
+                  createdAt: {
+                    lt: new Date(Date.now() - 24 * 60 * 60 * 1000), // Older than 24 hours
+                  },
+                },
+              ],
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+          carePlans: {
+            where: {
+              targetDate: {
+                lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due within 7 days
+              },
+              status: {
+                notIn: ['COMPLETED', 'CANCELLED'],
+              },
             },
           },
         },
-      },
-      take: 100, // Fetch more than we need, will filter by score
-    });
+        take: 100, // Fetch more than we need, will filter by score
+      });
 
-    // Calculate priority for each patient
-    const priorityPatients: PriorityPatient[] = await Promise.all(
-      patients.map(async (patient) => {
-        // Get latest pain score
-        const latestPainScore = patient.painAssessments[0]?.painScore;
+      // Calculate priority for each patient
+      const priorityPatients: PriorityPatient[] = await Promise.all(
+        patients.map(async (patient) => {
+          // Get latest pain score
+          const latestPainScore = patient.painAssessments[0]?.painScore;
 
-        // Get latest vitals (would need VitalSigns model, simulating for now)
-        const latestVitals = undefined; // TODO: Fetch from VitalSigns table when implemented
-        const abnormalVitals = latestVitals ? checkAbnormalVitals(latestVitals) : 0;
+          // Get latest vitals (would need VitalSigns model, simulating for now)
+          const latestVitals = undefined; // TODO: Fetch from VitalSigns table when implemented
+          const abnormalVitals = latestVitals ? checkAbnormalVitals(latestVitals) : 0;
 
-        // Count overdue notes
-        const overdueNotes = patient.soapNotes.length;
+          // Count overdue notes
+          const overdueNotes = patient.soapNotes.length;
 
-        // Count pending orders (would need Orders model, simulating for now)
-        const pendingOrders = 0; // TODO: Fetch from Orders table when implemented
+          // Count pending orders (would need Orders model, simulating for now)
+          const pendingOrders = 0; // TODO: Fetch from Orders table when implemented
 
-        // Check for today's appointment
-        const todayAppointment = patient.appointments[0];
+          // Check for today's appointment
+          const todayAppointment = patient.appointments[0];
 
-        // Calculate days since last visit
-        const lastVisit = patient.soapNotes[0]?.createdAt;
-        const daysSinceLastVisit = lastVisit
-          ? Math.floor((Date.now() - new Date(lastVisit).getTime()) / (1000 * 60 * 60 * 24))
-          : undefined;
+          // Calculate days since last visit
+          const lastVisit = patient.soapNotes[0]?.createdAt;
+          const daysSinceLastVisit = lastVisit
+            ? Math.floor((Date.now() - new Date(lastVisit).getTime()) / (1000 * 60 * 60 * 24))
+            : undefined;
 
-        // Calculate urgency score
-        const { score, reasons } = calculateUrgencyScore({
-          painScore: latestPainScore,
-          abnormalVitals,
-          overdueNotes,
-          pendingOrders,
-          hasAppointmentToday: !!todayAppointment,
-          daysSinceLastVisit,
-        });
+          // Calculate urgency score
+          const { score, reasons } = calculateUrgencyScore({
+            painScore: latestPainScore,
+            abnormalVitals,
+            overdueNotes,
+            pendingOrders,
+            hasAppointmentToday: !!todayAppointment,
+            daysSinceLastVisit,
+          });
 
-        // Count care plan goals due
-        const carePlanGoalsDue = patient.carePlans?.reduce((total, plan) => total + (plan.goals?.length || 0), 0) || 0;
+          // Count care plan goals due
+          const carePlanGoalsDue = patient.carePlans?.reduce((total, plan) => total + (plan.goals?.length || 0), 0) || 0;
 
-        return {
-          id: patient.id,
-          firstName: patient.firstName,
-          lastName: patient.lastName,
-          mrn: patient.mrn,
-          tokenId: patient.tokenId,
-          dateOfBirth: patient.dateOfBirth.toISOString(),
-          urgencyScore: score,
-          urgencyReasons: reasons,
-          latestPainScore,
-          latestVitals,
-          overdueNotes,
-          pendingOrders,
-          todayAppointment: todayAppointment
-            ? {
-                id: todayAppointment.id,
-                startTime: todayAppointment.startTime,
-                type: todayAppointment.type,
-              }
-            : undefined,
-          lastVisit,
-          daysSinceLastVisit,
-          carePlanGoalsDue,
-        };
-      })
-    );
+          return {
+            id: patient.id,
+            firstName: patient.firstName,
+            lastName: patient.lastName,
+            mrn: patient.mrn,
+            tokenId: patient.tokenId,
+            dateOfBirth: patient.dateOfBirth.toISOString(),
+            urgencyScore: score,
+            urgencyReasons: reasons,
+            latestPainScore,
+            latestVitals,
+            overdueNotes,
+            pendingOrders,
+            todayAppointment: todayAppointment
+              ? {
+                  id: todayAppointment.id,
+                  startTime: todayAppointment.startTime,
+                  type: todayAppointment.type,
+                }
+              : undefined,
+            lastVisit,
+            daysSinceLastVisit,
+            carePlanGoalsDue,
+          };
+        })
+      );
 
-    // Filter by minimum score and sort by urgency
-    const filteredPatients = priorityPatients
-      .filter((p) => p.urgencyScore >= minScore)
-      .sort((a, b) => b.urgencyScore - a.urgencyScore)
-      .slice(0, limit);
+      // Filter by minimum score and sort by urgency
+      const filteredPatients = priorityPatients
+        .filter((p) => p.urgencyScore >= minScore)
+        .sort((a, b) => b.urgencyScore - a.urgencyScore)
+        .slice(0, limit);
 
-    // Calculate summary statistics
-    const summary = {
-      totalPatients: filteredPatients.length,
-      criticalUrgency: filteredPatients.filter((p) => p.urgencyScore >= 70).length,
-      highUrgency: filteredPatients.filter((p) => p.urgencyScore >= 50 && p.urgencyScore < 70).length,
-      moderateUrgency: filteredPatients.filter((p) => p.urgencyScore >= 30 && p.urgencyScore < 50).length,
-      lowUrgency: filteredPatients.filter((p) => p.urgencyScore < 30).length,
-      totalOverdueNotes: filteredPatients.reduce((sum, p) => sum + p.overdueNotes, 0),
-      totalPendingOrders: filteredPatients.reduce((sum, p) => sum + p.pendingOrders, 0),
-      appointmentsToday: filteredPatients.filter((p) => p.todayAppointment).length,
-    };
+      // Calculate summary statistics
+      const summary = {
+        totalPatients: filteredPatients.length,
+        criticalUrgency: filteredPatients.filter((p) => p.urgencyScore >= 70).length,
+        highUrgency: filteredPatients.filter((p) => p.urgencyScore >= 50 && p.urgencyScore < 70).length,
+        moderateUrgency: filteredPatients.filter((p) => p.urgencyScore >= 30 && p.urgencyScore < 50).length,
+        lowUrgency: filteredPatients.filter((p) => p.urgencyScore < 30).length,
+        totalOverdueNotes: filteredPatients.reduce((sum, p) => sum + p.overdueNotes, 0),
+        totalPendingOrders: filteredPatients.reduce((sum, p) => sum + p.pendingOrders, 0),
+        appointmentsToday: filteredPatients.filter((p) => p.todayAppointment).length,
+      };
 
-    // HIPAA Audit Log: Clinician accessed priority patients dashboard
-    await createAuditLog({
-      action: 'READ',
-      resource: 'Dashboard',
-      resourceId: 'priority-patients',
-      details: {
-        patientCount: filteredPatients.length,
-        patientIds: filteredPatients.map(p => p.id),
-        criticalUrgencyCount: summary.criticalUrgency,
-        highUrgencyCount: summary.highUrgency,
-        minScoreFilter: minScore,
-        limit,
-        accessType: 'PRIORITY_PATIENTS_DASHBOARD',
-      },
-      success: true,
-    });
+      // HIPAA Audit Log: Clinician accessed priority patients dashboard
+      await createAuditLog({
+        action: 'READ',
+        resource: 'Dashboard',
+        resourceId: 'priority-patients',
+        details: {
+          patientCount: filteredPatients.length,
+          patientIds: filteredPatients.map((p) => p.id),
+          criticalUrgencyCount: summary.criticalUrgency,
+          highUrgencyCount: summary.highUrgency,
+          minScoreFilter: minScore,
+          limit,
+          accessType: 'PRIORITY_PATIENTS_DASHBOARD',
+        },
+        success: true,
+      });
 
-    return NextResponse.json({
-      success: true,
-      data: filteredPatients,
-      summary,
-      generatedAt: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Error fetching priority patients:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch priority patients' },
-      { status: 500 }
-    );
-  }
-}
+      return NextResponse.json({
+        success: true,
+        data: filteredPatients,
+        summary,
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error fetching priority patients:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch priority patients' },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: [...ROLES] }
+);

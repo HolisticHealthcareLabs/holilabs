@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePatientSession } from '@/lib/auth/patient-session';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 // Grant consent schema
@@ -34,7 +35,8 @@ const GrantConsentSchema = z.object({
 /**
  * GET - Fetch current WhatsApp consent status
  */
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     const session = await requirePatientSession();
 
@@ -112,12 +114,15 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
 /**
  * POST - Grant WhatsApp consent
  */
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     const session = await requirePatientSession();
     const body = await request.json();
@@ -230,12 +235,15 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 
 /**
  * DELETE - Withdraw WhatsApp consent
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     const session = await requirePatientSession();
 
@@ -305,4 +313,6 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);

@@ -11,15 +11,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(
-  _request: NextRequest,
-  { params }: { params: { requestId: string } }
-) {
-  const session = await requirePatientSession();
-  const requestId = params.requestId;
+export const POST = createPublicRoute(
+  async (_request: NextRequest, context: { params?: Promise<{ requestId: string }> | { requestId: string } }) => {
+    const session = await requirePatientSession();
+    const params = await Promise.resolve(context.params ?? {});
+    const requestId = params.requestId;
 
   const notif = await prisma.notification.findFirst({
     where: {
@@ -80,6 +80,7 @@ export async function POST(
   });
 
   return NextResponse.json({ success: true }, { status: 200 });
-}
-
+  },
+  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+);
 

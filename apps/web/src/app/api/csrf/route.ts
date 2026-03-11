@@ -8,11 +8,12 @@ import { NextResponse } from 'next/server';
 import { generateCsrfToken } from '@/lib/security/csrf';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 // Force dynamic rendering - don't try to generate at build time
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export const GET = createPublicRoute(async () => {
   try {
     const token = generateCsrfToken();
 
@@ -52,4 +53,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

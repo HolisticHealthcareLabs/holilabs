@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -22,7 +23,7 @@ function slugify(text: string): string {
     .slice(0, 48);
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const parsed = OnboardingSchema.safeParse(body);
@@ -150,4 +151,4 @@ export async function POST(request: NextRequest) {
     });
     return safeErrorResponse(error, { userMessage: 'Account creation failed. Please try again.' });
   }
-}
+});

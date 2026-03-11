@@ -60,10 +60,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -73,21 +72,10 @@ const TranscribeRequestSchema = z.object({
   generateSOAP: z.boolean().default(true),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    // Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
-    const recordingId = params.id;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    const recordingId = context.params?.id;
+    try {
 
     // Parse request body
     const body = await request.json();
@@ -151,7 +139,7 @@ export async function POST(
     }
 
     // Verify ownership
-    if (recording.appointment?.clinician?.id !== (session.user as any).id) {
+    if (recording.appointment?.clinician?.id !== context.user!.id) {
       return NextResponse.json(
         { success: false, error: 'No tienes permiso para transcribir esta grabación' },
         { status: 403 }
@@ -373,8 +361,8 @@ Responde en formato JSON con esta estructura:
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: (session.user as any).id,
-        userEmail: session.user.email || '',
+        userId: context.user!.id,
+        userEmail: context.user!.email || '',
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'UPDATE',
         resource: 'RecordingSession',
@@ -420,10 +408,12 @@ Responde en formato JSON con esta estructura:
 
     // Update recording status to failed
     try {
-      await prisma.scribeSession.update({
-        where: { id: params.id },
-        data: { status: 'FAILED' },
-      });
+      if (recordingId) {
+        await prisma.scribeSession.update({
+          where: { id: recordingId },
+          data: { status: 'FAILED' },
+        });
+      }
     } catch (updateError) {
       // Ignore update errors
     }
@@ -437,4 +427,6 @@ Responde en formato JSON con esta estructura:
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

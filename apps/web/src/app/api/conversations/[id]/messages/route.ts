@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -18,11 +17,8 @@ export const dynamic = 'force-dynamic';
 /**
  * POST - Send a message in a conversation
  */
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  try {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
@@ -37,38 +33,22 @@ export async function POST(
       );
     }
 
-    // Determine sender identity
-    const clinicianSession = await getServerSession(authOptions);
-    let senderId: string;
-    let senderType: 'CLINICIAN' | 'PATIENT';
+    const senderId = context.user?.id;
+    const senderType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
     let senderName: string;
 
-    if (clinicianSession?.user?.id) {
-      senderId = clinicianSession.user.id;
-      senderType = 'CLINICIAN';
-
+    if (senderType === 'CLINICIAN') {
       const clinician = await prisma.user.findUnique({
         where: { id: senderId },
         select: { firstName: true, lastName: true },
       });
       senderName = `Dr. ${clinician?.firstName || ''} ${clinician?.lastName || ''}`.trim();
     } else {
-      try {
-        const patientSession = await requirePatientSession();
-        senderId = patientSession.patientId;
-        senderType = 'PATIENT';
-
-        const patient = await prisma.patient.findUnique({
-          where: { id: senderId },
-          select: { firstName: true, lastName: true },
-        });
-        senderName = `${patient?.firstName || ''} ${patient?.lastName || ''}`.trim();
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      const patient = await prisma.patient.findUnique({
+        where: { id: senderId },
+        select: { firstName: true, lastName: true },
+      });
+      senderName = `${patient?.firstName || ''} ${patient?.lastName || ''}`.trim();
     }
 
     // Verify user is a participant
@@ -254,15 +234,10 @@ export async function POST(
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'send_message_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to send message' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);

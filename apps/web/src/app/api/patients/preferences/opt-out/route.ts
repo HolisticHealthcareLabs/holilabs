@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
@@ -42,7 +43,7 @@ function decryptToken(token: string): string | null {
 // GET /api/patients/preferences/opt-out
 // ============================================================================
 
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
   const token = searchParams.get('token');
   const type = searchParams.get('type'); // 'sms', 'email', 'all'
@@ -273,4 +274,4 @@ export async function GET(request: NextRequest) {
       'Content-Type': 'text/html; charset=utf-8',
     },
   });
-}
+});

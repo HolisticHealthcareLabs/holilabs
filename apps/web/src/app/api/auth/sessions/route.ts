@@ -15,12 +15,14 @@ import { getTokenRevocationService, RevocationReason } from '@/lib/auth/token-re
 import { auth } from '@/lib/auth/auth';
 import { getServerSession } from '@/lib/auth';
 import logger from '@/lib/logger';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 /**
  * GET /api/auth/sessions
  * Get all active sessions for the current user
  */
-export async function GET(request: NextRequest) {
+export const GET = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Get session - try patient auth first, then clinician auth
     let session = await auth();
@@ -76,13 +78,16 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 15 * 60 * 1000, maxRequests: 10 } }
+);
 
 /**
  * DELETE /api/auth/sessions
  * Terminate all sessions except current
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = createPublicRoute(
+  async (request: NextRequest) => {
   try {
     // Get session
     let session = await auth();
@@ -154,4 +159,6 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { rateLimit: { windowMs: 15 * 60 * 1000, maxRequests: 10 } }
+);

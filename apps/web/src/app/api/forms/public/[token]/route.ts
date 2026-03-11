@@ -6,14 +6,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
+export const GET = createPublicRoute(async (
   request: NextRequest,
   { params }: { params: { token: string } }
-) {
+) => {
   try {
     const { token } = params;
 
@@ -117,12 +118,12 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(
+export const POST = createPublicRoute(async (
   request: NextRequest,
   { params }: { params: { token: string } }
-) {
+) => {
   try {
     const { token } = params;
     const body = await request.json();
@@ -181,4 +182,4 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+});

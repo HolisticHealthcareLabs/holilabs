@@ -8,6 +8,10 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
 
+jest.mock('@/lib/api/middleware', () => ({
+  createPublicRoute: (handler: (req: NextRequest, ctx?: any) => Promise<Response>) => handler,
+}));
+
 jest.mock('@/lib/auth/otp', () => ({
   generateOTP: jest.fn(),
 }));

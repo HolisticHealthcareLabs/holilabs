@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { createSyncService } from '@/lib/services/sync.service';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
@@ -50,164 +50,152 @@ const SyncRequestSchema = z.object({
  * Trigger a FHIR sync operation.
  * Returns sync event ID for polling status.
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      // Parse and validate request body
+      const body = await request.json();
+      const validationResult = SyncRequestSchema.safeParse(body);
 
-    // Parse and validate request body
-    const body = await request.json();
-    const validationResult = SyncRequestSchema.safeParse(body);
-
-    if (!validationResult.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: validationResult.error.flatten(),
-        },
-        { status: 400 }
-      );
-    }
-
-    const { operation, resourceType, localId, fhirResourceId, localPatientId } = validationResult.data;
-
-    logger.info({
-      event: 'fhir_sync_api_request',
-      operation,
-      resourceType,
-      localId,
-      fhirResourceId,
-      userId: session.user.id,
-    });
-
-    const syncService = createSyncService();
-    let syncEventId: string;
-
-    if (operation === 'push') {
-      // Push local data to FHIR server
-      if (resourceType === 'Patient') {
-        syncEventId = await syncService.pushPatient(localId!);
-      } else {
-        // TODO: Implement other resource types
+      if (!validationResult.success) {
         return NextResponse.json(
-          { success: false, error: `Push for ${resourceType} not yet implemented` },
-          { status: 501 }
+          {
+            success: false,
+            error: 'Validation failed',
+            details: validationResult.error.flatten(),
+          },
+          { status: 400 }
         );
       }
-    } else {
-      // Pull data from FHIR server
-      if (resourceType === 'Patient') {
-        syncEventId = await syncService.pullPatient(fhirResourceId!, localPatientId);
-      } else {
-        // TODO: Implement other resource types
-        return NextResponse.json(
-          { success: false, error: `Pull for ${resourceType} not yet implemented` },
-          { status: 501 }
-        );
-      }
-    }
 
-    // HIPAA Audit Log
-    await createAuditLog({
-      action: 'CREATE',
-      resource: 'FHIRSyncEvent',
-      resourceId: syncEventId,
-      details: {
+      const { operation, resourceType, localId, fhirResourceId, localPatientId } = validationResult.data;
+
+      logger.info({
+        event: 'fhir_sync_api_request',
         operation,
         resourceType,
         localId,
         fhirResourceId,
-      },
-      success: true,
-    });
+        userId: context.user?.id,
+      });
 
-    logger.info({
-      event: 'fhir_sync_api_enqueued',
-      syncEventId,
-      operation,
-      resourceType,
-    });
+      const syncService = createSyncService();
+      let syncEventId: string;
 
-    return NextResponse.json({
-      success: true,
-      data: {
+      if (operation === 'push') {
+        // Push local data to FHIR server
+        if (resourceType === 'Patient') {
+          syncEventId = await syncService.pushPatient(localId!);
+        } else {
+          // TODO: Implement other resource types
+          return NextResponse.json(
+            { success: false, error: `Push for ${resourceType} not yet implemented` },
+            { status: 501 }
+          );
+        }
+      } else {
+        // Pull data from FHIR server
+        if (resourceType === 'Patient') {
+          syncEventId = await syncService.pullPatient(fhirResourceId!, localPatientId);
+        } else {
+          // TODO: Implement other resource types
+          return NextResponse.json(
+            { success: false, error: `Pull for ${resourceType} not yet implemented` },
+            { status: 501 }
+          );
+        }
+      }
+
+      // HIPAA Audit Log
+      await createAuditLog({
+        action: 'CREATE',
+        resource: 'FHIRSyncEvent',
+        resourceId: syncEventId,
+        details: {
+          operation,
+          resourceType,
+          localId,
+          fhirResourceId,
+        },
+        success: true,
+      });
+
+      logger.info({
+        event: 'fhir_sync_api_enqueued',
         syncEventId,
         operation,
         resourceType,
-        status: 'PENDING',
-        message: 'Sync operation enqueued. Poll /api/fhir/sync/[syncEventId] for status.',
-      },
-    });
-  } catch (error) {
-    logger.error({
-      event: 'fhir_sync_api_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+      });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to initiate sync',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
-}
+      return NextResponse.json({
+        success: true,
+        data: {
+          syncEventId,
+          operation,
+          resourceType,
+          status: 'PENDING',
+          message: 'Sync operation enqueued. Poll /api/fhir/sync/[syncEventId] for status.',
+        },
+      });
+    } catch (error) {
+      logger.error({
+        event: 'fhir_sync_api_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to initiate sync',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/fhir/sync
  *
  * Get sync statistics and status overview.
  */
-export async function GET(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await getServerSession();
-    if (!session?.user) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const syncService = createSyncService();
+      const stats = await syncService.getSyncStats();
+
+      logger.info({
+        event: 'fhir_sync_stats_fetch',
+        userId: context.user?.id,
+        stats,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          stats,
+          message: stats.conflicts > 0
+            ? `${stats.conflicts} conflict(s) require human review`
+            : 'No conflicts pending',
+        },
+      });
+    } catch (error) {
+      logger.error({
+        event: 'fhir_sync_stats_error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        {
+          success: false,
+          error: 'Failed to fetch sync statistics',
+        },
+        { status: 500 }
       );
     }
-
-    const syncService = createSyncService();
-    const stats = await syncService.getSyncStats();
-
-    logger.info({
-      event: 'fhir_sync_stats_fetch',
-      userId: session.user.id,
-      stats,
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        stats,
-        message: stats.conflicts > 0
-          ? `${stats.conflicts} conflict(s) require human review`
-          : 'No conflicts pending',
-      },
-    });
-  } catch (error) {
-    logger.error({
-      event: 'fhir_sync_stats_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch sync statistics',
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

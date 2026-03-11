@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -36,8 +35,8 @@ interface ConversationListItem {
 /**
  * GET - List conversations for the authenticated user
  */
-export async function GET(request: NextRequest) {
-  try {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
@@ -46,26 +45,8 @@ export async function GET(request: NextRequest) {
     const includeArchived = searchParams.get('archived') === 'true';
     const cursor = searchParams.get('cursor');
 
-    // Determine user identity
-    const clinicianSession = await getServerSession(authOptions);
-    let userId: string;
-    let userType: 'CLINICIAN' | 'PATIENT';
-
-    if (clinicianSession?.user?.id) {
-      userId = clinicianSession.user.id;
-      userType = 'CLINICIAN';
-    } else {
-      try {
-        const patientSession = await requirePatientSession();
-        userId = patientSession.patientId;
-        userType = 'PATIENT';
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-    }
+    const userId = context.user?.id;
+    const userType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
 
     // Build query for conversations where user is a participant
     const whereClause = {
@@ -183,29 +164,24 @@ export async function GET(request: NextRequest) {
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'get_conversations_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch conversations' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);
 
 /**
  * POST - Create a new conversation
  */
-export async function POST(request: NextRequest) {
-  try {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
     const rateLimitError = await checkRateLimit(request, 'api');
     if (rateLimitError) return rateLimitError;
 
     const body = await request.json();
-    const { patientId, title, participantIds } = body;
+    const { patientId, title } = body;
 
     if (!patientId) {
       return NextResponse.json(
@@ -214,38 +190,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine creator identity
-    const clinicianSession = await getServerSession(authOptions);
-    let creatorId: string;
-    let creatorType: 'CLINICIAN' | 'PATIENT';
+    const creatorId = context.user?.id;
+    const creatorType = context.user?.role === 'PATIENT' ? 'PATIENT' : 'CLINICIAN';
     let creatorName: string;
 
-    if (clinicianSession?.user?.id) {
-      creatorId = clinicianSession.user.id;
-      creatorType = 'CLINICIAN';
-
+    if (creatorType === 'CLINICIAN') {
       const clinician = await prisma.user.findUnique({
         where: { id: creatorId },
         select: { firstName: true, lastName: true },
       });
       creatorName = `Dr. ${clinician?.firstName || ''} ${clinician?.lastName || ''}`.trim();
     } else {
-      try {
-        const patientSession = await requirePatientSession();
-        creatorId = patientSession.patientId;
-        creatorType = 'PATIENT';
-
-        const patient = await prisma.patient.findUnique({
-          where: { id: creatorId },
-          select: { firstName: true, lastName: true },
-        });
-        creatorName = `${patient?.firstName || ''} ${patient?.lastName || ''}`.trim();
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+      const patient = await prisma.patient.findUnique({
+        where: { id: creatorId },
+        select: { firstName: true, lastName: true },
+      });
+      creatorName = `${patient?.firstName || ''} ${patient?.lastName || ''}`.trim();
     }
 
     // Verify patient exists
@@ -358,15 +318,10 @@ export async function POST(request: NextRequest) {
       success: true,
       data: { conversation, isExisting: false },
     });
-  } catch (error) {
-    logger.error({
-      event: 'create_conversation_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to create conversation' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN', 'NURSE', 'STAFF'],
+    allowPatientAuth: true,
+    skipCsrf: true,
   }
-}
+);

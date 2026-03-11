@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { executeScheduledReminders } from '@/lib/jobs/reminder-executor';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max execution time
@@ -194,6 +195,5 @@ export async function GET(request: NextRequest) {
  * POST /api/cron/execute-reminders
  * Alternative method for triggering execution (useful for manual testing)
  */
-export async function POST(request: NextRequest) {
-  return GET(request);
-}
+export const GET = createPublicRoute(getExecuteReminders);
+export const POST = createPublicRoute((req) => getExecuteReminders(req));

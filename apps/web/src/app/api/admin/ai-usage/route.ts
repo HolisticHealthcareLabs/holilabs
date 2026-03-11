@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { getUsageSummary, checkCostAlerts } from '@/lib/ai/usage-tracker';
 import { createAuditLog } from '@/lib/audit';
@@ -65,26 +65,10 @@ interface UsageStats {
  * - period: 'day' | 'week' | 'month' | 'quarter' (default: 'month')
  * - clinicId: string (optional - filter by clinic)
  */
-export async function GET(request: NextRequest) {
-  try {
-    // Check authentication and admin role
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Check admin role
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'month';
     const clinicId = searchParams.get('clinicId') || undefined;
 
@@ -287,32 +271,19 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['ADMIN'], skipCsrf: true }
+);
 
 /**
- * GET /api/admin/ai-usage/clinics
+ * POST /api/admin/ai-usage
  *
  * Get AI usage breakdown by clinic for multi-tenant dashboards
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Check authentication and admin role
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const body = await request.json();
     const { action } = body;
 
     if (action === 'clinic_breakdown') {
@@ -437,4 +408,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['ADMIN'], skipCsrf: true }
+);

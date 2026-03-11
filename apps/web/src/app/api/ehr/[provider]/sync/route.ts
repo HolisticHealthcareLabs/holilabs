@@ -2,17 +2,10 @@
  * EHR Sync API
  *
  * POST /api/ehr/[provider]/sync - Sync patient data from EHR
- *
- * Request Body:
- * - patientFhirId: FHIR ID of patient in EHR (optional, uses context if available)
- * - localPatientId: Local patient ID to sync to
- * - resourceTypes: Array of resource types to sync (optional, defaults to all)
- * - since: ISO date for incremental sync (optional)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import {
   getSmartSessionForUser,
   fetchFhirResource,
@@ -24,7 +17,6 @@ import {
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
-import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import {
   fromFHIRObservation,
   fromFHIRCondition,
@@ -50,16 +42,13 @@ interface SyncRequestBody {
   since?: string;
 }
 
-export async function POST(
-  request: NextRequest,
-  context: any
-) {
-  const startTime = Date.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+    const startTime = Date.now();
+    const params = await Promise.resolve(context.params ?? {});
+    const provider = params.provider;
 
-  try {
-    const { provider } = await context.params;
-
-    // Validate provider
     if (!VALID_PROVIDERS.includes(provider as EhrProviderId)) {
       return NextResponse.json(
         { success: false, error: `Invalid provider: ${provider}` },
@@ -68,17 +57,8 @@ export async function POST(
     }
 
     const providerId = provider as EhrProviderId;
+    const userId = context.user!.id;
 
-    // Require authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
-    // Parse request body
     const body: SyncRequestBody = await request.json();
     const { localPatientId, resourceTypes = DEFAULT_RESOURCE_TYPES, since } = body;
 
@@ -89,11 +69,10 @@ export async function POST(
       );
     }
 
-    // Verify local patient exists and user has access
     const localPatient = await prisma.patient.findFirst({
       where: {
         id: localPatientId,
-        assignedClinicianId: session.user.id,
+        assignedClinicianId: userId,
       },
     });
 
@@ -104,8 +83,7 @@ export async function POST(
       );
     }
 
-    // Get EHR session
-    const ehrSession = await getSmartSessionForUser(session.user.id, providerId);
+    const ehrSession = await getSmartSessionForUser(userId, providerId);
     if (!ehrSession) {
       return NextResponse.json(
         { success: false, error: `Not connected to ${providerId}` },
@@ -113,7 +91,6 @@ export async function POST(
       );
     }
 
-    // Determine patient FHIR ID
     const patientFhirId = body.patientFhirId || ehrSession.patientFhirId;
     if (!patientFhirId) {
       return NextResponse.json(
@@ -125,13 +102,12 @@ export async function POST(
     logger.info({
       event: 'ehr_sync_started',
       providerId,
-      userId: session.user.id,
+      userId,
       localPatientId,
       patientFhirId,
       resourceTypes,
     });
 
-    // Initialize result
     const result: EhrSyncResult = {
       success: true,
       providerId,
@@ -143,7 +119,6 @@ export async function POST(
       syncedAt: new Date(),
     };
 
-    // Sync each resource type
     for (const resourceType of resourceTypes) {
       try {
         const count = await syncResourceType(
@@ -151,7 +126,7 @@ export async function POST(
           resourceType,
           patientFhirId,
           localPatientId,
-          session.user.id,
+          userId,
           since
         );
         result.resourceCounts[resourceType] = count;
@@ -172,7 +147,6 @@ export async function POST(
     result.duration = Date.now() - startTime;
     result.success = result.errors.length === 0;
 
-    // Audit log
     await createAuditLog({
       action: 'CREATE',
       resource: 'EhrSync',
@@ -193,7 +167,7 @@ export async function POST(
     logger.info({
       event: 'ehr_sync_completed',
       providerId,
-      userId: session.user.id,
+      userId,
       localPatientId,
       patientFhirId,
       duration: result.duration,
@@ -205,33 +179,25 @@ export async function POST(
       success: true,
       data: result,
     });
-  } catch (error) {
-    logger.error({
-      event: 'ehr_sync_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    if (error instanceof EhrApiError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-          fhirError: error.fhirOperationOutcome,
-        },
-        { status: error.statusCode || 500 }
-      );
+    } catch (error) {
+      if (error instanceof EhrApiError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+            fhirError: error.fhirOperationOutcome,
+          },
+          { status: error.statusCode || 500 }
+        );
+      }
+      throw error;
     }
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to sync data' },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);
 
-/**
- * Sync a specific resource type from EHR
- */
 async function syncResourceType(
   sessionId: string,
   resourceType: SyncResourceType,
@@ -240,7 +206,6 @@ async function syncResourceType(
   userId: string,
   since?: string
 ): Promise<number> {
-  // Build search parameters
   const params: Record<string, string> = {
     patient: patientFhirId,
     _count: '100',
@@ -250,7 +215,6 @@ async function syncResourceType(
     params._lastUpdated = `ge${since}`;
   }
 
-  // Fetch resources from EHR
   const bundle = await fetchFhirResource<any>(
     sessionId,
     resourceType,
@@ -264,7 +228,6 @@ async function syncResourceType(
 
   let syncedCount = 0;
 
-  // Process each resource
   for (const entry of bundle.entry) {
     const resource = entry.resource;
     if (!resource) continue;
@@ -292,7 +255,6 @@ async function syncResourceType(
           syncedCount++;
           break;
 
-        // Add more resource types as needed
         default:
           logger.debug({
             event: 'ehr_sync_unsupported_type',
@@ -312,9 +274,6 @@ async function syncResourceType(
   return syncedCount;
 }
 
-/**
- * Sync Observation to LabResult
- */
 async function syncObservation(
   observation: any,
   localPatientId: string
@@ -322,7 +281,6 @@ async function syncObservation(
   const labResult = fromFHIRObservation(observation, localPatientId);
   if (!labResult || !labResult.testName) return;
 
-  // Check for duplicates
   const existing = await prisma.labResult.findFirst({
     where: {
       patientId: localPatientId,
@@ -331,7 +289,7 @@ async function syncObservation(
     },
   });
 
-  if (existing) return; // Skip duplicates
+  if (existing) return;
 
   await prisma.labResult.create({
     data: {
@@ -349,9 +307,6 @@ async function syncObservation(
   });
 }
 
-/**
- * Sync Condition to Diagnosis
- */
 async function syncCondition(
   condition: any,
   localPatientId: string
@@ -359,7 +314,6 @@ async function syncCondition(
   const diagnosis = fromFHIRCondition(condition, localPatientId);
   if (!diagnosis || !diagnosis.description) return;
 
-  // Check for duplicates
   const existing = await prisma.diagnosis.findFirst({
     where: {
       patientId: localPatientId,
@@ -368,7 +322,7 @@ async function syncCondition(
     },
   });
 
-  if (existing) return; // Skip duplicates
+  if (existing) return;
 
   await prisma.diagnosis.create({
     data: {
@@ -384,9 +338,6 @@ async function syncCondition(
   });
 }
 
-/**
- * Sync MedicationStatement/MedicationRequest to Medication
- */
 async function syncMedication(
   resource: any,
   localPatientId: string
@@ -394,7 +345,6 @@ async function syncMedication(
   const medication = fromFHIRMedicationStatement(resource, localPatientId);
   if (!medication || !medication.name) return;
 
-  // Check for duplicates
   const existing = await prisma.medication.findFirst({
     where: {
       patientId: localPatientId,
@@ -403,7 +353,7 @@ async function syncMedication(
     },
   });
 
-  if (existing) return; // Skip duplicates
+  if (existing) return;
 
   await prisma.medication.create({
     data: {
@@ -419,21 +369,16 @@ async function syncMedication(
   });
 }
 
-/**
- * Sync AllergyIntolerance to Allergy
- */
 async function syncAllergy(
   allergyIntolerance: any,
   localPatientId: string,
   userId: string
 ): Promise<void> {
-  // Extract allergy name
   const allergyName =
     allergyIntolerance.code?.text ||
     allergyIntolerance.code?.coding?.[0]?.display ||
     'Unknown Allergy';
 
-  // Check for duplicates
   const existing = await prisma.allergy.findFirst({
     where: {
       patientId: localPatientId,
@@ -441,9 +386,8 @@ async function syncAllergy(
     },
   });
 
-  if (existing) return; // Skip duplicates
+  if (existing) return;
 
-  // Extract severity
   let severity: 'MILD' | 'MODERATE' | 'SEVERE' = 'MODERATE';
   if (allergyIntolerance.criticality === 'high') {
     severity = 'SEVERE';
@@ -451,14 +395,12 @@ async function syncAllergy(
     severity = 'MILD';
   }
 
-  // Determine allergy type based on category
   const category = allergyIntolerance.category?.[0];
   let allergyType: 'MEDICATION' | 'FOOD' | 'ENVIRONMENTAL' | 'OTHER' = 'OTHER';
   if (category === 'medication') allergyType = 'MEDICATION';
   else if (category === 'food') allergyType = 'FOOD';
   else if (category === 'environment') allergyType = 'ENVIRONMENTAL';
 
-  // Extract reactions as array
   const reactions: string[] = allergyIntolerance.reaction
     ?.flatMap((r: any) =>
       r.manifestation?.map((m: any) => m.text || m.coding?.[0]?.display).filter(Boolean)

@@ -2,13 +2,13 @@
  * Demo Patient Generation API
  *
  * POST /api/onboarding/demo-patient - Create a demo patient for onboarding
+ * GET /api/onboarding/demo-patient - Get available demo patient scenarios
  *
  * @compliance GDPR Art. 6 (Lawful processing)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { createDemoPatient, DemoPatientConfig } from '@/lib/demo/demo-patient-generator';
 import { createAuditLog } from '@/lib/audit';
 
@@ -18,25 +18,10 @@ interface CreateDemoPatientRequest {
   scenario: 'diabetes' | 'hypertension' | 'preventive' | 'general';
 }
 
-/**
- * POST /api/onboarding/demo-patient
- *
- * Create a demo patient with complete medical history for onboarding
- */
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const userId = context.user!.id;
 
-    const userId = session.user.id;
-
-    // Parse request body
     const body: CreateDemoPatientRequest = await request.json();
 
     if (!body.scenario) {
@@ -57,7 +42,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Create demo patient
     const config: DemoPatientConfig = {
       userId,
       scenario: body.scenario,
@@ -65,7 +49,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const patient = await createDemoPatient(config);
 
-    // Audit log
     await createAuditLog(
       {
         action: 'CREATE',
@@ -91,35 +74,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         scenario: body.scenario,
       },
     });
-  } catch (error) {
-    console.error('[Demo Patient API] Error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to create demo patient',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
   }
-}
+);
 
-/**
- * GET /api/onboarding/demo-patient
- *
- * Get available demo patient scenarios
- */
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Authenticate user
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+export const GET = createProtectedRoute(
+  async () => {
     const scenarios = [
       {
         id: 'diabetes',
@@ -175,15 +137,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       success: true,
       scenarios,
     });
-  } catch (error) {
-    console.error('[Demo Patient Scenarios API] Error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch scenarios',
-      },
-      { status: 500 }
-    );
+  },
+  {
+    roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
+    skipCsrf: true,
   }
-}
+);

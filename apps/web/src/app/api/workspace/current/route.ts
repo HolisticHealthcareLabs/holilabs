@@ -13,6 +13,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { createPublicRoute } from '@/lib/api/middleware';
 import { getServerSession, authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +24,7 @@ const DEMO_PAYLOAD = {
   role:        'CLINICIAN',
 } as const;
 
-export async function GET() {
+export const GET = createPublicRoute(async () => {
   try {
     const session = await getServerSession(authOptions);
 
@@ -41,4 +42,4 @@ export async function GET() {
   }
 
   return NextResponse.json(DEMO_PAYLOAD);
-}
+});
