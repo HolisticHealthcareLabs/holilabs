@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { rxnormService } from '@/lib/clinical';
 import { openFDAService } from '@/lib/clinical';
 
@@ -18,7 +19,8 @@ export const dynamic = 'force-dynamic';
  * - name: Drug name to look up
  * - includeLabel: Include FDA label data (default: false)
  */
-export async function GET(request: NextRequest) {
+export const GET = createProtectedRoute(
+    async (request: NextRequest, context: any) => {
     try {
         const { searchParams } = new URL(request.url);
         const drugName = searchParams.get('name');
@@ -74,14 +76,17 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+    },
+    { roles: ['CLINICIAN', 'PHYSICIAN', 'PHARMACIST', 'ADMIN'] }
+);
 
 /**
  * POST /api/clinical/drugs/interactions
  * 
  * Body: { drugs: string[] }
  */
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+    async (request: NextRequest, context: any) => {
     try {
         const body = await request.json();
         const { drugs } = body;
@@ -152,4 +157,6 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
-}
+    },
+    { roles: ['CLINICIAN', 'PHYSICIAN', 'PHARMACIST', 'ADMIN'] }
+);

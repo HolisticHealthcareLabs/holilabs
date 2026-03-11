@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
 import {
   Calendar, Clock, Stethoscope,
@@ -21,11 +22,11 @@ import {
 // Time-aware greeting
 // ---------------------------------------------------------------------------
 
-function getGreeting(now: Date): string {
+function getGreetingKey(now: Date): string {
   const h = now.getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return 'dashboard.myDay.goodMorning';
+  if (h < 18) return 'dashboard.myDay.goodAfternoon';
+  return 'dashboard.myDay.goodEvening';
 }
 
 function formatToday(now: Date): string {
@@ -338,9 +339,10 @@ export default function MyDayPage() {
     ...DEFAULT_TASKS.slice(1),
   ];
 
+  const { t } = useLanguage();
   const userRole = String((session?.user as { role?: string } | undefined)?.role ?? 'CLINICIAN');
   const doctorLastName = getDoctorLastName(session?.user?.name);
-  const greeting = isClockReady && now ? getGreeting(now) : 'Welcome';
+  const greeting = isClockReady && now ? t(getGreetingKey(now)) : 'Welcome';
   const todayLabel = isClockReady && now ? formatToday(now) : 'Loading local date';
   const localTimeLabel = isClockReady && now ? formatLocalTime(now) : '--:--';
   const timeZoneLabel = isClockReady && now ? formatTimeZone(now) : 'Detecting timezone';

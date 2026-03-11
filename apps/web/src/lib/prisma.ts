@@ -167,11 +167,9 @@ function createPrismaClient(): PrismaClient | null {
   });
 
   // Apply transparent encryption extension (SOC 2 Control CC6.7)
-  // This automatically encrypts/decrypts PHI fields on all operations
-  // TEMPORARILY DISABLED - encryption extension is blocking database access
-  // TODO: Fix encryption extension initialization
-  // const client = baseClient.$extends(encryptionExtension) as unknown as PrismaClient;
-  const client = baseClient as unknown as PrismaClient;
+  // Automatically encrypts PHI fields on write, decrypts on read.
+  // Safe to enable: skips encryption gracefully when ENCRYPTION_KEY is not set.
+  const client = baseClient.$extends(encryptionExtension) as unknown as PrismaClient;
 
   return client;
 }

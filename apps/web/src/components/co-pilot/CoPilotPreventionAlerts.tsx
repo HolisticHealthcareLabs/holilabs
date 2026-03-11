@@ -187,11 +187,11 @@ export function CoPilotPreventionAlerts({
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-4">
-              {/* Detected Conditions */}
+              {/* Flagged Conditions */}
               {conditions.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Detected Conditions ({conditions.length})
+                    Flagged Conditions ({conditions.length})
                   </h4>
                   <div className="space-y-2">
                     {visibleConditions.map((condition) => (

@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -28,18 +27,10 @@ interface SearchResult {
  * GET /api/prevention/search
  * Search across prevention-related resources
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const searchParams = request.nextUrl.searchParams;
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
+    try {
+      const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q') || '';
     const type = searchParams.get('type'); // 'plan', 'template', 'reminder', or 'all'
     const planType = searchParams.get('planType');
@@ -272,4 +263,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

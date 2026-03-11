@@ -12,32 +12,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
 import { getPreventionHistoryService } from '@/lib/services/prevention-history.service';
 import logger from '@/lib/logger';
 import { auditView } from '@/lib/audit';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createProtectedRoute, requirePatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-interface RouteParams {
-  params: Promise<{ patientId: string }>;
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
-
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { patientId } = await params;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const rawParams = context.params;
+    const patientId = rawParams && typeof (rawParams as Promise<unknown>).then === 'function'
+      ? (await (rawParams as Promise<{ patientId: string }>)).patientId
+      : (rawParams as { patientId?: string })?.patientId;
 
     if (!patientId) {
       return NextResponse.json(
@@ -46,6 +34,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const start = performance.now();
+
+    try {
     // Optional planId filter from query params
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get('planId') || undefined;
@@ -62,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       versionCount: history.versions.length,
       timelineCount: history.timeline.length,
       latencyMs: elapsed.toFixed(2),
-      userId: session.user.id,
+      userId: context.user!.id,
     });
 
     // HIPAA Audit: Log prevention history view
@@ -98,4 +89,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], customMiddlewares: [requirePatientAccess()] }
+);

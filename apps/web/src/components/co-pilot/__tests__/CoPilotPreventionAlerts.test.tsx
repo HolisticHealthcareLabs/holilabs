@@ -161,7 +161,7 @@ describe('CoPilotPreventionAlerts', () => {
     it('should display conditions count header', () => {
       render(<CoPilotPreventionAlerts {...defaultProps} />);
 
-      expect(screen.getByText('Detected Conditions (2)')).toBeInTheDocument();
+      expect(screen.getByText('Flagged Conditions (2)')).toBeInTheDocument();
     });
   });
 
@@ -229,14 +229,14 @@ describe('CoPilotPreventionAlerts', () => {
     it('should not render expanded content when isExpanded is false', () => {
       render(<CoPilotPreventionAlerts {...defaultProps} isExpanded={false} />);
 
-      expect(screen.queryByText('Detected Conditions (2)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Flagged Conditions (2)')).not.toBeInTheDocument();
       expect(screen.queryByText('Recommendations (3)')).not.toBeInTheDocument();
     });
 
     it('should render expanded content when isExpanded is true', () => {
       render(<CoPilotPreventionAlerts {...defaultProps} isExpanded={true} />);
 
-      expect(screen.getByText('Detected Conditions (2)')).toBeInTheDocument();
+      expect(screen.getByText('Flagged Conditions (2)')).toBeInTheDocument();
       expect(screen.getByText('Recommendations (3)')).toBeInTheDocument();
     });
   });

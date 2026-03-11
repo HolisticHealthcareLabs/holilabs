@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 import { createHash } from 'crypto';
 import { UpdateSOAPNoteSchema } from '@/lib/validation/schemas';
 import { z } from 'zod';
@@ -71,7 +72,7 @@ export const GET = createProtectedRoute(
         data: note,
       });
     } catch (error) {
-      console.error('Error fetching SOAP note:', error);
+      logger.error({ error }, 'Error fetching SOAP note');
       return safeErrorResponse(error, { userMessage: 'Failed to fetch SOAP note' });
     }
   },
@@ -227,7 +228,7 @@ export const PATCH = createProtectedRoute(
         message: newEdits.length > 0 ? `${newEdits.length} field(s) updated` : 'No changes detected',
       });
     } catch (error) {
-      console.error('Error updating SOAP note:', error);
+      logger.error({ error }, 'Error updating SOAP note');
       return safeErrorResponse(error, { userMessage: 'Failed to update SOAP note' });
     }
   },

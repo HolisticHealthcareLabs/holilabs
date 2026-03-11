@@ -6,19 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import {
   emitPreventionEventToAll,
 } from '@/lib/socket-server';
 import { SocketEvent, NotificationPriority } from '@/lib/socket/events';
-
-interface RouteContext {
-  params: {
-    planId: string;
-  };
-}
 
 interface PlanGoal {
   goal: string;
@@ -32,21 +26,10 @@ interface PlanGoal {
 /**
  * POST - Auto-generate reminders from plan goals
  */
-export async function POST(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { planId } = context.params;
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
 
     // Fetch the prevention plan
     const plan = await prisma.preventionPlan.findUnique({
@@ -206,7 +189,7 @@ export async function POST(
 
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: context.user?.id ?? '',
         action: 'CREATE',
         resource: 'prevention_plan',
         resourceId: planId,
@@ -217,7 +200,7 @@ export async function POST(
 
     logger.info({
       event: 'reminders_auto_generated',
-      userId: session.user.id,
+      userId: context.user?.id,
       planId,
       created: createdReminders.length,
       skipped: skippedGoals.length,
@@ -234,7 +217,7 @@ export async function POST(
         planId,
         patientId: plan.patientId,
         count: createdReminders.length,
-        userId: session.user.id,
+        userId: context.user?.id,
         timestamp: new Date(),
       },
       timestamp: new Date(),
@@ -271,4 +254,6 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

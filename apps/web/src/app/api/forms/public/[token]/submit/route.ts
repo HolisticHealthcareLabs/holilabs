@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendFormCompletionEmail } from '@/lib/email';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,7 +121,7 @@ export async function POST(
       //   formResponseUrl
       // );
     } catch (emailError) {
-      console.error('Error sending completion email:', emailError);
+      logger.error({ error: emailError }, 'Error sending completion email');
       // Continue even if email fails
     }
 
@@ -133,7 +134,7 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error submitting form:', error);
+    logger.error({ error }, 'Error submitting form');
     return NextResponse.json(
       {
         error: 'Failed to submit form',

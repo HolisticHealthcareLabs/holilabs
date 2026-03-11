@@ -15,8 +15,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
+import { requireSecret } from '@/lib/security/require-secret';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export const dynamic = 'force-dynamic';
  * Generate internal service token for trusted agent gateway requests.
  */
 function generateInternalToken(): string {
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const secret = requireSecret('NEXTAUTH_SECRET');
   const timestamp = Math.floor(Date.now() / 60000);
   return crypto
     .createHmac('sha256', secret)
@@ -162,16 +163,11 @@ async function executeSequential(
   return results;
 }
 
-export async function POST(request: NextRequest) {
-  const orchestrationStart = Date.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
+    const orchestrationStart = Date.now();
 
-  // 1. Verify session
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // 2. Parse request
+    // Parse request
   let body: {
     tools?: ToolCall[];
     mode?: 'parallel' | 'sequential';
@@ -225,7 +221,7 @@ export async function POST(request: NextRequest) {
   const failureCount = results.length - successCount;
   const toolDurationSum = results.reduce((sum, r) => sum + r.duration, 0);
 
-  // 7. Return aggregated response
+  // Return aggregated response
   return NextResponse.json({
     mode,
     totalTools: results.length,
@@ -239,19 +235,17 @@ export async function POST(request: NextRequest) {
       failureCount,
     },
   });
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/agent/orchestrate
  * Returns orchestration capabilities and available workflows
  */
-export async function GET(_request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  return NextResponse.json({
+export const GET = createProtectedRoute(
+  async (_request: NextRequest) => {
+    return NextResponse.json({
     description: 'Agent Orchestration API - Execute multiple tools in parallel',
     modes: ['parallel', 'sequential'],
     defaultTimeout: DEFAULT_TIMEOUT,
@@ -274,4 +268,6 @@ export async function GET(_request: NextRequest) {
       mode: 'parallel',
     },
   });
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

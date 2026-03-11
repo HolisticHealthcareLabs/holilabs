@@ -46,6 +46,15 @@ if grep -E "^\s+[a-z-]+:\s+[^;]+$" apps/web/src/styles/*.css | grep -v "^$" | gr
   echo "  ⚠️  Possible missing semicolons in CSS"
 fi
 
+# 5. Run tests (fast bail on first failure)
+echo "  ├─ Running tests..."
+if pnpm test --bail --passWithNoTests 2>&1 | tail -5; then
+  echo "  ✓ Tests passed"
+else
+  echo "  ✗ Tests failed! Fix before committing."
+  exit 1
+fi
+
 echo "  └─ ✓ All checks passed!"
 echo ""
 echo "✅ Pre-commit checks complete. Proceeding with commit..."

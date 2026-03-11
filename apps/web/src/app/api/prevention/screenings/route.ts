@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -62,20 +62,12 @@ const ScheduleScreeningSchema = z.object({
  * POST /api/prevention/screenings
  * Schedule a new screening for a patient
  */
-export async function POST(request: NextRequest) {
-  const start = performance.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    const start = performance.now();
 
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+    try {
+      const body = await request.json();
     const validation = ScheduleScreeningSchema.safeParse(body);
 
     if (!validation.success) {
@@ -146,7 +138,7 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         description: description || null,
         screeningCode: screeningCode || null,
-        orderingProvider: orderingProvider || session.user.id,
+        orderingProvider: orderingProvider || context.user?.id ?? '',
         facility: facility || null,
         followUpPlanId: preventionPlanId || null,
       },
@@ -160,7 +152,7 @@ export async function POST(request: NextRequest) {
       patientId,
       screeningType,
       scheduledDate,
-      scheduledBy: session.user.id,
+      scheduledBy: context.user?.id,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -169,7 +161,7 @@ export async function POST(request: NextRequest) {
       patientId,
       screeningType,
       scheduledDate,
-      scheduledBy: session.user.id,
+      scheduledBy: context.user?.id ?? '',
       action: 'screening_scheduled',
     });
 
@@ -204,26 +196,20 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/prevention/screenings
  * List screenings for a patient with optional filters
  */
-export async function GET(request: NextRequest) {
-  const start = performance.now();
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    const start = performance.now();
 
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
+    try {
+      const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
     const screeningType = searchParams.get('type');
     const status = searchParams.get('status'); // scheduled, completed, overdue
@@ -302,7 +288,7 @@ export async function GET(request: NextRequest) {
       count: screenings.length,
       filters: { screeningType, status },
       latencyMs: elapsed.toFixed(2),
-      userId: session.user.id,
+      userId: context.user?.id,
     });
 
     // HIPAA Audit: Log screening list access
@@ -310,7 +296,7 @@ export async function GET(request: NextRequest) {
       patientId,
       screeningCount: screenings.length,
       filters: { screeningType, status },
-      accessedBy: session.user.id,
+      accessedBy: context.user?.id ?? '',
       action: 'screenings_viewed',
     });
 
@@ -341,4 +327,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

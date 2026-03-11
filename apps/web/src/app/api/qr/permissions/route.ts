@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession, authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { PermissionScope } from '@/lib/qr/types';
+import logger from '@/lib/logger';
 
 interface GrantPermissionsRequest {
   deviceId: string;
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       })),
     });
 
-    console.log(`Permissions granted to device ${deviceId}:`, permissions);
+    logger.info('[QR] Permissions granted', { deviceId, scopes: permissions.length });
 
     return NextResponse.json({
       success: true,
@@ -223,7 +224,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       })),
     });
 
-    console.log(`Permissions updated for device ${deviceId}:`, permissions);
+    logger.info('[QR] Permissions updated', { deviceId, scopes: permissions.length });
 
     return NextResponse.json({
       success: true,
@@ -281,7 +282,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       where: { devicePairingId: devicePairing.id },
     });
 
-    console.log(`All permissions revoked for device ${deviceId}`);
+    logger.info('[QR] All permissions revoked', { deviceId });
 
     return NextResponse.json({
       success: true,

@@ -9,8 +9,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
+import { requireSecret } from '@/lib/security/require-secret';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ export const dynamic = 'force-dynamic';
  * The agent gateway ALWAYS validates user session before making internal calls.
  */
 function generateInternalToken(): string {
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
+  const secret = requireSecret('NEXTAUTH_SECRET');
   const timestamp = Math.floor(Date.now() / 60000); // 1-minute window
   return crypto
     .createHmac('sha256', secret)
@@ -307,14 +308,9 @@ function normalizeValidateDoseToolResponse(data: unknown): unknown {
   };
 }
 
-export async function POST(request: NextRequest) {
-  // 1. Verify session (agents must have valid session)
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // 2. Parse tool call
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    // Parse tool call
   let body: { tool: string; arguments?: Record<string, unknown> };
   try {
     body = await request.json();
@@ -373,8 +369,8 @@ export async function POST(request: NextRequest) {
   // Add internal service token (trusted internal request from agent gateway)
   // This bypasses CSRF and redundant auth since we already validated the session
   forwardHeaders.set('X-Agent-Internal-Token', generateInternalToken());
-  forwardHeaders.set('X-Agent-User-Id', (session.user as any).id || '');
-  forwardHeaders.set('X-Agent-User-Email', session.user.email || '');
+  forwardHeaders.set('X-Agent-User-Id', context.user?.id || '');
+  forwardHeaders.set('X-Agent-User-Email', context.user?.email || '');
 
   // 7. Make internal request
   const response = await fetch(fullUrl, {
@@ -396,23 +392,23 @@ export async function POST(request: NextRequest) {
     },
     { status: response.status }
   );
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/agent
  * Returns available tools for capability discovery
  */
-export async function GET(_request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  return NextResponse.json({
-    tools: Object.entries(TOOL_ROUTES).map(([name, config]) => ({
-      name,
-      method: config.method,
-      path: config.path,
-    })),
-  });
-}
+export const GET = createProtectedRoute(
+  async (_request: NextRequest) => {
+    return NextResponse.json({
+      tools: Object.entries(TOOL_ROUTES).map(([name, config]) => ({
+        name,
+        method: config.method,
+        path: config.path,
+      })),
+    });
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

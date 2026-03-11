@@ -1,25 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import * as crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-
-/**
- * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
- */
-function verifyInternalToken(token: string | null): boolean {
-  if (!token) return false;
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
-  const now = Math.floor(Date.now() / 60000);
-  for (const timestamp of [now, now - 1]) {
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(`agent-internal:${timestamp}`)
-      .digest('hex');
-    if (token === expected) return true;
-  }
-  return false;
-}
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 /**
  * Allergy Contraindication Checker
@@ -65,34 +47,8 @@ interface AllergyAlert {
   actionRequired: boolean;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Check for internal agent gateway token first
-    let userId: string | undefined;
-    const internalToken = request.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = request.headers.get('X-Agent-User-Email');
-      const headerUserId = request.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
-
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
     const body = await request.json();
     const { patientId, medications } = body;
 
@@ -278,44 +234,13 @@ export async function POST(request: NextRequest) {
       allergiesChecked: allergies.length,
       medicationsChecked: medications.length,
     });
-  } catch (error) {
-    console.error('Allergy check error:', error);
-    return NextResponse.json(
-      { error: 'Failed to check allergies', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 // GET: Fetch all patient allergies
-export async function GET(request: NextRequest) {
-  try {
-    // Check for internal agent gateway token first
-    let userId: string | undefined;
-    const internalToken = request.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = request.headers.get('X-Agent-User-Email');
-      const headerUserId = request.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
-
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
 
@@ -350,11 +275,6 @@ export async function GET(request: NextRequest) {
       count: allergies.length,
       hasMedicationAllergies: allergies.some((a) => a.allergyType === 'MEDICATION'),
     });
-  } catch (error) {
-    console.error('Fetch allergies error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch allergies' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

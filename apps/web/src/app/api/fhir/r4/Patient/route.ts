@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { fromFHIRPatient, validateFHIRPatient, generateMRN, generateTokenId, toFHIRPatient, type FHIRPatient } from '@/lib/fhir/patient-mapper';
 import { auditCreate, auditView } from '@/lib/audit';
@@ -90,7 +91,8 @@ interface FHIRBundle {
  * - 400: Invalid search parameters
  * - 500: Server error
  */
-export async function GET(request: NextRequest) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const searchParams = request.nextUrl.searchParams;
 
@@ -247,7 +249,9 @@ export async function GET(request: NextRequest) {
       },
     });
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * POST /api/fhir/r4/Patient
@@ -262,7 +266,8 @@ export async function GET(request: NextRequest) {
  * - 409: Patient already exists (duplicate identifier)
  * - 500: Server error
  */
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     // Parse FHIR Patient resource from request body
     let fhirPatient: FHIRPatient;
@@ -497,4 +502,6 @@ export async function POST(request: NextRequest) {
       },
     });
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

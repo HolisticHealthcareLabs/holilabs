@@ -385,7 +385,7 @@
   },
   "aiCommandCenter": {
     "navigation": {
-      "cdss": "Taking you to the Clinical Decision Support System (CDSS). Here you'll find 12+ active rules that detect problems before they occur, drug interactions, and WHO/PAHO protocols.",
+      "cdss": "Taking you to the Clinical Decision Support System (CDSS). Here you'll find 12+ active rules that flag potential concerns, drug interactions, and WHO/PAHO protocols.",
       "scribe": "Perfect! Taking you to the AI Medical Scribe. This tool transcribes your consultations in real-time and generates SOAP notes automatically, saving you 3-4 hours daily.",
       "prevention": "Directing you to the Longitudinal Prevention Hub. Here you can see 30-year timelines, 7 health domains, and over 100 preventive interventions based on WHO/PAHO/USPSTF protocols.",
       "patients": "Taking you to the Patient Management Portal. From here you can see all your patients, their complete history, and access the patient portal that reduces your calls by 40%.",
@@ -413,10 +413,14 @@
       "forHospitals": "For hospitals",
       "pricing": "Pricing",
       "signIn": "Sign in",
-      "requestAccess": "Request access"
+      "requestAccess": "Request access",
+      "changeLanguage": "Change language",
+      "closeMenu": "Close menu",
+      "openMenu": "Open menu"
     },
     "featureA": {
       "eyebrow": "Ambient AI Scribe",
+      "imageAlt": "Cortex Cross-Reference Engine",
       "headline": "Listen once. Your notes write themselves.",
       "description": "Holi Labs listens to every patient encounter and builds structured SOAP notes in real time — automatically populating Subjective, Objective, Assessment, and Plan as the conversation unfolds. PHI is de-identified before it ever touches a server.",
       "link": "See the live demo"
@@ -572,6 +576,114 @@
       "headline": "Not sure yet? See it in action.",
       "subhead": "Try the live demo — no sign-up required.",
       "button": "Try Live Demo"
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "clinicalWorkspace": "CLINICAL WORKSPACE",
+      "revenueOps": "REVENUE & OPS",
+      "administration": "ADMINISTRATION",
+      "myDay": "My Day",
+      "coPilot": "Co-Pilot",
+      "patients": "Patients",
+      "inbox": "Inbox",
+      "commandCenter": "Command Center",
+      "claimsIntelligence": "Claims Intelligence",
+      "analytics": "Analytics",
+      "auditCompliance": "Audit & Compliance",
+      "settingsTeam": "Settings & Team",
+      "startVisit": "Start Visit",
+      "openingCoPilot": "Opening Co-Pilot...",
+      "searchPatients": "Search Patients...",
+      "expandSidebar": "Expand sidebar",
+      "collapseSidebar": "Collapse sidebar",
+      "closeSidebar": "Close sidebar"
+    },
+    "profile": {
+      "profile": "Profile",
+      "security": "Security",
+      "preferences": "Preferences",
+      "privacyData": "Privacy & Data",
+      "billing": "Billing",
+      "integrations": "Integrations",
+      "helpSupport": "Help & Support",
+      "signOut": "Sign Out"
+    },
+    "roles": {
+      "administrator": "Administrator",
+      "clinician": "Clinician",
+      "nurse": "Nurse",
+      "physician": "Physician",
+      "receptionist": "Receptionist",
+      "staff": "Staff"
+    },
+    "error": {
+      "crashed": "Dashboard crashed",
+      "failsafeOverlay": "This is a failsafe overlay so we can see the real error.",
+      "reload": "Reload"
+    },
+    "myDay": {
+      "goodMorning": "Good morning",
+      "goodAfternoon": "Good afternoon",
+      "goodEvening": "Good evening",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "scheduled": "Scheduled",
+      "arrived": "Arrived",
+      "finished": "Finished",
+      "pendingSignature": "Pending Signature",
+      "noAppointments": "No appointments scheduled",
+      "todaySchedule": "Today's Schedule",
+      "upcomingTasks": "Upcoming Tasks",
+      "recentNotes": "Recent Notes"
+    },
+    "patients": {
+      "addPatient": "Add Patient",
+      "registerNewPatient": "Register New Patient",
+      "searchPlaceholder": "Search by name, MRN, or diagnosis...",
+      "noPatients": "No patients found",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "dateOfBirth": "Date of Birth",
+      "gender": "Gender",
+      "email": "Email",
+      "phone": "Phone",
+      "patient": "Patient",
+      "ageSex": "Age / Sex",
+      "primaryDx": "Primary Dx",
+      "lastVisit": "Last Visit",
+      "risk": "Risk",
+      "showing": "Showing {from}-{to} of {total} patients"
+    },
+    "settings": {
+      "searchCortex": "Search Cortex Account",
+      "yourAccount": "Your account",
+      "noEmail": "No email on file",
+      "securityReview": "Security review recommended",
+      "reviewSettings": "Review settings",
+      "organization": "Organization",
+      "role": "Role",
+      "pendingInvites": "Pending invites",
+      "aiProviders": "AI Providers",
+      "geminiApiKey": "Google Gemini API key",
+      "anthropicApiKey": "Anthropic API key",
+      "openaiApiKey": "OpenAI API key",
+      "deepgramApiKey": "Deepgram API key"
+    },
+    "billing": {
+      "searchClaims": "Search claims, patients, payers...",
+      "clinicalRationale": "Provide clinical rationale per payer policy requirements..."
+    },
+    "commandCenter": {
+      "resolutionNotes": "Resolution notes (optional)",
+      "criticalLabFollowUp": "Critical Lab Follow-up"
+    },
+    "analytics": {
+      "consultationTrend": "Consultation Trend",
+      "patientDemographics": "Patient Demographics",
+      "visitTypes": "Visit Types",
+      "clinicHeatmap": "Clinic Activity Heatmap",
+      "heatmapDescription": "Consultation density by day and hour"
     }
   }
 }

@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -30,18 +29,10 @@ interface TemplateRecommendation {
  * GET /api/prevention/templates
  * Get all prevention plan templates
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const searchParams = request.nextUrl.searchParams;
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
+    try {
+      const searchParams = request.nextUrl.searchParams;
     const planType = searchParams.get('planType');
     const isActive = searchParams.get('isActive');
 
@@ -105,24 +96,18 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * POST /api/prevention/templates
  * Create a new prevention plan template
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const body = await request.json();
     const {
       templateName,
       planType,
@@ -165,7 +150,7 @@ export async function POST(request: NextRequest) {
         recommendations: recommendations || [],
         isActive: true,
         useCount: 0,
-        createdBy: session.user.id,
+        createdBy: context.user?.id ?? '',
       },
     });
 
@@ -187,4 +172,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

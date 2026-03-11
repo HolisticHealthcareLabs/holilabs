@@ -6,11 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-export const dynamic = 'force-dynamic';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { checkConsentVersion } from '@/lib/consent/version-manager';
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
@@ -36,4 +38,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import type { PreventionProtocol } from '@/lib/prevention/international-protocols';
@@ -40,18 +40,10 @@ const CreatePlanSchema = z.object({
  * POST /api/prevention/plans
  * Create a new prevention plan from an applied protocol
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context) => {
+    try {
+      const body = await request.json();
     const validation = CreatePlanSchema.safeParse(body);
 
     if (!validation.success) {
@@ -126,7 +118,7 @@ export async function POST(request: NextRequest) {
         guidelineSource: `${protocol.source} ${protocol.guidelineVersion}`,
         evidenceLevel: `Grade ${protocol.evidenceGrade}`,
         status: 'ACTIVE',
-        reviewedBy: session.user.id,
+        reviewedBy: context.user?.id ?? '',
         reviewedAt: new Date(),
         aiGeneratedBy: 'prevention-hub-integration',
         aiConfidence: 1.0, // Confidence is high since it's from validated international guidelines
@@ -158,24 +150,18 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/prevention/plans?patientId=xxx
  * Get prevention plans for a patient
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
+    try {
+      const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
 
     if (!patientId) {
@@ -237,4 +223,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

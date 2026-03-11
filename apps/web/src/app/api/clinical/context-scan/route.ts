@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import logger from '@/lib/logger';
 
 /**
@@ -340,12 +340,8 @@ function buildClinicalSummary(
 
 // ─── Route handler ────────────────────────────────────────────────────────────
 
-export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
   let body: ClinicalContextRequest;
   try {
     body = await request.json();
@@ -383,4 +379,6 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ success: true, cached: false, context });
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

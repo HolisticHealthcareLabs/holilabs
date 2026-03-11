@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { parseORU, ORUParser, type ObservationResult } from '@/lib/hl7/oru-parser';
 import { auditCreate } from '@/lib/audit';
@@ -165,7 +166,8 @@ function categorizeTest(testCode: string | undefined, testName: string): string 
  * POST /api/hl7/oru
  * Ingest HL7 ORU message and create lab results
  */
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   const start = performance.now();
 
   try {
@@ -407,4 +409,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

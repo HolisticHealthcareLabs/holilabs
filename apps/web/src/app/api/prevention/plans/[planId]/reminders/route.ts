@@ -6,34 +6,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-
-interface RouteContext {
-  params: {
-    planId: string;
-  };
-}
 
 /**
  * GET - Retrieve reminders for a prevention plan
  */
-export async function GET(
-  request: NextRequest,
-  context: RouteContext
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { planId } = context.params;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
 
     // Verify plan exists
     const plan = await prisma.preventionPlan.findUnique({
@@ -97,7 +80,7 @@ export async function GET(
 
     logger.info({
       event: 'plan_reminders_retrieved',
-      userId: session.user.id,
+      userId: context.user?.id,
       planId,
       reminderCount: reminders.length,
     });
@@ -133,4 +116,6 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

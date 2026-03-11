@@ -14,28 +14,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import * as crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
-
-/**
- * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
- */
-function verifyInternalToken(token: string | null): boolean {
-  if (!token) return false;
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
-  const now = Math.floor(Date.now() / 60000);
-  for (const timestamp of [now, now - 1]) {
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(`agent-internal:${timestamp}`)
-      .digest('hex');
-    if (token === expected) return true;
-  }
-  return false;
-}
+import { createProtectedRoute, requirePatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -215,46 +197,16 @@ function getScreeningEvidence(screeningType: string): string {
   return evidence[screeningType] || 'Clinical guideline recommendation';
 }
 
-interface RouteParams {
-  params: {
-    patientId: string;
-  };
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const startTime = performance.now();
-
-  try {
-    // Check for internal agent gateway token first
-    let userId: string | undefined;
-    const internalToken = request.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = request.headers.get('X-Agent-User-Email');
-      const headerUserId = request.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: { params?: { patientId?: string } }) => {
+    const patientId = context.params?.patientId;
+    if (!patientId) {
+      return NextResponse.json({ error: 'Patient ID required' }, { status: 400 });
     }
 
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
+    const startTime = performance.now();
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { patientId } = params;
+    try {
 
     // Fetch all data in parallel for optimal latency
     const [
@@ -479,4 +431,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], customMiddlewares: [requirePatientAccess()] }
+);

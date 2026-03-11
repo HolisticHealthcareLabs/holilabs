@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Users, Stethoscope, FileText, DollarSign,
   TrendingUp, TrendingDown, Minus,
@@ -316,6 +317,7 @@ function normalizeAnalyticsData(input: unknown, fallback: AnalyticsData): Analyt
 type TimeRange = '7d' | '30d' | '90d';
 
 export default function AnalyticsPage() {
+  const { t } = useLanguage();
   const [data, setData] = useState<AnalyticsData>(() => generateMockData());
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
@@ -437,7 +439,7 @@ export default function AnalyticsPage() {
       {/* Trend Chart */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Consultation Trend</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.consultationTrend')}</h2>
           <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
             <Calendar className="w-3 h-3" />
             Last {timeRange === '7d' ? '7' : timeRange === '30d' ? '30' : '90'} days
@@ -474,7 +476,7 @@ export default function AnalyticsPage() {
         {/* Demographics */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Patient Demographics</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.patientDemographics')}</h2>
           </div>
           <div className="px-5 py-4 space-y-3">
             {data.demographics.map((band) => (
@@ -499,7 +501,7 @@ export default function AnalyticsPage() {
         {/* Appointment Types */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Visit Types</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.visitTypes')}</h2>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {data.appointmentTypes.map((t) => (
@@ -526,8 +528,8 @@ export default function AnalyticsPage() {
       {/* Activity Heatmap */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Clinic Activity Heatmap</h2>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Consultation density by day and hour</p>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.clinicHeatmap')}</h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('dashboard.analytics.heatmapDescription')}</p>
         </div>
         <div className="p-5 overflow-x-auto">
           <div className="inline-block min-w-full">

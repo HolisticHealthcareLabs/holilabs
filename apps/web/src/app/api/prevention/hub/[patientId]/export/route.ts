@@ -14,37 +14,32 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
 import { exportPreventionReport, ExportOptions } from '@/lib/services/prevention-export.service';
 import logger from '@/lib/logger';
 import { auditExport } from '@/lib/audit';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { createProtectedRoute, requirePatientAccess } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
-
-interface RouteParams {
-  params: Promise<{ patientId: string }>;
-}
 
 /**
  * GET /api/prevention/hub/:patientId/export
  * Generate and download prevention report
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
-  const { patientId } = await params;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const rawParams = context.params;
+    const patientId = rawParams && typeof (rawParams as Promise<unknown>).then === 'function'
+      ? (await (rawParams as Promise<{ patientId: string }>)).patientId
+      : (rawParams as { patientId?: string })?.patientId;
 
-  try {
-    // Verify authentication
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
+    if (!patientId) {
+      return NextResponse.json({ error: 'Patient ID required' }, { status: 400 });
     }
 
+    const start = performance.now();
+
+    try {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const format = searchParams.get('format');
@@ -79,7 +74,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       event: 'prevention_export_downloaded',
       patientId,
       format,
-      userId: session.user.id,
+      userId: context.user!.id,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -87,7 +82,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     await auditExport('PreventionReport', patientId, request, {
       action: 'prevention_report_exported',
       format,
-      exportedBy: session.user.id,
+      exportedBy: context.user!.id,
       includeRiskScores: options.includeRiskScores,
       includeScreenings: options.includeScreenings,
       includePlans: options.includePlans,
@@ -123,4 +118,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], customMiddlewares: [requirePatientAccess()] }
+);

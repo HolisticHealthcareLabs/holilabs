@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession, authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { z } from 'zod';
@@ -18,10 +18,6 @@ import { auditUpdate, auditView } from '@/lib/audit';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 
 export const dynamic = 'force-dynamic';
-
-interface RouteParams {
-  params: Promise<{ screeningId: string }>;
-}
 
 // Valid result values
 const RESULT_VALUES = ['normal', 'abnormal', 'needs_followup', 'inconclusive'] as const;
@@ -45,20 +41,12 @@ const UpdateScreeningSchema = z.object({
  * GET /api/prevention/screenings/[screeningId]
  * Get details of a specific screening
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
 
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { screeningId } = await params;
+    try {
+      const { screeningId } = await (context.params ?? Promise.resolve({}));
 
     if (!screeningId) {
       return NextResponse.json(
@@ -105,14 +93,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       screeningId,
       patientId: screening.patientId,
       latencyMs: elapsed.toFixed(2),
-      userId: session.user.id,
+      userId: context.user?.id,
     });
 
     // HIPAA Audit: Log screening access
     await auditView('ScreeningOutcome', screeningId, request, {
       patientId: screening.patientId,
       screeningType: screening.screeningType,
-      accessedBy: session.user.id,
+      accessedBy: context.user?.id,
       action: 'screening_viewed',
     });
 
@@ -143,26 +131,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * PATCH /api/prevention/screenings/[screeningId]
  * Update a screening result, completion date, or reschedule
  */
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
 
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { screeningId } = await params;
+    try {
+      const { screeningId } = await (context.params ?? Promise.resolve({}));
 
     if (!screeningId) {
       return NextResponse.json(
@@ -272,7 +254,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       screeningId,
       patientId: updatedScreening.patientId,
       changes,
-      updatedBy: session.user.id,
+      updatedBy: context.user?.id,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -282,7 +264,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       screeningType: updatedScreening.screeningType,
       changes,
       result: updatedScreening.result,
-      updatedBy: session.user.id,
+      updatedBy: context.user?.id,
       action: result ? 'screening_result_recorded' : 'screening_updated',
     });
 
@@ -315,26 +297,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * DELETE /api/prevention/screenings/[screeningId]
  * Cancel/delete a scheduled screening
  */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const start = performance.now();
+export const DELETE = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    const start = performance.now();
 
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const { screeningId } = await params;
+    try {
+      const { screeningId } = await (context.params ?? Promise.resolve({}));
 
     if (!screeningId) {
       return NextResponse.json(
@@ -375,7 +351,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       screeningId,
       patientId: existingScreening.patientId,
       screeningType: existingScreening.screeningType,
-      cancelledBy: session.user.id,
+      cancelledBy: context.user?.id,
       latencyMs: elapsed.toFixed(2),
     });
 
@@ -383,7 +359,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await auditUpdate('ScreeningOutcome', screeningId, request, {
       patientId: existingScreening.patientId,
       screeningType: existingScreening.screeningType,
-      cancelledBy: session.user.id,
+      cancelledBy: context.user?.id,
       action: 'screening_cancelled',
     });
 
@@ -411,4 +387,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

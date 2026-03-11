@@ -98,8 +98,7 @@ model User {
   // Credential Verification
   credentials ProviderCredential[]
 
-  // Medical Imaging
-  patientMedicalImages  MedicalImage[]    @relation("PatientMedicalImages")
+  // Medical Imaging (provider and upload roles only — patient images belong to Patient model)
   providerMedicalImages MedicalImage[]    @relation("ProviderMedicalImages")
   uploadedMedicalImages MedicalImage[]    @relation("UploadedMedicalImages")
   imageAccessLogs       ImageAccessLog[]
@@ -279,6 +278,7 @@ model Message {
   @@index([fromUserId])
   @@index([toUserId])
   @@index([patientId])
+  @@index([patientId, createdAt])
   @@index([readAt])
   @@index([createdAt])
   @@map("messages")
@@ -786,6 +786,9 @@ model Patient {
   procedures              ProcedureRecord[]
   insuranceAuthorizations InsuranceAuthorization[]
 
+  // Medical Imaging
+  medicalImages MedicalImage[] @relation("PatientMedicalImages")
+
   // AI Quality Control
   reviewQueueItems ManualReviewQueueItem[]
 
@@ -798,6 +801,7 @@ model Patient {
   @@index([tokenId])
   @@index([blockchainId])
   @@index([assignedClinicianId])
+  @@index([assignedClinicianId, isActive])
   @@index([cns])
   @@index([cpf])
   @@index([isPalliativeCare])
@@ -1424,6 +1428,7 @@ model Appointment {
   MedicalImage MedicalImage[]
 
   @@index([patientId])
+  @@index([patientId, startTime])
   @@index([clinicianId])
   @@index([startTime])
   @@index([status])
@@ -1670,6 +1675,10 @@ model AuditLog {
   details  Json? // Additional context
   dataHash String? // Hash of data accessed/modified
 
+  // LGPD/Law 25.326 Compliance - Access Justification
+  accessReason  AccessReason? // Mandatory for READ operations on PHI
+  accessPurpose String?       @db.Text // Optional free-text justification
+
   // Result
   success      Boolean @default(true)
   errorMessage String? @db.Text
@@ -1680,7 +1689,9 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([resourceId])
+  @@index([resourceId, timestamp])
   @@index([timestamp])
+  @@index([accessReason])
   @@map("audit_logs")
 }
 
@@ -1702,6 +1713,19 @@ enum AuditAction {
   OPT_OUT // Patient preference opt-out action
   NOTIFY // WhatsApp/Email/SMS notifications
   DOCUMENT_UPLOADED // Document upload action
+}
+
+// LGPD Art. 6 (Purpose Limitation) + Law 25.326 Art. 5 (Purpose Specification)
+enum AccessReason {
+  DIRECT_PATIENT_CARE // Atendimento direto ao paciente (LGPD Art. 11, II, a)
+  CARE_COORDINATION // Coordenação de cuidados
+  EMERGENCY_ACCESS // Acesso emergencial (Art. 11, II, a - Proteção da vida)
+  ADMINISTRATIVE // Gestão administrativa (Art. 7, V - Execução de contrato)
+  QUALITY_IMPROVEMENT // Melhoria da qualidade (Art. 10 - Legítimo interesse)
+  BILLING // Faturamento (Art. 7, V - Execução de contrato)
+  LEGAL_COMPLIANCE // Conformidade legal (Art. 7, II - Obrigação legal)
+  RESEARCH_IRB_APPROVED // Pesquisa aprovada por comitê de ética
+  PUBLIC_HEALTH // Saúde pública (Art. 7, III - Políticas públicas)
 }
 
 // ============================================================================
@@ -4038,7 +4062,7 @@ model MedicalImage {
 
   // Clinical Context
   patientId String?
-  patient   User?   @relation("PatientMedicalImages", fields: [patientId], references: [id], onDelete: SetNull)
+  patient   Patient? @relation("PatientMedicalImages", fields: [patientId], references: [id], onDelete: SetNull)
 
   providerId String?
   provider   User?   @relation("ProviderMedicalImages", fields: [providerId], references: [id], onDelete: SetNull)

@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -21,18 +20,10 @@ interface GoalData {
  * GET /api/prevention/analytics
  * Get comprehensive prevention analytics and statistics
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const searchParams = request.nextUrl.searchParams;
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
+    try {
+      const searchParams = request.nextUrl.searchParams;
     const patientId = searchParams.get('patientId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
@@ -260,4 +251,6 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

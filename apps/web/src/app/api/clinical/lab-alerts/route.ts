@@ -1,25 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import * as crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-
-/**
- * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
- */
-function verifyInternalToken(token: string | null): boolean {
-  if (!token) return false;
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
-  const now = Math.floor(Date.now() / 60000);
-  for (const timestamp of [now, now - 1]) {
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(`agent-internal:${timestamp}`)
-      .digest('hex');
-    if (token === expected) return true;
-  }
-  return false;
-}
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 /**
  * Lab Result Abnormality Alert System
@@ -109,70 +91,24 @@ interface LabAlert {
   labResultId?: string;
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Check for internal agent gateway token first
-    let userId: string | undefined;
-    const internalToken = request.headers.get('X-Agent-Internal-Token');
+/** Shared logic: process lab results and return alerts. Used by both POST and GET. */
+async function processLabAlerts(
+  patientId: string,
+  labsToCheck: Array<{ id?: string; testName?: string; name?: string; value: number | string }>
+): Promise<NextResponse> {
+  const alerts: LabAlert[] = [];
+  let resultsChecked = 0;
 
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = request.headers.get('X-Agent-User-Email');
-      const headerUserId = request.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
+  if (!labsToCheck || labsToCheck.length === 0) {
+    return NextResponse.json({
+      alerts: [],
+      hasAbnormalities: false,
+      summary: 'No recent lab results to check',
+    });
+  }
 
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { patientId, labResults } = body;
-
-    if (!patientId) {
-      return NextResponse.json({ error: 'Patient ID is required' }, { status: 400 });
-    }
-
-    const alerts: LabAlert[] = [];
-    let resultsChecked = 0;
-
-    // If labResults provided, check those; otherwise fetch recent labs
-    let labsToCheck = labResults;
-    if (!labsToCheck) {
-      const recentLabs = await prisma.labResult.findMany({
-        where: {
-          patientId,
-          resultDate: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-          },
-        },
-        orderBy: { resultDate: 'desc' },
-        take: 50,
-      });
-      labsToCheck = recentLabs;
-    }
-
-    if (!labsToCheck || labsToCheck.length === 0) {
-      return NextResponse.json({
-        alerts: [],
-        hasAbnormalities: false,
-        summary: 'No recent lab results to check',
-      });
-    }
-
-    // Check each lab result
-    for (const lab of labsToCheck) {
+  // Check each lab result
+  for (const lab of labsToCheck) {
       const testName = lab.testName || lab.name;
       if (!testName) continue;
 
@@ -226,22 +162,22 @@ export async function POST(request: NextRequest) {
           priority: alertType === 'critical' ? 'high' : 'medium',
           actionRequired: alertType === 'critical',
           labResultId: lab.id,
-        });
-      }
+      });
     }
+  }
 
-    // Sort by priority
-    alerts.sort((a, b) => {
+  // Sort by priority
+  alerts.sort((a, b) => {
       if (a.type === 'critical' && b.type !== 'critical') return -1;
       if (a.type !== 'critical' && b.type === 'critical') return 1;
       return 0;
-    });
+  });
 
-    const criticalAlerts = alerts.filter((a) => a.type === 'critical');
-    const warningAlerts = alerts.filter((a) => a.type === 'warning');
+  const criticalAlerts = alerts.filter((a) => a.type === 'critical');
+  const warningAlerts = alerts.filter((a) => a.type === 'warning');
 
-    // HIPAA Audit Log: Lab result alerts generated for patient
-    await createAuditLog({
+  // HIPAA Audit Log: Lab result alerts generated for patient
+  await createAuditLog({
       action: 'CREATE',
       resource: 'LabAlert',
       resourceId: patientId,
@@ -253,27 +189,49 @@ export async function POST(request: NextRequest) {
         warningAlerts: warningAlerts.length,
         accessType: 'LAB_RESULT_ALERT_CHECK',
       },
-      success: true,
-    });
+    success: true,
+  });
 
-    return NextResponse.json({
-      alerts,
-      hasAbnormalities: alerts.length > 0,
-      summary: {
-        total: alerts.length,
-        critical: criticalAlerts.length,
-        warnings: warningAlerts.length,
-      },
-      resultsChecked,
-    });
-  } catch (error) {
-    console.error('Lab alerts error:', error);
-    return NextResponse.json(
-      { error: 'Failed to check lab results', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    alerts,
+    hasAbnormalities: alerts.length > 0,
+    summary: {
+      total: alerts.length,
+      critical: criticalAlerts.length,
+      warnings: warningAlerts.length,
+    },
+    resultsChecked,
+  });
 }
+
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
+    const body = await request.json();
+    const { patientId, labResults } = body;
+
+    if (!patientId) {
+      return NextResponse.json({ error: 'Patient ID is required' }, { status: 400 });
+    }
+
+    let labsToCheck = labResults;
+    if (!labsToCheck) {
+      const recentLabs = await prisma.labResult.findMany({
+        where: {
+          patientId,
+          resultDate: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+          },
+        },
+        orderBy: { resultDate: 'desc' },
+        take: 50,
+      });
+      labsToCheck = recentLabs;
+    }
+
+    return processLabAlerts(patientId, labsToCheck);
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 function generateRecommendation(
   testName: string,
@@ -333,34 +291,8 @@ function generateRecommendation(
 }
 
 // GET: Fetch recent abnormal labs for a patient
-export async function GET(request: NextRequest) {
-  try {
-    // Check for internal agent gateway token first
-    let userId: string | undefined;
-    const internalToken = request.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = request.headers.get('X-Agent-User-Email');
-      const headerUserId = request.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
-
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+export const GET = createProtectedRoute(
+  async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
     const days = parseInt(searchParams.get('days') || '30');
@@ -379,17 +311,7 @@ export async function GET(request: NextRequest) {
       orderBy: { resultDate: 'desc' },
     });
 
-    // Process through the alert checker
-    const response = await POST(
-      new NextRequest(request.url, {
-        method: 'POST',
-        body: JSON.stringify({ patientId, labResults: recentLabs }),
-      })
-    );
-
-    return response;
-  } catch (error) {
-    console.error('Fetch lab alerts error:', error);
-    return NextResponse.json({ error: 'Failed to fetch lab alerts' }, { status: 500 });
-  }
-}
+    return processLabAlerts(patientId, recentLabs);
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

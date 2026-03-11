@@ -9,8 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { soapGenerator } from '@/lib/clinical-notes/soap-generator';
 import { confidenceScoringService } from '@/lib/ai/confidence-scoring';
 import type { ClinicalSessionContext } from '@/lib/scribe/ai-scribe-service';
@@ -109,26 +108,12 @@ interface GenerateNoteResponse {
  *
  * Generate SOAP note from transcription
  */
-export async function POST(request: NextRequest): Promise<NextResponse<GenerateNoteResponse>> {
-  const startTime = Date.now();
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any): Promise<NextResponse<GenerateNoteResponse>> => {
+    const startTime = Date.now();
 
-  try {
-    // 1. Authenticate request
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Authentication required',
-          },
-        },
-        { status: 401 }
-      );
-    }
-
-    // 2. Parse and validate request body
+    try {
+      // Parse and validate request body
     let body: GenerateNoteRequest;
     try {
       body = await request.json();
@@ -176,14 +161,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateN
       event: 'soap_note_generation_started',
       patientId: body.patientId,
       appointmentId: body.appointmentId,
-      userId: session.user.id,
+      userId: context.user?.id,
     });
     const result = await soapGenerator.generateFromTranscription(
       body.transcription,
       clinicalContext,
       {
         patientId: body.patientId,
-        authorId: session.user.id,
+        authorId: context.user?.id ?? '',
         appointmentId: body.appointmentId,
         saveToDatabase: body.saveToDatabase ?? false,
       }
@@ -218,7 +203,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateN
       processingTime,
       confidence: confidenceScore.overall,
       requiresReview: confidenceScore.requiresReview,
-      userId: session.user.id,
+      userId: context.user?.id,
     });
 
     return NextResponse.json(response, { status: 200 });
@@ -265,10 +250,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateN
           details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined,
         },
       },
-      { status: 500 }
+      {       status: 500 }
     );
-  }
-}
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * Validate request body
@@ -314,8 +301,9 @@ function validateRequest(body: GenerateNoteRequest): string | null {
  *
  * Return API information
  */
-export async function GET(): Promise<NextResponse> {
-  return NextResponse.json(
+export const GET = createProtectedRoute(
+  async (_request: NextRequest): Promise<NextResponse> => {
+    return NextResponse.json(
     {
       endpoint: '/api/ai/generate-note',
       methods: ['POST'],
@@ -330,4 +318,6 @@ export async function GET(): Promise<NextResponse> {
     },
     { status: 200 }
   );
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

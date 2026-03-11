@@ -17,27 +17,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import * as crypto from 'crypto';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-
-/**
- * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
- */
-function verifyInternalToken(token: string | null): boolean {
-  if (!token) return false;
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
-  const now = Math.floor(Date.now() / 60000);
-  for (const timestamp of [now, now - 1]) {
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(`agent-internal:${timestamp}`)
-      .digest('hex');
-    if (token === expected) return true;
-  }
-  return false;
-}
+import { createProtectedRoute } from '@/lib/api/middleware';
 import {
   processClinicalDecision,
   processDiagnosisOnly,
@@ -141,40 +123,12 @@ interface ClinicalDecisionResponse {
 // API HANDLER
 // ═══════════════════════════════════════════════════════════════
 
-export async function POST(req: NextRequest): Promise<NextResponse<ClinicalDecisionResponse>> {
-  const startTime = Date.now();
+export const POST = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse<ClinicalDecisionResponse>> => {
+    const startTime = Date.now();
 
-  try {
-    // 1. Authenticate user (internal token or session)
-    let userId: string | undefined;
-    const internalToken = req.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = req.headers.get('X-Agent-User-Email');
-      const headerUserId = req.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
-
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // 2. Parse and validate request
+    try {
+      // 1. Parse and validate request
     const body = await req.json();
     const validationResult = requestSchema.safeParse(body);
 
@@ -346,60 +300,33 @@ export async function POST(req: NextRequest): Promise<NextResponse<ClinicalDecis
 
     return NextResponse.json(response);
 
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    logger.error({
-      event: 'clinical_decision_api_error',
-      error: errorMessage,
-    });
+      logger.error({
+        event: 'clinical_decision_api_error',
+        error: errorMessage,
+      });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to process clinical decision',
-        ...(process.env.NODE_ENV === 'development' && { details: errorMessage }),
-      },
-      { status: 500 }
-    );
-  }
-}
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to process clinical decision',
+          ...(process.env.NODE_ENV === 'development' && { details: errorMessage }),
+        },
+        { status: 500 }
+      );
+    }
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 // ═══════════════════════════════════════════════════════════════
 // GET: Health check and capabilities
 // ═══════════════════════════════════════════════════════════════
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  try {
-    // Check for internal agent gateway token first
-    let userId: string | undefined;
-    const internalToken = req.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = req.headers.get('X-Agent-User-Email');
-      const headerUserId = req.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
-
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+export const GET = createProtectedRoute(
+  async (req: NextRequest): Promise<NextResponse> => {
     return NextResponse.json({
       service: 'Clinical Intelligence API',
       version: '2.0.0',
@@ -424,7 +351,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       },
       health: 'ok',
     });
-  } catch (error) {
-    return safeErrorResponse(error, { userMessage: 'Health check failed' });
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

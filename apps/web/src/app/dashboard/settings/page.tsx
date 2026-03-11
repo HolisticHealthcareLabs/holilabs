@@ -10,6 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   AlertTriangle,
   Bell,
@@ -135,6 +136,7 @@ function buildInitialTeamMembers(activeOrganizationId: string): TeamMember[] {
 }
 
 export default function SettingsPage() {
+  const { t } = useLanguage();
   const { data: session } = useSession();
   const userRole = String((session?.user as { role?: string } | undefined)?.role ?? '').toUpperCase();
   const tenantRole = String((session?.user as { tenantRole?: string } | undefined)?.tenantRole ?? 'CLINICIAN').toUpperCase();
@@ -376,7 +378,7 @@ export default function SettingsPage() {
                 value=""
                 readOnly
                 aria-label="Search account settings"
-                placeholder="Search Cortex Account"
+                placeholder={t('dashboard.settings.searchCortex')}
                 className="w-full bg-transparent text-base text-white/85 outline-none placeholder:text-white/38"
               />
             </div>
@@ -386,10 +388,10 @@ export default function SettingsPage() {
                 {(session?.user?.name || session?.user?.email || 'C').charAt(0).toUpperCase()}
               </div>
               <h1 className="text-5xl font-semibold tracking-tight text-white">
-                {session?.user?.name || 'Your account'}
+                {session?.user?.name || t('dashboard.settings.yourAccount')}
               </h1>
               <p className="mt-2 text-lg text-white/65">
-                {session?.user?.email || 'No email on file'}
+                {session?.user?.email || t('dashboard.settings.noEmail')}
               </p>
             </div>
 
@@ -403,7 +405,7 @@ export default function SettingsPage() {
                           <AlertTriangle className="h-5 w-5" />
                         </span>
                         <div>
-                          <p className="text-lg font-semibold text-white">Security review recommended</p>
+                          <p className="text-lg font-semibold text-white">{t('dashboard.settings.securityReview')}</p>
                           <p className="mt-1 text-sm text-white/80">
                             Review organization access, team invites, and privacy settings before rollout.
                           </p>
@@ -415,24 +417,24 @@ export default function SettingsPage() {
                       onClick={() => setActiveTab('privacy')}
                       className="shrink-0 rounded-full bg-white/85 px-5 py-3 text-sm font-semibold text-[#7f1612] transition-colors hover:bg-white"
                     >
-                      Review settings
+                      {t('dashboard.settings.reviewSettings')}
                     </button>
                   </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Organization</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('dashboard.settings.organization')}</p>
                     <p className="mt-3 text-xl font-semibold text-white">{organizationName}</p>
                     <p className="mt-1 text-sm text-white/55">{organizationType}</p>
                   </div>
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Role</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('dashboard.settings.role')}</p>
                     <p className="mt-3 text-xl font-semibold text-white">{tenantRole}</p>
                     <p className="mt-1 text-sm text-white/55">Scoped to your current workspace</p>
                   </div>
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Pending invites</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('dashboard.settings.pendingInvites')}</p>
                     <p className="mt-3 text-xl font-semibold text-white">
                       {visibleTeamMembers.filter((member) => member.status === 'PENDING').length}
                     </p>
@@ -528,28 +530,28 @@ export default function SettingsPage() {
                           type="password"
                           value={aiConfig.geminiApiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, geminiApiKey: e.target.value })}
-                          placeholder="Google Gemini API key"
+                          placeholder={t('dashboard.settings.geminiApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                         <input
                           type="password"
                           value={aiConfig.anthropicKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, anthropicKey: e.target.value })}
-                          placeholder="Anthropic API key"
+                          placeholder={t('dashboard.settings.anthropicApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                         <input
                           type="password"
                           value={aiConfig.openaiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, openaiKey: e.target.value })}
-                          placeholder="OpenAI API key"
+                          placeholder={t('dashboard.settings.openaiApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                         <input
                           type="password"
                           value={aiConfig.deepgramApiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, deepgramApiKey: e.target.value })}
-                          placeholder="Deepgram API key"
+                          placeholder={t('dashboard.settings.deepgramApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                       </div>
@@ -744,7 +746,7 @@ export default function SettingsPage() {
                     <div className="mt-6 overflow-hidden rounded-[24px] border border-white/10">
                       <div className="grid grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)_minmax(0,0.9fr)] gap-4 bg-white/[0.03] px-5 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
                         <span>Member</span>
-                        <span>Role</span>
+                        <span>{t('dashboard.settings.role')}</span>
                         <span>Status</span>
                       </div>
                       <div className="divide-y divide-white/8">

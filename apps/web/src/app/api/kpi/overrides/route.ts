@@ -4,9 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { getOverrideReasons, validateFilterState } from '@/lib/kpi';
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
+export const GET = createProtectedRoute(
+  async (req: NextRequest, context: any) => {
   try {
     const searchParams = req.nextUrl.searchParams;
 
@@ -35,4 +37,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

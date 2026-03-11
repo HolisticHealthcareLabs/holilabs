@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { requireSecret } from '@/lib/security/require-secret';
+import logger from '@/lib/logger';
 
-// Shared Secret (Must match Edge Node)
-const EDGE_SECRET = process.env.EDGE_SECRET || 'dev-secret-key';
+const EDGE_SECRET = requireSecret('EDGE_SECRET');
 
 export async function POST(req: NextRequest) {
     try {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Verify Signature (HMAC-SHA256)
         if (!verifySignature(bodyText, signature, EDGE_SECRET)) {
-            console.warn(`[Telemetry] Invalid signature from node ${nodeId}`);
+            logger.warn('[Telemetry] Invalid signature', { nodeId });
             return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
         }
 
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
         const data = JSON.parse(bodyText);
         const events = data.events || [];
 
-        console.log(`[Telemetry] Received ${events.length} events from ${nodeId}`);
+        logger.info('[Telemetry] Events received', { count: events.length, nodeId });
 
         // In a real app, we would insert these into TimescaleDB or ClickHouse
         // events.forEach(e => insert(e));
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error) {
-        console.error('[Telemetry] Ingest error:', error);
+        logger.error('[Telemetry] Ingest error', { error });
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

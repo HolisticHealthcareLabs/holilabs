@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { toFHIRPatient, validateFHIRPatient } from '@/lib/fhir/patient-mapper';
 import { auditView } from '@/lib/audit';
@@ -66,12 +67,10 @@ function createOperationOutcome(
  * - 404: Patient not found
  * - 500: Server error
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
-    const patientId = params.id;
+    const patientId = context.params?.id;
 
     // Search by ID or MRN (flexible identifier matching)
     const patient = await prisma.patient.findFirst({
@@ -131,7 +130,7 @@ export async function GET(
     });
   } catch (error) {
     console.error('FHIR Patient GET error:', {
-      patientId: params.id,
+      patientId: context.params?.id,
       error: error instanceof Error ? error.message : String(error),
     });
 
@@ -149,4 +148,6 @@ export async function GET(
       },
     });
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

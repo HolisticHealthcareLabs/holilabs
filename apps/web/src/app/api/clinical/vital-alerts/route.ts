@@ -1,25 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth/auth';
-import * as crypto from 'crypto';
 import { createAuditLog } from '@/lib/audit';
-import { prisma } from '@/lib/prisma';
-
-/**
- * Verify internal agent gateway token (HMAC-signed, 1-minute validity)
- */
-function verifyInternalToken(token: string | null): boolean {
-  if (!token) return false;
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
-  const now = Math.floor(Date.now() / 60000);
-  for (const timestamp of [now, now - 1]) {
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(`agent-internal:${timestamp}`)
-      .digest('hex');
-    if (token === expected) return true;
-  }
-  return false;
-}
+import { createProtectedRoute } from '@/lib/api/middleware';
 
 /**
  * Vital Signs Critical Alert System
@@ -234,34 +215,8 @@ function generateVitalRecommendation(
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Check for internal agent gateway token first
-    let userId: string | undefined;
-    const internalToken = request.headers.get('X-Agent-Internal-Token');
-
-    if (internalToken && verifyInternalToken(internalToken)) {
-      const userEmail = request.headers.get('X-Agent-User-Email');
-      const headerUserId = request.headers.get('X-Agent-User-Id');
-      if (userEmail) {
-        const dbUser = await prisma.user.findFirst({
-          where: { OR: [{ id: headerUserId || '' }, { email: userEmail }] },
-          select: { id: true },
-        });
-        userId = dbUser?.id;
-      }
-    }
-
-    // Fall back to session auth
-    if (!userId) {
-      const session = await auth();
-      userId = (session?.user as any)?.id;
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
+export const POST = createProtectedRoute(
+  async (request: NextRequest) => {
     const body = await request.json();
 
     // Support both nested format { patientAge, vitals } and flat format { age, heartRate, ... }
@@ -370,11 +325,6 @@ export async function POST(request: NextRequest) {
       ageGroup,
       vitalsChecked: Object.keys(vitals).length,
     });
-  } catch (error) {
-    console.error('Vital alerts error:', error);
-    return NextResponse.json(
-      { error: 'Failed to check vital signs', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

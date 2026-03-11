@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { parseADT, ADTParser } from '@/lib/hl7/adt-parser';
 import { generatePatientDataHash } from '@/lib/blockchain/hashing';
@@ -39,7 +40,8 @@ export const dynamic = 'force-dynamic';
  * - 409: Conflict (patient already exists with different data)
  * - 500: Server error
  */
-export async function POST(request: NextRequest) {
+export const POST = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
   try {
     // Parse request body as text (HL7 messages are plain text)
     const contentType = request.headers.get('content-type') || '';
@@ -327,4 +329,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+},
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

@@ -5,9 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/auth';
-import { authOptions } from '@/lib/auth';
+import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -33,21 +33,10 @@ type StatusChangeHistory = z.infer<typeof StatusChangeHistoryEntry>;
  * PATCH /api/prevention/plans/[planId]/status
  * Update prevention plan status with reason and history tracking
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { planId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const planId = params.planId;
+export const PATCH = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
     const body = await request.json();
     const validation = UpdateStatusSchema.safeParse(body);
 
@@ -90,7 +79,7 @@ export async function PATCH(
     // Create new history entry
     const historyEntry: StatusChangeHistory = {
       timestamp: new Date().toISOString(),
-      userId: session.user.id,
+      userId: context.user?.id ?? '',
       fromStatus: currentStatus,
       toStatus: status,
       reason: reason || undefined,
@@ -111,11 +100,11 @@ export async function PATCH(
     if (status === 'COMPLETED') {
       updateData.completionReason = reason || null;
       updateData.completedAt = new Date();
-      updateData.completedBy = session.user.id;
+      updateData.completedBy = context.user?.id;
     } else if (status === 'DEACTIVATED') {
       updateData.deactivationReason = reason || null;
       updateData.deactivatedAt = new Date();
-      updateData.deactivatedBy = session.user.id;
+      updateData.deactivatedBy = context.user?.id;
     } else if (status === 'ACTIVE' && currentStatus === 'DEACTIVATED') {
       // Reactivating a deactivated plan
       updateData.activatedAt = new Date();
@@ -153,7 +142,7 @@ export async function PATCH(
       },
     });
   } catch (error) {
-    console.error('Error updating prevention plan status:', error);
+    logger.error({ error }, 'Error updating prevention plan status');
 
     return NextResponse.json(
       {
@@ -163,27 +152,18 @@ export async function PATCH(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);
 
 /**
  * GET /api/prevention/plans/[planId]/status/history
  * Get status change history for a plan
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { planId: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
-      );
-    }
-
-    const planId = params.planId;
+export const GET = createProtectedRoute(
+  async (request: NextRequest, context: any) => {
+    try {
+      const planId = context.params?.planId;
 
     // Get the prevention plan
     const preventionPlan = await prisma.preventionPlan.findUnique({
@@ -225,7 +205,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching status history:', error);
+    logger.error({ error }, 'Error fetching status history');
 
     return NextResponse.json(
       {
@@ -235,4 +215,6 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+  },
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+);

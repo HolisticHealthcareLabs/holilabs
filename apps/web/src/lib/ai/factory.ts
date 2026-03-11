@@ -2,6 +2,7 @@ import { AIProvider } from "./provider-interface";
 import { GeminiProvider } from "./gemini-provider";
 import { AnthropicProvider } from "./anthropic-provider";
 import { OllamaProvider, VLLMProvider, TogetherProvider } from "./providers";
+import { createGeminiProvider } from "./vertex-ai-provider";
 import { prisma } from "../prisma";
 import { decryptPHIWithVersion } from "../security/encryption";
 import logger from "@/lib/logger";
@@ -258,10 +259,11 @@ export class AIProviderFactory {
             return new TogetherProvider({ apiKey: togetherKey });
         }
 
-        // Then check Gemini (Google)
+        // Then check Gemini (Google) — routes to Vertex AI or direct API based on config
         const systemGeminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-        if (systemGeminiKey) {
-            return new GeminiProvider(systemGeminiKey);
+        const geminiBackend = process.env.AI_GEMINI_BACKEND;
+        if (systemGeminiKey || geminiBackend === 'vertex') {
+            return createGeminiProvider(systemGeminiKey);
         }
 
         // Finally check Anthropic
@@ -313,7 +315,7 @@ export class AIProviderFactory {
         switch (provider.toLowerCase()) {
             case "gemini":
             case "google":
-                return new GeminiProvider(apiKey);
+                return createGeminiProvider(apiKey);
 
             case "anthropic":
             case "claude":
