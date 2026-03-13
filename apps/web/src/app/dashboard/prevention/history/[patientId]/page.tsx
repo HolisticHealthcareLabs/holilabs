@@ -12,6 +12,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import PreventionPlanHistory from '@/components/prevention/PreventionPlanHistory';
 import PreventionPlanVersionComparison from '@/components/prevention/PreventionPlanVersionComparison';
@@ -33,6 +34,7 @@ interface Version {
 }
 
 export default function PreventionHistoryPage() {
+  const t = useTranslations('dashboard.prevention.history');
   const params = useParams();
   const router = useRouter();
   const patientId = (params?.patientId as string) || '';
@@ -46,8 +48,6 @@ export default function PreventionHistoryPage() {
 
   const handleViewVersion = (version: Version) => {
     setSelectedVersion(version);
-    // Could open a modal or detail view
-    console.log('View version:', version);
   };
 
   const handleCompareVersions = (version1: Version, version2: Version) => {
@@ -80,19 +80,19 @@ export default function PreventionHistoryPage() {
               </button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {viewMode === 'history' ? 'Prevention History' : 'Version Comparison'}
+                  {viewMode === 'history' ? t('preventionHistory') : t('versionComparison')}
                 </h1>
                 <p className="text-sm text-gray-600 mt-1">
                   {viewMode === 'history'
-                    ? 'View prevention plan history and screening timeline'
-                    : 'Compare differences between plan versions'}
+                    ? t('preventionHistoryDesc')
+                    : t('versionComparisonDesc')}
                 </p>
               </div>
             </div>
 
             {viewMode === 'history' && (
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Patient ID:</span>
+                <span className="text-sm text-gray-600">{t('patientId')}:</span>
                 <code className="text-sm bg-gray-100 px-2 py-1 rounded">{patientId}</code>
               </div>
             )}
@@ -125,7 +125,7 @@ export default function PreventionHistoryPage() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Version {selectedVersion.version} Details
+                    {t('versionDetails', { version: selectedVersion.version })}
                   </h3>
                   <button
                     onClick={() => setSelectedVersion(null)}
@@ -137,35 +137,35 @@ export default function PreventionHistoryPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-600">Change Reason</p>
+                    <p className="text-sm text-gray-600">{t('changeReason')}</p>
                     <p className="font-medium text-gray-900">
-                      {selectedVersion.changeReason || 'No reason provided'}
+                      {selectedVersion.changeReason || t('noReasonProvided')}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600">Changed By</p>
+                    <p className="text-sm text-gray-600">{t('changedBy')}</p>
                     <p className="font-medium text-gray-900">
                       {selectedVersion.clinician?.name || selectedVersion.changedBy}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600">Date</p>
+                    <p className="text-sm text-gray-600">{t('date')}</p>
                     <p className="font-medium text-gray-900">
                       {new Date(selectedVersion.createdAt).toLocaleString()}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">Changes</p>
+                    <p className="text-sm text-gray-600 mb-2">{t('changes')}</p>
                     <pre className="bg-gray-50 p-3 rounded-lg text-xs overflow-auto">
                       {JSON.stringify(selectedVersion.changes, null, 2)}
                     </pre>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">Plan Data Snapshot</p>
+                    <p className="text-sm text-gray-600 mb-2">{t('planDataSnapshot')}</p>
                     <pre className="bg-gray-50 p-3 rounded-lg text-xs overflow-auto max-h-[200px]">
                       {JSON.stringify(selectedVersion.planData, null, 2)}
                     </pre>
@@ -177,7 +177,7 @@ export default function PreventionHistoryPage() {
                     onClick={() => setSelectedVersion(null)}
                     className="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
                   >
-                    Close
+                    {t('close')}
                   </button>
                 </div>
               </div>

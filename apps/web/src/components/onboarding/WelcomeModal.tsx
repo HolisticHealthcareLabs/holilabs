@@ -1,220 +1,171 @@
 'use client';
 
-/**
- * Welcome Modal - First-time user onboarding
- * Inspired by Stripe, Notion, Linear
- *
- * Shows once after signup, highlights 3 quick wins
- */
+import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { useLanguage } from '@/contexts/LanguageContext';
+// ---------------------------------------------------------------------------
+// i18n — inline translations for the welcome modal
+// ---------------------------------------------------------------------------
 
-interface WelcomeModalProps {
-  userName?: string;
+type Lang = 'en' | 'pt' | 'es';
+
+const COPY: Record<Lang, {
+  welcome: (name: string) => string;
+  workspaceReady: (specialty: string) => string;
+  startTour: string;
+  explore: string;
+}> = {
+  en: {
+    welcome: (name) => `Welcome, Dr. ${name}.`,
+    workspaceReady: (specialty) => `Your ${specialty} workspace is ready.`,
+    startTour: 'Take the 75-second guided tour',
+    explore: "I'll explore on my own",
+  },
+  pt: {
+    welcome: (name) => `Bem-vindo(a), Dr(a). ${name}.`,
+    workspaceReady: (specialty) => `Seu ambiente de ${specialty} está pronto.`,
+    startTour: 'Fazer o tour guiado de 75 segundos',
+    explore: 'Prefiro explorar por conta própria',
+  },
+  es: {
+    welcome: (name) => `Bienvenido(a), Dr(a). ${name}.`,
+    workspaceReady: (specialty) => `Tu espacio de ${specialty} está listo.`,
+    startTour: 'Hacer el tour guiado de 75 segundos',
+    explore: 'Prefiero explorar por mi cuenta',
+  },
+};
+
+function getLang(): Lang {
+  if (typeof window === 'undefined') return 'en';
+  const stored = localStorage.getItem('holilabs_language');
+  if (stored === 'pt' || stored === 'es') return stored;
+  return 'en';
 }
 
-export default function WelcomeModal({ userName }: WelcomeModalProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const { t } = useLanguage();
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
-  // Accessibility: Focus management
-  const startButtonRef = useRef<HTMLButtonElement>(null);
-  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+interface WelcomeModalProps {
+  doctorName: string;
+  specialty: string;
+  onStartTour: () => void;
+  onDismiss: () => void;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function WelcomeModal({
+  doctorName,
+  specialty,
+  onStartTour,
+  onDismiss,
+}: WelcomeModalProps) {
+  const tourBtnRef = useRef<HTMLButtonElement>(null);
+  const lang = getLang();
+  const copy = COPY[lang];
 
   useEffect(() => {
-    // Check if user has seen welcome modal
-    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+    const timer = setTimeout(() => tourBtnRef.current?.focus(), 500);
 
-    if (!hasSeenWelcome) {
-      // Show after 500ms for smooth entrance
-      setTimeout(() => setIsVisible(true), 500);
-    }
-  }, []);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDismiss();
+    };
+    window.addEventListener('keydown', onKey);
 
-  // Handle Escape key and focus management
-  useEffect(() => {
-    if (isVisible) {
-      // Store the element that opened the modal
-      previousActiveElementRef.current = document.activeElement as HTMLElement;
-
-      // Focus the start button when modal opens
-      setTimeout(() => startButtonRef.current?.focus(), 600);
-
-      // Handle Escape key
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          handleDismiss();
-        }
-      };
-
-      document.addEventListener('keydown', handleEscape);
-
-      return () => {
-        document.removeEventListener('keydown', handleEscape);
-        // Return focus to the element that opened the modal
-        previousActiveElementRef.current?.focus();
-      };
-    }
-  }, [isVisible]);
-
-  const handleDismiss = () => {
-    localStorage.setItem('hasSeenWelcome', 'true');
-    setIsVisible(false);
-  };
-
-  if (!isVisible) return null;
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onDismiss]);
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 transition-opacity" />
+    <motion.div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Welcome"
+    >
+      {/* Dark glass backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
 
-      {/* Modal */}
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="welcome-modal-title"
+      {/* Card */}
+      <motion.div
+        className="relative z-10 flex flex-col items-center text-center px-8 py-12 max-w-md w-full"
+        initial={{ opacity: 0, scale: 0.92, y: 24 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in duration-300">
-          {/* Header with gradient */}
-          <div className="bg-gradient-to-r from-primary to-purple-700 text-white p-8 text-center">
-            <div className="text-6xl mb-4" aria-hidden="true">🎉</div>
-            <h1 id="welcome-modal-title" className="text-3xl font-bold mb-2">
-              {t('onboarding.welcome')}{userName ? `, ${userName}` : ''}!
-            </h1>
-            {/* White on gradient background - sufficient contrast */}
-            <p className="text-white/90 text-lg">
-              {t('onboarding.subtitle')}
-            </p>
-          </div>
+        {/* Hospital demo logo */}
+        <img
+          src="/demo/hospital-logo.png"
+          alt="Hospital Demo"
+          className="h-10 w-auto mb-4 opacity-60"
+        />
 
-          {/* Content */}
-          <div className="p-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-              {t('onboarding.steps.title')}
-            </h2>
+        {/* Holi Labs logo */}
+        <svg
+          className="h-10 w-9 text-white/80 mb-10"
+          viewBox="20 100 555 670"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <line x1="244.03" y1="369.32" x2="350.47" y2="369.32" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+          <line x1="244.03" y1="453.65" x2="350.47" y2="453.65" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+          <path fill="currentColor" d="m545.36,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z" />
+          <path fill="currentColor" d="m202.39,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z" />
+        </svg>
 
-            {/* 3 Quick Wins */}
-            <div className="space-y-6 mb-8">
-              {/* Step 1 */}
-              <div className="flex items-start space-x-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex-shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
-                  1
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    📝 {t('onboarding.steps.note.title')}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    {t('onboarding.steps.note.description')}
-                  </p>
-                  <Link
-                    href="/dashboard/patients"
-                    onClick={handleDismiss}
-                    className="inline-block text-sm font-medium text-blue-600 hover:text-blue-700 transition"
-                  >
-                    {t('onboarding.steps.note.action')} →
-                  </Link>
-                </div>
-              </div>
+        {/* Welcome heading */}
+        <motion.h1
+          className="text-[28px] sm:text-[34px] font-semibold text-white tracking-tight leading-tight"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          {copy.welcome(doctorName)}
+        </motion.h1>
 
-              {/* Step 2 */}
-              <div className="flex items-start space-x-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="flex-shrink-0 w-10 h-10 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
-                  2
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    📊 {t('onboarding.steps.transfer.title')}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    {t('onboarding.steps.transfer.description')}
-                  </p>
-                  <Link
-                    href="/dashboard/upload"
-                    onClick={handleDismiss}
-                    className="inline-block text-sm font-medium text-purple-600 hover:text-purple-700 transition"
-                  >
-                    {t('onboarding.steps.transfer.action')} →
-                  </Link>
-                </div>
-              </div>
+        {/* Subtitle */}
+        <motion.p
+          className="text-white/40 text-[15px] mt-2 mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+        >
+          {copy.workspaceReady(specialty)}
+        </motion.p>
 
-              {/* Step 3 */}
-              <div className="flex items-start space-x-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex-shrink-0 w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
-                  3
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    👤 {t('onboarding.steps.invite.title')}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    {t('onboarding.steps.invite.description')}
-                  </p>
-                  <Link
-                    href="/dashboard/patients/new"
-                    onClick={handleDismiss}
-                    className="inline-block text-sm font-medium text-green-600 hover:text-green-700 transition"
-                  >
-                    {t('onboarding.steps.invite.action')} →
-                  </Link>
-                </div>
-              </div>
-            </div>
+        {/* CTA: Start Tour */}
+        <motion.button
+          ref={tourBtnRef}
+          onClick={onStartTour}
+          className="w-full max-w-xs px-6 py-3.5 rounded-2xl bg-white text-black text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65, duration: 0.4 }}
+        >
+          {copy.startTour}
+        </motion.button>
 
-            {/* Optional: WhatsApp Setup */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
-              <div className="flex items-start space-x-3">
-                <span className="text-2xl">📱</span>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('onboarding.optional.title')}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {t('onboarding.optional.description')}
-                  </p>
-                  <Link
-                    href="/dashboard/settings"
-                    onClick={handleDismiss}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition underline"
-                  >
-                    {t('onboarding.optional.action')}
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between">
-              <button
-                onClick={handleDismiss}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition"
-              >
-                {t('onboarding.skip')}
-              </button>
-              <button
-                ref={startButtonRef}
-                onClick={handleDismiss}
-                className="px-6 py-3 bg-gradient-to-r from-primary to-purple-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all hover:scale-105"
-              >
-                {t('onboarding.start')} 🚀
-              </button>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="bg-gray-50 border-t border-gray-200 px-8 py-4 text-center">
-            {/* Decorative - low contrast intentional for tip footer */}
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {t('onboarding.tip')}
-            </p>
-          </div>
-        </div>
-      </div>
-    </>
+        {/* Ghost: Explore on my own */}
+        <motion.button
+          onClick={onDismiss}
+          className="mt-4 text-[13px] text-white/25 hover:text-white/50 transition-colors duration-200"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.85, duration: 0.3 }}
+        >
+          {copy.explore}
+        </motion.button>
+      </motion.div>
+    </motion.div>
   );
 }

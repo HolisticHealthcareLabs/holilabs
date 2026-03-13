@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { upgradeConsentVersion } from '@/lib/consent/version-manager';
+import logger from '@/lib/logger';
 
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
@@ -34,12 +35,12 @@ export const POST = createProtectedRoute(
       message: 'Consent upgraded to latest version',
     });
   } catch (error) {
-    console.error('Error upgrading consent version:', error);
+    logger.error('Error upgrading consent version:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to upgrade consent' },
       { status: 500 }
     );
   }
   },
-  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], audit: { action: 'UPDATE', resource: 'ConsentVersion' } }
 );

@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import FileUploader from '@/components/upload/FileUploader';
@@ -42,6 +43,7 @@ interface DocumentsData {
 }
 
 export default function DocumentsPage() {
+  const t = useTranslations('portal.documents');
   const [data, setData] = useState<DocumentsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,12 +68,12 @@ export default function DocumentsPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Error al cargar documentos');
+        throw new Error(result.error || t('retry'));
       }
 
       setData(result.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('retry'));
     } finally {
       setLoading(false);
     }
@@ -79,12 +81,12 @@ export default function DocumentsPage() {
 
   const getTypeLabel = (type: DocumentType): string => {
     const labels: Record<DocumentType, string> = {
-      LAB_RESULT: 'Resultado de Laboratorio',
-      IMAGING: 'Imagen Médica',
-      PRESCRIPTION: 'Receta',
-      INSURANCE: 'Seguro',
-      CONSENT: 'Consentimiento',
-      OTHER: 'Otro',
+      LAB_RESULT: t('typeLab'),
+      IMAGING: t('typeImaging'),
+      PRESCRIPTION: t('typePrescription'),
+      INSURANCE: t('typeInsurance'),
+      CONSENT: t('typeConsent'),
+      OTHER: t('typeOther'),
     };
     return labels[type];
   };
@@ -141,7 +143,7 @@ export default function DocumentsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: documentDetails.title || 'Documento sin título',
+          title: documentDetails.title || t('noTitle'),
           description: documentDetails.description,
           type: documentDetails.type,
           fileUrl: uploadedFile.url,
@@ -153,7 +155,7 @@ export default function DocumentsPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al guardar documento');
+        throw new Error(data.error || t('saveError'));
       }
 
       // Reset and refresh
@@ -163,7 +165,7 @@ export default function DocumentsPage() {
       setDocumentDetails({ title: '', description: '', type: 'OTHER' });
       fetchDocuments();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al guardar documento');
+      alert(err instanceof Error ? err.message : t('saveError'));
     }
   };
 
@@ -197,7 +199,7 @@ export default function DocumentsPage() {
               />
             </svg>
           </div>
-          <p className="text-gray-600 font-medium">Cargando documentos...</p>
+          <p className="text-gray-600 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -223,14 +225,14 @@ export default function DocumentsPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-            Error al cargar
+            {t('loadError')}
           </h2>
           <p className="text-gray-600 mb-6 text-center">{error}</p>
           <button
             onClick={() => fetchDocuments()}
             className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
           >
-            Reintentar
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -243,10 +245,10 @@ export default function DocumentsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            Mis Documentos
+            {t('title')}
           </h1>
           <p className="text-gray-600">
-            Gestiona y consulta tus documentos médicos
+            {t('subtitle')}
           </p>
         </div>
 
@@ -261,7 +263,7 @@ export default function DocumentsPage() {
               <span className="text-2xl">📁</span>
               <span className="text-3xl font-bold">{data?.summary.total || 0}</span>
             </div>
-            <p className="text-sm font-medium">Total Documentos</p>
+            <p className="text-sm font-medium">{t('statTotal')}</p>
           </motion.div>
 
           <motion.div
@@ -276,7 +278,7 @@ export default function DocumentsPage() {
                 {data?.summary.byType.LAB_RESULT || 0}
               </span>
             </div>
-            <p className="text-sm font-medium">Laboratorios</p>
+            <p className="text-sm font-medium">{t('statLabs')}</p>
           </motion.div>
 
           <motion.div
@@ -291,7 +293,7 @@ export default function DocumentsPage() {
                 {data?.summary.byType.IMAGING || 0}
               </span>
             </div>
-            <p className="text-sm font-medium">Imágenes</p>
+            <p className="text-sm font-medium">{t('statImaging')}</p>
           </motion.div>
 
           <motion.div
@@ -306,7 +308,7 @@ export default function DocumentsPage() {
                 {data?.summary.totalSizeMB} MB
               </span>
             </div>
-            <p className="text-sm font-medium">Almacenamiento</p>
+            <p className="text-sm font-medium">{t('statStorage')}</p>
           </motion.div>
         </div>
 
@@ -329,7 +331,7 @@ export default function DocumentsPage() {
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Subir Documento
+            {t('uploadDocument')}
           </button>
         </div>
 
@@ -343,7 +345,7 @@ export default function DocumentsPage() {
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
-            Todos ({data?.summary.total || 0})
+            {t('filterAll', { count: data?.summary.total || 0 })}
           </button>
           {(['LAB_RESULT', 'IMAGING', 'PRESCRIPTION', 'INSURANCE', 'CONSENT', 'OTHER'] as DocumentType[]).map(
             (type) => (
@@ -382,18 +384,18 @@ export default function DocumentsPage() {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No hay documentos
+              {t('noDocuments')}
             </h3>
             <p className="text-gray-600 mb-6">
               {selectedType === 'ALL'
-                ? 'Aún no tienes documentos cargados'
-                : `No tienes documentos de tipo "${getTypeLabel(selectedType)}"`}
+                ? t('noDocumentsEmpty')
+                : t('noDocsOfType', { type: getTypeLabel(selectedType) })}
             </p>
             <button
               onClick={() => setShowUploadModal(true)}
               className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             >
-              Subir Primer Documento
+              {t('addFirstDocument')}
             </button>
           </div>
         ) : (
@@ -511,7 +513,7 @@ export default function DocumentsPage() {
                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                           />
                         </svg>
-                        Ver
+                        {t('view')}
                       </a>
                       <a
                         href={doc.fileUrl}
@@ -531,7 +533,7 @@ export default function DocumentsPage() {
                             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                           />
                         </svg>
-                        Descargar
+                        {t('download')}
                       </a>
                     </div>
                   </div>
@@ -551,7 +553,7 @@ export default function DocumentsPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Subir Documento
+                  {t('uploadTitle')}
                 </h2>
                 <button
                   onClick={() => {
@@ -580,45 +582,45 @@ export default function DocumentsPage() {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Título del documento <span className="text-red-500">*</span>
+                      {t('titleLabel')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={documentDetails.title}
                       onChange={(e) => setDocumentDetails({ ...documentDetails, title: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="Ej: Análisis de sangre"
+                      placeholder={t('titlePlaceholder')}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Tipo de documento
+                      {t('typeSelectLabel')}
                     </label>
                     <select
                       value={documentDetails.type}
                       onChange={(e) => setDocumentDetails({ ...documentDetails, type: e.target.value as DocumentType })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
-                      <option value="LAB_RESULT">Resultado de Laboratorio</option>
-                      <option value="IMAGING">Imagen Médica</option>
-                      <option value="PRESCRIPTION">Receta</option>
-                      <option value="INSURANCE">Seguro</option>
-                      <option value="CONSENT">Consentimiento</option>
-                      <option value="OTHER">Otro</option>
+                      <option value="LAB_RESULT">{t('typeLab')}</option>
+                      <option value="IMAGING">{t('typeImaging')}</option>
+                      <option value="PRESCRIPTION">{t('typePrescription')}</option>
+                      <option value="INSURANCE">{t('typeInsurance')}</option>
+                      <option value="CONSENT">{t('typeConsent')}</option>
+                      <option value="OTHER">{t('typeOther')}</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Descripción (opcional)
+                      {t('descriptionLabel')}
                     </label>
                     <textarea
                       value={documentDetails.description}
                       onChange={(e) => setDocumentDetails({ ...documentDetails, description: e.target.value })}
                       rows={3}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                      placeholder="Notas adicionales sobre el documento..."
+                      placeholder={t('descriptionPlaceholder')}
                     />
                   </div>
 
@@ -630,14 +632,14 @@ export default function DocumentsPage() {
                       }}
                       className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
                     >
-                      Volver
+                      {t('cancelUpload')}
                     </button>
                     <button
                       onClick={handleSaveDocument}
                       disabled={!documentDetails.title.trim()}
                       className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Guardar Documento
+                      {t('saveDocument')}
                     </button>
                   </div>
                 </div>
@@ -649,26 +651,20 @@ export default function DocumentsPage() {
         {/* Info Card */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-blue-900 mb-3">
-            💡 Sobre tus documentos
+            {t('aboutTitle')}
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start gap-2">
               <span className="text-blue-600">•</span>
-              <span>
-                Todos tus documentos están encriptados y protegidos con tecnología blockchain
-              </span>
+              <span>{t('infoEncrypted')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600">•</span>
-              <span>
-                Puedes ver y descargar tus documentos en cualquier momento
-              </span>
+              <span>{t('infoAccess')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600">•</span>
-              <span>
-                Los documentos subidos por tu médico aparecerán automáticamente aquí
-              </span>
+              <span>{t('infoShared')}</span>
             </li>
           </ul>
         </div>

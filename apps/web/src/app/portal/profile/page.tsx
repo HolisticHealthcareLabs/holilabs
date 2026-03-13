@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import QRCode from 'qrcode';
 
@@ -45,6 +46,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const t = useTranslations('portal.profilePage');
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +64,12 @@ export default function ProfilePage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Error al cargar perfil');
+        throw new Error(result.error || t('errorTitle'));
       }
 
       setData(result.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('errorTitle'));
     } finally {
       setLoading(false);
     }
@@ -128,7 +130,7 @@ export default function ProfilePage() {
               />
             </svg>
           </div>
-          <p className="text-gray-600 font-medium">Cargando perfil...</p>
+          <p className="text-gray-600 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -154,14 +156,14 @@ export default function ProfilePage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-            Error al cargar
+            {t('errorTitle')}
           </h2>
           <p className="text-gray-600 mb-6 text-center">{error}</p>
           <button
             onClick={() => fetchProfile()}
             className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
           >
-            Reintentar
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -174,10 +176,10 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            Mi Perfil
+            {t('title')}
           </h1>
           <p className="text-gray-600">
-            Información personal y datos médicos
+            {t('subtitle')}
           </p>
         </div>
 
@@ -199,10 +201,10 @@ export default function ProfilePage() {
                   {data.firstName} {data.lastName}
                 </h2>
                 <p className="text-green-100 text-lg">
-                  ID Paciente: {data.patientId}
+                  {t('patientIdLabel')} {data.patientId}
                 </p>
                 <p className="text-green-100">
-                  {calculateAge(data.dateOfBirth)} años • {data.gender === 'M' ? 'Masculino' : data.gender === 'F' ? 'Femenino' : 'Otro'}
+                  {calculateAge(data.dateOfBirth)} años • {data.gender === 'M' ? t('male') : data.gender === 'F' ? t('female') : t('other')}
                 </p>
               </div>
             </div>
@@ -248,24 +250,24 @@ export default function ProfilePage() {
             <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            Información Personal
+            {t('personalInfoTitle')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Fecha de Nacimiento
+                {t('dobLabel')}
               </label>
               <p className="text-gray-900">{formatDate(data.dateOfBirth)}</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Tipo de Sangre
+                {t('bloodTypeLabel')}
               </label>
-              <p className="text-gray-900">{data.bloodType || 'No especificado'}</p>
+              <p className="text-gray-900">{data.bloodType || t('notSpecified')}</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Miembro desde
+                {t('memberSinceLabel')}
               </label>
               <p className="text-gray-900">{formatDate(data.createdAt)}</p>
             </div>
@@ -283,12 +285,12 @@ export default function ProfilePage() {
             <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Información Médica
+            {t('medicalInfoTitle')}
           </h3>
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Alergias
+                {t('allergiesLabel')}
               </label>
               {data.allergies && data.allergies.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -302,12 +304,12 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600">No se registraron alergias</p>
+                <p className="text-gray-600">{t('noAllergies')}</p>
               )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Condiciones Crónicas
+                {t('conditionsLabel')}
               </label>
               {data.chronicConditions && data.chronicConditions.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -321,7 +323,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600">No se registraron condiciones crónicas</p>
+                <p className="text-gray-600">{t('noConditions')}</p>
               )}
             </div>
           </div>
@@ -338,31 +340,31 @@ export default function ProfilePage() {
             <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
             </svg>
-            Contacto de Emergencia
+            {t('emergencyTitle')}
           </h3>
           {data.emergencyContactName ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Nombre
+                  {t('nameLabel')}
                 </label>
                 <p className="text-gray-900">{data.emergencyContactName}</p>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Teléfono
+                  {t('phoneLabel')}
                 </label>
-                <p className="text-gray-900">{data.emergencyContactPhone || 'No especificado'}</p>
+                <p className="text-gray-900">{data.emergencyContactPhone || t('notSpecified')}</p>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Relación
+                  {t('relationshipLabel')}
                 </label>
-                <p className="text-gray-900">{data.emergencyContactRelationship || 'No especificado'}</p>
+                <p className="text-gray-900">{data.emergencyContactRelationship || t('notSpecified')}</p>
               </div>
             </div>
           ) : (
-            <p className="text-gray-600">No se ha registrado un contacto de emergencia</p>
+            <p className="text-gray-600">{t('noEmergency')}</p>
           )}
         </motion.div>
 
@@ -378,7 +380,7 @@ export default function ProfilePage() {
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Médico Asignado
+              {t('assignedDoctorTitle')}
             </h3>
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
@@ -392,11 +394,11 @@ export default function ProfilePage() {
                 <p className="text-gray-600 mb-2">{data.assignedClinician.specialty}</p>
                 <div className="space-y-1 text-sm">
                   <p className="text-gray-700">
-                    <span className="font-medium">Licencia:</span> {data.assignedClinician.licenseNumber}
+                    <span className="font-medium">{t('licenseLabel')}</span> {data.assignedClinician.licenseNumber}
                   </p>
                   <p className="text-gray-700">
-                    <span className="font-medium">Email:</span>{' '}
-                    {data.assignedClinician.email || 'No especificado'}
+                    <span className="font-medium">{t('emailLabel')}</span>{' '}
+                    {data.assignedClinician.email || t('notSpecified')}
                   </p>
                 </div>
               </div>
@@ -411,9 +413,9 @@ export default function ProfilePage() {
           transition={{ delay: 0.5 }}
           className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 mt-6"
         >
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Compartir con tu médico</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{t('shareTitle')}</h3>
           <p className="text-gray-600 mb-4">
-            Muestra este QR a tu médico. Al escanearlo, podrá solicitar acceso y tú podrás aprobar o rechazar desde Holi Labs.
+            {t('shareDesc')}
           </p>
 
           {shareQr ? (
@@ -421,15 +423,15 @@ export default function ProfilePage() {
               <img src={shareQr} alt="QR para solicitud de acceso" className="h-[220px] w-[220px] rounded-lg border" />
               <div className="text-sm text-gray-700 space-y-2">
                 <p>
-                  <span className="font-semibold">Tu identificador (token):</span> {data.tokenId}
+                  <span className="font-semibold">{t('tokenLabel')}</span> {data.tokenId}
                 </p>
                 <p className="text-gray-600">
-                  Privacidad: el QR no revela PII; solo inicia una solicitud que requiere tu aprobación.
+                  {t('privacyNote')}
                 </p>
               </div>
             </div>
           ) : (
-            <p className="text-gray-600">Generando QR…</p>
+            <p className="text-gray-600">{t('generatingQr')}</p>
           )}
         </motion.div>
       </div>

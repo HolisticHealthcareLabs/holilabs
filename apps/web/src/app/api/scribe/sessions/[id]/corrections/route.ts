@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -148,7 +149,7 @@ export const POST = createProtectedRoute(
         },
       });
 
-      console.log('✅ Correction saved to training queue:', {
+      logger.info('✅ Correction saved to training queue:', {
         sessionId,
         segmentIndex,
         confidence,
@@ -166,7 +167,7 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error saving correction:', error);
+      logger.error('Error saving correction:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to save correction' });
     }
   },

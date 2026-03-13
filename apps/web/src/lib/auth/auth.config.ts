@@ -208,12 +208,12 @@ export const authConfig: NextAuthConfig = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 60 * 60, // 1 hour — aligned with jwt.maxAge for clinical workflows
+    maxAge: 30 * 60, // 30 min — aligned with patient-session.ts REGULAR_TIMEOUT
     updateAge: 5 * 60, // Sliding window: refresh every 5 min of activity
   },
 
   jwt: {
-    maxAge: 60 * 60, // 1 hour — must match session.maxAge to prevent ghost tokens
+    maxAge: 30 * 60, // 30 min — must match session.maxAge to prevent ghost tokens
   },
 
   useSecureCookies: process.env.NODE_ENV === 'production',

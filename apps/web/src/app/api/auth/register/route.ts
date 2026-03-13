@@ -17,6 +17,7 @@ import { sendWelcomeEmail } from '@/lib/email';
 import { generateUsername } from '@/lib/auth/username';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { createPublicRoute } from '@/lib/api/middleware';
+import { createAuditLog } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,6 +192,22 @@ export const POST = createPublicRoute(
       responseMessage =
         'Account created. Your medical license verification is pending.';
     }
+
+    await createAuditLog(
+      {
+        action: 'CREATE',
+        resource: 'UserRegistration',
+        resourceId: created.id,
+        details: {
+          role: mapClinicianRole(role),
+          licenseVerificationStatus,
+        },
+        success: true,
+      },
+      request,
+      created.id,
+      created.email,
+    );
 
     return NextResponse.json(
       {

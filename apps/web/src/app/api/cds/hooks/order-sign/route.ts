@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext } from '@/lib/cds/types';
+import logger from '@/lib/logger';
 
 export const POST = createProtectedRoute(
   async (request: NextRequest, context) => {
@@ -30,7 +31,7 @@ export const POST = createProtectedRoute(
       prefetch: body.prefetch,
     };
 
-    console.log(
+    logger.info(
       `📝 [CDS Hooks] order-sign for patient ${cdsContext.patientId} (final safety check)`
     );
 
@@ -40,14 +41,14 @@ export const POST = createProtectedRoute(
     // Log critical alerts - these should block order signing
     const criticalAlerts = result.alerts.filter(a => a.severity === 'critical');
     if (criticalAlerts.length > 0) {
-      console.log(
+      logger.info(
         `🚨 [CDS Hooks] ${criticalAlerts.length} CRITICAL alerts generated for order-sign - may block order execution`
       );
     }
 
       return NextResponse.json(response);
     } catch (error) {
-      console.error('❌ [CDS Hooks] order-sign error:', error);
+      logger.error('❌ [CDS Hooks] order-sign error:', error);
       return NextResponse.json(
         { error: 'Internal Server Error' },
         { status: 500 }

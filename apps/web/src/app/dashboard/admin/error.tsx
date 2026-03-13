@@ -6,6 +6,7 @@
  */
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ShieldExclamationIcon } from '@heroicons/react/24/outline';
 
 export default function AdminError({
@@ -15,6 +16,8 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('dashboard.adminError');
+
   useEffect(() => {
     // Log error to console (Sentry removed)
     console.error('[Admin Error]', error);
@@ -30,17 +33,17 @@ export default function AdminError({
         </div>
 
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Admin Panel Error
+          {t('title')}
         </h2>
 
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          An error occurred in the admin panel. The incident has been logged for review.
+          {t('description')}
         </p>
 
         {process.env.NODE_ENV === 'development' && (
           <details className="mb-6 text-left">
             <summary className="cursor-pointer text-sm font-medium text-red-600 dark:text-red-400 mb-2">
-              Error Details (Development Only)
+              {t('errorDetails')}
             </summary>
             <pre className="text-xs bg-red-50 dark:bg-red-900/20 p-3 rounded border border-red-200 dark:border-red-800 overflow-auto">
               {error.message}
@@ -55,13 +58,13 @@ export default function AdminError({
             onClick={reset}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
           >
-            Try Again
+            {t('tryAgain')}
           </button>
           <a
             href="/dashboard"
             className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all text-center"
           >
-            Go to Dashboard
+            {t('goToDashboard')}
           </a>
         </div>
 

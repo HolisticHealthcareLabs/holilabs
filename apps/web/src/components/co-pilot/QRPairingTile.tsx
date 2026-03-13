@@ -72,8 +72,6 @@ export default function QRPairingTile({
         onDevicePaired(pairingData.deviceId);
       }
 
-      // Show success message or notification
-      console.log('Device paired successfully:', pairingData);
     } else {
       console.error('Invalid QR code:', result.error);
       // Show error message

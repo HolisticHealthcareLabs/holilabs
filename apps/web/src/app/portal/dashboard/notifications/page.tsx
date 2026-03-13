@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -47,6 +48,7 @@ interface NotificationsResponse {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const t = useTranslations('portal.notifications');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -199,7 +201,7 @@ export default function NotificationsPage() {
               <div className="flex items-center gap-3 mb-2">
                 <BellIcon className="h-8 w-8 text-blue-600" />
                 <h1 className="text-4xl font-bold text-gray-900">
-                  Notificaciones
+                  {t('title')}
                 </h1>
                 {unreadCount > 0 && (
                   <span className="px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full">
@@ -224,7 +226,7 @@ export default function NotificationsPage() {
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            Todas
+            {t('filterAll')}
           </button>
           <button
             onClick={() => setFilter('unread')}
@@ -234,7 +236,7 @@ export default function NotificationsPage() {
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            No leídas
+            {t('filterUnread')}
             {unreadCount > 0 && (
               <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                 filter === 'unread' ? 'bg-white text-blue-600' : 'bg-red-500 text-white'
@@ -265,12 +267,12 @@ export default function NotificationsPage() {
               <BellIcon className="h-10 w-10 text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No hay notificaciones
+              {t('noNotifications')}
             </h3>
             <p className="text-gray-600">
               {filter === 'unread'
-                ? 'No tienes notificaciones sin leer'
-                : 'Todas tus notificaciones aparecerán aquí'}
+                ? t('noUnreadNotifications')
+                : t('noNotificationsEmpty')}
             </p>
           </div>
         ) : (

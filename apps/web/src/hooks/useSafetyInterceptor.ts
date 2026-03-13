@@ -64,8 +64,6 @@ export function useSafetyInterceptor(toast: any): SafetyInterceptor {
     }, []);
 
     const triggerYellowNudge = useCallback(() => {
-        console.log('[SlowLane] Latency: >800ms'); // Phase 2 Check
-
         // Phase 3 Check: Race Condition / Priority Queue
         // We need to check if a block is active. 
         // Since state updates may be async, we check the state variable in the closure. 
@@ -85,8 +83,7 @@ export function useSafetyInterceptor(toast: any): SafetyInterceptor {
 
         setActiveBlock(currentBlock => {
             if (currentBlock?.severity === 'HARD_BLOCK') {
-                console.log('[PriorityQueue] High Priority Signal detected. Suppressing Low Priority.');
-                return currentBlock; // Don't change block, don't show toast
+                return currentBlock;
             }
 
             // If no block, show toast
@@ -135,12 +132,6 @@ export function useSafetyInterceptor(toast: any): SafetyInterceptor {
             });
             return;
         }
-
-        console.log('Logging Override:', {
-            ruleId: activeBlock?.ruleId,
-            reason,
-            timestamp: new Date().toISOString()
-        });
 
         try {
             // Phase 1: Liability Check (Network Call)

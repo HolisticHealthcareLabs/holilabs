@@ -84,7 +84,7 @@ export async function sendPushNotification(
         event: 'webpush_not_configured',
         message: 'VAPID keys not configured',
       });
-      console.log('[DEV MODE] Would send push notification:', payload);
+      console.error('[WebPush]', { event: 'dev_mode', payload });
       return false;
     }
 

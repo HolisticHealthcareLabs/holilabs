@@ -9,6 +9,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,7 +106,7 @@ export const POST = createProtectedRoute(
         message: 'SOAP note signed successfully',
       });
     } catch (error) {
-      console.error('Error signing SOAP note:', error);
+      logger.error('Error signing SOAP note:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to sign SOAP note' });
     }
   }

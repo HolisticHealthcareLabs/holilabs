@@ -17,6 +17,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import prisma from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -154,7 +155,7 @@ export const GET = createProtectedRoute(
         count: templatesWithMeta.length,
       });
     } catch (error) {
-      console.error('Error fetching templates:', error);
+      logger.error('Error fetching templates:', error);
       return NextResponse.json(
         { error: 'Failed to fetch templates' },
         { status: 500 }
@@ -245,7 +246,7 @@ export const POST = createProtectedRoute(
         message: 'Template created successfully',
       }, { status: 201 });
     } catch (error) {
-      console.error('Error creating template:', error);
+      logger.error('Error creating template:', error);
       return NextResponse.json(
         { error: 'Failed to create template' },
         { status: 500 }

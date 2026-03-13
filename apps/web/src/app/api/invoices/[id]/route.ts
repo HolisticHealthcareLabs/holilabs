@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,13 +102,14 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      logger.error('Error fetching invoice:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch invoice' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    audit: { action: 'READ', resource: 'Invoice' },
   }
 );
 
@@ -338,13 +340,14 @@ export const PATCH = createProtectedRoute(
         message: 'Invoice updated successfully',
       });
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      logger.error('Error updating invoice:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to update invoice' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'UPDATE', resource: 'Invoice' },
   }
 );
 
@@ -431,12 +434,13 @@ export const DELETE = createProtectedRoute(
         message: 'Invoice voided successfully',
       });
     } catch (error) {
-      console.error('Error voiding invoice:', error);
+      logger.error('Error voiding invoice:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to void invoice' });
     }
   },
   {
     roles: ['ADMIN'],
     rateLimit: { windowMs: 60000, maxRequests: 10 },
+    audit: { action: 'DELETE', resource: 'Invoice' },
   }
 );

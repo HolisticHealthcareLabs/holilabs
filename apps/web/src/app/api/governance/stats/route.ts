@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,7 @@ export const GET = createProtectedRoute(
 
         // Check if the GovernanceLog model exists in Prisma schema
         // If not, return default stats for demo purposes
-        const sessionsAudited = await (prisma as any).governanceLog?.count?.({
+        const sessionsAudited = await prisma.governanceLog?.count?.({
             where: { timestamp: { gte: oneDayAgo } },
         }).catch(() => null);
 
@@ -32,7 +33,7 @@ export const GET = createProtectedRoute(
         }
 
         // Count interventions (HARD_BLOCK events)
-        const interventionsTriggered = await (prisma as any).governanceEvent?.count?.({
+        const interventionsTriggered = await prisma.governanceEvent?.count?.({
             where: {
                 timestamp: { gte: oneDayAgo },
                 severity: 'HARD_BLOCK',
@@ -40,7 +41,7 @@ export const GET = createProtectedRoute(
         }).catch(() => 0) || 0;
 
         // Calculate average safety score
-        const avgScoreResult = await (prisma as any).governanceLog?.aggregate?.({
+        const avgScoreResult = await prisma.governanceLog?.aggregate?.({
             _avg: { safetyScore: true },
             where: { timestamp: { gte: oneDayAgo } },
         }).catch(() => ({ _avg: { safetyScore: null } }));
@@ -56,7 +57,7 @@ export const GET = createProtectedRoute(
             }
         });
     } catch (error) {
-        console.error('Failed to fetch safety stats:', error);
+        logger.error('Failed to fetch safety stats:', error);
         return NextResponse.json({
             data: {
                 sessionsAudited: 0,

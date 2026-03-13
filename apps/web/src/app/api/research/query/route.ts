@@ -410,7 +410,7 @@ export const POST = createProtectedRoute(
           result = await executeTemporalQuery(query);
           break;
         case 'outcomes':
-          // TODO: Implement outcomes query
+          // @todo(research-outcomes): Implement outcomes query type
           return NextResponse.json(
             { error: 'Outcomes query not yet implemented' },
             { status: 501 }
@@ -424,7 +424,7 @@ export const POST = createProtectedRoute(
 
       // Track query execution
       // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-      await prisma.userBehaviorEvent.create({
+      await (prisma as any).userBehaviorEvent.create({
         data: {
           userId: context.user.id,
           eventType: 'RESEARCH_QUERY',

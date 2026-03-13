@@ -1,16 +1,29 @@
+jest.mock('@/lib/logger', () => ({
+  __esModule: true,
+  default: {
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    trace: jest.fn(),
+    fatal: jest.fn(),
+    child: jest.fn(),
+  },
+}));
+
 import { safeErrorResponse } from '../safe-error-response';
+
+const logger = require('@/lib/logger').default;
 
 describe('safeErrorResponse', () => {
   const originalEnv = process.env.NODE_ENV;
-  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
     (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
-    consoleErrorSpy.mockRestore();
   });
 
   it('returns only userMessage in production — no stack or devMessage', async () => {
@@ -80,7 +93,7 @@ describe('safeErrorResponse', () => {
     const err = new Error('secret DB path /var/db');
     safeErrorResponse(err, { logContext: { route: '/api/patients' } });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    expect(logger.error).toHaveBeenCalledWith(
       '[API Error]',
       expect.objectContaining({
         message: 'secret DB path /var/db',

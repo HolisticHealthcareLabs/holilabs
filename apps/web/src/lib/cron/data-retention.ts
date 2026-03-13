@@ -230,7 +230,7 @@ async function deleteExpiredExports(now: Date): Promise<number> {
     return 0;
 
     /* Original code - requires DeIDExport model:
-    const result = await prisma.deIDExport.deleteMany({
+    const result = await (prisma as any).deIDExport.deleteMany({
       where: {
         createdAt: { lt: thirtyDaysAgo },
       },
@@ -273,7 +273,7 @@ async function deleteExpiredSessions(now: Date): Promise<number> {
 
     /* Original code - requires PatientSession and Session models:
     // Delete patient sessions
-    const patientSessions = await prisma.patientSession.deleteMany({
+    const patientSessions = await (prisma as any).patientSession.deleteMany({
       where: {
         OR: [
           { expiresAt: { lt: now } }, // Expired
@@ -283,7 +283,7 @@ async function deleteExpiredSessions(now: Date): Promise<number> {
     });
 
     // Delete NextAuth sessions (if using database sessions)
-    const authSessions = await prisma.session.deleteMany({
+    const authSessions = await (prisma as any).session.deleteMany({
       where: {
         expires: { lt: now },
       },

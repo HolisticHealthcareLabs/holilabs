@@ -462,39 +462,24 @@ export function withCsrfProtection(
  * Test CSRF functions (Industry-Grade Test Suite)
  */
 export function testCsrf() {
-  console.log('🛡️ Testing CSRF protection...\n');
+  console.error('[CSRF Test] Testing CSRF protection...');
 
-  // Test 1: Generate token
   const token1 = generateCsrfToken();
   const token2 = generateCsrfToken();
-  console.log('Test 1 - Token generation:');
-  console.log('  Token 1 format:', token1.split(':').length === 3 ? '✅' : '❌');
-  console.log('  Token 2 format:', token2.split(':').length === 3 ? '✅' : '❌');
-  console.log('  Unique:', token1 !== token2 ? '✅' : '❌');
+  console.error('[CSRF Test]', { test: 'token_generation', format1: token1.split(':').length === 3, format2: token2.split(':').length === 3, unique: token1 !== token2 });
+  console.error('[CSRF Test]', { test: 'verification', freshValid: verifyCsrfToken(token1) });
 
-  // Test 2: Verify valid token
-  console.log('\nTest 2 - Token verification:');
-  console.log('  Fresh token valid:', verifyCsrfToken(token1) ? '✅' : '❌');
+  const expiredToken = `abc123:signature:${Date.now() - 1000}`;
+  console.error('[CSRF Test]', { test: 'expiration', rejected: !verifyCsrfToken(expiredToken) });
 
-  // Test 3: Verify expired token
-  const expiredToken = `abc123:signature:${Date.now() - 1000}`; // 1 second ago
-  console.log('\nTest 3 - Expiration check:');
-  console.log('  Expired token rejected:', !verifyCsrfToken(expiredToken) ? '✅' : '❌');
+  const [tok, , ] = token1.split(':');
+  const tamperedToken = `${tok}:wrongsignature:${token1.split(':')[2]}`;
+  console.error('[CSRF Test]', { test: 'signature', rejected: !verifyCsrfToken(tamperedToken) });
 
-  // Test 4: Verify invalid signature
-  const [tok, sig, exp] = token1.split(':');
-  const tamperedToken = `${tok}:wrongsignature:${exp}`;
-  console.log('\nTest 4 - Signature verification:');
-  console.log('  Tampered token rejected:', !verifyCsrfToken(tamperedToken) ? '✅' : '❌');
-
-  // Test 5: Compare tokens
   const testToken = 'abc123';
-  console.log('\nTest 5 - Token comparison:');
-  console.log('  Same tokens:', compareTokens(testToken, testToken) ? '✅' : '❌');
-  console.log('  Different tokens:', !compareTokens(testToken, 'xyz789') ? '✅' : '❌');
-  console.log('  Empty tokens:', !compareTokens('', '') ? '✅' : '❌');
+  console.error('[CSRF Test]', { test: 'comparison', same: compareTokens(testToken, testToken), different: !compareTokens(testToken, 'xyz789'), empty: !compareTokens('', '') });
 
-  console.log('\n✅ All CSRF tests completed!\n');
+  console.error('[CSRF Test] All tests completed.');
 }
 
 // Run tests if executed directly

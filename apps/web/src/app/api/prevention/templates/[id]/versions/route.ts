@@ -25,7 +25,7 @@ const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
  */
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const templateId = params?.id;
     const userId = context.user?.id;
 
@@ -94,7 +94,7 @@ export const GET = createProtectedRoute(
  */
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const templateId = params?.id;
     const userId = context.user?.id;
 

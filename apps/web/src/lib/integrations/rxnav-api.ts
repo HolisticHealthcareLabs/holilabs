@@ -121,7 +121,7 @@ export class RxNavClient {
     const cached = await cacheClient.get<string>(cacheKey);
     if (cached) {
       this.metrics.cacheHits++;
-      console.log(`[RxNav] Cache hit for RxCUI: ${drugName}`);
+      console.error('[RxNav]', { event: 'cache_hit', drugName });
       return cached;
     }
 
@@ -144,7 +144,7 @@ export class RxNavClient {
         await cacheClient.set(cacheKey, rxcui, RXCUI_CACHE_TTL);
 
         this.metrics.successfulCalls++;
-        console.log(`[RxNav] Found RxCUI for ${drugName}: ${rxcui}`);
+        console.error('[RxNav]', { event: 'rxcui_found', drugName, rxcui });
         return rxcui;
       }
 
@@ -169,7 +169,7 @@ export class RxNavClient {
     const cached = await cacheClient.get<DrugInteraction[]>(cacheKey);
     if (cached) {
       this.metrics.cacheHits++;
-      console.log(`[RxNav] Cache hit for interaction: ${rxcui1} + ${rxcui2}`);
+      console.error('[RxNav]', { event: 'interaction_cache_hit', rxcui1, rxcui2 });
       return cached;
     }
 
@@ -190,7 +190,7 @@ export class RxNavClient {
       await cacheClient.set(cacheKey, interactions, INTERACTION_CACHE_TTL);
 
       this.metrics.successfulCalls++;
-      console.log(`[RxNav] Found ${interactions.length} interactions for ${rxcui1} + ${rxcui2}`);
+      console.error('[RxNav]', { event: 'interactions_found', count: interactions.length, rxcui1, rxcui2 });
 
       return interactions;
     } catch (error) {

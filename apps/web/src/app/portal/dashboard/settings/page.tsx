@@ -13,10 +13,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import WhatsAppConsentSection from '@/components/portal/WhatsAppConsentSection';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const t = useTranslations('portal.portalSettings');
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);

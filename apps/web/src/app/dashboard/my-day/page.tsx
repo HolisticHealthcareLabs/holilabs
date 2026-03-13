@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslations, useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
+import WelcomeModal from '@/components/onboarding/WelcomeModal';
+import SpecialtyWalkthrough from '@/components/onboarding/SpecialtyWalkthrough';
 import {
   Calendar, Clock, Stethoscope,
   User, FileText, CheckCircle2,
@@ -11,6 +13,7 @@ import {
 } from 'lucide-react';
 import { PatientQueue, type Appointment } from './_components/PatientQueue';
 import { TaskWidget, type TaskItem } from './_components/TaskWidget';
+import SpotlightTrigger from '@/components/onboarding/SpotlightTrigger';
 import {
   staggerContainer,
   staggerItem,
@@ -24,9 +27,9 @@ import {
 
 function getGreetingKey(now: Date): string {
   const h = now.getHours();
-  if (h < 12) return 'dashboard.myDay.goodMorning';
-  if (h < 18) return 'dashboard.myDay.goodAfternoon';
-  return 'dashboard.myDay.goodEvening';
+  if (h < 12) return 'goodMorning';
+  if (h < 18) return 'goodAfternoon';
+  return 'goodEvening';
 }
 
 function formatToday(now: Date): string {
@@ -231,28 +234,28 @@ function useKpiCards(appointments: Appointment[]): KpiCard[] {
   const stats = useScheduleStats(appointments);
   return useMemo(() => [
     {
-      label: 'Patients Today',
+      label: 'patientsToday',
       value: stats.total,
       Icon: User,
       accent: 'text-blue-600 dark:text-blue-400',
       border: 'border-blue-200/60 dark:border-blue-500/20',
     },
     {
-      label: 'Remaining',
+      label: 'remaining',
       value: stats.remaining,
       Icon: Calendar,
       accent: 'text-slate-600 dark:text-slate-300',
       border: 'border-slate-200/80 dark:border-slate-700/40',
     },
     {
-      label: 'Waiting Room',
+      label: 'waitingRoom',
       value: stats.arrivedCount,
       Icon: CheckCircle2,
       accent: 'text-emerald-600 dark:text-emerald-400',
       border: 'border-emerald-200/60 dark:border-emerald-500/20',
     },
     {
-      label: 'Unsigned Charts',
+      label: 'unsignedCharts',
       value: stats.unsignedCount,
       Icon: FileText,
       accent: 'text-amber-600 dark:text-amber-400',
@@ -284,6 +287,9 @@ export default function MyDayPage() {
   const [isClockReady, setIsClockReady] = useState(false);
   const [personaSchedule, setPersonaSchedule] = useState<Appointment[] | null>(null);
   const [personaSpecialty, setPersonaSpecialty] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [tourActive, setTourActive] = useState(false);
+  const [workspaceVoiceId, setWorkspaceVoiceId] = useState<string | undefined>();
 
   // Live clock
   useEffect(() => {
@@ -315,7 +321,15 @@ export default function MyDayPage() {
           if (!cancelled) {
             setPersonaSchedule(adaptPersonaSchedule(persona.schedule));
             setPersonaSpecialty(persona.specialty ?? null);
+            const voice = (data?.metadata?.persona as Record<string, unknown> | undefined)?.voice as
+              | { copilotVoiceId?: string }
+              | undefined;
+            if (voice?.copilotVoiceId) setWorkspaceVoiceId(voice.copilotVoiceId);
           }
+        }
+
+        if (isEphemeral && !localStorage.getItem('holi_welcome_seen')) {
+          if (!cancelled) setShowWelcome(true);
         }
       } catch {
         // Silently fall back to default mock data
@@ -339,17 +353,48 @@ export default function MyDayPage() {
     ...DEFAULT_TASKS.slice(1),
   ];
 
-  const { t } = useLanguage();
+  const t = useTranslations('dashboard.myDay');
+  const locale = useLocale();
   const userRole = String((session?.user as { role?: string } | undefined)?.role ?? 'CLINICIAN');
   const doctorLastName = getDoctorLastName(session?.user?.name);
-  const greeting = isClockReady && now ? t(getGreetingKey(now)) : 'Welcome';
-  const todayLabel = isClockReady && now ? formatToday(now) : 'Loading local date';
+  const greeting = isClockReady && now ? t(getGreetingKey(now)) : t('welcome');
+  const todayLabel = isClockReady && now ? formatToday(now) : t('loadingDate');
   const localTimeLabel = isClockReady && now ? formatLocalTime(now) : '--:--';
   const timeZoneLabel = isClockReady && now ? formatTimeZone(now) : 'Detecting timezone';
   const stats = useScheduleStats(appointments);
   const kpiCards = useKpiCards(appointments);
 
+  const dismissWelcome = () => {
+    localStorage.setItem('holi_welcome_seen', 'true');
+    setShowWelcome(false);
+  };
+
+  const startTour = () => {
+    localStorage.setItem('holi_welcome_seen', 'true');
+    setShowWelcome(false);
+    setTourActive(true);
+  };
+
   return (
+    <>
+    {showWelcome && (
+      <WelcomeModal
+        doctorName={doctorLastName ?? session?.user?.name ?? ''}
+        specialty={personaSpecialty ?? 'Clinical'}
+        onStartTour={startTour}
+        onDismiss={dismissWelcome}
+      />
+    )}
+    {tourActive && (
+      <SpecialtyWalkthrough
+        active={tourActive}
+        onComplete={() => setTourActive(false)}
+        doctorName={doctorLastName ?? session?.user?.name ?? ''}
+        specialty={personaSpecialty ?? 'Medicine'}
+        voiceId={workspaceVoiceId}
+        language={locale as 'en' | 'pt' | 'es'}
+      />
+    )}
     <motion.div
       className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6"
       variants={staggerContainer}
@@ -367,7 +412,7 @@ export default function MyDayPage() {
             {todayLabel}
             {personaSpecialty && (
               <span className="ml-2 px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-semibold uppercase tracking-wide border border-cyan-200/60 dark:border-cyan-500/20">
-                {personaSpecialty} Demo
+                {personaSpecialty} {t('demo')}
               </span>
             )}
           </p>
@@ -375,6 +420,13 @@ export default function MyDayPage() {
 
         {/* Stat pills */}
         <div className="flex items-center gap-3">
+          <SpotlightTrigger
+            steps={[
+              { target: '#my-day-schedule', title: t('todaySchedule'), content: 'Your patients for today, sorted by arrival status.' },
+              { target: '#stat-cards', title: 'Quick Stats', content: 'Patients seen, remaining, waiting room, and unsigned charts.' },
+              { target: '#requires-attention', title: 'Action Items', content: 'Tasks that need your immediate attention.' },
+            ]}
+          />
           <div suppressHydrationWarning className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
             <Clock className="w-3.5 h-3.5" />
             {localTimeLabel}
@@ -384,24 +436,24 @@ export default function MyDayPage() {
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300">
             <Stethoscope className="w-3.5 h-3.5" />
-            {stats.seen}/{stats.total} patients seen
+            {t('patientsSeen', { seen: stats.seen, total: stats.total })}
           </div>
           {stats.arrivedCount > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {stats.arrivedCount} in lobby
+              {t('inLobby', { count: stats.arrivedCount })}
             </div>
           )}
           {stats.unsignedCount > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-xs font-semibold text-amber-700 dark:text-amber-300">
-              {stats.unsignedCount} unsigned
+              {t('unsigned', { count: stats.unsignedCount })}
             </div>
           )}
         </div>
       </motion.div>
 
       {/* Morning Huddle KPI cards */}
-      <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <motion.div variants={staggerItem} id="stat-cards" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {kpiCards.map((card, i) => (
           <motion.div
             key={card.label}
@@ -415,7 +467,7 @@ export default function MyDayPage() {
             <div className="flex items-center gap-2 mb-2.5">
               <card.Icon className={`w-4 h-4 ${card.accent}`} />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {card.label}
+                {t(card.label)}
               </span>
             </div>
             <p className={`text-3xl font-bold tabular-nums ${card.accent}`}>
@@ -428,28 +480,29 @@ export default function MyDayPage() {
       {/* Grid: Schedule + Tasks */}
       <motion.div variants={staggerItem} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Patient queue: 2/3 */}
-        <motion.div variants={staggerItem} className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
+        <motion.div id="my-day-schedule" variants={staggerItem} className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              Today&apos;s Schedule
+              {t('todaySchedule')}
             </h2>
             <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-              {appointments.length} appointments
+              {t('appointments', { count: appointments.length })}
             </span>
           </div>
           <PatientQueue appointments={appointments} userRole={userRole} />
         </motion.div>
 
         {/* Tasks: 1/3 */}
-        <motion.div variants={staggerItem} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
+        <motion.div id="requires-attention" variants={staggerItem} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-none overflow-hidden">
           <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-800">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              Requires Attention
+              {t('requiresAttention')}
             </h2>
           </div>
           <TaskWidget tasks={tasks} userRole={userRole} />
         </motion.div>
       </motion.div>
     </motion.div>
+    </>
   );
 }

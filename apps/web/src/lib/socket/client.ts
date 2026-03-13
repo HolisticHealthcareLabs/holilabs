@@ -38,7 +38,7 @@ export function initSocketClient(config: SocketClientConfig): Socket {
         socket.connect();
       }
     } catch {}
-    console.log('✓ Reusing existing socket instance');
+    console.error('[Socket]', { event: 'reusing_instance' });
     return socket;
   }
 
@@ -55,7 +55,7 @@ export function initSocketClient(config: SocketClientConfig): Socket {
 
   // Connection event handlers
   socket.on('connect', () => {
-    console.log('✓ Socket connected:', socket?.id);
+    console.error('[Socket]', { event: 'connected', id: socket?.id });
 
     // Authenticate user
     socket?.emit('authenticate', {
@@ -65,11 +65,11 @@ export function initSocketClient(config: SocketClientConfig): Socket {
   });
 
   socket.on('authenticated', (data: { success: boolean; userId: string }) => {
-    console.log('✓ Socket authenticated:', data.userId);
+    console.error('[Socket]', { event: 'authenticated', userId: data.userId });
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('✗ Socket disconnected:', reason);
+    console.error('[Socket]', { event: 'disconnected', reason });
 
     // Auto-reconnect on intentional disconnect
     if (reason === 'io server disconnect') {
@@ -102,7 +102,7 @@ export function disconnectSocket() {
   if (socket) {
     socket.disconnect();
     socket = null;
-    console.log('✓ Socket disconnected');
+    console.error('[Socket]', { event: 'disconnected' });
   }
 }
 
@@ -116,7 +116,7 @@ export function joinRoom(roomType: SocketRoom, resourceId: string) {
   }
 
   socket.emit('join_room', { roomType, resourceId });
-  console.log(`→ Joining room: ${roomType}${resourceId}`);
+  console.error('[Socket]', { event: 'join_room', roomType, resourceId });
 }
 
 /**
@@ -129,7 +129,7 @@ export function leaveRoom(roomType: SocketRoom, resourceId: string) {
   }
 
   socket.emit('leave_room', { roomType, resourceId });
-  console.log(`→ Leaving room: ${roomType}${resourceId}`);
+  console.error('[Socket]', { event: 'leave_room', roomType, resourceId });
 }
 
 /**
@@ -145,12 +145,12 @@ export function subscribeToEvent(
   }
 
   socket.on(event, callback);
-  console.log(`✓ Subscribed to event: ${event}`);
+  console.error('[Socket]', { event: 'subscribed', socketEvent: event });
 
   // Return unsubscribe function
   return () => {
     socket?.off(event, callback);
-    console.log(`✓ Unsubscribed from event: ${event}`);
+    console.error('[Socket]', { event: 'unsubscribed', socketEvent: event });
   };
 }
 

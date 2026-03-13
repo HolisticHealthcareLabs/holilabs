@@ -172,7 +172,7 @@ export async function completeAdminOnboarding(formData: FormData): Promise<Admin
     });
 
     if (frontDeskEmail && frontDeskEmail.includes('@')) {
-      console.log(`[Admin Onboarding] Front desk invite queued: ${frontDeskEmail}`);
+      // Front desk invite queued - TODO: send actual invitation email
     }
 
     return { success: true };

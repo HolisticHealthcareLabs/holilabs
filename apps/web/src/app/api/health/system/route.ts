@@ -54,7 +54,7 @@ async function checkUrl(url: string, timeoutMs: number) {
   }
 }
 
-export async function GET() {
+async function getSystemHealth() {
   const startTime = Date.now();
   const health: SystemHealth = {
     status: 'healthy',

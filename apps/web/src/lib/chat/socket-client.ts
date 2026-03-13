@@ -54,11 +54,11 @@ export function initSocket(authToken: string): Socket {
   });
 
   socket.on('connect', () => {
-    console.log('✅ Socket connected:', socket?.id);
+    console.error('[SocketClient]', { event: 'connected', socketId: socket?.id });
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ Socket disconnected');
+    console.error('[SocketClient]', { event: 'disconnected' });
   });
 
   socket.on('connect_error', (error) => {

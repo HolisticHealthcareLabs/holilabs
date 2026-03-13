@@ -13,10 +13,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 // Grant consent schema
@@ -35,13 +34,10 @@ const GrantConsentSchema = z.object({
 /**
  * GET - Fetch current WhatsApp consent status
  */
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    const session = await requirePatientSession();
-
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const patient = await prisma.patient.findUnique({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       select: {
         id: true,
         whatsappConsentGiven: true,
@@ -69,7 +65,7 @@ export const GET = createPublicRoute(
 
     logger.info({
       event: 'whatsapp_consent_status_fetched',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       consentGiven: patient.whatsappConsentGiven,
     });
 
@@ -96,35 +92,18 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'whatsapp_consent_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Error fetching consent status' },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'WhatsAppConsent' },
+  }
 );
 
 /**
  * POST - Grant WhatsApp consent
  */
-export const POST = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    const session = await requirePatientSession();
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const body = await request.json();
     const validation = GrantConsentSchema.safeParse(body);
 
@@ -143,7 +122,7 @@ export const POST = createPublicRoute(
 
     // Check if patient has phone number
     const patient = await prisma.patient.findUnique({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       select: { phone: true },
     });
 
@@ -159,7 +138,7 @@ export const POST = createPublicRoute(
 
     // Update patient with consent
     const updatedPatient = await prisma.patient.update({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       data: {
         whatsappConsentGiven: true,
         whatsappConsentDate: new Date(),
@@ -179,12 +158,12 @@ export const POST = createPublicRoute(
     // Create audit log (HIPAA requirement)
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
         resource: 'WhatsAppConsent',
-        resourceId: session.patientId,
+        resourceId: context.session.patientId,
         success: true,
         details: {
           consentMethod: data.consentMethod,
@@ -201,7 +180,7 @@ export const POST = createPublicRoute(
 
     logger.info({
       event: 'whatsapp_consent_granted',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       consentMethod: data.consentMethod,
       language: data.language,
     });
@@ -217,39 +196,21 @@ export const POST = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'whatsapp_consent_grant_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Error granting consent' },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'UPDATE', resource: 'WhatsAppConsent' },
+  }
 );
 
 /**
  * DELETE - Withdraw WhatsApp consent
  */
-export const DELETE = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    const session = await requirePatientSession();
-
+export const DELETE = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     // Update patient - mark consent as withdrawn
     const updatedPatient = await prisma.patient.update({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       data: {
         whatsappConsentGiven: false,
         whatsappConsentWithdrawnAt: new Date(),
@@ -264,12 +225,12 @@ export const DELETE = createPublicRoute(
     // Create audit log (LGPD right to withdraw consent)
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'DELETE',
         resource: 'WhatsAppConsent',
-        resourceId: session.patientId,
+        resourceId: context.session.patientId,
         success: true,
         details: {
           withdrawnAt: updatedPatient.whatsappConsentWithdrawnAt,
@@ -280,7 +241,7 @@ export const DELETE = createPublicRoute(
 
     logger.info({
       event: 'whatsapp_consent_withdrawn',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       withdrawnAt: updatedPatient.whatsappConsentWithdrawnAt,
     });
 
@@ -295,24 +256,9 @@ export const DELETE = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'whatsapp_consent_withdraw_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Error withdrawing consent' },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'DELETE', resource: 'WhatsAppConsent' },
+  }
 );

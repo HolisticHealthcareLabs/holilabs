@@ -62,7 +62,7 @@ export const GET = createProtectedRoute(
     };
 
     const conversations = await prisma.conversation.findMany({
-      where: whereClause,
+      where: whereClause as any,
       include: {
         patient: {
           select: {

@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthProvider';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   ChevronLeftIcon,
   BellIcon,
@@ -31,6 +32,8 @@ import { logger } from '@/lib/logger';
 export default function NotificationSettingsPage() {
   const router = useRouter();
   const { patientId, loading: authLoading } = useAuth();
+  const { t: tRaw } = useLanguage();
+  const t = (key: string) => tRaw(`portal.notificationSettings.${key}`);
   const [loading, setLoading] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -100,23 +103,23 @@ export default function NotificationSettingsPage() {
       if (permission === 'granted') {
         // Subscribe to push notifications with real patient ID
         if (!patientId) {
-          alert('No se pudo obtener el ID del paciente');
+          alert(t('alertNoPatientId'));
           return;
         }
         const subscription = await subscribeToPushNotifications(patientId);
 
         if (subscription) {
           setPushEnabled(true);
-          alert('¡Notificaciones push habilitadas correctamente!');
+          alert(t('alertPushEnabled'));
         } else {
-          alert('No se pudieron habilitar las notificaciones push');
+          alert(t('alertPushFailed'));
         }
       } else {
-        alert('Permiso de notificaciones denegado');
+        alert(t('alertPermissionDenied'));
       }
     } catch (error) {
       logger.error('Error enabling push:', error);
-      alert('Error al habilitar notificaciones push');
+      alert(t('alertEnableError'));
     } finally {
       setLoading(false);
     }
@@ -129,13 +132,13 @@ export default function NotificationSettingsPage() {
 
       if (success) {
         setPushEnabled(false);
-        alert('Notificaciones push deshabilitadas');
+        alert(t('alertPushDisabled'));
       } else {
-        alert('Error al deshabilitar notificaciones push');
+        alert(t('alertDisableError'));
       }
     } catch (error) {
       logger.error('Error disabling push:', error);
-      alert('Error al deshabilitar notificaciones push');
+      alert(t('alertDisableError'));
     } finally {
       setLoading(false);
     }
@@ -151,13 +154,13 @@ export default function NotificationSettingsPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('¡Notificación de prueba enviada! Revisa tu navegador.');
+        alert(t('alertTestSent'));
       } else {
-        alert('Error al enviar notificación de prueba');
+        alert(t('alertTestError'));
       }
     } catch (error) {
       logger.error('Error sending test notification:', error);
-      alert('Error al enviar notificación de prueba');
+      alert(t('alertTestError'));
     } finally {
       setLoading(false);
     }
@@ -168,9 +171,9 @@ export default function NotificationSettingsPage() {
     try {
       // TODO: Save preferences to backend
       await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Preferencias guardadas correctamente');
+      alert(t('alertSaveSuccess'));
     } catch (error) {
-      alert('Error al guardar preferencias');
+      alert(t('alertSaveError'));
     } finally {
       setLoading(false);
     }
@@ -190,38 +193,38 @@ export default function NotificationSettingsPage() {
     {
       key: 'appointments' as const,
       icon: BellIcon,
-      title: 'Citas Médicas',
-      description: 'Recordatorios, confirmaciones y cambios de citas',
+      title: t('appointmentsTitle'),
+      description: t('appointmentsDesc'),
     },
     {
       key: 'messages' as const,
       icon: EnvelopeIcon,
-      title: 'Mensajes',
-      description: 'Nuevos mensajes de tu equipo médico',
+      title: t('messagesTitle'),
+      description: t('messagesDesc'),
     },
     {
       key: 'documents' as const,
       icon: BellIcon,
-      title: 'Documentos',
-      description: 'Nuevos documentos disponibles',
+      title: t('documentsTitle'),
+      description: t('documentsDesc'),
     },
     {
       key: 'medications' as const,
       icon: BellIcon,
-      title: 'Medicamentos',
-      description: 'Recordatorios de medicación',
+      title: t('medicationsTitle'),
+      description: t('medicationsDesc'),
     },
     {
       key: 'labResults' as const,
       icon: BellIcon,
-      title: 'Resultados de Laboratorio',
-      description: 'Nuevos resultados disponibles',
+      title: t('labResultsTitle'),
+      description: t('labResultsDesc'),
     },
     {
       key: 'security' as const,
       icon: BellIcon,
-      title: 'Seguridad',
-      description: 'Alertas de seguridad importantes',
+      title: t('securityTitle'),
+      description: t('securityDesc'),
     },
   ];
 
@@ -235,27 +238,27 @@ export default function NotificationSettingsPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver al Perfil
+            {t('backToProfile')}
           </button>
 
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            🔔 Preferencias de Notificaciones
+            🔔 {t('title')}
           </h1>
           <p className="text-gray-600">
-            Configura cómo y cuándo deseas recibir notificaciones
+            {t('subtitle')}
           </p>
         </div>
 
         {/* Push Notifications Status */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Notificaciones Push
+            {t('pushSection')}
           </h2>
 
           {!pushSupported && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
               <p className="text-yellow-800 text-sm">
-                ⚠️ Tu navegador no soporta notificaciones push
+                ⚠️ {t('browserNotSupported')}
               </p>
             </div>
           )}
@@ -267,11 +270,11 @@ export default function NotificationSettingsPage() {
                 <div className="flex items-center gap-3">
                   <DevicePhoneMobileIcon className="h-6 w-6 text-gray-600" />
                   <div>
-                    <p className="font-semibold text-gray-900">Estado de Notificaciones</p>
+                    <p className="font-semibold text-gray-900">{t('statusLabel')}</p>
                     <p className="text-sm text-gray-600">
-                      {notificationPermission === 'granted' && '✅ Permitidas'}
-                      {notificationPermission === 'denied' && '❌ Bloqueadas'}
-                      {notificationPermission === 'default' && '⏳ Sin configurar'}
+                      {notificationPermission === 'granted' && `✅ ${t('permissionGranted')}`}
+                      {notificationPermission === 'denied' && `❌ ${t('permissionDenied')}`}
+                      {notificationPermission === 'default' && `⏳ ${t('permissionDefault')}`}
                     </p>
                   </div>
                 </div>
@@ -292,7 +295,7 @@ export default function NotificationSettingsPage() {
                     disabled={loading || notificationPermission === 'denied'}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
                   >
-                    {loading ? 'Habilitando...' : 'Habilitar Notificaciones Push'}
+                    {loading ? t('enabling') : t('enablePush')}
                   </button>
                 ) : (
                   <>
@@ -301,14 +304,14 @@ export default function NotificationSettingsPage() {
                       disabled={loading}
                       className="flex-1 px-6 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                     >
-                      Enviar Notificación de Prueba
+                      {t('sendTest')}
                     </button>
                     <button
                       onClick={handleDisablePush}
                       disabled={loading}
                       className="flex-1 px-6 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium"
                     >
-                      Deshabilitar
+                      {t('disable')}
                     </button>
                   </>
                 )}
@@ -317,7 +320,7 @@ export default function NotificationSettingsPage() {
               {notificationPermission === 'denied' && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-800 text-sm">
-                    Las notificaciones están bloqueadas en tu navegador. Para habilitarlas, ve a la configuración de tu navegador y permite las notificaciones para este sitio.
+                    {t('deniedHelp')}
                   </p>
                 </div>
               )}
@@ -328,7 +331,7 @@ export default function NotificationSettingsPage() {
         {/* Notification Preferences */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Preferencias por Categoría
+            {t('preferencesSection')}
           </h2>
 
           <div className="space-y-6">
@@ -395,14 +398,14 @@ export default function NotificationSettingsPage() {
             disabled={loading}
             className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
-            Cancelar
+            {t('cancel')}
           </button>
           <button
             onClick={handleSavePreferences}
             disabled={loading}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all font-medium"
           >
-            {loading ? 'Guardando...' : 'Guardar Preferencias'}
+            {loading ? t('saving') : t('savePreferences')}
           </button>
         </div>
       </div>

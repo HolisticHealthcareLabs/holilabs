@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { PreventionHubSidebar } from '@/components/prevention/PreventionHubSidebar';
 
 // Mock patient data
@@ -116,6 +117,7 @@ type Message = {
 
 export default function AICopilotPage() {
   const router = useRouter();
+  const t = useTranslations('portal.aiCopilot');
   const [selectedPatient, setSelectedPatient] = useState(PATIENTS[0]);
   const [selectedModel, setSelectedModel] = useState(LLM_MODELS[0]);
   const [messages, setMessages] = useState<Message[]>([
@@ -260,8 +262,8 @@ export default function AICopilotPage() {
             <div className="flex items-center space-x-4">
               <div className="text-3xl">🦾</div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Copilot</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Asistente clínico inteligente • Holi Labs</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -270,7 +272,7 @@ export default function AICopilotPage() {
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
               >
                 <span>🛡️</span>
-                <span>Ver Planes de Prevención</span>
+                <span>{t('viewPreventionPlans')}</span>
               </Link>
               <button
                 onClick={() => setShowApiSetup(!showApiSetup)}
@@ -280,7 +282,7 @@ export default function AICopilotPage() {
                     : 'bg-yellow-500 hover:bg-yellow-600 text-white'
                 }`}
               >
-                {isConnected ? '✓ Conectado' : '⚠ Configurar API'}
+                {isConnected ? t('connected') : t('configureApi')}
               </button>
             </div>
           </div>
@@ -292,12 +294,12 @@ export default function AICopilotPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-              Conectar {selectedModel.name}
+              {t('connectTo', { model: selectedModel.name })}
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                  API Key
+                  {t('apiKeyLabel')}
                 </label>
                 <input
                   type="password"
@@ -308,20 +310,20 @@ export default function AICopilotPage() {
                 />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Tu API key se almacena localmente y nunca se comparte. Solo se usa para conectar con {selectedModel.provider}.
+                {t('apiKeyHint', { provider: selectedModel.provider })}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={handleConnectAPI}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium"
                 >
-                  Conectar
+                  {t('connect')}
                 </button>
                 <button
                   onClick={() => setShowApiSetup(false)}
                   className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
-                  Cancelar
+                  {t('cancel')}
                 </button>
               </div>
             </div>
@@ -335,18 +337,18 @@ export default function AICopilotPage() {
           {/* Patient Selector Card */}
           <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg text-gray-900 dark:text-white">Pacientes</h2>
+              <h2 className="font-bold text-lg text-gray-900 dark:text-white">{t('patients')}</h2>
               <Link
                 href="/dashboard/patients"
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
-                Ver todos
+                {t('viewAll')}
               </Link>
             </div>
 
             <input
               type="text"
-              placeholder="Buscar paciente..."
+              placeholder={t('searchPatient')}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm mb-4 dark:bg-gray-700 dark:text-white"
             />
 
@@ -409,7 +411,7 @@ export default function AICopilotPage() {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
-                    Modelo LLM
+                    {t('llmModel')}
                   </label>
                   <select
                     value={selectedModel.id}
@@ -433,8 +435,7 @@ export default function AICopilotPage() {
             {/* CDS Warning Banner */}
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 p-3">
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                ⚠️ <strong>Apoyo a la Decisión Clínica (CDS):</strong> Este sistema NO es diagnóstico. Todas las
-                recomendaciones deben ser validadas por un profesional médico.
+                {t('cdsWarning')}
               </p>
             </div>
 
@@ -455,7 +456,7 @@ export default function AICopilotPage() {
                     }`}
                   >
                     <div className="text-xs font-medium mb-2 opacity-75">
-                      {message.role === 'user' ? 'Tú' : message.role === 'system' ? 'Sistema' : selectedModel.name}
+                      {message.role === 'user' ? t('youLabel') : message.role === 'system' ? t('systemLabel') : selectedModel.name}
                     </div>
                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
                       {message.content}
@@ -481,8 +482,8 @@ export default function AICopilotPage() {
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder={
                     isConnected
-                      ? `Pregunta sobre ${selectedPatient.name}...`
-                      : 'Configura tu API key primero...'
+                      ? t('inputPlaceholderConnected', { patient: selectedPatient.name })
+                      : t('inputPlaceholderDisconnected')
                   }
                   disabled={!isConnected}
                   className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 dark:bg-gray-700 dark:text-white"
@@ -492,16 +493,16 @@ export default function AICopilotPage() {
                   disabled={!isConnected || !input.trim()}
                   className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
                 >
-                  Enviar
+                  {t('send')}
                 </button>
               </div>
               <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
                 <span>
-                  {isConnected ? `✓ Conectado a ${selectedModel.name}` : '⚠ No conectado'}
+                  {isConnected ? t('connectedToModel', { model: selectedModel.name }) : t('notConnected')}
                 </span>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input type="checkbox" className="rounded dark:bg-gray-700 dark:border-gray-600" />
-                  <span>Reconozco que esto es solo apoyo, no diagnóstico</span>
+                  <span>{t('disclaimer')}</span>
                 </label>
               </div>
             </div>
@@ -514,9 +515,9 @@ export default function AICopilotPage() {
             <div className="flex items-center space-x-3">
               <div className="text-3xl">💊</div>
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-white">Sugerir Medicación</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t('suggestMedication')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Recomendaciones basadas en evidencia
+                  {t('evidenceBased')}
                 </p>
               </div>
             </div>
@@ -526,9 +527,9 @@ export default function AICopilotPage() {
             <div className="flex items-center space-x-3">
               <div className="text-3xl">🔬</div>
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-white">Análisis de Laboratorio</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t('labAnalysis')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Interpretación de resultados
+                  {t('interpretResults')}
                 </p>
               </div>
             </div>
@@ -538,9 +539,9 @@ export default function AICopilotPage() {
             <div className="flex items-center space-x-3">
               <div className="text-3xl">📋</div>
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-white">Diagnóstico Diferencial</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white">{t('differentialDiagnosis')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Lista de posibilidades clínicas
+                  {t('clinicalPossibilities')}
                 </p>
               </div>
             </div>

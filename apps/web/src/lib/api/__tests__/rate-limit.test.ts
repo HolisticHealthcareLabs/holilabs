@@ -528,14 +528,15 @@ describe('Rate Limiting', () => {
       Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
     });
 
-    it('should log warning when Redis is not configured in production', async () => {
+    it('should block request when Redis is not configured in production (fail-closed)', async () => {
       const originalNodeEnv = process.env.NODE_ENV;
       Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
 
       const result = await applyRateLimit(mockRequest, 'api');
 
-      // Should still allow request (fail-open)
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
+      expect(result.response).toBeDefined();
+      expect(result.response?.status).toBe(503);
 
       Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
     });

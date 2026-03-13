@@ -30,7 +30,7 @@ export const GET = createPublicRoute(async (
   context: any
 ) => {
   try {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const provider = (params as { provider?: string }).provider;
 
     // Validate provider

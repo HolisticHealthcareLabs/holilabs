@@ -521,13 +521,13 @@ export function decryptBuffer(encryptedBuffer: Buffer): Buffer {
  * Run: node -r ts-node/register src/lib/security/encryption.ts
  */
 export function testEncryption() {
-  console.log('🔒 Testing encryption...\n');
+  console.error('[Encryption Test] Testing encryption...');
 
   // Test 1: Simple string
   const testString = 'Hello, World!';
   const encrypted1 = encrypt(testString);
   const decrypted1 = decrypt(encrypted1);
-  console.log('✅ Test 1 - String:', testString === decrypted1 ? 'PASS' : 'FAIL');
+  console.error('[Encryption Test]', { test: 'string', pass: testString === decrypted1 });
 
   // Test 2: Object
   const testObject = {
@@ -536,30 +536,26 @@ export function testEncryption() {
   };
   const encrypted2 = encrypt(testObject);
   const decrypted2 = decrypt(encrypted2);
-  console.log(
-    '✅ Test 2 - Object:',
-    JSON.stringify(testObject) === JSON.stringify(decrypted2) ? 'PASS' : 'FAIL'
-  );
+  console.error('[Encryption Test]', {
+    test: 'object',
+    pass: JSON.stringify(testObject) === JSON.stringify(decrypted2)
+  });
 
   // Test 3: Generate key
   const newKey = generateEncryptionKey();
-  console.log('✅ Test 3 - Generated key length:', newKey.length === 64 ? 'PASS' : 'FAIL');
+  console.error('[Encryption Test]', { test: 'key_length', pass: newKey.length === 64 });
 
   // Test 4: Hash
   const hash1 = hash('test data');
   const hash2 = hash('test data');
   const hash3 = hash('different data');
-  console.log('✅ Test 4 - Hash consistency:', hash1 === hash2 ? 'PASS' : 'FAIL');
-  console.log('✅ Test 5 - Hash uniqueness:', hash1 !== hash3 ? 'PASS' : 'FAIL');
+  console.error('[Encryption Test]', { test: 'hash_consistency', pass: hash1 === hash2 });
+  console.error('[Encryption Test]', { test: 'hash_uniqueness', pass: hash1 !== hash3 });
 
   // Test 6: Mask
   const masked = maskSensitiveString('sk-ant-api03-1234567890');
-  console.log('✅ Test 6 - Masking:', masked === 'sk-ant-***7890' ? 'PASS' : 'FAIL');
-
-  console.log('\n🎉 All tests completed!\n');
-  console.log('To generate a new key for .env:');
-  console.log('Run: openssl rand -hex 32');
-  console.log('Or use: generateEncryptionKey()');
+  console.error('[Encryption Test]', { test: 'masking', pass: masked === 'sk-ant-***7890' });
+  console.error('[Encryption Test] All tests completed.');
 }
 
 // Run tests if executed directly

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface BetaSignup {
   id: string;
@@ -26,6 +26,7 @@ interface SignupsResponse {
 }
 
 export default function SubscribersPage() {
+  const t = useTranslations('dashboard.subscribers');
   const [signups, setSignups] = useState<BetaSignup[]>([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -46,10 +47,10 @@ export default function SubscribersPage() {
         setSignups(data.signups);
         setCount(data.count);
       } else {
-        setError('Failed to load signups');
+        setError(t('loadError'));
       }
     } catch (err) {
-      setError('Error fetching signups');
+      setError(t('loadError'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -75,11 +76,11 @@ export default function SubscribersPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert('Failed to export CSV');
+        alert(t('exportError'));
       }
     } catch (err) {
       console.error('Export error:', err);
-      alert('Error exporting CSV');
+      alert(t('exportError'));
     }
   };
 
@@ -94,7 +95,7 @@ export default function SubscribersPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent"></div>
-          <p className="mt-4 text-gray-600">Loading subscribers...</p>
+          <p className="mt-4 text-gray-600">{t('loadingSubscribers')}</p>
         </div>
       </div>
     );
@@ -109,7 +110,7 @@ export default function SubscribersPage() {
             onClick={fetchSignups}
             className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -123,9 +124,9 @@ export default function SubscribersPage() {
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Beta Subscribers</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Total signups: <span className="font-semibold text-primary-600">{count}</span>
+                {t('totalSignups')} <span className="font-semibold text-primary-600">{count}</span>
               </p>
             </div>
             <div className="flex gap-3">
@@ -136,7 +137,7 @@ export default function SubscribersPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Refresh
+                {t('refresh')}
               </button>
               <button
                 onClick={exportToCSV}
@@ -145,7 +146,7 @@ export default function SubscribersPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Export CSV
+                {t('exportCsv')}
               </button>
             </div>
           </div>
@@ -154,7 +155,7 @@ export default function SubscribersPage() {
           <div className="mt-4">
             <input
               type="text"
-              placeholder="Search by email, name, or organization..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -169,22 +170,22 @@ export default function SubscribersPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
+                    {t('emailCol')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    {t('nameCol')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Organization
+                    {t('organizationCol')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
+                    {t('roleCol')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Source
+                    {t('sourceCol')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Signup Date
+                    {t('signupDateCol')}
                   </th>
                 </tr>
               </thead>
@@ -192,7 +193,7 @@ export default function SubscribersPage() {
                 {filteredSignups.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      {searchTerm ? 'No signups match your search' : 'No signups yet'}
+                      {searchTerm ? t('noSignupsMatch') : t('noSignupsYet')}
                     </td>
                   </tr>
                 ) : (
@@ -220,7 +221,7 @@ export default function SubscribersPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {new Date(signup.createdAt).toLocaleDateString('en-US', {
+                        {new Date(signup.createdAt).toLocaleDateString(undefined, {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric',
@@ -239,17 +240,17 @@ export default function SubscribersPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-sm font-medium text-gray-500 uppercase">Total Signups</h3>
+            <h3 className="text-sm font-medium text-gray-500 uppercase">{t('totalSignupsLabel')}</h3>
             <p className="mt-2 text-3xl font-bold text-gray-900">{count}</p>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-sm font-medium text-gray-500 uppercase">Landing Page</h3>
+            <h3 className="text-sm font-medium text-gray-500 uppercase">{t('landingPage')}</h3>
             <p className="mt-2 text-3xl font-bold text-blue-600">
               {signups.filter(s => s.source === 'landing_page').length}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-sm font-medium text-gray-500 uppercase">Waitlist Form</h3>
+            <h3 className="text-sm font-medium text-gray-500 uppercase">{t('waitlistForm')}</h3>
             <p className="mt-2 text-3xl font-bold text-green-600">
               {signups.filter(s => s.source === 'waitlist_form').length}
             </p>

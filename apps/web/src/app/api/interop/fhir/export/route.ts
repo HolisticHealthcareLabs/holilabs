@@ -18,7 +18,7 @@ import logger from '@/lib/logger';
 import {
   buildFhirBundle,
   type FhirExportPayload,
-} from '../../../../../../../../../../packages/shared-kernel/src/clinical/fhir-mapper';
+} from '../../../../../../../../packages/shared-kernel/src/clinical/fhir-mapper';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';

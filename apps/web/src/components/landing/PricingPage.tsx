@@ -270,34 +270,47 @@ export function PricingPage() {
         <section className="py-20 px-5 -mt-8">
           <div ref={tiersFade.ref} style={tiersFade.style} className="max-w-[1040px] mx-auto">
 
-            {/* Monthly / Annually toggle */}
+            {/* Founders access banner */}
+            <div className="max-w-[520px] mx-auto mb-8">
+              <div className="flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#0071e3]/[0.06] to-[#34c759]/[0.06] border border-[#0071e3]/15 px-5 py-2.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#34c759] animate-pulse flex-shrink-0" />
+                <span className="text-[13px] font-medium text-[#1d1d1f]">
+                  First 100 licenses are <span className="font-bold text-[#0071e3]">completely free</span> for founding members
+                </span>
+              </div>
+            </div>
+
+            {/* Monthly / Annually segmented control */}
             <div className="flex items-center justify-center gap-3 mb-4">
-              <span className={`text-[14px] font-medium ${!annual ? 'text-[#1d1d1f]' : 'text-[#6e6e73]'}`}>
-                {t('toggle.monthly')}
-              </span>
-              <button
-                onClick={() => setAnnual((v) => !v)}
-                className={`relative w-[52px] h-[28px] rounded-full transition-colors duration-200 ${annual ? 'bg-[#0071e3]' : 'bg-[#d1d1d6]'}`}
-                aria-label="Toggle billing period"
-                role="switch"
-                aria-checked={annual}
-              >
-                <span
-                  className={`absolute top-[2px] left-[2px] w-[24px] h-[24px] bg-white rounded-full shadow-sm transition-transform duration-200 ${annual ? 'translate-x-[24px]' : ''}`}
-                />
-              </button>
-              <span className={`text-[14px] font-medium ${annual ? 'text-[#1d1d1f]' : 'text-[#6e6e73]'}`}>
-                {t('toggle.annually')}
-              </span>
+              <div className="inline-flex items-center rounded-full bg-[#f5f5f7] p-[3px] ring-1 ring-black/[0.06]">
+                <button
+                  onClick={() => setAnnual(false)}
+                  className={`relative rounded-full px-5 py-2 text-[13px] font-medium transition-all duration-200 ${!annual
+                    ? 'bg-white text-[#1d1d1f] shadow-sm ring-1 ring-black/[0.04]'
+                    : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                  }`}
+                >
+                  {t('toggle.monthly')}
+                </button>
+                <button
+                  onClick={() => setAnnual(true)}
+                  className={`relative rounded-full px-5 py-2 text-[13px] font-medium transition-all duration-200 ${annual
+                    ? 'bg-white text-[#1d1d1f] shadow-sm ring-1 ring-black/[0.04]'
+                    : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                  }`}
+                >
+                  {t('toggle.annually')}
+                </button>
+              </div>
               {annual && (
-                <span className="inline-flex items-center rounded-full bg-[#34c759]/10 border border-[#34c759]/20 px-2.5 py-0.5 text-[12px] font-semibold text-[#34c759]">
+                <span className="inline-flex items-center rounded-full bg-[#34c759]/10 border border-[#34c759]/20 px-2.5 py-1 text-[12px] font-semibold text-[#34c759]">
                   {t('toggle.save')}
                 </span>
               )}
             </div>
 
             {/* Currency disclaimer */}
-            <p className="text-center text-[12px] text-[#6e6e73] mb-12">
+            <p className="text-center text-[13px] text-[#6e6e73] mb-12">
               {t('currency')}
             </p>
 

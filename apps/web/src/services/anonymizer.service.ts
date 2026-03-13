@@ -7,6 +7,8 @@
  * @module services/anonymizer.service
  */
 
+import logger from '@/lib/logger';
+
 // ============================================================================
 // MEDICAL EPONYM ALLOW LIST (Do NOT redact these as names)
 // ============================================================================
@@ -143,7 +145,7 @@ export class AnonymizerService {
 
         const anonymizationMs = performance.now() - startTime;
 
-        console.log(`[AnonymizerService] Processed in ${anonymizationMs.toFixed(2)}ms, ${totalRedactions} redactions`);
+        logger.info('[AnonymizerService] anonymization_complete', { processingTimeMs: anonymizationMs.toFixed(2), totalRedactions });
 
         return {
             redactedText: result,

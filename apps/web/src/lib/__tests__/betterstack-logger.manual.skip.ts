@@ -1,6 +1,6 @@
 /**
  * Test BetterStack Logging Integration
- * Run: LOGTAIL_SOURCE_TOKEN="ppRsuAAsrT4hR8Uw8HAY4UCu" NODE_ENV=production pnpm tsx src/lib/__tests__/betterstack-logger.test.ts
+ * Run: LOGTAIL_SOURCE_TOKEN="YOUR_LOGTAIL_TOKEN_HERE" NODE_ENV=production pnpm tsx src/lib/__tests__/betterstack-logger.test.ts
  */
 
 import { logger } from '@/lib/logger';

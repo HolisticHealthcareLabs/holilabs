@@ -19,8 +19,6 @@ export async function logFormularyOverride(
     details: prescriptionDetails
   });
 
-  console.log(`[AUDIT] Formulary Override Logged: User ${clinicianId} overrode Rule ${ruleId} due to ${reason}`);
-  
   // Mock DB write
   return { success: true, id: 'mock-override-id' };
 }

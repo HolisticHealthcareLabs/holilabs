@@ -15,10 +15,11 @@ import { prisma } from '@/lib/prisma';
 import { encryptPHIWithVersion } from '@/lib/security/encryption';
 import { maskSensitiveString } from '@/lib/security/encryption';
 import logger from '@/lib/logger';
+import { getAllProviders } from '@/lib/ai/provider-registry';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_PROVIDERS = ['gemini', 'anthropic', 'openai'] as const;
+const ALLOWED_PROVIDERS = ['gemini', 'anthropic', 'openai', 'ollama', 'vllm', 'together'] as const;
 type AllowedProvider = (typeof ALLOWED_PROVIDERS)[number];
 
 // ---------------------------------------------------------------------------
@@ -31,7 +32,7 @@ type AllowedProvider = (typeof ALLOWED_PROVIDERS)[number];
 
 const DEMO_WORKSPACE_ID = 'demo-workspace-1';
 
-const DEMO_CONFIGS = (['anthropic', 'openai', 'gemini'] as const).map((provider) => ({
+const DEMO_CONFIGS = ALLOWED_PROVIDERS.map((provider) => ({
   id:           `demo-cfg-${provider}`,
   provider,
   isActive:     true,
@@ -133,7 +134,7 @@ export const GET = createProtectedRoute(
     // The demo workspace has no real DB records.  Return a pre-baked payload
     // so every model shows as configured and the CDSS is fully unlocked.
     if (workspaceId === DEMO_WORKSPACE_ID) {
-      return NextResponse.json({ configs: DEMO_CONFIGS });
+      return NextResponse.json({ configs: DEMO_CONFIGS, providers: getAllProviders() });
     }
 
     // ── Real workspace — query DB ─────────────────────────────────────────
@@ -170,12 +171,10 @@ export const GET = createProtectedRoute(
         updatedAt: c.updatedAt,
       }));
 
-      return NextResponse.json({ configs: result });
+      return NextResponse.json({ configs: result, providers: getAllProviders() });
     } catch (err) {
-      // Database unreachable — fall back to demo configs so the UI is never
-      // blocked during local development or when the DB is provisioning.
       logger.warn({ event: 'workspace_llm_config_db_fallback', workspaceId, err });
-      return NextResponse.json({ configs: DEMO_CONFIGS });
+      return NextResponse.json({ configs: DEMO_CONFIGS, providers: getAllProviders() });
     }
   },
   {

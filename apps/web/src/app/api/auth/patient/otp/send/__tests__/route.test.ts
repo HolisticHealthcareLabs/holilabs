@@ -25,6 +25,7 @@ jest.mock('@/lib/audit', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
+  __esModule: true,
   default: {
     info: jest.fn(),
     error: jest.fn(),

@@ -11,6 +11,7 @@
  */
 
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { getCurrentPatient } from '@/lib/auth/patient-session';
 import PreventionClient from './PreventionClient';
 import { logger } from '@/lib/logger';
@@ -50,20 +51,20 @@ export default async function PreventionPage() {
   }
 
   const preventionData = await fetchPreventionData(patientUser.patient.id);
+  const t = await getTranslations('portal.preventionHub');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-5xl">🛡️</span>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Mi Salud Preventiva
+                {t('title')}
               </h1>
               <p className="text-gray-600 mt-1">
-                Monitorea tu salud y previene enfermedades antes de que aparezcan
+                {t('subtitle')}
               </p>
             </div>
           </div>

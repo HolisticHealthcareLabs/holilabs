@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Shield,
   Upload,
@@ -21,6 +22,7 @@ import {
 } from '@/components/clinical/MedicalImageViewer';
 
 export default function ClinicalSupportPage() {
+  const t = useTranslations('portal.clinicalSupport');
   const [uploadedImages, setUploadedImages] = useState<MedicalImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<MedicalImage | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export default function ClinicalSupportPage() {
   };
 
   const handleDeleteImage = async (imageId: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) {
+    if (!confirm(t('deleteConfirm'))) {
       return;
     }
 
@@ -68,10 +70,10 @@ export default function ClinicalSupportPage() {
           setSelectedImage(null);
         }
       } else {
-        alert('Failed to delete image');
+        alert(t('deleteFailed'));
       }
     } catch (error) {
-      alert('Error deleting image');
+      alert(t('deleteError'));
     }
   };
 
@@ -82,15 +84,15 @@ export default function ClinicalSupportPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Clinical Decision Support System</h1>
+              <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
               <p className="text-green-100">
-                Secure medical imaging with HIPAA-compliant de-identification
+                {t('subtitle')}
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3">
               <div className="flex items-center space-x-2 text-sm">
                 <Shield className="w-5 h-5" />
-                <span className="font-semibold">HIPAA Protected</span>
+                <span className="font-semibold">{t('hipaaProtected')}</span>
               </div>
             </div>
           </div>
@@ -103,9 +105,9 @@ export default function ClinicalSupportPage() {
           <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center">
             <CheckCircle2 className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
             <div>
-              <p className="text-green-900 font-medium">Image uploaded and de-identified successfully</p>
+              <p className="text-green-900 font-medium">{t('uploadSuccess')}</p>
               <p className="text-green-700 text-sm mt-1">
-                All PHI has been removed and the image is ready for clinical review
+                {t('uploadSuccessDetail')}
               </p>
             </div>
           </div>
@@ -115,7 +117,7 @@ export default function ClinicalSupportPage() {
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
             <AlertCircle className="w-5 h-5 text-red-600 mr-3 flex-shrink-0" />
             <div>
-              <p className="text-red-900 font-medium">Upload failed</p>
+              <p className="text-red-900 font-medium">{t('uploadFailed')}</p>
               <p className="text-red-700 text-sm mt-1">{uploadError}</p>
             </div>
           </div>
@@ -129,37 +131,37 @@ export default function ClinicalSupportPage() {
               <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
                 <h2 className="text-sm font-semibold text-blue-900 flex items-center">
                   <User className="w-4 h-4 mr-2" />
-                  Patient Information
+                  {t('patientInformation')}
                 </h2>
               </div>
               <div className="p-4 space-y-3">
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Pseudonym ID</p>
+                  <p className="text-xs text-gray-600 mb-1">{t('pseudonymId')}</p>
                   <p className="text-sm font-mono text-gray-900">{patientInfo.pseudonymId}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Age</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('age')}</p>
                     <p className="text-sm text-gray-900">{patientInfo.age}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Sex</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('sex')}</p>
                     <p className="text-sm text-gray-900">{patientInfo.sex}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Study Type</p>
+                  <p className="text-xs text-gray-600 mb-1">{t('studyType')}</p>
                   <p className="text-sm text-gray-900">{patientInfo.studyType}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600 mb-1">Visit Date</p>
+                  <p className="text-xs text-gray-600 mb-1">{t('visitDate')}</p>
                   <p className="text-sm text-gray-900">{patientInfo.visitDate}</p>
                 </div>
                 <div className="pt-3 border-t border-gray-200">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-2">
                     <p className="text-xs text-green-800 flex items-center">
                       <Lock className="w-3 h-3 mr-1" />
-                      De-identified per HIPAA
+                      {t('deidentifiedHipaa')}
                     </p>
                   </div>
                 </div>
@@ -171,14 +173,14 @@ export default function ClinicalSupportPage() {
               <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
                 <h2 className="text-sm font-semibold text-gray-900 flex items-center">
                   <FileImage className="w-4 h-4 mr-2" />
-                  Uploaded Images ({uploadedImages.length})
+                  {t('uploadedImages', { count: uploadedImages.length })}
                 </h2>
               </div>
               <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
                 {uploadedImages.length === 0 ? (
                   <div className="p-4 text-center">
                     <FileImage className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">No images uploaded yet</p>
+                    <p className="text-sm text-gray-500">{t('noImagesYet')}</p>
                   </div>
                 ) : (
                   uploadedImages.map((image) => (
@@ -208,7 +210,7 @@ export default function ClinicalSupportPage() {
                       {image.removedPHI.length > 0 && (
                         <div className="mt-2">
                           <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                            {image.removedPHI.length} PHI removed
+                            {t('phiRemoved', { count: image.removedPHI.length })}
                           </span>
                         </div>
                       )}
@@ -223,7 +225,7 @@ export default function ClinicalSupportPage() {
                     className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex items-center justify-center"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Upload New Image
+                    {t('uploadNewImage')}
                   </button>
                 </div>
               )}
@@ -232,25 +234,25 @@ export default function ClinicalSupportPage() {
             {/* Security Info */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <h3 className="text-sm font-semibold text-green-900 mb-3 flex items-center">
-                <Shield className="w-4 h-4 mr-2" />
-                Security Features
-              </h3>
+                  <Shield className="w-4 h-4 mr-2" />
+                  {t('securityFeatures')}
+                </h3>
               <ul className="space-y-2 text-xs text-green-800">
                 <li className="flex items-start">
                   <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Automatic PHI removal</span>
+                  <span>{t('automaticPhi')}</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>HIPAA Safe Harbor compliant</span>
+                  <span>{t('hipaaCompliant')}</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Audit logging enabled</span>
+                  <span>{t('auditLogging')}</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>Encrypted storage</span>
+                  <span>{t('encryptedStorage')}</span>
                 </li>
               </ul>
             </div>

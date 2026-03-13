@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 const REQUIRED_CONSENTS = [
   'TERMS_OF_SERVICE',
@@ -63,12 +64,12 @@ export const GET = createProtectedRoute(
         })),
       });
     } catch (error) {
-      console.error('Error checking consents:', error);
+      logger.error('Error checking consents:', error);
       return NextResponse.json(
         { error: 'Failed to check consents' },
         { status: 500 }
       );
     }
   },
-  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], allowPatientAuth: true }
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], allowPatientAuth: true, audit: { action: 'READ', resource: 'ConsentCheck' } }
 );

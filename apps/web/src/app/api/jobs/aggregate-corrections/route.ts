@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPublicRoute } from '@/lib/api/middleware';
 import { aggregateDailyCorrections, aggregateCorrectionsRange } from '@/lib/jobs/correction-aggregation';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max
@@ -40,7 +41,7 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
       const providedSecret = authHeader?.replace('Bearer ', '') || urlSecret;
 
       if (providedSecret !== expectedSecret) {
-        console.error('🔒 Unauthorized job execution attempt');
+        logger.error('🔒 Unauthorized job execution attempt');
         return NextResponse.json(
           { error: 'Unauthorized' },
           { status: 401 }
@@ -53,7 +54,7 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
     const startDateParam = request.nextUrl.searchParams.get('startDate');
     const endDateParam = request.nextUrl.searchParams.get('endDate');
 
-    console.log(`🚀 [Job] Starting correction aggregation job (mode: ${mode})`);
+    logger.info(`🚀 [Job] Starting correction aggregation job (mode: ${mode})`);
 
     let result;
 
@@ -69,23 +70,23 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
         );
       }
 
-      console.log(`📅 Running custom range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      logger.info(`📅 Running custom range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
       result = await aggregateCorrectionsRange(startDate, endDate);
     } else {
       // Daily aggregation (default)
-      console.log('📆 Running daily aggregation');
+      logger.info('📆 Running daily aggregation');
       result = await aggregateDailyCorrections();
     }
 
     if (result.processed) {
-      console.log('✅ [Job] Correction aggregation completed successfully');
+      logger.info('✅ [Job] Correction aggregation completed successfully');
       return NextResponse.json({
         success: true,
         message: 'Correction aggregation completed successfully',
         data: result.results,
       });
     } else {
-      console.log('ℹ️ [Job] No corrections to process');
+      logger.info('ℹ️ [Job] No corrections to process');
       return NextResponse.json({
         success: true,
         message: 'No corrections to process',
@@ -93,7 +94,7 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
       });
     }
   } catch (error) {
-    console.error('❌ [Job] Error running correction aggregation:', error);
+    logger.error('❌ [Job] Error running correction aggregation:', error);
     return safeErrorResponse(error, { userMessage: 'Failed to run correction aggregation job' });
   }
 });

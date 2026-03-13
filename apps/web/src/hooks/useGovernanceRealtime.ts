@@ -75,8 +75,6 @@ export function useGovernanceRealtime(
   // Handle incoming governance log event
   const handleLogEvent = useCallback(
     (event: GovernanceLogEvent) => {
-      console.log('[Governance] Real-time log received:', event);
-
       setRecentEvents((prev) => {
         // Keep last 50 events, prepend new one
         const newEvents = [event, ...prev].slice(0, 50);
@@ -91,8 +89,6 @@ export function useGovernanceRealtime(
   // Handle override event
   const handleOverrideEvent = useCallback(
     (event: GovernanceOverrideEvent) => {
-      console.log('[Governance] Override received:', event);
-
       setOverrideEvents((prev) => {
         const newEvents = [event, ...prev].slice(0, 50);
         return newEvents;
@@ -106,7 +102,6 @@ export function useGovernanceRealtime(
   // Handle blocked event
   const handleBlockedEvent = useCallback(
     (event: any) => {
-      console.log('[Governance] Blocked event received:', event);
       config.onBlocked?.(event);
     },
     [config]
@@ -183,8 +178,6 @@ export function useGovernanceRealtime(
       );
 
       unsubscribersRef.current = [unsubLog, unsubOverride, unsubBlocked];
-
-      console.log('[Governance] Real-time subscriptions initialized');
     } catch (error) {
       console.error('[Governance] Socket initialization error:', error);
     }

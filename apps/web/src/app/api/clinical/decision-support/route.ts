@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 /**
  * Unified Clinical Decision Support API
@@ -40,6 +41,11 @@ export const POST = createProtectedRoute(
 
       if (!patientId) {
         return NextResponse.json({ error: 'Patient ID is required' }, { status: 400 });
+      }
+
+      const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
       }
 
       // Fetch patient data
@@ -96,7 +102,7 @@ export const POST = createProtectedRoute(
           }
         }
       } catch (error) {
-        console.error('Drug interaction check failed:', error);
+        logger.error('Drug interaction check failed:', error);
       }
 
       // 2. Check for allergy contraindications
@@ -141,7 +147,7 @@ export const POST = createProtectedRoute(
             }
           }
         } catch (error) {
-          console.error('Allergy check failed:', error);
+          logger.error('Allergy check failed:', error);
         }
       }
 
@@ -184,7 +190,7 @@ export const POST = createProtectedRoute(
             }
           }
         } catch (error) {
-          console.error('Lab check failed:', error);
+          logger.error('Lab check failed:', error);
         }
       }
 
@@ -236,7 +242,7 @@ export const POST = createProtectedRoute(
             }
           }
         } catch (error) {
-          console.error('Vital check failed:', error);
+          logger.error('Vital check failed:', error);
         }
       }
 
@@ -284,7 +290,7 @@ export const POST = createProtectedRoute(
             }
           }
         } catch (error) {
-          console.error('Preventive care check failed:', error);
+          logger.error('Preventive care check failed:', error);
         }
       }
 
@@ -351,7 +357,7 @@ export const POST = createProtectedRoute(
         timestamp: new Date(),
       });
     } catch (error) {
-      console.error('Clinical decision support error:', error);
+      logger.error('Clinical decision support error:', error);
       return NextResponse.json(
         {
           error: 'Failed to generate clinical decision support',
@@ -410,7 +416,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Clinical decision support summary error:', error);
+      logger.error('Clinical decision support summary error:', error);
       return NextResponse.json(
         { error: 'Failed to get clinical decision support summary' },
         { status: 500 }

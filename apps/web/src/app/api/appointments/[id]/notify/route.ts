@@ -23,7 +23,7 @@ type NotificationType = 'payment_reminder' | 'appointment_reminder' | 'followup'
  */
 export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const appointmentId = params.id;
     if (!appointmentId) {
       return NextResponse.json(
@@ -177,5 +177,6 @@ export const POST = createProtectedRoute(
   {
     roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
+    audit: { action: 'NOTIFY', resource: 'Appointment' },
   }
 );

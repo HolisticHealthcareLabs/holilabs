@@ -12,6 +12,7 @@
  */
 
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { getCurrentPatient } from '@/lib/auth/patient-session';
 import LabResultsClient from './LabResultsClient';
 import { logger } from '@/lib/logger';
@@ -46,18 +47,18 @@ export default async function LabResultsPage() {
   }
 
   const labResults = await fetchLabResults(patientUser.patient.id);
+  const t = await getTranslations('portal.labResults');
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <span className="text-4xl">🧪</span>
-            <span>Resultados de Laboratorio</span>
+            <span>{t('title')}</span>
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Visualiza tus resultados de pruebas de laboratorio y su evolución en el tiempo
+            {t('subtitle')}
           </p>
         </div>
 

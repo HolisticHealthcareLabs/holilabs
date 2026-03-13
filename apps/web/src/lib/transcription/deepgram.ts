@@ -139,9 +139,16 @@ export async function transcribeAudioWithDeepgram(
 
     const processingTimeMs = Date.now() - startTime;
 
-    console.log(`✅ Deepgram transcription completed in ${processingTimeMs}ms`);
-    console.log(`   Language: ${finalLanguage}${autoDetect ? ' (auto-detected)' : ''}, Duration: ${durationSeconds}s, Speakers: ${speakerCount}`);
-    console.log(`   Words: ${result.results.channels[0].alternatives[0].words?.length || 0}, Confidence: ${(avgConfidence * 100).toFixed(1)}%`);
+    console.error('[Deepgram]', {
+      event: 'transcription_complete',
+      processingTimeMs,
+      language: finalLanguage,
+      autoDetect,
+      durationSeconds,
+      speakerCount,
+      wordCount: result.results.channels[0].alternatives[0].words?.length || 0,
+      confidence: avgConfidence,
+    });
 
     return {
       text: transcriptText,

@@ -69,7 +69,7 @@ export const POST = createPublicRoute(async (request: NextRequest): Promise<Next
     const workspaceSlug = `demo-sandbox-${crypto.randomBytes(8).toString('hex')}`;
     const passwordHash = await bcrypt.hash(identity.plainPassword, 10);
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Build the today schedule from persona patients
       const today = new Date();
       const scheduleItems = persona.patients.map((p, i) => ({
@@ -98,7 +98,6 @@ export const POST = createPublicRoute(async (request: NextRequest): Promise<Next
             regulatoryBody: billing.regulatoryBody,
             country: billing.country,
             demoRole: role ?? 'CLINICIAN',
-            // Persona data stored in metadata for fast My Day hydration
             persona: {
               disciplineSlug:  persona.disciplineSlug,
               doctorTitle:     persona.doctorTitle,

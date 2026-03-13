@@ -59,5 +59,5 @@ export const GET = createProtectedRoute(
 
     return NextResponse.json({ data: encounters });
   },
-  { roles: ['ADMIN', 'CLINICIAN', 'PHYSICIAN'], skipCsrf: true }
+  { roles: ['ADMIN', 'CLINICIAN', 'PHYSICIAN'], skipCsrf: true, audit: { action: 'READ', resource: 'Encounter' } }
 );

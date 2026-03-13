@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,7 +113,7 @@ export const GET = createPublicRoute(async (
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error fetching public form:', error);
+    logger.error('Error fetching public form:', error);
     return NextResponse.json(
       { error: 'Failed to load form' },
       { status: 500 }
@@ -176,7 +177,7 @@ export const POST = createPublicRoute(async (
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error saving form progress:', error);
+    logger.error('Error saving form progress:', error);
     return NextResponse.json(
       { error: 'Failed to save progress' },
       { status: 500 }

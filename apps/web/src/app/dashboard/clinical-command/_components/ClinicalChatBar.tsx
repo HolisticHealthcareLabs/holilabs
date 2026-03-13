@@ -2,6 +2,7 @@
 
 import { useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { Activity, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 
 // Inline mic SVG — lucide-react Mic/MicOff have a TS 5.9 export-duplicate issue in this version
@@ -68,6 +69,7 @@ export function ClinicalChatBar({
   activeModel,
   onModelChange,
 }: ClinicalChatBarProps) {
+  const t = useTranslations('portal.clinicalChatBar');
   const fileInputRef    = useRef<HTMLInputElement>(null);
   const textareaRef     = useRef<HTMLTextAreaElement>(null);
   const canSend         = value.trim().length > 0 && !disabled && !isReplying;
@@ -110,7 +112,7 @@ export function ClinicalChatBar({
         onChange={(e) => onChange(e.target.value)}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
-        placeholder={disabled ? 'Sync transcript first to chat…' : 'Ask anything, @ to mention, / for workflow…'}
+        placeholder={disabled ? t('placeholderSync') : t('placeholder')}
         disabled={disabled}
         aria-label="Clinical chat input"
         className="
@@ -131,7 +133,7 @@ export function ClinicalChatBar({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          aria-label="Attach file"
+          aria-label={t('attachFile')}
           className="
             w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
             text-slate-400 hover:text-slate-200 hover:bg-slate-800
@@ -158,7 +160,7 @@ export function ClinicalChatBar({
           <select
             value={promptMode}
             onChange={(e) => onPromptModeChange(e.target.value as PromptMode)}
-            aria-label="Prompt mode"
+            aria-label={t('promptMode')}
             className="
               appearance-none bg-transparent
               text-[11px] font-medium text-slate-300
@@ -185,7 +187,7 @@ export function ClinicalChatBar({
           <select
             value={activeModel}
             onChange={(e) => onModelChange(e.target.value as ModelId)}
-            aria-label="Select AI model"
+            aria-label={t('selectModel')}
             className="
               appearance-none bg-transparent
               text-[11px] font-medium text-slate-400
@@ -214,7 +216,7 @@ export function ClinicalChatBar({
         <button
           type="button"
           onClick={onMicToggle}
-          aria-label={isListening ? 'Stop listening' : 'Start voice input'}
+          aria-label={isListening ? t('stopListening') : t('startVoiceInput')}
           aria-pressed={isListening}
           className={`
             w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0
@@ -235,7 +237,7 @@ export function ClinicalChatBar({
           disabled={!canSend}
           whileHover={canSend ? { scale: 1.08 } : {}}
           whileTap={canSend ? { scale: 0.92 } : {}}
-          aria-label="Send message"
+          aria-label={t('sendMessage')}
           className={`
             w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
             transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400
@@ -257,12 +259,13 @@ export function ClinicalChatBar({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SyncButton({ isSyncing, onSync, syncEnabled }: { isSyncing: boolean; onSync: () => void; syncEnabled: boolean }) {
+  const t = useTranslations('portal.clinicalChatBar');
   return (
     <motion.button
       type="button"
       onClick={onSync}
       disabled={!syncEnabled || isSyncing}
-      aria-label="Sync with CDSS"
+      aria-label={t('syncWithCdss')}
       aria-busy={isSyncing}
       whileTap={syncEnabled && !isSyncing ? { scale: 0.93 } : {}}
       initial={false}
@@ -303,7 +306,7 @@ function SyncButton({ isSyncing, onSync, syncEnabled }: { isSyncing: boolean; on
         className="text-[11px] font-medium whitespace-nowrap overflow-hidden"
         aria-hidden="true"
       >
-        {isSyncing ? 'Syncing…' : 'Sync'}
+        {isSyncing ? t('syncing') : t('sync')}
       </motion.span>
     </motion.button>
   );

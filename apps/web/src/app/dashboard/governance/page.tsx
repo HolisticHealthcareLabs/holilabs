@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { RefreshCw, Shield, AlertTriangle, Activity, Clock, CheckCircle2, XCircle, ChevronRight, TrendingUp, Eye } from 'lucide-react';
 import { ReplayModal } from '@/components/governance/ReplayModal';
@@ -48,6 +49,7 @@ const FALLBACK_REFRESH_INTERVAL = 30000;
 // ============================================================================
 
 export default function GovernanceDashboard() {
+    const t = useTranslations('dashboard.governance');
     const [logs, setLogs] = useState<GovernanceLog[]>([]);
     const [stats, setStats] = useState<SafetyStats>({
         sessionsAudited: 0,
@@ -95,12 +97,10 @@ export default function GovernanceDashboard() {
     const { connected: socketConnected, recentEvents } = useGovernanceRealtime({
         autoConnect: true,
         onNewLog: handleNewLog,
-        onOverride: (event) => {
-            console.log('[Governance] Override event received in dashboard:', event);
+        onOverride: (_event) => {
             setLastRefreshed(new Date());
         },
-        onBlocked: (event) => {
-            console.log('[Governance] Block event received in dashboard:', event);
+        onBlocked: (_event) => {
         },
     });
 
@@ -128,7 +128,7 @@ export default function GovernanceDashboard() {
             if (logsRes.data) setLogs(logsRes.data);
             if (statsRes.data) setStats(statsRes.data);
         } catch (error) {
-            console.error('Failed to fetch governance data:', error);
+            console.error('[Governance]', { event: 'fetch_data_error', error: error instanceof Error ? error.message : String(error) });
         } finally {
             setLoading(false);
             setLastRefreshed(new Date());
@@ -147,10 +147,7 @@ export default function GovernanceDashboard() {
         let interval: NodeJS.Timeout | null = null;
 
         if (!socketConnected) {
-            console.log('[Governance] Socket disconnected, enabling fallback polling');
             interval = setInterval(fetchData, FALLBACK_REFRESH_INTERVAL);
-        } else {
-            console.log('[Governance] Socket connected, real-time push active');
         }
 
         return () => {
@@ -183,8 +180,8 @@ export default function GovernanceDashboard() {
                                 <Shield className="w-6 h-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-white tracking-tight">Mission Control</h1>
-                                <p className="text-sm text-gray-400">Real-time Clinical Governance & AI Safety Monitoring</p>
+                                <h1 className="text-2xl font-bold text-white tracking-tight">{t('missionControl')}</h1>
+                                <p className="text-sm text-gray-400">{t('subtitle')}</p>
                             </div>
                         </div>
 
@@ -198,12 +195,12 @@ export default function GovernanceDashboard() {
                                 {socketConnected ? (
                                     <>
                                         <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                                        <span className="text-xs text-emerald-300 font-medium">Real-time</span>
+                                        <span className="text-xs text-emerald-300 font-medium">{t('realtime')}</span>
                                     </>
                                 ) : (
                                     <>
                                         <Clock className="w-3.5 h-3.5 text-amber-400" />
-                                        <span className="text-xs text-amber-300 font-medium">Polling</span>
+                                        <span className="text-xs text-amber-300 font-medium">{t('polling')}</span>
                                     </>
                                 )}
                             </div>
@@ -221,7 +218,7 @@ export default function GovernanceDashboard() {
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white transition-all"
                             >
                                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                <span className="text-sm font-medium">Refresh</span>
+                                <span className="text-sm font-medium">{t('refresh')}</span>
                             </button>
                         </div>
                     </div>
@@ -236,13 +233,13 @@ export default function GovernanceDashboard() {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-8 translate-x-8" />
                         <div className="relative">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm font-medium text-blue-300">Sessions Audited</span>
+                                <span className="text-sm font-medium text-blue-300">{t('sessionsAudited')}</span>
                                 <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
                                     <Activity className="w-5 h-5 text-blue-400" />
                                 </div>
                             </div>
                             <p className="text-4xl font-bold text-white">{stats.sessionsAudited}</p>
-                            <p className="text-xs text-gray-400 mt-1">Last 24 hours</p>
+                            <p className="text-xs text-gray-400 mt-1">{t('last24Hours')}</p>
                         </div>
                     </div>
 
@@ -251,13 +248,13 @@ export default function GovernanceDashboard() {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -translate-y-8 translate-x-8" />
                         <div className="relative">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm font-medium text-red-300">Interventions</span>
+                                <span className="text-sm font-medium text-red-300">{t('interventions')}</span>
                                 <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
                                     <AlertTriangle className="w-5 h-5 text-red-400" />
                                 </div>
                             </div>
                             <p className="text-4xl font-bold text-white">{stats.interventionsTriggered}</p>
-                            <p className="text-xs text-gray-400 mt-1">Blocks & flags triggered</p>
+                            <p className="text-xs text-gray-400 mt-1">{t('blocksFlagsTriggered')}</p>
                         </div>
                     </div>
 
@@ -266,13 +263,13 @@ export default function GovernanceDashboard() {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -translate-y-8 translate-x-8" />
                         <div className="relative">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm font-medium text-emerald-300">Safety Score</span>
+                                <span className="text-sm font-medium text-emerald-300">{t('safetyScore')}</span>
                                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
                                     <TrendingUp className="w-5 h-5 text-emerald-400" />
                                 </div>
                             </div>
                             <p className="text-4xl font-bold text-white">{stats.avgSafetyScore}%</p>
-                            <p className="text-xs text-gray-400 mt-1">Average across all sessions</p>
+                            <p className="text-xs text-gray-400 mt-1">{t('avgAcrossSessions')}</p>
                         </div>
                     </div>
 
@@ -281,16 +278,16 @@ export default function GovernanceDashboard() {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -translate-y-8 translate-x-8" />
                         <div className="relative">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm font-medium text-purple-300">System Status</span>
+                                <span className="text-sm font-medium text-purple-300">{t('systemStatus')}</span>
                                 <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
                                     <Shield className="w-5 h-5 text-purple-400" />
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
-                                <p className="text-lg font-bold text-white">Operational</p>
+                                <p className="text-lg font-bold text-white">{t('operational')}</p>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">All systems healthy</p>
+                            <p className="text-xs text-gray-400 mt-1">{t('allSystemsHealthy')}</p>
                         </div>
                     </div>
                 </div>
@@ -300,16 +297,16 @@ export default function GovernanceDashboard() {
                     <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Activity className="w-5 h-5 text-emerald-400" />
-                            <h2 className="text-lg font-semibold text-white">Live Risk Feed</h2>
+                            <h2 className="text-lg font-semibold text-white">{t('liveRiskFeed')}</h2>
                             <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs text-gray-300">
-                                Last 50
+                                {t('last50')}
                             </span>
                         </div>
                         <Link
                             href="/admin/governance"
                             className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors"
                         >
-                            <span>Full Dashboard</span>
+                            <span>{t('fullDashboard')}</span>
                             <ChevronRight className="w-4 h-4" />
                         </Link>
                     </div>
@@ -319,13 +316,13 @@ export default function GovernanceDashboard() {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-white/5">
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Timestamp</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Model</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Safety Score</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Trigger</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Risk Level</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Latency</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Action</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('timestamp')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('model')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('safetyScore')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('trigger')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('riskLevel')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('latency')}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{t('action')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -336,8 +333,8 @@ export default function GovernanceDashboard() {
                                                 <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
                                                     <Shield className="w-8 h-8 text-gray-500" />
                                                 </div>
-                                                <p className="text-gray-400">No logs found. Waiting for sessions...</p>
-                                                <p className="text-xs text-gray-500">Governance events will appear here in real-time</p>
+                                                <p className="text-gray-400">{t('noLogs')}</p>
+                                                <p className="text-xs text-gray-500">{t('logsAppearHere')}</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -385,16 +382,26 @@ export default function GovernanceDashboard() {
                                                 {log.events.length > 0 ? (
                                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getSeverityColor(log.events[0].severity)}`}>
                                                         {log.events[0].severity === 'HARD_BLOCK' ? (
-                                                            <XCircle className="w-3.5 h-3.5" />
+                                                            <>
+                                                                <XCircle className="w-3.5 h-3.5" />
+                                                                {t('hardBlock')}
+                                                            </>
+                                                        ) : log.events[0].severity === 'SOFT_NUDGE' ? (
+                                                            <>
+                                                                <AlertTriangle className="w-3.5 h-3.5" />
+                                                                {t('softNudge')}
+                                                            </>
                                                         ) : (
-                                                            <AlertTriangle className="w-3.5 h-3.5" />
+                                                            <>
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                {t('pass')}
+                                                            </>
                                                         )}
-                                                        {log.events[0].severity}
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                                                         <CheckCircle2 className="w-3.5 h-3.5" />
-                                                        PASS
+                                                        {t('pass')}
                                                     </span>
                                                 )}
                                             </td>
@@ -412,7 +419,7 @@ export default function GovernanceDashboard() {
                                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-300 hover:text-white text-xs font-medium transition-all"
                                                 >
                                                     <Eye className="w-3.5 h-3.5" />
-                                                    View
+                                                    {t('view')}
                                                 </button>
                                             </td>
                                         </tr>
@@ -427,15 +434,15 @@ export default function GovernanceDashboard() {
                 <div className="mt-8 flex items-center justify-center gap-6 text-sm text-gray-500">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                        <span>Pass</span>
+                        <span>{t('pass')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-amber-500" />
-                        <span>Soft Nudge</span>
+                        <span>{t('softNudge')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-red-500" />
-                        <span>Hard Block</span>
+                        <span>{t('hardBlock')}</span>
                     </div>
                 </div>
             </div>

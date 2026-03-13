@@ -12,6 +12,7 @@ import { createHash } from 'crypto';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { verifyRecordingConsent } from '@/lib/consent/recording-consent';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -171,7 +172,7 @@ export const POST = createProtectedRoute(
         data: session,
       });
     } catch (error) {
-      console.error('Error creating scribe session:', error);
+      logger.error('Error creating scribe session:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to create scribe session' });
     }
   }
@@ -264,7 +265,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error fetching scribe sessions:', error);
+      logger.error('Error fetching scribe sessions:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch scribe sessions' });
     }
   }

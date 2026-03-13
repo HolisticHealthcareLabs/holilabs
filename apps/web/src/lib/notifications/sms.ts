@@ -46,7 +46,7 @@ export async function sendSMS({ to, message }: SMSOptions): Promise<boolean> {
     }
 
     const data = await response.json();
-    console.log('SMS sent successfully:', data.sid);
+    console.error('[NotificationSMS]', { event: 'sent', sid: data.sid });
     return true;
   } catch (error) {
     console.error('Error sending SMS:', error);

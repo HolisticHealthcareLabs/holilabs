@@ -7,6 +7,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 type AccessRequest = {
   requestId: string;
@@ -17,6 +18,7 @@ type AccessRequest = {
 };
 
 export default function AccessRequestsPage() {
+  const t = useTranslations('portal.accessRequests');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requests, setRequests] = useState<AccessRequest[]>([]);

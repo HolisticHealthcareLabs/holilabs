@@ -37,7 +37,7 @@ const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const imageId = params?.imageId;
       const userId = context.user?.id || context.user?.email || 'unknown';
 
@@ -104,7 +104,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       logger.error({
         event: 'image_retrieval_error',
         imageId: params?.imageId,
@@ -124,7 +124,7 @@ export const GET = createProtectedRoute(
 export const DELETE = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const imageId = params?.imageId;
       const userId = context.user?.id || context.user?.email || 'unknown';
 
@@ -170,7 +170,7 @@ export const DELETE = createProtectedRoute(
         imageId,
       });
     } catch (error) {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       logger.error({
         event: 'image_deletion_error',
         imageId: params?.imageId,

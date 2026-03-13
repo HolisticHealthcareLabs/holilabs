@@ -7,13 +7,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const { id } = params;
 
       const formInstance = await prisma.formInstance.findUnique({
@@ -70,7 +71,7 @@ export const GET = createProtectedRoute(
         { status: 200 }
       );
     } catch (error) {
-      console.error('Error fetching form responses:', error);
+      logger.error('Error fetching form responses:', error);
       return NextResponse.json(
         { error: 'Failed to fetch form responses' },
         { status: 500 }

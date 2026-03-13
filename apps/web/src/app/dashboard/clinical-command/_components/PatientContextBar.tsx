@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import {
   Search, User, X, Eye, Heart, AlertTriangle, Clock, FileText,
-  Upload, Stethoscope, Calendar, UserPlus,
+  Upload, Stethoscope, Calendar,
 } from 'lucide-react';
 import { filterRecordsForOrganization } from '../../../../../../../packages/shared-kernel/src/types/auth';
 
@@ -212,6 +213,7 @@ function SectionHeading({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ExternalRecordsZone() {
+  const t = useTranslations('dashboard.clinicalCommand');
   const [isDragging, setIsDragging] = useState(false);
 
   function handleDragEnter(e: React.DragEvent) {
@@ -260,10 +262,10 @@ function ExternalRecordsZone() {
 
       <div className="text-center">
         <p className={`text-xs font-medium transition-colors ${isDragging ? 'text-cyan-400' : 'text-slate-500'}`}>
-          Drag and drop external records or PDFs here
+          {t('dragDropRecords')}
         </p>
         <p className="text-[10px] text-slate-600 mt-0.5">
-          PDF, JPEG, PNG · max 25 MB
+          {t('fileFormats')}
         </p>
       </div>
     </motion.div>
@@ -284,6 +286,7 @@ function PatientChartDrawer({
   /** When true, the drawer scrolls to and highlights the External Records zone. */
   scrollToRecords?: boolean;
 }) {
+  const t = useTranslations('dashboard.clinicalCommand');
   const facesheet = FACESHEET[patient.id] ?? {
     problems: [], medications: [], allergies: [], diagnoses: [], encounters: [],
   };
@@ -345,7 +348,7 @@ function PatientChartDrawer({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <FileText className="w-4 h-4 text-cyan-400" />
-              <h2 className="text-base font-semibold text-white">Patient Facesheet</h2>
+              <h2 className="text-base font-semibold text-white">{t('patientFacesheet')}</h2>
             </div>
             <p className="text-sm font-medium text-slate-300">{patient.name}</p>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -370,9 +373,9 @@ function PatientChartDrawer({
 
           {/* Problem List */}
           <section>
-            <SectionHeading icon={Stethoscope} label="Problem List" iconColor="text-cyan-400" />
+            <SectionHeading icon={Stethoscope} label={t('problemList')} iconColor="text-cyan-400" />
             {facesheet.problems.length === 0 ? (
-              <p className="text-xs text-slate-600 italic">No active problems on file.</p>
+              <p className="text-xs text-slate-600 italic">{t('noActiveProblems')}</p>
             ) : (
               <div className="space-y-2">
                 {facesheet.problems.map((prob, i) => (
@@ -386,7 +389,7 @@ function PatientChartDrawer({
                   >
                     <div>
                       <span className="text-sm font-medium text-slate-200">{prob.description}</span>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Since {prob.onset}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{t('since', { date: prob.onset })}</p>
                     </div>
                     <StatusBadge status={prob.status} />
                   </motion.div>
@@ -397,9 +400,9 @@ function PatientChartDrawer({
 
           {/* Active Medications */}
           <section>
-            <SectionHeading icon={Heart} label="Active Medications" iconColor="text-cyan-400" />
+            <SectionHeading icon={Heart} label={t('activeMedications')} iconColor="text-cyan-400" />
             {facesheet.medications.length === 0 ? (
-              <p className="text-xs text-slate-600 italic">None on file.</p>
+              <p className="text-xs text-slate-600 italic">{t('noneOnFile')}</p>
             ) : (
               <div className="space-y-2">
                 {facesheet.medications.map((med, i) => (
@@ -425,9 +428,9 @@ function PatientChartDrawer({
 
           {/* Allergies */}
           <section>
-            <SectionHeading icon={AlertTriangle} label="Allergies" iconColor="text-amber-400" />
+            <SectionHeading icon={AlertTriangle} label={t('allergiesLabel')} iconColor="text-amber-400" />
             {facesheet.allergies.length === 0 ? (
-              <p className="text-xs text-slate-600 italic">No known allergies (NKA).</p>
+              <p className="text-xs text-slate-600 italic">{t('noKnownAllergies')}</p>
             ) : (
               <div className="space-y-2">
                 {facesheet.allergies.map((allergy, i) => (
@@ -452,9 +455,9 @@ function PatientChartDrawer({
 
           {/* Recent Encounters */}
           <section>
-            <SectionHeading icon={Calendar} label="Recent Encounters" iconColor="text-cyan-400" />
+            <SectionHeading icon={Calendar} label={t('recentEncounters')} iconColor="text-cyan-400" />
             {facesheet.encounters.length === 0 ? (
-              <p className="text-xs text-slate-600 italic">No recent encounters on file.</p>
+              <p className="text-xs text-slate-600 italic">{t('noRecentEncounters')}</p>
             ) : (
               <div className="space-y-2">
                 {facesheet.encounters.map((enc, i) => (
@@ -482,7 +485,7 @@ function PatientChartDrawer({
 
           {/* External Records — drag-and-drop upload zone */}
           <section ref={recordsSectionRef}>
-            <SectionHeading icon={Upload} label="External Records" iconColor="text-cyan-400" />
+            <SectionHeading icon={Upload} label={t('externalRecords')} iconColor="text-cyan-400" />
             <motion.div
               animate={scrollToRecords
                 ? { boxShadow: ['0 0 0 0px rgb(34 211 238 / 0)', '0 0 0 3px rgb(34 211 238 / 0.4)', '0 0 0 0px rgb(34 211 238 / 0)'] }
@@ -498,7 +501,7 @@ function PatientChartDrawer({
         {/* ── Drawer footer ─────────────────────────────────────────────── */}
         <div className="flex-shrink-0 px-6 py-4 border-t border-slate-800">
           <p className="text-[10px] text-slate-600 text-center">
-            Facesheet data is read-only. Edit records in the EHR system.
+            {t('facesheetReadOnly')}
           </p>
         </div>
       </motion.aside>
@@ -517,6 +520,7 @@ interface PatientContextBarProps {
 }
 
 export function PatientContextBar({ onSelectPatient, initialPatientId }: PatientContextBarProps) {
+  const t = useTranslations('dashboard.clinicalCommand');
   const { data: session } = useSession();
   const [query,       setQuery]       = useState('');
   const [open,        setOpen]        = useState(false);
@@ -598,7 +602,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
         <div className="flex items-center gap-3 max-w-2xl">
           <span className="text-[10px] font-semibold uppercase tracking-wider flex-shrink-0
                            text-slate-500 dark:text-slate-400">
-            Patient
+            {t('patientLabel')}
           </span>
 
           <div className="relative flex-1 max-w-xs">
@@ -635,7 +639,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                     aria-controls="patient-search-results"
                     aria-expanded={open}
                     aria-autocomplete="list"
-                    placeholder="Search patients..."
+                    placeholder={t('searchPatients')}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => setOpen(true)}
@@ -712,7 +716,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                 "
               >
                 <Eye className="w-3 h-3" />
-                View Chart
+                {t('viewChart')}
               </motion.button>
 
               {/* Attach Document — opens drawer and scrolls to External Records */}
@@ -735,7 +739,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                 "
               >
                 <Upload className="w-3 h-3" />
-                Attach Document
+                {t('attachDocument')}
               </motion.button>
             </>
           )}
@@ -753,8 +757,8 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
               "
             >
-              <UserPlus className="w-3 h-3" />
-              Add Patient
+              <User className="w-3 h-3" />
+              {t('addPatient')}
             </button>
           )}
 
@@ -762,7 +766,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                placeholder="Full name"
+                placeholder={t('fullNamePlaceholder')}
                 value={newPatientName}
                 onChange={(e) => setNewPatientName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddPatient(); }}
@@ -778,7 +782,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
               />
               <input
                 type="text"
-                placeholder="DOB (MM/DD/YYYY)"
+                placeholder={t('dobPlaceholder')}
                 value={newPatientDob}
                 onChange={(e) => setNewPatientDob(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddPatient(); }}
@@ -801,7 +805,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
                   transition-colors
                 "
               >
-                Add
+                {t('addButton')}
               </button>
               <button
                 onClick={() => { setShowNewPatientForm(false); setNewPatientName(''); setNewPatientDob(''); }}
@@ -814,7 +818,7 @@ export function PatientContextBar({ onSelectPatient, initialPatientId }: Patient
 
           {!selected && !showNewPatientForm && (
             <p className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:block">
-              Select a patient to enable recording &amp; CDSS sync.
+              {t('selectPatientHint')}
             </p>
           )}
         </div>

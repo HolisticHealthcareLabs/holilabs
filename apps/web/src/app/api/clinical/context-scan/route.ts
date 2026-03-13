@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import logger from '@/lib/logger';
 
 /**
@@ -341,7 +341,7 @@ function buildClinicalSummary(
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export const POST = createProtectedRoute(
-  async (request: NextRequest) => {
+  async (request: NextRequest, context: { user?: { id: string } }) => {
   let body: ClinicalContextRequest;
   try {
     body = await request.json();
@@ -351,6 +351,11 @@ export const POST = createProtectedRoute(
 
   if (!body.patientId || !body.encounterId) {
     return NextResponse.json({ error: 'patientId and encounterId are required' }, { status: 400 });
+  }
+
+  const hasAccess = await verifyPatientAccess(context.user!.id, body.patientId);
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
   }
 
   // Check cache — one scan per patient per calendar day

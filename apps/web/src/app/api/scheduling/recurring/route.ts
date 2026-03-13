@@ -201,7 +201,7 @@ export const POST = createProtectedRoute(
             description: validated.description,
             startTime: slot.startTime,
             endTime: slot.endTime,
-            timezone: 'America/Mexico_City', // TODO: Get from clinician preferences
+            timezone: 'America/Mexico_City', // @todo(clinician-timezone): Read from clinician preferences
             type: validated.type,
             meetingUrl: validated.meetingUrl,
             status: 'SCHEDULED',

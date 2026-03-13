@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import AccessGrantsList from '@/components/access-grants/AccessGrantsList';
 import AccessGrantForm from '@/components/access-grants/AccessGrantForm';
@@ -10,6 +11,7 @@ import { ConsentManagementPanel } from '@/components/privacy/ConsentManagementPa
 import { AccessLogViewer } from '@/components/privacy/AccessLogViewer';
 
 export default function PrivacyControlPage() {
+  const t = useTranslations('portal.privacy');
   const { patientId, loading } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);

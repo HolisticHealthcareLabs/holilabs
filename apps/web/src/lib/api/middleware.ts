@@ -23,10 +23,11 @@ import { getPatientSession } from '@/lib/auth/patient-session';
 // TYPES
 // ============================================================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApiHandler = (
   request: NextRequest,
-  context: ApiContext
-) => Promise<NextResponse> | NextResponse;
+  context: any
+) => Promise<NextResponse | Response> | NextResponse | Response;
 
 export interface ApiContext {
   params?: Record<string, string>;
@@ -510,7 +511,9 @@ export function requireAuthOrPatientSession() {
 // ============================================================================
 
 export type UserRole =
+  | 'LICENSE_OWNER'
   | 'ADMIN'
+  | 'COMPLIANCE_ADMIN'
   | 'PHYSICIAN'
   | 'NURSE'
   | 'RECEPTIONIST'
@@ -528,6 +531,10 @@ export function requireRole(...allowedRoles: UserRole[]) {
         { error: 'Authentication required' },
         { status: 401 }
       );
+    }
+
+    if (context.user.role === 'LICENSE_OWNER') {
+      return next();
     }
 
     if (!allowedRoles.includes(context.user.role as UserRole)) {

@@ -7,12 +7,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function TemplatesRedirect() {
+  const t = useTranslations('dashboard.templatesRedirect');
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to Forms page with notifications tab active
     router.replace('/dashboard/forms?tab=notifications');
   }, [router]);
 
@@ -21,7 +22,7 @@ export default function TemplatesRedirect() {
       <div className="text-center">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mb-4"></div>
         <p className="text-gray-600 dark:text-gray-400">
-          Redirigiendo a Plantillas...
+          {t('redirecting')}
         </p>
       </div>
     </div>

@@ -1,0 +1,66 @@
+/**
+ * @jest-environment jsdom
+ */
+import React from 'react';
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
+
+jest.mock('framer-motion', () => ({
+  motion: new Proxy({}, {
+    get: (_target, prop) => React.forwardRef(({ children, ...rest }: any, ref: any) => {
+      const Tag = typeof prop === 'string' ? prop : 'div';
+      return React.createElement(Tag, { ...rest, ref }, children);
+    }),
+  }),
+  AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
+}));
+
+jest.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => {
+    const map: Record<string, string> = {
+      claimReview: 'Claim Review',
+      billingStandards: 'TUSS/CBHPM billing standards',
+      analyzingDocumentation: 'Analyzing documentation...',
+      approveSubmitClaim: 'Approve & Submit',
+      editNoteFirst: 'Edit Note First',
+      retry: 'Retry',
+    };
+    return map[key] ?? key;
+  },
+}));
+
+global.fetch = jest.fn().mockResolvedValue({
+  ok: true,
+  json: () => Promise.resolve({
+    success: true,
+    data: {
+      extractedDiagnoses: [],
+      suggestedServices: [],
+      totalEstimatedValue: 0,
+      cdiWarnings: [],
+    },
+  }),
+}) as jest.Mock;
+
+import { SignAndBillModal } from '../SignAndBillModal';
+
+describe('SignAndBillModal', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('renders nothing when closed', () => {
+    const { container } = render(
+      <SignAndBillModal isOpen={false} onClose={jest.fn()} onComplete={jest.fn()} />
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders Claim Review header when open', () => {
+    render(<SignAndBillModal isOpen={true} onClose={jest.fn()} onComplete={jest.fn()} />);
+    expect(screen.getByText('Claim Review')).toBeInTheDocument();
+  });
+
+  it('shows loading state initially', () => {
+    render(<SignAndBillModal isOpen={true} onClose={jest.fn()} onComplete={jest.fn()} />);
+    expect(screen.getByText('Analyzing documentation...')).toBeInTheDocument();
+  });
+});

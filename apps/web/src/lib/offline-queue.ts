@@ -220,7 +220,7 @@ class OfflineQueue {
         if (response.ok) {
           await this.updateStatus(operation.id, 'completed');
           succeeded++;
-          console.log(`✅ Synced operation ${operation.id} (${operation.type})`);
+          console.error('[OfflineQueue]', { event: 'synced', operationId: operation.id, type: operation.type });
         } else {
           const errorText = await response.text();
           await this.updateStatus(operation.id, 'pending', `HTTP ${response.status}: ${errorText}`);
@@ -283,10 +283,10 @@ export async function queueAPICall(
 if (typeof window !== 'undefined') {
   // Process queue when coming online
   window.addEventListener('online', async () => {
-    console.log('🌐 Connection restored - processing offline queue...');
+    console.error('[OfflineQueue]', { event: 'connection_restored' });
     try {
       const result = await offlineQueue.processQueue();
-      console.log(`✅ Sync complete: ${result.succeeded} succeeded, ${result.failed} failed`);
+      console.error('[OfflineQueue]', { event: 'sync_complete', succeeded: result.succeeded, failed: result.failed });
 
       // Show notification
       if ('Notification' in window && Notification.permission === 'granted') {
@@ -303,6 +303,6 @@ if (typeof window !== 'undefined') {
   // Periodic cleanup (every 24 hours)
   setInterval(async () => {
     const deleted = await offlineQueue.cleanup();
-    console.log(`🧹 Cleaned up ${deleted} old operations`);
+    console.error('[OfflineQueue]', { event: 'cleanup', deletedCount: deleted });
   }, 24 * 60 * 60 * 1000);
 }

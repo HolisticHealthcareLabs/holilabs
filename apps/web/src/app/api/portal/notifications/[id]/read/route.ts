@@ -5,21 +5,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 
-export const POST = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const segments = request.nextUrl.pathname.split('/');
+    const notificationId = segments[segments.length - 2]; // /api/portal/notifications/[id]/read
 
-    const params = await Promise.resolve(context.params ?? {});
-    const notificationId = params.id;
-
-    // Find notification
     const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
     });
@@ -34,8 +28,7 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Verify ownership
-    if (notification.recipientId !== session.patientId || notification.recipientType !== 'PATIENT') {
+    if (notification.recipientId !== context.session.patientId || notification.recipientType !== 'PATIENT') {
       return NextResponse.json(
         {
           success: false,
@@ -45,7 +38,6 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Mark as read
     const updatedNotification = await prisma.notification.update({
       where: { id: notificationId },
       data: {
@@ -57,7 +49,7 @@ export const POST = createPublicRoute(
     logger.info({
       event: 'notification_marked_read',
       notificationId,
-      patientId: session.patientId,
+      patientId: context.session.patientId,
     });
 
     return NextResponse.json(
@@ -68,30 +60,6 @@ export const POST = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'notification_mark_read_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al marcar notificación como leída.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'UPDATE', resource: 'Notification' } }
 );

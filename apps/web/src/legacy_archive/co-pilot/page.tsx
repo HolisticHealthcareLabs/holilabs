@@ -1204,7 +1204,6 @@ function CoPilotContent() {
       };
 
       socket.on('connect', () => {
-        console.log('✅ Co-Pilot Socket.io connected');
         // Reset serverReady - will be set when we receive co_pilot:server_ready after joining
         setScribeDebug((prev) => ({ ...prev, socketConnected: true, serverReady: false }));
 
@@ -1365,8 +1364,6 @@ function CoPilotContent() {
         // Only process if for current patient
         if (data.patientId !== selectedPatientIdRef.current) return;
 
-        console.log('🛡️ Prevention condition detected:', data.conditions.length, 'conditions');
-
         setPreventionConditions((prev) => {
           const existingIds = new Set(prev.map((c) => c.id));
           const newConditions = data.conditions.filter((c) => !existingIds.has(c.id));
@@ -1393,8 +1390,6 @@ function CoPilotContent() {
       socket.on('prevention:findings_processed', (data: PreventionFindingsProcessedPayload) => {
         // Only process if for current patient
         if (data.patientId !== selectedPatientIdRef.current) return;
-
-        console.log('🛡️ Prevention findings processed:', data.conditions.length, 'conditions,', data.recommendations.length, 'recommendations in', data.processingTimeMs, 'ms');
 
         // Update conditions
         setPreventionConditions((prev) => {
@@ -1459,7 +1454,6 @@ function CoPilotContent() {
       });
 
       socket.on('disconnect', () => {
-        console.log('Socket.io disconnected');
         setScribeDebug((prev) => ({ ...prev, socketConnected: false, serverReady: false }));
         wsRef.current = null;
       });

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,7 @@ export const PATCH = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error updating prevention plan goal:', error);
+    logger.error('Error updating prevention plan goal:', error);
 
     return NextResponse.json(
       {
@@ -200,7 +201,7 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error bulk updating prevention plan goals:', error);
+      logger.error('Error bulk updating prevention plan goals:', error);
 
       return NextResponse.json(
         {

@@ -3,14 +3,16 @@
  *
  * POST /api/portal/records/[id]/share
  * Create a secure, time-limited share link for a medical record
+ *
+ * GET /api/portal/records/[id]/share
+ * List all active shares for a record
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import crypto from 'crypto';
 
@@ -27,14 +29,9 @@ const ShareRequestSchema = z.object({
   password: z.string().min(6).optional(),
 });
 
-export const POST = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const recordId = params.id;
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const recordId = context.params.id;
 
     // Verify record exists and belongs to patient
     const record = await prisma.sOAPNote.findUnique({
@@ -48,27 +45,21 @@ export const POST = createPublicRoute(
 
     if (!record) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Registro no encontrado.',
-        },
+        { success: false, error: 'Registro no encontrado.' },
         { status: 404 }
       );
     }
 
-    if (record.patientId !== session.patientId) {
+    if (record.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_share_attempt',
-        patientId: session.userId,
+        patientId: context.session.userId,
         requestedPatientId: record.patientId,
         recordId,
       });
 
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado para compartir este registro.',
-        },
+        { success: false, error: 'No autorizado para compartir este registro.' },
         { status: 403 }
       );
     }
@@ -125,7 +116,7 @@ export const POST = createPublicRoute(
     // Create share record
     const share = await prisma.documentShare.create({
       data: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         documentType: 'SOAP_NOTE',
         documentId: recordId,
         documentIds: [recordId],
@@ -153,7 +144,7 @@ export const POST = createPublicRoute(
       resource: 'SOAPNote',
       resourceId: recordId,
       details: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         recordId,
         shareId: share.id,
         recipientEmail: share.recipientEmail,
@@ -183,45 +174,17 @@ export const POST = createPublicRoute(
       },
       { status: 201 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'medical_record_share_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      recordId: (await Promise.resolve(context.params ?? {})).id,
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al crear enlace de compartir.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'CREATE', resource: 'RecordShare' },
+  }
 );
 
 // GET - List all active shares for a record
-export const GET = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const recordId = params.id;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const recordId = context.params.id;
 
     // Verify record belongs to patient
     const record = await prisma.sOAPNote.findUnique({
@@ -234,20 +197,14 @@ export const GET = createPublicRoute(
 
     if (!record) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Registro no encontrado.',
-        },
+        { success: false, error: 'Registro no encontrado.' },
         { status: 404 }
       );
     }
 
-    if (record.patientId !== session.patientId) {
+    if (record.patientId !== context.session.patientId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado.',
-        },
+        { success: false, error: 'No autorizado.' },
         { status: 403 }
       );
     }
@@ -257,7 +214,7 @@ export const GET = createPublicRoute(
       where: {
         documentId: recordId,
         documentType: 'SOAP_NOTE',
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         isActive: true,
       },
       orderBy: {
@@ -283,7 +240,7 @@ export const GET = createPublicRoute(
       resource: 'DocumentShare',
       resourceId: recordId,
       details: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         recordId,
         sharesCount: shares.length,
         accessType: 'PATIENT_RECORD_SHARE_LIST',
@@ -292,27 +249,12 @@ export const GET = createPublicRoute(
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        data: shares,
-      },
+      { success: true, data: shares },
       { status: 200 }
     );
-  } catch (error) {
-    logger.error({
-      event: 'list_shares_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      recordId: (await Promise.resolve(context.params ?? {})).id,
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al listar enlaces de compartir.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'RecordShare' },
+  }
 );

@@ -161,9 +161,9 @@ export default function PatientSelectorModal({
             </label>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { value: 'SMS', label: 'SMS', icon: '💬' },
-                { value: 'EMAIL', label: 'Email', icon: '📧' },
-                { value: 'WHATSAPP', label: 'WhatsApp', icon: '💚' },
+                { value: 'SMS', label: 'SMS', icon: '' },
+                { value: 'EMAIL', label: 'Email', icon: '' },
+                { value: 'WHATSAPP', label: 'WhatsApp', icon: '' },
               ].map((ch) => (
                 <button
                   key={ch.value}

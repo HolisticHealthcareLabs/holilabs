@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTranslations } from 'next-intl';
 
 // Tab Components
 import PatientOverviewTab from '@/components/palliative/tabs/PatientOverviewTab';
@@ -16,6 +17,7 @@ import FamilyTab from '@/components/palliative/tabs/FamilyTab';
 type Tab = 'overview' | 'care-plans' | 'pain-history' | 'clinical-notes' | 'family';
 
 export default function PalliativePatientDetailPage() {
+  const t = useTranslations('portal.palliative');
   const params = useParams();
   const patientId = (params?.id as string) || '';
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -101,8 +103,8 @@ export default function PalliativePatientDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mb-4" />
-          <h3 className="text-xl font-bold text-gray-800">Cargando datos del paciente...</h3>
-          <p className="text-gray-600 mt-2">Por favor espere...</p>
+          <h3 className="text-xl font-bold text-gray-800">{t('loading')}</h3>
+          <p className="text-gray-600 mt-2">{t('loadingWait')}</p>
         </div>
       </div>
     );
@@ -114,13 +116,13 @@ export default function PalliativePatientDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center p-8 bg-white border-2 border-red-300 rounded-xl shadow-lg max-w-md">
           <div className="text-6xl mb-4">❌</div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">Error al cargar paciente</h3>
-          <p className="text-gray-600 mb-4">{error || 'Paciente no encontrado'}</p>
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">{t('errorTitle')}</h3>
+          <p className="text-gray-600 mb-4">{error || t('notFound')}</p>
           <Link
             href="/dashboard/patients"
             className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
           >
-            ← Volver a Pacientes
+            {t('backToPatients')}
           </Link>
         </div>
       </div>
@@ -168,7 +170,7 @@ export default function PalliativePatientDetailPage() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="font-medium">← Volver a Pacientes</span>
+            <span className="font-medium">{t('backToPatients')}</span>
           </Link>
 
           <div className="flex items-start justify-between">
@@ -180,10 +182,10 @@ export default function PalliativePatientDetailPage() {
                   🕊️
                 </div>
                 {patient.isPalliativeCare && (
-                  <div className="absolute -bottom-2 -right-2 px-3 py-1 bg-purple-900 text-white text-xs font-bold rounded-full border-2 border-white shadow-lg">
-                    Cuidados Paliativos
-                  </div>
-                )}
+                    <div className="absolute -bottom-2 -right-2 px-3 py-1 bg-purple-900 text-white text-xs font-bold rounded-full border-2 border-white shadow-lg">
+                      {t('palliativeCare')}
+                    </div>
+                  )}
               </div>
 
               {/* Patient Details */}
@@ -192,7 +194,7 @@ export default function PalliativePatientDetailPage() {
                   <h1 className="text-3xl font-black">{fullName}</h1>
                   {patient.isPalliativeCare && (
                     <span className="px-3 py-1 bg-purple-800/50 backdrop-blur rounded-full text-sm font-semibold">
-                      🕊️ Palliativo
+                      🕊️ {t('palliativeLabel')}
                     </span>
                   )}
                 </div>
@@ -202,9 +204,9 @@ export default function PalliativePatientDetailPage() {
                   <span>•</span>
                   <span>Token: {patient.tokenId}</span>
                   <span>•</span>
-                  <span>{age ? `${age} años` : 'Edad desconocida'}</span>
+                  <span>{age ? `${age} años` : t('unknownAge')}</span>
                   <span>•</span>
-                  <span>{patient.gender || 'No especificado'}</span>
+                  <span>{patient.gender || t('notSpecified')}</span>
                 </div>
 
                 {/* Critical Alerts - Epic Style */}
@@ -224,13 +226,13 @@ export default function PalliativePatientDetailPage() {
                   {patient.hasAdvanceDirective && (
                     <div className="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 shadow-md">
                       <span>📄</span>
-                      <span>Directivas Anticipadas</span>
+                      <span>{t('advanceDirective')}</span>
                     </div>
                   )}
                   {latestPainAssessment && latestPainAssessment.painScore > 7 && (
                     <div className="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1 shadow-md">
                       <span>⚠️</span>
-                      <span>Dolor Alto ({latestPainAssessment.painScore}/10)</span>
+                      <span>{t('highPain', { score: latestPainAssessment.painScore })}</span>
                     </div>
                   )}
                 </div>
@@ -239,19 +241,19 @@ export default function PalliativePatientDetailPage() {
                 <div className="flex items-center space-x-6 text-sm">
                   {latestPainAssessment && (
                     <div className="flex items-center space-x-2 bg-white/20 backdrop-blur px-3 py-1 rounded-lg">
-                      <span className="font-semibold">Dolor:</span>
+                      <span className="font-semibold">{t('painLabel')}</span>
                       <span className="text-lg font-black">{latestPainAssessment.painScore}/10</span>
                     </div>
                   )}
                   {latestQoLAssessment && (
                     <div className="flex items-center space-x-2 bg-white/20 backdrop-blur px-3 py-1 rounded-lg">
-                      <span className="font-semibold">QoL:</span>
+                      <span className="font-semibold">{t('qolLabel')}</span>
                       <span className="text-lg font-black">{latestQoLAssessment.overallQoL}/10</span>
                     </div>
                   )}
                   {activeCarePlans.length > 0 && (
                     <div className="flex items-center space-x-2 bg-white/20 backdrop-blur px-3 py-1 rounded-lg">
-                      <span className="font-semibold">Planes Activos:</span>
+                      <span className="font-semibold">{t('activePlansLabel')}</span>
                       <span className="text-lg font-black">{activeCarePlans.length}</span>
                     </div>
                   )}
@@ -265,13 +267,13 @@ export default function PalliativePatientDetailPage() {
                 href={`/dashboard/scribe?patientId=${patientId}`}
                 className="px-6 py-3 bg-white text-purple-700 rounded-lg hover:bg-gray-100 transition font-bold shadow-lg text-center"
               >
-                📝 Nueva Nota SOAP
+                📝 {t('newSoapNote')}
               </Link>
               <button className="px-6 py-3 bg-white/10 backdrop-blur hover:bg-white/20 rounded-lg transition font-semibold border-2 border-white/30">
-                🩺 Evaluar Dolor
+                🩺 {t('evaluatePain')}
               </button>
               <button className="px-6 py-3 bg-white/10 backdrop-blur hover:bg-white/20 rounded-lg transition font-semibold border-2 border-white/30">
-                📋 Nuevo Plan
+                📋 {t('newPlan')}
               </button>
             </div>
           </div>
@@ -280,11 +282,11 @@ export default function PalliativePatientDetailPage() {
           <div className="mt-6 -mb-px">
             <nav className="flex space-x-1">
               {[
-                { id: 'overview', label: 'Resumen', icon: '👤' },
-                { id: 'care-plans', label: 'Planes de Atención', icon: '📋' },
-                { id: 'pain-history', label: 'Historial de Dolor', icon: '😣' },
-                { id: 'clinical-notes', label: 'Notas Clínicas', icon: '📝' },
-                { id: 'family', label: 'Familia', icon: '👨‍👩‍👧' },
+                { id: 'overview', label: t('tabOverview'), icon: '👤' },
+                { id: 'care-plans', label: t('tabCarePlans'), icon: '📋' },
+                { id: 'pain-history', label: t('tabPainHistory'), icon: '😣' },
+                { id: 'clinical-notes', label: t('tabClinicalNotes'), icon: '📝' },
+                { id: 'family', label: t('tabFamily'), icon: '👨‍👩‍👧' },
               ].map((tab) => (
                 <button
                   key={tab.id}

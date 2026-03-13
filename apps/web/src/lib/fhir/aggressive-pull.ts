@@ -431,7 +431,7 @@ async function importProcedures(
   const procs = procedures.map(proc => fromFHIRProcedure(proc, patientId));
 
   // Deduplicate by procedure name + performed date
-  const existingProcs = await prisma.procedureRecord.findMany({
+  const existingProcs = await (prisma as any).procedureRecord.findMany({
     where: { patientId },
     select: { procedureName: true, performedAt: true },
   });
@@ -458,7 +458,7 @@ async function importProcedures(
   }
 
   // Batch create
-  await prisma.procedureRecord.createMany({
+  await (prisma as any).procedureRecord.createMany({
     data: newProcs as any,
     skipDuplicates: true,
   });
@@ -493,7 +493,7 @@ async function trackPullEvent(patientId: string, result: PullResult): Promise<vo
 
   /* Original code - requires UserBehaviorEvent model:
   try {
-    await prisma.userBehaviorEvent.create({
+    await (prisma as any).userBehaviorEvent.create({
       data: {
         userId: 'system',
         eventType: 'FHIR_AGGRESSIVE_PULL',

@@ -208,7 +208,7 @@ async function getDatabaseMetrics() {
   }
 }
 
-export async function GET() {
+async function getMetrics() {
   try {
     // Fetch all metrics in parallel
     const [businessMetrics, securityMetrics, databaseMetrics] = await Promise.all([

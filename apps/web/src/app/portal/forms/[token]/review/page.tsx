@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import SignatureCanvas from 'react-signature-canvas';
@@ -22,6 +23,7 @@ interface FormData {
 }
 
 export default function ReviewPage() {
+  const t = useTranslations('portal.formReview');
   const params = useParams();
   const router = useRouter();
   const token = (params?.token as string) || '';
@@ -44,14 +46,14 @@ export default function ReviewPage() {
       const response = await fetch(`/api/forms/public/${token}`);
 
       if (!response.ok) {
-        setError('Error al cargar el formulario');
+        setError(t('loadError'));
         return;
       }
 
       const data = await response.json();
       setFormData(data.form);
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('loadError'));
       console.error('Error fetching form:', err);
     } finally {
       setLoading(false);
@@ -65,7 +67,7 @@ export default function ReviewPage() {
 
   const saveSignature = () => {
     if (signatureRef.current?.isEmpty()) {
-      setError('Por favor, firme antes de continuar');
+      setError(t('signRequired'));
       return;
     }
     const dataUrl = signatureRef.current?.toDataURL('image/png');
@@ -74,12 +76,12 @@ export default function ReviewPage() {
 
   const handleSubmit = async () => {
     if (!signatureDataUrl) {
-      setError('Por favor, firme el formulario');
+      setError(t('signRequired'));
       return;
     }
 
     if (!agreedToTerms) {
-      setError('Debe aceptar los términos para continuar');
+      setError(t('termsRequired'));
       return;
     }
 
@@ -98,13 +100,13 @@ export default function ReviewPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Error al enviar el formulario');
+        throw new Error(data.error || t('submitBtn'));
       }
 
       // Success - redirect to success page
       router.push(`/portal/forms/${token}/success`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al enviar el formulario');
+      setError(err instanceof Error ? err.message : t('submitBtn'));
     } finally {
       setSubmitting(false);
     }
@@ -112,13 +114,13 @@ export default function ReviewPage() {
 
   const renderValue = (value: any): string => {
     if (typeof value === 'boolean') {
-      return value ? 'Sí' : 'No';
+      return value ? t('yes') : t('no');
     }
     if (Array.isArray(value)) {
       return value.join(', ');
     }
     if (value === null || value === undefined || value === '') {
-      return '(Sin respuesta)';
+      return t('noAnswer');
     }
     return String(value);
   };
@@ -140,7 +142,7 @@ export default function ReviewPage() {
             onClick={() => router.push(`/portal/forms/${token}`)}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            Volver al formulario
+            {t('backToForm')}
           </button>
         </div>
       </div>
@@ -157,15 +159,13 @@ export default function ReviewPage() {
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8">
-            <h1 className="text-3xl font-bold mb-2">Revisión Final</h1>
-            <p className="text-blue-100">
-              Por favor, revise sus respuestas antes de firmar y enviar
-            </p>
+            <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+            <p className="text-blue-100">{t('subtitle')}</p>
           </div>
 
           {/* Responses Review */}
           <div className="p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Sus Respuestas</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('yourAnswersTitle')}</h2>
 
             <div className="space-y-8">
               {formData?.template.structure.sections.map((section: any, sectionIndex: number) => (
@@ -180,7 +180,7 @@ export default function ReviewPage() {
                             onClick={() => router.push(`/portal/forms/${token}`)}
                             className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            Editar
+                            {t('editBtn')}
                           </button>
                         </div>
                         <p className="text-base text-gray-900">
@@ -195,11 +195,11 @@ export default function ReviewPage() {
 
             {/* Signature Section */}
             <div className="mt-12 border-t border-gray-200 pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Firma Electrónica</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('signatureTitle')}</h2>
 
               <div className="bg-gray-50 rounded-lg p-6">
                 <p className="text-sm text-gray-600 mb-4">
-                  Por favor, firme en el recuadro a continuación con su dedo o mouse
+                  {t('signDesc')}
                 </p>
 
                 {!signatureDataUrl ? (
@@ -218,13 +218,13 @@ export default function ReviewPage() {
                         onClick={clearSignature}
                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                       >
-                        Limpiar
+                        {t('clear')}
                       </button>
                       <button
                         onClick={saveSignature}
                         className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                       >
-                        Guardar Firma
+                        {t('saveSignature')}
                       </button>
                     </div>
                   </div>
@@ -241,7 +241,7 @@ export default function ReviewPage() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span className="text-sm text-green-700 font-medium">Firma guardada</span>
+                      <span className="text-sm text-green-700 font-medium">{t('signatureSaved')}</span>
                       <button
                         onClick={() => {
                           setSignatureDataUrl(null);
@@ -249,7 +249,7 @@ export default function ReviewPage() {
                         }}
                         className="ml-auto text-sm text-blue-600 hover:text-blue-800 font-medium"
                       >
-                        Cambiar firma
+                        {t('changeSignature')}
                       </button>
                     </div>
                   </div>
@@ -266,8 +266,7 @@ export default function ReviewPage() {
                     className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
                   />
                   <span className="text-sm text-gray-700">
-                    Confirmo que he revisado todas mis respuestas y que la información proporcionada es correcta.
-                    Entiendo que esta firma electrónica tiene la misma validez legal que una firma manuscrita.
+                    {t('termsConfirm')}
                   </span>
                 </label>
               </div>
@@ -289,14 +288,14 @@ export default function ReviewPage() {
                   onClick={() => router.push(`/portal/forms/${token}`)}
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 >
-                  Volver al formulario
+                  {t('backBtn')}
                 </button>
                 <button
                   onClick={handleSubmit}
                   disabled={!signatureDataUrl || !agreedToTerms || submitting}
                   className="flex-1 px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 transition-all font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? 'Enviando...' : 'Enviar Formulario'}
+                  {submitting ? t('submitting') : t('submitBtn')}
                 </button>
               </div>
             </div>
@@ -306,7 +305,7 @@ export default function ReviewPage() {
         {/* Security Notice */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            🔒 Su información está protegida con cifrado de grado empresarial
+            {t('securityNotice')}
           </p>
         </div>
       </div>

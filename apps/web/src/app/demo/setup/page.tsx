@@ -223,7 +223,7 @@ const DISCIPLINE_IDS = [
 
 // ─── Phases ───────────────────────────────────────────────────────────────────
 
-type Phase = 'language' | 'country' | 'role' | 'disciplines';
+type Phase = 'language' | 'country' | 'role' | 'disciplines' | 'launching';
 const STEP_PHASES: Phase[] = ['country', 'role', 'disciplines'];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -266,6 +266,7 @@ export default function DemoSetupPage() {
   const totalSteps = STEP_PHASES.length;
 
   async function handleLaunch() {
+    setPhase('launching');
     setIsLaunching(true);
     setError(null);
 
@@ -279,6 +280,7 @@ export default function DemoSetupPage() {
 
       if (!res.ok || !data.success) {
         setError(data.error || t.provisionError);
+        setPhase('disciplines');
         setIsLaunching(false);
         return;
       }
@@ -291,6 +293,7 @@ export default function DemoSetupPage() {
 
       if (!signInResult || signInResult.error) {
         setError(t.sessionError);
+        setPhase('disciplines');
         setIsLaunching(false);
         return;
       }
@@ -301,6 +304,7 @@ export default function DemoSetupPage() {
       router.refresh();
     } catch {
       setError(t.connectionError);
+      setPhase('disciplines');
       setIsLaunching(false);
     }
   }
@@ -591,10 +595,53 @@ export default function DemoSetupPage() {
               onBack={goBack}
               onNext={handleLaunch}
               canNext={disciplines.length > 0}
-              nextLabel={isLaunching ? t.launching : t.launchDemo}
+              nextLabel={t.launchDemo}
               backLabel={t.back}
-              loading={isLaunching}
+              loading={false}
             />
+          </motion.div>
+        )}
+
+        {/* ── LAUNCHING (Welcome screen while provisioning) ─────────────── */}
+        {phase === 'launching' && (
+          <motion.div
+            key="launching"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex flex-col items-center justify-center text-center max-w-[400px]"
+          >
+            <div className="relative flex items-center justify-center mb-6">
+              <div className="absolute w-20 h-20 rounded-full bg-white/[0.04] animate-[pulse_2.5s_ease-in-out_infinite]" />
+              <div className="absolute w-14 h-14 rounded-full bg-white/[0.03] animate-[pulse_2.5s_ease-in-out_0.4s_infinite]" />
+              <svg
+                className="relative h-10 w-9 text-white/80"
+                viewBox="20 100 555 670"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <line x1="244.03" y1="369.32" x2="350.47" y2="369.32" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+                <line x1="244.03" y1="453.65" x2="350.47" y2="453.65" stroke="currentColor" strokeLinecap="round" strokeWidth="58" />
+                <path fill="currentColor" d="m545.36,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z" />
+                <path fill="currentColor" d="m202.39,412.45h.28c-.09-.09-.18-.19-.28-.29,0-.23.01-.46,0-.69-.26-20.4-12.91-39.54-22.09-52.6-10.57-15.03-23.66-36.05-24.12-56.82-.03-1.47-.02-1.18,0-2.65.12-21.37,11.74-41.35,23.85-56.95,9.78-12.59,22.88-33.63,22.63-55.23-.47-40.95-33.71-74.6-74.64-75.57-43.09-1.02-78.34,33.61-78.34,76.48h-.04s.03.03.04.04c.01,20.95,11.14,39.39,22.09,53.74,11.78,15.43,24.2,35.7,24.35,57.25,0,.78,0,1.56,0,2.34-.16,21.55-14.59,43.3-24.39,57.22-10.89,15.48-22.1,32.77-22.1,53.72s8.39,39.83,21.99,53.62c15.01,15.22,24.01,35.43,24.12,56.81,0,.38,0,.77,0,1.15-.04,21.55-12.4,42.24-24.14,57.31-8.95,11.5-22.03,32.85-21.97,53.83.12,41.15,33.4,75.17,74.54,76.14,43.03,1.02,78.23-33.56,78.23-76.36,0-21.19-13.73-42.38-22.56-54.2-12.69-16.97-23.47-35.3-23.55-56.49,0-.19,0-.37,0-.56,0-21.6,8.9-42.21,24.08-57.58,13.62-13.79,22.02-32.75,22.02-53.67Z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white tracking-tight mb-3">
+              {language === 'pt' ? 'Criando seu ambiente clínico...' : language === 'es' ? 'Creando tu espacio clínico...' : 'Creating your clinical workspace...'}
+            </h2>
+            <p className="text-sm text-white/50 leading-relaxed mb-6">
+              {language === 'pt'
+                ? 'Preparando casos e protocolos da sua especialidade. Cada detalhe, pensado para você.'
+                : language === 'es'
+                ? 'Preparando casos y protocolos de tu especialidad. Cada detalle, pensado para ti.'
+                : 'Preparing cases and protocols for your specialty. Every detail, tailored for you.'}
+            </p>
+            <div className="flex items-center gap-2 text-[11px] text-white/30">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              {language === 'pt' ? 'Personalizando seu command center...' : language === 'es' ? 'Personalizando tu command center...' : 'Tailoring your command center...'}
+            </div>
           </motion.div>
         )}
 

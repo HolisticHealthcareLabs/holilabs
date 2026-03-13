@@ -5,20 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 import type { PreventionPlan } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-    const patientId = session.patientId;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
     // Fetch patient details for age calculation and risk scores
     const patient = await prisma.patient.findUnique({
@@ -187,26 +183,11 @@ export const GET = createPublicRoute(
       goals,
       recommendations,
     });
-  } catch (error) {
-    logger.error({
-      event: 'portal_prevention_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar los datos de prevención.',
-        riskScores: [],
-        interventions: [],
-        goals: [],
-        recommendations: [],
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'Prevention' },
+  }
 );
 
 function calculateAge(dateOfBirth: Date): number {

@@ -219,18 +219,30 @@ export default function ScheduleReminderModal({
                     </svg>
                     Repeat
                   </h3>
-                  <button
-                    onClick={() => setIsRecurring(!isRecurring)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      isRecurring ? 'bg-purple-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        isRecurring ? 'translate-x-6' : 'translate-x-1'
+                  <div className="inline-flex items-center rounded-full bg-gray-100 p-[2px] ring-1 ring-black/[0.04]">
+                    <button
+                      type="button"
+                      onClick={() => setIsRecurring(false)}
+                      className={`relative rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-200 ${
+                        !isRecurring
+                          ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/[0.04]'
+                          : 'text-gray-500 hover:text-gray-700'
                       }`}
-                    />
-                  </button>
+                    >
+                      Off
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsRecurring(true)}
+                      className={`relative rounded-full px-3 py-1 text-[11px] font-medium transition-all duration-200 ${
+                        isRecurring
+                          ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/[0.04]'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      On
+                    </button>
+                  </div>
                 </div>
 
                 {isRecurring && (

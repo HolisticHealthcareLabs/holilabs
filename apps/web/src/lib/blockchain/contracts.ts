@@ -63,7 +63,7 @@ export async function storeConsentOnChain(
   patientWallet?: string
 ): Promise<{ txHash: string; blockNumber: number; gasUsed: string }> {
   // STUB: Return simulated data for now
-  console.log('[Blockchain] Storing consent hash:', { consentId, consentHash });
+  console.error('[Blockchain]', { event: 'store_consent_hash', consentId });
 
   // In production, this would be:
   // const contract = getContract();
@@ -89,7 +89,7 @@ export async function storePrescriptionOnChain(
   prescriptionHash: string,
   clinicianWallet?: string
 ): Promise<{ txHash: string; blockNumber: number; gasUsed: string }> {
-  console.log('[Blockchain] Storing prescription hash:', { prescriptionId, prescriptionHash });
+  console.error('[Blockchain]', { event: 'store_prescription_hash', prescriptionId });
 
   // STUB: Return simulated data
   return {
@@ -106,7 +106,7 @@ export async function storeDocumentOnChain(
   documentId: string,
   documentHash: string
 ): Promise<{ txHash: string; blockNumber: number; gasUsed: string }> {
-  console.log('[Blockchain] Storing document hash:', { documentId, documentHash });
+  console.error('[Blockchain]', { event: 'store_document_hash', documentId });
 
   return {
     txHash: `0x${documentHash.substring(0, 64)}`,
@@ -123,7 +123,7 @@ export async function verifyRecordOnChain(
   recordId: string,
   expectedHash: string
 ): Promise<{ isValid: boolean; onChainHash: string; timestamp: number }> {
-  console.log('[Blockchain] Verifying record:', { recordId, expectedHash });
+  console.error('[Blockchain]', { event: 'verify_record', recordId });
 
   // STUB: In production, fetch from contract:
   // const contract = getContract();
@@ -143,7 +143,7 @@ export async function verifyRecordOnChain(
 export async function batchStoreHashes(
   records: Array<{ id: string; hash: string; type: 'consent' | 'prescription' | 'document' }>
 ): Promise<{ txHash: string; merkleRoot: string; recordCount: number }> {
-  console.log('[Blockchain] Batch storing hashes:', records.length);
+  console.error('[Blockchain]', { event: 'batch_store', count: records.length });
 
   // In production:
   // 1. Generate Merkle tree from hashes
@@ -167,7 +167,7 @@ export async function getTransactionStatus(txHash: string): Promise<{
   confirmations: number;
   blockNumber?: number;
 }> {
-  console.log('[Blockchain] Checking transaction:', txHash);
+  console.error('[Blockchain]', { event: 'check_transaction', txHash });
 
   // In production:
   // const provider = getProvider();
@@ -212,7 +212,7 @@ export function isBlockchainEnabled(): boolean {
  */
 export async function initializeBlockchain(): Promise<{ connected: boolean; network: string }> {
   if (!isBlockchainEnabled()) {
-    console.log('[Blockchain] Disabled (configure ENABLE_BLOCKCHAIN=true to activate)');
+    console.error('[Blockchain]', { event: 'disabled' });
     return { connected: false, network: 'none' };
   }
 
@@ -220,7 +220,7 @@ export async function initializeBlockchain(): Promise<{ connected: boolean; netw
     const provider = getProvider();
     const network = await provider.getNetwork();
 
-    console.log('[Blockchain] Connected to network:', network.name);
+    console.error('[Blockchain]', { event: 'connected', network: network.name });
 
     return {
       connected: true,

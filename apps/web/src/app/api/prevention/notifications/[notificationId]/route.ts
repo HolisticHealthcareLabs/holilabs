@@ -30,7 +30,7 @@ const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     const start = performance.now();
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const notificationId = params?.notificationId;
     const userId = context.user?.id;
 
@@ -73,7 +73,7 @@ export const GET = createProtectedRoute(
 export const PATCH = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     const start = performance.now();
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const notificationId = params?.notificationId;
     const userId = context.user?.id;
 
@@ -147,7 +147,7 @@ export const PATCH = createProtectedRoute(
 export const DELETE = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     const start = performance.now();
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const notificationId = params?.notificationId;
     const userId = context.user?.id;
 

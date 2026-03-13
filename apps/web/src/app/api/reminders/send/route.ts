@@ -201,7 +201,7 @@ async function getPatientVariables(patientId: string) {
       : 'your next appointment',
     medication_name: patient.medications[0]?.name || '[Medication]',
     lab_result: 'your lab results',
-    condition: '[condition]', // TODO: Patient model doesn't have conditions field
+    condition: '[condition]', // @todo(patient-conditions): Add conditions relation to Patient model
     custom_message: '',
   };
 
@@ -347,7 +347,8 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // TODO: Implement scheduling logic (e.g., using a job queue like Bull or database-based scheduler)
+      // @todo(reminder-scheduler): Implement via job queue (Bull/BullMQ) or DB-based scheduler
+      logger.warn({ event: 'unimplemented_feature', feature: 'reminder_scheduling' });
       return NextResponse.json({
         success: true,
         message: 'Reminder scheduled successfully',

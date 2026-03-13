@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 import { evaluateDOACRule } from '@/lib/clinical/safety/doac-evaluator';
 import type { DOACType } from '@/lib/clinical/safety/doac-evaluator';
 import {
@@ -171,7 +172,7 @@ export const POST = createProtectedRoute(
         engineResult = await cdsEngine.evaluate(cdsContext);
       } catch (err) {
         engineWarning = 'CDS engine unavailable — DOAC safety evaluation still active';
-        console.warn('[CDS Evaluate] Engine error (graceful degradation):', err);
+        logger.warn('[CDS Evaluate] Engine error (graceful degradation):', err);
       }
 
       // 3. DOAC Safety Evaluation — runs for medication-prescribe / order-sign hooks

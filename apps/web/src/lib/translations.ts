@@ -110,7 +110,17 @@ export const translations = {
         dashboard: "Taking you to the main Dashboard where you can see a summary of your active patients, scheduled appointments, pending prescriptions, and more.",
       },
       defaultResponse: "I understand you're looking for \"{query}\".\n\nI can help you with:\n• **Prevention**: 30-year longitudinal system with automatic alerts\n• **AI Scribe**: Real-time transcription and SOAP notes (saves 3-4h/day)\n• **CDSS**: 12+ clinical support rules with WHO/PAHO protocols\n• **Patients**: Complete portal that reduces calls by 40%\n• **E-Prescribing**: Digital signature to 8+ integrated pharmacies\n\nWhat would you like to know more about?",
-    }
+    },
+    errorPages: {
+      somethingWentWrong: 'Something went wrong',
+      unexpectedError: 'An unexpected error occurred',
+      tryAgain: 'Try again',
+      goHome: 'Go to Home',
+      technicalDetails: 'Technical details',
+      notFound: 'Page not found',
+      notFoundCode: '404',
+      goToSignIn: 'Go to Sign In',
+    },
   },
   
   es: {
@@ -220,7 +230,17 @@ export const translations = {
         dashboard: "Te llevo al Dashboard principal donde puedes ver un resumen de tus pacientes activos, citas programadas, prescripciones pendientes, y más.",
       },
       defaultResponse: "Entiendo que buscas \"{query}\".\n\nPuedo ayudarte con:\n• **Prevención**: Sistema longitudinal de 30 años con alertas automáticas\n• **AI Scribe**: Transcripción y notas SOAP en tiempo real (ahorra 3-4h/día)\n• **CDSS**: 12+ reglas de soporte clínico con protocolos WHO/PAHO\n• **Pacientes**: Portal completo que reduce llamadas en 40%\n• **E-Prescribing**: Firma digital a 8+ farmacias integradas\n\n¿Sobre cuál te gustaría saber más?",
-    }
+    },
+    errorPages: {
+      somethingWentWrong: 'Algo salió mal',
+      unexpectedError: 'Ocurrió un error inesperado',
+      tryAgain: 'Reintentar',
+      goHome: 'Volver al Inicio',
+      technicalDetails: 'Detalles técnicos',
+      notFound: 'Página no encontrada',
+      notFoundCode: '404',
+      goToSignIn: 'Ir a Iniciar Sesión',
+    },
   },
   
   pt: {
@@ -330,7 +350,17 @@ export const translations = {
         dashboard: "Levando você ao Dashboard principal onde você pode ver um resumo dos seus pacientes ativos, consultas agendadas, prescrições pendentes e mais.",
       },
       defaultResponse: "Entendo que você está procurando por \"{query}\".\n\nPosso ajudá-lo com:\n• **Prevenção**: Sistema longitudinal de 30 anos com alertas automáticos\n• **AI Scribe**: Transcrição e notas SOAP em tempo real (economiza 3-4h/dia)\n• **CDSS**: Mais de 12 regras de suporte clínico com protocolos OMS/OPAS\n• **Pacientes**: Portal completo que reduz chamadas em 40%\n• **E-Prescribing**: Assinatura digital para mais de 8 farmácias integradas\n\nSobre o que você gostaria de saber mais?",
-    }
+    },
+    errorPages: {
+      somethingWentWrong: 'Algo deu errado',
+      unexpectedError: 'Ocorreu um erro inesperado',
+      tryAgain: 'Tentar novamente',
+      goHome: 'Ir para o Início',
+      technicalDetails: 'Detalhes técnicos',
+      notFound: 'Página não encontrada',
+      notFoundCode: '404',
+      goToSignIn: 'Ir para Login',
+    },
   }
 } as const;
 

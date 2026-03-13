@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import logger from '@/lib/logger';
 
 interface SafeErrorOptions {
   userMessage?: string;
@@ -17,7 +18,7 @@ export function safeErrorResponse(
   } = options;
   const isDev = process.env.NODE_ENV === 'development';
 
-  console.error('[API Error]', {
+  logger.error('[API Error]', {
     message: error instanceof Error ? error.message : String(error),
     stack: error instanceof Error ? error.stack : undefined,
     ...logContext,

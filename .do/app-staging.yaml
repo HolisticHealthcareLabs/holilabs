@@ -1,0 +1,106 @@
+name: holi-labs-staging
+region: nyc
+domains:
+  - domain: staging.holilabs.xyz
+    type: PRIMARY
+
+services:
+  - name: web
+    github:
+      repo: HolisticHealthcareLabs/holilabs
+      branch: develop
+      deploy_on_push: true
+
+    dockerfile_path: Dockerfile
+
+    instance_count: 1
+    instance_size_slug: basic-xxs
+
+    http_port: 3000
+
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 30
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+    routes:
+      - path: /
+
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://staging.holilabs.xyz
+        scope: RUN_AND_BUILD_TIME
+
+      - key: NEXTAUTH_URL
+        value: https://staging.holilabs.xyz
+        scope: RUN_AND_BUILD_TIME
+
+      - key: DATABASE_URL
+        value: ${db.DATABASE_URL}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: NEXTAUTH_SECRET
+        value: ${NEXTAUTH_SECRET}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: SESSION_SECRET
+        value: ${SESSION_SECRET}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: ENCRYPTION_KEY
+        value: ${ENCRYPTION_KEY}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: ENCRYPTION_MASTER_KEY
+        value: ${ENCRYPTION_MASTER_KEY}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: CRON_SECRET
+        value: ${CRON_SECRET}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: JWT_SECRET
+        value: ${JWT_SECRET}
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: DEID_SECRET
+        value: ${DEID_SECRET}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: GOOGLE_AI_API_KEY
+        value: ${GOOGLE_AI_API_KEY}
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+
+      - key: UPSTASH_REDIS_REST_URL
+        value: ${UPSTASH_REDIS_REST_URL}
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: UPSTASH_REDIS_REST_TOKEN
+        value: ${UPSTASH_REDIS_REST_TOKEN}
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+        scope: RUN_AND_BUILD_TIME
+
+      - key: AI_CACHE_ENABLED
+        value: "true"
+        scope: RUN_TIME

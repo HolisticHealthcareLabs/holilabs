@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
@@ -27,6 +28,7 @@ interface Payment {
 
 export default function BillingPage() {
   const router = useRouter();
+  const t = useTranslations('portal.portalBilling');
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalPaid, setTotalPaid] = useState(0);
@@ -89,10 +91,10 @@ export default function BillingPage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'PAID': return 'Pagado';
-      case 'PENDING': return 'Pendiente';
-      case 'FAILED': return 'Fallido';
-      case 'REFUNDED': return 'Reembolsado';
+      case 'PAID': return t('statusPaid');
+      case 'PENDING': return t('statusPending');
+      case 'FAILED': return t('statusFailed');
+      case 'REFUNDED': return t('statusRefunded');
       default: return status;
     }
   };
@@ -117,16 +119,15 @@ export default function BillingPage() {
             <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Volver
+            {t('back')}
           </button>
 
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <span className="text-4xl">💳</span>
-            <span>Facturación y Pagos</span>
+            <span>{t('title')}</span>
           </h1>
-          {/* Decorative - low contrast intentional for page subtitle description */}
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Historial de pagos y facturas
+            {t('subtitle')}
           </p>
         </div>
 
@@ -139,7 +140,7 @@ export default function BillingPage() {
             className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Pagado</span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('totalPaid')}</span>
               <span className="text-2xl">✅</span>
             </div>
             <p className="text-3xl font-bold text-green-600">${totalPaid.toFixed(2)}</p>
@@ -187,7 +188,7 @@ export default function BillingPage() {
         >
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Historial de Pagos
+              {t('paymentHistory')}
             </h2>
           </div>
 
@@ -238,13 +239,13 @@ export default function BillingPage() {
                     
                     {payment.status === 'PAID' && (
                       <button className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
-                        Descargar Factura
+                        {t('downloadInvoice')}
                       </button>
                     )}
                     
                     {payment.status === 'PENDING' && (
                       <button className="mt-2 px-4 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Pagar Ahora
+                        {t('payNow')}
                       </button>
                     )}
                   </div>
@@ -262,7 +263,7 @@ export default function BillingPage() {
           className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
         >
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Métodos de Pago
+            {t('paymentMethods')}
           </h2>
           
           <div className="space-y-4">
@@ -278,13 +279,13 @@ export default function BillingPage() {
                 </div>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                Principal
+                {t('primary')}
               </span>
             </div>
 
             {/* Decorative - low contrast intentional for add payment method button */}
             <button className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-colors">
-              + Agregar Método de Pago
+              {t('addPaymentMethod')}
             </button>
           </div>
         </motion.div>

@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -65,15 +66,15 @@ const statusColors = {
   NO_SHOW: 'bg-orange-100 text-orange-800',
 };
 
-const statusLabels = {
-  SCHEDULED: 'Programada',
-  CONFIRMED: 'Confirmada',
-  CHECKED_IN: 'En recepción',
-  IN_PROGRESS: 'En progreso',
-  COMPLETED: 'Completada',
-  CANCELLED: 'Cancelada',
-  NO_SHOW: 'No asistió',
-};
+const statusKeys = {
+  SCHEDULED: 'statusScheduled',
+  CONFIRMED: 'statusConfirmed',
+  CHECKED_IN: 'statusCheckedIn',
+  IN_PROGRESS: 'statusInProgress',
+  COMPLETED: 'statusCompleted',
+  CANCELLED: 'statusCancelled',
+  NO_SHOW: 'statusNoShow',
+} as const;
 
 const typeIcons = {
   IN_PERSON: BuildingOfficeIcon,
@@ -81,11 +82,11 @@ const typeIcons = {
   PHONE: PhoneIcon,
 };
 
-const typeLabels = {
-  IN_PERSON: 'Presencial',
-  TELEHEALTH: 'Virtual',
-  PHONE: 'Telefónica',
-};
+const typeKeys = {
+  IN_PERSON: 'typeInPerson',
+  TELEHEALTH: 'typeTelehealth',
+  PHONE: 'typePhone',
+} as const;
 
 const typeColors = {
   IN_PERSON: 'text-blue-600 bg-blue-100',
@@ -95,6 +96,7 @@ const typeColors = {
 
 export default function AppointmentsPage() {
   const router = useRouter();
+  const t = useTranslations('portal.appointments');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
@@ -115,7 +117,7 @@ export default function AppointmentsPage() {
       const data: AppointmentsResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al cargar citas');
+        throw new Error(data.error || t('loadError'));
       }
 
       if (data.success && data.data) {
@@ -124,7 +126,7 @@ export default function AppointmentsPage() {
         setSummary(data.data.summary);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('unknownError'));
       logger.error('Error fetching appointments:', err);
     } finally {
       setLoading(false);
@@ -149,13 +151,13 @@ export default function AppointmentsPage() {
     if (diffDays > 7) {
       return format(start, "d 'de' MMMM", { locale: es });
     } else if (diffDays > 0) {
-      return `En ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+      return t('inDays', { count: diffDays });
     } else if (diffHours > 0) {
-      return `En ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
+      return t('inHours', { count: diffHours });
     } else if (diffMs > 0) {
-      return 'Hoy';
+      return t('today');
     }
-    return 'Pasada';
+    return t('passed');
   };
 
   if (loading) {
@@ -178,18 +180,17 @@ export default function AppointmentsPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver al Dashboard
+            {t('backToDashboard')}
           </button>
 
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
                 <CalendarIcon className="h-9 w-9 text-gray-900" />
-                Mis Citas
+                {t('myAppointments')}
               </h1>
               <p className="text-gray-600">
-                {summary.upcoming} cita{summary.upcoming !== 1 ? 's' : ''} próxima
-                {summary.upcoming !== 1 ? 's' : ''} • {summary.past} pasada{summary.past !== 1 ? 's' : ''}
+                {t('upcomingSummary', { count: summary.upcoming })} • {t('pastSummary', { count: summary.past })}
               </p>
             </div>
 
@@ -198,7 +199,7 @@ export default function AppointmentsPage() {
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
             >
               <PlusIcon className="h-5 w-5" />
-              Nueva Cita
+              {t('newAppointment')}
             </button>
           </div>
         </div>
@@ -210,7 +211,7 @@ export default function AppointmentsPage() {
               onClick={fetchAppointments}
               className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors"
             >
-              Reintentar
+              {t('retry')}
             </button>
           </div>
         )}
@@ -218,7 +219,7 @@ export default function AppointmentsPage() {
         {/* Upcoming Appointments */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Próximas Citas
+            {t('upcomingAppointments')}
           </h2>
 
           {upcomingAppointments.length === 0 ? (
@@ -226,17 +227,17 @@ export default function AppointmentsPage() {
               {/* Decorative - low contrast intentional for empty state icon */}
               <CalendarIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No tienes citas próximas
+                {t('noUpcomingTitle')}
               </h3>
               <p className="text-gray-600 mb-6">
-                Agenda tu próxima cita con tu médico
+                {t('noUpcomingDescription')}
               </p>
               <button
                 onClick={handleNewAppointment}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <PlusIcon className="h-5 w-5" />
-                Agendar Cita
+                {t('scheduleAppointment')}
               </button>
             </div>
           ) : (
@@ -260,7 +261,7 @@ export default function AppointmentsPage() {
                             {appointment.title}
                           </h3>
                           <span className="text-sm text-gray-600">
-                            {typeLabels[appointment.type]}
+                            {t(typeKeys[appointment.type])}
                           </span>
                         </div>
                       </div>
@@ -303,7 +304,7 @@ export default function AppointmentsPage() {
                           statusColors[appointment.status]
                         }`}
                       >
-                        {statusLabels[appointment.status]}
+                        {t(statusKeys[appointment.status])}
                       </span>
                     </div>
                   </div>
@@ -320,7 +321,7 @@ export default function AppointmentsPage() {
               onClick={() => setShowPast(!showPast)}
               className="flex items-center gap-2 text-lg font-bold text-gray-900 mb-4 hover:text-blue-600 transition-colors"
             >
-              <span>Citas Anteriores ({pastAppointments.length})</span>
+              <span>{t('pastAppointmentsTitle', { count: pastAppointments.length })}</span>
               <svg
                 className={`h-5 w-5 transition-transform ${showPast ? 'rotate-180' : ''}`}
                 fill="none"
@@ -357,7 +358,7 @@ export default function AppointmentsPage() {
                               {appointment.title}
                             </h3>
                             <span className="text-sm text-gray-600">
-                              {typeLabels[appointment.type]}
+                              {t(typeKeys[appointment.type])}
                             </span>
                           </div>
                         </div>
@@ -396,7 +397,7 @@ export default function AppointmentsPage() {
                             statusColors[appointment.status]
                           }`}
                         >
-                          {statusLabels[appointment.status]}
+                          {t(statusKeys[appointment.status])}
                         </span>
                       </div>
                     </div>

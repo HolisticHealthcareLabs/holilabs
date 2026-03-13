@@ -43,7 +43,7 @@ export const POST = createProtectedRoute(
 
     const userId = context.user!.id;
 
-    // Store feedback (audit log for now - TODO: create Feedback model)
+    // @todo(feedback-model): Migrate from audit log to dedicated Feedback model
     await prisma.auditLog.create({
       data: {
         userId,

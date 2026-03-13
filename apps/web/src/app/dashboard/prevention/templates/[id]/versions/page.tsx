@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowLeftIcon as ArrowLeft } from '@heroicons/react/24/outline';
 import { Download } from 'lucide-react';
 import VersionHistory from '@/components/prevention/VersionHistory';
 import VersionComparison from '@/components/prevention/VersionComparison';
 
 export default function TemplateVersionsPage() {
+  const t = useTranslations('dashboard.prevention.versions');
   const params = useParams();
   const router = useRouter();
   const templateId = (params?.id as string) || '';
@@ -22,13 +24,10 @@ export default function TemplateVersionsPage() {
 
   const handleViewVersion = (versionId: string) => {
     setSelectedVersionId(versionId);
-    // Could open a modal or navigate to a detail view
-    console.log('View version:', versionId);
   };
 
-  const handleRevertToVersion = (versionId: string) => {
+  const handleRevertToVersion = (_versionId: string) => {
     // Refresh after revert - VersionHistory component handles this
-    console.log('Reverted to version:', versionId);
   };
 
   const handleCompareVersions = (versionId1: string, versionId2?: string) => {
@@ -101,12 +100,12 @@ export default function TemplateVersionsPage() {
               </button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {viewMode === 'history' ? 'Historial de Versiones' : 'Comparación de Versiones'}
+                  {viewMode === 'history' ? t('versionHistory') : t('versionComparison')}
                 </h1>
                 <p className="text-sm text-gray-600 mt-1">
                   {viewMode === 'history'
-                    ? 'Ver y gestionar versiones de la plantilla'
-                    : 'Visualizar diferencias entre versiones'}
+                    ? t('versionHistoryDesc')
+                    : t('versionComparisonDesc')}
                 </p>
               </div>
             </div>
@@ -117,7 +116,7 @@ export default function TemplateVersionsPage() {
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>Exportar Versión</span>
+                <span>{t('exportVersion')}</span>
               </button>
             )}
           </div>

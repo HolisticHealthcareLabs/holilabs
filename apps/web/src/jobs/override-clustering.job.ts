@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { generateEmbedding } from '@/lib/ai/embeddings';
 import { performClustering, ClusteredItem } from '@/lib/ml/clustering';
+import logger from '@/lib/logger';
 
 interface EmbeddingContext {
     id: string; // AssuranceEvent ID
@@ -8,7 +9,7 @@ interface EmbeddingContext {
 }
 
 export async function runOverrideClustering(): Promise<void> {
-    console.log('Starting Override Clustering Job...');
+    logger.info('[OverrideClustering] job_started');
 
     // 1. Fetch recent override events (last 30 days)
     // We only care about events where human disagreed with AI
@@ -24,11 +25,11 @@ export async function runOverrideClustering(): Promise<void> {
     });
 
     if (overrides.length < 5) {
-        console.log('Not enough override events to cluster (min 5).');
+        logger.info('[OverrideClustering] insufficient_events', { count: overrides.length, min: 5 });
         return;
     }
 
-    console.log(`Fetching embeddings for ${overrides.length} events...`);
+    logger.info('[OverrideClustering] fetching_embeddings', { count: overrides.length });
 
     // 2. Generate embeddings for each override context
     const embeddingContexts: EmbeddingContext[] = [];
@@ -60,7 +61,7 @@ export async function runOverrideClustering(): Promise<void> {
     // Heuristic: k = sqrt(n/2), but capped at 20 clusters for manageability
     const k = Math.min(20, Math.max(2, Math.floor(Math.sqrt(vectors.length / 2))));
 
-    console.log(`Clustering ${vectors.length} items into ${k} clusters...`);
+    logger.info('[OverrideClustering] clustering', { vectorCount: vectors.length, k });
     const result = performClustering(vectors, k);
 
     // 4. Group results and save to DB
@@ -96,9 +97,9 @@ export async function runOverrideClustering(): Promise<void> {
                 }
             });
 
-            console.log(`Created cluster ${cluster.id} with ${eventIds.length} events.`);
+            logger.info('[OverrideClustering] cluster_created', { clusterId: cluster.id, eventCount: eventIds.length });
         });
     }
 
-    console.log('Override Clustering Job Complete.');
+    logger.info('[OverrideClustering] job_complete');
 }

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { FormStatus } from '@prisma/client';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export const GET = createProtectedRoute(
 
       return NextResponse.json({ success: true, forms }, { status: 200 });
     } catch (error) {
-      console.error('Error fetching sent forms:', error);
+      logger.error('Error fetching sent forms:', error);
       return NextResponse.json(
         { error: 'Failed to fetch sent forms' },
         { status: 500 }

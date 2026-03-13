@@ -9,6 +9,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import prisma from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
       const userId = context.user?.id;
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const { id } = params;
 
       const template = await prisma.clinicalTemplate.findUnique({
@@ -96,7 +97,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error fetching template:', error);
+      logger.error('Error fetching template:', error);
       return NextResponse.json(
         { error: 'Failed to fetch template' },
         { status: 500 }
@@ -114,7 +115,7 @@ export const PATCH = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
       const userId = context.user?.id;
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const { id } = params;
       const body = await request.json();
 
@@ -215,7 +216,7 @@ export const PATCH = createProtectedRoute(
         message: 'Template updated successfully',
       });
     } catch (error) {
-      console.error('Error updating template:', error);
+      logger.error('Error updating template:', error);
       return NextResponse.json(
         { error: 'Failed to update template' },
         { status: 500 }
@@ -234,7 +235,7 @@ export const DELETE = createProtectedRoute(
     try {
       const userId = context.user?.id;
       const userRole = context.user?.role;
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const { id } = params;
 
       const template = await prisma.clinicalTemplate.findUnique({
@@ -281,7 +282,7 @@ export const DELETE = createProtectedRoute(
         message: 'Template deleted successfully',
       });
     } catch (error) {
-      console.error('Error deleting template:', error);
+      logger.error('Error deleting template:', error);
       return NextResponse.json(
         { error: 'Failed to delete template' },
         { status: 500 }

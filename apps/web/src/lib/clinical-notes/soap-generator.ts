@@ -113,11 +113,11 @@ export class SOAPGenerator {
 
     try {
       // Step 1: Extract medical entities using AWS Comprehend Medical
-      console.log('🔍 [SOAP Generator] Extracting medical entities...');
+      console.error('[SOAPGenerator]', { event: 'extracting_entities' });
       const medicalEntities = await this.extractMedicalEntities(transcription);
 
       // Step 2: Auto-fill patient context using existing AI Scribe Service
-      console.log('📋 [SOAP Generator] Auto-filling patient context...');
+      console.error('[SOAPGenerator]', { event: 'auto_filling_context' });
       const autoFillResult = await aiScribeService.autoFillPatientInfo(context, {
         includeVitals: true,
         includeHistory: true,
@@ -125,7 +125,7 @@ export class SOAPGenerator {
       });
 
       // Step 3: Generate SOAP sections using AI Provider (BYOK aware)
-      console.log('🤖 [SOAP Generator] Generating SOAP sections with AI...');
+      console.error('[SOAPGenerator]', { event: 'generating_soap' });
       const soapSections = await this.generateSOAPSections(
         transcription,
         context,
@@ -157,7 +157,7 @@ export class SOAPGenerator {
 
       const processingTime = Date.now() - startTime;
 
-      console.log(`✅ [SOAP Generator] SOAP note generated successfully in ${processingTime}ms`);
+      console.error('[SOAPGenerator]', { event: 'generation_complete', processingTimeMs: processingTime });
 
       return {
         noteId,
@@ -224,7 +224,7 @@ export class SOAPGenerator {
         }
       }
 
-      console.log(`📊 [SOAP Generator] Extracted ${allEntities.length} medical entities`);
+      console.error('[SOAPGenerator]', { event: 'entities_extracted', count: allEntities.length });
       return allEntities;
     } catch (error) {
       console.error('Error extracting medical entities:', error);
@@ -485,7 +485,7 @@ IMPORTANT FORMATTING REQUIREMENTS:
         },
       });
 
-      console.log(`💾 [SOAP Generator] Saved draft note: ${note.id}`);
+      console.error('[SOAPGenerator]', { event: 'draft_saved', noteId: note.id });
       return note.id;
     } catch (error) {
       console.error('Error saving note to database:', error);

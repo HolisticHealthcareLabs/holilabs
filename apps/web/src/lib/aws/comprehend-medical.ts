@@ -215,12 +215,11 @@ export async function deidentifyWithReversibility(
   // For now, we'll just return the mapping ID
   // In production, implement DynamoDB storage with TTL
 
-  console.log('[AWS Comprehend Medical] De-identification complete:', {
+  console.error('[AWSComprehendMedical]', {
+    event: 'deidentification_complete',
     mappingId,
     patientId,
     entitiesDetected: entities.length,
-    accessReason,
-    userId,
   });
 
   return {

@@ -7,6 +7,7 @@
  */
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline';
 import SupportContact from '@/components/SupportContact';
 
@@ -17,6 +18,7 @@ export default function PortalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('portal.error');
   useEffect(() => {
     // Log error to error reporting service
     console.error('Portal Error:', error);
@@ -36,12 +38,12 @@ export default function PortalError({
 
           {/* Title */}
           <h1 className="text-2xl font-bold text-gray-900 text-center mb-3">
-            Algo salió mal
+            {t('title')}
           </h1>
 
           {/* Message */}
           <p className="text-gray-600 text-center mb-6">
-            Lo sentimos, ocurrió un error inesperado en el portal de pacientes. Por favor, intenta de nuevo.
+            {t('message')}
           </p>
 
           {/* Error details (dev mode only) */}
@@ -65,14 +67,14 @@ export default function PortalError({
               className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
             >
               <ArrowPathIcon className="h-5 w-5" />
-              Intentar de nuevo
+              {t('tryAgain')}
             </button>
             <button
               onClick={() => window.location.href = '/portal/dashboard'}
               className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <HomeIcon className="h-5 w-5" />
-              Volver al inicio
+              {t('goBack')}
             </button>
           </div>
 
@@ -81,7 +83,7 @@ export default function PortalError({
             <SupportContact
               variant="compact"
               showTitle={true}
-              title="¿Necesitas ayuda?"
+              title={t('needHelp')}
             />
           </div>
         </div>

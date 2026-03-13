@@ -190,9 +190,9 @@ export const POST = createProtectedRoute(
       }),
     ]);
 
-    // TODO: Send notification to patient about no-show and any fees
-    // TODO: Check policy for automatic restrictions (e.g., 3 strikes rule)
-    // TODO: Add to patient's record/profile
+    // @todo(no-show-notifications): Send notification to patient about no-show and any fees
+    // @todo(no-show-policy): Enforce automatic restrictions (e.g., 3 strikes rule)
+    // @todo(patient-profile): Persist no-show flag to patient record/profile
 
     return NextResponse.json(
       {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle, Info, CheckCircle2,
@@ -175,9 +176,9 @@ interface CdssAlertsPaneProps {
 const QUICK_ACTIONS: QuickActionBubble[] = [
   {
     id: 'rx-timeline',
-    label: 'Rx Timeline & Safety',
+    label: 'rxTimeline',
     Icon: Clock,
-    intentLabel: 'Assessing Rx Timeline and Safety...',
+    intentLabel: 'rxTimelineIntent',
     cdssActionType: 'RX_TIMELINE_SAFETY',
     systemPrompt:
       'Analyze pharmaceutical history using ATC (Anatomical Therapeutic Chemical) codes. ' +
@@ -187,9 +188,9 @@ const QUICK_ACTIONS: QuickActionBubble[] = [
   },
   {
     id: 'lifestyle',
-    label: 'Lifestyle & Prevention',
+    label: 'lifestylePrevention',
     Icon: Heart,
-    intentLabel: 'Building Lifestyle and Risk Reduction Plan...',
+    intentLabel: 'lifestylePreventionIntent',
     cdssActionType: 'LIFESTYLE_PREVENTION',
     systemPrompt:
       'Generate a comprehensive lifestyle and preventative care plan based on this encounter. ' +
@@ -199,9 +200,9 @@ const QUICK_ACTIONS: QuickActionBubble[] = [
   },
   {
     id: 'differential',
-    label: 'Differential Dx (ICD-10)',
+    label: 'differentialDx',
     Icon: Brain,
-    intentLabel: 'Generating Differential Dx Context...',
+    intentLabel: 'differentialDxIntent',
     cdssActionType: 'DIFFERENTIAL_DX',
     systemPrompt:
       'Suggest differential diagnoses ordered by probability using ICD-10/11 and SNOMED CT standards. ' +
@@ -210,9 +211,9 @@ const QUICK_ACTIONS: QuickActionBubble[] = [
   },
   {
     id: 'handout',
-    label: 'Draft Patient Handout',
+    label: 'draftHandout',
     Icon: FileText,
-    intentLabel: 'Drafting Patient Handout...',
+    intentLabel: 'draftHandoutIntent',
     cdssActionType: 'DRAFT_HANDOUT',
     systemPrompt:
       'Draft a patient-friendly summary of this visit in Portuguese or Spanish ' +
@@ -501,6 +502,7 @@ function RationalePopover({
   rationale: { confidence: number; reasoning: string };
 }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations('dashboard.clinicalCommand');
 
   return (
     <div className="relative flex-shrink-0">
@@ -540,7 +542,7 @@ function RationalePopover({
           >
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                Confidence
+                {t('confidence')}
               </span>
               <span className="text-xs font-bold text-cyan-400">
                 {rationale.confidence}%
@@ -669,6 +671,7 @@ export function CdssAlertsPane({
   resetSignal = 0,
 }: CdssAlertsPaneProps) {
   const { data: sessionData } = useSession();
+  const t = useTranslations('dashboard.clinicalCommand');
   const activeCfg    = modelConfigs[activeModel];
   const isConfigured = activeCfg?.isConfigured ?? false;
   const syncEnabled  = isConfigured && patientSelected && hasTranscript && !isSyncing;
@@ -799,7 +802,7 @@ export function CdssAlertsPane({
 
     incrementClick(bubble.id);
 
-    const intentMessage = bubble.intentLabel;
+    const intentMessage = t(bubble.intentLabel);
     const userMsg: ChatMessage = {
       id: `bubble-${Date.now()}`,
       role: 'user',
@@ -928,7 +931,7 @@ export function CdssAlertsPane({
       <div className="flex items-center flex-shrink-0">
         <h2 className="text-xs font-semibold uppercase tracking-wider
                        text-slate-500 dark:text-slate-400">
-          Co-Pilot
+          {t('coPilotHeader')}
         </h2>
       </div>
 
@@ -964,7 +967,7 @@ export function CdssAlertsPane({
                     />
                   ))}
                 </div>
-                <span className="text-[10px] text-slate-500">AI is thinking…</span>
+                <span className="text-[10px] text-slate-500">{t('aiThinking')}</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -991,7 +994,7 @@ export function CdssAlertsPane({
                 className="text-[26px] leading-tight font-medium tracking-[-0.02em]
                            text-slate-300 dark:text-slate-300"
               >
-                {doctorLastNameLabel ? `Hi Dr. ${doctorLastNameLabel}` : 'Hi there'}
+                {doctorLastNameLabel ? t('hiDoctor', { name: doctorLastNameLabel }) : t('hiThere')}
               </motion.h3>
               <motion.h2
                 initial={{ opacity: 0, y: 6 }}
@@ -1000,7 +1003,7 @@ export function CdssAlertsPane({
                 className="text-[40px] leading-[1.05] font-medium tracking-[-0.03em]
                            text-slate-100 dark:text-slate-100"
               >
-                Where should we start?
+                {t('whereToStart')}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 6 }}
@@ -1008,7 +1011,7 @@ export function CdssAlertsPane({
                 transition={{ duration: 0.35, delay: 0.28 }}
                 className="text-xs text-slate-500 dark:text-slate-500 mt-2"
               >
-                Suggestions adapt to your most used clinical actions.
+                {t('suggestionsAdapt')}
               </motion.p>
             </div>
           </div>
@@ -1034,7 +1037,7 @@ export function CdssAlertsPane({
               transition={{ delay: i * 0.05, duration: 0.2 }}
               onClick={() => handleBubbleClick(bubble)}
               disabled={isReplying || !syncEnabled}
-              aria-label={bubble.label}
+              aria-label={t(bubble.label)}
               className="
                 group flex items-center gap-2 whitespace-nowrap flex-shrink-0
                 bg-slate-900/55 hover:bg-slate-800/90
@@ -1044,16 +1047,16 @@ export function CdssAlertsPane({
                 disabled:opacity-50 disabled:cursor-not-allowed
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
               "
-              title={syncEnabled ? `${bubble.label}${bubble.id === topUsedBubbleId ? ' - most used' : ''}` : 'Select patient and sync transcript to enable'}
+              title={syncEnabled ? `${t(bubble.label)}${bubble.id === topUsedBubbleId ? ' - ' + t('mostUsed') : ''}` : t('enableSyncHint')}
             >
               <bubble.Icon className="w-3.5 h-3.5 flex-shrink-0 text-slate-400 group-hover:text-cyan-300 transition-colors" />
-              {bubble.label}
+              {t(bubble.label)}
               {bubble.id === topUsedBubbleId && (
                 <span
                   className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px]
                              bg-cyan-500/15 text-cyan-300 border border-cyan-500/30"
                 >
-                  Top
+                  {t('topBadge')}
                 </span>
               )}
             </motion.button>
@@ -1103,13 +1106,12 @@ export function CdssAlertsPane({
 
             <div className="space-y-1.5">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                API Key Required
+                {t('apiKeyRequired')}
               </p>
               <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                <span className="font-medium">{activeOption?.label}</span> is not
-                configured for this workspace.
+                {t('modelNotConfigured', { model: activeOption?.label ?? '' })}
                 <br />
-                Add your BYOK key to enable CDSS alerts.
+                {t('addByokKey')}
               </p>
             </div>
 
@@ -1127,7 +1129,7 @@ export function CdssAlertsPane({
               "
             >
               <Settings className="w-3.5 h-3.5" />
-              Configure BYOK in Settings
+              {t('configureByok')}
             </Link>
           </motion.div>
         )}

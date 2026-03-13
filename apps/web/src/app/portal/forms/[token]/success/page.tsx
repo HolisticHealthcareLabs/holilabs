@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 export default function FormSuccessPage() {
+  const t = useTranslations('portal.formSuccess');
   const params = useParams();
   const router = useRouter();
   const token = (params?.token as string) || '';
@@ -41,10 +43,10 @@ export default function FormSuccessPage() {
           transition={{ delay: 0.3 }}
         >
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            ¡Formulario Enviado con Éxito!
+            {t('title')}
           </h1>
           <p className="text-lg text-gray-600 mb-8">
-            Gracias por completar el formulario. Su información ha sido recibida de manera segura.
+            {t('message')}
           </p>
         </motion.div>
 
@@ -64,7 +66,7 @@ export default function FormSuccessPage() {
                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span className="font-medium">Hora de envío</span>
+            <span className="font-medium">{t('submissionTimeLabel')}</span>
           </div>
           <p className="text-2xl font-bold text-gray-900">
             {submissionTime.toLocaleDateString('es-ES', {
@@ -97,20 +99,20 @@ export default function FormSuccessPage() {
                 clipRule="evenodd"
               />
             </svg>
-            ¿Qué sigue?
+            {t('whatNextTitle')}
           </h2>
           <ul className="space-y-2 text-gray-700">
             <li className="flex items-start gap-2">
               <span className="text-blue-600 mt-1">•</span>
-              <span>Su proveedor de salud revisará la información que proporcionó</span>
+              <span>{t('step1')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600 mt-1">•</span>
-              <span>Recibirá una copia del formulario completado por correo electrónico</span>
+              <span>{t('step2')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600 mt-1">•</span>
-              <span>Si se requiere información adicional, nos pondremos en contacto con usted</span>
+              <span>{t('step3')}</span>
             </li>
           </ul>
         </motion.div>
@@ -130,7 +132,7 @@ export default function FormSuccessPage() {
               clipRule="evenodd"
             />
           </svg>
-          <span>Sus datos están protegidos con cifrado de grado empresarial y cumplimiento HIPAA</span>
+          <span>{t('securityNotice')}</span>
         </motion.div>
 
         {/* Close Window Button */}
@@ -141,12 +143,12 @@ export default function FormSuccessPage() {
           onClick={() => window.close()}
           className="w-full px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 transition-all font-bold shadow-lg"
         >
-          Cerrar Ventana
+          {t('closeWindow')}
         </motion.button>
 
         {/* Decorative - low contrast intentional for dismissal helper text */}
         <p className="text-xs text-gray-500 mt-4">
-          Puede cerrar esta ventana de forma segura
+          {t('safeToClose')}
         </p>
       </motion.div>
     </div>

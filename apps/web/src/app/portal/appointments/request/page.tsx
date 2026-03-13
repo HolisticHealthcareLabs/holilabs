@@ -10,11 +10,13 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function RequestAppointmentPage() {
   const router = useRouter();
+  const t = useTranslations('portal.appointmentRequest');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -45,7 +47,7 @@ export default function RequestAppointmentPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al solicitar la cita');
+        throw new Error(data.error || t('submit'));
       }
 
       setSuccess(true);
@@ -53,7 +55,7 @@ export default function RequestAppointmentPage() {
         router.push('/portal/appointments');
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('title'));
     } finally {
       setIsSubmitting(false);
     }
@@ -72,11 +74,9 @@ export default function RequestAppointmentPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Solicitud Enviada!</h2>
-          <p className="text-gray-600 mb-6">
-            Tu solicitud de cita ha sido recibida. Te contactaremos pronto para confirmar.
-          </p>
-          <p className="text-sm text-gray-500">Redirigiendo...</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('successTitle')}</h2>
+          <p className="text-gray-600 mb-6">{t('successMessage')}</p>
+          <p className="text-sm text-gray-500">{t('redirecting')}</p>
         </motion.div>
       </div>
     );
@@ -104,13 +104,13 @@ export default function RequestAppointmentPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Volver a citas
+            {t('backToAppointments')}
           </Link>
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            Solicitar Nueva Cita
+            {t('title')}
           </h1>
           <p className="text-gray-600">
-            Completa el formulario y te contactaremos para confirmar tu cita
+            {t('subtitle')}
           </p>
         </div>
 
@@ -124,7 +124,7 @@ export default function RequestAppointmentPage() {
             {/* Reason */}
             <div>
               <label htmlFor="reason" className="block text-sm font-semibold text-gray-700 mb-2">
-                Motivo de la consulta <span className="text-red-500">*</span>
+                {t('reasonRequired')}
               </label>
               <input
                 id="reason"
@@ -132,17 +132,17 @@ export default function RequestAppointmentPage() {
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                placeholder="Ej: Control de diabetes, dolor de cabeza..."
+                placeholder={t('reasonPlaceholder')}
                 required
                 minLength={10}
               />
-              <p className="text-xs text-gray-500 mt-1">Mínimo 10 caracteres</p>
+              <p className="text-xs text-gray-500 mt-1">{t('reasonHint')}</p>
             </div>
 
             {/* Type */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Tipo de consulta <span className="text-red-500">*</span>
+                {t('typeLabel')} <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-3 gap-3">
                 <button
@@ -155,7 +155,7 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">🏥</div>
-                  <div className="text-sm font-semibold text-gray-900">Presencial</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('typePresencial')}</div>
                 </button>
                 <button
                   type="button"
@@ -167,7 +167,7 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">💻</div>
-                  <div className="text-sm font-semibold text-gray-900">Virtual</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('typeVirtual')}</div>
                 </button>
                 <button
                   type="button"
@@ -179,7 +179,7 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">📞</div>
-                  <div className="text-sm font-semibold text-gray-900">Teléfono</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('typePhone')}</div>
                 </button>
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function RequestAppointmentPage() {
             {/* Preferred Date */}
             <div>
               <label htmlFor="preferredDate" className="block text-sm font-semibold text-gray-700 mb-2">
-                Fecha preferida <span className="text-red-500">*</span>
+                {t('dateLabel')} <span className="text-red-500">*</span>
               </label>
               <input
                 id="preferredDate"
@@ -204,7 +204,7 @@ export default function RequestAppointmentPage() {
             {/* Preferred Time */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Horario preferido <span className="text-red-500">*</span>
+                {t('timeLabel')} <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-3 gap-3">
                 <button
@@ -217,8 +217,8 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">🌅</div>
-                  <div className="text-sm font-semibold text-gray-900">Mañana</div>
-                  <div className="text-xs text-gray-500">9:00 - 12:00</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('timeMorning')}</div>
+                  <div className="text-xs text-gray-500">{t('timeMorningHours')}</div>
                 </button>
                 <button
                   type="button"
@@ -230,8 +230,8 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">☀️</div>
-                  <div className="text-sm font-semibold text-gray-900">Tarde</div>
-                  <div className="text-xs text-gray-500">14:00 - 17:00</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('timeAfternoon')}</div>
+                  <div className="text-xs text-gray-500">{t('timeAfternoonHours')}</div>
                 </button>
                 <button
                   type="button"
@@ -243,8 +243,8 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">🌙</div>
-                  <div className="text-sm font-semibold text-gray-900">Noche</div>
-                  <div className="text-xs text-gray-500">17:00 - 20:00</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('timeEvening')}</div>
+                  <div className="text-xs text-gray-500">{t('timeEveningHours')}</div>
                 </button>
               </div>
             </div>
@@ -252,7 +252,7 @@ export default function RequestAppointmentPage() {
             {/* Urgency */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Urgencia
+                {t('urgencyLabel')}
               </label>
               <div className="grid grid-cols-3 gap-3">
                 <button
@@ -265,7 +265,7 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">📋</div>
-                  <div className="text-sm font-semibold text-gray-900">Rutina</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('urgencyRoutine')}</div>
                 </button>
                 <button
                   type="button"
@@ -277,7 +277,7 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">⚠️</div>
-                  <div className="text-sm font-semibold text-gray-900">Urgente</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('urgencyUrgent')}</div>
                 </button>
                 <button
                   type="button"
@@ -289,14 +289,12 @@ export default function RequestAppointmentPage() {
                   }`}
                 >
                   <div className="text-2xl mb-2">🚨</div>
-                  <div className="text-sm font-semibold text-gray-900">Emergencia</div>
+                  <div className="text-sm font-semibold text-gray-900">{t('urgencyEmergency')}</div>
                 </button>
               </div>
               {formData.urgency === 'EMERGENCY' && (
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700">
-                    <strong>⚠️ Importante:</strong> Si es una emergencia médica, llama al 911 o acude a urgencias inmediatamente.
-                  </p>
+                  <p className="text-sm text-red-700">{t('emergencyWarning')}</p>
                 </div>
               )}
             </div>
@@ -304,7 +302,7 @@ export default function RequestAppointmentPage() {
             {/* Notes */}
             <div>
               <label htmlFor="notes" className="block text-sm font-semibold text-gray-700 mb-2">
-                Notas adicionales (opcional)
+                {t('notesLabel')}
               </label>
               <textarea
                 id="notes"
@@ -312,7 +310,7 @@ export default function RequestAppointmentPage() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
-                placeholder="Información adicional que consideres importante..."
+                placeholder={t('notesPlaceholder')}
               />
             </div>
 
@@ -329,7 +327,7 @@ export default function RequestAppointmentPage() {
                 href="/portal/appointments"
                 className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-center"
               >
-                Cancelar
+                {t('cancel')}
               </Link>
               <button
                 type="submit"
@@ -353,10 +351,10 @@ export default function RequestAppointmentPage() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Enviando...
+                    {t('submitting')}
                   </>
                 ) : (
-                  'Enviar Solicitud'
+                  t('submit')
                 )}
               </button>
             </div>
@@ -366,20 +364,20 @@ export default function RequestAppointmentPage() {
         {/* Info Card */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-blue-900 mb-3">
-            📋 ¿Qué sucede después?
+            📋 {t('whatNextTitle')}
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start gap-2">
               <span className="text-blue-600">1.</span>
-              <span>Revisaremos tu solicitud y disponibilidad del médico</span>
+              <span>{t('whatNextStep1')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600">2.</span>
-              <span>Te contactaremos para confirmar la fecha y hora exacta</span>
+              <span>{t('whatNextStep2')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600">3.</span>
-              <span>Recibirás un recordatorio 24 horas antes de tu cita</span>
+              <span>{t('whatNextStep3')}</span>
             </li>
           </ul>
         </div>

@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
+import logger from '@/lib/logger';
 
 export const GET = createProtectedRoute(
   async () => {
@@ -94,7 +95,7 @@ export const GET = createProtectedRoute(
       }
     );
   } catch (error) {
-    console.error('[CDSS Metrics API] Error:', error);
+    logger.error('[CDSS Metrics API] Error:', error);
 
     return NextResponse.json(
       {
@@ -137,7 +138,7 @@ export const POST = createProtectedRoute(
       { status: 400 }
     );
   } catch (error) {
-    console.error('[CDSS Metrics API] Error:', error);
+    logger.error('[CDSS Metrics API] Error:', error);
 
     return NextResponse.json(
       {

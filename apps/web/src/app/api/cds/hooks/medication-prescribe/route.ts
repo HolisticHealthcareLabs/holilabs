@@ -20,6 +20,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext } from '@/lib/cds/types';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ export const POST = createProtectedRoute(
       // Log critical alerts
       const criticalAlerts = result.alerts.filter((a: any) => a.severity === 'critical');
       if (criticalAlerts.length > 0) {
-        console.log(
+        logger.info(
           `[CDS Hooks] ${criticalAlerts.length} CRITICAL alerts for medication-prescribe`
         );
       }
@@ -70,7 +71,7 @@ export const POST = createProtectedRoute(
 
       return NextResponse.json(response);
     } catch (error) {
-      console.error('[CDS Hooks] medication-prescribe error:', error);
+      logger.error('[CDS Hooks] medication-prescribe error:', error);
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
   },

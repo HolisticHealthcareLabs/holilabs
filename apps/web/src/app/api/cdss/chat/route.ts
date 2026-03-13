@@ -12,6 +12,7 @@ import {
   type CdssActionType,
   type DeidentifiedClinicalInput,
 } from '../../../../../../../packages/shared-kernel/src/clinical/prompt-engine';
+import { wrapInSafetyEnvelope, CLINICAL_DISCLAIMER } from '@/lib/clinical/safety-envelope';
 
 export const dynamic = 'force-dynamic';
 
@@ -271,14 +272,60 @@ export const POST = createProtectedRoute(
       ],
     });
 
-    if (!aiResult.success || !aiResult.message) {
-      return NextResponse.json(
-        { success: false, error: aiResult.error || 'Failed to generate clinical response' },
-        { status: 503 }
-      );
+    const usedFallback = !aiResult.success || !aiResult.message;
+
+    if (usedFallback) {
+      logger.warn({
+        event: 'cdss_chat_ai_fallback',
+        patientId,
+        encounterId,
+        provider,
+        aiError: aiResult.error ?? 'No response from AI',
+      });
+
+      const fallbackResponse =
+        'The AI clinical reasoning engine is temporarily unavailable. ' +
+        'Based on the clinical context provided, please review the relevant clinical practice guidelines ' +
+        'for the patient\'s presenting conditions. Consider consulting UpToDate, DynaMed, or institutional ' +
+        'protocols for evidence-based decision support. If urgent, escalate per your facility\'s clinical escalation pathway.';
+
+      const fallbackSuggestions = extractSuggestions(`${safeMessage} ${fallbackResponse}`);
+
+      await createAuditLog({
+        action: 'CREATE',
+        resource: 'CDSSChatMessage',
+        resourceId: patientId,
+        details: {
+          encounterId,
+          messageLength: message.length,
+          responseLength: fallbackResponse.length,
+          suggestionsCount: fallbackSuggestions.length,
+          cdssActionType: cdssActionType ?? null,
+          provider,
+          fallbackUsed: true,
+          fallbackReason: aiResult.error ?? 'No response from AI',
+        },
+        success: true,
+      });
+
+      return NextResponse.json({
+        success: true,
+        ...wrapInSafetyEnvelope(
+          {
+            response: fallbackResponse,
+            suggestions: fallbackSuggestions,
+          },
+          {
+            processingMethod: 'deterministic',
+            confidence: 0.3,
+            fallbackUsed: true,
+            model: 'deterministic-fallback',
+          }
+        ),
+      });
     }
 
-    const aiResponse = aiResult.message;
+    const aiResponse = aiResult.message!;
     const suggestions = extractSuggestions(`${safeMessage} ${aiResponse}`);
 
     await createAuditLog({
@@ -292,6 +339,7 @@ export const POST = createProtectedRoute(
         suggestionsCount: suggestions.length,
         cdssActionType: cdssActionType ?? null,
         provider,
+        fallbackUsed: false,
       },
       success: true,
     });
@@ -309,11 +357,18 @@ export const POST = createProtectedRoute(
 
     return NextResponse.json({
       success: true,
-      data: {
-        response: aiResponse,
-        suggestions,
-        disclaimer: 'Clinical reasoning support only. Final decisions remain with the treating clinician.',
-      },
+      ...wrapInSafetyEnvelope(
+        {
+          response: aiResponse,
+          suggestions,
+        },
+        {
+          processingMethod: 'ai',
+          confidence: 0.85,
+          fallbackUsed: false,
+          model: provider,
+        }
+      ),
     });
   } catch (error) {
     logger.error({

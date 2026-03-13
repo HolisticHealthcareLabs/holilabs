@@ -7,8 +7,8 @@
   },
   "scripts": {
     "dev": "WATCHPACK_POLLING=true CHOKIDAR_USEPOLLING=true NODE_ENV=development next dev --port 3000",
-    "build": "pnpm run validate:env && next build",
-    "build:release": "NEXT_TELEMETRY_DISABLED=1 SKIP_ENV_VALIDATION=1 next build",
+    "build": "pnpm run db:generate && pnpm run validate:env && next build",
+    "build:release": "pnpm run db:generate && NEXT_TELEMETRY_DISABLED=1 SKIP_ENV_VALIDATION=1 next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -20,7 +20,7 @@
     "test:e2e:safari": "playwright test --project=webkit",
     "test:e2e:mobile": "playwright test --project=mobile-safari-iphone --project=mobile-chrome-android",
     "test:report": "playwright show-report",
-    "typecheck": "tsc --noEmit && pnpm run validate:env",
+    "typecheck": "pnpm run db:generate && tsc --noEmit && pnpm run validate:env",
     "validate:env": "tsx -e \"import '@/lib/env'; console.log('✅ Environment validation passed');\"",
     "check:health": "tsx scripts/check-health.ts",
     "cleanup:names": "tsx scripts/cleanup-synthetic-names.ts",
@@ -33,7 +33,7 @@
     "validate-translations": "tsx scripts/validate-translations.ts",
     "translations:validate": "tsx scripts/validate-translations.ts",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",
-    "test:a11y": "jest --testPathPattern=accessibility --passWithNoTests"
+    "test:a11y": "npx playwright test tests/e2e/accessibility-fixes.spec.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.53",
@@ -163,6 +163,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/express": "^5.0.5",
     "@types/jest": "^29.5.0",
+    "prettier": "^3.4.2",
     "@types/json-logic-js": "^2.0.8",
     "@types/multer": "^2.0.0",
     "@types/node": "^20",

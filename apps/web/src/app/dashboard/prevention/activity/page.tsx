@@ -7,6 +7,7 @@
  */
 
 import { Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 import ActivityFeed from '@/components/prevention/ActivityFeed';
 import QuickActionsPanel from '@/components/prevention/QuickActionsPanel';
 import Link from 'next/link';
@@ -14,6 +15,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 function ActivityPageContent() {
+  const t = useTranslations('portal.preventionActivity');
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
@@ -23,17 +25,16 @@ function ActivityPageContent() {
             href="/dashboard/prevention"
             className="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
           >
-            <span className="mr-2">←</span>
-            Volver al Hub de Prevención
+            {t('backToHub')}
           </Link>
 
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Actividad Reciente
+                {t('title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Historial completo de actividades de prevención en tiempo real
+                {t('subtitle')}
               </p>
             </div>
 
@@ -41,7 +42,7 @@ function ActivityPageContent() {
               href="/dashboard/prevention/audit"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Ver Registro de Auditoría
+              {t('viewAuditLog')}
             </Link>
           </div>
         </div>
@@ -65,22 +66,22 @@ function ActivityPageContent() {
           {/* Info Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <InfoCard
-              title="Plans Activos"
-              description="Ver todos los planes de prevención activos"
+              title={t('activePlans')}
+              description={t('activePlansDesc')}
               href="/dashboard/prevention/plans"
               icon="📋"
               color="blue"
             />
             <InfoCard
-              title="Plantillas"
-              description="Gestionar plantillas de prevención"
+              title={t('templates')}
+              description={t('templatesDesc')}
               href="/dashboard/prevention/templates"
               icon="📑"
               color="purple"
             />
             <InfoCard
-              title="Búsqueda Avanzada"
-              description="Buscar en planes y plantillas"
+              title={t('advancedSearch')}
+              description={t('advancedSearchDesc')}
               href="/dashboard/prevention/search"
               icon="🔍"
               color="green"
@@ -128,9 +129,14 @@ function InfoCard({ title, description, href, icon, color }: InfoCardProps) {
   );
 }
 
+function ActivityLoading() {
+  const t = useTranslations('portal.preventionActivity');
+  return <div className="p-6">{t('loading')}</div>;
+}
+
 export default function ActivityPage() {
   return (
-    <Suspense fallback={<div className="p-6">Cargando actividad...</div>}>
+    <Suspense fallback={<ActivityLoading />}>
       <ActivityPageContent />
     </Suspense>
   );

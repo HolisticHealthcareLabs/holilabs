@@ -110,7 +110,7 @@ export class CDSEngine {
     const effectiveHookType = hookType || context.hookType;
     const startTime = performance.now();
 
-    console.log(`🔍 [CDS Engine] Evaluating ${effectiveHookType} hook for patient ${context.patientId}`);
+    console.error('[CDSEngine]', { event: 'evaluate', hookType: effectiveHookType, patientId: context.patientId });
 
     // Check cache first
     const cacheKey = this.generateContextHash(context, effectiveHookType);
@@ -119,7 +119,7 @@ export class CDSEngine {
       if (cached) {
         this.metrics.cacheHits++;
         this.metrics.totalEvaluations++;
-        console.log(`⚡ [CDS Engine] CACHE HIT for ${cacheKey} (${Math.round(performance.now() - startTime)}ms)`);
+        console.error('[CDSEngine]', { event: 'cache_hit', cacheKey, durationMs: Math.round(performance.now() - startTime) });
 
         // Update timestamp but preserve cached alerts
         return {
@@ -156,7 +156,7 @@ export class CDSEngine {
         const duration = performance.now() - ruleStartTime;
 
         if (alert) {
-          console.log(`✅ [CDS Engine] Rule fired: ${rule.name} (${alert.severity}, ${Math.round(duration)}ms)`);
+          console.error('[CDSEngine]', { event: 'rule_fired', rule: rule.name, severity: alert.severity, durationMs: Math.round(duration) });
         }
 
         return { rule, alert, duration };
@@ -197,9 +197,7 @@ export class CDSEngine {
       console.warn(`⚠️ [CDS Engine] SLOW EVALUATION: ${processingTime}ms (threshold: ${this.SLOW_EVALUATION_THRESHOLD}ms)`);
     }
 
-    console.log(
-      `📊 [CDS Engine] Evaluation complete: ${rulesFired}/${rulesEvaluated} rules fired in ${processingTime}ms`
-    );
+    console.error('[CDSEngine]', { event: 'evaluation_complete', rulesFired, rulesEvaluated, processingTimeMs: processingTime });
 
     const evaluationResult: CDSEvaluationResult = {
       timestamp: new Date().toISOString(),
@@ -231,7 +229,7 @@ export class CDSEngine {
     try {
       const pattern = generateCacheKey('cdss', patientId, '*');
       const deleted = await this.cache.deletePattern(pattern);
-      console.log(`🗑️ [CDS Engine] Invalidated ${deleted} cache entries for patient ${patientId}`);
+      console.error('[CDSEngine]', { event: 'cache_invalidated', patientId, entriesDeleted: deleted });
     } catch (error) {
       console.error('[CDS Engine] Cache invalidation error:', error);
     }
@@ -277,7 +275,7 @@ export class CDSEngine {
   public registerRule(rule: CDSRule): void {
     this.rules.push(rule);
     this.enabledRules.set(rule.id, rule.enabled);
-    console.log(`📝 [CDS Engine] Registered rule: ${rule.name}`);
+    console.error('[CDSEngine]', { event: 'rule_registered', rule: rule.name });
   }
 
   /**
@@ -727,7 +725,7 @@ export class CDSEngine {
       this.registerRule(rule);
     }
 
-    console.log(`✅ [CDS Engine] Initialized with ${this.rules.length} rules (including WHO PEN and PAHO protocols)`);
+    console.error('[CDSEngine]', { event: 'initialized', ruleCount: this.rules.length });
   }
 }
 

@@ -10,7 +10,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Bell,
@@ -136,7 +136,7 @@ function buildInitialTeamMembers(activeOrganizationId: string): TeamMember[] {
 }
 
 export default function SettingsPage() {
-  const { t } = useLanguage();
+  const t = useTranslations('dashboard.settings');
   const { data: session } = useSession();
   const userRole = String((session?.user as { role?: string } | undefined)?.role ?? '').toUpperCase();
   const tenantRole = String((session?.user as { tenantRole?: string } | undefined)?.tenantRole ?? 'CLINICIAN').toUpperCase();
@@ -263,15 +263,15 @@ export default function SettingsPage() {
       const settingsSaved = Boolean(response?.ok && data?.success);
 
       if (profileSaved && settingsSaved) {
-        setSaveMessage('✅ Configuración guardada');
+        setSaveMessage(`✅ ${t('configSaved')}`);
       } else if (profileSaved) {
-        setSaveMessage('✅ Contexto de rollout guardado (otras preferencias pendientes)');
+        setSaveMessage(`✅ ${t('rolloutSaved')}`);
       } else {
-        setSaveMessage('❌ Error al guardar');
+        setSaveMessage(`❌ ${t('saveError')}`);
       }
       setTimeout(() => setSaveMessage(''), 4000);
     } catch (error) {
-      setSaveMessage('❌ Error de conexión');
+      setSaveMessage(`❌ ${t('connectionError')}`);
     } finally {
       setIsSaving(false);
     }
@@ -284,7 +284,7 @@ export default function SettingsPage() {
   const handleInviteMember = async () => {
     const normalizedEmail = inviteEmail.trim().toLowerCase();
     if (!normalizedEmail || !normalizedEmail.includes('@')) {
-      setTeamMessage('Please enter a valid email address.');
+      setTeamMessage(t('validEmailRequired'));
       return;
     }
 
@@ -307,7 +307,7 @@ export default function SettingsPage() {
     setInviteRole('CLINICIAN');
     setIsSendingInvite(false);
     setIsInviteModalOpen(false);
-    setTeamMessage(`Invite sent to ${normalizedEmail}.`);
+    setTeamMessage(t('inviteSentTo', { email: normalizedEmail }));
   };
 
   const navigationItems: Array<{
@@ -317,14 +317,14 @@ export default function SettingsPage() {
     accent: string;
     available: boolean;
   }> = [
-    { id: 'home', label: 'Home', icon: Home, accent: 'bg-blue-100 text-blue-700', available: true },
-    { id: 'personal', label: 'Personal info', icon: UserCircle2, accent: 'bg-emerald-100 text-emerald-700', available: true },
-    { id: 'security', label: 'Security & sign-in', icon: ShieldCheck, accent: 'bg-sky-100 text-sky-700', available: false },
-    { id: 'license', label: 'Clinical license', icon: FileBadge2, accent: 'bg-amber-100 text-amber-700', available: false },
-    { id: 'integrations', label: 'Third-party apps & services', icon: Link2, accent: 'bg-indigo-100 text-indigo-700', available: true },
-    { id: 'privacy', label: 'Data & privacy', icon: Lock, accent: 'bg-violet-100 text-violet-700', available: true },
-    { id: 'team', label: 'People & sharing', icon: Users2, accent: 'bg-pink-100 text-pink-700', available: canManageClinic },
-    { id: 'billing', label: 'Wallet & subscriptions', icon: CreditCard, accent: 'bg-orange-100 text-orange-700', available: false },
+    { id: 'home', label: t('home'), icon: Home, accent: 'bg-blue-100 text-blue-700', available: true },
+    { id: 'personal', label: t('personalInfo'), icon: UserCircle2, accent: 'bg-emerald-100 text-emerald-700', available: true },
+    { id: 'security', label: t('securitySignIn'), icon: ShieldCheck, accent: 'bg-sky-100 text-sky-700', available: false },
+    { id: 'license', label: t('clinicalLicense'), icon: FileBadge2, accent: 'bg-amber-100 text-amber-700', available: false },
+    { id: 'integrations', label: t('thirdPartyApps'), icon: Link2, accent: 'bg-indigo-100 text-indigo-700', available: true },
+    { id: 'privacy', label: t('dataPrivacy'), icon: Lock, accent: 'bg-violet-100 text-violet-700', available: true },
+    { id: 'team', label: t('peopleSharing'), icon: Users2, accent: 'bg-pink-100 text-pink-700', available: canManageClinic },
+    { id: 'billing', label: t('walletSubscriptions'), icon: CreditCard, accent: 'bg-orange-100 text-orange-700', available: false },
   ];
 
   const saveFeedbackTone = saveMessage.includes('✅')
@@ -337,7 +337,7 @@ export default function SettingsPage() {
         <aside className="hidden w-[280px] shrink-0 xl:block">
           <div className="sticky top-8 space-y-2">
             <div className="mb-6 px-4 text-[28px] font-semibold tracking-tight text-white">
-              Cortex Account
+              {t('cortexAccount')}
             </div>
             {navigationItems.map((item) => {
               const Icon = item.icon;
@@ -360,7 +360,7 @@ export default function SettingsPage() {
                   </span>
                   {!item.available && (
                     <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">
-                      Coming Soon
+                      {t('comingSoon')}
                     </span>
                   )}
                 </button>
@@ -378,7 +378,7 @@ export default function SettingsPage() {
                 value=""
                 readOnly
                 aria-label="Search account settings"
-                placeholder={t('dashboard.settings.searchCortex')}
+                placeholder={t('searchCortex')}
                 className="w-full bg-transparent text-base text-white/85 outline-none placeholder:text-white/38"
               />
             </div>
@@ -388,10 +388,10 @@ export default function SettingsPage() {
                 {(session?.user?.name || session?.user?.email || 'C').charAt(0).toUpperCase()}
               </div>
               <h1 className="text-5xl font-semibold tracking-tight text-white">
-                {session?.user?.name || t('dashboard.settings.yourAccount')}
+                {session?.user?.name || t('yourAccount')}
               </h1>
               <p className="mt-2 text-lg text-white/65">
-                {session?.user?.email || t('dashboard.settings.noEmail')}
+                {session?.user?.email || t('noEmail')}
               </p>
             </div>
 
@@ -405,7 +405,7 @@ export default function SettingsPage() {
                           <AlertTriangle className="h-5 w-5" />
                         </span>
                         <div>
-                          <p className="text-lg font-semibold text-white">{t('dashboard.settings.securityReview')}</p>
+                          <p className="text-lg font-semibold text-white">{t('securityReview')}</p>
                           <p className="mt-1 text-sm text-white/80">
                             Review organization access, team invites, and privacy settings before rollout.
                           </p>
@@ -417,28 +417,28 @@ export default function SettingsPage() {
                       onClick={() => setActiveTab('privacy')}
                       className="shrink-0 rounded-full bg-white/85 px-5 py-3 text-sm font-semibold text-[#7f1612] transition-colors hover:bg-white"
                     >
-                      {t('dashboard.settings.reviewSettings')}
+                      {t('reviewSettings')}
                     </button>
                   </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('dashboard.settings.organization')}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('organization')}</p>
                     <p className="mt-3 text-xl font-semibold text-white">{organizationName}</p>
                     <p className="mt-1 text-sm text-white/55">{organizationType}</p>
                   </div>
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('dashboard.settings.role')}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('role')}</p>
                     <p className="mt-3 text-xl font-semibold text-white">{tenantRole}</p>
-                    <p className="mt-1 text-sm text-white/55">Scoped to your current workspace</p>
+                    <p className="mt-1 text-sm text-white/55">{t('scopedToWorkspace')}</p>
                   </div>
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('dashboard.settings.pendingInvites')}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('pendingInvites')}</p>
                     <p className="mt-3 text-xl font-semibold text-white">
                       {visibleTeamMembers.filter((member) => member.status === 'PENDING').length}
                     </p>
-                    <p className="mt-1 text-sm text-white/55">Awaiting onboarding completion</p>
+                    <p className="mt-1 text-sm text-white/55">{t('awaitingOnboarding')}</p>
                   </div>
                 </div>
               </div>
@@ -447,22 +447,22 @@ export default function SettingsPage() {
             {activeTab === 'personal' && (
               <div className="space-y-4">
                 <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Personal info</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('personalInfo')}</p>
                   <div className="mt-6 grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">Full name</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.name || 'Unknown'}</p>
+                      <p className="text-sm text-white/50">{t('fullName')}</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.name || t('unknown')}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">Email</p>
-                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.email || 'Unknown'}</p>
+                      <p className="text-sm text-white/50">{t('email')}</p>
+                      <p className="mt-2 text-lg font-semibold text-white">{session?.user?.email || t('unknown')}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">Organization ID</p>
+                      <p className="text-sm text-white/50">{t('organizationIdLabel')}</p>
                       <p className="mt-2 font-mono text-sm text-white">{organizationId}</p>
                     </div>
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                      <p className="text-sm text-white/50">Tenant role</p>
+                      <p className="text-sm text-white/50">{t('tenantRoleLabel')}</p>
                       <p className="mt-2 text-lg font-semibold text-white">{tenantRole}</p>
                     </div>
                   </div>
@@ -475,14 +475,14 @@ export default function SettingsPage() {
                 <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Third-party apps & services</p>
-                      <h2 className="mt-3 text-2xl font-semibold text-white">AI provider settings</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('thirdPartyApps')}</p>
+                      <h2 className="mt-3 text-2xl font-semibold text-white">{t('aiProviderSettings')}</h2>
                       <p className="mt-2 text-sm text-white/60">
-                        Connect your preferred model provider and manage keys for this workspace.
+                        {t('aiProviderDesc')}
                       </p>
                     </div>
                     <span className="rounded-full bg-white/8 px-3 py-1 text-xs font-semibold text-white/70">
-                      {aiConfig.useCustomApiKey ? 'BYOK enabled' : 'Shared mode'}
+                      {aiConfig.useCustomApiKey ? t('byokEnabled') : t('sharedMode')}
                     </span>
                   </div>
 
@@ -490,9 +490,9 @@ export default function SettingsPage() {
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-base font-semibold text-white">Bring Your Own Key</p>
+                          <p className="text-base font-semibold text-white">{t('bringYourOwnKey')}</p>
                           <p className="mt-1 text-sm text-white/55">
-                            Use workspace-managed API credentials instead of the shared environment.
+                            {t('byokDesc')}
                           </p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -511,7 +511,7 @@ export default function SettingsPage() {
 
                     <div>
                       <label className="mb-2 block text-sm font-medium text-white/75">
-                        Preferred provider
+                        {t('preferredProvider')}
                       </label>
                       <select
                         value={aiConfig.provider}
@@ -530,28 +530,28 @@ export default function SettingsPage() {
                           type="password"
                           value={aiConfig.geminiApiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, geminiApiKey: e.target.value })}
-                          placeholder={t('dashboard.settings.geminiApiKey')}
+                          placeholder={t('geminiApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                         <input
                           type="password"
                           value={aiConfig.anthropicKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, anthropicKey: e.target.value })}
-                          placeholder={t('dashboard.settings.anthropicApiKey')}
+                          placeholder={t('anthropicApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                         <input
                           type="password"
                           value={aiConfig.openaiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, openaiKey: e.target.value })}
-                          placeholder={t('dashboard.settings.openaiApiKey')}
+                          placeholder={t('openaiApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                         <input
                           type="password"
                           value={aiConfig.deepgramApiKey}
                           onChange={(e) => setAiConfig({ ...aiConfig, deepgramApiKey: e.target.value })}
-                          placeholder={t('dashboard.settings.deepgramApiKey')}
+                          placeholder={t('deepgramApiKey')}
                           className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/10"
                         />
                       </div>
@@ -569,7 +569,7 @@ export default function SettingsPage() {
                         disabled={isSaving}
                         className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#1f1f1c] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {isSaving ? 'Saving...' : 'Save changes'}
+                        {isSaving ? t('saving') : t('saveChanges')}
                       </button>
                     </div>
                   </div>
@@ -580,16 +580,16 @@ export default function SettingsPage() {
             {activeTab === 'privacy' && (
               <div className="space-y-6">
                 <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">Data & privacy</p>
-                  <h2 className="mt-3 text-2xl font-semibold text-white">Workspace privacy controls</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('dataPrivacy')}</p>
+                  <h2 className="mt-3 text-2xl font-semibold text-white">{t('workspacePrivacy')}</h2>
                   <p className="mt-2 text-sm text-white/60">
-                    Tune outreach, rollout context, and compliance settings for your tenant.
+                    {t('privacyDesc')}
                   </p>
 
                   <div className="mt-6 space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-white/75">Phone on file</label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">{t('phoneOnFile')}</label>
                         <input
                           type="tel"
                           value={commsConfig.contactPhone}
@@ -599,7 +599,7 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-white/75">Preferred channel</label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">{t('preferredChannel')}</label>
                         <select
                           value={commsConfig.preferredChannel}
                           onChange={(e) => setCommsConfig({ ...commsConfig, preferredChannel: e.target.value })}
@@ -614,9 +614,9 @@ export default function SettingsPage() {
                     <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
                       <label className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-base font-semibold text-white">Automated reminders</p>
+                          <p className="text-base font-semibold text-white">{t('automatedReminders')}</p>
                           <p className="mt-1 text-sm text-white/55">
-                            Allow appointment reminders and workflow nudges for this account.
+                            {t('automatedRemindersDesc')}
                           </p>
                         </div>
                         <input
@@ -630,7 +630,7 @@ export default function SettingsPage() {
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-white/75">Compliance country</label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">{t('complianceCountry')}</label>
                         <select
                           value={rolloutContext.complianceCountry}
                           disabled={!canEditRolloutContext}
@@ -654,7 +654,7 @@ export default function SettingsPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-white/75">Protocol mode</label>
+                        <label className="mb-2 block text-sm font-medium text-white/75">{t('protocolMode')}</label>
                         <select
                           value={rolloutContext.protocolMode}
                           disabled={!canEditRolloutContext}
@@ -673,7 +673,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-white/75">Insurance / payer focus</label>
+                      <label className="mb-2 block text-sm font-medium text-white/75">{t('insurerFocus')}</label>
                       <input
                         type="text"
                         value={rolloutContext.insurerFocus}
@@ -688,7 +688,7 @@ export default function SettingsPage() {
 
                     {!canEditRolloutContext && (
                       <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                        Read-only access for role {tenantRole || userRole || 'UNKNOWN'}.
+                        {t('readOnlyAccess', { role: tenantRole || userRole || 'UNKNOWN' })}
                       </div>
                     )}
 
@@ -704,7 +704,7 @@ export default function SettingsPage() {
                         disabled={isSaving}
                         className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#1f1f1c] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {isSaving ? 'Saving...' : 'Save changes'}
+                        {isSaving ? t('saving') : t('saveChanges')}
                       </button>
                     </div>
                   </div>
@@ -718,10 +718,10 @@ export default function SettingsPage() {
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">People & sharing</p>
-                        <h2 className="mt-3 text-2xl font-semibold text-white">Team members</h2>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('peopleSharing')}</p>
+                        <h2 className="mt-3 text-2xl font-semibold text-white">{t('teamMembersTitle')}</h2>
                         <p className="mt-2 text-sm text-white/60">
-                          Invite and manage organization members inside this tenant boundary.
+                          {t('teamDesc')}
                         </p>
                       </div>
                       <button
@@ -729,7 +729,7 @@ export default function SettingsPage() {
                         onClick={() => setIsInviteModalOpen(true)}
                         className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#1f1f1c] transition-colors hover:bg-white/90"
                       >
-                        Invite member
+                        {t('inviteMember')}
                       </button>
                     </div>
 
@@ -745,9 +745,9 @@ export default function SettingsPage() {
 
                     <div className="mt-6 overflow-hidden rounded-[24px] border border-white/10">
                       <div className="grid grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)_minmax(0,0.9fr)] gap-4 bg-white/[0.03] px-5 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
-                        <span>Member</span>
-                        <span>{t('dashboard.settings.role')}</span>
-                        <span>Status</span>
+                        <span>{t('memberCol')}</span>
+                        <span>{t('role')}</span>
+                        <span>{t('statusCol')}</span>
                       </div>
                       <div className="divide-y divide-white/8">
                         {visibleTeamMembers.map((member) => (
@@ -766,12 +766,12 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex items-center">
                               <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${ROLE_STYLES[member.role]}`}>
-                                {member.role === 'ORG_ADMIN' ? 'Admin' : member.role === 'CLINICIAN' ? 'Clinician' : 'Billing'}
+                                {member.role === 'ORG_ADMIN' ? t('roleAdmin') : member.role === 'CLINICIAN' ? t('roleClinician') : t('roleBilling')}
                               </span>
                             </div>
                             <div className="flex items-center">
                               <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[member.status]}`}>
-                                {member.status === 'ACTIVE' ? 'Active' : 'Pending'}
+                                {member.status === 'ACTIVE' ? t('statusActive') : t('statusPending')}
                               </span>
                             </div>
                           </div>
@@ -781,10 +781,10 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">People & sharing</p>
-                    <h2 className="mt-3 text-2xl font-semibold text-white">Team management</h2>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">{t('peopleSharing')}</p>
+                    <h2 className="mt-3 text-2xl font-semibold text-white">{t('teamManagement')}</h2>
                     <p className="mt-2 text-sm text-white/60">
-                      Coming Soon for clinicians. Organization admins manage access and sharing controls.
+                      {t('teamComingSoon')}
                     </p>
                   </div>
                 )}
@@ -795,14 +795,14 @@ export default function SettingsPage() {
               <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
                   {activeTab === 'security'
-                    ? 'Security & sign-in'
+                    ? t('securitySignIn')
                     : activeTab === 'license'
-                      ? 'Clinical license'
-                      : 'Wallet & subscriptions'}
+                      ? t('clinicalLicense')
+                      : t('walletSubscriptions')}
                 </p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Coming Soon</h2>
+                <h2 className="mt-3 text-2xl font-semibold text-white">{t('comingSoon')}</h2>
                 <p className="mt-2 text-sm text-white/60">
-                  This section has been reserved in the new account dashboard and will be enabled once the underlying product surface is available.
+                  {t('comingSoonDesc')}
                 </p>
               </div>
             )}
@@ -822,15 +822,15 @@ export default function SettingsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h3 className="text-lg font-semibold text-slate-900">Invite Member</h3>
+                <h3 className="text-lg font-semibold text-slate-900">{t('inviteMemberTitle')}</h3>
                 <p className="mt-1 text-sm text-slate-600">
-                  New members join as pending users inside {organizationName}.
+                  {t('inviteMemberDesc', { org: organizationName })}
                 </p>
               </div>
               <div className="space-y-4 px-5 py-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Email Address
+                    {t('emailAddress')}
                   </label>
                   <input
                     type="email"
@@ -843,7 +843,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Role
+                    {t('role')}
                   </label>
                   <select
                     value={inviteRole}
@@ -859,7 +859,7 @@ export default function SettingsPage() {
                   </select>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                  This invite will be stamped to organization ID: <span className="font-mono text-slate-900">{organizationId}</span>
+                  {t('inviteStamped')} <span className="font-mono text-slate-900">{organizationId}</span>
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
@@ -869,7 +869,7 @@ export default function SettingsPage() {
                   className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
                   disabled={isSendingInvite}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="button"
@@ -877,7 +877,7 @@ export default function SettingsPage() {
                   className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isSendingInvite}
                 >
-                  {isSendingInvite ? 'Sending Invite...' : 'Send Invite'}
+                  {isSendingInvite ? t('sendingInvite') : t('sendInvite')}
                 </button>
               </div>
             </div>

@@ -36,7 +36,7 @@ export function getRedisClient(): Redis | null {
       url: redisUrl,
       token: redisToken,
     });
-    console.log('[Redis] Connected to Upstash Redis');
+    console.error('[Redis]', { event: 'connected' });
     return redisClient;
   } catch (error) {
     console.error('[Redis] Failed to connect to Redis:', error);

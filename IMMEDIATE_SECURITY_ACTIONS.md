@@ -42,7 +42,7 @@ curl -u YOUR_TWILIO_ACCOUNT_SID:YOUR_TWILIO_AUTH_TOKEN \
 
 - [ ] Visit: https://resend.com/api-keys
 - [ ] Log in to your account
-- [ ] Find key: `re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu`
+- [ ] Find key: `<REDACTED-REVOKE-AND-REGENERATE>`
 - [ ] Click "Revoke" or "Delete"
 - [ ] Generate new API key
 - [ ] Update `.env.local` with new key:
@@ -95,7 +95,7 @@ openssl rand -hex 32
 
 # Update .env.local
 # Replace old value:
-# DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"
+# DEID_SECRET="<REDACTED-REVOKE-AND-REGENERATE>"
 # With new value:
 # DEID_SECRET="[paste new value here]"
 ```
@@ -104,7 +104,7 @@ openssl rand -hex 32
 
 - [ ] Visit: https://betterstack.com/logs
 - [ ] Go to: Source Tokens
-- [ ] Find token: `ppRsuAAsrT4hR8Uw8HAY4UCu`
+- [ ] Find token: `<REDACTED-REVOKE-AND-REGENERATE>`
 - [ ] Click "Delete" or "Revoke"
 - [ ] Generate new token (if needed)
 - [ ] Update in test file or remove if not used
@@ -120,8 +120,8 @@ cd /Users/nicolacapriroloteran/prototypes/holilabsv2
 
 # Edit RED_TEAM_REPORT.md
 # Find lines 255-256:
-# DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"
-# RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
+# DEID_SECRET="<REDACTED-REVOKE-AND-REGENERATE>"
+# RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"
 
 # Replace with:
 # DEID_SECRET="[REDACTED - 64 hex characters]"
@@ -133,7 +133,7 @@ cd /Users/nicolacapriroloteran/prototypes/holilabsv2
 ```bash
 # Edit IMMEDIATE_ACTION_PLAN.md
 # Find line 61:
-# RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
+# RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"
 
 # Replace with:
 # RESEND_API_KEY="re_[REDACTED]"
@@ -144,7 +144,7 @@ cd /Users/nicolacapriroloteran/prototypes/holilabsv2
 ```bash
 # Edit apps/web/src/lib/__tests__/betterstack-logger.test.ts
 # Find line 3:
-# * Run: LOGTAIL_SOURCE_TOKEN="ppRsuAAsrT4hR8Uw8HAY4UCu" NODE_ENV=production...
+# * Run: LOGTAIL_SOURCE_TOKEN="<REDACTED-REVOKE-AND-REGENERATE>" NODE_ENV=production...
 
 # Replace with:
 # * Run: LOGTAIL_SOURCE_TOKEN="your-logtail-token-here" NODE_ENV=production...
@@ -254,7 +254,7 @@ rm test-secret.txt
 git reset HEAD
 
 # 3. Check documentation is redacted
-grep -i "re_hvh5qDG6" RED_TEAM_REPORT.md IMMEDIATE_ACTION_PLAN.md
+grep -i "RESEND_API_KEY\|DEID_SECRET" RED_TEAM_REPORT.md IMMEDIATE_ACTION_PLAN.md
 # Should return nothing
 
 # 4. Verify .env.local.backup is gone

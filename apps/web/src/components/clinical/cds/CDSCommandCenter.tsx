@@ -311,8 +311,7 @@ export function CDSCommandCenter({
                   <RuleManager
                     rules={rules}
                     loading={loadingRules}
-                    onRuleToggle={(ruleId, enabled) => {
-                      console.log(`Toggle rule ${ruleId}: ${enabled}`);
+                    onRuleToggle={(_ruleId, _enabled) => {
                       // TODO: API call to update rule status
                     }}
                   />

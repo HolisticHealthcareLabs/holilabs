@@ -31,8 +31,8 @@ jobs:
           docker build \
             -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs-staging:${{ github.sha }} \
             -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/holi-labs-staging:latest \
-            -f apps/web/Dockerfile \
-            apps/web
+            -f Dockerfile \
+            .
 
       - name: Push image to DigitalOcean Container Registry
         run: |

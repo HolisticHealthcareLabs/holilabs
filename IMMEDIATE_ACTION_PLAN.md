@@ -58,11 +58,11 @@ echo 'export SENTRY_AUTH_TOKEN="<new-token>"' >> ~/.bashrc
 **KEYS TO ROTATE:**
 ```bash
 # Resend (Email API)
-RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
+RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"
 → Visit: https://resend.com/api-keys
 
 # De-identification Secret
-DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"
+DEID_SECRET="<REDACTED-REVOKE-AND-REGENERATE>"
 → Generate new: openssl rand -hex 32
 
 # Check for other keys:

@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -24,6 +25,7 @@ interface Recording {
 }
 
 export default function ConsultationsPage() {
+  const t = useTranslations('portal.consultations');
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,12 +41,12 @@ export default function ConsultationsPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al cargar consultas');
+        throw new Error(data.error || t('loadError'));
       }
 
       setRecordings(data.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -68,10 +70,10 @@ export default function ConsultationsPage() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, { bg: string; text: string; label: string }> = {
-      COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Disponible' },
-      PROCESSING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Procesando' },
-      TRANSCRIBING: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Transcribiendo' },
-      FAILED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Error' },
+      COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: t('statusAvailable') },
+      PROCESSING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: t('statusProcessing') },
+      TRANSCRIBING: { bg: 'bg-blue-100', text: 'text-blue-700', label: t('statusTranscribing') },
+      FAILED: { bg: 'bg-red-100', text: 'text-red-700', label: t('statusError') },
     };
 
     const style = styles[status] || styles.PROCESSING;
@@ -108,7 +110,7 @@ export default function ConsultationsPage() {
               />
             </svg>
           </div>
-          <p className="text-gray-600 font-medium">Cargando consultas...</p>
+          <p className="text-gray-600 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -134,14 +136,14 @@ export default function ConsultationsPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-            Error al cargar
+            {t('errorTitle')}
           </h2>
           <p className="text-gray-600 mb-6 text-center">{error}</p>
           <button
             onClick={() => fetchRecordings()}
             className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
           >
-            Reintentar
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -154,10 +156,10 @@ export default function ConsultationsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            Mis Consultas
+            {t('title')}
           </h1>
           <p className="text-gray-600">
-            Revisa las grabaciones y notas de tus consultas médicas
+            {t('subtitle')}
           </p>
         </div>
 
@@ -181,10 +183,10 @@ export default function ConsultationsPage() {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No hay consultas grabadas
+              {t('noRecordings')}
             </h3>
             <p className="text-gray-600 mb-6">
-              Las consultas grabadas aparecerán aquí después de tus citas
+              {t('noRecordingsDesc')}
             </p>
           </div>
         ) : (
@@ -266,7 +268,7 @@ export default function ConsultationsPage() {
                           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                         />
                       </svg>
-                      Ver
+                      {t('view')}
                     </Link>
                   )}
                 </div>
@@ -278,26 +280,20 @@ export default function ConsultationsPage() {
         {/* Info Card */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
           <h3 className="text-sm font-semibold text-blue-900 mb-3">
-            🎙️ Sobre las consultas grabadas
+            {t('aboutTitle')}
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start gap-2">
               <span className="text-blue-600">•</span>
-              <span>
-                Tu médico puede grabar las consultas para generar notas médicas precisas
-              </span>
+              <span>{t('tip1')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600">•</span>
-              <span>
-                Puedes escuchar el audio y leer las notas cuando lo necesites
-              </span>
+              <span>{t('tip2')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-600">•</span>
-              <span>
-                Las grabaciones son privadas y protegidas con encriptación
-              </span>
+              <span>{t('tip3')}</span>
             </li>
           </ul>
         </div>

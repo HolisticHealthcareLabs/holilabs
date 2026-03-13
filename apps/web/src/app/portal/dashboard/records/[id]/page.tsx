@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -71,15 +72,10 @@ const statusColors = {
   ADDENDUM: 'bg-purple-100 text-purple-800',
 };
 
-const statusLabels = {
-  DRAFT: 'Borrador',
-  PENDING_REVIEW: 'Pendiente de revisión',
-  SIGNED: 'Firmado',
-  AMENDED: 'Enmendado',
-  ADDENDUM: 'Adenda',
-};
+
 
 export default function RecordDetailPage() {
+  const t = useTranslations('portal.records');
   const router = useRouter();
   const params = useParams();
   const recordId = (params?.id as string) || '';
@@ -102,14 +98,14 @@ export default function RecordDetailPage() {
       const data: RecordResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al cargar registro');
+        throw new Error(data.error || t('errorLoadingRecord'));
       }
 
       if (data.success && data.data) {
         setRecord(data.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('errorLoadingRecord'));
       logger.error('Error fetching record:', err);
     } finally {
       setLoading(false);
@@ -126,7 +122,7 @@ export default function RecordDetailPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Error al exportar PDF');
+        throw new Error(t('exportPdf'));
       }
 
       const blob = await response.blob();
@@ -142,7 +138,7 @@ export default function RecordDetailPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err) {
-      alert('Error al exportar PDF: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+      alert(t('downloadError') + ' ' + (err instanceof Error ? err.message : ''));
     } finally {
       setExporting(false);
     }
@@ -165,15 +161,15 @@ export default function RecordDetailPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver a Registros
+            {t('backToRecords')}
           </button>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-800 mb-4">{error || 'Registro no encontrado'}</p>
+            <p className="text-red-800 mb-4">{error || t('notFound')}</p>
             <button
               onClick={fetchRecord}
               className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors"
             >
-              Reintentar
+              {t('retryBtn')}
             </button>
           </div>
         </div>
@@ -191,13 +187,13 @@ export default function RecordDetailPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver a Registros
+            {t('backToRecords')}
           </button>
 
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Registro Médico
+                {t('recordDetail')}
               </h1>
               <p className="text-gray-600">
                 {format(new Date(record.createdAt), "d 'de' MMMM, yyyy 'a las' HH:mm", {
@@ -211,7 +207,7 @@ export default function RecordDetailPage() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <DocumentArrowDownIcon className="h-5 w-5" />
-              {exporting ? 'Exportando...' : 'Exportar PDF'}
+              {exporting ? t('exporting') : t('exportPdf')}
             </button>
           </div>
         </div>
@@ -223,7 +219,7 @@ export default function RecordDetailPage() {
               statusColors[record.status]
             }`}
           >
-            {statusLabels[record.status]}
+            {record.status === 'DRAFT' ? t('statusDraftLabel') : record.status === 'PENDING_REVIEW' ? t('statusPendingLabel') : record.status === 'SIGNED' ? t('statusSignedLabel') : record.status === 'AMENDED' ? t('statusAmendedLabel') : t('statusAddendumLabel')}
           </span>
         </div>
 
@@ -232,21 +228,21 @@ export default function RecordDetailPage() {
           {/* Patient Info */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Información del Paciente
+              {t('patientInfoTitle')}
             </h3>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="text-gray-600">Nombre:</span>{' '}
+                <span className="text-gray-600">{t('nameLabel')}</span>{' '}
                 <span className="font-medium">
                   {record.patient.firstName} {record.patient.lastName}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">MRN:</span>{' '}
+                <span className="text-gray-600">{t('mrnLabel')}</span>{' '}
                 <span className="font-medium">{record.patient.mrn}</span>
               </div>
               <div>
-                <span className="text-gray-600">Fecha de Nacimiento:</span>{' '}
+                <span className="text-gray-600">{t('dobLabel')}</span>{' '}
                 <span className="font-medium">
                   {format(new Date(record.patient.dateOfBirth), "d 'de' MMMM, yyyy", {
                     locale: es,
@@ -259,24 +255,24 @@ export default function RecordDetailPage() {
           {/* Clinician Info */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Información del Médico
+              {t('clinicianInfoTitle')}
             </h3>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="text-gray-600">Nombre:</span>{' '}
+                <span className="text-gray-600">{t('nameLabel')}</span>{' '}
                 <span className="font-medium">
                   Dr. {record.clinician.firstName} {record.clinician.lastName}
                 </span>
               </div>
               {record.clinician.specialty && (
                 <div>
-                  <span className="text-gray-600">Especialidad:</span>{' '}
+                  <span className="text-gray-600">{t('specialtyLabel')}</span>{' '}
                   <span className="font-medium">{record.clinician.specialty}</span>
                 </div>
               )}
               {record.clinician.licenseNumber && (
                 <div>
-                  <span className="text-gray-600">Licencia:</span>{' '}
+                  <span className="text-gray-600">{t('licenseLabel')}</span>{' '}
                   <span className="font-medium">{record.clinician.licenseNumber}</span>
                 </div>
               )}
@@ -287,9 +283,9 @@ export default function RecordDetailPage() {
         {/* Chief Complaint */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">
-            Motivo de Consulta
+            {t('chiefComplaintTitle')}
           </h3>
-          <p className="text-gray-700">{record.chiefComplaint || 'No especificado'}</p>
+          <p className="text-gray-700">{record.chiefComplaint || t('notSpecified')}</p>
         </div>
 
         {/* SOAP Note Sections */}
@@ -301,11 +297,11 @@ export default function RecordDetailPage() {
                 S
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Subjetivo (Narrativa del Paciente)
+                {t('subjectiveTitle')}
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
-              {record.subjective || 'No disponible'}
+              {record.subjective || t('notAvailable')}
             </p>
           </div>
 
@@ -316,11 +312,11 @@ export default function RecordDetailPage() {
                 O
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Objetivo (Hallazgos Clínicos)
+                {t('objectiveTitle')}
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
-              {record.objective || 'No disponible'}
+              {record.objective || t('notAvailable')}
             </p>
           </div>
 
@@ -331,11 +327,11 @@ export default function RecordDetailPage() {
                 A
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Evaluación (Diagnóstico)
+                {t('assessmentTitle')}
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
-              {record.assessment || 'No disponible'}
+              {record.assessment || t('notAvailable')}
             </p>
           </div>
 
@@ -346,11 +342,11 @@ export default function RecordDetailPage() {
                 P
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Plan (Tratamiento)
+                {t('planTitle')}
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">
-              {record.plan || 'No disponible'}
+              {record.plan || t('notAvailable')}
             </p>
           </div>
         </div>
@@ -358,12 +354,12 @@ export default function RecordDetailPage() {
         {/* Metadata Footer */}
         <div className="mt-8 bg-gray-50 rounded-xl border border-gray-200 p-6">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">
-            Información del Registro
+            {t('metadataTitle')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
               {/* Decorative - low contrast intentional for metadata labels */}
-              <span className="block text-gray-500">Creado:</span>
+              <span className="block text-gray-500">{t('created')}</span>
               <span className="font-medium">
                 {format(new Date(record.createdAt), "d/MM/yyyy HH:mm", {
                   locale: es,
@@ -372,7 +368,7 @@ export default function RecordDetailPage() {
             </div>
             <div>
               {/* Decorative - low contrast intentional for metadata labels */}
-              <span className="block text-gray-500">Actualizado:</span>
+              <span className="block text-gray-500">{t('updated')}</span>
               <span className="font-medium">
                 {format(new Date(record.updatedAt), "d/MM/yyyy HH:mm", {
                   locale: es,
@@ -382,7 +378,7 @@ export default function RecordDetailPage() {
             {record.signedAt && (
               <div>
                 {/* Decorative - low contrast intentional for metadata labels */}
-                <span className="block text-gray-500">Firmado:</span>
+                <span className="block text-gray-500">{t('signedAt')}</span>
                 <span className="font-medium">
                   {format(new Date(record.signedAt), "d/MM/yyyy HH:mm", {
                     locale: es,
@@ -394,10 +390,10 @@ export default function RecordDetailPage() {
           {record.session?.audioDuration && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               {/* Decorative - low contrast intentional for metadata labels */}
-              <span className="text-gray-500">Duración de la grabación:</span>{' '}
+              <span className="text-gray-500">{t('recordingDuration')}</span>{' '}
               <span className="font-medium">
-                {Math.floor(record.session.audioDuration / 60)} minutos{' '}
-                {record.session.audioDuration % 60} segundos
+                {Math.floor(record.session.audioDuration / 60)} {t('minutes')}{' '}
+                {record.session.audioDuration % 60} {t('seconds')}
               </span>
             </div>
           )}

@@ -10,6 +10,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import type { PreventionProtocol } from '@/lib/prevention/international-protocols';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,7 +141,7 @@ export const POST = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error creating prevention plan:', error);
+    logger.error('Error creating prevention plan:', error);
 
     return NextResponse.json(
       {
@@ -213,7 +214,7 @@ export const GET = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error fetching prevention plans:', error);
+    logger.error('Error fetching prevention plans:', error);
 
     return NextResponse.json(
       {

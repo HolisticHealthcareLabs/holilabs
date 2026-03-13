@@ -9,27 +9,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
-// Create message schema
 const CreateMessageSchema = z.object({
   content: z.string().min(1, 'El mensaje no puede estar vacío').max(2000, 'El mensaje es demasiado largo'),
   type: z.enum(['TEXT', 'QUESTION', 'URGENT']).default('TEXT'),
 });
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Get patient's assigned clinician
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const patient = await prisma.patient.findUnique({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       select: {
         assignedClinicianId: true,
         assignedClinician: {
@@ -54,35 +47,15 @@ export const GET = createPublicRoute(
       );
     }
 
-    // Parse query parameters for pagination
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const before = searchParams.get('before'); // Message ID for pagination
+    const before = searchParams.get('before');
 
-    // Build where clause for message filtering
-    // In a real system, you'd have a Messages table with senderId/receiverId
-    // For now, we'll use ClinicalNotes as a proxy for communication
-    // This is a simplified version - in production you'd have a dedicated Messages table
-
-    // For demo purposes, we'll create a mock messages structure
-    // In production, you would query a Messages table like:
-    // const messages = await prisma.message.findMany({
-    //   where: {
-    //     OR: [
-    //       { senderId: session.userId, receiverId: patient.assignedClinician.user.id },
-    //       { senderId: patient.assignedClinician.user.id, receiverId: session.userId },
-    //     ],
-    //   },
-    //   orderBy: { timestamp: 'desc' },
-    //   take: limit,
-    // });
-
-    // For now, return empty messages with clinician info
     const messages: any[] = [];
 
     logger.info({
       event: 'patient_messages_fetched',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       clinicianId: patient.assignedClinicianId,
       count: messages.length,
     });
@@ -98,42 +71,12 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_messages_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar mensajes.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'Messages' } }
 );
 
-export const POST = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse and validate request body
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const body = await request.json();
     const validation = CreateMessageSchema.safeParse(body);
 
@@ -150,20 +93,13 @@ export const POST = createPublicRoute(
 
     const { content, type } = validation.data;
 
-    // Get patient's assigned clinician
     const patient = await prisma.patient.findUnique({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       select: {
         assignedClinicianId: true,
         assignedClinician: {
           select: {
             id: true,
-            // TODO: user relation doesn't exist in Prisma schema yet
-            // user: {
-            //   select: {
-            //     id: true,
-            //   },
-            // },
           },
         },
       },
@@ -179,33 +115,20 @@ export const POST = createPublicRoute(
       );
     }
 
-    // In production, you would create a Message record:
-    // const message = await prisma.message.create({
-    //   data: {
-    //     senderId: session.userId,
-    //     receiverId: patient.assignedClinician.user.id,
-    //     content,
-    //     type,
-    //     sentAt: new Date(),
-    //   },
-    // });
-
-    // For demo, create a mock message
     const message = {
       id: `msg_${Date.now()}`,
       content,
       type,
       sentAt: new Date().toISOString(),
-      senderId: session.userId,
-      receiverId: patient.assignedClinicianId, // Using clinicianId directly since user relation doesn't exist
+      senderId: context.session.userId,
+      receiverId: patient.assignedClinicianId,
       isRead: false,
     };
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
         resource: 'Message',
@@ -220,7 +143,7 @@ export const POST = createPublicRoute(
 
     logger.info({
       event: 'message_sent',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       clinicianId: patient.assignedClinicianId,
       messageId: message.id,
       type,
@@ -234,31 +157,6 @@ export const POST = createPublicRoute(
       },
       { status: 201 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'message_send_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al enviar mensaje.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'CREATE', resource: 'Message' } }
 );

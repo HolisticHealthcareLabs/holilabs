@@ -273,9 +273,7 @@ export default function SOAPNoteEditor({
     commands: voiceCommands,
     language: selectedLanguage === 'pt' ? 'pt' : 'es',
     debug: true,
-    onCommandExecuted: (command) => {
-      console.log('[Voice Command] Executed:', command);
-    },
+    onCommandExecuted: (_command) => {},
     onError: (error) => {
       console.error('[Voice Command] Error:', error);
     },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { Step } from 'react-joyride';
 import { Stethoscope, Star, RefreshCw, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,31 +24,6 @@ const ContextDrawer = lazy(() => import('./_components/ContextDrawer').then(m =>
 // the BailoutToCSR Suspense-boundary hydration error in Next.js 14 App Router.
 const JoyrideClient = lazy(() => import('react-joyride'));
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Spotlight tour steps
-// ─────────────────────────────────────────────────────────────────────────────
-
-const TOUR_STEPS: Step[] = [
-  {
-    target:        '#live-meeting-notes',
-    title:         'Live AI Scribe',
-    content:       'Real-time transcription with automatic PHI de-identification. Every name, date, and identifier is masked before storage — HIPAA & LGPD compliant by design.',
-    disableBeacon: true,
-    placement:     'right',
-  },
-  {
-    target:    '#soap-note-pane',
-    title:     'Auto SOAP Generation',
-    content:   'The AI auto-populates structured Subjective, Objective, Assessment, and Plan fields as the conversation progresses. Sign & Bill when the encounter is complete.',
-    placement: 'left',
-  },
-  {
-    target:    '#cdss-pane',
-    title:     'Intelligent Clinical Partner',
-    content:   'CDSS analyses the full transcript against clinical guidelines and flags drug interactions, contraindications, and protocol gaps. Ask follow-up questions in the chat.',
-    placement: 'left',
-  },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rich demo transcript — naturalized phrasing, LATAM clinical scenario
@@ -108,6 +84,29 @@ function countTranscriptWords(segs: Segment[]): number {
 export default function ClinicalCommandCenterPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const t = useTranslations('dashboard.clinicalCommand');
+
+  const tourSteps: Step[] = useMemo(() => [
+    {
+      target:        '#live-meeting-notes',
+      title:         t('tourLiveScribeTitle'),
+      content:       t('tourLiveScribeContent'),
+      disableBeacon: true,
+      placement:     'right' as const,
+    },
+    {
+      target:    '#soap-note-pane',
+      title:     t('tourSoapTitle'),
+      content:   t('tourSoapContent'),
+      placement: 'left' as const,
+    },
+    {
+      target:    '#cdss-pane',
+      title:     t('tourCdssTitle'),
+      content:   t('tourCdssContent'),
+      placement: 'left' as const,
+    },
+  ], [t]);
 
   // ── Deep link: auto-select patient from My Day schedule ─────────────────
   const incomingPatientId = searchParams.get('patientId');
@@ -404,7 +403,7 @@ export default function ClinicalCommandCenterPage() {
       const wordCount = countTranscriptWords(segmentsRef.current);
       if (wordCount < MIN_TRANSCRIPT_WORDS) {
         setAmbientState('idle');
-        setToastMessage('Transcript too short to generate notes.');
+        setToastMessage(t('transcriptTooShort'));
       } else {
         setAmbientState('generating_soap');
       }
@@ -457,9 +456,7 @@ export default function ClinicalCommandCenterPage() {
         if (cancelled) return;
 
         if (err instanceof Error && err.name === 'AbortError') {
-          setSoapError(
-            'SOAP generation timed out. Your transcript has been preserved.'
-          );
+          setSoapError(t('soapTimedOut'));
           setAmbientState('error');
         } else {
           // Network error or endpoint not deployed: demo fallback
@@ -590,7 +587,7 @@ export default function ClinicalCommandCenterPage() {
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        setSyncError('Sync timed out after 15 s — CDSS did not respond. Using cached alerts.');
+        setSyncError(t('syncTimedOut'));
       }
       setCdssAlerts(DEMO_CDSS_CARDS);
     } finally {
@@ -631,7 +628,7 @@ export default function ClinicalCommandCenterPage() {
         <Suspense fallback={null}>
           <JoyrideClient
             run={isTourRunning}
-            steps={TOUR_STEPS}
+            steps={tourSteps}
             continuous
             showSkipButton
             spotlightClicks={false}
@@ -699,18 +696,18 @@ export default function ClinicalCommandCenterPage() {
           <h1 className="font-semibold text-base flex items-center gap-2
                          text-slate-900 dark:text-white">
             <Stethoscope className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-            Clinical Command Center
+            {t('pageTitle')}
           </h1>
           <p className="text-xs mt-0.5 text-slate-500 flex items-center gap-2">
-            Live Transcription · Ambient SOAP · Co-Pilot
+            {t('pageSubtitle')}
             {isContextScanning && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 text-[10px] font-semibold text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-500/20 animate-pulse">
-                Scanning patient context...
+                {t('scanningContext')}
               </span>
             )}
             {clinicalContext && !isContextScanning && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
-                Context ready
+                {t('contextReady')}
               </span>
             )}
           </p>
@@ -720,8 +717,8 @@ export default function ClinicalCommandCenterPage() {
           {/* Context Drawer toggle */}
           <button
             onClick={() => setIsContextDrawerOpen((o) => !o)}
-            title="Toggle Clinical Context Drawer"
-            aria-label="Toggle Clinical Context Drawer"
+            title={t('toggleContextDrawer')}
+            aria-label={t('toggleContextDrawer')}
             className={`
               flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium
               border transition-colors
@@ -733,7 +730,7 @@ export default function ClinicalCommandCenterPage() {
             `}
           >
             <Layers className="w-3 h-3" />
-            Context
+            {t('contextButton')}
             {extractedEntities.filter((e) => e.status === 'active').length > 0 && (
               <span className="
                 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none
@@ -748,8 +745,8 @@ export default function ClinicalCommandCenterPage() {
           {/* Layout toggle: cycles pane arrangement, persisted to localStorage */}
           <button
             onClick={cycleLayout}
-            title={layoutMode === 'default' ? 'Switch to transcript-right layout' : 'Switch to default layout'}
-            aria-label="Toggle workspace layout"
+            title={layoutMode === 'default' ? t('switchToTranscriptRight') : t('switchToDefault')}
+            aria-label={t('toggleLayout')}
             className="
               flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium
               text-slate-500 dark:text-slate-400
@@ -761,7 +758,7 @@ export default function ClinicalCommandCenterPage() {
             "
           >
             <RefreshCw className="w-3 h-3" />
-            Layout
+            {t('layoutButton')}
           </button>
 
           {/* Quick Tour — premium outline style, in the page nav (not floating) */}
@@ -777,10 +774,10 @@ export default function ClinicalCommandCenterPage() {
               transition-colors
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400
             "
-            aria-label="Start product tour"
+            aria-label={t('startTour')}
           >
             <Star className="w-3 h-3" />
-            Quick Tour
+            {t('quickTour')}
           </button>
 
         </div>
@@ -800,9 +797,9 @@ export default function ClinicalCommandCenterPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Prior Authorization — Unverified</p>
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{t('preAuthTitle')}</p>
             <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
-              No prior authorization has been confirmed for <strong>{selectedPatient.name}</strong>. Before proceeding, verify that all required procedures are pre-authorized by the payer. Performing or billing unauthorized services may expose you to claim denial and legal liability.
+              {t('preAuthBody', { name: selectedPatient.name })}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -810,13 +807,13 @@ export default function ClinicalCommandCenterPage() {
               href="/dashboard/billing"
               className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors"
             >
-              Send Pre-Auth
+              {t('sendPreAuth')}
             </a>
             <button
               onClick={() => setPreAuthAcknowledged(true)}
               className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 transition-colors px-2 py-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-500/20"
             >
-              Acknowledge
+              {t('acknowledge')}
             </button>
           </div>
         </div>
@@ -866,7 +863,7 @@ export default function ClinicalCommandCenterPage() {
           id="cdss-pane"
           className="hidden lg:flex min-h-0 w-[34%] shrink-0"
         >
-          <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">Loading Co-Pilot...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-500 text-sm">{t('loadingCoPilot')}</div>}>
           <CdssAlertsPane
             activeModel={activeModel}
             modelConfigs={modelConfigs}
@@ -916,7 +913,7 @@ export default function ClinicalCommandCenterPage() {
           />
         </div>
         <div>
-          <Suspense fallback={<div className="flex items-center justify-center h-40 text-slate-500 text-sm">Loading Co-Pilot...</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center h-40 text-slate-500 text-sm">{t('loadingCoPilot')}</div>}>
           <CdssAlertsPane
             activeModel={activeModel}
             modelConfigs={modelConfigs}

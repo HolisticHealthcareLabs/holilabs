@@ -14,9 +14,9 @@ export const dynamic = 'force-dynamic';
 
 export const POST = createPublicRoute(async (
   request: NextRequest,
-  context: { params?: Record<string, string> | Promise<Record<string, string>> }
+  context: any
 ) => {
-  const params = await Promise.resolve(context.params ?? {});
+  const params = await Promise.resolve(context.params ?? ({} as any));
   const token = params.token;
   try {
     if (!token) {
@@ -109,9 +109,8 @@ export const POST = createPublicRoute(async (
     try {
       const formResponseUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/forms/responses/${formInstance.id}`;
 
-      // TODO: Get clinician email from session/database
-      // For now, we'll log that the email would be sent
-      console.log('Would send form completion email for:', {
+      // @todo(clinician-context): Resolve clinician email from FormInstance → clinician relation
+      logger.info('Would send form completion email for:', {
         patient: `${formInstance.patient.firstName} ${formInstance.patient.lastName}`,
         form: formInstance.template.title,
         url: formResponseUrl,

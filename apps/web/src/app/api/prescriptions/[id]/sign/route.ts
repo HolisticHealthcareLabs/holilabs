@@ -88,8 +88,8 @@ export const POST = createProtectedRoute(
 
       // Verify PIN if using PIN method
       if (body.signatureMethod === 'pin') {
-        // TODO: Implement PIN verification against user's stored PIN
-        // For now, we'll just validate the PIN format (4-6 digits)
+        // @todo(pin-verification): Verify PIN against user's stored hashed PIN
+        logger.warn({ event: 'unimplemented_feature', feature: 'pin_verification', prescriptionId });
         if (!/^\d{4,6}$/.test(body.signatureData)) {
           return NextResponse.json(
             { error: 'Invalid PIN format. Must be 4-6 digits.' },

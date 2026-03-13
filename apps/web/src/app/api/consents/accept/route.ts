@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import logger from '@/lib/logger';
 
 interface ConsentSubmission {
   type: string;
@@ -122,14 +123,14 @@ export const POST = createProtectedRoute(
         })),
       });
     } catch (error) {
-      console.error('Error accepting consents:', error);
+      logger.error('Error accepting consents:', error);
       return NextResponse.json(
         { error: 'Failed to accept consents' },
         { status: 500 }
       );
     }
   },
-  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], allowPatientAuth: true }
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], allowPatientAuth: true, audit: { action: 'CREATE', resource: 'ConsentAcceptance' } }
 );
 
 export const GET = createProtectedRoute(

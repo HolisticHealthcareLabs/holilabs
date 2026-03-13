@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,15 @@ export const DELETE = createProtectedRoute(
     async (request: NextRequest, context: any) => {
         try {
             const { id: patientId, medicationId } = context.params;
+
+            const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+            if (!hasAccess) {
+                return NextResponse.json(
+                    { error: 'Access denied to this patient record' },
+                    { status: 403 }
+                );
+            }
+
             const { searchParams } = new URL(request.url);
             const reason = searchParams.get('reason') || 'Discontinued via API';
 

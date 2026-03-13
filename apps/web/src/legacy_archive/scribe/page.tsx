@@ -185,7 +185,6 @@ export default function AIScribePage() {
   // VAD: Handle silence detection (auto-pause)
   const handleSilenceDetected = (silenceDurationMs: number) => {
     if (smartAutoPauseEnabled && recordingState === 'recording') {
-      console.log(`Smart pause triggered after ${silenceDurationMs}ms of silence`);
       pauseRecording();
     }
   };
@@ -326,7 +325,6 @@ export default function AIScribePage() {
         throw new Error('Failed to save correction');
       }
 
-      console.log('✅ Correction saved successfully');
     } catch (error) {
       console.error('Error saving correction:', error);
       alert('Error al guardar la corrección. Intenta de nuevo.');

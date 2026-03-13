@@ -43,6 +43,12 @@ export interface DemoSOAP {
   plan: string;
 }
 
+export interface DemoVoiceProfile {
+  copilotVoiceId: string;
+  doctorVoiceId: string;
+  tone: 'warm' | 'clinical' | 'calm' | 'urgent';
+}
+
 export interface DemoPersona {
   disciplineSlug: string;
   doctorTitle: string;
@@ -52,6 +58,7 @@ export interface DemoPersona {
   patients: DemoPatient[];
   soapNote: DemoSOAP;
   cdssAlerts: DemoCDSSAlert[];
+  voice?: DemoVoiceProfile;
 }
 
 // ─── Personas ─────────────────────────────────────────────────────────────────
@@ -65,6 +72,7 @@ const personas: DemoPersona[] = [
     doctorFirst:    'Ricardo',
     doctorLast:     'Ferreira',
     specialty:      'Internal Medicine',
+    voice: { copilotVoiceId: 'onwK4e9ZLuTAKqWW03F9', doctorVoiceId: 'pNInz6obpgDQGcFmaJgB', tone: 'clinical' },
     patients: [
       { firstName: 'James',    lastName: 'O\'Brien',  age: 58, sex: 'M', chiefComplaint: 'Chest tightness & dyspnea on exertion',     status: 'in-progress', vitals: { bp: '162/95', hr: 94, spo2: 93, weight: '92 kg' } },
       { firstName: 'Maria',    lastName: 'Costa',     age: 44, sex: 'F', chiefComplaint: 'Fatigue and uncontrolled blood glucose',     status: 'arrived',     vitals: { bp: '138/88', hr: 82, spo2: 98, weight: '78 kg' } },
@@ -93,6 +101,7 @@ const personas: DemoPersona[] = [
     doctorFirst:    'Ana',
     doctorLast:     'Ribeiro',
     specialty:      'Cardiology',
+    voice: { copilotVoiceId: 'EXAVITQu4vr4xnSDxMaL', doctorVoiceId: '21m00Tcm4TlvDq8ikWAM', tone: 'calm' },
     patients: [
       { firstName: 'Eduardo', lastName: 'Santos',  age: 63, sex: 'M', chiefComplaint: 'Post-MI follow-up — 6 weeks',                status: 'in-progress', vitals: { bp: '128/80', hr: 68, spo2: 98 } },
       { firstName: 'Claudia', lastName: 'Pereira', age: 47, sex: 'F', chiefComplaint: 'Palpitations and pre-syncope episodes',      status: 'arrived',     vitals: { bp: '115/72', hr: 112, spo2: 99 } },
@@ -118,6 +127,7 @@ const personas: DemoPersona[] = [
     disciplineSlug: 'pediatrics',
     doctorTitle:    'Dr.',
     doctorFirst:    'Camila',
+    voice: { copilotVoiceId: 'AZnzlk1XvdvUeBnXmlld', doctorVoiceId: 'MF3mGyEYCl7XYWbV9V6O', tone: 'warm' },
     doctorLast:     'Oliveira',
     specialty:      'Pediatrics',
     patients: [
@@ -145,6 +155,7 @@ const personas: DemoPersona[] = [
     disciplineSlug: 'orthopedics',
     doctorTitle:    'Dr.',
     doctorFirst:    'Felipe',
+    voice: { copilotVoiceId: 'onwK4e9ZLuTAKqWW03F9', doctorVoiceId: 'VR6AewLTigWG4xSOukaG', tone: 'clinical' },
     doctorLast:     'Martins',
     specialty:      'Orthopedics',
     patients: [
@@ -169,6 +180,7 @@ const personas: DemoPersona[] = [
   // ── Neurology ───────────────────────────────────────────────────────────────
   {
     disciplineSlug: 'neurology',
+    voice: { copilotVoiceId: 'EXAVITQu4vr4xnSDxMaL', doctorVoiceId: 'pNInz6obpgDQGcFmaJgB', tone: 'calm' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Larissa',
     doctorLast:     'Monteiro',
@@ -196,6 +208,7 @@ const personas: DemoPersona[] = [
   // ── Oncology ────────────────────────────────────────────────────────────────
   {
     disciplineSlug: 'oncology',
+    voice: { copilotVoiceId: 'AZnzlk1XvdvUeBnXmlld', doctorVoiceId: '21m00Tcm4TlvDq8ikWAM', tone: 'warm' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Bruno',
     doctorLast:     'Nascimento',
@@ -205,6 +218,7 @@ const personas: DemoPersona[] = [
       { firstName: 'Antônio',  lastName: 'Macedo',   age: 67, sex: 'M', chiefComplaint: 'CRC Stage III — post-FOLFOX cycle 8',          status: 'arrived',     vitals: { bp: '126/78', hr: 76 } },
       { firstName: 'Vanessa',  lastName: 'Pinto',    age: 42, sex: 'F', chiefComplaint: 'Cervical cancer — radiation planning',          status: 'scheduled' },
       { firstName: 'Francisco',lastName: 'Ramos',    age: 71, sex: 'M', chiefComplaint: 'Lung adenocarcinoma — EGFR mutation — 3-month review', status: 'scheduled' },
+      { firstName: 'Renata',   lastName: 'Vieira',   age: 48, sex: 'F', chiefComplaint: 'Pancreatic cancer — CA 19-9 surveillance — gemcitabine cycle 3', status: 'scheduled', vitals: { bp: '110/68', hr: 82 } },
     ],
     soapNote: {
       patientName: 'Helena Correia',
@@ -223,6 +237,7 @@ const personas: DemoPersona[] = [
   // ── Dermatology ─────────────────────────────────────────────────────────────
   {
     disciplineSlug: 'dermatology',
+    voice: { copilotVoiceId: 'MF3mGyEYCl7XYWbV9V6O', doctorVoiceId: 'onwK4e9ZLuTAKqWW03F9', tone: 'warm' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Letícia',
     doctorLast:     'Xavier',
@@ -249,6 +264,7 @@ const personas: DemoPersona[] = [
   // ── Psychiatry ──────────────────────────────────────────────────────────────
   {
     disciplineSlug: 'psychiatry',
+    voice: { copilotVoiceId: 'EXAVITQu4vr4xnSDxMaL', doctorVoiceId: 'AZnzlk1XvdvUeBnXmlld', tone: 'calm' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Gabriela',
     doctorLast:     'Moura',
@@ -276,6 +292,7 @@ const personas: DemoPersona[] = [
   // ── OB-GYN ──────────────────────────────────────────────────────────────────
   {
     disciplineSlug: 'obstetrics-gynecology',
+    voice: { copilotVoiceId: 'AZnzlk1XvdvUeBnXmlld', doctorVoiceId: 'EXAVITQu4vr4xnSDxMaL', tone: 'warm' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Débora',
     doctorLast:     'Fernandes',
@@ -302,6 +319,7 @@ const personas: DemoPersona[] = [
   // ── Emergency Medicine ──────────────────────────────────────────────────────
   {
     disciplineSlug: 'emergency-medicine',
+    voice: { copilotVoiceId: 'onwK4e9ZLuTAKqWW03F9', doctorVoiceId: 'VR6AewLTigWG4xSOukaG', tone: 'urgent' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Rodrigo',
     doctorLast:     'Tavares',
@@ -329,6 +347,7 @@ const personas: DemoPersona[] = [
   // ── Physical Therapy ────────────────────────────────────────────────────────
   {
     disciplineSlug: 'physical-therapy',
+    voice: { copilotVoiceId: 'MF3mGyEYCl7XYWbV9V6O', doctorVoiceId: '21m00Tcm4TlvDq8ikWAM', tone: 'warm' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Marcela',
     doctorLast:     'Santana',
@@ -355,6 +374,7 @@ const personas: DemoPersona[] = [
   // ── General Practice ────────────────────────────────────────────────────────
   {
     disciplineSlug: 'general-practice',
+    voice: { copilotVoiceId: 'onwK4e9ZLuTAKqWW03F9', doctorVoiceId: 'pNInz6obpgDQGcFmaJgB', tone: 'warm' },
     doctorTitle:    'Dr.',
     doctorFirst:    'Sandra',
     doctorLast:     'Nogueira',

@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -43,6 +44,7 @@ interface MedicationResponse {
 export default function MedicationDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const t = useTranslations('portal.medicationDetail');
   const medicationId = (params?.id as string) || '';
 
   const [medication, setMedication] = useState<Medication | null>(null);
@@ -66,14 +68,14 @@ export default function MedicationDetailPage() {
       const data: MedicationResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al cargar medicamento');
+        throw new Error(data.error || t('loadError'));
       }
 
       if (data.success && data.data) {
         setMedication(data.data);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('loadError'));
       console.error('Error fetching medication:', err);
     } finally {
       setLoading(false);
@@ -99,15 +101,15 @@ export default function MedicationDetailPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al solicitar renovación');
+        throw new Error(data.error || 'Error al solicitar renovaci�n');
       }
 
-      alert(data.message || 'Solicitud de renovación enviada exitosamente');
+      alert(data.message || 'Solicitud de renovaci�n enviada exitosamente');
       setShowRefillModal(false);
       setRefillNotes('');
       setPharmacy('');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al solicitar renovación');
+      alert(err instanceof Error ? err.message : 'Error al solicitar renovaci�n');
     } finally {
       setRequesting(false);
     }
@@ -130,15 +132,15 @@ export default function MedicationDetailPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver a Medicamentos
+            {t('backToMedications')}
           </button>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-800 mb-4">{error || 'Medicamento no encontrado'}</p>
+            <p className="text-red-800 mb-4">{error || t('notFound')}</p>
             <button
               onClick={fetchMedication}
               className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors"
             >
-              Reintentar
+              {t('retry')}
             </button>
           </div>
         </div>
@@ -156,7 +158,7 @@ export default function MedicationDetailPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver a Medicamentos
+            {t('backToMedications')}
           </button>
 
           <div className="flex items-start justify-between">
@@ -165,7 +167,7 @@ export default function MedicationDetailPage() {
                 {medication.name}
               </h1>
               {medication.genericName && (
-                <p className="text-gray-600">Nombre genérico: {medication.genericName}</p>
+                <p className="text-gray-600">{t('genericNameLabel')} {medication.genericName}</p>
               )}
             </div>
             {medication.isActive && (
@@ -174,7 +176,7 @@ export default function MedicationDetailPage() {
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all"
               >
                 <ArrowPathIcon className="h-5 w-5" />
-                Solicitar Renovación
+                {t('requestRefill')}
               </button>
             )}
           </div>
@@ -189,9 +191,10 @@ export default function MedicationDetailPage() {
                 : 'bg-gray-100 text-gray-800'
             }`}
           >
-            {medication.isActive ? ' Activo' : 'Inactivo'}
+            {medication.isActive ? t('statusActive') : t('statusInactive')}
           </span>
         </div>
+
 
         {/* Main Info Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -201,7 +204,7 @@ export default function MedicationDetailPage() {
             </div>
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Información del Medicamento
+                t('medInfoTitle')
               </h2>
             </div>
           </div>
@@ -210,7 +213,7 @@ export default function MedicationDetailPage() {
             {/* Dosage */}
             {medication.dosage && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-2">Dosificación</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">Dosificaci�n</h3>
                 <p className="text-lg font-medium text-gray-900">{medication.dosage}</p>
               </div>
             )}
@@ -219,7 +222,7 @@ export default function MedicationDetailPage() {
             {/* Decorative - low contrast intentional for time/date icons */}
             {medication.frequency && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-2">Frecuencia</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">t('frequencyLabel')</h3>
                 {/* Decorative - low contrast intentional for all metadata icons (clock and calendar icons on lines 224, 235, 250) */}
                 <div className="flex items-center gap-2">
                   <ClockIcon className="h-5 w-5 text-gray-400" />
@@ -231,7 +234,7 @@ export default function MedicationDetailPage() {
             {/* Start Date */}
             {medication.startDate && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-2">Fecha de Inicio</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">t('startDateLabel')</h3>
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5 text-gray-400" />
                   <p className="text-gray-900">
@@ -246,7 +249,7 @@ export default function MedicationDetailPage() {
             {/* End Date */}
             {medication.endDate && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-600 mb-2">Fecha de Fin</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-2">t('endDateLabel')</h3>
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-5 w-5 text-gray-400" />
                   <p className="text-gray-900">
@@ -264,7 +267,7 @@ export default function MedicationDetailPage() {
         {medication.instructions && (
           <div className="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              =Ë Instrucciones
+              t('instructionsTitle')
             </h3>
             <p className="text-gray-700 whitespace-pre-wrap">{medication.instructions}</p>
           </div>
@@ -276,7 +279,7 @@ export default function MedicationDetailPage() {
             <div className="flex items-center gap-2 mb-3">
               <ExclamationCircleIcon className="h-6 w-6 text-yellow-600" />
               <h3 className="text-lg font-semibold text-gray-900">
-                Efectos Secundarios Posibles
+                t('sideEffectsTitle')
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">{medication.sideEffects}</p>
@@ -289,7 +292,7 @@ export default function MedicationDetailPage() {
             <div className="flex items-center gap-2 mb-3">
               <ExclamationCircleIcon className="h-6 w-6 text-red-600" />
               <h3 className="text-lg font-semibold text-gray-900">
-                  Precauciones
+t('precautionsTitle')
               </h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap">{medication.precautions}</p>
@@ -300,7 +303,7 @@ export default function MedicationDetailPage() {
         {medication.prescribedBy && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              Prescrito Por
+              t('prescribedByTitle')
             </h3>
             <p className="text-gray-700">{medication.prescribedBy}</p>
           </div>
@@ -315,32 +318,32 @@ export default function MedicationDetailPage() {
                   <ArrowPathIcon className="h-6 w-6 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">
-                  Solicitar Renovación
+                  t('refillTitle')
                 </h3>
               </div>
 
               <form onSubmit={handleRequestRefill} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Farmacia (opcional)
+                    t('pharmacyLabel')
                   </label>
                   <input
                     type="text"
                     value={pharmacy}
                     onChange={(e) => setPharmacy(e.target.value)}
-                    placeholder="Ej: Farmacia del Ahorro Centro"
+                    placeholder="t('pharmacyPlaceholder')"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notas adicionales (opcional)
+                    t('notesLabel')
                   </label>
                   <textarea
                     value={refillNotes}
                     onChange={(e) => setRefillNotes(e.target.value)}
-                    placeholder="Información adicional para tu médico..."
+                    placeholder={t('notesPlaceholder')}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
@@ -348,7 +351,7 @@ export default function MedicationDetailPage() {
 
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-sm text-gray-700">
-                    Tu médico revisará esta solicitud y te contactará pronto para confirmar.
+                    t('doctorWillReview')
                   </p>
                 </div>
 
@@ -359,14 +362,14 @@ export default function MedicationDetailPage() {
                     disabled={requesting}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                   >
-                    Cancelar
+                    t('cancel')
                   </button>
                   <button
                     type="submit"
                     disabled={requesting}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
-                    {requesting ? 'Enviando...' : 'Enviar Solicitud'}
+                    {requesting ? t('submitting') : t('submit')}
                   </button>
                 </div>
               </form>

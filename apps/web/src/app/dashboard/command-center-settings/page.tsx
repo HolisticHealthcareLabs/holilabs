@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CogIcon,
@@ -22,6 +23,7 @@ import Link from 'next/link';
 type SettingsTab = 'devices' | 'notifications' | 'appearance' | 'sync' | 'security';
 
 export default function CommandCenterSettings() {
+  const t = useTranslations('portal.commandSettings');
   const [activeTab, setActiveTab] = useState<SettingsTab>('devices');
   const [settings, setSettings] = useState({
     // Notification Settings
@@ -53,33 +55,33 @@ export default function CommandCenterSettings() {
   const tabs = [
     {
       id: 'devices' as SettingsTab,
-      label: 'Connected Devices',
+      label: t('connectedDevices'),
       icon: ShieldCheckIcon,
-      description: 'Manage paired devices and permissions',
+      description: t('connectedDevicesDesc'),
     },
     {
       id: 'notifications' as SettingsTab,
-      label: 'Notifications',
+      label: t('notifications'),
       icon: BellIcon,
-      description: 'Configure alert preferences',
+      description: t('notificationsDesc'),
     },
     {
       id: 'appearance' as SettingsTab,
-      label: 'Appearance',
+      label: t('appearance'),
       icon: PaintBrushIcon,
-      description: 'Customize visual settings',
+      description: t('appearanceDesc'),
     },
     {
       id: 'sync' as SettingsTab,
-      label: 'Synchronization',
+      label: t('synchronization'),
       icon: ServerIcon,
-      description: 'Real-time sync options',
+      description: t('synchronizationDesc'),
     },
     {
       id: 'security' as SettingsTab,
-      label: 'Security',
+      label: t('security'),
       icon: ShieldCheckIcon,
-      description: 'Security and privacy settings',
+      description: t('securityDesc'),
     },
   ];
 
@@ -102,12 +104,10 @@ export default function CommandCenterSettings() {
             <DeviceManagerTile />
             <div className="p-6 bg-blue-50 border-2 border-blue-200 rounded-2xl">
               <h3 className="font-semibold text-blue-900 mb-2">
-                About Device Pairing
+                {t('aboutDevicePairing')}
               </h3>
               <p className="text-sm text-blue-700">
-                Connect multiple devices using QR codes. Each device can have granular
-                permissions that expire after 24 hours for security. All data is
-                synchronized in real-time across paired devices.
+                {t('devicePairingInfo')}
               </p>
             </div>
           </div>
@@ -118,30 +118,30 @@ export default function CommandCenterSettings() {
           <div className="space-y-6">
             <div className="p-6 bg-white rounded-2xl border-2 border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Notification Preferences
+                {t('notificationPreferences')}
               </h3>
 
               <div className="space-y-4">
                 {[
                   {
                     key: 'enableNotifications',
-                    label: 'Enable Notifications',
-                    description: 'Receive alerts for important events',
+                    label: t('enableNotifications'),
+                    description: t('enableNotificationsDesc'),
                   },
                   {
                     key: 'notificationSound',
-                    label: 'Notification Sounds',
-                    description: 'Play sound when receiving notifications',
+                    label: t('notificationSounds'),
+                    description: t('notificationSoundsDesc'),
                   },
                   {
                     key: 'desktopNotifications',
-                    label: 'Desktop Notifications',
-                    description: 'Show browser notifications',
+                    label: t('desktopNotifications'),
+                    description: t('desktopNotificationsDesc'),
                   },
                   {
                     key: 'emailNotifications',
-                    label: 'Email Notifications',
-                    description: 'Send alerts via email',
+                    label: t('emailNotifications'),
+                    description: t('emailNotificationsDesc'),
                   },
                 ].map((item) => (
                   <div
@@ -184,14 +184,14 @@ export default function CommandCenterSettings() {
           <div className="space-y-6">
             <div className="p-6 bg-white rounded-2xl border-2 border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Visual Customization
+                {t('visualCustomization')}
               </h3>
 
               <div className="space-y-6">
                 {/* Theme Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Theme
+                    {t('theme')}
                   </label>
                   <div className="grid grid-cols-3 gap-3">
                     {['dark', 'light', 'auto'].map((theme) => (
@@ -213,7 +213,7 @@ export default function CommandCenterSettings() {
                 {/* Accent Color */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Accent Color
+                    {t('accentColor')}
                   </label>
                   <div className="grid grid-cols-6 gap-3">
                     {[
@@ -243,18 +243,18 @@ export default function CommandCenterSettings() {
 
                 {/* Toggle Options */}
                 <div className="space-y-3">
-                  {[
-                    {
-                      key: 'animationsEnabled',
-                      label: 'Enable Animations',
-                      description: 'Smooth transitions and effects',
-                    },
-                    {
-                      key: 'compactMode',
-                      label: 'Compact Mode',
-                      description: 'Reduce spacing and padding',
-                    },
-                  ].map((item) => (
+                {[
+                  {
+                    key: 'animationsEnabled',
+                    label: t('enableAnimations'),
+                    description: t('enableAnimationsDesc'),
+                  },
+                  {
+                    key: 'compactMode',
+                    label: t('compactMode'),
+                    description: t('compactModeDesc'),
+                  },
+                ].map((item) => (
                     <div
                       key={item.key}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
@@ -296,20 +296,20 @@ export default function CommandCenterSettings() {
           <div className="space-y-6">
             <div className="p-6 bg-white rounded-2xl border-2 border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Synchronization Settings
+                {t('syncSettings')}
               </h3>
 
               <div className="space-y-4">
                 {[
                   {
                     key: 'autoSync',
-                    label: 'Auto-Sync',
-                    description: 'Automatically sync data across devices',
+                    label: t('autoSync'),
+                    description: t('autoSyncDesc'),
                   },
                   {
                     key: 'offlineMode',
-                    label: 'Offline Mode',
-                    description: 'Work without internet connection',
+                    label: t('offlineMode'),
+                    description: t('offlineModeDesc'),
                   },
                 ].map((item) => (
                   <div
@@ -346,7 +346,7 @@ export default function CommandCenterSettings() {
                 {/* Sync Interval */}
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <label className="block font-medium text-gray-900 mb-2">
-                    Sync Interval
+                    {t('syncInterval')}
                   </label>
                   <div className="flex items-center gap-4">
                     <input
@@ -378,25 +378,25 @@ export default function CommandCenterSettings() {
           <div className="space-y-6">
             <div className="p-6 bg-white rounded-2xl border-2 border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Security & Privacy
+                {t('securityPrivacy')}
               </h3>
 
               <div className="space-y-4">
                 {[
                   {
                     key: 'requirePinForActions',
-                    label: 'Require PIN for Actions',
-                    description: 'Additional security for sensitive operations',
+                    label: t('requirePin'),
+                    description: t('requirePinDesc'),
                   },
                   {
                     key: 'biometricAuth',
-                    label: 'Biometric Authentication',
-                    description: 'Use fingerprint or face recognition',
+                    label: t('biometricAuth'),
+                    description: t('biometricAuthDesc'),
                   },
                   {
                     key: 'auditLogging',
-                    label: 'Audit Logging',
-                    description: 'Track all system activities',
+                    label: t('auditLoggingLabel'),
+                    description: t('auditLoggingDesc'),
                   },
                 ].map((item) => (
                   <div
@@ -433,7 +433,7 @@ export default function CommandCenterSettings() {
                 {/* Session Timeout */}
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <label className="block font-medium text-gray-900 mb-2">
-                    Session Timeout
+                    {t('sessionTimeout')}
                   </label>
                   <div className="flex items-center gap-4">
                     <input
@@ -482,8 +482,8 @@ export default function CommandCenterSettings() {
                 <CogIcon className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">Command Center Settings</h1>
-                <p className="text-sm text-blue-200">Configure your clinical workspace</p>
+                <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+                <p className="text-sm text-blue-200">{t('configureWorkspace')}</p>
               </div>
             </div>
 
@@ -500,10 +500,10 @@ export default function CommandCenterSettings() {
             >
               {saveStatus === 'saved' && <CheckCircleIcon className="w-5 h-5" />}
               {saveStatus === 'saving'
-                ? 'Saving...'
+                ? t('saving')
                 : saveStatus === 'saved'
-                ? 'Saved!'
-                : 'Save Changes'}
+                ? t('saved')
+                : t('saveChanges')}
             </motion.button>
           </div>
         </div>

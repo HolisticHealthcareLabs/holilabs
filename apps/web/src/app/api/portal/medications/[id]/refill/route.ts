@@ -6,10 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 const RefillRequestSchema = z.object({
@@ -17,14 +16,10 @@ const RefillRequestSchema = z.object({
   pharmacy: z.string().optional(),
 });
 
-export const POST = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const { id } = params;
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const segments = request.nextUrl.pathname.split('/');
+    const id = segments[segments.length - 2]; // /api/portal/medications/[id]/refill
 
     if (!id) {
       return NextResponse.json(
@@ -36,7 +31,6 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Parse request body
     const body = await request.json();
     const validation = RefillRequestSchema.safeParse(body);
 
@@ -53,7 +47,6 @@ export const POST = createPublicRoute(
 
     const { notes, pharmacy } = validation.data;
 
-    // Fetch medication
     const medication = await prisma.medication.findUnique({
       where: { id },
       select: {
@@ -74,11 +67,10 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Verify the medication belongs to the authenticated patient
-    if (medication.patientId !== session.patientId) {
+    if (medication.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_refill_request_attempt',
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         requestedMedicationId: id,
       });
 
@@ -91,7 +83,6 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Check if medication is active
     if (!medication.isActive) {
       return NextResponse.json(
         {
@@ -102,23 +93,20 @@ export const POST = createPublicRoute(
       );
     }
 
-    // In production, you would create a RefillRequest record
-    // For now, we'll create a mock refill request and log it
     const refillRequest = {
       id: `refill_${Date.now()}`,
       medicationId: medication.id,
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       status: 'PENDING',
       requestedAt: new Date().toISOString(),
       notes,
       pharmacy,
     };
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
         resource: 'RefillRequest',
@@ -135,7 +123,7 @@ export const POST = createPublicRoute(
 
     logger.info({
       event: 'refill_requested',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       medicationId: medication.id,
       refillRequestId: refillRequest.id,
     });
@@ -148,31 +136,6 @@ export const POST = createPublicRoute(
       },
       { status: 201 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'refill_request_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al solicitar renovación.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'CREATE', resource: 'MedicationRefill' } }
 );

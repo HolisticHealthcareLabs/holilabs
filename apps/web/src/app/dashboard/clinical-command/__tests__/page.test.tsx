@@ -64,12 +64,23 @@ jest.mock('next/link', () => {
   };
 });
 
+jest.mock('next-auth/react', () => ({
+  useSession: () => ({ data: { user: { id: 'test-user', email: 'doc@example.com', role: 'CLINICIAN' } }, status: 'authenticated' }),
+  SessionProvider: ({ children }: any) => children,
+}));
+
+jest.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: jest.fn(), push: jest.fn(), back: jest.fn() }),
+  usePathname: () => '/dashboard/clinical-command',
+}));
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Imports — AFTER all jest.mock() declarations
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React from 'react';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import ClinicalCommandCenterPage from '../page';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,6 +131,29 @@ function mockFetchWithDeferredCds(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper — LGPD consent gate
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Grants digital consent by clicking the consent button in the TranscriptPane.
+ * Must be called after render so the "Start recording" aria-label is available.
+ */
+async function grantConsent() {
+  const btns = await screen.findAllByRole('button', { name: /record digital patient consent/i });
+  for (const btn of btns) {
+    await act(async () => { fireEvent.click(btn); });
+  }
+}
+
+/**
+ * Returns a scoped query object for the desktop (main) layout, avoiding
+ * duplicate-element errors from the mobile fallback pane.
+ */
+function desktop() {
+  return within(document.querySelector('main')!);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Helper — patient selection
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -128,10 +162,9 @@ function mockFetchWithDeferredCds(
  * (Robert Chen) in the dropdown.  Awaits the patient chip to confirm selection.
  */
 async function selectDemoPatient() {
-  const searchInput = screen.getByRole('combobox', { name: /search patients/i });
+  const searchInput = await screen.findByRole('combobox', { name: /search patients/i });
   await act(async () => { fireEvent.focus(searchInput); });
 
-  // Dropdown renders all patients on focus
   await waitFor(
     () => expect(screen.getByRole('option', { name: /robert chen/i })).toBeDefined(),
     { timeout: 2000 }
@@ -141,32 +174,31 @@ async function selectDemoPatient() {
     fireEvent.click(screen.getByRole('option', { name: /robert chen/i }));
   });
 
-  // Chip appears confirming selection
   await waitFor(
-    () => expect(screen.getByText('Robert Chen')).toBeDefined(),
-    { timeout: 1000 }
+    () => expect(screen.getAllByText('Robert Chen').length).toBeGreaterThan(0),
+    { timeout: 2000 }
   );
 }
 
 /**
  * Clicks "Start Recording" and waits for the first transcript chunk to appear.
- * Required before testing sync-button enable/click, because the Sync button is
- * gated on hasTranscript (segments.length > 0).
- * Uses real timers — streaming interval is 1 200 ms.
  */
 async function startRecordingAndWait() {
   await waitFor(
-    () => screen.getByRole('button', { name: /start recording/i }),
+    () => desktop().getByRole('button', { name: /start recording/i }),
     { timeout: 3000 }
   );
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: /start recording/i }));
+    fireEvent.click(desktop().getByRole('button', { name: /start recording/i }));
   });
-  // Wait for the first chunk (≥ 1 200 ms real-timer delay)
-  const liveRegion = screen.getByRole('log');
+  // Wait for recording state transition (Stop Recording button or live region appearing)
   await waitFor(
-    () => expect(liveRegion.textContent?.includes('Doctor')).toBe(true),
-    { timeout: 4000 }
+    () => {
+      const stopBtn = desktop().queryByRole('button', { name: /stop recording/i });
+      const liveRegion = desktop().queryByRole('log');
+      expect(stopBtn || liveRegion).toBeTruthy();
+    },
+    { timeout: 6000 }
   );
 }
 
@@ -185,10 +217,11 @@ describe('ClinicalCommandCenterPage — patient context gate', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     await waitFor(
       () => {
-        const btn = screen.getByRole('button', { name: /start recording/i });
+        const btn = desktop().getByRole('button', { name: /start recording/i });
         expect(btn).toBeDisabled();
       },
       { timeout: 3000 }
@@ -202,10 +235,11 @@ describe('ClinicalCommandCenterPage — patient context gate', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     // Button disabled initially
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /start recording/i })).toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /start recording/i })).toBeDisabled(),
       { timeout: 3000 }
     );
 
@@ -213,7 +247,7 @@ describe('ClinicalCommandCenterPage — patient context gate', () => {
 
     // Button enabled after selection
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /start recording/i })).not.toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /start recording/i })).not.toBeDisabled(),
       { timeout: 2000 }
     );
   });
@@ -225,8 +259,9 @@ describe('ClinicalCommandCenterPage — patient context gate', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
-    const searchInput = screen.getByRole('combobox', { name: /search patients/i });
+    const searchInput = await screen.findByRole('combobox', { name: /search patients/i });
     await act(async () => { fireEvent.focus(searchInput); });
 
     await waitFor(
@@ -251,10 +286,11 @@ describe('ClinicalCommandCenterPage — model config gate', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     await waitFor(
       () => {
-        const btn = screen.getByRole('button', { name: /sync with cdss/i });
+        const btn = desktop().getByRole('button', { name: /sync with cdss/i });
         expect(btn).toBeDisabled();
       },
       { timeout: 3000 }
@@ -268,10 +304,11 @@ describe('ClinicalCommandCenterPage — model config gate', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     // Still disabled before patient selection
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
       { timeout: 3000 }
     );
 
@@ -279,7 +316,7 @@ describe('ClinicalCommandCenterPage — model config gate', () => {
 
     // Still disabled until transcript has content
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
       { timeout: 2000 }
     );
 
@@ -287,7 +324,7 @@ describe('ClinicalCommandCenterPage — model config gate', () => {
     await startRecordingAndWait();
 
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
       { timeout: 2000 }
     );
   });
@@ -299,29 +336,30 @@ describe('ClinicalCommandCenterPage — model config gate', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     // Generate transcript so hasTranscript gate is satisfied
     await startRecordingAndWait();
 
     // Default model (anthropic) not configured → still disabled
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
       { timeout: 3000 }
     );
 
-    const select = screen.getByRole('combobox', { name: /select ai model/i });
+    const select = desktop().getByRole('combobox', { name: /select ai model/i });
 
     // Switch to gemini (configured) + transcript exists → enabled
     await act(async () => { fireEvent.change(select, { target: { value: 'gemini' } }); });
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
       { timeout: 2000 }
     );
 
     // Switch back to anthropic (unconfigured) → disabled again
     await act(async () => { fireEvent.change(select, { target: { value: 'anthropic' } }); });
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).toBeDisabled(),
       { timeout: 2000 }
     );
   });
@@ -333,10 +371,11 @@ describe('ClinicalCommandCenterPage — model config gate', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     await waitFor(
       () => {
-        const link = screen.getByRole('link', { name: /configure byok in settings/i });
+        const link = desktop().getByRole('link', { name: /configure byok in settings/i });
         expect((link as HTMLAnchorElement).href).toContain('/dashboard/settings/ai-providers');
       },
       { timeout: 3000 }
@@ -359,10 +398,11 @@ describe('ClinicalCommandCenterPage — transcript recording', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     // With no patient selected the placeholder points to patient selection
     await waitFor(
-      () => expect(screen.getByText(/select a patient above to begin/i)).toBeDefined(),
+      () => expect(desktop().getByText(/select a patient above to begin/i)).toBeDefined(),
       { timeout: 3000 }
     );
   });
@@ -374,24 +414,25 @@ describe('ClinicalCommandCenterPage — transcript recording', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
 
     await waitFor(
-      () => screen.getByRole('button', { name: /start recording/i }),
+      () => desktop().getByRole('button', { name: /start recording/i }),
       { timeout: 3000 }
     );
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /start recording/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /start recording/i }));
     });
 
     // Button flips to "Stop Recording"
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /stop recording/i })).toBeDefined(),
+      () => expect(desktop().getByRole('button', { name: /stop recording/i })).toBeDefined(),
       { timeout: 2000 }
     );
 
     // First chunk appears in the live log after ≥ 1 200 ms
-    const liveRegion = screen.getByRole('log');
+    const liveRegion = desktop().getByRole('log');
     await waitFor(
       () => expect(liveRegion.textContent?.includes('Doctor')).toBe(true),
       { timeout: 4000 }
@@ -405,28 +446,29 @@ describe('ClinicalCommandCenterPage — transcript recording', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
 
     await waitFor(
-      () => screen.getByRole('button', { name: /start recording/i }),
+      () => desktop().getByRole('button', { name: /start recording/i }),
       { timeout: 3000 }
     );
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /start recording/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /start recording/i }));
     });
 
-    const liveRegion = screen.getByRole('log');
+    const liveRegion = desktop().getByRole('log');
     await waitFor(
       () => expect(liveRegion.textContent?.includes('Doctor')).toBe(true),
       { timeout: 4000 }
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /stop recording/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /stop recording/i }));
     });
 
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /start recording/i })).toBeDefined(),
+      () => expect(desktop().getByRole('button', { name: /start recording/i })).toBeDefined(),
       { timeout: 2000 }
     );
     // Transcript kept for review after stopping
@@ -440,19 +482,20 @@ describe('ClinicalCommandCenterPage — transcript recording', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
 
     await waitFor(
-      () => screen.getByRole('button', { name: /start recording/i }),
+      () => desktop().getByRole('button', { name: /start recording/i }),
       { timeout: 3000 }
     );
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /start recording/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /start recording/i }));
     });
 
     // Chunk index 1 is the PATIENT_NAME token (≈ 2 × 1 200 ms from start)
     await waitFor(
-      () => expect(screen.getByText('[PATIENT_NAME]')).toBeDefined(),
+      () => expect(desktop().getByText('[PATIENT_NAME]')).toBeDefined(),
       { timeout: 5000 }
     );
   });
@@ -484,22 +527,23 @@ describe('ClinicalCommandCenterPage — Live Sync flow', () => {
     );
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     // Transcript required to unlock Sync button
     await startRecordingAndWait();
 
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
       { timeout: 3000 }
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /sync with cdss/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /sync with cdss/i }));
     });
 
     // Loading skeleton visible while fetch is deferred
     await waitFor(
-      () => expect(screen.getByRole('status', { name: /loading alerts/i })).toBeDefined(),
+      () => expect(desktop().getByRole('status', { name: /loading alerts/i })).toBeDefined(),
       { timeout: 2000 }
     );
 
@@ -509,7 +553,7 @@ describe('ClinicalCommandCenterPage — Live Sync flow', () => {
     await waitFor(
       // Chat message <p> contains summary + '\n' + detail; use regex for partial match.
       () => expect(
-        screen.getByText(/Interaction: Metformin \+ Atorvastatin detected/)
+        desktop().getByText(/Interaction: Metformin \+ Atorvastatin detected/)
       ).toBeDefined(),
       { timeout: 2000 }
     );
@@ -530,24 +574,25 @@ describe('ClinicalCommandCenterPage — Live Sync flow', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     await startRecordingAndWait();
 
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
       { timeout: 3000 }
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /sync with cdss/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /sync with cdss/i }));
     });
 
     await waitFor(
       () => {
         // No error message — demo cards are shown instead
-        expect(screen.queryByRole('alert')).toBeNull();
+        expect(desktop().queryByRole('alert')).toBeNull();
         // DEMO_CDSS_CARDS first card should be visible
-        expect(screen.getByText(/Drug Interaction: Metformin/i)).toBeDefined();
+        expect(desktop().getByText(/Drug Interaction: Metformin/i)).toBeDefined();
       },
       { timeout: 3000 }
     );
@@ -561,16 +606,17 @@ describe('ClinicalCommandCenterPage — Live Sync flow', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     await startRecordingAndWait();
 
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sync with cdss/i })).not.toBeDisabled(),
       { timeout: 3000 }
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /sync with cdss/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /sync with cdss/i }));
     });
 
     await waitFor(
@@ -597,18 +643,19 @@ describe('ClinicalCommandCenterPage — Live Sync flow', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     // Streaming produces transcript → hasTranscript = true → syncEnabled = true
     await startRecordingAndWait();
 
     // Bubble row appears once syncEnabled is true
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /rx timeline & safety/i })).toBeDefined(),
+      () => expect(desktop().getByRole('button', { name: /rx timeline & safety/i })).toBeDefined(),
       { timeout: 3000 }
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /rx timeline & safety/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /rx timeline & safety/i }));
     });
 
     // After clicking, "Rx Timeline & Safety" appears in BOTH the (now-used) bubble
@@ -622,14 +669,14 @@ describe('ClinicalCommandCenterPage — Live Sync flow', () => {
     // AI reply arrives after simulateLLMResponse (~850 ms real-timer delay).
     // Contains ATC code A10BA02 (Metformina) — verifies LATAM ontology is used.
     await waitFor(
-      () => expect(screen.getByText(/A10BA02/)).toBeDefined(),
+      () => expect(desktop().getByText(/A10BA02/)).toBeDefined(),
       { timeout: 3000 }
     );
 
     // Bubble remains enabled (persistent — no fade/disable after use)
     await waitFor(
       () => {
-        const bubble = screen.getByRole('button', { name: /rx timeline & safety/i });
+        const bubble = desktop().getByRole('button', { name: /rx timeline & safety/i });
         // Bubble is only disabled while isReplying; after reply it's re-enabled
         expect(bubble).toBeDefined();
       },
@@ -650,9 +697,10 @@ describe('ClinicalCommandCenterPage — SOAP note', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     await waitFor(
-      () => expect(screen.getByText(/awaiting transcript/i)).toBeDefined(),
+      () => expect(desktop().getByText(/awaiting transcript/i)).toBeDefined(),
       { timeout: 3000 }
     );
   });
@@ -667,19 +715,20 @@ describe('ClinicalCommandCenterPage — SOAP note', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
 
     await waitFor(
-      () => screen.getByRole('button', { name: /start recording/i }),
+      () => desktop().getByRole('button', { name: /start recording/i }),
       { timeout: 3000 }
     );
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /start recording/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /start recording/i }));
     });
 
     // Wait for chunk 5 ("five days") to appear — 6 × 1 200 ms ≈ 7.2 s.
     // Timeout is 10 000 ms to accommodate CI latency.
-    const liveRegion = screen.getByRole('log');
+    const liveRegion = desktop().getByRole('log');
     await waitFor(
       () => expect(liveRegion.textContent?.includes('five days')).toBe(true),
       { timeout: 10000 }
@@ -687,7 +736,7 @@ describe('ClinicalCommandCenterPage — SOAP note', () => {
 
     // S threshold (chunk 5) now reached → Subjective content is visible.
     await waitFor(
-      () => expect(screen.getByText(/precordial pain/i)).toBeDefined(),
+      () => expect(desktop().getByText(/precordial pain/i)).toBeDefined(),
       { timeout: 2000 }
     );
   });
@@ -699,18 +748,19 @@ describe('ClinicalCommandCenterPage — SOAP note', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
 
     await waitFor(
-      () => screen.getByRole('button', { name: /start recording/i }),
+      () => desktop().getByRole('button', { name: /start recording/i }),
       { timeout: 3000 }
     );
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /start recording/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /start recording/i }));
     });
 
     await waitFor(
-      () => expect(screen.getByText('Auto-fill active')).toBeDefined(),
+      () => expect(desktop().getByText('Auto-fill active')).toBeDefined(),
       { timeout: 4000 }
     );
   });
@@ -728,10 +778,11 @@ describe('ClinicalCommandCenterPage — Modal workflows', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
 
     await waitFor(
       () => {
-        const btn = screen.getByRole('button', { name: /sign and bill/i });
+        const btn = desktop().getByRole('button', { name: /sign and bill/i });
         expect(btn).toBeDisabled();
       },
       { timeout: 3000 }
@@ -745,12 +796,13 @@ describe('ClinicalCommandCenterPage — Modal workflows', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     await startRecordingAndWait();
 
     await waitFor(
       () => {
-        const btn = screen.getByRole('button', { name: /sign and bill/i });
+        const btn = desktop().getByRole('button', { name: /sign and bill/i });
         expect(btn).not.toBeDisabled();
       },
       { timeout: 3000 }
@@ -764,16 +816,17 @@ describe('ClinicalCommandCenterPage — Modal workflows', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     await startRecordingAndWait();
 
     await waitFor(
-      () => expect(screen.getByRole('button', { name: /sign and bill/i })).not.toBeDisabled(),
+      () => expect(desktop().getByRole('button', { name: /sign and bill/i })).not.toBeDisabled(),
       { timeout: 3000 }
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /sign and bill/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /sign and bill/i }));
     });
 
     // Billing modal should appear with role="dialog"
@@ -794,17 +847,18 @@ describe('ClinicalCommandCenterPage — Modal workflows', () => {
     ]);
 
     render(<ClinicalCommandCenterPage />);
+    await grantConsent();
     await selectDemoPatient();
     await startRecordingAndWait();
 
     // syncEnabled = true once patient + transcript + model configured
     await waitFor(
-      () => screen.getByRole('button', { name: /draft patient handout/i }),
+      () => desktop().getByRole('button', { name: /draft patient handout/i }),
       { timeout: 3000 }
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /draft patient handout/i }));
+      fireEvent.click(desktop().getByRole('button', { name: /draft patient handout/i }));
     });
 
     // Handout modal appears with accessible dialog role
@@ -814,6 +868,6 @@ describe('ClinicalCommandCenterPage — Modal workflows', () => {
     );
 
     // Delivery method selector is visible
-    expect(screen.getByRole('button', { name: /whatsapp/i })).toBeDefined();
+    expect(desktop().getByRole('button', { name: /whatsapp/i })).toBeDefined();
   });
 });

@@ -85,7 +85,10 @@ const authRoutes = async (server) => {
                 return reply.code(401).send({ error: 'Invalid credentials' });
             }
             // Generate JWT
-            const secret = new TextEncoder().encode(process.env.JWT_PRIVATE_KEY || 'secret');
+            if (!process.env.JWT_PRIVATE_KEY) {
+                throw new Error('[SECURITY FATAL] JWT_PRIVATE_KEY is not set. Refusing to sign tokens.');
+            }
+            const secret = new TextEncoder().encode(process.env.JWT_PRIVATE_KEY);
             const token = await new jose_1.SignJWT({
                 userId: user.id,
                 email: user.email,

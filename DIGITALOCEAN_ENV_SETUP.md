@@ -6,8 +6,8 @@ Add these environment variables to your DigitalOcean App Platform:
 
 ```bash
 # De-identification Security Keys
-SALT_ROTATION_KEY=19fb7a6c0e238aa55aee9803ec85772d4d6a2493e0b603a50bdbb0a37f235686
-DEID_SECRET=0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4
+SALT_ROTATION_KEY=<REDACTED-GENERATE-WITH-openssl-rand-hex-32>
+DEID_SECRET=<REDACTED-GENERATE-WITH-openssl-rand-hex-32>
 ```
 
 ---
@@ -30,13 +30,13 @@ DEID_SECRET=0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4
 
    **Variable 1:**
    - Key: `SALT_ROTATION_KEY`
-   - Value: `19fb7a6c0e238aa55aee9803ec85772d4d6a2493e0b603a50bdbb0a37f235686`
+   - Value: `<REDACTED-GENERATE-WITH-openssl-rand-hex-32>`
    - Encrypt: ✅ (Check this box)
    - Click "Save"
 
    **Variable 2:**
    - Key: `DEID_SECRET`
-   - Value: `0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4`
+   - Value: `<REDACTED-GENERATE-WITH-openssl-rand-hex-32>`
    - Encrypt: ✅ (Check this box)
    - Click "Save"
 
@@ -65,11 +65,11 @@ doctl apps update APP_ID --spec - <<EOF
 name: holilabs
 envs:
   - key: SALT_ROTATION_KEY
-    value: 19fb7a6c0e238aa55aee9803ec85772d4d6a2493e0b603a50bdbb0a37f235686
+    value: <REDACTED-GENERATE-WITH-openssl-rand-hex-32>
     scope: RUN_TIME
     type: SECRET
   - key: DEID_SECRET
-    value: 0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4
+    value: <REDACTED-GENERATE-WITH-openssl-rand-hex-32>
     scope: RUN_TIME
     type: SECRET
 EOF
@@ -125,8 +125,8 @@ Store a secure backup of these keys in a password manager (1Password, LastPass, 
 
 ```
 Service: HoliLabs Production - De-identification Keys
-SALT_ROTATION_KEY: 19fb7a6c0e238aa55aee9803ec85772d4d6a2493e0b603a50bdbb0a37f235686
-DEID_SECRET: 0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4
+SALT_ROTATION_KEY: <REDACTED-GENERATE-WITH-openssl-rand-hex-32>
+DEID_SECRET: <REDACTED-GENERATE-WITH-openssl-rand-hex-32>
 Generated: 2025-10-27
 Next Rotation: 2026-01-27 (90 days)
 ```

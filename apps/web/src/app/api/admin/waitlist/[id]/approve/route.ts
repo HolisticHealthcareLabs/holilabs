@@ -5,7 +5,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { isResendConfigured, sendApprovalInvite } from '@/lib/email/resend';
 
 export const POST = createProtectedRoute(
-  async (_request: NextRequest, context: { params?: Record<string, string>; requestId?: string }) => {
+  async (_request: NextRequest, context: any) => {
     const id = context.params?.id;
 
     if (!id) {
@@ -67,5 +67,5 @@ export const POST = createProtectedRoute(
       emailSent,
     });
   },
-  { roles: ['ADMIN' as any] }
+  { roles: ['ADMIN' as any], audit: { action: 'UPDATE', resource: 'WaitlistApproval' } }
 );

@@ -6,20 +6,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const recordId = params.id;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const recordId = context.params.id;
 
     // Fetch record with full details
     const record = await prisma.sOAPNote.findUnique({
@@ -65,31 +59,24 @@ export const GET = createPublicRoute(
       },
     });
 
-    // Check if record exists
     if (!record) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Registro no encontrado.',
-        },
+        { success: false, error: 'Registro no encontrado.' },
         { status: 404 }
       );
     }
 
     // Verify record belongs to authenticated patient
-    if (record.patientId !== session.patientId) {
+    if (record.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_record_access_attempt',
-        patientId: session.userId,
+        patientId: context.session.userId,
         requestedPatientId: record.patientId,
         recordId,
       });
 
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado para ver este registro.',
-        },
+        { success: false, error: 'No autorizado para ver este registro.' },
         { status: 403 }
       );
     }
@@ -100,7 +87,7 @@ export const GET = createPublicRoute(
       resource: 'SOAPNote',
       resourceId: recordId,
       details: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         recordId,
         clinicianId: record.clinicianId,
         chiefComplaint: record.chiefComplaint,
@@ -111,38 +98,12 @@ export const GET = createPublicRoute(
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        data: record,
-      },
+      { success: true, data: record },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_record_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      recordId: params.id,
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar el registro médico.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'Record' },
+  }
 );

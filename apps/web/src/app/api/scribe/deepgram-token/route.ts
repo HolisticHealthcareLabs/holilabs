@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 /**
  * Deepgram Token Endpoint
@@ -35,7 +36,7 @@ export const GET = createProtectedRoute(
     const apiKey = process.env.DEEPGRAM_API_KEY;
 
     if (!apiKey) {
-      console.error('DEEPGRAM_API_KEY not configured');
+      logger.error('DEEPGRAM_API_KEY not configured');
       return NextResponse.json(
         { error: 'Transcription service not configured' },
         { status: 500 }

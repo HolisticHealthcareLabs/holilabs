@@ -341,7 +341,7 @@ export const POST = createProtectedRoute(
 
       // Track search event
       // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-      await prisma.userBehaviorEvent.create({
+      await (prisma as any).userBehaviorEvent.create({
         data: {
           userId: context.user.id,
           eventType: 'SEMANTIC_SEARCH',

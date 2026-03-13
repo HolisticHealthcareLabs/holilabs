@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -178,7 +179,7 @@ export const GET = createProtectedRoute(
 
       topDiagnoses.sort((a, b) => b.count - a.count);
     } catch (err) {
-      console.warn('Could not fetch diagnoses:', err);
+      logger.warn('Could not fetch diagnoses:', err);
     }
 
     const pendingForms = totalForms - completedForms;

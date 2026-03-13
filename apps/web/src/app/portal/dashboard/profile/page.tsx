@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -52,10 +53,15 @@ interface SessionResponse {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const t = useTranslations('portal.profile');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -201,11 +207,11 @@ export default function ProfilePage() {
                 Informaci�n Personal
               </h3>
               <button
-                onClick={() => alert('Funci�n de edici�n pr�ximamente')}
+                onClick={() => setIsEditing(!isEditing)}
                 className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <PencilIcon className="h-4 w-4" />
-                Editar
+                {isEditing ? 'Cancel' : 'Edit'}
               </button>
             </div>
 

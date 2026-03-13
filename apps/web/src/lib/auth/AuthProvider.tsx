@@ -67,7 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Handle timeout logout
   const handleTimeoutLogout = useCallback(async () => {
-    console.log('Session timed out due to inactivity');
     setUser(null);
     setSession(null);
     setShowTimeoutWarning(false);

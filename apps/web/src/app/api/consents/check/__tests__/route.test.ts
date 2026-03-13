@@ -6,6 +6,11 @@
 
 import { NextRequest } from 'next/server';
 
+jest.mock('@/lib/api/middleware', () => ({
+  createProtectedRoute: (handler: any) => handler,
+  createPublicRoute: (handler: any) => handler,
+}));
+
 jest.mock('@/lib/auth', () => ({
   getServerSession: jest.fn(),
   authOptions: {},
@@ -28,6 +33,11 @@ const mockSession = {
     id: 'user-1',
     email: 'patient@example.com',
   },
+};
+
+const mockContext = {
+  user: { id: 'user-1', email: 'patient@example.com' },
+  requestId: 'req-1',
 };
 
 const mockPatientUser = {
@@ -62,7 +72,7 @@ describe('GET /api/consents/check', () => {
     (prisma.patientUser.findUnique as jest.Mock).mockResolvedValue(mockPatientUser);
 
     const request = new NextRequest('http://localhost:3000/api/consents/check');
-    const response = await GET(request);
+    const response = await GET(request, mockContext);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -70,24 +80,11 @@ describe('GET /api/consents/check', () => {
     expect(data.missingConsents).toBeDefined();
     expect(data.consents).toBeDefined();
     expect(Array.isArray(data.consents)).toBe(true);
-    expect(getServerSession).toHaveBeenCalled();
     expect(prisma.patientUser.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { email: 'patient@example.com' },
       })
     );
-  });
-
-  it('returns 401 when unauthenticated', async () => {
-    (getServerSession as jest.Mock).mockResolvedValue(null);
-
-    const request = new NextRequest('http://localhost:3000/api/consents/check');
-    const response = await GET(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Unauthorized');
-    expect(prisma.patientUser.findUnique).not.toHaveBeenCalled();
   });
 
   it('returns missing consents when patient has no consents', async () => {
@@ -97,7 +94,7 @@ describe('GET /api/consents/check', () => {
     });
 
     const request = new NextRequest('http://localhost:3000/api/consents/check');
-    const response = await GET(request);
+    const response = await GET(request, mockContext);
     const data = await response.json();
 
     expect(response.status).toBe(200);

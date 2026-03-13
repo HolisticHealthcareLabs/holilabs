@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { VerificationStatus } from '@prisma/client';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 /**
  * POST /api/credentials/[id]/approve
@@ -83,12 +84,12 @@ export const POST = createProtectedRoute(
       credential: updatedCredential,
     });
   } catch (error: any) {
-    console.error('Error approving/rejecting credential:', error);
+    logger.error('Error approving/rejecting credential:', error);
     return NextResponse.json(
       { error: 'Failed to process approval/rejection' },
       { status: 500 }
     );
   }
   },
-  { roles: ['ADMIN'] }
+  { roles: ['ADMIN'], audit: { action: 'UPDATE', resource: 'CredentialApproval' } }
 );

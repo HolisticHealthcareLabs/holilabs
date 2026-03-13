@@ -65,7 +65,7 @@ class PushNotificationManager {
     }
 
     const permission = await Notification.requestPermission();
-    console.log('Notification permission:', permission);
+    console.error('[PushNotifications]', { event: 'permission_result', permission });
     return permission;
   }
 
@@ -80,7 +80,7 @@ class PushNotificationManager {
 
     try {
       this.registration = await navigator.serviceWorker.ready;
-      console.log('✅ Service Worker ready for push notifications');
+      console.error('[PushNotifications]', { event: 'sw_ready' });
     } catch (error) {
       console.error('❌ Error initializing push notifications:', error);
     }
@@ -104,7 +104,7 @@ class PushNotificationManager {
       let subscription = await this.registration.pushManager.getSubscription();
 
       if (subscription) {
-        console.log('Already subscribed to push notifications');
+        console.error('[PushNotifications]', { event: 'already_subscribed' });
         return subscription;
       }
 
@@ -123,7 +123,7 @@ class PushNotificationManager {
         applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey),
       });
 
-      console.log('✅ Subscribed to push notifications');
+      console.error('[PushNotifications]', { event: 'subscribed' });
 
       // Send subscription to backend
       await this.sendSubscriptionToBackend(subscription);
@@ -149,7 +149,7 @@ class PushNotificationManager {
       const subscription = await this.registration.pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();
-        console.log('✅ Unsubscribed from push notifications');
+        console.error('[PushNotifications]', { event: 'unsubscribed' });
         return true;
       }
       return false;
@@ -203,7 +203,7 @@ class PushNotificationManager {
 
       await this.registration.showNotification(options.title, notificationOpts);
 
-      console.log(`✅ Notification shown: ${options.title}`);
+      console.error('[PushNotifications]', { event: 'notification_shown', title: options.title });
     } catch (error) {
       console.error('❌ Error showing notification:', error);
     }
@@ -221,7 +221,7 @@ class PushNotificationManager {
         },
         body: JSON.stringify(subscription),
       });
-      console.log('✅ Subscription sent to backend');
+      console.error('[PushNotifications]', { event: 'subscription_sent' });
     } catch (error) {
       console.error('❌ Error sending subscription to backend:', error);
     }

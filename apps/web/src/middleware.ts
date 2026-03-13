@@ -86,8 +86,9 @@ export async function middleware(request: NextRequest) {
   const isNonLocaleRoute = NON_LOCALE_PREFIXES.some(
     (prefix) => pathname.startsWith(prefix)
   );
+  const shouldBypassLocaleRouting = pathname === '/';
 
-  if (!isNonLocaleRoute) {
+  if (!isNonLocaleRoute && !shouldBypassLocaleRouting) {
     // Let next-intl handle locale detection + rewriting for landing page
     const intlResponse = handleI18nRouting(request);
 

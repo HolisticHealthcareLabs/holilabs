@@ -14,7 +14,7 @@ import { prisma } from '@/lib/prisma';
  */
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const doctorId = params.id;
 
     if (!doctorId) {
@@ -103,7 +103,7 @@ export const GET = createProtectedRoute(
  */
 export const PATCH = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const doctorId = params.id;
 
     if (!doctorId) {

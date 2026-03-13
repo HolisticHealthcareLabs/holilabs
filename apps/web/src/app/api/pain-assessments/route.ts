@@ -10,6 +10,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +53,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error fetching pain assessments:', error);
+      logger.error('Error fetching pain assessments:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch pain assessments' });
     }
   },
@@ -134,7 +135,7 @@ export const POST = createProtectedRoute(
         message: 'Pain assessment recorded successfully',
       }, { status: 201 });
     } catch (error) {
-      console.error('Error creating pain assessment:', error);
+      logger.error('Error creating pain assessment:', error);
 
       if (error instanceof z.ZodError) {
         return NextResponse.json(

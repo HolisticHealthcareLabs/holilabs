@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, FileSignature, ShieldCheck, FlaskConical, CheckCircle2, X, Bell } from 'lucide-react';
 import { nudgeProvider } from '@/app/actions/schedule';
 
@@ -40,6 +41,7 @@ interface TaskWidgetProps {
 }
 
 export function TaskWidget({ tasks, userRole = 'CLINICIAN' }: TaskWidgetProps) {
+  const t = useTranslations('dashboard.taskWidget');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [nudgeStatus, setNudgeStatus] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
@@ -64,10 +66,10 @@ export function TaskWidget({ tasks, userRole = 'CLINICIAN' }: TaskWidgetProps) {
           <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
         </div>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">
-          All caught up
+          {t('allCaughtUp')}
         </h3>
         <p className="text-xs text-slate-400 dark:text-slate-500 text-center max-w-[200px]">
-          No pending tasks or unsigned notes. Great work.
+          {t('noTasksDesc')}
         </p>
       </div>
     );
@@ -141,8 +143,8 @@ export function TaskWidget({ tasks, userRole = 'CLINICIAN' }: TaskWidgetProps) {
           <aside className="fixed top-0 right-0 h-full w-[380px] max-w-[90vw] z-50 flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 shadow-2xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white">Unsigned SOAP Notes</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Send a reminder to the provider</p>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('unsignedNotes')}</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('sendReminder')}</p>
               </div>
               <button onClick={() => setDrawerOpen(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <X className="w-4 h-4" />
@@ -161,7 +163,7 @@ export function TaskWidget({ tasks, userRole = 'CLINICIAN' }: TaskWidgetProps) {
                     {nudgeStatus[note.noteId] === 'sent' ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 flex-shrink-0">
                         <CheckCircle2 className="w-3 h-3" />
-                        Sent
+                        {t('sent')}
                       </span>
                     ) : (
                       <button
@@ -170,7 +172,7 @@ export function TaskWidget({ tasks, userRole = 'CLINICIAN' }: TaskWidgetProps) {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30 dark:hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
                       >
                         <Bell className="w-3 h-3" />
-                        Nudge Provider
+                        {t('nudgeProvider')}
                       </button>
                     )}
                   </div>

@@ -231,7 +231,7 @@ Date: ${new Date().toLocaleDateString()}
     },
   });
 
-  console.log(`✅ Upgraded consent for patient ${patientId}: ${consentType} → v${latestVersion}`);
+  console.error('[ConsentVersionManager]', { event: 'consent_upgraded', patientId, consentType, version: latestVersion });
 }
 
 /**

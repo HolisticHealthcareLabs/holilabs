@@ -33,9 +33,9 @@ const updateFeedbackSchema = z.object({
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const GET = createProtectedRoute(
-  async (req: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
+  async (req: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const { id } = params as { id: string };
 
       const feedback = await prisma.humanFeedback.findUnique({
@@ -74,9 +74,9 @@ export const GET = createProtectedRoute(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const PUT = createProtectedRoute(
-  async (req: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
+  async (req: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const { id } = params as { id: string };
       const body = await req.json();
       const validation = updateFeedbackSchema.safeParse(body);
@@ -140,9 +140,9 @@ export const PUT = createProtectedRoute(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const DELETE = createProtectedRoute(
-  async (req: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
+  async (req: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const { id } = params as { id: string };
 
       const feedback = await prisma.humanFeedback.findUnique({

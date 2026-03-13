@@ -6,16 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -29,7 +26,7 @@ export const GET = createPublicRoute(
     // Fetch clinical notes with vital signs
     const clinicalNotes = await prisma.clinicalNote.findMany({
       where: {
-        patientId: session.patientId,
+        patientId,
         createdAt: {
           gte: startDate,
           lte: endDate,
@@ -40,21 +37,14 @@ export const GET = createPublicRoute(
       },
       select: {
         id: true,
-        // TODO: vitalSigns field doesn't exist in Prisma schema yet
-        // vitalSigns: true,
+        // @todo(vital-signs-schema): Add vitalSigns relation to ClinicalNote model
         createdAt: true,
       },
     });
 
-    // TODO: vitalSigns field doesn't exist - cannot extract metrics
-    // Extract and aggregate vital signs
+    // @todo(vital-signs-schema): Query vitalSigns once schema supports it
+    logger.warn({ event: 'unimplemented_feature', feature: 'vital_signs_metrics', patientId });
     const metrics: any[] = [];
-    // const metrics = clinicalNotes
-    //   .filter((note) => note.vitalSigns)
-    //   .map((note) => ({
-    //     date: note.createdAt,
-    //     ...note.vitalSigns,
-    //   }));
 
     // Calculate latest values and trends
     const latestMetric = metrics[0];
@@ -121,7 +111,7 @@ export const GET = createPublicRoute(
 
     logger.info({
       event: 'patient_metrics_fetched',
-      patientId: session.patientId,
+      patientId,
       metricsCount: metrics.length,
       days,
     });
@@ -141,31 +131,9 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_metrics_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar métricas de salud.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'Metrics' },
+  }
 );

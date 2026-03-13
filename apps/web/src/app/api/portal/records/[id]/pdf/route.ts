@@ -6,23 +6,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { renderToStream } from '@react-pdf/renderer';
 import { SOAPNotePDF } from '@/components/pdf/SOAPNotePDF';
 import React from 'react';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const recordId = params.id;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const recordId = context.params.id;
 
     // Fetch record with full details
     const record = await prisma.sOAPNote.findUnique({
@@ -68,31 +62,24 @@ export const GET = createPublicRoute(
       },
     });
 
-    // Check if record exists
     if (!record) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Registro no encontrado.',
-        },
+        { success: false, error: 'Registro no encontrado.' },
         { status: 404 }
       );
     }
 
     // Verify record belongs to authenticated patient
-    if (record.patientId !== session.patientId) {
+    if (record.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_pdf_export_attempt',
-        patientId: session.userId,
+        patientId: context.session.userId,
         requestedPatientId: record.patientId,
         recordId,
       });
 
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado para exportar este registro.',
-        },
+        { success: false, error: 'No autorizado para exportar este registro.' },
         { status: 403 }
       );
     }
@@ -103,7 +90,7 @@ export const GET = createPublicRoute(
       resource: 'SOAPNote',
       resourceId: recordId,
       details: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         recordId,
         clinicianId: record.clinicianId,
         exportFormat: 'PDF',
@@ -139,32 +126,9 @@ export const GET = createPublicRoute(
         'Content-Length': pdfBuffer.length.toString(),
       },
     });
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_record_pdf_export_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      recordId: (await Promise.resolve(context.params ?? {})).id,
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al generar el PDF del registro médico.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'RecordPDF' },
+  }
 );

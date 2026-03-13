@@ -18,6 +18,7 @@ import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createProtectedRoute, requirePatientAccess } from '@/lib/api/middleware';
+import { wrapInSafetyEnvelope } from '@/lib/clinical/safety-envelope';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,7 +83,13 @@ export const GET = createProtectedRoute(
 
     return NextResponse.json({
       success: true,
-      data: alerts,
+      ...wrapInSafetyEnvelope(alerts, {
+        processingMethod: 'deterministic',
+        confidence: 0.95,
+        fallbackUsed: false,
+        model: 'prevention-rules-engine',
+        version: '3.0.0',
+      }),
     });
   } catch (error) {
     logger.error({

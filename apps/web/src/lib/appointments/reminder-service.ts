@@ -149,9 +149,7 @@ export async function sendAppointmentReminder(appointmentId: string): Promise<bo
       },
     });
 
-    console.log(
-      `[Reminder] Queued reminder for appointment ${appointmentId}, Email ID: ${emailId}`
-    );
+    console.error('[ReminderService]', { event: 'reminder_queued', appointmentId, emailId });
 
     return true;
   } catch (error) {
@@ -167,11 +165,11 @@ export async function sendAppointmentReminder(appointmentId: string): Promise<bo
 export async function processAppointmentReminders(
   hoursBeforeAppointment = 24
 ): Promise<{ processed: number; failed: number; skipped: number }> {
-  console.log('[Reminder] Starting appointment reminder processing...');
+  console.error('[ReminderService]', { event: 'processing_start' });
 
   const appointments = await findAppointmentsNeedingReminders(hoursBeforeAppointment);
 
-  console.log(`[Reminder] Found ${appointments.length} appointments needing reminders`);
+  console.error('[ReminderService]', { event: 'appointments_found', count: appointments.length });
 
   let processed = 0;
   let failed = 0;
@@ -191,9 +189,7 @@ export async function processAppointmentReminders(
     }
   }
 
-  console.log(
-    `[Reminder] Completed: ${processed} sent, ${skipped} skipped, ${failed} failed`
-  );
+  console.error('[ReminderService]', { event: 'processing_complete', processed, skipped, failed });
 
   return { processed, failed, skipped };
 }

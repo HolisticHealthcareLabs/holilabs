@@ -66,7 +66,7 @@ function isValidCronIP(ip: string | null): boolean {
   return false;
 }
 
-export async function POST(request: NextRequest) {
+async function postSendConsentReminders(request: NextRequest) {
   const startTime = Date.now();
   let retryCount = 0;
   const maxRetries = 3;

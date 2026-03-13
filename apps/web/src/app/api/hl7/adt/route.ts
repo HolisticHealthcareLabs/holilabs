@@ -22,6 +22,7 @@ import { generatePatientDataHash } from '@/lib/blockchain/hashing';
 import { generateMRN, generateTokenId } from '@/lib/fhir/patient-mapper';
 import { auditCreate, auditUpdate } from '@/lib/audit';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -318,7 +319,7 @@ export const POST = createProtectedRoute(
       { status: 409 }
     );
   } catch (error) {
-    console.error('HL7 ADT ingestion error:', {
+    logger.error('HL7 ADT ingestion error:', {
       error: (error instanceof Error ? error.message : String(error)),
     });
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   Heart, Shield, Baby, Stethoscope, Ribbon, Droplets,
@@ -96,6 +97,7 @@ const PROTOCOLS: ProtocolTemplate[] = [
 ];
 
 export default function PreventionPage() {
+  const t = useTranslations('portal.preventionPage');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
 
@@ -117,10 +119,10 @@ export default function PreventionPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Prevention Protocols
+            {t('title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Evidence-based preventive care protocols and screening guidelines
+            {t('subtitle')}
           </p>
         </div>
         <Link
@@ -132,7 +134,7 @@ export default function PreventionPage() {
             transition-colors
           "
         >
-          Open Prevention Hub
+          {t('openHub')}
           <ChevronRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -143,7 +145,7 @@ export default function PreventionPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search protocols..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="
@@ -170,7 +172,7 @@ export default function PreventionPage() {
               focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500
             "
           >
-            <option value="all">All Specialties</option>
+            <option value="all">{t('allSpecialties')}</option>
             {specialties.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -209,9 +211,9 @@ export default function PreventionPage() {
                 {protocol.description}
               </p>
               <div className="flex items-center gap-3 text-[11px] text-gray-400 dark:text-gray-500">
-                <span>{protocol.interventionCount} interventions</span>
+                <span>{t('interventions', { count: protocol.interventionCount })}</span>
                 <span className="w-0.5 h-0.5 rounded-full bg-gray-300 dark:bg-gray-600" />
-                <span>{protocol.screeningCount} screenings</span>
+                <span>{t('screenings', { count: protocol.screeningCount })}</span>
               </div>
             </div>
           );
@@ -222,7 +224,7 @@ export default function PreventionPage() {
         <div className="flex flex-col items-center justify-center py-16">
           <Shield className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-3" />
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            No protocols match your search
+            {t('noResults')}
           </p>
         </div>
       )}

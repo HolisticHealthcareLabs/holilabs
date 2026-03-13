@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,13 +61,14 @@ export const GET = createProtectedRoute(
         data: payment,
       });
     } catch (error) {
-      console.error('Error fetching payment:', error);
+      logger.error('Error fetching payment:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch payment' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    audit: { action: 'READ', resource: 'Payment' },
   }
 );
 
@@ -273,12 +275,13 @@ export const PATCH = createProtectedRoute(
           : 'Payment updated successfully',
       });
     } catch (error) {
-      console.error('Error updating payment:', error);
+      logger.error('Error updating payment:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to update payment' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'UPDATE', resource: 'Payment' },
   }
 );

@@ -4,37 +4,31 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { addMinutes, format, isBefore, isAfter, parse } from 'date-fns';
+import logger from '@/lib/logger';
 
 const querySchema = z.object({
   clinicianId: z.string().cuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   type: z.enum(['IN_PERSON', 'TELEHEALTH', 'PHONE']).optional(),
 });
 
-// Business hours: 9 AM - 5 PM
 const BUSINESS_START_HOUR = 9;
 const BUSINESS_END_HOUR = 17;
 const SLOT_DURATION_MINUTES = 30;
-const BUFFER_MINUTES = 5; // Buffer between appointments
+const BUFFER_MINUTES = 5;
 
 interface TimeSlot {
-  time: string; // HH:mm format
+  time: string;
   available: boolean;
-  reason?: string; // Why unavailable
+  reason?: string;
 }
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    await requirePatientSession();
-
-    // Parse query parameters
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const { searchParams } = new URL(request.url);
     const params = {
       clinicianId: searchParams.get('clinicianId'),
@@ -42,10 +36,22 @@ export const GET = createPublicRoute(
       type: searchParams.get('type'),
     };
 
-    // Validate parameters
-    const validated = querySchema.parse(params);
+    try {
+      var validated = querySchema.parse(params);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid parameters',
+            details: error.errors,
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
 
-    // Check if clinician exists
     const clinician = await prisma.user.findUnique({
       where: { id: validated.clinicianId },
       select: {
@@ -63,11 +69,9 @@ export const GET = createPublicRoute(
       );
     }
 
-    // Parse the date
     const targetDate = parse(validated.date, 'yyyy-MM-dd', new Date());
     const now = new Date();
 
-    // Don't allow booking in the past
     if (isBefore(targetDate, now)) {
       return NextResponse.json({
         success: true,
@@ -79,7 +83,6 @@ export const GET = createPublicRoute(
       });
     }
 
-    // Get all existing appointments for this clinician on this date
     const existingAppointments = await prisma.appointment.findMany({
       where: {
         clinicianId: validated.clinicianId,
@@ -88,7 +91,7 @@ export const GET = createPublicRoute(
           lt: new Date(validated.date + 'T23:59:59'),
         },
         status: {
-          notIn: ['CANCELLED', 'NO_SHOW'], // Don't count cancelled appointments
+          notIn: ['CANCELLED', 'NO_SHOW'],
         },
       },
       select: {
@@ -97,18 +100,14 @@ export const GET = createPublicRoute(
       },
     });
 
-    // Generate all possible time slots for the day
     const slots: TimeSlot[] = [];
 
     for (let hour = BUSINESS_START_HOUR; hour < BUSINESS_END_HOUR; hour++) {
-      // Skip lunch hour (1 PM - 2 PM)
       if (hour === 13) continue;
 
-      // Add slots every 30 minutes
       for (let minute = 0; minute < 60; minute += SLOT_DURATION_MINUTES) {
         const slotTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 
-        // Create full datetime for this slot
         const slotStart = parse(
           `${validated.date} ${slotTime}`,
           'yyyy-MM-dd HH:mm',
@@ -116,8 +115,7 @@ export const GET = createPublicRoute(
         );
         const slotEnd = addMinutes(slotStart, SLOT_DURATION_MINUTES);
 
-        // Check if slot is in the past (with 2-hour buffer)
-        const minimumBookingTime = addMinutes(now, 120); // 2 hours from now
+        const minimumBookingTime = addMinutes(now, 120);
         if (isBefore(slotStart, minimumBookingTime)) {
           slots.push({
             time: slotTime,
@@ -127,7 +125,6 @@ export const GET = createPublicRoute(
           continue;
         }
 
-        // Check if slot conflicts with existing appointments
         let isConflict = false;
         let conflictReason = '';
 
@@ -135,11 +132,9 @@ export const GET = createPublicRoute(
           const appointmentStart = new Date(appointment.startTime);
           const appointmentEnd = new Date(appointment.endTime);
 
-          // Add buffer time
           const bufferedStart = addMinutes(appointmentStart, -BUFFER_MINUTES);
           const bufferedEnd = addMinutes(appointmentEnd, BUFFER_MINUTES);
 
-          // Check for overlap
           if (
             (isAfter(slotStart, bufferedStart) || slotStart.getTime() === bufferedStart.getTime()) &&
             (isBefore(slotStart, bufferedEnd) || slotStart.getTime() === bufferedEnd.getTime())
@@ -167,7 +162,6 @@ export const GET = createPublicRoute(
       }
     }
 
-    // Return available slots
     return NextResponse.json({
       success: true,
       data: {
@@ -184,28 +178,6 @@ export const GET = createPublicRoute(
         },
       },
     });
-  } catch (error) {
-    console.error('Available slots error:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid parameters',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch available slots',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'AvailableSlots' } }
 );

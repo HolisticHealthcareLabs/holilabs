@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,7 +123,7 @@ export const POST = createProtectedRoute(
               },
             });
           } catch (error) {
-            console.error(`Error updating plan ${planId}:`, error);
+            logger.error(`Error updating plan ${planId}:`, error);
             results.push({
               planId,
               success: false,
@@ -186,7 +187,7 @@ export const POST = createProtectedRoute(
               },
             });
           } catch (error) {
-            console.error(`Error deleting plan ${planId}:`, error);
+            logger.error(`Error deleting plan ${planId}:`, error);
             results.push({
               planId,
               success: false,
@@ -235,7 +236,7 @@ export const POST = createProtectedRoute(
               },
             });
           } catch (error) {
-            console.error(`Error exporting plan ${planId}:`, error);
+            logger.error(`Error exporting plan ${planId}:`, error);
             results.push({
               planId,
               success: false,
@@ -289,7 +290,7 @@ export const POST = createProtectedRoute(
               },
             });
           } catch (error) {
-            console.error(`Error duplicating plan ${planId}:`, error);
+            logger.error(`Error duplicating plan ${planId}:`, error);
             results.push({
               planId,
               success: false,
@@ -325,7 +326,7 @@ export const POST = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error performing bulk operation:', error);
+    logger.error('Error performing bulk operation:', error);
 
     return NextResponse.json(
       {

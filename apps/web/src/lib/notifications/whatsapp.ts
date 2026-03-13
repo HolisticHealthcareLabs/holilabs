@@ -226,7 +226,7 @@ export async function notifyPatientPrescription({
       body: messages[language],
     });
 
-    console.log('✅ WhatsApp prescription sent:', message.sid);
+    console.error('[WhatsApp]', { event: 'prescription_sent', sid: message.sid });
     return { success: true, messageSid: message.sid };
   } catch (error: any) {
     console.error('❌ WhatsApp prescription send failed:', error);
@@ -266,7 +266,7 @@ export async function notifyDoctorSignatureRequest({
       body: messages[language],
     });
 
-    console.log('✅ WhatsApp signature request sent:', message.sid);
+    console.error('[WhatsApp]', { event: 'signature_request_sent', sid: message.sid });
     return { success: true, messageSid: message.sid };
   } catch (error: any) {
     console.error('❌ WhatsApp signature request failed:', error);
@@ -310,7 +310,7 @@ export async function notifyAppointmentReminder({
       body: messages[language],
     });
 
-    console.log('✅ WhatsApp appointment reminder sent:', message.sid);
+    console.error('[WhatsApp]', { event: 'reminder_sent', sid: message.sid });
     return { success: true, messageSid: message.sid };
   } catch (error: any) {
     console.error('❌ WhatsApp appointment reminder failed:', error);
@@ -409,7 +409,7 @@ export async function notifyTestResults({
       body: messages[language],
     });
 
-    console.log('✅ WhatsApp test results notification sent:', message.sid);
+    console.error('[WhatsApp]', { event: 'test_results_sent', sid: message.sid });
     return { success: true, messageSid: message.sid };
   } catch (error: any) {
     console.error('❌ WhatsApp test results notification failed:', error);

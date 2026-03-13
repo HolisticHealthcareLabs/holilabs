@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,7 +87,7 @@ export const GET = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error fetching templates:', error);
+    logger.error('Error fetching templates:', error);
 
     return NextResponse.json(
       {
@@ -162,7 +163,7 @@ export const POST = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error creating template:', error);
+    logger.error('Error creating template:', error);
 
     return NextResponse.json(
       {

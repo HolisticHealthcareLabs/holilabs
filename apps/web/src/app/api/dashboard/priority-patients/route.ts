@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import prisma from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -246,14 +247,14 @@ export const GET = createProtectedRoute(
           const latestPainScore = patient.painAssessments[0]?.painScore;
 
           // Get latest vitals (would need VitalSigns model, simulating for now)
-          const latestVitals = undefined; // TODO: Fetch from VitalSigns table when implemented
+          const latestVitals = undefined; // @todo(vital-signs-schema): Fetch from VitalSigns table
           const abnormalVitals = latestVitals ? checkAbnormalVitals(latestVitals) : 0;
 
           // Count overdue notes
           const overdueNotes = patient.soapNotes.length;
 
           // Count pending orders (would need Orders model, simulating for now)
-          const pendingOrders = 0; // TODO: Fetch from Orders table when implemented
+          const pendingOrders = 0; // @todo(orders-schema): Fetch from Orders table
 
           // Check for today's appointment
           const todayAppointment = patient.appointments[0];
@@ -346,7 +347,7 @@ export const GET = createProtectedRoute(
         generatedAt: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error fetching priority patients:', error);
+      logger.error('Error fetching priority patients:', error);
       return NextResponse.json(
         { error: 'Failed to fetch priority patients' },
         { status: 500 }

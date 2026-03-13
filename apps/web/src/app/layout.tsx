@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
+import { getLocale, getMessages } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
 import './globals.css';
 import '@/styles/print.css';
 import '@/styles/mobile.css';
@@ -8,6 +10,7 @@ import { Providers } from '@/components/Providers';
 import { SkipLink } from '@/components/SkipLink';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { themeInitScript } from '@/scripts/theme-init';
+import { Toaster } from '@/components/ui/toaster';
 
 const OfflineIndicator = dynamic(() => import('@/components/OfflineIndicator'), { ssr: false });
 const IOSInstallPrompt = dynamic(() => import('@/components/IOSInstallPrompt').then(m => m.IOSInstallPrompt ? { default: m.IOSInstallPrompt } : m), { ssr: false });
@@ -56,9 +59,11 @@ export default async function RootLayout({
 }) {
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') ?? undefined;
+  const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Theme initialization script - prevents FOUC */}
         <script
@@ -136,20 +141,23 @@ export default async function RootLayout({
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, user-scalable=no, viewport-fit=cover" />
       </head>
       <body className="font-sans antialiased">
-        <ErrorBoundary>
-          <Providers>
-            <SkipLink />
-            <OfflineIndicator />
-            <IOSInstallPrompt />
-            <CookieConsentBanner />
-            <main
-              id="main-content"
-              className="min-h-[100dvh] bg-background pb-[var(--holi-cookie-banner-h,0px)] transition-[padding] duration-200"
-            >
-              {children}
-            </main>
-          </Providers>
-        </ErrorBoundary>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ErrorBoundary>
+            <Providers>
+              <SkipLink />
+              <OfflineIndicator />
+              <IOSInstallPrompt />
+              <CookieConsentBanner />
+              <Toaster />
+              <main
+                id="main-content"
+                className="min-h-[100dvh] bg-background pb-[var(--holi-cookie-banner-h,0px)] transition-[padding] duration-200"
+              >
+                {children}
+              </main>
+            </Providers>
+          </ErrorBoundary>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -9,11 +9,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
-import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,12 +117,9 @@ interface PatientExportData {
   };
 }
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-    const patientId = session.patientId;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
     // HIPAA/GDPR Audit Log: Patient requested full data export
     await createAuditLog({
@@ -201,7 +196,6 @@ export const GET = createPublicRoute(
         fileSize: true,
         documentType: true,
         createdAt: true,
-        // Exclude actual file data for privacy/size
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -377,20 +371,9 @@ export const GET = createPublicRoute(
         'X-Export-Records': exportData.metadata.totalRecords.toString(),
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'gdpr_data_export_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        error: 'Failed to export patient data',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'EXPORT', resource: 'PatientData' },
+  }
 );

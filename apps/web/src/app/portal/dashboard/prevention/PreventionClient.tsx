@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface RiskScore {
@@ -62,6 +63,7 @@ export default function PreventionClient({
   patientName,
   patientAge,
 }: PreventionClientProps) {
+  const t = useTranslations('portal.preventionHub');
   const [selectedTab, setSelectedTab] = useState<'overview' | 'interventions' | 'goals' | 'recommendations'>('overview');
   const [expandedRisk, setExpandedRisk] = useState<string | null>(null);
 
@@ -111,31 +113,31 @@ export default function PreventionClient({
         return {
           color: 'bg-red-100 text-red-700 border-red-200',
           icon: '⚠️',
-          label: 'Atrasado',
+          label: t('statusOverdue'),
         };
       case 'due-soon':
         return {
           color: 'bg-orange-100 text-orange-700 border-orange-200',
           icon: '⏰',
-          label: 'Próximo',
+          label: t('statusDueSoon'),
         };
       case 'scheduled':
         return {
           color: 'bg-blue-100 text-blue-700 border-blue-200',
           icon: '📅',
-          label: 'Agendado',
+          label: t('statusScheduledLabel'),
         };
       case 'completed':
         return {
           color: 'bg-green-100 text-green-700 border-green-200',
           icon: '✓',
-          label: 'Completado',
+          label: t('statusCompletedLabel'),
         };
       default:
         return {
           color: 'bg-gray-100 text-gray-700 border-gray-200',
           icon: '●',
-          label: 'Pendiente',
+          label: t('statusPendingLabel'),
         };
     }
   };
@@ -145,11 +147,10 @@ export default function PreventionClient({
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🛡️</div>
         <h3 className="text-2xl font-bold text-gray-900 mb-3">
-          ¡Bienvenido a tu Hub de Prevención!
+          {t('emptyTitle')}
         </h3>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Tu médico pronto compartirá contigo tu perfil de salud preventiva.
-          Aquí podrás ver tus risk scores, intervenciones recomendadas y metas de salud.
+          {t('emptyDesc')}
         </p>
       </div>
     );
@@ -161,10 +162,10 @@ export default function PreventionClient({
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
         <div className="flex gap-2 overflow-x-auto">
           {[
-            { id: 'overview', label: 'Resumen', icon: '📊' },
-            { id: 'interventions', label: 'Intervenciones', icon: '🎯', badge: initialData.interventions.filter(i => i.status === 'overdue' || i.status === 'due-soon').length },
-            { id: 'goals', label: 'Metas', icon: '🎖️' },
-            { id: 'recommendations', label: 'Recomendaciones', icon: '💡' },
+            { id: 'overview', label: t('overviewTab'), icon: '📊' },
+            { id: 'interventions', label: t('interventionsTab'), icon: '🎯', badge: initialData.interventions.filter(i => i.status === 'overdue' || i.status === 'due-soon').length },
+            { id: 'goals', label: t('goalsTab'), icon: '🏋️' },
+            { id: 'recommendations', label: t('recommendationsTab'), icon: '💡' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -198,7 +199,7 @@ export default function PreventionClient({
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <span>📈</span>
-              <span>Tus Risk Scores</span>
+              <span>{t('riskScoresTitle')}</span>
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {initialData.riskScores.map((risk) => {
@@ -230,7 +231,7 @@ export default function PreventionClient({
                         onClick={() => setExpandedRisk(expandedRisk === risk.id ? null : risk.id)}
                         className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
                       >
-                        {expandedRisk === risk.id ? '▼ Ver menos' : '▶ Más información'}
+                        {expandedRisk === risk.id ? t('viewLess') : t('viewMore')}
                       </button>
                       <AnimatePresence>
                         {expandedRisk === risk.id && (
@@ -245,7 +246,7 @@ export default function PreventionClient({
                             </p>
                             {/* Decorative - low contrast intentional for last updated metadata */}
                             <p className="text-xs text-gray-500 mt-2">
-                              Última actualización: {new Date(risk.lastCalculated).toLocaleDateString('es-MX')}
+                              {t('lastUpdated')} {new Date(risk.lastCalculated).toLocaleDateString('es-MX')}
                             </p>
                           </motion.div>
                         )}
@@ -264,7 +265,7 @@ export default function PreventionClient({
               <div className="text-3xl font-bold mb-1">
                 {initialData.interventions.filter(i => i.status === 'overdue' || i.status === 'due-soon').length}
               </div>
-              <div className="text-blue-100">Intervenciones Pendientes</div>
+              <div className="text-blue-100">{t('pendingInterventions')}</div>
             </div>
 
             <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-6">
@@ -272,7 +273,7 @@ export default function PreventionClient({
               <div className="text-3xl font-bold mb-1">
                 {initialData.goals.length}
               </div>
-              <div className="text-purple-100">Metas Activas</div>
+              <div className="text-purple-100">{t('activeGoals')}</div>
             </div>
 
             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg p-6">
@@ -280,7 +281,7 @@ export default function PreventionClient({
               <div className="text-3xl font-bold mb-1">
                 {initialData.recommendations.filter(r => r.priority === 'high').length}
               </div>
-              <div className="text-emerald-100">Recomendaciones Prioritarias</div>
+              <div className="text-emerald-100">{t('priorityRecommendations')}</div>
             </div>
           </div>
         </motion.div>
@@ -295,13 +296,13 @@ export default function PreventionClient({
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span>🎯</span>
-            <span>Intervenciones Preventivas</span>
+            <span>{t('interventionsTitle')}</span>
           </h2>
 
           {initialData.interventions.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
               <div className="text-4xl mb-3">✅</div>
-              <p className="text-gray-600">¡Estás al día con todas tus intervenciones!</p>
+              <p className="text-gray-600">{t('allCurrent')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -325,10 +326,10 @@ export default function PreventionClient({
                           {/* Decorative - low contrast intentional for intervention metadata (scheduled date, bullet separator, type) */}
                           <div className="flex items-center gap-3 text-sm">
                             <span className="text-gray-500">
-                              Fecha programada: {new Date(intervention.dueDate).toLocaleDateString('es-MX')}
+                              {t('scheduledDate')} {new Date(intervention.dueDate).toLocaleDateString('es-MX')}
                             </span>
                             <span className="text-gray-400">•</span>
-                            <span className="text-gray-500">Tipo: {intervention.type}</span>
+                            <span className="text-gray-500">{t('typeLabel')} {intervention.type}</span>
                           </div>
                         </div>
                       </div>
@@ -340,7 +341,7 @@ export default function PreventionClient({
                     {intervention.importance && (
                       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
                         <p className="text-sm text-yellow-900">
-                          <span className="font-semibold">💡 Importante: </span>
+                          <span className="font-semibold">{t('importantLabel')}</span>
                           {intervention.importance}
                         </p>
                       </div>
@@ -348,7 +349,7 @@ export default function PreventionClient({
 
                     {(intervention.status === 'overdue' || intervention.status === 'due-soon') && (
                       <button className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all font-medium">
-                        📅 Agendar Cita
+                        {t('bookAppointment')}
                       </button>
                     )}
                   </div>
@@ -368,15 +369,15 @@ export default function PreventionClient({
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span>🎖️</span>
-            <span>Mis Metas de Salud</span>
+            <span>{t('goalsTitle')}</span>
           </h2>
 
           {initialData.goals.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
               <div className="text-4xl mb-3">🎯</div>
-              <p className="text-gray-600">Aún no tienes metas configuradas</p>
+              <p className="text-gray-600">{t('noGoals')}</p>
               {/* Decorative - low contrast intentional for empty state helper text */}
-              <p className="text-sm text-gray-500 mt-2">Habla con tu médico para establecer metas personalizadas</p>
+              <p className="text-sm text-gray-500 mt-2">{t('noGoalsDesc')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -389,10 +390,10 @@ export default function PreventionClient({
                     <div>
                       <h3 className="font-bold text-gray-900 text-lg mb-1">{goal.title}</h3>
                       <p className="text-sm text-gray-600">
-                        <span className="font-medium">Objetivo:</span> {goal.target}
+                        <span className="font-medium">{t('goalTargetLabel')}</span> {goal.target}
                       </p>
                       <p className="text-sm text-gray-600">
-                        <span className="font-medium">Actual:</span> {goal.current}
+                        <span className="font-medium">{t('goalCurrentLabel')}</span> {goal.current}
                       </p>
                     </div>
                     <span className="text-2xl font-bold text-emerald-600">
@@ -429,13 +430,13 @@ export default function PreventionClient({
         >
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span>💡</span>
-            <span>Recomendaciones Personalizadas</span>
+            <span>{t('recsTitle')}</span>
           </h2>
 
           {initialData.recommendations.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
               <div className="text-4xl mb-3">💡</div>
-              <p className="text-gray-600">No hay recomendaciones en este momento</p>
+              <p className="text-gray-600">{t('noRecs')}</p>
             </div>
           ) : (
             <div className="space-y-3">

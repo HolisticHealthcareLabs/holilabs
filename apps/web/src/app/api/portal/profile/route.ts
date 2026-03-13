@@ -9,11 +9,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 // Update profile schema — fields that exist on the Patient model
@@ -25,15 +24,13 @@ const UpdateProfileSchema = z.object({
   postalCode: z.string().optional(),
 });
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
     // Fetch patient with full profile data
     const patient = await prisma.patient.findUnique({
-      where: { id: session.patientId },
+      where: { id: patientId },
       include: {
         assignedClinician: {
           select: {
@@ -64,10 +61,7 @@ export const GET = createPublicRoute(
 
     if (!patient) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Perfil no encontrado.',
-        },
+        { success: false, error: 'Perfil no encontrado.' },
         { status: 404 }
       );
     }
@@ -76,9 +70,9 @@ export const GET = createPublicRoute(
     await createAuditLog({
       action: 'READ',
       resource: 'Patient',
-      resourceId: session.patientId,
+      resourceId: patientId,
       details: {
-        patientId: session.patientId,
+        patientId,
         includedStats: {
           activeMedications: patient.medications.length,
           upcomingAppointments: patient.appointments.length,
@@ -117,42 +111,15 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_profile_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar perfil.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'Profile' },
+  }
 );
 
-export const PATCH = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse and validate request body
+export const PATCH = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const body = await request.json();
     const validation = UpdateProfileSchema.safeParse(body);
 
@@ -169,21 +136,19 @@ export const PATCH = createPublicRoute(
 
     const updateData = validation.data;
 
-    // Update patient profile
     const updatedPatient = await prisma.patient.update({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       data: updateData,
     });
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'UPDATE',
         resource: 'Patient',
-        resourceId: session.patientId,
+        resourceId: context.session.patientId,
         success: true,
         details: {
           updatedFields: Object.keys(updateData),
@@ -193,7 +158,7 @@ export const PATCH = createPublicRoute(
 
     logger.info({
       event: 'patient_profile_updated',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       updatedFields: Object.keys(updateData),
     });
 
@@ -205,31 +170,9 @@ export const PATCH = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_profile_update_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al actualizar perfil.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'UPDATE', resource: 'Profile' },
+  }
 );

@@ -348,9 +348,7 @@ export default function DashboardCommandCenter() {
             {/* AI Insights */}
             <AIInsights
               maxHeight="600px"
-              onInsightAction={(id, action) => {
-                console.log(`Insight ${id} ${action}`);
-              }}
+              onInsightAction={(_id, _action) => {}}
               showConfidence={true}
               showEvidence={true}
             />
@@ -362,9 +360,7 @@ export default function DashboardCommandCenter() {
             {showNotificationsPanel && (
               <SmartNotifications
                 maxHeight="500px"
-                onNotificationClick={(notification) => {
-                  console.log('Notification clicked:', notification);
-                }}
+                onNotificationClick={(_notification) => {}}
                 onDismiss={(id) => {
                   setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
                 }}

@@ -19,6 +19,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { deidentifyTranscriptOrThrow } from '@/lib/deid/transcript-gate';
 import { enqueuePatientDossierJob } from '@/lib/patients/dossier-queue';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for long transcriptions
@@ -167,7 +168,7 @@ export const POST = createProtectedRoute(
         try {
           audioBuffer = decryptBuffer(encryptedBuffer);
         } catch (error) {
-          console.error('Failed to decrypt audio:', error);
+          logger.error('Failed to decrypt audio:', error);
           return NextResponse.json(
             { error: 'Failed to decrypt audio file' },
             { status: 500 }
@@ -199,10 +200,10 @@ export const POST = createProtectedRoute(
           transcriptText = transcriptionResult.text;
           segments = transcriptionResult.segments;
 
-          console.log(`✅ Deepgram transcription completed in ${transcriptionResult.processingTimeMs}ms`);
-          console.log(`   Confidence: ${(transcriptionResult.confidence * 100).toFixed(1)}%, Speakers: ${transcriptionResult.speakerCount}`);
+          logger.info(`✅ Deepgram transcription completed in ${transcriptionResult.processingTimeMs}ms`);
+          logger.info(`   Confidence: ${(transcriptionResult.confidence * 100).toFixed(1)}%, Speakers: ${transcriptionResult.speakerCount}`);
         } catch (error) {
-          console.error('❌ Deepgram transcription error:', error);
+          logger.error('❌ Deepgram transcription error:', error);
 
           await prisma.scribeSession.update({
             where: { id: sessionId },
@@ -219,7 +220,7 @@ export const POST = createProtectedRoute(
         const anonymizeStartTime = Date.now();
         deidentifiedTranscript = await deidentifyTranscriptOrThrow(transcriptText);
         const anonymizeDurationMs = Date.now() - anonymizeStartTime;
-        console.log(`🛡️ Presidio anonymization completed in ${anonymizeDurationMs}ms`);
+        logger.info(`🛡️ Presidio anonymization completed in ${anonymizeDurationMs}ms`);
 
         // Remove text from diarized segments (keep timing + speaker metadata only)
         safeSegments = (segments || []).map((s: any) => ({
@@ -335,7 +336,7 @@ export const POST = createProtectedRoute(
         });
       } catch (error) {
         if (error instanceof z.ZodError) {
-          console.error('AI-generated SOAP note validation failed:', error.errors);
+          logger.error('AI-generated SOAP note validation failed:', error.errors);
 
           // Use unvalidated data with warnings (don't crash on AI mistakes)
           validatedSOAPData = {
@@ -459,7 +460,7 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error finalizing session:', error);
+      logger.error('Error finalizing session:', error);
 
       // Update session with error
       try {
@@ -471,7 +472,7 @@ export const POST = createProtectedRoute(
           },
         });
       } catch (updateError) {
-        console.error('Failed to update session error:', updateError);
+        logger.error('Failed to update session error:', updateError);
       }
 
       return safeErrorResponse(error, { userMessage: 'Failed to finalize session' });

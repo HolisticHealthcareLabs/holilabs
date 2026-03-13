@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslations } from 'next-intl';
 import {
   Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
   MoreHorizontal, X, User, UserPlus, AlertTriangle,
@@ -11,6 +11,8 @@ import {
   Play, Clock, ChevronsUpDown,
 } from 'lucide-react';
 import { filterRecordsForOrganization } from '../../../../../../packages/shared-kernel/src/types/auth';
+import { PatientEditDrawer } from './_components/PatientEditDrawer';
+import SpotlightTrigger from '@/components/onboarding/SpotlightTrigger';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -287,6 +289,7 @@ function QuickLookDrawer({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations('dashboard.patients');
   const age = calcAge(patient.dateOfBirth);
   const risk = RISK_STYLES[patient.riskLevel];
 
@@ -335,7 +338,7 @@ function QuickLookDrawer({
           <div className="flex flex-wrap gap-1.5">
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${risk.bg} ${risk.text}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${risk.dot}`} />
-              {patient.riskLevel.charAt(0).toUpperCase() + patient.riskLevel.slice(1)} Risk
+              {patient.riskLevel.charAt(0).toUpperCase() + patient.riskLevel.slice(1)} {t('riskSuffix')}
             </span>
             {patient.statusFlags.map((flag) => (
               <span key={flag} className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${FLAG_STYLES[flag]}`}>
@@ -348,7 +351,7 @@ function QuickLookDrawer({
           <section>
             <div className="flex items-center gap-2 mb-2">
               <Stethoscope className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Primary Diagnosis</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('primaryDiagnosis')}</span>
             </div>
             <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
               {patient.primaryDiagnosis}
@@ -360,7 +363,7 @@ function QuickLookDrawer({
           <section>
             <div className="flex items-center gap-2 mb-2">
               <Heart className="w-3.5 h-3.5 text-rose-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Latest Blood Pressure</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('latestBloodPressure')}</span>
             </div>
             <p className="text-lg font-bold tabular-nums text-gray-800 dark:text-gray-200">{patient.latestBP}</p>
           </section>
@@ -369,10 +372,10 @@ function QuickLookDrawer({
           <section>
             <div className="flex items-center gap-2 mb-2">
               <FlaskConical className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Active Medications</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('activeMedications')}</span>
             </div>
             {patient.medications.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">None on file</p>
+              <p className="text-xs text-gray-400 italic">{t('noneOnFile')}</p>
             ) : (
               <div className="space-y-1.5">
                 {patient.medications.map((med, i) => (
@@ -388,10 +391,10 @@ function QuickLookDrawer({
           <section>
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Allergies</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('allergies')}</span>
             </div>
             {patient.allergies.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">No known allergies (NKA)</p>
+              <p className="text-xs text-gray-400 italic">{t('noKnownAllergies')}</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {patient.allergies.map((a) => (
@@ -407,7 +410,7 @@ function QuickLookDrawer({
           <section>
             <div className="flex items-center gap-2 mb-2">
               <Shield className="w-3.5 h-3.5 text-teal-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Insurance / Payer</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('insurancePayer')}</span>
             </div>
             <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{patient.payer}</p>
           </section>
@@ -416,7 +419,7 @@ function QuickLookDrawer({
           <section>
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Last Visit</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('lastVisit')}</span>
             </div>
             <p className="text-sm text-gray-700 dark:text-gray-300">{formatDate(patient.lastVisitDate)}</p>
           </section>
@@ -434,7 +437,7 @@ function QuickLookDrawer({
             "
           >
             <Play className="w-3.5 h-3.5" />
-            Begin Visit
+            {t('beginVisit')}
           </button>
         </div>
       </aside>
@@ -449,18 +452,21 @@ function QuickLookDrawer({
 function KebabMenu({
   patient,
   onClose,
+  onEdit,
 }: {
   patient: RegistryPatient;
   onClose: () => void;
+  onEdit: (p: RegistryPatient) => void;
 }) {
   const router = useRouter();
+  const t = useTranslations('dashboard.patients');
 
   const actions = [
-    { label: 'Begin Visit', action: () => router.push(`/dashboard/clinical-command?patientId=${patient.id}`) },
-    { label: 'Send Pre-Authorization', action: () => router.push(`/dashboard/billing?action=prior-auth&patientId=${patient.id}&patientName=${encodeURIComponent(patient.firstName + ' ' + patient.lastName)}`) },
-    { label: 'Edit Demographics', action: () => {} },
-    { label: 'View Full Chart', action: () => router.push(`/dashboard/patients/${patient.id}`) },
-    { label: 'Print Summary', action: () => {} },
+    { label: t('beginVisit'), action: () => router.push(`/dashboard/clinical-command?patientId=${patient.id}`) },
+    { label: t('sendPreAuth'), action: () => router.push(`/dashboard/billing?action=prior-auth&patientId=${patient.id}&patientName=${encodeURIComponent(patient.firstName + ' ' + patient.lastName)}`) },
+    { label: t('editDemographics'), action: () => onEdit(patient) },
+    { label: t('viewFullChart'), action: () => router.push(`/dashboard/patients/${patient.id}`) },
+    { label: t('printSummary'), action: () => {} },
   ];
 
   return (
@@ -489,13 +495,15 @@ type RiskFilter = 'all' | RiskLevel;
 
 export default function PatientsPage() {
   const { data: session } = useSession();
-  const { t } = useLanguage();
+  const t = useTranslations('dashboard.patients');
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState<RiskFilter>('all');
+  const [dxFilter, setDxFilter] = useState<string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
   const [quickLookPatient, setQuickLookPatient] = useState<RegistryPatient | null>(null);
+  const [editPatient, setEditPatient] = useState<RegistryPatient | null>(null);
   const [kebabOpenId, setKebabOpenId] = useState<string | null>(null);
   const [roster, setRoster] = useState<RegistryPatient[]>(PATIENTS);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -568,8 +576,12 @@ export default function PatientsPage() {
       list = list.filter((p) => p.riskLevel === riskFilter);
     }
 
+    if (dxFilter !== 'all') {
+      list = list.filter((p) => p.primaryDiagnosis === dxFilter);
+    }
+
     return sortPatients(list, sortKey, sortDir);
-  }, [organizationScopedRoster, search, riskFilter, sortKey, sortDir]);
+  }, [organizationScopedRoster, search, riskFilter, dxFilter, sortKey, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(processedPatients.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -578,12 +590,17 @@ export default function PatientsPage() {
   const visiblePatients = processedPatients.slice(pageStart, pageEnd);
 
   const RISK_FILTERS: { value: RiskFilter; label: string }[] = [
-    { value: 'all', label: 'All' },
-    { value: 'critical', label: 'Critical' },
-    { value: 'high', label: 'High' },
-    { value: 'moderate', label: 'Moderate' },
-    { value: 'low', label: 'Low' },
+    { value: 'all', label: t('filterAll') },
+    { value: 'critical', label: t('filterCritical') },
+    { value: 'high', label: t('filterHigh') },
+    { value: 'moderate', label: t('filterModerate') },
+    { value: 'low', label: t('filterLow') },
   ];
+
+  const uniqueDxValues = useMemo(() => {
+    const dxSet = new Set(organizationScopedRoster.map((p) => p.primaryDiagnosis));
+    return Array.from(dxSet).sort();
+  }, [organizationScopedRoster]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
@@ -591,33 +608,41 @@ export default function PatientsPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Patient Registry
+            {t('patientRegistry')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {organizationScopedRoster.length} patients in panel
+            {t('patientsInPanel', { count: organizationScopedRoster.length })}
           </p>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="
-            inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
-            bg-gray-900 dark:bg-white text-white dark:text-gray-900
-            hover:bg-gray-800 dark:hover:bg-gray-100
-            transition-colors
-          "
-        >
-          <UserPlus className="w-4 h-4" />
-          {t('dashboard.patients.addPatient')}
-        </button>
+        <div className="flex items-center gap-3">
+          <SpotlightTrigger
+            steps={[
+              { target: '#patient-search', title: 'Smart Search', content: 'Search by name, MRN, diagnosis, or risk score.' },
+              { target: '#patient-list', title: 'Patient Panel', content: 'Click any patient for the quick-look drawer with vitals, meds, and risk flags.' },
+            ]}
+          />
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="
+              inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+              bg-gray-900 dark:bg-white text-white dark:text-gray-900
+              hover:bg-gray-800 dark:hover:bg-gray-100
+              transition-colors
+            "
+          >
+            <UserPlus className="w-4 h-4" />
+            {t('addPatient')}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div id="patient-search" className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder={t('dashboard.patients.searchPlaceholder')}
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="
@@ -650,18 +675,30 @@ export default function PatientsPage() {
               </button>
             );
           })}
+
+          {/* DX / Specialty filter */}
+          <select
+            value={dxFilter}
+            onChange={(e) => { setDxFilter(e.target.value); setPage(1); }}
+            className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer"
+          >
+            <option value="all">{t('allDiagnoses')}</option>
+            {uniqueDxValues.map((dx) => (
+              <option key={dx} value={dx}>{dx}</option>
+            ))}
+          </select>
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+      <div id="patient-list" className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         {/* Column headers */}
         <div className="grid grid-cols-[2fr_1fr_1.5fr_1fr_1fr_40px] gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-          <SortableHeader label={t('dashboard.patients.patient')} sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label={t('dashboard.patients.ageSex')} sortKey="age" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label={t('dashboard.patients.primaryDx')} sortKey="diagnosis" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label={t('dashboard.patients.lastVisit')} sortKey="lastVisit" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-          <SortableHeader label={t('dashboard.patients.risk')} sortKey="risk" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('patient')} sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('ageSex')} sortKey="age" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('primaryDx')} sortKey="diagnosis" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('lastVisit')} sortKey="lastVisit" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+          <SortableHeader label={t('risk')} sortKey="risk" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
           <span />
         </div>
 
@@ -672,17 +709,17 @@ export default function PatientsPage() {
               <User className="w-6 h-6 text-gray-400 dark:text-gray-500" />
             </div>
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-              {t('dashboard.patients.noPatients')}
+              {t('noPatients')}
             </h3>
             <p className="text-xs text-gray-400 dark:text-gray-500 text-center max-w-xs mb-4">
-              Adjust your search or filters, or add a new patient to your panel.
+              {t('adjustFiltersHint')}
             </p>
             <button
               onClick={() => setShowAddForm(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             >
               <UserPlus className="w-3 h-3" />
-              {t('dashboard.patients.registerNewPatient')}
+              {t('registerNewPatient')}
             </button>
           </div>
         ) : (
@@ -748,7 +785,7 @@ export default function PatientsPage() {
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
                     {kebabOpenId === p.id && (
-                      <KebabMenu patient={p} onClose={() => setKebabOpenId(null)} />
+                      <KebabMenu patient={p} onClose={() => setKebabOpenId(null)} onEdit={(pat) => { setEditPatient(pat); setKebabOpenId(null); }} />
                     )}
                   </div>
                 </div>
@@ -761,7 +798,7 @@ export default function PatientsPage() {
         {processedPatients.length > 0 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Showing {pageStart + 1}-{pageEnd} of {processedPatients.length} patients
+              {t('showing', { from: pageStart + 1, to: pageEnd, total: processedPatients.length })}
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -805,7 +842,7 @@ export default function PatientsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-lg">
               <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">{t('dashboard.patients.registerNewPatient')}</h2>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">{t('registerNewPatient')}</h2>
                 <button onClick={() => setShowAddForm(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                   <X className="w-4 h-4" />
                 </button>
@@ -813,7 +850,7 @@ export default function PatientsPage() {
               <div className="px-6 py-5 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">First Name *</label>
+                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t('firstNameRequired')}</label>
                     <input
                       type="text"
                       value={newFirstName}
@@ -824,7 +861,7 @@ export default function PatientsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Last Name *</label>
+                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t('lastNameRequired')}</label>
                     <input
                       type="text"
                       value={newLastName}
@@ -836,29 +873,38 @@ export default function PatientsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Date of Birth</label>
+                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t('dateOfBirth')}</label>
                     <input
-                      type="date"
+                      type="text"
+                      inputMode="numeric"
                       value={newDob}
-                      onChange={(e) => setNewDob(e.target.value)}
-                      className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                      onChange={(e) => {
+                        let v = e.target.value.replace(/[^\d]/g, '');
+                        if (v.length > 8) v = v.slice(0, 8);
+                        if (v.length >= 5) v = `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6)}`;
+                        else if (v.length >= 3) v = `${v.slice(0, 4)}-${v.slice(4)}`;
+                        setNewDob(v);
+                      }}
+                      placeholder="YYYY-MM-DD"
+                      maxLength={10}
+                      className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 tabular-nums"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Sex</label>
+                    <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t('sex')}</label>
                     <select
                       value={newSex}
                       onChange={(e) => setNewSex(e.target.value as Sex)}
                       className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
                     >
-                      <option value="M">Male</option>
-                      <option value="F">Female</option>
-                      <option value="O">Other</option>
+                      <option value="M">{t('male')}</option>
+                      <option value="F">{t('female')}</option>
+                      <option value="O">{t('other')}</option>
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Presenting Concern (optional)</label>
+                  <label className="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">{t('presentingConcern')}</label>
                   <input
                     type="text"
                     value={newDiagnosis}
@@ -874,14 +920,14 @@ export default function PatientsPage() {
                   onClick={() => setShowAddForm(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleAddPatient}
                   disabled={!newFirstName.trim() || !newLastName.trim()}
                   className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  Register Patient
+                  {t('registerPatient')}
                 </button>
               </div>
             </div>
@@ -894,6 +940,18 @@ export default function PatientsPage() {
         <QuickLookDrawer
           patient={quickLookPatient}
           onClose={() => setQuickLookPatient(null)}
+        />
+      )}
+
+      {/* Edit Demographics Drawer */}
+      {editPatient && (
+        <PatientEditDrawer
+          patient={editPatient}
+          onClose={() => setEditPatient(null)}
+          onSave={(updated) => {
+            setRoster((prev) => prev.map((p) => p.id === updated.id ? { ...p, ...updated } : p));
+            setEditPatient(null);
+          }}
         />
       )}
     </div>

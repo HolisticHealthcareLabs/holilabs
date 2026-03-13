@@ -488,7 +488,7 @@ Run health check in your application:
 import { checkBemiHealth } from '@/lib/audit/bemi-context';
 
 const health = await checkBemiHealth();
-console.log(health);
+console.info(JSON.stringify(health, null, 2));
 \`\`\`
 
 ## Step 5: Verify Audit Trail

@@ -6,50 +6,26 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
-import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
-    // TODO: recordingSession model doesn't exist in Prisma schema yet
-    // Fetch all recordings for this patient
-    // const recordings = await prisma.recordingSession.findMany({
-    //   where: {
-    //     patientId: session.patientId,
-    //     status: {
-    //       in: ['COMPLETED', 'PROCESSING', 'TRANSCRIBING'],
-    //     },
-    //   },
-    //   include: {
-    //     appointment: {
-    //       select: {
-    //         id: true,
-    //         title: true,
-    //         startTime: true,
-    //       },
-    //     },
-    //   },
-    //   orderBy: {
-    //     startedAt: 'desc',
-    //   },
-    // });
-
-    const recordings: any[] = []; // Temporary empty array until model is added
+    // @todo(recording-session-model): Query RecordingSession once added to Prisma schema
+    logger.warn({ event: 'unimplemented_feature', feature: 'recording_session_query', patientId });
+    const recordings: any[] = [];
 
     // HIPAA Audit Log: Patient accessed their consultations list
     await createAuditLog({
       action: 'READ',
       resource: 'RecordingSession',
-      resourceId: session.patientId,
+      resourceId: patientId,
       details: {
-        patientId: session.patientId,
+        patientId,
         count: recordings.length,
         accessType: 'PATIENT_CONSULTATIONS_LIST',
       },
@@ -57,37 +33,12 @@ export const GET = createPublicRoute(
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        data: recordings,
-      },
+      { success: true, data: recordings },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_consultations_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar consultas.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'Consultations' },
+  }
 );

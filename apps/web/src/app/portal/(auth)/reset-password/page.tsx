@@ -14,6 +14,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { PasswordInput } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { validatePassword } from '@/lib/auth/password-validation';
@@ -22,6 +23,7 @@ export default function PatientResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
+  const t = useTranslations('portal.resetPassword');
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,9 +37,9 @@ export default function PatientResetPasswordPage() {
 
   useEffect(() => {
     if (!token) {
-      setError('Token de restablecimiento inválido');
+      setError(t('invalidToken'));
     }
-  }, [token]);
+  }, [token, t]);
 
   const getStrengthColor = () => {
     if (strength <= 1) return 'bg-red-500';
@@ -48,12 +50,12 @@ export default function PatientResetPasswordPage() {
   };
 
   const getStrengthLabel = () => {
-    if (strength === 0) return 'Muy Débil';
-    if (strength === 1) return 'Débil';
-    if (strength === 2) return 'Aceptable';
-    if (strength === 3) return 'Buena';
-    if (strength === 4) return 'Fuerte';
-    return 'Excelente';
+    if (strength === 0) return t('strengthVeryWeak');
+    if (strength === 1) return t('strengthWeak');
+    if (strength === 2) return t('strengthFair');
+    if (strength === 3) return t('strengthGood');
+    if (strength === 4) return t('strengthStrong');
+    return t('strengthExcellent');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,13 +64,12 @@ export default function PatientResetPasswordPage() {
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('passwordsDontMatch'));
       return;
     }
 
-    // Validate password strength
     if (!passwordValidation.valid) {
-      setError('La contraseña debe cumplir todos los requisitos');
+      setError(t('passwordRequirements'));
       return;
     }
 
@@ -114,16 +115,16 @@ export default function PatientResetPasswordPage() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">
-            Enlace inválido
+            {t('invalidLink')}
           </h2>
           <p className="text-gray-600 mb-6">
-            El enlace de restablecimiento es inválido o ha expirado.
+            {t('invalidLinkDescription')}
           </p>
           <button
             onClick={() => router.push('/portal/forgot-password')}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
           >
-            Solicitar nuevo enlace
+            {t('requestNewLink')}
           </button>
         </div>
       </div>
@@ -147,9 +148,9 @@ export default function PatientResetPasswordPage() {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <h1 className="text-3xl font-bold text-gray-900">Restablecer Contraseña</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           <p className="text-gray-600 mt-2">
-            Crea una nueva contraseña segura
+            {t('subtitle')}
           </p>
         </div>
 
@@ -165,15 +166,15 @@ export default function PatientResetPasswordPage() {
               </div>
 
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                ¡Contraseña restablecida!
+                {t('passwordReset')}
               </h2>
 
               <p className="text-gray-600 mb-6">
-                Tu contraseña ha sido actualizada exitosamente.
+                {t('passwordResetDescription')}
               </p>
 
               <p className="text-sm text-gray-500">
-                Redirigiendo al inicio de sesión...
+                {t('redirecting')}
               </p>
             </div>
           ) : (
@@ -188,7 +189,7 @@ export default function PatientResetPasswordPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* New Password */}
                 <PasswordInput
-                  label="Nueva Contraseña"
+                  label={t('newPassword')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -200,7 +201,7 @@ export default function PatientResetPasswordPage() {
                 {password && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">Seguridad:</span>
+                      <span className="text-gray-600">{t('strengthLabel')}</span>
                       <span className={`font-semibold ${
                         strength >= 4 ? 'text-green-600' :
                         strength >= 3 ? 'text-blue-600' :
@@ -224,19 +225,19 @@ export default function PatientResetPasswordPage() {
                     {/* Password Requirements */}
                     <div className="text-xs space-y-1 mt-3">
                       <div className={passwordErrors.includes('At least 8 characters') ? 'text-gray-400' : 'text-green-600'}>
-                        {passwordErrors.includes('At least 8 characters') ? '○' : '✓'} Mínimo 8 caracteres
+                        {passwordErrors.includes('At least 8 characters') ? '○' : '✓'} {t('reqMinChars')}
                       </div>
                       <div className={passwordErrors.includes('One uppercase letter') ? 'text-gray-400' : 'text-green-600'}>
-                        {passwordErrors.includes('One uppercase letter') ? '○' : '✓'} Una letra mayúscula
+                        {passwordErrors.includes('One uppercase letter') ? '○' : '✓'} {t('reqUppercase')}
                       </div>
                       <div className={passwordErrors.includes('One lowercase letter') ? 'text-gray-400' : 'text-green-600'}>
-                        {passwordErrors.includes('One lowercase letter') ? '○' : '✓'} Una letra minúscula
+                        {passwordErrors.includes('One lowercase letter') ? '○' : '✓'} {t('reqLowercase')}
                       </div>
                       <div className={passwordErrors.includes('One number') ? 'text-gray-400' : 'text-green-600'}>
-                        {passwordErrors.includes('One number') ? '○' : '✓'} Un número
+                        {passwordErrors.includes('One number') ? '○' : '✓'} {t('reqNumber')}
                       </div>
                       <div className={passwordErrors.includes('One special character (@$!%*?&)') ? 'text-gray-400' : 'text-green-600'}>
-                        {passwordErrors.includes('One special character (@$!%*?&)') ? '○' : '✓'} Un carácter especial (@$!%*?&)
+                        {passwordErrors.includes('One special character (@$!%*?&)') ? '○' : '✓'} {t('reqSpecial')}
                       </div>
                     </div>
                   </div>
@@ -244,7 +245,7 @@ export default function PatientResetPasswordPage() {
 
                 {/* Confirm Password */}
                 <PasswordInput
-                  label="Confirmar Nueva Contraseña"
+                  label={t('confirmNewPassword')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -259,17 +260,16 @@ export default function PatientResetPasswordPage() {
                   fullWidth
                   loading={loading}
                 >
-                  Restablecer Contraseña
+                  {t('resetBtn')}
                 </Button>
               </form>
 
-              {/* Back to Login */}
               <div className="mt-6 text-center">
                 <button
                   onClick={() => router.push('/portal/login')}
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
-                  ← Volver al inicio de sesión
+                  ← {t('backToLogin')}
                 </button>
               </div>
             </>
@@ -282,7 +282,7 @@ export default function PatientResetPasswordPage() {
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
-            <span>Todas las sesiones anteriores serán cerradas por seguridad</span>
+            <span>{t('securityNote')}</span>
           </div>
         </div>
       </motion.div>

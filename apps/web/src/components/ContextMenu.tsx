@@ -268,7 +268,6 @@ export function PatientContextMenu({
       ),
       shortcut: 'cmd+n',
       action: () => {
-        console.log('Create SOAP note for', patientId);
         onAction?.('create-note');
       },
     },
@@ -281,7 +280,6 @@ export function PatientContextMenu({
         </svg>
       ),
       action: () => {
-        console.log('Schedule appointment for', patientId);
         onAction?.('schedule-appointment');
       },
     },
@@ -294,7 +292,6 @@ export function PatientContextMenu({
         </svg>
       ),
       action: () => {
-        console.log('Prescribe for', patientId);
         onAction?.('prescribe');
       },
     },
@@ -312,7 +309,6 @@ export function PatientContextMenu({
         </svg>
       ),
       action: () => {
-        console.log('Export records for', patientId);
         onAction?.('export');
       },
     },
@@ -326,7 +322,6 @@ export function PatientContextMenu({
       ),
       shortcut: 'cmd+p',
       action: () => {
-        console.log('Print for', patientId);
         onAction?.('print');
       },
     },

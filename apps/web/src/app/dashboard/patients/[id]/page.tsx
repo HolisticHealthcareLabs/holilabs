@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,7 @@ function safetyBadge(color: 'GREEN' | 'AMBER' | 'RED' | null) {
 export default function PatientDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
+  const t = useTranslations('dashboard.patients');
 
   const [loading, setLoading] = useState(true);
   const [patient, setPatient] = useState<any>(null);
@@ -126,8 +128,8 @@ export default function PatientDetailPage() {
   }
 
   const patientName = patient
-    ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() || 'Patient'
-    : 'Patient';
+    ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() || t('patientFallback')
+    : t('patientFallback');
 
   const isActive = patient?.isActive !== false;
   const age = patient?.dateOfBirth
@@ -140,7 +142,7 @@ export default function PatientDetailPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 px-6 py-5">
         <Link href="/dashboard/patients" className="text-sm text-blue-600 font-medium mb-2 inline-block">
-          ← All Patients
+          ← {t('allPatientsLink')}
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -163,13 +165,43 @@ export default function PatientDetailPage() {
             {statusBadge(isActive ? 'ACTIVE' : 'INACTIVE')}
             {patient?.isPalliativeCare && (
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border bg-purple-50 text-purple-700 border-purple-200">
-                Palliative
+                {t('palliative')}
               </span>
             )}
             <span className="text-xs text-gray-400 border border-gray-200 rounded-xl px-3 py-1">
-              Synthetic demo
+              {t('syntheticDemo')}
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Quick Action Bar */}
+      <div className="bg-white border-b border-gray-100 px-6 py-3">
+        <div className="flex items-center gap-2 max-w-6xl mx-auto overflow-x-auto">
+          <Link
+            href={`/dashboard/clinical-command?patientId=${id}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 transition-colors whitespace-nowrap"
+          >
+            {t('startEncounter')}
+          </Link>
+          <Link
+            href={`/dashboard/prevention/hub?patientId=${id}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t('preventionPlan')}
+          </Link>
+          <Link
+            href={`/dashboard/billing?action=prior-auth&patientId=${id}&patientName=${encodeURIComponent(patientName)}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t('preAuthorization')}
+          </Link>
+          <Link
+            href={`/dashboard/forms?patientId=${id}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {t('sendForm')}
+          </Link>
         </div>
       </div>
 
@@ -177,14 +209,14 @@ export default function PatientDetailPage() {
 
         {/* ── Section 1: Clinical Summary 2×2 ──────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Clinical Summary</h2>
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">{t('clinicalSummary')}</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-gray-400">Active Medications</span>
+              <span className="text-xs text-gray-400">{t('activeMedications')}</span>
               <span className="text-2xl font-semibold text-gray-900">{prescriptions.length}</span>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-gray-400">Last Prescribed</span>
+              <span className="text-xs text-gray-400">{t('lastPrescribed')}</span>
               <span className="text-sm font-medium text-gray-900">
                 {prescriptions[0]
                   ? new Date(prescriptions[0].createdAt).toLocaleDateString()
@@ -192,7 +224,7 @@ export default function PatientDetailPage() {
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-gray-400">Risk Factors</span>
+              <span className="text-xs text-gray-400">{t('riskFactors')}</span>
               <div className="flex flex-wrap gap-1">
                 {patient?.isPalliativeCare ? (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">Palliative</span>
@@ -202,7 +234,7 @@ export default function PatientDetailPage() {
               </div>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-gray-400">Recent Encounter</span>
+              <span className="text-xs text-gray-400">{t('recentEncounter')}</span>
               <span className="text-sm font-medium text-gray-900">
                 {encounters[0] ? statusBadge(encounters[0].status) : '—'}
               </span>
@@ -213,24 +245,24 @@ export default function PatientDetailPage() {
         {/* ── Section 2: Active Medications ────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Medications</h2>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('activeMedications')}</h2>
             <Link
               href="/dashboard/prescriptions/new"
               className="text-xs font-semibold text-blue-600 hover:text-blue-700"
             >
-              + Prescribe
+              {t('addPrescription')}
             </Link>
           </div>
           {prescriptions.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">No active medications</div>
+            <div className="px-5 py-8 text-center text-sm text-gray-400">{t('noActiveMedications')}</div>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400">Drug + Dose</th>
-                  <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400">Frequency</th>
-                  <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400">Safety</th>
-                  <th className="px-5 py-2.5 text-right text-xs font-medium text-gray-400">Action</th>
+                  <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400">{t('drugAndDose')}</th>
+                  <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400">{t('frequency')}</th>
+                  <th className="px-5 py-2.5 text-left text-xs font-medium text-gray-400">{t('safety')}</th>
+                  <th className="px-5 py-2.5 text-right text-xs font-medium text-gray-400">{t('action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,7 +278,7 @@ export default function PatientDetailPage() {
                       <td className="px-5 py-3">{safetyBadge(null)}</td>
                       <td className="px-5 py-3 text-right">
                         <button className="text-xs text-blue-600 font-semibold hover:text-blue-700">
-                          Prescribe
+                          {t('prescribe')}
                         </button>
                       </td>
                     </tr>
@@ -260,10 +292,10 @@ export default function PatientDetailPage() {
         {/* ── Section 3: Recent Encounters Timeline ────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Recent Encounters</h2>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('recentEncounters')}</h2>
           </div>
           {encounters.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">No encounters recorded</div>
+            <div className="px-5 py-8 text-center text-sm text-gray-400">{t('noEncountersRecorded')}</div>
           ) : (
             <div className="divide-y divide-gray-50">
               {encounters.slice(0, 5).map((enc) => (
@@ -297,25 +329,25 @@ export default function PatientDetailPage() {
             href={`/dashboard/encounters/new?patientId=${id}`}
             className="bg-black text-white rounded-full px-6 py-3 text-sm font-semibold hover:bg-gray-900 transition-colors"
           >
-            Start Encounter
+            {t('startEncounter')}
           </Link>
           <Link
             href={`/dashboard/prescriptions/new?patientId=${id}`}
             className="bg-black text-white rounded-full px-6 py-3 text-sm font-semibold hover:bg-gray-900 transition-colors"
           >
-            Prescribe Medication
+            {t('prescribeMedication')}
           </Link>
           <Link
             href="/dashboard/prevention"
             className="bg-black text-white rounded-full px-6 py-3 text-sm font-semibold hover:bg-gray-900 transition-colors"
           >
-            View Prevention Plan
+            {t('viewPreventionPlan')}
           </Link>
           <Link
             href="/dashboard/co-pilot-v2"
             className="bg-black text-white rounded-full px-6 py-3 text-sm font-semibold hover:bg-gray-900 transition-colors"
           >
-            SOAP Note
+            {t('soapNote')}
           </Link>
         </div>
 

@@ -40,6 +40,7 @@ jest.mock('@/lib/analytics/server-analytics', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
+  __esModule: true,
   logger: {
     info: jest.fn(),
     error: jest.fn(),

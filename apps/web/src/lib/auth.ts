@@ -15,6 +15,8 @@ import { auth } from '@/lib/auth/auth';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 
+export { auth };
+
 /**
  * Legacy authOptions — kept as an empty marker for files that destructure it.
  * All real configuration lives in auth.config.ts.

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ export const GET = createProtectedRoute(
     try {
         // Check if the GovernanceLog model exists in Prisma schema
         // If not, return mock data for demo purposes
-        const logs = await (prisma as any).governanceLog?.findMany?.({
+        const logs = await prisma.governanceLog?.findMany?.({
             take: 50,
             orderBy: { timestamp: 'desc' },
             include: {
@@ -57,7 +58,7 @@ export const GET = createProtectedRoute(
 
         return NextResponse.json({ data: formattedLogs });
     } catch (error) {
-        console.error('Failed to fetch governance logs:', error);
+        logger.error('Failed to fetch governance logs:', error);
         return NextResponse.json({
             data: [],
             error: 'Failed to fetch governance logs'

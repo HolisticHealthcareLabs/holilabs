@@ -17,6 +17,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DocumentUpload } from '@/components/encounter/DocumentUpload';
+import { useTranslations } from 'next-intl';
 import { SmartAlerts } from '@/components/encounter/SmartAlerts';
 
 interface Appointment {
@@ -70,6 +71,7 @@ const ImageIcon = () => (
 export default function PreVisitPage() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations('dashboard.preVisit');
   const appointmentId = (params?.appointmentId as string) || '';
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
@@ -137,7 +139,7 @@ export default function PreVisitPage() {
         setAppointment(prev => prev ? { ...prev, status: 'checked_in' } : null);
       }
     } catch (err) {
-      console.error('Check-in failed:', err);
+      console.error('[PreVisit]', { event: 'check_in_error', error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -155,7 +157,7 @@ export default function PreVisitPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" />
-          <p className="text-neutral-600 dark:text-neutral-400">Loading appointment...</p>
+          <p className="text-neutral-600 dark:text-neutral-400">{t('loadingAppointment')}</p>
         </div>
       </div>
     );
@@ -170,9 +172,9 @@ export default function PreVisitPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
-              {error || 'Appointment not found'}
+              {error || t('appointmentNotFound')}
             </h2>
-            <Button onClick={() => router.back()}>Go Back</Button>
+            <Button onClick={() => router.back()}>{t('goBack')}</Button>
           </div>
         </Card>
       </div>
@@ -188,10 +190,10 @@ export default function PreVisitPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-            Pre-Visit Prep
+            {t('title')}
           </h1>
           <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-            Prepare documents and review alerts before the visit
+            {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -224,10 +226,10 @@ export default function PreVisitPage() {
                 {appointment.patientName}
               </h2>
               <p className="text-neutral-600 dark:text-neutral-400">
-                DOB: {new Date(appointment.patientDob).toLocaleDateString()}
+                {t('dob')} {new Date(appointment.patientDob).toLocaleDateString()}
               </p>
               <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-                <span className="font-medium">Reason:</span> {appointment.reason}
+                <span className="font-medium">{t('reason')}</span> {appointment.reason}
               </p>
             </div>
           </div>
@@ -238,7 +240,7 @@ export default function PreVisitPage() {
               {appointmentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
             <p className="text-neutral-600 dark:text-neutral-400">
-              {isToday ? 'Today' : appointmentTime.toLocaleDateString()}
+              {isToday ? t('today') : appointmentTime.toLocaleDateString()}
             </p>
             <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-1">
               Dr. {appointment.providerName}
@@ -250,7 +252,7 @@ export default function PreVisitPage() {
         {appointment.status === 'scheduled' && (
           <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
             <Button variant="primary" onClick={handleCheckIn}>
-              Check In Patient
+              {t('checkInPatient')}
             </Button>
           </div>
         )}
@@ -260,8 +262,7 @@ export default function PreVisitPage() {
       <SmartAlerts
         patientId={appointment.patientId}
         defaultExpanded={true}
-        onAction={(alert, actionType) => {
-          console.log('Alert action:', alert.id, actionType);
+        onAction={(_alert, _actionType) => {
         }}
       />
 
@@ -269,7 +270,7 @@ export default function PreVisitPage() {
       <DocumentUpload
         patientId={appointment.patientId}
         onComplete={handleDocumentComplete}
-        onError={(error) => console.error('Upload error:', error)}
+        onError={(error) => console.error('[PreVisit]', { event: 'document_upload_error', error: error instanceof Error ? error.message : String(error) })}
       />
 
       {/* Processed Documents */}
@@ -277,8 +278,8 @@ export default function PreVisitPage() {
         <Card variant="outlined" padding="none">
           <div className="p-4 border-b border-neutral-200 dark:border-neutral-800">
             <CardHeader
-              title="Processed Documents"
-              subtitle={`${processedDocs.length} document(s) ready for review`}
+              title={t('processedDocuments')}
+              subtitle={t('documentsReady', { count: processedDocs.length })}
             />
           </div>
           <CardContent className="p-0">
@@ -307,7 +308,7 @@ export default function PreVisitPage() {
                       <ClockIcon />
                     ) : null}
                     <Button size="sm" variant="ghost">
-                      View
+                      {t('view')}
                     </Button>
                   </div>
                 </li>
@@ -326,18 +327,18 @@ export default function PreVisitPage() {
             </div>
             <div>
               <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                PACS Images
+                {t('pacsImages')}
               </h3>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 {pacsStudyCount > 0
-                  ? `${pacsStudyCount} study/studies available`
-                  : 'No imaging studies found'}
+                  ? t('studiesAvailable', { count: pacsStudyCount })
+                  : t('noImagingStudies')}
               </p>
             </div>
           </div>
           {pacsStudyCount > 0 && (
             <Button variant="secondary" onClick={openPACS}>
-              Open in PACS
+              {t('openInPacs')}
             </Button>
           )}
         </div>
@@ -346,18 +347,18 @@ export default function PreVisitPage() {
       {/* Footer Actions */}
       <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-neutral-800">
         <Button variant="ghost" onClick={() => router.back()}>
-          Back to Schedule
+          {t('backToSchedule')}
         </Button>
         <div className="flex items-center gap-2">
           <Button variant="secondary">
-            Print Summary
+            {t('printSummary')}
           </Button>
           {appointment.status === 'checked_in' && (
             <Button
               variant="primary"
               onClick={() => router.push(`/dashboard/encounter/${appointment.patientId}`)}
             >
-              Start Encounter
+              {t('startEncounter')}
             </Button>
           )}
         </div>

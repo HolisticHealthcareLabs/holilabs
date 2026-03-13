@@ -42,7 +42,7 @@ Production code is clean with no hardcoded secrets. Environment files are proper
 ```bash
 # Resend API Key
 # Visit: https://resend.com/api-keys
-# Revoke: re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu
+# Revoke: <REDACTED-REVOKE-AND-REGENERATE>
 # Generate new key and update .env.local
 
 # DEID Secret (regenerate)
@@ -51,7 +51,7 @@ openssl rand -hex 32
 
 # BetterStack Token (if real)
 # Visit: https://betterstack.com/logs
-# Revoke: ppRsuAAsrT4hR8Uw8HAY4UCu
+# Revoke: <REDACTED-REVOKE-AND-REGENERATE>
 ```
 
 ### 2. Clean Documentation Files (5 minutes)
@@ -131,9 +131,9 @@ Full instructions: See `GIT_SECRETS_SETUP.md`
 - `RESEND_API_KEY` - Development key
 
 ### Found in Documentation (requires revocation)
-- `RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"` - REAL KEY
-- `DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"` - REAL SECRET
-- `LOGTAIL_SOURCE_TOKEN="ppRsuAAsrT4hR8Uw8HAY4UCu"` - Unknown if real
+- `RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"` - REAL KEY
+- `DEID_SECRET="<REDACTED-REVOKE-AND-REGENERATE>"` - REAL SECRET
+- `LOGTAIL_SOURCE_TOKEN="<REDACTED-REVOKE-AND-REGENERATE>"` - Unknown if real
 
 ### Test Fixtures (safe, no action needed)
 - `sk-ant-api03-1234567890` - Mock key in encryption.ts

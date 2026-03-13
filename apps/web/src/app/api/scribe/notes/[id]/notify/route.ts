@@ -9,6 +9,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { notifyPatientSOAPReady } from '@/lib/notifications/whatsapp';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +105,7 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error sending WhatsApp notification:', error);
+      logger.error('Error sending WhatsApp notification:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to send notification' });
     }
   }

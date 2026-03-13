@@ -119,7 +119,7 @@ function LoginContent() {
   const submitDisabled = isLoading || !email || !password || !termsAgreed;
 
   return (
-    <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-center px-4 pb-[var(--holi-cookie-banner-h,0px)]">
+    <div className="min-h-[100dvh] bg-white dark:bg-gray-950 flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 pb-[var(--holi-cookie-banner-h,0px)]">
       {/* Wordmark */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -136,7 +136,7 @@ function LoginContent() {
             className="w-full h-full object-contain"
           />
         </div>
-        <span className="text-[20px] leading-none font-semibold tracking-tight text-gray-900">
+        <span className="text-[20px] leading-none font-semibold tracking-tight text-gray-900 dark:text-white">
           Holi Labs
         </span>
       </motion.div>
@@ -148,7 +148,7 @@ function LoginContent() {
         transition={{ duration: 0.35, delay: 0.05 }}
         className="w-full max-w-[400px]"
       >
-        <h1 className="text-[26px] font-bold text-gray-900 text-center mb-7 tracking-tight">
+        <h1 className="text-[26px] font-bold text-gray-900 dark:text-white text-center mb-7 tracking-tight">
           Sign in
         </h1>
 
@@ -176,9 +176,9 @@ function LoginContent() {
           disabled={isLoading}
           className="
             w-full flex items-center justify-center gap-3
-            border border-gray-300 rounded-xl
-            px-4 py-3 text-sm font-medium text-gray-900
-            hover:bg-gray-50 active:bg-gray-100
+            border border-gray-300 dark:border-gray-600 rounded-xl
+            px-4 py-3 text-sm font-medium text-gray-900 dark:text-white
+            hover:bg-gray-50 dark:hover:bg-white/5 active:bg-gray-100 dark:active:bg-white/10
             transition-colors
             disabled:opacity-50 disabled:cursor-not-allowed
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400
@@ -195,9 +195,9 @@ function LoginContent() {
           disabled={isLoading}
           className="
             mt-3 w-full flex items-center justify-center gap-2
-            border border-gray-300 rounded-xl
-            px-4 py-3 text-sm font-medium text-gray-600
-            hover:bg-gray-50 hover:text-gray-900 active:bg-gray-100
+            border border-gray-300 dark:border-gray-600 rounded-xl
+            px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300
+            hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-white/10
             transition-colors
             disabled:opacity-50 disabled:cursor-not-allowed
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400
@@ -214,13 +214,13 @@ function LoginContent() {
         </button>
 
         {/* Consent line under Google button */}
-        <p className="mt-4 text-[12px] text-gray-500 leading-relaxed">
+        <p className="mt-4 text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed">
           By clicking &ldquo;Sign in with Google&rdquo; I agree to the{' '}
-          <a href="/legal/terms-of-service" className="underline underline-offset-2 hover:text-gray-700">
+          <a href="/legal/terms-of-service" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-gray-200">
             Terms of Service
           </a>
           , and acknowledge Holi Labs&apos;{' '}
-          <a href="/legal/privacy-policy" className="underline underline-offset-2 hover:text-gray-700">
+          <a href="/legal/privacy-policy" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-gray-200">
             Privacy Policy
           </a>
           .
@@ -228,9 +228,9 @@ function LoginContent() {
 
         {/* Divider */}
         <div className="my-5 flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400 font-medium select-none">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <span className="text-xs text-gray-400 dark:text-gray-500 font-medium select-none">or</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
         {/* ── Email / password form ─────────────────────────────────────────── */}
@@ -239,7 +239,7 @@ function LoginContent() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-900 mb-1.5"
+              className="block text-sm font-medium text-gray-900 dark:text-white mb-1.5"
             >
               Email
             </label>
@@ -252,10 +252,10 @@ function LoginContent() {
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
               className="
-                w-full px-4 py-3 rounded-xl border border-gray-300
-                text-sm text-gray-900 placeholder:text-gray-400
-                bg-white
-                focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent
+                w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600
+                text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500
+                bg-white dark:bg-white/5
+                focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 focus:border-transparent
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition
               "
@@ -267,7 +267,7 @@ function LoginContent() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-900 mb-1.5"
+              className="block text-sm font-medium text-gray-900 dark:text-white mb-1.5"
             >
               Password
             </label>
@@ -280,10 +280,10 @@ function LoginContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
                 className="
-                  w-full px-4 py-3 pr-11 rounded-xl border border-gray-300
-                  text-sm text-gray-900 placeholder:text-gray-400
-                  bg-white
-                  focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent
+                  w-full px-4 py-3 pr-11 rounded-xl border border-gray-300 dark:border-gray-600
+                  text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500
+                  bg-white dark:bg-white/5
+                  focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500 focus:border-transparent
                   disabled:opacity-50 disabled:cursor-not-allowed
                   transition
                 "
@@ -293,7 +293,7 @@ function LoginContent() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1 transition-colors"
               >
                 {showPassword ? <EyeOff /> : <EyeOpen />}
               </button>
@@ -311,10 +311,10 @@ function LoginContent() {
               />
               {/* Custom checkbox */}
               <span className="
-                block w-5 h-5 rounded border border-gray-300
-                peer-checked:bg-gray-900 peer-checked:border-gray-900
+                block w-5 h-5 rounded border border-gray-300 dark:border-gray-600
+                peer-checked:bg-gray-900 dark:peer-checked:bg-white peer-checked:border-gray-900 dark:peer-checked:border-white
                 transition-colors
-                group-hover:border-gray-500
+                group-hover:border-gray-500 dark:group-hover:border-gray-400
               " />
               {/* Checkmark */}
               {termsAgreed && (
@@ -328,12 +328,12 @@ function LoginContent() {
                 </svg>
               )}
             </span>
-            <span className="text-[13px] text-gray-600 leading-relaxed">
+            <span className="text-[13px] text-gray-600 dark:text-gray-400 leading-relaxed">
               I agree to the{' '}
               <a
                 href="/legal/terms-of-service"
                 onClick={(e) => e.stopPropagation()}
-                className="underline underline-offset-2 hover:text-gray-900"
+                className="underline underline-offset-2 hover:text-gray-900 dark:hover:text-white"
               >
                 Terms of Service
               </a>
@@ -341,7 +341,7 @@ function LoginContent() {
               <a
                 href="/legal/privacy-policy"
                 onClick={(e) => e.stopPropagation()}
-                className="underline underline-offset-2 hover:text-gray-900"
+                className="underline underline-offset-2 hover:text-gray-900 dark:hover:text-white"
               >
                 Privacy Policy
               </a>
@@ -374,11 +374,11 @@ function LoginContent() {
         </form>
 
         {/* Footer link */}
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           Don&apos;t have an account?{' '}
           <a
             href="/auth/register"
-            className="font-semibold underline underline-offset-2 text-gray-900 hover:text-gray-600 transition-colors"
+            className="font-semibold underline underline-offset-2 text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             Create profile
           </a>
@@ -393,7 +393,7 @@ export default function ClinicianLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[100dvh] bg-white flex items-center justify-center pb-[var(--holi-cookie-banner-h,0px)]">
+        <div className="min-h-[100dvh] bg-white dark:bg-gray-950 flex items-center justify-center pb-[var(--holi-cookie-banner-h,0px)]">
           <Spinner size={24} />
         </div>
       }

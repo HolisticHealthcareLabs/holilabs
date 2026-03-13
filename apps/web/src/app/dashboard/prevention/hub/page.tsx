@@ -18,7 +18,9 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { usePreventionDetection, type DetectedConditionFromServer, type RecommendationFromServer } from '@/hooks/useRealtimePreventionUpdates';
+import SpotlightTrigger from '@/components/onboarding/SpotlightTrigger';
 
 // Force dynamic rendering to avoid build errors with useSearchParams
 export const dynamic = 'force-dynamic';
@@ -142,6 +144,7 @@ const HEALTH_DOMAINS = {
 // ===========================
 
 export default function PreventionHub() {
+  const t = useTranslations('dashboard.prevention.hub');
   const searchParams = useSearchParams();
   const patientId = searchParams?.get('patient') || 'demo';
 
@@ -642,7 +645,7 @@ export default function PreventionHub() {
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-primary mb-4" />
           <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-            Loading Prevention Hub...
+            {t('loading')}
           </h3>
         </div>
       </div>
@@ -655,13 +658,13 @@ export default function PreventionHub() {
         <div className="text-center p-8">
           <div className="text-6xl mb-4">⚠️</div>
           <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-            Patient data not found
+            {t('patientNotFound')}
           </h3>
           <Link
             href="/dashboard/prevention"
             className="inline-block mt-4 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition"
           >
-            Back to Prevention
+            {t('backToPrevention')}
           </Link>
         </div>
       </div>
@@ -677,24 +680,30 @@ export default function PreventionHub() {
         <div className="max-w-7xl mx-auto px-6 py-6">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
-            <Link href="/dashboard" className="hover:text-primary">Dashboard</Link>
+            <Link href="/dashboard" className="hover:text-primary">{t('breadcrumbDashboard')}</Link>
             <span>›</span>
-            <Link href="/dashboard/prevention" className="hover:text-primary">Prevention</Link>
+            <Link href="/dashboard/prevention" className="hover:text-primary">{t('breadcrumbPrevention')}</Link>
             <span>›</span>
-            <span className="text-gray-900 dark:text-white font-medium">Longitudinal Hub</span>
+            <span className="text-gray-900 dark:text-white font-medium">{t('breadcrumbHub')}</span>
           </div>
 
           {/* Title */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                🧭 Longitudinal Prevention Hub
+                🧭 {t('title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Proactive, Predictive, and Participatory Care for Patient #{patient.id}
+                {t('subtitle', { patientId: patient.id })}
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <SpotlightTrigger
+                steps={[
+                  { target: '#health-domains', title: 'Health Domains', content: '30-year screening protocols organized by clinical domain.' },
+                  { target: '#patient-plans', title: 'Patient Plans', content: 'Individual prevention plans with due/overdue status.' },
+                ]}
+              />
               {/* Real-time status indicator */}
               {patientId !== 'demo' && (
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
@@ -705,7 +714,7 @@ export default function PreventionHub() {
                   <span className={`w-2 h-2 rounded-full ${
                     realtimeConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
                   }`} />
-                  {realtimeConnected ? 'Live' : 'Offline'}
+                  {realtimeConnected ? t('live') : t('offline')}
                   {isProcessing && <span className="ml-1 animate-spin">⚙️</span>}
                 </div>
               )}
@@ -714,16 +723,16 @@ export default function PreventionHub() {
                 disabled={actionLoading}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {actionLoading ? 'Exporting...' : 'Export Report'}
+                {actionLoading ? t('exporting') : t('exportReport')}
               </button>
               <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                Settings
+                {t('settings')}
               </button>
             </div>
           </div>
 
           {/* Risk Scores Dashboard */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div id="health-domains" className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {patient.riskScores.map((risk) => (
               <div
                 key={risk.id}
@@ -733,7 +742,7 @@ export default function PreventionHub() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-sm mb-1">{risk.name}</h3>
                     <p className="text-xs opacity-75">
-                      Last calculated: {risk.lastCalculated.toLocaleDateString()}
+                      {t('lastCalculated')}: {risk.lastCalculated.toLocaleDateString()}
                     </p>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -776,7 +785,7 @@ export default function PreventionHub() {
                   <span className="text-3xl animate-pulse">🔔</span>
                   <div className="flex-1">
                     <h4 className="font-bold text-blue-900 dark:text-blue-200 mb-2">
-                      Real-Time Prevention Detections
+                      {t('realtimeDetections')}
                     </h4>
                     <div className="space-y-1">
                       {realtimeNotifications.map((notification) => (
@@ -801,7 +810,7 @@ export default function PreventionHub() {
                   }}
                   className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
                 >
-                  Clear
+                  {t('clear')}
                 </button>
               </div>
             </div>
@@ -814,14 +823,14 @@ export default function PreventionHub() {
                 <span className="text-3xl">🚨</span>
                 <div className="flex-1">
                   <h4 className="font-bold text-red-900 dark:text-red-200 mb-1">
-                    Prevention Gaps Detected
+                    {t('gapsDetected')}
                   </h4>
                   <p className="text-sm text-red-800 dark:text-red-300">
                     {patient.activeInterventions.filter(i => i.status === 'overdue').length} overdue screening(s) require immediate attention
                   </p>
                 </div>
                 <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
-                  Review Now
+                  {t('reviewNow')}
                 </button>
               </div>
             </div>
@@ -843,7 +852,7 @@ export default function PreventionHub() {
                   : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              📈 Longitudinal Timeline
+              📈 {t('tabTimeline')}
             </button>
             <button
               onClick={() => setActiveView('domains')}
@@ -853,7 +862,7 @@ export default function PreventionHub() {
                   : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              🎯 Health Domains
+              🎯 {t('tabDomains')}
             </button>
             <button
               onClick={() => setActiveView('gaps')}
@@ -863,7 +872,7 @@ export default function PreventionHub() {
                   : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              ⚠️ Prevention Gaps
+              ⚠️ {t('tabGaps')}
             </button>
           </div>
         </div>
@@ -872,16 +881,16 @@ export default function PreventionHub() {
       {/* ===========================
           MAIN CONTENT AREA
           =========================== */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main id="patient-plans" className="max-w-7xl mx-auto px-6 py-8">
         {/* TIMELINE VIEW */}
         {activeView === 'timeline' && (
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Longitudinal Care Pathway
+                {t('timelineTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Visualize the patient's entire preventative care journey across time
+                {t('timelineDescription')}
               </p>
             </div>
 
@@ -909,7 +918,7 @@ export default function PreventionHub() {
                           {age}y
                         </span>
                         {age === patient.age && (
-                          <span className="text-xs text-primary font-bold mt-1">NOW</span>
+                          <span className="text-xs text-primary font-bold mt-1">{t('now')}</span>
                         )}
                       </div>
                     ))}
@@ -938,7 +947,7 @@ export default function PreventionHub() {
                                 <div className="flex items-start gap-2">
                                   <span className="text-lg">🤖</span>
                                   <div>
-                                    <p className="text-xs font-bold mb-1">AI Recommendation</p>
+                                    <p className="text-xs font-bold mb-1">{t('aiRecommendation')}</p>
                                     <p className="text-xs">{intervention.aiRecommendation}</p>
                                   </div>
                                 </div>
@@ -974,10 +983,10 @@ export default function PreventionHub() {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Health Domains
+                {t('domainsTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Organize care by key health systems and functions
+                {t('domainsDescription')}
               </p>
             </div>
 
@@ -1019,7 +1028,7 @@ export default function PreventionHub() {
                       {domain.description}
                     </p>
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                      <span>{interventions.length} active interventions</span>
+                      <span>{t('activeInterventions', { count: interventions.length })}</span>
                     </div>
                   </div>
                 );
@@ -1033,10 +1042,10 @@ export default function PreventionHub() {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Prevention Gaps & Alerts
+                {t('gapsTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Overdue screenings and interventions requiring immediate action
+                {t('gapsDescription')}
               </p>
             </div>
 
@@ -1075,10 +1084,10 @@ export default function PreventionHub() {
                       </div>
                       <div className="flex gap-2">
                         <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
-                          Schedule Now
+                          {t('scheduleNow')}
                         </button>
                         <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                          Mark Complete
+                          {t('markComplete')}
                         </button>
                       </div>
                     </div>
@@ -1089,10 +1098,10 @@ export default function PreventionHub() {
                 <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700">
                   <div className="text-6xl mb-4">✅</div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    No Prevention Gaps
+                    {t('noGapsTitle')}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    All screening and interventions are up to date!
+                    {t('noGapsDescription')}
                   </p>
                 </div>
               )}
@@ -1135,12 +1144,12 @@ export default function PreventionHub() {
             {/* Modal Content */}
             <div className="p-6">
               <div className="mb-6">
-                <h4 className="font-bold text-gray-900 dark:text-white mb-2">Description</h4>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2">{t('description')}</h4>
                 <p className="text-gray-700 dark:text-gray-300">{selectedIntervention.description}</p>
               </div>
 
               <div className="mb-6">
-                <h4 className="font-bold text-gray-900 dark:text-white mb-2">Evidence Base</h4>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2">{t('evidenceBase')}</h4>
                 <p className="text-gray-700 dark:text-gray-300">{selectedIntervention.evidence}</p>
               </div>
 
@@ -1150,7 +1159,7 @@ export default function PreventionHub() {
                     <span className="text-3xl">🤖</span>
                     <div className="flex-1">
                       <h4 className="font-bold text-blue-900 dark:text-blue-200 mb-2">
-                        AI-Powered Recommendation
+                        {t('aiPoweredRecommendation')}
                       </h4>
                       <p className="text-blue-800 dark:text-blue-300">
                         {selectedIntervention.aiRecommendation}
@@ -1162,7 +1171,7 @@ export default function PreventionHub() {
 
               {/* Action Tabs */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h4 className="font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h4>
+                <h4 className="font-bold text-gray-900 dark:text-white mb-4">{t('quickActions')}</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => selectedIntervention && handleCreateOrder(selectedIntervention)}
@@ -1170,9 +1179,9 @@ export default function PreventionHub() {
                     className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="text-2xl mb-2">📋</div>
-                    <div className="font-bold text-gray-900 dark:text-white mb-1">Orders</div>
+                    <div className="font-bold text-gray-900 dark:text-white mb-1">{t('orders')}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Pre-populated lab orders
+                      {t('ordersDescription')}
                     </div>
                   </button>
                   <button
@@ -1181,9 +1190,9 @@ export default function PreventionHub() {
                     className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="text-2xl mb-2">👨‍⚕️</div>
-                    <div className="font-bold text-gray-900 dark:text-white mb-1">Referrals</div>
+                    <div className="font-bold text-gray-900 dark:text-white mb-1">{t('referrals')}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      One-click specialist referral
+                      {t('referralsDescription')}
                     </div>
                   </button>
                   <button
@@ -1192,9 +1201,9 @@ export default function PreventionHub() {
                     className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary/5 transition text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="text-2xl mb-2">📱</div>
-                    <div className="font-bold text-gray-900 dark:text-white mb-1">Patient Tasks</div>
+                    <div className="font-bold text-gray-900 dark:text-white mb-1">{t('patientTasks')}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Assign to patient portal
+                      {t('patientTasksDescription')}
                     </div>
                   </button>
                 </div>
@@ -1225,12 +1234,12 @@ export default function PreventionHub() {
                 {actionLoading ? (
                   <>
                     <span className="animate-spin">⏳</span>
-                    Processing...
+                    {t('processing')}
                   </>
                 ) : (
                   <>
                     <span>➕</span>
-                    Add to Plan
+                    {t('addToPlan')}
                   </>
                 )}
               </button>
@@ -1241,14 +1250,14 @@ export default function PreventionHub() {
                   disabled={actionLoading}
                   className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium disabled:opacity-50"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={() => handleMarkComplete(selectedIntervention)}
                   disabled={actionLoading}
                   className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Mark as Complete
+                  {t('markAsComplete')}
                 </button>
               </div>
             </div>

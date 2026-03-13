@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 import {
-  DollarSign, AlertTriangle, Clock, CheckCircle2,
-  ChevronDown, ArrowUpRight, Search, RefreshCw,
+  AlertTriangle, Clock, CheckCircle2,
+  ChevronDown, Search, RefreshCw,
   FileText, User, Calendar, Star, X,
 } from 'lucide-react';
 
@@ -116,6 +117,7 @@ function filterGapsByTab(gaps: RevenueGap[], tab: MetricTab): RevenueGap[] {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AuditorDashboard() {
+  const t = useTranslations('portal.auditor');
   const [summary, setSummary] = useState<AuditorSummary>(DEMO_SUMMARY);
   const [gaps, setGaps] = useState<RevenueGap[]>(DEMO_GAPS);
   const [loading, setLoading] = useState(false);
@@ -167,11 +169,11 @@ export default function AuditorDashboard() {
     );
   });
 
-  const metrics: { id: MetricTab; domId: string; label: string; value: string | number; icon: typeof DollarSign; accent: string; activeBorder: string }[] = [
-    { id: 'revenue',   domId: 'metric-revenue',   label: 'Recoverable Revenue', value: summary.totalPotentialValueFormatted, icon: DollarSign,     accent: 'text-emerald-600 dark:text-emerald-400', activeBorder: 'border-emerald-500' },
-    { id: 'unbilled',  domId: 'metric-unbilled',  label: 'Unbilled Procedures', value: summary.totalGaps,                    icon: AlertTriangle,  accent: 'text-amber-600 dark:text-amber-400',     activeBorder: 'border-amber-500' },
-    { id: 'pending',   domId: 'metric-pending',   label: 'Pending Review',      value: summary.byStatus.open,                icon: Clock,          accent: 'text-red-600 dark:text-red-400',         activeBorder: 'border-red-500' },
-    { id: 'recovered', domId: 'metric-recovered', label: 'Billed / Recovered',  value: summary.byStatus.billed,              icon: CheckCircle2,   accent: 'text-blue-600 dark:text-blue-400',       activeBorder: 'border-blue-500' },
+  const metrics: { id: MetricTab; domId: string; label: string; value: string | number; icon: typeof AlertTriangle; accent: string; activeBorder: string }[] = [
+    { id: 'revenue',   domId: 'metric-revenue',   label: t('recoverableRevenue'),       value: summary.totalPotentialValueFormatted, icon: Star,           accent: 'text-emerald-600 dark:text-emerald-400', activeBorder: 'border-emerald-500' },
+    { id: 'unbilled',  domId: 'metric-unbilled',  label: t('unbilledProceduresMetric'), value: summary.totalGaps,                    icon: AlertTriangle,  accent: 'text-amber-600 dark:text-amber-400',     activeBorder: 'border-amber-500' },
+    { id: 'pending',   domId: 'metric-pending',   label: t('pendingReviewMetric'),      value: summary.byStatus.open,                icon: Clock,          accent: 'text-red-600 dark:text-red-400',         activeBorder: 'border-red-500' },
+    { id: 'recovered', domId: 'metric-recovered', label: t('billedRecoveredMetric'),    value: summary.byStatus.billed,              icon: CheckCircle2,   accent: 'text-blue-600 dark:text-blue-400',       activeBorder: 'border-blue-500' },
   ];
 
   return (
@@ -201,10 +203,10 @@ export default function AuditorDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div className="header-entrance">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Revenue Gap Auditor
+            {t('title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            AI-powered scan of clinical notes vs. billing claims
+            {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -214,10 +216,10 @@ export default function AuditorDashboard() {
               onChange={(e) => setLookbackHours(parseInt(e.target.value, 10))}
               className="appearance-none pl-3 pr-8 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <option value={24}>Last 24 hours</option>
-              <option value={48}>Last 48 hours</option>
-              <option value={168}>Last 7 days</option>
-              <option value={720}>Last 30 days</option>
+              <option value={24}>{t('last24h')}</option>
+              <option value={48}>{t('last48h')}</option>
+              <option value={168}>{t('last7days')}</option>
+              <option value={720}>{t('last30days')}</option>
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
@@ -227,14 +229,14 @@ export default function AuditorDashboard() {
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t('refresh')}
           </button>
           <button
             onClick={() => { setIsTourRunning(true); localStorage.removeItem('auditor-tour-seen'); }}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
           >
             <Star className="w-3.5 h-3.5" />
-            Tour
+            {t('tour')}
           </button>
         </div>
       </div>
@@ -268,22 +270,27 @@ export default function AuditorDashboard() {
                 }
               `}
             >
-              {active && (
-                <div className="absolute top-2.5 right-2.5">
-                  <div className="w-2 h-2 rounded-full bg-current animate-pulse" style={{ color: 'inherit' }} />
-                </div>
-              )}
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                   active ? 'bg-gray-900 dark:bg-white' : 'bg-gray-100 dark:bg-gray-800'
                 }`}>
                   <Icon className={`w-4 h-4 ${active ? 'text-white dark:text-gray-900' : m.accent}`} />
                 </div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 leading-tight">
+
+                {active && (
+                  <div className="pt-1">
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse opacity-70" style={{ color: 'inherit' }} />
+                  </div>
+                )}
+              </div>
+
+              <div className="min-h-[2.75rem] mb-3 flex items-start">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500 leading-[1.3] max-w-[12ch]">
                   {m.label}
                 </p>
               </div>
-              <p className={`text-2xl font-bold tabular-nums ${m.accent}`}>
+
+              <p className={`text-[clamp(1.9rem,2.8vw,2.35rem)] font-bold tabular-nums leading-none ${m.accent}`}>
                 {m.value}
               </p>
             </button>
@@ -297,10 +304,10 @@ export default function AuditorDashboard() {
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              {activeTab === 'revenue' && 'All Revenue Gaps'}
-              {activeTab === 'unbilled' && 'Unbilled Procedures'}
-              {activeTab === 'pending' && 'Pending Review'}
-              {activeTab === 'recovered' && 'Billed & Recovered'}
+              {activeTab === 'revenue' && t('allRevenueGaps')}
+              {activeTab === 'unbilled' && t('unbilledProcedures')}
+              {activeTab === 'pending' && t('pendingReview')}
+              {activeTab === 'recovered' && t('billedRecovered')}
             </h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {filteredGaps.length} item{filteredGaps.length !== 1 ? 's' : ''}
@@ -313,7 +320,7 @@ export default function AuditorDashboard() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search patients, procedures..."
+              placeholder={t('searchPlaceholder')}
               className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
             />
           </div>
@@ -323,18 +330,18 @@ export default function AuditorDashboard() {
         {filteredGaps.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <FileText className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-3" />
-            <p className="text-sm text-gray-400 dark:text-gray-500">No gaps found for this filter.</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">{t('noGapsFound')}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {/* Column headers */}
             <div className="hidden sm:grid grid-cols-12 gap-3 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 bg-gray-50/50 dark:bg-gray-800/30">
-              <div className="col-span-3">Patient</div>
-              <div className="col-span-4">Procedure</div>
-              <div className="col-span-2">Source</div>
-              <div className="col-span-1">Confidence</div>
-              <div className="col-span-1 text-right">Value</div>
-              <div className="col-span-1 text-right">Status</div>
+              <div className="col-span-3">{t('patient')}</div>
+              <div className="col-span-4">{t('procedure')}</div>
+              <div className="col-span-2">{t('source')}</div>
+              <div className="col-span-1">{t('confidence')}</div>
+              <div className="col-span-1 text-right">{t('value')}</div>
+              <div className="col-span-1 text-right">{t('status')}</div>
             </div>
 
             {filteredGaps.map((gap) => (
@@ -389,7 +396,9 @@ export default function AuditorDashboard() {
                 <div className="sm:col-span-1 flex items-center sm:justify-end">
                   <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums flex items-center gap-0.5">
                     {gap.procedure.estimatedValueFormatted}
-                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-[10px] uppercase tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">
+                      View
+                    </span>
                   </span>
                 </div>
 
@@ -410,7 +419,7 @@ export default function AuditorDashboard() {
         {/* Top Procedures */}
         <div className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Top Unbilled Procedures</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('topUnbilledProcedures')}</h2>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {summary.topProcedures.map((proc, i) => (
@@ -435,11 +444,11 @@ export default function AuditorDashboard() {
         {/* Quick Stats */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Period Summary</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('periodSummary')}</h2>
           </div>
           <div className="p-5 space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400 dark:text-gray-500">Period</span>
+              <span className="text-gray-400 dark:text-gray-500">{t('period')}</span>
               <span className="text-gray-700 dark:text-gray-300 text-xs tabular-nums">
                 {new Date(summary.periodStart).toLocaleDateString()} - {new Date(summary.periodEnd).toLocaleDateString()}
               </span>
@@ -456,7 +465,7 @@ export default function AuditorDashboard() {
               </div>
             ))}
             <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between">
-              <span className="text-xs font-semibold text-gray-500">Total</span>
+              <span className="text-xs font-semibold text-gray-500">{t('total')}</span>
               <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{summary.totalPotentialValueFormatted}</span>
             </div>
           </div>

@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPublicRoute } from '@/lib/api/middleware';
 import { validateReferralCode } from '@/lib/referral';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,7 +99,7 @@ export const POST = createPublicRoute(async (request: NextRequest): Promise<Next
       },
     });
   } catch (error) {
-    console.error('[Referral Validate API] Error:', error);
+    logger.error('[Referral Validate API] Error:', error);
 
     return NextResponse.json(
       {

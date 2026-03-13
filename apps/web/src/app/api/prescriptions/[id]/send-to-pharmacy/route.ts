@@ -97,8 +97,8 @@ export const POST = createProtectedRoute(
         );
       }
 
-      // TODO: Integrate with actual pharmacy network (NCPDP, Surescripts, etc.)
-      // For now, we'll just update the database and log the event
+      // @todo(pharmacy-integration): Integrate with NCPDP/Surescripts pharmacy network
+      logger.warn({ event: 'unimplemented_feature', feature: 'pharmacy_network_integration', prescriptionId });
 
       // Update prescription
       const updatedPrescription = await prisma.prescription.update({
@@ -157,10 +157,7 @@ export const POST = createProtectedRoute(
         }
       );
 
-      // TODO: Send notification to patient
-      // - Email notification
-      // - SMS notification
-      // - In-app notification
+      // @todo(patient-notifications): Send email/SMS/in-app notification to patient
 
       return NextResponse.json({
         success: true,
@@ -185,6 +182,6 @@ export const POST = createProtectedRoute(
   {
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
-    audit: { action: 'SEND_TO_PHARMACY', resource: 'Prescription' },
+    audit: { action: 'PRESCRIBE', resource: 'Prescription' },
   }
 );

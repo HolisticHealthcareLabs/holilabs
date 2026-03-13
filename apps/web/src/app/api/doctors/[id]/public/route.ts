@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createPublicRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 /**
  * GET /api/doctors/[id]/public
@@ -88,7 +89,7 @@ export const GET = createPublicRoute(
         },
       });
     } catch (error: any) {
-      console.error('Error fetching doctor profile:', error);
+      logger.error('Error fetching doctor profile:', error);
       return NextResponse.json(
         { error: 'Failed to fetch doctor profile' },
         { status: 500 }

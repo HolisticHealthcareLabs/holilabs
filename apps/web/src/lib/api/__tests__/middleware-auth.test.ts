@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// We don't even need to mock NextAuth anymore since we bypass it in the middleware
-// using global._mockSession and process.env.TEST_ENV
-
 import { requireAuth } from '../middleware';
 
-// Mock dependencies
+// Stable mock references that survive jest resetMocks
 const mockFindFirst = jest.fn();
 const mockFindUnique = jest.fn();
+const mockWorkspaceFindUnique = jest.fn();
+const mockGetPatientSession = jest.fn();
+const mockGetOrCreateWorkspace = jest.fn();
+const mockLogError = jest.fn();
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -15,7 +16,18 @@ jest.mock('@/lib/prisma', () => ({
       findFirst: (...args: any[]) => mockFindFirst(...args),
       findUnique: (...args: any[]) => mockFindUnique(...args),
     },
+    workspace: {
+      findUnique: (...args: any[]) => mockWorkspaceFindUnique(...args),
+    },
   },
+}));
+
+jest.mock('@/lib/auth/patient-session', () => ({
+  getPatientSession: (...args: any[]) => mockGetPatientSession(...args),
+}));
+
+jest.mock('@/lib/workspace', () => ({
+  getOrCreateWorkspaceForUser: (...args: any[]) => mockGetOrCreateWorkspace(...args),
 }));
 
 jest.mock('@/lib/logger', () => ({
@@ -31,7 +43,7 @@ jest.mock('@/lib/logger', () => ({
     error: jest.fn(),
     debug: jest.fn(),
   }),
-  logError: jest.fn(),
+  logError: (...args: any[]) => mockLogError(...args),
 }));
 
 describe('Middleware Authentication (requireAuth)', () => {
@@ -41,11 +53,14 @@ describe('Middleware Authentication (requireAuth)', () => {
     jest.clearAllMocks();
     mockFindFirst.mockReset();
     mockFindUnique.mockReset();
-    
-    // Set TEST_ENV so the middleware knows to look for global._mockSession
+    mockWorkspaceFindUnique.mockResolvedValue({ id: 'ws-test', name: 'Test Workspace' });
+    mockGetPatientSession.mockResolvedValue(null);
+    mockGetOrCreateWorkspace.mockResolvedValue({ workspaceId: 'ws-test', role: 'MEMBER' });
+    mockLogError.mockImplementation((err: unknown) => ({ err: err instanceof Error ? err : new Error(String(err)) }));
+
     process.env.TEST_ENV = 'true';
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    
+
     (global as any)._mockSession = null;
   });
 

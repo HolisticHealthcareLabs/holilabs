@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { checkConsentVersion } from '@/lib/consent/version-manager';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,12 +33,12 @@ export const GET = createProtectedRoute(
       ...versionCheck,
     });
   } catch (error) {
-    console.error('Error checking consent version:', error);
+    logger.error('Error checking consent version:', error);
     return NextResponse.json(
       { error: 'Failed to check consent version' },
       { status: 500 }
     );
   }
   },
-  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
+  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'], audit: { action: 'READ', resource: 'ConsentVersion' } }
 );

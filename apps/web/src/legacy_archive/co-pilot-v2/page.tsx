@@ -215,8 +215,7 @@ function CoPilotCommandCenter() {
     }
   };
 
-  const handleDevicePaired = (deviceId: string) => {
-    console.log('Device paired:', deviceId);
+  const handleDevicePaired = (_deviceId: string) => {
     addToast('success', 'Device Paired', 'Mobile device connected successfully.');
   };
 
@@ -627,7 +626,7 @@ function CoPilotCommandCenter() {
               <QuickActionsTile
                 patientId={selectedPatient?.id}
                 tileId="quick-actions-tile"
-                onAction={(action) => console.log('Quick action:', action)}
+                onAction={(_action) => {}}
               />
             </div>
           </motion.div>

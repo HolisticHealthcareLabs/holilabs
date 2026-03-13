@@ -108,7 +108,7 @@ export const GET = createProtectedRoute(
     try {
       // Track behavior event (fire-and-forget)
       // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-      await prisma.userBehaviorEvent.create({
+      await (prisma as any).userBehaviorEvent.create({
         data: {
           userId: context.user!.id,
           eventType: 'CONTEXT_LOADED',
@@ -126,7 +126,7 @@ export const GET = createProtectedRoute(
 
       // Update access reason aggregate (for compliance monitoring)
       // @ts-ignore - accessReasonAggregate model not yet in Prisma schema
-      await prisma.accessReasonAggregate.upsert({
+      await (prisma as any).accessReasonAggregate.upsert({
         where: {
           accessReason_hourOfDay_dayOfWeek_date: {
             accessReason,

@@ -275,7 +275,6 @@ export function AlertHistory({
           <button
             onClick={() => {
               // TODO: Implement export functionality
-              console.log('Export history');
             }}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors flex items-center gap-2"
           >

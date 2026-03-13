@@ -208,7 +208,6 @@ export default function FailedRemindersTable({ onUpdate }: FailedRemindersTableP
                       </>
                     ) : (
                       <>
-                        <span>🔄</span>
                         <span>Retry</span>
                       </>
                     )}

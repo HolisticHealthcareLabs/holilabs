@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { clinicalTrialsService } from '@/lib/clinical';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Clinical trials search error:', error);
+      logger.error('Clinical trials search error:', error);
       return NextResponse.json(
         { success: false, error: 'Failed to search clinical trials' },
         { status: 500 }
@@ -131,7 +132,7 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Patient trial matching error:', error);
+      logger.error('Patient trial matching error:', error);
       return NextResponse.json(
         { success: false, error: 'Failed to match patient to trials' },
         { status: 500 }

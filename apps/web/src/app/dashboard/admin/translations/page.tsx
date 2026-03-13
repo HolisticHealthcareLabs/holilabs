@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { translations, Language, languageNames } from '@/lib/translations';
 
 type TranslationEntry = {
@@ -49,6 +50,7 @@ function getNestedValue(obj: any, path: string): string {
 }
 
 export default function TranslationsAdminPage() {
+  const t = useTranslations('dashboard.translationsAdmin');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSection, setSelectedSection] = useState<string>('all');
 
@@ -83,29 +85,29 @@ export default function TranslationsAdminPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Translation Management
+            {t('title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            View and compare translations across all languages
+            {t('subtitle')}
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Keys</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('totalKeys')}</div>
             <div className="text-3xl font-bold text-gray-900">{allEntries.length}</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Sections</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('sections')}</div>
             <div className="text-3xl font-bold text-gray-900">{sections.length}</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Languages</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('languages')}</div>
             <div className="text-3xl font-bold text-gray-900">3</div>
           </div>
           <div className={`bg-white rounded-lg shadow p-6 ${missingTranslations.length > 0 ? 'border-2 border-yellow-400' : ''}`}>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Missing</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('missing')}</div>
             <div className={`text-3xl font-bold ${missingTranslations.length > 0 ? 'text-yellow-600' : 'text-green-600'}`}>
               {missingTranslations.length}
             </div>
@@ -118,13 +120,13 @@ export default function TranslationsAdminPage() {
             {/* Search */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search
+                {t('searchLabel')}
               </label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search keys or translations..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -132,14 +134,14 @@ export default function TranslationsAdminPage() {
             {/* Section Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Section
+                {t('sectionLabel')}
               </label>
               <select
                 value={selectedSection}
                 onChange={(e) => setSelectedSection(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Sections</option>
+                <option value="all">{t('allSections')}</option>
                 {sections.map(section => (
                   <option key={section} value={section}>
                     {section}
@@ -150,7 +152,7 @@ export default function TranslationsAdminPage() {
           </div>
 
           <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            Showing {filteredEntries.length} of {allEntries.length} translations
+            {t('showingOf', { filtered: filteredEntries.length, total: allEntries.length })}
           </div>
         </div>
 
@@ -165,7 +167,7 @@ export default function TranslationsAdminPage() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700">
-                  <strong>{missingTranslations.length} translation(s)</strong> are missing or empty. Please update translations.ts file.
+                  {t('missingAlert', { count: missingTranslations.length })}
                 </p>
               </div>
             </div>
@@ -180,16 +182,16 @@ export default function TranslationsAdminPage() {
                 <tr>
                   {/* Decorative - low contrast intentional for table headers with uppercase tracking-wider */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-64">
-                    Key
+                    {t('keyCol')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    English
+                    {t('english')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Español
+                    {t('espanol')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Português
+                    {t('portugues')}
                   </th>
                 </tr>
               </thead>
@@ -204,17 +206,17 @@ export default function TranslationsAdminPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div className={`${!entry.en.trim() ? 'text-red-500 italic' : ''}`}>
-                          {entry.en || '(empty)'}
+                          {entry.en || t('empty')}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div className={`${!entry.es.trim() ? 'text-red-500 italic' : ''}`}>
-                          {entry.es || '(empty)'}
+                          {entry.es || t('empty')}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div className={`${!entry.pt.trim() ? 'text-red-500 italic' : ''}`}>
-                          {entry.pt || '(empty)'}
+                          {entry.pt || t('empty')}
                         </div>
                       </td>
                     </tr>
@@ -227,7 +229,7 @@ export default function TranslationsAdminPage() {
 
         {/* Export Options */}
         <div className="mt-6 bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Options</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('exportOptions')}</h3>
           <div className="flex gap-4">
             <button
               onClick={() => {
@@ -241,7 +243,7 @@ export default function TranslationsAdminPage() {
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Export as JSON
+              {t('exportJson')}
             </button>
             <button
               onClick={() => {
@@ -259,17 +261,17 @@ export default function TranslationsAdminPage() {
               }}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
-              Export as CSV
+              {t('exportCsv')}
             </button>
           </div>
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            💡 <strong>Tip:</strong> Use the CSV export to work with translators using spreadsheets, then update the translations.ts file manually.
+            💡 <strong>{t('tip')}</strong> {t('tipText')}
           </p>
         </div>
 
         {/* Instructions */}
         <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">How to Update Translations</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('howToUpdate')}</h3>
           <ol className="list-decimal list-inside space-y-2 text-blue-800">
             <li>Edit <code className="bg-blue-100 px-2 py-1 rounded">apps/web/src/lib/translations.ts</code> directly</li>
             <li>Run <code className="bg-blue-100 px-2 py-1 rounded">pnpm validate-translations</code> to check for missing keys</li>

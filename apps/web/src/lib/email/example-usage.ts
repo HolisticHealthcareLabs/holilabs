@@ -15,11 +15,11 @@ import { queueEmail, startEmailWorker, getEmailQueueMetrics, getEmailJobStatus }
  * Call this once when your application starts (e.g., in server initialization)
  */
 export function initializeEmailWorker() {
-  console.log('Starting email worker...');
+  console.error('[EmailWorker]', { event: 'starting' });
 
   const worker = startEmailWorker();
 
-  console.log('Email worker started and processing jobs');
+  console.error('[EmailWorker]', { event: 'started' });
 
   return worker;
 }
@@ -46,7 +46,7 @@ export async function sendWelcomeEmail(
     },
   });
 
-  console.log('Welcome email queued:', jobId);
+  console.error('[EmailWorker]', { event: 'welcome_queued', jobId });
   return jobId;
 }
 
@@ -98,7 +98,7 @@ export async function sendAppointmentReminder(
 export async function sendNewsletterToPatients(
   patients: Array<{ email: string; name: string; id: string }>
 ) {
-  console.log(`Sending newsletter to ${patients.length} patients...`);
+  console.error('[EmailWorker]', { event: 'newsletter_sending', count: patients.length });
 
   const jobIds = await Promise.all(
     patients.map((patient) =>
@@ -117,7 +117,7 @@ export async function sendNewsletterToPatients(
     )
   );
 
-  console.log(`Queued ${jobIds.length} newsletter emails`);
+  console.error('[EmailWorker]', { event: 'newsletter_queued', count: jobIds.length });
   return jobIds;
 }
 
@@ -162,11 +162,11 @@ export async function checkEmailStatus(jobId: string) {
   const status = await getEmailJobStatus(jobId);
 
   if (!status) {
-    console.log('Job not found');
+    console.error('[EmailWorker]', { event: 'job_not_found' });
     return null;
   }
 
-  console.log('Email Status:', {
+  console.error('[EmailWorker]', {
     state: status.state,
     attempts: status.attemptsMade,
     failedReason: status.failedReason,
@@ -181,7 +181,7 @@ export async function checkEmailStatus(jobId: string) {
 export async function monitorEmailQueue() {
   const metrics = await getEmailQueueMetrics();
 
-  console.log('Email Queue Metrics:', {
+  console.error('[EmailWorker]', {
     waiting: metrics.waiting,
     active: metrics.active,
     completed: metrics.completed,

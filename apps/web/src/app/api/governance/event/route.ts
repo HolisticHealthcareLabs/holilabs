@@ -36,7 +36,7 @@ export const POST = createProtectedRoute(
         const event = validation.data;
 
         // Phase 0: Setup / Telemetry Check
-        logger.info('[Governance] API Event Received', { type: event.type, eventId: event.id });
+        logger.info('[Governance] API Event Received', { type: event.type, eventId: (event as any).id });
 
         if (event.type === 'OVERRIDE') {
             // Phase 1: Liability Check
@@ -51,7 +51,7 @@ export const POST = createProtectedRoute(
             } catch (persistenceError) {
                 // Demo-safe degradation: keep governance event broadcast path alive
                 // when local DB schemas are incomplete.
-                console.error('[Governance] Override persistence degraded:', persistenceError);
+                logger.error('[Governance] Override persistence degraded:', persistenceError);
                 persistenceWarning = 'override_persistence_degraded';
             }
 
@@ -186,7 +186,7 @@ export const POST = createProtectedRoute(
 
         return NextResponse.json({ success: false, error: 'Unknown event type' }, { status: 400 });
     } catch (error) {
-        console.error('[Governance] API Error:', error);
+        logger.error('[Governance] API Error:', error);
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
     },

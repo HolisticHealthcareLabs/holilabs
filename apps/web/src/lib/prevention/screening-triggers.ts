@@ -430,7 +430,7 @@ export async function autoGenerateScreeningReminders(): Promise<{
   patientsProcessed: number;
   remindersCreated: number;
 }> {
-  console.log('[Screening Triggers] Starting auto-generation...');
+  console.error('[ScreeningTriggers]', { event: 'auto_generation_start' });
 
   const activePatients = await prisma.patient.findMany({
     where: { isActive: true },
@@ -451,9 +451,7 @@ export async function autoGenerateScreeningReminders(): Promise<{
     }
   }
 
-  console.log(
-    `[Screening Triggers] Complete. Processed ${activePatients.length} patients, created ${remindersCreated} reminders`
-  );
+  console.error('[ScreeningTriggers]', { event: 'auto_generation_complete', patientsProcessed: activePatients.length, remindersCreated });
 
   return {
     patientsProcessed: activePatients.length,
