@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,7 @@ export const GET = createProtectedRoute(
       data: { template },
     });
   } catch (error) {
-    console.error('Error fetching template:', error);
+    logger.error('Error fetching template:', error);
 
     return NextResponse.json(
       {
@@ -226,7 +227,7 @@ export const PUT = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error updating template:', error);
+    logger.error('Error updating template:', error);
 
     return NextResponse.json(
       {
@@ -279,7 +280,7 @@ export const DELETE = createProtectedRoute(
       data: { template: deletedTemplate },
     });
   } catch (error) {
-    console.error('Error deleting template:', error);
+    logger.error('Error deleting template:', error);
 
     return NextResponse.json(
       {

@@ -138,7 +138,7 @@ export const POST = createProtectedRoute(
         notes: notes || null,
         description: description || null,
         screeningCode: screeningCode || null,
-        orderingProvider: orderingProvider || context.user?.id ?? '',
+        orderingProvider: orderingProvider || (context.user?.id ?? ''),
         facility: facility || null,
         followUpPlanId: preventionPlanId || null,
       },

@@ -11,6 +11,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { sendFormNotificationEmail } from '@/lib/email';
 import crypto from 'crypto';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,10 +119,10 @@ export const POST = createProtectedRoute(
           publicUrl,
           expiresAtDate,
           message || undefined,
-          undefined // TODO: Get clinician name from session
+          undefined // @todo(clinician-context): Resolve clinician name from session
         );
       } catch (emailError) {
-        console.error('Error sending email notification:', emailError);
+        logger.error('Error sending email notification:', emailError);
         // Continue even if email fails - form was created successfully
       }
     }
@@ -137,7 +138,7 @@ export const POST = createProtectedRoute(
       { status: 201 }
     );
     } catch (error) {
-      console.error('Error sending form:', error);
+      logger.error('Error sending form:', error);
       return NextResponse.json(
         {
           error: 'Failed to send form',

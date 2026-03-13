@@ -19,6 +19,7 @@ import {
 } from '@/lib/imaging/dicom-parser';
 import crypto from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for large DICOM uploads
@@ -143,7 +144,7 @@ export const POST = createProtectedRoute(
           // Images
           imageCount: 1, // Single DICOM file (may contain multiple frames)
           imageUrls: [uploadResult.url],
-          thumbnailUrl: null, // TODO: Generate thumbnail from DICOM
+          thumbnailUrl: null, // @todo(dicom-thumbnail): Generate thumbnail from DICOM pixel data
 
           // Dates
           studyDate,
@@ -189,7 +190,7 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error uploading DICOM file:', error);
+      logger.error('Error uploading DICOM file:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to upload DICOM file' });
     }
   },

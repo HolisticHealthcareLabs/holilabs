@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 interface Recording {
   id: string;
@@ -39,6 +40,7 @@ interface SOAPNotes {
 }
 
 export default function RecordingDetailPage() {
+  const t = useTranslations('portal.recordings');
   const params = useParams();
   const recordingId = (params?.id as string) || '';
 
@@ -59,12 +61,11 @@ export default function RecordingDetailPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al cargar grabación');
+        throw new Error(data.error || t('errorLoad'));
       }
 
       setRecording(data.data);
 
-      // Parse SOAP notes if available
       if (data.data.aiGeneratedNotes) {
         try {
           const parsed = JSON.parse(data.data.aiGeneratedNotes);
@@ -74,7 +75,7 @@ export default function RecordingDetailPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('errorLoad'));
     } finally {
       setLoading(false);
     }
@@ -88,8 +89,7 @@ export default function RecordingDetailPage() {
   };
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString('es-ES', {
+    return new Date(dateString).toLocaleString(undefined, {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -98,20 +98,28 @@ export default function RecordingDetailPage() {
     });
   };
 
+  const STATUS_LABELS: Record<string, string> = {
+    RECORDING: t('statusRecording'),
+    PROCESSING: t('statusProcessing'),
+    TRANSCRIBING: t('statusTranscribing'),
+    COMPLETED: t('statusCompleted'),
+    FAILED: t('statusFailed'),
+  };
+
+  const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
+    RECORDING: { bg: 'bg-red-100', text: 'text-red-700' },
+    PROCESSING: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+    TRANSCRIBING: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    COMPLETED: { bg: 'bg-green-100', text: 'text-green-700' },
+    FAILED: { bg: 'bg-red-100', text: 'text-red-700' },
+  };
+
   const getStatusBadge = (status: string) => {
-    const styles: Record<string, { bg: string; text: string; label: string }> = {
-      RECORDING: { bg: 'bg-red-100', text: 'text-red-700', label: 'Grabando' },
-      PROCESSING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Procesando' },
-      TRANSCRIBING: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Transcribiendo' },
-      COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Completado' },
-      FAILED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Fallido' },
-    };
-
-    const style = styles[status] || styles.PROCESSING;
-
+    const style = STATUS_STYLES[status] || STATUS_STYLES.PROCESSING;
+    const label = STATUS_LABELS[status] || status;
     return (
       <span className={`px-3 py-1 ${style.bg} ${style.text} text-xs font-semibold rounded-full`}>
-        {style.label}
+        {label}
       </span>
     );
   };
@@ -121,27 +129,12 @@ export default function RecordingDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg
-              className="w-8 h-8 text-blue-600 animate-spin"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
+            <svg className="w-8 h-8 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
           </div>
-          <p className="text-gray-600 font-medium">Cargando grabación...</p>
+          <p className="text-gray-600 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -152,27 +145,17 @@ export default function RecordingDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Error</h2>
-          <p className="text-gray-600 mb-6 text-center">{error}</p>
+          <p className="text-gray-600 mb-6 text-center">{error || t('errorLoad')}</p>
           <Link
             href="/dashboard"
             className="block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-center transition-colors"
           >
-            Volver al Dashboard
+            {t('backToDashboard')}
           </Link>
         </div>
       </div>
@@ -191,12 +174,12 @@ export default function RecordingDetailPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Volver al Dashboard
+            {t('backToDashboard')}
           </Link>
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                Grabación de Consulta
+                {t('title')}
               </h1>
               <p className="text-gray-600">
                 {recording.patient.firstName} {recording.patient.lastName} •{' '}
@@ -216,7 +199,7 @@ export default function RecordingDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Paciente
+                {t('patient')}
               </label>
               <p className="text-gray-900">
                 {recording.patient.firstName} {recording.patient.lastName}
@@ -225,19 +208,19 @@ export default function RecordingDetailPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Cita
+                {t('appointment')}
               </label>
               <p className="text-gray-900">{recording.appointment.title}</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Duración
+                {t('duration')}
               </label>
               <p className="text-gray-900">{formatDuration(recording.audioDuration)}</p>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Fecha
+                {t('date')}
               </label>
               <p className="text-gray-900">{formatDate(recording.startedAt)}</p>
             </div>
@@ -256,10 +239,10 @@ export default function RecordingDetailPage() {
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>
-              Audio de la Consulta
+              {t('audioTitle')}
             </h2>
             <audio controls className="w-full" src={recording.audioUrl}>
-              Tu navegador no soporta el elemento de audio.
+              {t('audioUnsupported')}
             </audio>
           </motion.div>
         )}
@@ -281,7 +264,7 @@ export default function RecordingDetailPage() {
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                Notas SOAP
+                {t('soap')}
               </button>
               <button
                 onClick={() => setActiveTab('transcript')}
@@ -291,90 +274,55 @@ export default function RecordingDetailPage() {
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                Transcripción
+                {t('transcript')}
               </button>
             </div>
 
             <div className="p-6">
               {activeTab === 'soap' && soapNotes ? (
                 <div className="space-y-6">
-                  {/* Subjective */}
                   <div>
                     <h3 className="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
-                      <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-sm font-bold">
-                        S
-                      </span>
-                      Subjetivo
+                      <span className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-sm font-bold">S</span>
+                      {t('subjective')}
                     </h3>
-                    <p className="text-gray-700 leading-relaxed bg-blue-50 p-4 rounded-lg">
-                      {soapNotes.subjective}
-                    </p>
+                    <p className="text-gray-700 leading-relaxed bg-blue-50 p-4 rounded-lg">{soapNotes.subjective}</p>
                   </div>
-
-                  {/* Objective */}
                   <div>
                     <h3 className="text-lg font-bold text-green-900 mb-2 flex items-center gap-2">
-                      <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-sm font-bold">
-                        O
-                      </span>
-                      Objetivo
+                      <span className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-sm font-bold">O</span>
+                      {t('objective')}
                     </h3>
-                    <p className="text-gray-700 leading-relaxed bg-green-50 p-4 rounded-lg">
-                      {soapNotes.objective}
-                    </p>
+                    <p className="text-gray-700 leading-relaxed bg-green-50 p-4 rounded-lg">{soapNotes.objective}</p>
                   </div>
-
-                  {/* Assessment */}
                   <div>
                     <h3 className="text-lg font-bold text-purple-900 mb-2 flex items-center gap-2">
-                      <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-sm font-bold">
-                        A
-                      </span>
-                      Análisis
+                      <span className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-sm font-bold">A</span>
+                      {t('assessment')}
                     </h3>
-                    <p className="text-gray-700 leading-relaxed bg-purple-50 p-4 rounded-lg">
-                      {soapNotes.assessment}
-                    </p>
+                    <p className="text-gray-700 leading-relaxed bg-purple-50 p-4 rounded-lg">{soapNotes.assessment}</p>
                   </div>
-
-                  {/* Plan */}
                   <div>
                     <h3 className="text-lg font-bold text-orange-900 mb-2 flex items-center gap-2">
-                      <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm font-bold">
-                        P
-                      </span>
-                      Plan
+                      <span className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-sm font-bold">P</span>
+                      {t('plan')}
                     </h3>
-                    <p className="text-gray-700 leading-relaxed bg-orange-50 p-4 rounded-lg">
-                      {soapNotes.plan}
-                    </p>
+                    <p className="text-gray-700 leading-relaxed bg-orange-50 p-4 rounded-lg">{soapNotes.plan}</p>
                   </div>
                 </div>
               ) : activeTab === 'transcript' && recording.transcript ? (
                 <div className="prose max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {recording.transcript}
-                  </p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{recording.transcript}</p>
                 </div>
               ) : (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg
-                      className="w-8 h-8 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
                   <p className="text-gray-600">
-                    {activeTab === 'soap' ? 'No hay notas SOAP disponibles' : 'No hay transcripción disponible'}
+                    {activeTab === 'soap' ? t('noSoap') : t('noTranscript')}
                   </p>
                 </div>
               )}

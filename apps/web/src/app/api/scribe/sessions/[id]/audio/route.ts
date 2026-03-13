@@ -13,6 +13,7 @@ import crypto from 'crypto';
 import { encryptBuffer } from '@/lib/security/encryption';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for large audio files
@@ -116,7 +117,7 @@ export const POST = createProtectedRoute(
       try {
         finalBuffer = encryptBuffer(buffer);
       } catch (error) {
-        console.error('Audio encryption error:', error);
+        logger.error('Audio encryption error:', error);
         return safeErrorResponse(error, { userMessage: 'Failed to encrypt audio file' });
       }
 
@@ -197,7 +198,7 @@ export const POST = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error uploading audio:', error);
+      logger.error('Error uploading audio:', error);
 
       // Track failure event
       await trackEvent(

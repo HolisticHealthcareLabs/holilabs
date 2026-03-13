@@ -22,6 +22,7 @@ import {
   getTestInfoByLoincCode,
   getDatabaseStats,
 } from '@/lib/clinical/lab-reference-ranges';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -151,7 +152,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error fetching lab reference ranges:', error);
+      logger.error('Error fetching lab reference ranges:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch lab reference ranges' });
     }
   },

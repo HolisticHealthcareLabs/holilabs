@@ -275,8 +275,7 @@ export default function CommandCenterDemoPage() {
 
               {showScanner && (
                 <QRScanner
-                  onScan={(result) => {
-                    console.log('Scanned:', result);
+                  onScan={(_result) => {
                     setShowScanner(false);
                   }}
                   onClose={() => setShowScanner(false)}

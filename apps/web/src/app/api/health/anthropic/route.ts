@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { createPublicRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,7 +85,7 @@ async function getAnthropicHealth() {
       },
     });
   } catch (error) {
-    console.error('Anthropic health check error:', error);
+    logger.error('Anthropic health check error:', error);
     return NextResponse.json({
       status: 'error',
       service: 'anthropic',

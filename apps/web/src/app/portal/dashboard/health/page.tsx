@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -142,6 +143,7 @@ const MiniChart = ({ data, color }: { data: HealthMetric[]; color: string }) => 
 
 export default function HealthMetricsPage() {
   const router = useRouter();
+  const t = useTranslations('portal.health');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metricsByType, setMetricsByType] = useState<Record<string, HealthMetric[]>>({});

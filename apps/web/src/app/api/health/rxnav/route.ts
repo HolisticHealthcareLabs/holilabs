@@ -9,6 +9,7 @@
 import { NextResponse } from 'next/server';
 import { getHealthMetrics } from '@/lib/integrations/monitoring';
 import { createPublicRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 const RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 };
 
@@ -22,7 +23,7 @@ async function getRxnavHealth() {
       ...metrics,
     });
   } catch (error) {
-    console.error('[API] Health check error:', error);
+    logger.error('[API] Health check error:', error);
 
     return NextResponse.json(
       {

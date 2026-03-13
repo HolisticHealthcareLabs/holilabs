@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   Shield,
   Calendar,
@@ -73,6 +74,7 @@ const DEMO_PATIENTS: PatientInfo[] = [
 ];
 
 export default function PreventionPlansPage() {
+  const t = useTranslations('dashboard.prevention.plans');
   const searchParams = useSearchParams();
   const patientIdFromUrl = searchParams?.get('patientId') || searchParams?.get('patient');
 
@@ -129,11 +131,11 @@ export default function PreventionPlansPage() {
       if (result.success) {
         setPlans(result.data.preventionPlans || []);
       } else {
-        setError(result.error || 'Failed to load prevention plans');
+        setError(result.error || t('errorLoadPlans'));
       }
     } catch (err) {
-      console.error('Error fetching prevention plans:', err);
-      setError('Failed to connect to server. Please try again.');
+      console.error('[PreventionPlans]', { event: 'fetch_plans_error', error: err instanceof Error ? err.message : String(err) });
+      setError(t('errorConnect'));
     } finally {
       setLoading(false);
     }
@@ -199,10 +201,10 @@ export default function PreventionPlansPage() {
           });
         }
       } else {
-        console.error('Failed to update goal:', result.error);
+        console.error('[PreventionPlans]', { event: 'update_goal_failed', error: result.error });
       }
     } catch (err) {
-      console.error('Error updating goal:', err);
+      console.error('[PreventionPlans]', { event: 'update_goal_error', error: err instanceof Error ? err.message : String(err) });
     } finally {
       setUpdatingGoal(null);
     }
@@ -261,10 +263,10 @@ export default function PreventionPlansPage() {
           });
         }
       } else {
-        console.error('Failed to update goal target date:', result.error);
+        console.error('[PreventionPlans]', { event: 'update_goal_target_date_failed', error: result.error });
       }
     } catch (err) {
-      console.error('Error updating goal target date:', err);
+      console.error('[PreventionPlans]', { event: 'update_goal_target_date_error', error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -321,10 +323,10 @@ export default function PreventionPlansPage() {
           });
         }
       } else {
-        console.error('Failed to update goal notes:', result.error);
+        console.error('[PreventionPlans]', { event: 'update_goal_notes_failed', error: result.error });
       }
     } catch (err) {
-      console.error('Error updating goal notes:', err);
+      console.error('[PreventionPlans]', { event: 'update_goal_notes_error', error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -392,12 +394,12 @@ export default function PreventionPlansPage() {
         // Refresh plans to get updated data
         await fetchPlans(selectedPatientId);
       } else {
-        console.error('Failed to update status:', result.error);
+        console.error('[PreventionPlans]', { event: 'update_status_failed', error: result.error });
         alert(`Error: ${result.error}`);
       }
     } catch (err) {
-      console.error('Error updating status:', err);
-      alert('Failed to update plan status. Please try again.');
+      console.error('[PreventionPlans]', { event: 'update_status_error', error: err instanceof Error ? err.message : String(err) });
+      alert(t('errorUpdateStatus'));
     } finally {
       setUpdatingStatus(false);
     }
@@ -425,7 +427,7 @@ export default function PreventionPlansPage() {
         setStatusHistory(result.data.statusHistory || []);
       }
     } catch (err) {
-      console.error('Error fetching status history:', err);
+      console.error('[PreventionPlans]', { event: 'fetch_status_history_error', error: err instanceof Error ? err.message : String(err) });
       setStatusHistory([]);
     } finally {
       setLoadingHistory(false);
@@ -461,7 +463,7 @@ export default function PreventionPlansPage() {
         setUndoInfo(null);
       }
     } catch (err) {
-      console.error('Error checking undo eligibility:', err);
+      console.error('[PreventionPlans]', { event: 'check_undo_eligibility_error', error: err instanceof Error ? err.message : String(err) });
       setCanUndo(false);
       setUndoInfo(null);
     }
@@ -506,8 +508,8 @@ export default function PreventionPlansPage() {
         alert(`Error: ${result.error}\n${result.message || ''}`);
       }
     } catch (err) {
-      console.error('Error undoing status change:', err);
-      alert('Failed to undo status change. Please try again.');
+      console.error('[PreventionPlans]', { event: 'undo_status_change_error', error: err instanceof Error ? err.message : String(err) });
+      alert(t('errorUndoStatus'));
     } finally {
       setUndoing(false);
     }
@@ -696,15 +698,13 @@ export default function PreventionPlansPage() {
         await fetchPlans(selectedPatientId);
 
         // Show success message
-        alert(
-          `Operación completada: ${result.data.successCount} exitosos, ${result.data.failureCount} fallidos`
-        );
+        alert(t('bulkOperationResult', { success: result.data.successCount, failed: result.data.failureCount }));
       } else {
         alert(`Error: ${result.error}`);
       }
     } catch (err) {
-      console.error('Error performing bulk operation:', err);
-      alert('Error al realizar la operación en bloque. Por favor intente nuevamente.');
+      console.error('[PreventionPlans]', { event: 'bulk_operation_error', error: err instanceof Error ? err.message : String(err) });
+      alert(t('errorBulkOperation'));
     } finally {
       setPerformingBulk(false);
     }
@@ -720,10 +720,10 @@ export default function PreventionPlansPage() {
               <Shield className="w-8 h-8 text-green-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Planes de Prevención
+                  {t('title')}
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Historial de protocolos aplicados • Holi Labs
+                  {t('subtitle')}
                 </p>
               </div>
             </div>
@@ -737,7 +737,7 @@ export default function PreventionPlansPage() {
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
               <h2 className="font-bold text-lg mb-4 text-gray-900 dark:text-white">
-                Seleccionar Paciente
+                {t('selectPatient')}
               </h2>
               <div className="space-y-2">
                 {DEMO_PATIENTS.map((patient) => (
@@ -781,7 +781,7 @@ export default function PreventionPlansPage() {
                       }`}
                     >
                       <Filter className="w-4 h-4" />
-                      <span>Filtros</span>
+                      <span>{t('filters')}</span>
                       {activeFilterCount > 0 && (
                         <span className="bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold">
                           {activeFilterCount}
@@ -792,7 +792,7 @@ export default function PreventionPlansPage() {
                       onClick={() => fetchPlans(selectedPatientId)}
                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
                     >
-                      Actualizar
+                      {t('refresh')}
                     </button>
                   </div>
                 </div>
@@ -801,13 +801,13 @@ export default function PreventionPlansPage() {
                 {showFilters && (
                   <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">Filtrar Planes</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{t('filterPlans')}</h3>
                       <button
                         onClick={clearFilters}
                         className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center space-x-1"
                       >
                         <X className="w-4 h-4" />
-                        <span>Limpiar Filtros</span>
+                        <span>{t('clearFilters')}</span>
                       </button>
                     </div>
 
@@ -815,31 +815,31 @@ export default function PreventionPlansPage() {
                       {/* Status Filter */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Estado
+                          {t('status')}
                         </label>
                         <select
                           value={filterStatus}
                           onChange={(e) => setFilterStatus(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                          <option value="all">Todos los estados</option>
-                          <option value="ACTIVE">Activos</option>
-                          <option value="COMPLETED">Completados</option>
-                          <option value="DEACTIVATED">Desactivados</option>
+                          <option value="all">{t('allStatuses')}</option>
+                          <option value="ACTIVE">{t('active')}</option>
+                          <option value="COMPLETED">{t('completed')}</option>
+                          <option value="DEACTIVATED">{t('deactivated')}</option>
                         </select>
                       </div>
 
                       {/* Plan Type Filter */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Tipo de Plan
+                          {t('planType')}
                         </label>
                         <select
                           value={filterPlanType}
                           onChange={(e) => setFilterPlanType(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                          <option value="all">Todos los tipos</option>
+                          <option value="all">{t('allTypes')}</option>
                           <option value="CARDIOVASCULAR">Cardiovascular</option>
                           <option value="DIABETES">Diabetes</option>
                           <option value="COMPREHENSIVE">Comprehensive</option>
@@ -849,7 +849,7 @@ export default function PreventionPlansPage() {
                       {/* Date From Filter */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Fecha Desde
+                          {t('dateFrom')}
                         </label>
                         <input
                           type="date"
@@ -862,7 +862,7 @@ export default function PreventionPlansPage() {
                       {/* Date To Filter */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Fecha Hasta
+                          {t('dateTo')}
                         </label>
                         <input
                           type="date"
@@ -891,13 +891,13 @@ export default function PreventionPlansPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <span className="font-semibold text-blue-900 dark:text-blue-200">
-                          {selectedPlanIds.size} {selectedPlanIds.size === 1 ? 'plan seleccionado' : 'planes seleccionados'}
+                          {t('plansSelected', { count: selectedPlanIds.size })}
                         </span>
                         <button
                           onClick={clearSelection}
                           className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                         >
-                          Limpiar selección
+                          {t('clearSelection')}
                         </button>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -906,27 +906,27 @@ export default function PreventionPlansPage() {
                           className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-1"
                         >
                           <CheckCircle2 className="w-4 h-4" />
-                          <span>Completar</span>
+                          <span>{t('complete')}</span>
                         </button>
                         <button
                           onClick={() => openBulkAction('status_change', { status: 'DEACTIVATED', reason: 'no_longer_indicated' })}
                           className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-1"
                         >
                           <XCircle className="w-4 h-4" />
-                          <span>Desactivar</span>
+                          <span>{t('deactivate')}</span>
                         </button>
                         <button
                           onClick={() => openBulkAction('delete')}
                           className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-1"
                         >
                           <XCircle className="w-4 h-4" />
-                          <span>Archivar</span>
+                          <span>{t('archive')}</span>
                         </button>
                         <button
                           onClick={() => openBulkAction('duplicate')}
                           className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
                         >
-                          Duplicar
+                          {t('duplicate')}
                         </button>
                       </div>
                     </div>
@@ -943,7 +943,7 @@ export default function PreventionPlansPage() {
                         className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                        Seleccionar todos los planes
+                        {t('selectAllPlans')}
                       </span>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
@@ -952,7 +952,7 @@ export default function PreventionPlansPage() {
                           {filteredPlans.filter((p) => p.status === 'ACTIVE').length}
                         </div>
                         <div className="text-sm text-green-700 dark:text-green-400">
-                          Planes Activos
+                          {t('activePlans')}
                         </div>
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
@@ -960,7 +960,7 @@ export default function PreventionPlansPage() {
                           {filteredPlans.filter((p) => p.status === 'COMPLETED').length}
                         </div>
                         <div className="text-sm text-blue-700 dark:text-blue-400">
-                          Completados
+                          {t('completed')}
                         </div>
                       </div>
                       <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
@@ -968,7 +968,7 @@ export default function PreventionPlansPage() {
                           {filteredPlans.reduce((sum, p) => sum + (p.goals?.length || 0), 0)}
                         </div>
                         <div className="text-sm text-purple-700 dark:text-purple-400">
-                          Intervenciones Totales
+                          {t('totalInterventions')}
                         </div>
                       </div>
                     </div>
@@ -980,7 +980,7 @@ export default function PreventionPlansPage() {
               {loading && (
                 <div className="p-12 text-center">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-                  <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando planes...</p>
+                  <p className="mt-4 text-gray-600 dark:text-gray-400">{t('loadingPlans')}</p>
                 </div>
               )}
 
@@ -1002,13 +1002,13 @@ export default function PreventionPlansPage() {
                 <div className="p-12 text-center">
                   <Shield className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    No hay planes de prevención
+                    {t('noPlansTitle')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Este paciente no tiene protocolos de prevención aplicados todavía.
+                    {t('noPlansDescription')}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-500">
-                    Ve al AI Copilot y aplica un protocolo para comenzar.
+                    {t('noPlansHint')}
                   </p>
                 </div>
               )}
@@ -1018,16 +1018,16 @@ export default function PreventionPlansPage() {
                 <div className="p-12 text-center">
                   <Filter className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    No se encontraron planes
+                    {t('noFilterResults')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    No hay planes que coincidan con los filtros seleccionados.
+                    {t('noFilterResultsDescription')}
                   </p>
                   <button
                     onClick={clearFilters}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                   >
-                    Limpiar Filtros
+                    {t('clearFilters')}
                   </button>
                 </div>
               )}
@@ -1181,7 +1181,7 @@ export default function PreventionPlansPage() {
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Description */}
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2">Descripción</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2">{t('description')}</h3>
                 <p className="text-gray-600 dark:text-gray-400">{selectedPlan.description}</p>
               </div>
 
@@ -1191,7 +1191,7 @@ export default function PreventionPlansPage() {
                   <ExternalLink className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                   <div>
                     <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
-                      Fuente de Guía Clínica
+                      {t('clinicalGuidelineSource')}
                     </h4>
                     <p className="text-sm text-blue-700 dark:text-blue-300">
                       {selectedPlan.guidelineSource}
@@ -1261,7 +1261,7 @@ export default function PreventionPlansPage() {
                             {goal.status === 'COMPLETED' && (
                               <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded flex items-center space-x-1">
                                 <CheckCircle2 className="w-3 h-3" />
-                                <span>Completado</span>
+                                <span>{t('completed')}</span>
                               </span>
                             )}
                             {goal.frequency && (
@@ -1284,7 +1284,7 @@ export default function PreventionPlansPage() {
                           <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                             <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                             <label className="text-xs text-gray-600 dark:text-gray-400">
-                              Fecha objetivo:
+                              {t('targetDate')}:
                             </label>
                             <input
                               type="date"
@@ -1303,7 +1303,7 @@ export default function PreventionPlansPage() {
                                 onClick={() => updateGoalTargetDate(selectedPlan.id, idx, null)}
                                 className="text-xs text-red-600 dark:text-red-400 hover:underline"
                               >
-                                Limpiar
+                                {t('clear')}
                               </button>
                             )}
                           </div>
@@ -1316,7 +1316,7 @@ export default function PreventionPlansPage() {
                             >
                               <FileText className="w-3 h-3" />
                               <span>
-                                {expandedNotes.has(idx) ? 'Ocultar notas' : 'Agregar/ver notas clínicas'}
+                                {expandedNotes.has(idx) ? t('hideNotes') : t('addViewNotes')}
                               </span>
                               {(goal as any).notes && !expandedNotes.has(idx) && (
                                 <span className="ml-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs">
@@ -1329,12 +1329,12 @@ export default function PreventionPlansPage() {
                                 <textarea
                                   value={(goal as any).notes || ''}
                                   onChange={(e) => updateGoalNotes(selectedPlan.id, idx, e.target.value)}
-                                  placeholder="Agregar notas clínicas, barreras, adherencia, etc..."
+                                  placeholder={t('notesPlaceholder')}
                                   className="w-full text-xs px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                                   rows={3}
                                 />
                                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                  Las notas se guardan automáticamente
+                                  {t('notesAutoSave')}
                                 </p>
                               </div>
                             )}
@@ -1348,22 +1348,22 @@ export default function PreventionPlansPage() {
 
               {/* Metadata */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="font-bold text-gray-900 dark:text-white mb-3">Información del Plan</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-3">{t('planInfo')}</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">Creado:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('created')}:</span>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {formatDate(selectedPlan.createdAt)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">Actualizado:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('updated')}:</span>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {formatDate(selectedPlan.updatedAt)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">ID del Plan:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('planId')}:</span>
                     <p className="font-mono text-xs text-gray-900 dark:text-white">
                       {selectedPlan.id}
                     </p>
@@ -1374,7 +1374,7 @@ export default function PreventionPlansPage() {
               {/* Status History Section */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-900 dark:text-white">Historial de Estado</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-white">{t('statusHistory')}</h3>
                   <button
                     onClick={() => toggleStatusHistory(selectedPlan.id)}
                     disabled={loadingHistory}
@@ -1383,12 +1383,12 @@ export default function PreventionPlansPage() {
                     {loadingHistory ? (
                       <div className="flex items-center space-x-2">
                         <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                        <span>Cargando...</span>
+                        <span>{t('loading')}</span>
                       </div>
                     ) : showHistory ? (
-                      'Ocultar'
+                      t('hide')
                     ) : (
-                      'Ver Historial'
+                      t('viewHistory')
                     )}
                   </button>
                 </div>
@@ -1403,7 +1403,7 @@ export default function PreventionPlansPage() {
                             <div className="flex items-center space-x-2 mb-2">
                               <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                               <h4 className="font-semibold text-amber-900 dark:text-amber-200">
-                                Deshacer Cambio de Estado
+                                {t('undoStatusChange')}
                               </h4>
                             </div>
                             <p className="text-sm text-amber-800 dark:text-amber-300 mb-2">
@@ -1421,7 +1421,7 @@ export default function PreventionPlansPage() {
                             className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2 text-sm"
                           >
                             <Activity className="w-4 h-4 transform rotate-180" />
-                            <span>Deshacer</span>
+                            <span>{t('undo')}</span>
                           </button>
                         </div>
                       </div>
@@ -1440,9 +1440,9 @@ export default function PreventionPlansPage() {
                       ) : (
                         <div className="text-center py-8 text-gray-600 dark:text-gray-400">
                           <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                          <p>No hay cambios de estado registrados</p>
+                          <p>{t('noStatusChanges')}</p>
                           <p className="text-sm mt-1">
-                            El historial se actualizará cuando se cambien los estados
+                            {t('noStatusChangesHint')}
                           </p>
                         </div>
                       )}
@@ -1459,11 +1459,11 @@ export default function PreventionPlansPage() {
                   onClick={() => setSelectedPlan(null)}
                   className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors"
                 >
-                  Cerrar
+                  {t('close')}
                 </button>
                 <div className="flex items-center space-x-3">
                   <button className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                    Exportar PDF
+                    {t('exportPdf')}
                   </button>
                   {selectedPlan.status === 'ACTIVE' && (
                     <>
@@ -1472,14 +1472,14 @@ export default function PreventionPlansPage() {
                         className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Marcar Completo</span>
+                        <span>{t('markComplete')}</span>
                       </button>
                       <button
                         onClick={() => openStatusModal('deactivate')}
                         className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
                       >
                         <XCircle className="w-4 h-4" />
-                        <span>Desactivar</span>
+                        <span>{t('deactivate')}</span>
                       </button>
                     </>
                   )}
@@ -1489,7 +1489,7 @@ export default function PreventionPlansPage() {
                       className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
                     >
                       <Activity className="w-4 h-4" />
-                      <span>Reactivar</span>
+                      <span>{t('reactivate')}</span>
                     </button>
                   )}
                 </div>
@@ -1506,14 +1506,14 @@ export default function PreventionPlansPage() {
             {/* Modal Header */}
             <div className="border-b border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {statusAction === 'complete' && 'Marcar Plan como Completo'}
-                {statusAction === 'deactivate' && 'Desactivar Plan'}
-                {statusAction === 'reactivate' && 'Reactivar Plan'}
+                {statusAction === 'complete' && t('markPlanComplete')}
+                {statusAction === 'deactivate' && t('deactivatePlan')}
+                {statusAction === 'reactivate' && t('reactivatePlan')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {statusAction === 'complete' && 'El plan se marcará como completado exitosamente.'}
-                {statusAction === 'deactivate' && 'El plan se desactivará y ya no aparecerá como activo.'}
-                {statusAction === 'reactivate' && 'El plan se reactivará y volverá a estar activo.'}
+                {statusAction === 'complete' && t('markPlanCompleteDesc')}
+                {statusAction === 'deactivate' && t('deactivatePlanDesc')}
+                {statusAction === 'reactivate' && t('reactivatePlanDesc')}
               </p>
             </div>
 
@@ -1522,7 +1522,7 @@ export default function PreventionPlansPage() {
               {/* Reason Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  Motivo {statusAction !== 'reactivate' && '(requerido)'}
+                  {t('reason')} {statusAction !== 'reactivate' && `(${t('required')})`}
                 </label>
                 <select
                   value={statusReason}
@@ -1530,32 +1530,32 @@ export default function PreventionPlansPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required={statusAction !== 'reactivate'}
                 >
-                  <option value="">Seleccionar motivo...</option>
+                  <option value="">{t('selectReason')}</option>
                   {statusAction === 'complete' && (
                     <>
-                      <option value="all_goals_met">Todas las metas cumplidas</option>
-                      <option value="patient_declined">Paciente declinó más intervenciones</option>
-                      <option value="transitioned_protocol">Transición a otro protocolo</option>
-                      <option value="no_longer_indicated">Ya no clínicamente indicado</option>
-                      <option value="other">Otro (especificar en notas)</option>
+                      <option value="all_goals_met">{t('reasonAllGoalsMet')}</option>
+                      <option value="patient_declined">{t('reasonPatientDeclined')}</option>
+                      <option value="transitioned_protocol">{t('reasonTransitioned')}</option>
+                      <option value="no_longer_indicated">{t('reasonNoLongerIndicated')}</option>
+                      <option value="other">{t('reasonOther')}</option>
                     </>
                   )}
                   {statusAction === 'deactivate' && (
                     <>
-                      <option value="no_longer_indicated">Ya no clínicamente indicado</option>
-                      <option value="patient_transferred">Paciente transferido a otro proveedor</option>
-                      <option value="duplicate_protocol">Protocolo duplicado</option>
-                      <option value="patient_declined">Paciente declinó seguimiento</option>
-                      <option value="superseded">Reemplazado por protocolo más reciente</option>
-                      <option value="other">Otro (especificar en notas)</option>
+                      <option value="no_longer_indicated">{t('reasonNoLongerIndicated')}</option>
+                      <option value="patient_transferred">{t('reasonPatientTransferred')}</option>
+                      <option value="duplicate_protocol">{t('reasonDuplicate')}</option>
+                      <option value="patient_declined">{t('reasonPatientDeclinedFollowup')}</option>
+                      <option value="superseded">{t('reasonSuperseded')}</option>
+                      <option value="other">{t('reasonOther')}</option>
                     </>
                   )}
                   {statusAction === 'reactivate' && (
                     <>
-                      <option value="continued_need">Necesidad continua de prevención</option>
-                      <option value="patient_returned">Paciente regresó a cuidado</option>
-                      <option value="deactivated_error">Desactivado por error</option>
-                      <option value="other">Otro (especificar en notas)</option>
+                      <option value="continued_need">{t('reasonContinuedNeed')}</option>
+                      <option value="patient_returned">{t('reasonPatientReturned')}</option>
+                      <option value="deactivated_error">{t('reasonDeactivatedError')}</option>
+                      <option value="other">{t('reasonOther')}</option>
                     </>
                   )}
                 </select>
@@ -1564,12 +1564,12 @@ export default function PreventionPlansPage() {
               {/* Notes */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-                  Notas adicionales (opcional)
+                  {t('additionalNotes')}
                 </label>
                 <textarea
                   value={statusNotes}
                   onChange={(e) => setStatusNotes(e.target.value)}
-                  placeholder="Agregar contexto adicional, detalles clínicos, o justificación..."
+                  placeholder={t('additionalNotesPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                   rows={3}
                 />
@@ -1580,7 +1580,7 @@ export default function PreventionPlansPage() {
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-yellow-800 dark:text-yellow-300">
-                    <strong>Advertencia:</strong> Este plan se ocultará de la vista activa. Podrás reactivarlo más tarde si es necesario.
+                    <strong>{t('warning')}:</strong> {t('deactivateWarning')}
                   </div>
                 </div>
               )}
@@ -1599,7 +1599,7 @@ export default function PreventionPlansPage() {
                   disabled={updatingStatus}
                   className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors disabled:opacity-50"
                 >
-                  Cancelar
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleStatusChange}
@@ -1615,7 +1615,7 @@ export default function PreventionPlansPage() {
                   {updatingStatus ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Actualizando...</span>
+                      <span>{t('updating')}</span>
                     </>
                   ) : (
                     <>
@@ -1623,9 +1623,9 @@ export default function PreventionPlansPage() {
                       {statusAction === 'deactivate' && <XCircle className="w-4 h-4" />}
                       {statusAction === 'reactivate' && <Activity className="w-4 h-4" />}
                       <span>
-                        {statusAction === 'complete' && 'Confirmar Completado'}
-                        {statusAction === 'deactivate' && 'Confirmar Desactivación'}
-                        {statusAction === 'reactivate' && 'Confirmar Reactivación'}
+                        {statusAction === 'complete' && t('confirmComplete')}
+                        {statusAction === 'deactivate' && t('confirmDeactivation')}
+                        {statusAction === 'reactivate' && t('confirmReactivation')}
                       </span>
                     </>
                   )}
@@ -1643,10 +1643,10 @@ export default function PreventionPlansPage() {
             {/* Modal Header */}
             <div className="border-b border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Confirmar Deshacer Cambio
+                {t('confirmUndoTitle')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Esta acción revertirá el último cambio de estado
+                {t('confirmUndoDesc')}
               </p>
             </div>
 
@@ -1654,7 +1654,7 @@ export default function PreventionPlansPage() {
             <div className="p-6 space-y-4">
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
-                  Detalles del Cambio
+                  {t('changeDetails')}
                 </h4>
                 <div className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
                   <p>
@@ -1679,9 +1679,8 @@ export default function PreventionPlansPage() {
                 <div className="flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-amber-800 dark:text-amber-300">
-                    <strong>Nota:</strong> El plan volverá al estado{' '}
-                    <strong>{undoInfo.wouldRevertTo}</strong>. Esta acción quedará registrada en el
-                    historial.
+                    <strong>{t('note')}:</strong> {t('undoNotePrefix')}{' '}
+                    <strong>{undoInfo.wouldRevertTo}</strong>. {t('undoNoteSuffix')}
                   </div>
                 </div>
               </div>
@@ -1695,7 +1694,7 @@ export default function PreventionPlansPage() {
                   disabled={undoing}
                   className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition-colors disabled:opacity-50"
                 >
-                  Cancelar
+                  {t('cancel')}
                 </button>
                 <button
                   onClick={handleUndoStatusChange}
@@ -1705,12 +1704,12 @@ export default function PreventionPlansPage() {
                   {undoing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Deshaciendo...</span>
+                      <span>{t('undoing')}</span>
                     </>
                   ) : (
                     <>
                       <Activity className="w-4 h-4 transform rotate-180" />
-                      <span>Confirmar Deshacer</span>
+                      <span>{t('confirmUndo')}</span>
                     </>
                   )}
                 </button>
@@ -1727,7 +1726,7 @@ export default function PreventionPlansPage() {
             {/* Modal Header */}
             <div className="border-b border-gray-200 dark:border-gray-700 p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                Confirmar Operación en Bloque
+                {t('confirmBulkOperation')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Esta acción se aplicará a {selectedPlanIds.size} plan{selectedPlanIds.size > 1 ? 'es' : ''}
@@ -1739,9 +1738,9 @@ export default function PreventionPlansPage() {
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
                   Operación:{' '}
-                  {bulkAction === 'status_change' && 'Cambio de Estado'}
-                  {bulkAction === 'delete' && 'Archivar Planes'}
-                  {bulkAction === 'duplicate' && 'Duplicar Planes'}
+                  {bulkAction === 'status_change' && t('bulkStatusChange')}
+                  {bulkAction === 'delete' && t('bulkArchive')}
+                  {bulkAction === 'duplicate' && t('bulkDuplicate')}
                 </h4>
                 {bulkAction === 'status_change' && bulkParams.status && (
                   <p className="text-sm text-blue-800 dark:text-blue-300">
@@ -1756,13 +1755,12 @@ export default function PreventionPlansPage() {
                 )}
                 {bulkAction === 'delete' && (
                   <p className="text-sm text-blue-800 dark:text-blue-300">
-                    Los planes seleccionados serán archivados y su estado cambiará a DEACTIVATED.
+                    {t('bulkArchiveDesc')}
                   </p>
                 )}
                 {bulkAction === 'duplicate' && (
                   <p className="text-sm text-blue-800 dark:text-blue-300">
-                    Se crearán copias de los planes seleccionados con el mismo contenido pero en estado
-                    ACTIVE.
+                    {t('bulkDuplicateDesc')}
                   </p>
                 )}
               </div>
@@ -1801,12 +1799,12 @@ export default function PreventionPlansPage() {
                   {performingBulk ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Procesando...</span>
+                      <span>{t('processing')}</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Confirmar Operación</span>
+                      <span>{t('confirmOperation')}</span>
                     </>
                   )}
                 </button>

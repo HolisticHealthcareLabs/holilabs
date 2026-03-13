@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,7 +138,7 @@ export const POST = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error undoing prevention plan status change:', error);
+    logger.error('Error undoing prevention plan status change:', error);
 
     return NextResponse.json(
       {
@@ -216,7 +217,7 @@ export const GET = createProtectedRoute(
       reason: canUndo ? 'Can undo' : 'Time limit exceeded (24 hours)',
     });
   } catch (error) {
-    console.error('Error checking undo eligibility:', error);
+    logger.error('Error checking undo eligibility:', error);
 
     return NextResponse.json(
       {

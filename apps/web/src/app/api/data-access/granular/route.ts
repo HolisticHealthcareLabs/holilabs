@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
@@ -157,14 +158,14 @@ export const POST = createProtectedRoute(
         })),
       });
     } catch (error) {
-      console.error('Error creating granular access grant:', error);
+      logger.error('Error creating granular access grant:', error);
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Failed to create access grant' },
         { status: 500 }
       );
     }
   },
-  { roles: [...ROLES] }
+  { roles: [...ROLES], audit: { action: 'CREATE', resource: 'GranularDataAccess' } }
 );
 
 /**
@@ -245,14 +246,14 @@ export const GET = createProtectedRoute(
         grants: Object.values(groupedGrants),
       });
     } catch (error) {
-      console.error('Error fetching granular access grants:', error);
+      logger.error('Error fetching granular access grants:', error);
       return NextResponse.json(
         { error: 'Failed to fetch access grants' },
         { status: 500 }
       );
     }
   },
-  { roles: [...ROLES] }
+  { roles: [...ROLES], audit: { action: 'READ', resource: 'GranularDataAccess' } }
 );
 
 /**
@@ -307,12 +308,12 @@ export const DELETE = createProtectedRoute(
         message: 'Access grant revoked',
       });
     } catch (error) {
-      console.error('Error revoking granular access grant:', error);
+      logger.error('Error revoking granular access grant:', error);
       return NextResponse.json(
         { error: 'Failed to revoke access grant' },
         { status: 500 }
       );
     }
   },
-  { roles: [...ROLES] }
+  { roles: [...ROLES], audit: { action: 'REVOKE', resource: 'GranularDataAccess' } }
 );

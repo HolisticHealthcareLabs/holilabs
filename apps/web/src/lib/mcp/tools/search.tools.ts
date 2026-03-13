@@ -1243,7 +1243,7 @@ async function getRecentSearchesHandler(
 ): Promise<MCPResult> {
     try {
         // In production, query from database:
-        // const searches = await prisma.searchHistory.findMany({...})
+        // const searches = await (prisma as any).searchHistory.findMany({...})
 
         // For now, return empty with explanation
         logger.info({
@@ -1289,7 +1289,7 @@ async function saveSearchHandler(
         const { name, description, entityType, searchParams, tags } = input;
 
         // In production, save to database:
-        // const savedSearch = await prisma.savedSearch.create({...})
+        // const savedSearch = await (prisma as any).savedSearch.create({...})
 
         const savedSearch = {
             id: `ss_${Date.now()}`,
@@ -1338,7 +1338,7 @@ async function getSavedSearchesHandler(
 ): Promise<MCPResult> {
     try {
         // In production, query from database:
-        // const searches = await prisma.savedSearch.findMany({...})
+        // const searches = await (prisma as any).savedSearch.findMany({...})
 
         logger.info({
             event: 'get_saved_searches',

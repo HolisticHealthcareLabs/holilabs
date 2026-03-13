@@ -144,6 +144,10 @@ model User {
   // Billing Intelligence
   clinicianNetworks ClinicianNetwork[]
 
+  // Role Assignment (delegated RBAC)
+  grantedRoles    RoleAssignment[] @relation("RoleGrantor")
+  receivedRoles   RoleAssignment[] @relation("RoleGrantee")
+
   @@index([email])
   @@index([walletAddress])
   @@index([invitationCodeId])
@@ -169,7 +173,9 @@ model UserAPIKey {
 }
 
 enum UserRole {
+  LICENSE_OWNER // License owner - super admin
   ADMIN // Clinic owner - full system access
+  COMPLIANCE_ADMIN // Compliance administrator - regional settings
   PHYSICIAN // Doctor - full patient care access
   NURSE // Nurse - limited prescribing, full patient care
   RECEPTIONIST // Front desk - scheduling, billing only
@@ -1081,6 +1087,9 @@ model Patient {
 
   // Medical Imaging
   medicalImages MedicalImage[] @relation("PatientMedicalImages")
+
+  // Communication Preferences (AI-powered)
+  commPreferences PatientCommPreference[]
 
   // AI Quality Control (Phase 2.3)
   aiContentFeedback      AIContentFeedback[]
@@ -2181,6 +2190,8 @@ model AuditLog {
   @@index([timestamp])
   @@index([accessReason])
   @@index([entryHash])
+  @@index([userId, timestamp])
+  @@index([resourceId, timestamp])
   @@map("audit_logs")
 }
 
@@ -2374,6 +2385,7 @@ model ScribeSession {
   @@index([clinicianId])
   @@index([status])
   @@index([createdAt])
+  @@index([clinicianId, createdAt])
   @@map("scribe_sessions")
 }
 
@@ -2521,6 +2533,8 @@ model ClinicalEncounter {
   @@index([providerId])
   @@index([status])
   @@index([scheduledAt])
+  @@index([providerId, scheduledAt])
+  @@index([patientId, scheduledAt])
   @@map("clinical_encounters")
 }
 
@@ -7925,4 +7939,386 @@ model DisciplineContentMap {
   @@index([disciplineId, priority])
   @@index([contentDefinitionId])
   @@map("discipline_content_maps")
+}
+
+// =============================================================================
+// NETWORK MODULE — Leakage Prevention Engine (@holi/network prototype)
+// Isolated models — no FK to PatientToken without an ADR.
+// =============================================================================
+
+enum NetworkReferralStatus {
+  PENDING
+  CONSENTED
+  SELECTING_PROVIDER
+  SELECTING_SLOT
+  BOOKED
+  EXPIRED
+  DECLINED
+}
+
+enum NetworkSpecialtyCode {
+  CARDIOLOGY
+  DERMATOLOGY
+  ORTHOPEDICS
+  NEUROLOGY
+  GASTROENTEROLOGY
+  OPHTHALMOLOGY
+  ENDOCRINOLOGY
+  GYNECOLOGY
+  UROLOGY
+  GENERAL_SURGERY
+}
+
+/// A healthcare provider registered in the referral network.
+model NetworkProvider {
+  id              String               @id @default(cuid())
+  orgId           String               @map("org_id")
+  name            String
+  specialty       NetworkSpecialtyCode
+  crmNumber       String               @map("crm_number")
+  calcomUsername  String?              @map("calcom_username")
+  calcomEventSlug String?              @map("calcom_event_slug")
+  phone           String?
+  addressCity     String?              @map("address_city")
+  addressState    String?              @map("address_state")
+  acceptedPlans   String[]             @map("accepted_plans")
+  isActive        Boolean              @default(true) @map("is_active")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  referrals NetworkReferral[]
+
+  @@index([orgId])
+  @@index([specialty])
+  @@index([isActive])
+  @@map("network_providers")
+}
+
+/// A referral request initiated by a clinician for a patient.
+/// patientPhoneEncrypted must be AES-256-GCM encrypted before any DB write (CYRUS).
+/// consentedAt is the LGPD gate — no PHI is shared before this is set (RUTH).
+model NetworkReferral {
+  id                          String                @id @default(cuid())
+  orgId                       String                @map("org_id")
+  referringClinicianId        String                @map("referring_clinician_id")
+  targetSpecialty             NetworkSpecialtyCode  @map("target_specialty")
+  status                      NetworkReferralStatus @default(PENDING)
+  patientPhoneEncrypted       String                @map("patient_phone_encrypted")
+  patientPhoneVersion         Int                   @default(1) @map("patient_phone_version")
+  /// HMAC-SHA256 of the E.164 phone (PHONE_LOOKUP_SECRET). Used for O(1) indexed lookup.
+  patientPhoneLookup          String?               @map("patient_phone_lookup")
+  /// Idempotency key (from Idempotency-Key header) prevents duplicate referrals on retries.
+  idempotencyKey              String?               @unique @map("idempotency_key")
+  consentedAt                 DateTime?             @map("consented_at")
+  consentMessageSid           String?               @map("consent_message_sid")
+  consentRetryAt              DateTime?             @map("consent_retry_at")
+  /// Last WhatsApp message SID processed — prevents duplicate delivery processing on every turn.
+  lastProcessedMessageSid     String?               @map("last_processed_message_sid")
+  selectedProviderId          String?               @map("selected_provider_id")
+  calBookingUid               String?               @map("cal_booking_uid")
+  bookedSlotStart             DateTime?             @map("booked_slot_start")
+  stateMachineSnapshot        Json?                 @map("state_machine_snapshot")
+  estimatedRevenueRetainedBrl Decimal?              @map("estimated_revenue_retained_brl") @db.Decimal(10, 2)
+  expiresAt                   DateTime              @map("expires_at")
+  createdAt                   DateTime              @default(now()) @map("created_at")
+  updatedAt                   DateTime              @updatedAt @map("updated_at")
+
+  selectedProvider NetworkProvider? @relation(fields: [selectedProviderId], references: [id])
+
+  @@index([orgId])
+  @@index([status])
+  @@index([referringClinicianId])
+  @@index([expiresAt])
+  @@index([patientPhoneLookup])
+  @@map("network_referrals")
+}
+
+// =============================================================================
+// PHYSICIAN DIRECTORY — Mercosur Government Registry
+// Global canonical physician identity imported from CFM (Brazil), SISA (Argentina),
+// MSP (Uruguay), and CMP (Paraguay). Not org-scoped — public directory data.
+//
+// RUTH: CFM commercial address/phone are public record (CFM Res. 2.299/2021).
+//       Personal data requires explicit consent (publicProfileEnabled = false by default
+//       for any personally-supplied fields).
+// ARCHIE: Keep separate from NetworkProvider (org-scoped) to avoid tenant pollution.
+// =============================================================================
+
+/// Source registry for a physician record
+enum PhysicianRegistrySource {
+  CFM_BR    // Conselho Federal de Medicina (Brazil)
+  SISA_AR   // Sistema Integrado de Información Sanitaria (Argentina)
+  MSP_UY    // Ministerio de Salud Pública (Uruguay)
+  CMP_PY    // Colegio Médico del Paraguay
+  MANUAL    // Manually entered by org admin
+}
+
+/// Global canonical physician identity — one row per licensed doctor in Mercosur.
+/// Imported from official government registries. Upserted on each import run.
+model PhysicianCatalog {
+  id               String                 @id @default(cuid())
+  /// "BR" | "AR" | "UY" | "PY"
+  country          String
+  /// CRM number (Brazil), MP number (Argentina), or equivalent
+  registryId       String                 @map("registry_id")
+  /// State/province of registration — "SP", "RJ" etc. (null for non-BR)
+  registryState    String?                @map("registry_state")
+  registrySource   PhysicianRegistrySource @map("registry_source")
+  name             String
+  photoUrl         String?                @map("photo_url")
+  gender           String?                // "M" | "F" | null
+  /// Decimal lat for PostGIS — populated by geocoding pipeline
+  lat              Decimal?               @db.Decimal(9, 6)
+  /// Decimal lng for PostGIS — populated by geocoding pipeline
+  lng              Decimal?               @db.Decimal(9, 6)
+  addressCity      String?                @map("address_city")
+  addressState     String?                @map("address_state")
+  addressCep       String?                @map("address_cep")
+  addressStreet    String?                @map("address_street")
+  /// Commercial phone — public per CFM Res. 2.299/2021 for Brazil
+  phone            String?
+  /// Commercial email — only if from registry (not personally supplied)
+  email            String?
+  /// Whether the registry record is active (not suspended, not cancelled)
+  isRegistryActive Boolean                @default(true) @map("is_registry_active")
+  /// True = included in public unauthenticated directory responses
+  publicProfileEnabled Boolean            @default(true) @map("public_profile_enabled")
+  /// Timestamp of last sync with the source registry
+  lastSyncedAt     DateTime?              @map("last_synced_at")
+  /// Profile completeness score 0–100 (computed on upsert)
+  completenessScore Int                   @default(0) @map("completeness_score")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+
+  specialties      PhysicianSpecialty[]
+  orgLinks         NetworkProviderLink[]
+  establishments   PhysicianEstablishment[]
+
+  @@unique([country, registryId, registryState])
+  @@index([country])
+  @@index([addressState])
+  @@index([addressCity])
+  @@index([isRegistryActive])
+  @@index([publicProfileEnabled])
+  @@index([completenessScore])
+  @@map("physician_catalog")
+}
+
+/// Reference table for all medical specialties — bilingual PT/ES, mapped to official codes.
+/// Supports hierarchy: parentId links Areas of Expertise (RQE) to parent specialties.
+model MedicalSpecialty {
+  id          String  @id @default(cuid())
+  /// Official CFM specialty code (Brazil)
+  cfmCode     String? @unique @map("cfm_code")
+  /// SISA specialty code (Argentina)
+  sisaCode    String? @map("sisa_code")
+  /// Portuguese display name (Brazil)
+  displayPt   String  @map("display_pt")
+  /// Spanish display name (Argentina/Uruguay/Paraguay)
+  displayEs   String  @map("display_es")
+  /// Slug for URL use — e.g. "cardiologia"
+  slug        String  @unique
+  /// True = Area of Expertise (RQE), False = main specialty
+  isAreaOfExpertise Boolean @default(false) @map("is_area_of_expertise")
+  /// Parent specialty ID (for RQEs/sub-specialties)
+  parentId    String? @map("parent_id")
+  parent      MedicalSpecialty?  @relation("SpecialtyHierarchy", fields: [parentId], references: [id])
+  children    MedicalSpecialty[] @relation("SpecialtyHierarchy")
+
+  physicians  PhysicianSpecialty[]
+
+  @@index([slug])
+  @@index([parentId])
+  @@map("medical_specialties")
+}
+
+/// Many-to-many join: physician ↔ specialty.
+/// Supports multiple specialties per doctor + RQE certification numbers.
+model PhysicianSpecialty {
+  id          String  @id @default(cuid())
+  physicianId String  @map("physician_id")
+  specialtyId String  @map("specialty_id")
+  /// RQE (Registro de Qualificação de Especialista) number for this specialty — Brazil only
+  rqeNumber   String? @map("rqe_number")
+  /// True = primary specialty (used for default search categorization)
+  isPrimary   Boolean @default(false) @map("is_primary")
+
+  physician   PhysicianCatalog @relation(fields: [physicianId], references: [id], onDelete: Cascade)
+  specialty   MedicalSpecialty @relation(fields: [specialtyId], references: [id])
+
+  @@unique([physicianId, specialtyId])
+  @@index([physicianId])
+  @@index([specialtyId])
+  @@map("physician_specialties")
+}
+
+/// Org membership: which PhysicianCatalog doctors are in a clinic's Holi referral network.
+/// Replaces the direct org-scoped NetworkProvider for network-enrolled doctors.
+/// Legacy NetworkProvider rows remain for manually-added doctors not in the global catalog.
+model NetworkProviderLink {
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  physicianId     String   @map("physician_id")
+  calcomUsername  String?  @map("calcom_username")
+  calcomEventSlug String?  @map("calcom_event_slug")
+  acceptedPlans   String[] @map("accepted_plans")
+  isActive        Boolean  @default(true) @map("is_active")
+  /// When the doctor claimed their profile and joined the network
+  claimedAt       DateTime? @map("claimed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  physician PhysicianCatalog @relation(fields: [physicianId], references: [id])
+
+  @@unique([orgId, physicianId])
+  @@index([orgId])
+  @@index([physicianId])
+  @@index([isActive])
+  @@map("network_provider_links")
+}
+
+model RoleAssignment {
+  id           String    @id @default(cuid())
+  grantorId    String
+  grantor      User      @relation("RoleGrantor", fields: [grantorId], references: [id])
+  granteeId    String
+  grantee      User      @relation("RoleGrantee", fields: [granteeId], references: [id])
+  role         UserRole
+  scope        String?
+  grantedAt    DateTime  @default(now())
+  revokedAt    DateTime?
+
+  @@unique([granteeId, role, scope])
+  @@index([grantorId])
+  @@index([granteeId])
+  @@map("role_assignments")
+}
+
+// =============================================================================
+// GOVERNMENT DATA COORDINATION — Insurance Plans, Healthcare Establishments, Sync
+// Source: ANS (Brazil), CNES (Brazil)
+// =============================================================================
+
+/// CNES establishment type classification
+enum EstablishmentType {
+  HOSPITAL
+  CLINIC
+  POLYCLINIC
+  LAB
+  IMAGING
+  PHARMACY
+  HOME_CARE
+  OTHER
+}
+
+/// Health insurance plan operator + product, sourced from ANS (Brazil).
+/// Enables `?plans=amil` directory filter using official ANS codes.
+model InsurancePlan {
+  id               String  @id @default(cuid())
+  /// ANS operator registry number
+  ansOperatorCode  String  @map("ans_operator_code")
+  /// ANS plan product code (unique per plan product)
+  ansPlanCode      String? @unique @map("ans_plan_code")
+  operatorName     String  @map("operator_name")
+  planName         String? @map("plan_name")
+  /// Slug for URL/search use — e.g. "amil", "sulamerica", "unimed-sp"
+  slug             String  @unique
+  /// Country code — "BR" for ANS-sourced plans
+  country          String  @default("BR")
+  isActive         Boolean @default(true) @map("is_active")
+  lastSyncedAt     DateTime? @map("last_synced_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([ansOperatorCode])
+  @@index([slug])
+  @@index([country])
+  @@map("insurance_plans")
+}
+
+/// Healthcare establishment (hospital, clinic, lab) sourced from CNES (Brazil).
+/// Includes lat/lng for geospatial queries and physician affiliation mapping.
+model HealthcareEstablishment {
+  id              String            @id @default(cuid())
+  /// CNES code — unique per establishment
+  cnesCode        String            @unique @map("cnes_code")
+  /// CNPJ of the legal entity
+  cnpj            String?
+  name            String
+  tradeName       String?           @map("trade_name")
+  type            EstablishmentType
+  country         String            @default("BR")
+  addressCity     String?           @map("address_city")
+  addressState    String?           @map("address_state")
+  addressCep      String?           @map("address_cep")
+  addressStreet   String?           @map("address_street")
+  lat             Decimal?          @db.Decimal(9, 6)
+  lng             Decimal?          @db.Decimal(9, 6)
+  phone           String?
+  email           String?
+  isActive        Boolean           @default(true) @map("is_active")
+  lastSyncedAt    DateTime?         @map("last_synced_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  physicians      PhysicianEstablishment[]
+
+  @@index([type])
+  @@index([addressState])
+  @@index([addressCity])
+  @@index([isActive])
+  @@map("healthcare_establishments")
+}
+
+/// Many-to-many: physician ↔ establishment (doctor works at hospital/clinic).
+/// Sourced from CNES professional linkage data.
+model PhysicianEstablishment {
+  id              String @id @default(cuid())
+  physicianId     String @map("physician_id")
+  establishmentId String @map("establishment_id")
+  isPrimary       Boolean @default(false) @map("is_primary")
+  startDate       DateTime? @map("start_date")
+
+  physician       PhysicianCatalog        @relation(fields: [physicianId], references: [id], onDelete: Cascade)
+  establishment   HealthcareEstablishment @relation(fields: [establishmentId], references: [id], onDelete: Cascade)
+
+  @@unique([physicianId, establishmentId])
+  @@index([physicianId])
+  @@index([establishmentId])
+  @@map("physician_establishments")
+}
+
+/// Tracks import/sync runs for each data source for audit and monitoring.
+model DataSourceSyncLog {
+  id              String   @id @default(cuid())
+  sourceId        String   @map("source_id")
+  startedAt       DateTime @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+  status          String   @default("running") // running | completed | failed
+  recordsImported Int      @default(0) @map("records_imported")
+  recordsUpdated  Int      @default(0) @map("records_updated")
+  recordsErrored  Int      @default(0) @map("records_errored")
+  errorMessage    String?  @map("error_message")
+
+  @@index([sourceId])
+  @@index([startedAt])
+  @@map("data_source_sync_logs")
+}
+
+model PatientCommPreference {
+  id           String    @id @default(cuid())
+  patientId    String
+  patient      Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  channel      String
+  preferredTime String?
+  frequency    String?
+  responseRate Float     @default(0)
+  lastSentAt   DateTime?
+  lastOpenedAt DateTime?
+  score        Float     @default(0.5)
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([patientId, channel])
+  @@index([patientId])
+  @@map("patient_comm_preferences")
 }

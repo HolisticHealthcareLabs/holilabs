@@ -25,6 +25,7 @@ import {
   type HybridDeidentificationConfig,
 } from '@holi/deid';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 /**
  * Request body validation
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Deidentif
       },
     });
   } catch (error) {
-    console.error('[De-identification API] Error:', error);
+    logger.error('[De-identification API] Error:', error);
 
     // Log failed attempt
     await createAuditLog(

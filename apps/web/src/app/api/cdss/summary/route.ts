@@ -21,6 +21,7 @@ import { createSummaryService } from '@/lib/services/summary.service';
 import { createAuditLog } from '@/lib/audit';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { wrapInSafetyEnvelope } from '@/lib/clinical/safety-envelope';
 
 export const dynamic = 'force-dynamic';
 
@@ -143,10 +144,19 @@ export const POST = createProtectedRoute(
       return NextResponse.json(
         {
           success: true,
-          data: {
-            jobId,
-            message: 'Summary generation queued. Poll /api/jobs/{jobId}/status for progress.',
-          },
+          ...wrapInSafetyEnvelope(
+            {
+              jobId,
+              message: 'Summary generation queued. Poll /api/jobs/{jobId}/status for progress.',
+            },
+            {
+              processingMethod: 'ai',
+              confidence: 0.0,
+              fallbackUsed: false,
+              model: 'async-summary-llm',
+              version: '3.0.0',
+            }
+          ),
         },
         { status: 202 }
       );
@@ -215,11 +225,20 @@ export const GET = createProtectedRoute(
 
       return NextResponse.json({
         success: true,
-        data: {
-          encounterId,
-          summaryDraft: encounter.summaryDraft,
-          hasDraft: !!encounter.summaryDraft,
-        },
+        ...wrapInSafetyEnvelope(
+          {
+            encounterId,
+            summaryDraft: encounter.summaryDraft,
+            hasDraft: !!encounter.summaryDraft,
+          },
+          {
+            processingMethod: encounter.summaryDraft ? 'ai' : 'deterministic',
+            confidence: encounter.summaryDraft ? 0.8 : 0.0,
+            fallbackUsed: false,
+            model: encounter.summaryDraft ? 'async-summary-llm' : 'none',
+            version: '3.0.0',
+          }
+        ),
       });
     } catch (error) {
       logger.error({

@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -56,6 +57,7 @@ interface Stats {
 }
 
 export default function PreventionSearchPage() {
+  const t = useTranslations('portal.preventionSearch');
   const router = useRouter();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -152,11 +154,11 @@ export default function PreventionSearchPage() {
   const getResultTypeLabel = (type: SearchResult['type']) => {
     switch (type) {
       case 'plan':
-        return 'Plan de Prevención';
+        return t('plan');
       case 'template':
-        return 'Plantilla';
+        return t('template');
       case 'reminder':
-        return 'Recordatorio';
+        return t('reminder');
     }
   };
 
@@ -186,11 +188,11 @@ export default function PreventionSearchPage() {
         <div className="flex items-center space-x-3 mb-2">
           <Search className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Búsqueda Avanzada
+            {t('title')}
           </h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400">
-          Busca en planes, plantillas y recordatorios de prevención
+          {t('subtitle')}
         </p>
       </div>
 
@@ -203,7 +205,7 @@ export default function PreventionSearchPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre, descripción, fuente de guía..."
+              placeholder={t('searchPlaceholder')}
               className="w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all"
             />
             {searchQuery && (

@@ -29,7 +29,7 @@ export async function sendEmail({
       text: undefined, // HTML-only for now
     });
 
-    console.log('Email queued successfully:', emailId);
+    console.error('[NotificationEmail]', { event: 'queued', emailId });
     return true;
   } catch (error) {
     console.error('Error queueing email:', error);

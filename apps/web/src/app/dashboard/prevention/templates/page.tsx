@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   FileText,
   Plus,
@@ -45,6 +46,7 @@ interface Template {
 }
 
 export default function PreventionTemplatesPage() {
+  const t = useTranslations('dashboard.prevention.templates');
   const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([]);
@@ -266,7 +268,7 @@ export default function PreventionTemplatesPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Cargando plantillas...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('loadingTemplates')}</p>
         </div>
       </div>
     );
@@ -285,7 +287,7 @@ export default function PreventionTemplatesPage() {
                 onClick={fetchTemplates}
                 className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                Reintentar
+                {t('retry')}
               </button>
             </div>
           </div>
@@ -304,10 +306,10 @@ export default function PreventionTemplatesPage() {
               <FileText className="w-8 h-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Plantillas de Prevención
+                  {t('title')}
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Gestiona plantillas reutilizables para planes de prevención • Holi Labs
+                  {t('subtitle')}
                 </p>
               </div>
             </div>
@@ -316,7 +318,7 @@ export default function PreventionTemplatesPage() {
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />
-              <span>Nueva Plantilla</span>
+              <span>{t('newTemplate')}</span>
             </button>
           </div>
 
@@ -343,7 +345,7 @@ export default function PreventionTemplatesPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar plantillas..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -352,7 +354,7 @@ export default function PreventionTemplatesPage() {
               className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
             >
               <Filter className="w-4 h-4" />
-              <span>Filtros</span>
+              <span>{t('filters')}</span>
               {(filterPlanType !== 'all' || filterActive !== 'all') && (
                 <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs">
                   {(filterPlanType !== 'all' ? 1 : 0) + (filterActive !== 'all' ? 1 : 0)}
@@ -367,31 +369,31 @@ export default function PreventionTemplatesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tipo de Plan
+                    {t('planType')}
                   </label>
                   <select
                     value={filterPlanType}
                     onChange={(e) => setFilterPlanType(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="all">Todos los tipos</option>
-                    <option value="CARDIOVASCULAR">Cardiovascular</option>
-                    <option value="DIABETES">Diabetes</option>
-                    <option value="COMPREHENSIVE">Integral</option>
+                    <option value="all">{t('allTypes')}</option>
+                    <option value="CARDIOVASCULAR">{t('cardiovascular')}</option>
+                    <option value="DIABETES">{t('diabetes')}</option>
+                    <option value="COMPREHENSIVE">{t('comprehensive')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Estado
+                    {t('status')}
                   </label>
                   <select
                     value={filterActive}
                     onChange={(e) => setFilterActive(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="all">Todos los estados</option>
-                    <option value="active">Activas</option>
-                    <option value="inactive">Inactivas</option>
+                    <option value="all">{t('allStatuses')}</option>
+                    <option value="active">{t('active')}</option>
+                    <option value="inactive">{t('inactive')}</option>
                   </select>
                 </div>
               </div>
@@ -410,7 +412,7 @@ export default function PreventionTemplatesPage() {
                 {templates.length}
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Plantillas</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('totalTemplates')}</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -420,7 +422,7 @@ export default function PreventionTemplatesPage() {
                 {templates.filter((t) => t.isActive).length}
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Activas</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('active')}</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -430,7 +432,7 @@ export default function PreventionTemplatesPage() {
                 {templates.reduce((sum, t) => sum + t.useCount, 0)}
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Usos Totales</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('totalUses')}</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -440,7 +442,7 @@ export default function PreventionTemplatesPage() {
                 {filteredTemplates.length}
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Filtradas</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('filtered')}</p>
           </div>
         </div>
 
@@ -449,12 +451,12 @@ export default function PreventionTemplatesPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No se encontraron plantillas
+              {t('noTemplatesFound')}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
               {searchTerm || filterPlanType !== 'all' || filterActive !== 'all'
-                ? 'Intenta ajustar los filtros de búsqueda'
-                : 'Crea tu primera plantilla para comenzar'}
+                ? t('adjustFilters')
+                : t('createFirstHint')}
             </p>
             {!searchTerm && filterPlanType === 'all' && filterActive === 'all' && (
               <button
@@ -462,7 +464,7 @@ export default function PreventionTemplatesPage() {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors inline-flex items-center space-x-2"
               >
                 <Plus className="w-4 h-4" />
-                <span>Crear Primera Plantilla</span>
+                <span>{t('createFirstTemplate')}</span>
               </button>
             )}
           </div>
@@ -502,11 +504,11 @@ export default function PreventionTemplatesPage() {
                         </h3>
                         {template.isActive ? (
                           <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
-                            Activa
+                            {t('active')}
                           </span>
                         ) : (
                           <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400 rounded-full text-xs font-medium">
-                            Inactiva
+                            {t('inactive')}
                           </span>
                         )}
                       </div>
@@ -558,7 +560,7 @@ export default function PreventionTemplatesPage() {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   {template.guidelineSource && (
                     <div>
-                      <span className="text-xs text-gray-500 dark:text-gray-500">Fuente:</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-500">{t('source')}:</span>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {template.guidelineSource}
                       </p>
@@ -566,7 +568,7 @@ export default function PreventionTemplatesPage() {
                   )}
                   {template.evidenceLevel && (
                     <div>
-                      <span className="text-xs text-gray-500 dark:text-gray-500">Evidencia:</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-500">{t('evidence')}:</span>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {template.evidenceLevel}
                       </p>

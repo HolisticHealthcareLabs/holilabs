@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -33,6 +34,7 @@ interface SOAPNotes {
 }
 
 export default function ConsultationDetailPage() {
+  const t = useTranslations('portal.consultationDetail');
   const params = useParams();
   const recordingId = (params?.id as string) || '';
 
@@ -53,7 +55,7 @@ export default function ConsultationDetailPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al cargar consulta');
+        throw new Error(data.error || t('error'));
       }
 
       setRecording(data.data);
@@ -68,7 +70,7 @@ export default function ConsultationDetailPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('error'));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export default function ConsultationDetailPage() {
               />
             </svg>
           </div>
-          <p className="text-gray-600 font-medium">Cargando consulta...</p>
+          <p className="text-gray-600 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -142,13 +144,13 @@ export default function ConsultationDetailPage() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">Error</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">{t('error')}</h2>
           <p className="text-gray-600 mb-6 text-center">{error}</p>
           <Link
             href="/portal/consultations"
             className="block w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold text-center shadow-lg hover:shadow-xl transition-all"
           >
-            Volver a Consultas
+            {t('backToConsultations')}
           </Link>
         </div>
       </div>
@@ -167,7 +169,7 @@ export default function ConsultationDetailPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Volver a consultas
+            t('backToConsultations')
           </Link>
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
             {recording.appointment.title}
@@ -193,7 +195,7 @@ export default function ConsultationDetailPage() {
                   />
                 </svg>
                 <span className="text-gray-700 font-medium">
-                  Duración: {formatDuration(recording.audioDuration)}
+                  {t('durationLabel')} {formatDuration(recording.audioDuration)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -228,10 +230,10 @@ export default function ConsultationDetailPage() {
                   d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
                 />
               </svg>
-              Audio de la Consulta
+              {t('audioTitle')}
             </h2>
             <audio controls className="w-full" src={recording.audioUrl}>
-              Tu navegador no soporta el elemento de audio.
+              {t('noAudioSupport')}
             </audio>
           </motion.div>
         )}
@@ -253,7 +255,7 @@ export default function ConsultationDetailPage() {
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                Notas Médicas
+                {t('soapTab')}
               </button>
               <button
                 onClick={() => setActiveTab('transcript')}
@@ -263,7 +265,7 @@ export default function ConsultationDetailPage() {
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                Transcripción
+                {t('transcriptTab')}
               </button>
             </div>
 
@@ -273,7 +275,7 @@ export default function ConsultationDetailPage() {
                   {/* Subjective */}
                   <div>
                     <h3 className="text-lg font-bold text-blue-900 mb-2">
-                      📝 Síntomas Reportados
+                      {t('symptomsTitle')}
                     </h3>
                     <p className="text-gray-700 leading-relaxed bg-blue-50 p-4 rounded-lg">
                       {soapNotes.subjective}
@@ -283,7 +285,7 @@ export default function ConsultationDetailPage() {
                   {/* Objective */}
                   <div>
                     <h3 className="text-lg font-bold text-green-900 mb-2">
-                      🔍 Hallazgos del Examen
+                      {t('examTitle')}
                     </h3>
                     <p className="text-gray-700 leading-relaxed bg-green-50 p-4 rounded-lg">
                       {soapNotes.objective}
@@ -293,7 +295,7 @@ export default function ConsultationDetailPage() {
                   {/* Assessment */}
                   <div>
                     <h3 className="text-lg font-bold text-purple-900 mb-2">
-                      🩺 Evaluación Médica
+                      {t('assessmentTitle')}
                     </h3>
                     <p className="text-gray-700 leading-relaxed bg-purple-50 p-4 rounded-lg">
                       {soapNotes.assessment}
@@ -303,7 +305,7 @@ export default function ConsultationDetailPage() {
                   {/* Plan */}
                   <div>
                     <h3 className="text-lg font-bold text-orange-900 mb-2">
-                      💊 Plan de Tratamiento
+                      {t('planTitle')}
                     </h3>
                     <p className="text-gray-700 leading-relaxed bg-orange-50 p-4 rounded-lg">
                       {soapNotes.plan}
@@ -334,7 +336,7 @@ export default function ConsultationDetailPage() {
                       />
                     </svg>
                   </div>
-                  <p className="text-gray-600">No hay información disponible</p>
+                  <p className="text-gray-600">{t('noInfo')}</p>
                 </div>
               )}
             </div>

@@ -100,7 +100,7 @@ export const POST = createProtectedRoute(
       include: {
         appointment: {
           include: {
-            clinician: true, // TODO: Fixed - clinician is already a User, no nested 'user' relation exists
+            clinician: true,
           },
         },
         patient: {
@@ -165,7 +165,7 @@ export const POST = createProtectedRoute(
     // Update status to processing (transcribing)
     await prisma.scribeSession.update({
       where: { id: recordingId },
-      data: { status: 'PROCESSING' }, // TODO: Changed from TRANSCRIBING to PROCESSING (valid enum value)
+      data: { status: 'PROCESSING' },
     });
 
     // Download audio file

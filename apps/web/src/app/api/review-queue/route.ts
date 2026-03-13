@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { reviewQueueService } from '@/lib/services/review-queue.service';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +67,7 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error fetching review queue:', error);
+      logger.error('Error fetching review queue:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch review queue' });
     }
   },
@@ -140,7 +141,7 @@ export const POST = createProtectedRoute(
         data: item,
       });
     } catch (error) {
-      console.error('Error adding to review queue:', error);
+      logger.error('Error adding to review queue:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to add to review queue' });
     }
   },

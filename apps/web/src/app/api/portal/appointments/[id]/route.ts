@@ -6,19 +6,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const { id } = params;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const id = request.nextUrl.pathname.split('/').at(-1);
 
     if (!id) {
       return NextResponse.json(
@@ -30,7 +24,6 @@ export const GET = createPublicRoute(
       );
     }
 
-    // Fetch appointment with full details
     const appointment = await prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -65,11 +58,10 @@ export const GET = createPublicRoute(
       );
     }
 
-    // Verify the appointment belongs to the authenticated patient
-    if (appointment.patientId !== session.patientId) {
+    if (appointment.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_appointment_access_attempt',
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         requestedAppointmentId: id,
         actualAppointmentPatientId: appointment.patientId,
       });
@@ -83,10 +75,9 @@ export const GET = createPublicRoute(
       );
     }
 
-    // Log access for HIPAA compliance
     logger.info({
       event: 'patient_appointment_accessed',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       appointmentId: appointment.id,
     });
 
@@ -97,43 +88,13 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_appointment_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar la cita.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'Appointment' } }
 );
 
-export const PATCH = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const { id } = params;
+export const PATCH = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const id = request.nextUrl.pathname.split('/').at(-1);
     const body = await request.json();
     const { action } = body;
 
@@ -157,7 +118,6 @@ export const PATCH = createPublicRoute(
       );
     }
 
-    // Fetch appointment
     const appointment = await prisma.appointment.findUnique({
       where: { id },
       select: {
@@ -178,11 +138,10 @@ export const PATCH = createPublicRoute(
       );
     }
 
-    // Verify the appointment belongs to the authenticated patient
-    if (appointment.patientId !== session.patientId) {
+    if (appointment.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_appointment_cancel_attempt',
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         requestedAppointmentId: id,
       });
 
@@ -195,7 +154,6 @@ export const PATCH = createPublicRoute(
       );
     }
 
-    // Check if appointment can be cancelled
     if (appointment.status === 'CANCELLED') {
       return NextResponse.json(
         {
@@ -216,7 +174,6 @@ export const PATCH = createPublicRoute(
       );
     }
 
-    // Check if appointment is in the past
     if (new Date(appointment.startTime) < new Date()) {
       return NextResponse.json(
         {
@@ -227,7 +184,6 @@ export const PATCH = createPublicRoute(
       );
     }
 
-    // Cancel appointment
     const updatedAppointment = await prisma.appointment.update({
       where: { id },
       data: {
@@ -244,11 +200,10 @@ export const PATCH = createPublicRoute(
       },
     });
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'UPDATE',
         resource: 'Appointment',
@@ -264,7 +219,7 @@ export const PATCH = createPublicRoute(
 
     logger.info({
       event: 'appointment_cancelled_by_patient',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       appointmentId: appointment.id,
     });
 
@@ -276,31 +231,6 @@ export const PATCH = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'appointment_cancel_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cancelar la cita.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'UPDATE', resource: 'Appointment' } }
 );

@@ -9,6 +9,7 @@ import { createClient } from '@deepgram/sdk';
 import { createHash } from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { createPublicRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +81,7 @@ async function getDeepgramHealth() {
       },
     });
   } catch (error) {
-    console.error('Deepgram health check error:', error);
+    logger.error('Deepgram health check error:', error);
     return NextResponse.json({
       status: 'error',
       service: 'deepgram',

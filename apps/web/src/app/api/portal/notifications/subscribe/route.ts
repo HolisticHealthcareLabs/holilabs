@@ -4,10 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 const subscriptionSchema = z.object({
   subscription: z.object({
@@ -20,17 +20,26 @@ const subscriptionSchema = z.object({
   }),
 });
 
-export const POST = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse request body
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const body = await request.json();
-    const validated = subscriptionSchema.parse(body);
 
-    // Check if subscription already exists
+    try {
+      var validated = subscriptionSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid subscription data',
+            details: error.errors,
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+
     const existingSubscription = await prisma.pushSubscription.findUnique({
       where: {
         endpoint: validated.subscription.endpoint,
@@ -38,13 +47,12 @@ export const POST = createPublicRoute(
     });
 
     if (existingSubscription) {
-      // Update existing subscription
       const updated = await prisma.pushSubscription.update({
         where: {
           endpoint: validated.subscription.endpoint,
         },
         data: {
-          userId: session.userId,
+          userId: context.session.userId,
           userType: 'PATIENT',
           keys: validated.subscription.keys,
         },
@@ -59,20 +67,18 @@ export const POST = createPublicRoute(
       });
     }
 
-    // Create new subscription
     const subscription = await prisma.pushSubscription.create({
       data: {
-        userId: session.userId,
+        userId: context.session.userId,
         userType: 'PATIENT',
         endpoint: validated.subscription.endpoint,
         keys: validated.subscription.keys,
       },
     });
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
+        userId: context.session.userId,
         action: 'CREATE',
         resource: 'PushSubscription',
         resourceId: subscription.id,
@@ -91,28 +97,6 @@ export const POST = createPublicRoute(
       },
       message: 'Push subscription created successfully',
     });
-  } catch (error) {
-    console.error('Push subscription error:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid subscription data',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to create push subscription',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'CREATE', resource: 'PushSubscription' } }
 );

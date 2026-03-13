@@ -19,7 +19,7 @@ import { getSyntheticNotifications, isDemoClinician } from '@/lib/demo/synthetic
 export const PUT = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const notificationId = params?.id;
 
       const userId = context.user?.id;
@@ -95,7 +95,7 @@ export const PUT = createProtectedRoute(
         { status: 200 }
       );
     } catch (error) {
-      const errParams = await Promise.resolve(context.params ?? {});
+      const errParams = await Promise.resolve(context.params ?? ({} as any));
       logger.error({
         event: 'notification_update_error',
         notificationId: errParams?.id,
@@ -117,7 +117,7 @@ export const PUT = createProtectedRoute(
 export const DELETE = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
-      const params = await Promise.resolve(context.params ?? {});
+      const params = await Promise.resolve(context.params ?? ({} as any));
       const notificationId = params?.id;
 
       const userId = context.user?.id;
@@ -188,7 +188,7 @@ export const DELETE = createProtectedRoute(
         { status: 200 }
       );
     } catch (error) {
-      const errParams = await Promise.resolve(context.params ?? {});
+      const errParams = await Promise.resolve(context.params ?? ({} as any));
       logger.error({
         event: 'notification_delete_error',
         notificationId: errParams?.id,

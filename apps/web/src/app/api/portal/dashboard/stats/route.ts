@@ -5,21 +5,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
-import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-    const patientId = session.patientId;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
-    // Fetch all stats in parallel for performance
     const [
       upcomingAppointments,
       activeMedications,
@@ -28,7 +22,6 @@ export const GET = createPublicRoute(
       recentConsultations,
       pendingForms,
     ] = await Promise.all([
-      // Upcoming appointments (future appointments)
       prisma.appointment.findMany({
         where: {
           patientId,
@@ -54,7 +47,6 @@ export const GET = createPublicRoute(
         },
       }),
 
-      // Active medications
       prisma.medication.count({
         where: {
           patientId,
@@ -62,7 +54,6 @@ export const GET = createPublicRoute(
         },
       }),
 
-      // Unread notifications
       prisma.notification.count({
         where: {
           recipientId: patientId,
@@ -71,14 +62,12 @@ export const GET = createPublicRoute(
         },
       }),
 
-      // Total documents
       prisma.document.count({
         where: {
           patientId,
         },
       }),
 
-      // Recent consultations (last 90 days)
       prisma.clinicalNote.findMany({
         where: {
           patientId,
@@ -96,7 +85,6 @@ export const GET = createPublicRoute(
         },
       }),
 
-      // Pending forms
       prisma.formInstance.count({
         where: {
           patientId,
@@ -105,7 +93,6 @@ export const GET = createPublicRoute(
       }),
     ]);
 
-    // Calculate next appointment date
     const nextAppointment = upcomingAppointments[0];
     const nextAppointmentDate = nextAppointment
       ? new Date(nextAppointment.startTime)
@@ -117,7 +104,6 @@ export const GET = createPublicRoute(
         )
       : null;
 
-    // Calculate medication adherence (mock for now - would need actual tracking)
     const medicationAdherence = activeMedications > 0 ? 95 : 100;
 
     return NextResponse.json({
@@ -167,20 +153,6 @@ export const GET = createPublicRoute(
         },
       },
     });
-  } catch (error) {
-    logger.error({
-      event: 'portal_dashboard_stats_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar las estadísticas del portal.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'DashboardStats' } }
 );

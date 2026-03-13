@@ -10,6 +10,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,13 +44,14 @@ export const GET = createProtectedRoute(
         data: carePlans,
       });
     } catch (error) {
-      console.error('Error fetching care plans:', error);
+      logger.error('Error fetching care plans:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch care plans' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    audit: { action: 'READ', resource: 'CarePlan' },
   }
 );
 
@@ -126,7 +128,7 @@ export const POST = createProtectedRoute(
         message: 'Care plan created successfully',
       }, { status: 201 });
     } catch (error) {
-      console.error('Error creating care plan:', error);
+      logger.error('Error creating care plan:', error);
 
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -144,5 +146,6 @@ export const POST = createProtectedRoute(
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'CREATE', resource: 'CarePlan' },
   }
 );

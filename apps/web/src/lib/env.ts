@@ -84,6 +84,11 @@ const serverSchema = z.object({
   // AI Transcription Services
   DEEPGRAM_API_KEY: z.string().optional(),
 
+  // Text-to-Speech (ElevenLabs)
+  ELEVENLABS_API_KEY: z.string().optional(),
+  ELEVENLABS_VOICE_DOCTOR: z.string().optional(),
+  ELEVENLABS_VOICE_PATIENT: z.string().optional(),
+
   // De-identification gate (HIPAA/LGPD)
   // When true, the system must NOT allow raw transcripts to be persisted or sent to the UI/LLMs.
   REQUIRE_DEIDENTIFICATION: z.enum(['true', 'false']).default('true'),
@@ -387,6 +392,17 @@ function validateEnv(): Env {
         process.exit(1);
       }
 
+      // In development, warn but don't crash — allow the app to boot with
+      // whatever env vars are present so the demo/dev experience isn't blocked.
+      if (!isProduction) {
+        console.warn('⚠️  Running with partial env config — some features may be unavailable.\n');
+        cachedEnv = {
+          ...(process.env as any),
+          NODE_ENV: process.env.NODE_ENV || 'development',
+        } as Env;
+        return cachedEnv;
+      }
+
       throw new Error('Environment validation failed');
     }
 
@@ -484,7 +500,7 @@ function validateEnv(): Env {
     cachedEnv = env;
 
     if (isServer) {
-      console.log('✅ Environment validation passed');
+      console.error('[Env]', { event: 'validation_passed' });
     }
 
     return env;

@@ -56,7 +56,7 @@ const DEFAULT_TEMPLATES: MessageTemplate[] = [
     id: 'med-reminder-daily',
     name: 'Daily Medication Reminder',
     category: 'medication',
-    message: 'Hi {{patient_name}}, remember to take your {{medication_name}} ({{dosage}}). Stay healthy! 💊',
+    message: 'Hi {{patient_name}}, remember to take your {{medication_name}} ({{dosage}}). Stay healthy!',
     variables: ['patient_name', 'medication_name', 'dosage'],
     isDefault: true,
     createdAt: new Date(),
@@ -124,11 +124,11 @@ export default function MessageTemplateEditor() {
   const [templateToSchedule, setTemplateToSchedule] = useState<MessageTemplate | null>(null);
 
   const categories = [
-    { value: 'all', label: 'All Templates', icon: '📋', count: templates.length },
-    { value: 'appointment', label: 'Appointments', icon: '📅', count: templates.filter(t => t.category === 'appointment').length },
-    { value: 'medication', label: 'Medications', icon: '💊', count: templates.filter(t => t.category === 'medication').length },
-    { value: 'lab', label: 'Lab Results', icon: '🔬', count: templates.filter(t => t.category === 'lab').length },
-    { value: 'follow-up', label: 'Follow-ups', icon: '🔄', count: templates.filter(t => t.category === 'follow-up').length },
+    { value: 'all', label: 'All Templates', icon: '', count: templates.length },
+    { value: 'appointment', label: 'Appointments', icon: '', count: templates.filter(t => t.category === 'appointment').length },
+    { value: 'medication', label: 'Medications', icon: '', count: templates.filter(t => t.category === 'medication').length },
+    { value: 'lab', label: 'Lab Results', icon: '', count: templates.filter(t => t.category === 'lab').length },
+    { value: 'follow-up', label: 'Follow-ups', icon: '', count: templates.filter(t => t.category === 'follow-up').length },
   ];
 
   const filteredTemplates = activeCategory === 'all'

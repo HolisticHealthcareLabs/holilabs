@@ -6,10 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
 // Query parameters schema
@@ -32,11 +31,9 @@ const CreateMetricSchema = z.object({
   diastolic: z.number().optional(),
 });
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -62,7 +59,7 @@ export const GET = createPublicRoute(
 
     // Build filter conditions
     const where: any = {
-      patientId: session.patientId,
+      patientId,
     };
 
     if (metricType) {
@@ -108,7 +105,7 @@ export const GET = createPublicRoute(
 
     logger.info({
       event: 'patient_health_metrics_fetched',
-      patientId: session.patientId,
+      patientId,
       count: metrics.length,
       types: Object.keys(metricsByType),
     });
@@ -128,42 +125,15 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_health_metrics_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar métricas de salud.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'READ', resource: 'HealthMetrics' },
+  }
 );
 
-export const POST = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse and validate request body
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const body = await request.json();
     const validation = CreateMetricSchema.safeParse(body);
 
@@ -188,7 +158,7 @@ export const POST = createPublicRoute(
     // Create health metric
     const metric = await prisma.healthMetric.create({
       data: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         metricType,
         value: finalValue,
         unit,
@@ -204,8 +174,8 @@ export const POST = createPublicRoute(
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
         resource: 'HealthMetric',
@@ -221,7 +191,7 @@ export const POST = createPublicRoute(
 
     logger.info({
       event: 'health_metric_added',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       metricId: metric.id,
       metricType,
     });
@@ -234,31 +204,9 @@ export const POST = createPublicRoute(
       },
       { status: 201 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'health_metric_add_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al registrar métrica de salud.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'CREATE', resource: 'HealthMetrics' },
+  }
 );

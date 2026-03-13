@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, Loader2, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
 
@@ -74,6 +75,7 @@ export function SignAndBillModal({
   transcript = '',
   patientData,
 }: SignAndBillModalProps) {
+  const t = useTranslations('dashboard.clinicalCommand');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [fetchState, setFetchState] = useState<FetchState>('idle');
   const [analysisData, setAnalysisData] = useState<BillingAnalysisData | null>(null);
@@ -209,10 +211,10 @@ export function SignAndBillModal({
               <div className="flex-shrink-0 flex items-center justify-between px-6 py-5 border-b border-slate-800">
                 <div>
                   <h2 className="text-base font-semibold text-white">
-                    Sign &amp; Bill - Claim Review
+                    {t('claimReview')}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    LATAM billing standards / CBHPM / TUSS / No CPT codes
+                    {t('billingStandards')}
                   </p>
                 </div>
                 {(submitState === 'idle' || submitState === 'ehr_error') && (
@@ -237,7 +239,7 @@ export function SignAndBillModal({
                 {fetchState === 'loading' && (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
-                    <p className="text-xs text-slate-500">Analyzing clinical documentation...</p>
+                    <p className="text-xs text-slate-500">{t('analyzingDocumentation')}</p>
                   </div>
                 )}
 
@@ -255,7 +257,7 @@ export function SignAndBillModal({
                       "
                     >
                       <RefreshCw className="w-3 h-3" />
-                      Retry
+                      {t('retry')}
                     </button>
                   </div>
                 )}
@@ -266,7 +268,7 @@ export function SignAndBillModal({
                     {/* Extracted Diagnoses */}
                     <section>
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                        Extracted Diagnoses
+                        {t('extractedDiagnoses')}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {diagnoses.map((dx) => (
@@ -287,7 +289,7 @@ export function SignAndBillModal({
                     {/* Suggested Services */}
                     <section>
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                        Suggested Services (CBHPM / TUSS)
+                        {t('suggestedServices')}
                       </p>
                       <div className="space-y-2">
                         {services.map((svc) => (
@@ -320,7 +322,7 @@ export function SignAndBillModal({
                       <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                       <div>
                         <p className="text-[10px] text-emerald-400/70 uppercase tracking-wider font-semibold">
-                          Estimated Claim Value
+                          {t('estimatedClaimValue')}
                         </p>
                         <p className="text-lg font-bold text-emerald-400 mt-0.5">{formatBRL(totalValue)}</p>
                       </div>
@@ -361,7 +363,7 @@ export function SignAndBillModal({
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500
                     "
                   >
-                    Wait, let me edit the note
+                    {t('editNoteFirst')}
                   </button>
                 )}
 
@@ -400,10 +402,10 @@ export function SignAndBillModal({
                   {submitState === 'ehr_error' && (
                     <RefreshCw className="w-4 h-4" />
                   )}
-                  {submitState === 'idle'           && 'Approve & Submit Claim'}
-                  {submitState === 'syncing_to_ehr' && 'Pushing to EHR...'}
-                  {submitState === 'success'        && 'Successfully Pushed to EHR'}
-                  {submitState === 'ehr_error'      && 'Failed to Sync to EHR - Retry'}
+                  {submitState === 'idle'           && t('approveSubmitClaim')}
+                  {submitState === 'syncing_to_ehr' && t('pushingToEhr')}
+                  {submitState === 'success'        && t('successPushedToEhr')}
+                  {submitState === 'ehr_error'      && t('failedSyncRetry')}
                 </motion.button>
               </div>
             </div>

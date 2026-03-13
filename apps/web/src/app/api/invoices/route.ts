@@ -11,6 +11,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -149,13 +150,14 @@ export const GET = createProtectedRoute(
         data: invoicesWithStatus,
       });
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      logger.error('Error fetching invoices:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch invoices' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN', 'NURSE'],
     rateLimit: { windowMs: 60000, maxRequests: 100 },
+    audit: { action: 'READ', resource: 'Invoice' },
   }
 );
 
@@ -327,12 +329,13 @@ export const POST = createProtectedRoute(
         { status: 201 }
       );
     } catch (error) {
-      console.error('Error creating invoice:', error);
+      logger.error('Error creating invoice:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to create invoice' });
     }
   },
   {
     roles: ['ADMIN', 'CLINICIAN'],
     rateLimit: { windowMs: 60000, maxRequests: 30 },
+    audit: { action: 'CREATE', resource: 'Invoice' },
   }
 );

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,7 +124,7 @@ export const GET = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error fetching reminders:', error);
+    logger.error('Error fetching reminders:', error);
 
     return NextResponse.json(
       {
@@ -200,7 +201,7 @@ export const PATCH = createProtectedRoute(
       data: { reminder: updated },
     });
   } catch (error) {
-    console.error('Error updating reminder:', error);
+    logger.error('Error updating reminder:', error);
 
     return NextResponse.json(
       {

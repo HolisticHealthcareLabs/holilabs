@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
+import { useTranslations } from 'next-intl';
 
 export default function AnalyticsError({
   error,
@@ -10,8 +11,9 @@ export default function AnalyticsError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('dashboard.analyticsError');
+
   useEffect(() => {
-    // Log error to Sentry
     if (typeof Sentry !== 'undefined' && Sentry.captureException) {
       Sentry.captureException(error);
     }
@@ -30,16 +32,16 @@ export default function AnalyticsError({
         </div>
 
         <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">
-          Error en Analíticas
+          {t('title')}
         </h2>
         <p className="text-gray-600 text-center mb-6">
-          Ocurrió un error al cargar las analíticas. Por favor, intenta nuevamente.
+          {t('description')}
         </p>
 
         {process.env.NODE_ENV === 'development' && (
           <details className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <summary className="cursor-pointer font-semibold text-red-900 mb-2">
-              Detalles técnicos (modo desarrollo)
+              {t('technicalDetails')}
             </summary>
             <pre className="text-xs text-red-800 overflow-auto">
               {error.message}
@@ -54,13 +56,13 @@ export default function AnalyticsError({
             onClick={reset}
             className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium"
           >
-            Reintentar
+            {t('retry')}
           </button>
           <button
             onClick={() => window.location.href = '/dashboard'}
             className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
           >
-            Volver al Dashboard
+            {t('backToDashboard')}
           </button>
         </div>
       </div>

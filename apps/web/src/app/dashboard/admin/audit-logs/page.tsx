@@ -16,6 +16,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
+import { useTranslations } from 'next-intl';
 
 interface AuditLog {
   id: string;
@@ -79,6 +80,7 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 export default function AuditLogsPage() {
+  const t = useTranslations('dashboard.auditLogs');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -195,24 +197,24 @@ export default function AuditLogsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Audit Logs
+            {t('title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            HIPAA-compliant audit trail of all system activities
+            {t('subtitle')}
           </p>
         </div>
 
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Filters
+            {t('filters')}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Action Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Action
+                {t('action')}
               </label>
               <select
                 value={action}
@@ -222,7 +224,7 @@ export default function AuditLogsPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="">All Actions</option>
+                <option value="">{t('allActions')}</option>
                 {ACTION_TYPES.map((type) => (
                   <option key={type} value={type}>
                     {type}
@@ -234,7 +236,7 @@ export default function AuditLogsPage() {
             {/* Resource Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Resource
+                {t('resource')}
               </label>
               <input
                 type="text"
@@ -243,7 +245,7 @@ export default function AuditLogsPage() {
                   setResource(e.target.value);
                   setPage(1);
                 }}
-                placeholder="e.g., Patient, ClinicalNote"
+                placeholder={t('resourcePlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
@@ -251,7 +253,7 @@ export default function AuditLogsPage() {
             {/* User Email Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                User Email
+                {t('userEmail')}
               </label>
               <input
                 type="text"
@@ -268,7 +270,7 @@ export default function AuditLogsPage() {
             {/* Success Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Status
+                {t('status')}
               </label>
               <select
                 value={successFilter}
@@ -278,16 +280,16 @@ export default function AuditLogsPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="">All</option>
-                <option value="true">Success</option>
-                <option value="false">Failed</option>
+                <option value="">{t('all')}</option>
+                <option value="true">{t('success')}</option>
+                <option value="false">{t('failed')}</option>
               </select>
             </div>
 
             {/* Start Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Start Date
+                {t('startDate')}
               </label>
               <input
                 type="date"
@@ -303,7 +305,7 @@ export default function AuditLogsPage() {
             {/* End Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                End Date
+                {t('endDate')}
               </label>
               <input
                 type="date"
@@ -323,17 +325,17 @@ export default function AuditLogsPage() {
               onClick={resetFilters}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
-              Reset Filters
+              {t('resetFilters')}
             </button>
             <button
               onClick={exportToCSV}
               disabled={logs.length === 0}
               className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Export to CSV
+              {t('exportCsv')}
             </button>
             <div className="ml-auto text-sm text-gray-600 dark:text-gray-400">
-              {pagination.total} total logs
+              {t('totalLogs', { count: pagination.total })}
             </div>
           </div>
         </div>
@@ -362,25 +364,25 @@ export default function AuditLogsPage() {
                     <tr>
                       {/* Decorative - low contrast intentional for table headers with uppercase tracking-wider */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Timestamp
+                        {t('timestamp')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        User
+                        {t('user')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Action
+                        {t('action')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Resource
+                        {t('resource')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        IP Address
+                        {t('ipAddress')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Status
+                        {t('status')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Actions
+                        {t('actions')}
                       </th>
                     </tr>
                   </thead>
@@ -388,7 +390,7 @@ export default function AuditLogsPage() {
                     {logs.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                          No audit logs found
+                          {t('noLogsFound')}
                         </td>
                       </tr>
                     ) : (
@@ -399,7 +401,7 @@ export default function AuditLogsPage() {
                               {format(new Date(log.timestamp), 'MMM dd, yyyy HH:mm:ss')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {log.userEmail || 'System'}
+                              {log.userEmail || t('system')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span
@@ -431,7 +433,7 @@ export default function AuditLogsPage() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  Success
+                                  {t('success')}
                                 </span>
                               ) : (
                                 <span className="flex items-center text-red-600 dark:text-red-400 text-sm">
@@ -442,7 +444,7 @@ export default function AuditLogsPage() {
                                       clipRule="evenodd"
                                     />
                                   </svg>
-                                  Failed
+                                  {t('failed')}
                                 </span>
                               )}
                             </td>
@@ -453,7 +455,7 @@ export default function AuditLogsPage() {
                                 }
                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                               >
-                                {expandedLog === log.id ? 'Hide Details' : 'View Details'}
+                                {expandedLog === log.id ? t('hideDetails') : t('viewDetails')}
                               </button>
                             </td>
                           </tr>
@@ -463,13 +465,13 @@ export default function AuditLogsPage() {
                                 <div className="space-y-3">
                                   <div>
                                     <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                                      Additional Details
+                                      {t('additionalDetails')}
                                     </h4>
                                     <dl className="grid grid-cols-2 gap-4">
                                       <div>
                                         {/* Decorative - low contrast intentional for metadata labels */}
                                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                          User ID
+                                          {t('userId')}
                                         </dt>
                                         <dd className="text-sm text-gray-900 dark:text-white">
                                           {log.userId || 'N/A'}
@@ -478,7 +480,7 @@ export default function AuditLogsPage() {
                                       <div>
                                         {/* Decorative - low contrast intentional for metadata labels */}
                                         <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                          User Agent
+                                          {t('userAgent')}
                                         </dt>
                                         <dd className="text-sm text-gray-900 dark:text-white break-all">
                                           {log.userAgent || 'N/A'}
@@ -488,7 +490,7 @@ export default function AuditLogsPage() {
                                         <div className="col-span-2">
                                           {/* Decorative - low contrast intentional for metadata labels */}
                                           <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                            Error Message
+                                            {t('errorMessage')}
                                           </dt>
                                           <dd className="text-sm text-red-600 dark:text-red-400">
                                             {log.errorMessage}
@@ -499,7 +501,7 @@ export default function AuditLogsPage() {
                                         <div className="col-span-2">
                                           {/* Decorative - low contrast intentional for metadata labels */}
                                           <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                            Data Hash
+                                            {t('dataHash')}
                                           </dt>
                                           <dd className="text-sm text-gray-900 dark:text-white font-mono">
                                             {log.dataHash}
@@ -510,9 +512,9 @@ export default function AuditLogsPage() {
                                   </div>
                                   {log.details && Object.keys(log.details).length > 0 && (
                                     <div>
-                                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                                        Event Details
-                                      </h4>
+                                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                                      {t('eventDetails')}
+                                    </h4>
                                       <pre className="bg-gray-900 dark:bg-black text-gray-100 p-4 rounded-lg overflow-x-auto text-xs">
                                         {JSON.stringify(log.details, null, 2)}
                                       </pre>
@@ -534,7 +536,7 @@ export default function AuditLogsPage() {
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-sm mt-4">
                 <div className="text-sm text-gray-700 dark:text-gray-300">
-                  Showing page {pagination.page} of {pagination.totalPages}
+                  {t('showingPage', { page: pagination.page, total: pagination.totalPages })}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -542,17 +544,17 @@ export default function AuditLogsPage() {
                     disabled={page === 1}
                     className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('previous')}
                   </button>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Page {page}
+                    {t('pageLabel', { page })}
                   </span>
                   <button
                     onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
                     disabled={page === pagination.totalPages}
                     className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('next')}
                   </button>
                 </div>
               </div>

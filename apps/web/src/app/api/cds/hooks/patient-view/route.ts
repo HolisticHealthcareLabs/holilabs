@@ -14,6 +14,7 @@ import { createProtectedRoute } from '@/lib/api/middleware';
 import { cdsEngine } from '@/lib/cds/engines/cds-engine';
 import type { CDSContext } from '@/lib/cds/types';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 export const POST = createProtectedRoute(
   async (request: NextRequest, context) => {
@@ -31,7 +32,7 @@ export const POST = createProtectedRoute(
       prefetch: body.prefetch,
     };
 
-    console.log(`🔍 [CDS Hooks] patient-view for patient ${cdsContext.patientId}`);
+    logger.info(`🔍 [CDS Hooks] patient-view for patient ${cdsContext.patientId}`);
 
     const result = await cdsEngine.evaluate(cdsContext);
     const response = cdsEngine.formatAsCDSHooksResponse(result);
@@ -54,7 +55,7 @@ export const POST = createProtectedRoute(
 
       return NextResponse.json(response);
     } catch (error) {
-      console.error('❌ [CDS Hooks] patient-view error:', error);
+      logger.error('❌ [CDS Hooks] patient-view error:', error);
       return NextResponse.json(
         { error: 'Internal Server Error' },
         { status: 500 }

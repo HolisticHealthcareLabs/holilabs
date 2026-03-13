@@ -143,7 +143,7 @@ export const GET = createProtectedRoute(
 
     return NextResponse.json({ success: true, consents: consentStatuses });
   } catch (error) {
-    console.error('Error fetching consents:', error);
+    logger.error('Error fetching consents:', error);
     return NextResponse.json({ error: 'Failed to fetch consents' }, { status: 500 });
   }
   },
@@ -335,7 +335,7 @@ Date: ${new Date().toLocaleDateString()}
       },
     });
   } catch (error) {
-    console.error('Error updating consent:', error);
+    logger.error('Error updating consent:', error);
     return NextResponse.json({ error: 'Failed to update consent' }, { status: 500 });
   }
   },

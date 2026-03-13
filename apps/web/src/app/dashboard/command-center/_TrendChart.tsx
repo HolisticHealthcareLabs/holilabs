@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
   AreaChart,
   Area,
@@ -18,10 +19,11 @@ interface TrendDatum {
 }
 
 export default function TrendChart({ data }: { data: TrendDatum[] }) {
+  const t = useTranslations('portal.trendChart');
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-none">
       <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">
-        Escalation Trend - Last 7 Days
+        {t('title')}
       </h2>
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -53,9 +55,9 @@ export default function TrendChart({ data }: { data: TrendDatum[] }) {
       </ResponsiveContainer>
       <div className="flex gap-4 mt-3 justify-end">
         {[
-          { color: '#f59e0b', label: 'Open' },
-          { color: '#ef4444', label: 'Breached' },
-          { color: '#22c55e', label: 'Resolved' },
+          { color: '#f59e0b', label: t('open') },
+          { color: '#ef4444', label: t('breached') },
+          { color: '#22c55e', label: t('resolved') },
         ].map(({ color, label }) => (
           <span key={label} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />

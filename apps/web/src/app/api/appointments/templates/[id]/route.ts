@@ -15,7 +15,7 @@ import { prisma } from '@/lib/prisma';
  */
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const templateId = params.id;
     if (!templateId) {
       return NextResponse.json(
@@ -52,6 +52,7 @@ export const GET = createProtectedRoute(
   {
     roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
     skipCsrf: true,
+    audit: { action: 'READ', resource: 'AppointmentTemplate' },
   }
 );
 
@@ -61,7 +62,7 @@ export const GET = createProtectedRoute(
  */
 export const PATCH = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const templateId = params.id;
     if (!templateId) {
       return NextResponse.json(
@@ -141,6 +142,7 @@ export const PATCH = createProtectedRoute(
   {
     roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
+    audit: { action: 'UPDATE', resource: 'AppointmentTemplate' },
   }
 );
 
@@ -150,7 +152,7 @@ export const PATCH = createProtectedRoute(
  */
 export const DELETE = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const templateId = params.id;
     if (!templateId) {
       return NextResponse.json(
@@ -207,5 +209,6 @@ export const DELETE = createProtectedRoute(
   {
     roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'],
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
+    audit: { action: 'DELETE', resource: 'AppointmentTemplate' },
   }
 );

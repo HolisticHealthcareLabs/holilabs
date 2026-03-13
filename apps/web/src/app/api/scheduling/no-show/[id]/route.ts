@@ -250,8 +250,8 @@ export const PATCH = createProtectedRoute(
       },
     });
 
-    // TODO: If patient accepted to reschedule, send notification or create follow-up task
-    // TODO: If fee was paid, update accounting/billing system
+    // @todo(no-show-reschedule): Send notification or create follow-up task on reschedule accept
+    // @todo(billing-integration): Update accounting/billing system when fee is paid
 
     return NextResponse.json({
       success: true,
@@ -306,7 +306,7 @@ export const DELETE = createProtectedRoute(
       }),
     ]);
 
-    // TODO: If fee was charged, notify accounting system to reverse charge
+    // @todo(billing-integration): Notify accounting system to reverse charge if fee was charged
 
     return NextResponse.json({
       success: true,

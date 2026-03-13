@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -75,6 +76,7 @@ const statusLabels = {
 
 export default function MedicalRecordsPage() {
   const router = useRouter();
+  const t = useTranslations('portal.records');
   const [records, setRecords] = useState<SOAPNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -155,10 +157,10 @@ export default function MedicalRecordsPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver al Dashboard
+            {t('backToDashboard')}
           </button>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            =Ë Mis Registros Médicos
+            📋 {t('title')}
           </h1>
           <p className="text-gray-600">
             {totalCount > 0

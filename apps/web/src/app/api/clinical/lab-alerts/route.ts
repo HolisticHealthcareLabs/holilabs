@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 
 /**
  * Lab Result Abnormality Alert System
@@ -205,12 +205,17 @@ async function processLabAlerts(
 }
 
 export const POST = createProtectedRoute(
-  async (request: NextRequest) => {
+  async (request: NextRequest, context: { user?: { id: string } }) => {
     const body = await request.json();
     const { patientId, labResults } = body;
 
     if (!patientId) {
       return NextResponse.json({ error: 'Patient ID is required' }, { status: 400 });
+    }
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
     }
 
     let labsToCheck = labResults;
@@ -292,13 +297,18 @@ function generateRecommendation(
 
 // GET: Fetch recent abnormal labs for a patient
 export const GET = createProtectedRoute(
-  async (request: NextRequest) => {
+  async (request: NextRequest, context: { user?: { id: string } }) => {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
     const days = parseInt(searchParams.get('days') || '30');
 
     if (!patientId) {
       return NextResponse.json({ error: 'Patient ID is required' }, { status: 400 });
+    }
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
     }
 
     const recentLabs = await prisma.labResult.findMany({
@@ -311,7 +321,7 @@ export const GET = createProtectedRoute(
       orderBy: { resultDate: 'desc' },
     });
 
-    return processLabAlerts(patientId, recentLabs);
+    return processLabAlerts(patientId, recentLabs as any);
   },
   { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
 );

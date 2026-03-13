@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface FormResponse {
   id: string;
@@ -37,8 +38,8 @@ interface FormResponse {
 }
 
 export default function FormResponsesPage() {
+  const t = useTranslations('dashboard.formResponses');
   const params = useParams();
-  const router = useRouter();
   const formId = (params?.id as string) || '';
 
   const [formData, setFormData] = useState<FormResponse | null>(null);
@@ -55,14 +56,14 @@ export default function FormResponsesPage() {
       const response = await fetch(`/api/forms/responses/${formId}`);
 
       if (!response.ok) {
-        setError('Error al cargar las respuestas');
+        setError(t('loadError'));
         return;
       }
 
       const data = await response.json();
       setFormData(data.form);
     } catch (err) {
-      setError('Error de conexión');
+      setError(t('connectionError'));
       console.error('Error fetching form responses:', err);
     } finally {
       setLoading(false);
@@ -71,20 +72,19 @@ export default function FormResponsesPage() {
 
   const renderValue = (value: any): string => {
     if (typeof value === 'boolean') {
-      return value ? 'Sí' : 'No';
+      return value ? t('yesValue') : t('noValue');
     }
     if (Array.isArray(value)) {
       return value.join(', ');
     }
     if (value === null || value === undefined || value === '') {
-      return '(Sin respuesta)';
+      return t('noAnswer');
     }
     return String(value);
   };
 
   const downloadPDF = async () => {
-    // TODO: Implement PDF generation
-    alert('Funcionalidad de descarga PDF próximamente');
+    alert(t('pdfComingSoon'));
   };
 
   if (loading) {
@@ -99,12 +99,12 @@ export default function FormResponsesPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <p className="text-red-600 mb-4">{error || 'Formulario no encontrado'}</p>
+          <p className="text-red-600 mb-4">{error || t('errorDefault')}</p>
           <Link
             href="/dashboard/forms/sent"
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            Volver a Formularios Enviados
+            {t('backToSent')}
           </Link>
         </div>
       </div>
@@ -128,7 +128,7 @@ export default function FormResponsesPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{formData.template.title}</h1>
               <p className="text-gray-500 mt-1">
-                Completado por {formData.patient.firstName} {formData.patient.lastName}
+                {t('completedBy', { firstName: formData.patient.firstName, lastName: formData.patient.lastName })}
               </p>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function FormResponsesPage() {
             onClick={downloadPDF}
             className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
           >
-            📥 Descargar PDF
+            📥 {t('downloadPdf')}
           </button>
         </div>
       </div>
@@ -156,10 +156,10 @@ export default function FormResponsesPage() {
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Formulario Completado</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t('formCompleted')}</h3>
             <p className="text-sm text-gray-600">
               {formData.completedAt
-                ? new Date(formData.completedAt).toLocaleDateString('es-ES', {
+                ? new Date(formData.completedAt).toLocaleDateString(undefined, {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -167,7 +167,7 @@ export default function FormResponsesPage() {
                     hour: '2-digit',
                     minute: '2-digit',
                   })
-                : 'Fecha desconocida'}
+                : t('unknownDate')}
             </p>
           </div>
         </div>
@@ -176,10 +176,10 @@ export default function FormResponsesPage() {
       {/* Responses */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Respuestas del Paciente</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('patientResponses')}</h2>
 
           <div className="space-y-8">
-            {formData.template.structure.sections.map((section, sectionIndex) => (
+            {formData.template.structure.sections.map((section) => (
               <div key={section.id} className="border-b border-gray-200 pb-6 last:border-b-0">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">{section.title}</h3>
                 {section.description && (
@@ -205,12 +205,12 @@ export default function FormResponsesPage() {
           {/* Signature */}
           {formData.signatureDataUrl && (
             <div className="mt-12 border-t border-gray-200 pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Firma Electrónica</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('electronicSignature')}</h2>
               <div className="bg-gray-50 rounded-lg p-6">
                 <div className="border-2 border-green-500 rounded-lg bg-white p-4">
                   <img
                     src={formData.signatureDataUrl}
-                    alt="Firma del paciente"
+                    alt={t('signedBy', { firstName: formData.patient.firstName, lastName: formData.patient.lastName })}
                     className="max-h-48 mx-auto"
                   />
                 </div>
@@ -223,14 +223,14 @@ export default function FormResponsesPage() {
                     />
                   </svg>
                   <span className="text-sm text-green-700 font-medium">
-                    Firmado electrónicamente por {formData.patient.firstName} {formData.patient.lastName}
+                    {t('signedBy', { firstName: formData.patient.firstName, lastName: formData.patient.lastName })}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  Fecha de firma:{' '}
+                  {t('signedDate')}{' '}
                   {formData.completedAt
-                    ? new Date(formData.completedAt).toLocaleString('es-ES')
-                    : 'Desconocida'}
+                    ? new Date(formData.completedAt).toLocaleString()
+                    : t('unknownSignDate')}
                 </p>
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function FormResponsesPage() {
       {/* Security Notice */}
       <div className="text-center">
         <p className="text-sm text-gray-600">
-          🔒 Todos los datos están cifrados y protegidos bajo cumplimiento HIPAA
+          🔒 {t('hipaaNotice')}
         </p>
       </div>
     </div>

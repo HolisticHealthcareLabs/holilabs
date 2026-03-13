@@ -1,9 +1,9 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface SentForm {
   id: string;
@@ -29,6 +29,7 @@ interface SentForm {
 }
 
 export default function SentFormsPage() {
+  const t = useTranslations('dashboard.sentForms');
   const [sentForms, setSentForms] = useState<SentForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -54,13 +55,13 @@ export default function SentFormsPage() {
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { label: string; className: string }> = {
-      PENDING: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-      VIEWED: { label: 'Visto', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-      IN_PROGRESS: { label: 'En Progreso', className: 'bg-purple-100 text-purple-700 border-purple-200' },
-      COMPLETED: { label: 'Completado', className: 'bg-orange-100 text-orange-700 border-orange-200' },
-      SIGNED: { label: 'Firmado', className: 'bg-green-100 text-green-700 border-green-200' },
-      EXPIRED: { label: 'Expirado', className: 'bg-red-100 text-red-700 border-red-200' },
-      REVOKED: { label: 'Revocado', className: 'bg-gray-100 text-gray-700 border-gray-200' },
+      PENDING: { label: t('statusPending'), className: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+      VIEWED: { label: t('statusViewed'), className: 'bg-blue-100 text-blue-700 border-blue-200' },
+      IN_PROGRESS: { label: t('statusInProgress'), className: 'bg-purple-100 text-purple-700 border-purple-200' },
+      COMPLETED: { label: t('statusCompleted'), className: 'bg-orange-100 text-orange-700 border-orange-200' },
+      SIGNED: { label: t('statusSigned'), className: 'bg-green-100 text-green-700 border-green-200' },
+      EXPIRED: { label: t('statusExpired'), className: 'bg-red-100 text-red-700 border-red-200' },
+      REVOKED: { label: t('statusRevoked'), className: 'bg-gray-100 text-gray-700 border-gray-200' },
     };
 
     const badge = badges[status] || badges.PENDING;
@@ -77,10 +78,10 @@ export default function SentFormsPage() {
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days === 0) return 'Hoy';
-    if (days === 1) return 'Ayer';
-    if (days < 7) return `Hace ${days} días`;
-    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (days === 0) return t('today');
+    if (days === 1) return t('yesterday');
+    if (days < 7) return t('daysAgo', { days });
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const filteredForms = sentForms.filter((form) => {
@@ -122,10 +123,10 @@ export default function SentFormsPage() {
                 />
               </svg>
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">Formularios Enviados</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           </div>
           <p className="text-gray-500 mt-1">
-            Rastrea el progreso de los formularios enviados a tus pacientes
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -133,19 +134,19 @@ export default function SentFormsPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <p className="text-sm text-gray-500">Total</p>
+          <p className="text-sm text-gray-500">{t('total')}</p>
           <p className="text-3xl font-bold text-gray-900 mt-1">{statusCounts.all}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <p className="text-sm text-gray-500">Pendientes</p>
+          <p className="text-sm text-gray-500">{t('pending')}</p>
           <p className="text-3xl font-bold text-yellow-600 mt-1">{statusCounts.PENDING}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <p className="text-sm text-gray-500">En Progreso</p>
+          <p className="text-sm text-gray-500">{t('inProgress')}</p>
           <p className="text-3xl font-bold text-purple-600 mt-1">{statusCounts.IN_PROGRESS}</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <p className="text-sm text-gray-500">Completados</p>
+          <p className="text-sm text-gray-500">{t('completed')}</p>
           <p className="text-3xl font-bold text-green-600 mt-1">{statusCounts.COMPLETED}</p>
         </div>
       </div>
@@ -154,11 +155,11 @@ export default function SentFormsPage() {
       <div className="bg-white border border-gray-200 rounded-xl p-4">
         <div className="flex items-center gap-2 overflow-x-auto">
           {[
-            { value: 'all', label: 'Todos' },
-            { value: 'PENDING', label: 'Pendientes' },
-            { value: 'IN_PROGRESS', label: 'En Progreso' },
-            { value: 'COMPLETED', label: 'Completados' },
-            { value: 'SIGNED', label: 'Firmados' },
+            { value: 'all', label: t('all') },
+            { value: 'PENDING', label: t('pending') },
+            { value: 'IN_PROGRESS', label: t('inProgress') },
+            { value: 'COMPLETED', label: t('completed') },
+            { value: 'SIGNED', label: t('signed') },
           ].map((status) => (
             <button
               key={status.value}
@@ -191,15 +192,15 @@ export default function SentFormsPage() {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No hay formularios enviados</h3>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">{t('noFormsTitle')}</h3>
           <p className="mt-2 text-sm text-gray-500">
-            Envía tu primer formulario a un paciente para comenzar
+            {t('noFormsDesc')}
           </p>
           <Link
             href="/dashboard/forms"
             className="mt-6 inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            Enviar Formulario
+            {t('sendFormBtn')}
           </Link>
         </div>
       ) : (
@@ -209,22 +210,22 @@ export default function SentFormsPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Paciente
+                    {t('patientCol')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Formulario
+                    {t('formCol')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
+                    {t('statusCol')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Progreso
+                    {t('progressCol')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Enviado
+                    {t('sentCol')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
+                    {t('actionsCol')}
                   </th>
                 </tr>
               </thead>
@@ -269,7 +270,7 @@ export default function SentFormsPage() {
                           onClick={() => {
                             const url = `${window.location.origin}/portal/forms/${form.accessToken}`;
                             navigator.clipboard.writeText(url);
-                            alert('Enlace copiado al portapapeles');
+                            alert(t('linkCopied'));
                           }}
                           className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
                           title="Copiar enlace"

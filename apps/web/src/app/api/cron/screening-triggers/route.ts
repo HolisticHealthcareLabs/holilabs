@@ -65,7 +65,7 @@ function isValidCronIP(ip: string | null): boolean {
  * GET /api/cron/screening-triggers
  * Auto-generate screening reminders for all active patients
  */
-export async function GET(request: NextRequest) {
+async function getScreeningTriggers(request: NextRequest) {
   const startTime = Date.now();
   let retryCount = 0;
   const maxRetries = 3;

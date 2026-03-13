@@ -55,7 +55,7 @@ export const POST = createProtectedRoute(
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
       include: {
-        clinician: true, // TODO: Fixed - clinician is already a User, no nested 'user' relation exists
+        clinician: true,
         patient: true,
       },
     });
@@ -113,7 +113,7 @@ export const POST = createProtectedRoute(
       data: {
         appointmentId,
         patientId,
-        clinicianId: appointment.clinicianId, // TODO: Added required clinicianId field
+        clinicianId: appointment.clinicianId,
         status: 'RECORDING',
         startedAt: new Date(),
       },
@@ -128,7 +128,6 @@ export const POST = createProtectedRoute(
           select: {
             firstName: true,
             lastName: true,
-            // TODO: patientId field doesn't exist on Patient model, using id instead
             id: true,
           },
         },

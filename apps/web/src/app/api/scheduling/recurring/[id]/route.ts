@@ -264,7 +264,7 @@ export const PATCH = createProtectedRoute(
                 startTime: slot.startTime,
                 endTime: slot.endTime,
                 timezone: 'America/Mexico_City',
-                type: 'IN_PERSON', // TODO: Get from series config
+                type: 'IN_PERSON', // @todo(recurring-config): Read type from series config
                 status: 'SCHEDULED',
               },
             })

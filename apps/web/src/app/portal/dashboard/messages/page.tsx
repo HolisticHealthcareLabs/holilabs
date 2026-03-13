@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -45,6 +46,7 @@ interface MessagesResponse {
 
 export default function MessagesPage() {
   const router = useRouter();
+  const t = useTranslations('portal.messaging');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(true);
@@ -212,10 +214,10 @@ export default function MessagesPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No hay mensajes todavía
+                  {t('noMessages')}
                 </h3>
                 <p className="text-gray-600">
-                  Envía tu primer mensaje a tu médico
+                  {t('noMessagesDesc')}
                 </p>
               </div>
             </div>
@@ -314,7 +316,7 @@ export default function MessagesPage() {
               <textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Escribe tu mensaje..."
+                placeholder={t('messagePlaceholder')}
                 rows={3}
                 maxLength={2000}
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -325,7 +327,7 @@ export default function MessagesPage() {
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
               >
                 <PaperAirplaneIcon className="h-5 w-5" />
-                {sending ? 'Enviando...' : 'Enviar'}
+                {sending ? t('sending') : t('send')}
               </button>
             </div>
 

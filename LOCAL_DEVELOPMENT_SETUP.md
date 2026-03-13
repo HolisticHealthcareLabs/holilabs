@@ -46,8 +46,8 @@ Copy this **minimal configuration** to `.env.local`:
 DATABASE_URL="postgresql://user:password@localhost:5432/holi_labs?schema=public"
 
 # PHASE 1 & 2 SECURITY KEYS (Generated for you!)
-SALT_ROTATION_KEY="19fb7a6c0e238aa55aee9803ec85772d4d6a2493e0b603a50bdbb0a37f235686"
-DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"
+SALT_ROTATION_KEY="<REDACTED-GENERATE-WITH-openssl-rand-hex-32>"
+DEID_SECRET="<REDACTED-GENERATE-WITH-openssl-rand-hex-32>"
 
 # NextAuth (REQUIRED)
 NEXTAUTH_URL="http://localhost:3000"

@@ -9,20 +9,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
-// Query parameters schema
 const DocumentsQuerySchema = z.object({
   type: z.enum(['LAB_RESULT', 'IMAGING', 'PRESCRIPTION', 'INSURANCE', 'CONSENT', 'OTHER']).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });
 
-// Create document schema
 const CreateDocumentSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
   description: z.string().optional(),
@@ -32,13 +29,8 @@ const CreateDocumentSchema = z.object({
   fileSize: z.number().int().positive('El tamaño del archivo debe ser mayor a 0'),
 });
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse query parameters
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const searchParams = request.nextUrl.searchParams;
     const queryValidation = DocumentsQuerySchema.safeParse({
       type: searchParams.get('type'),
@@ -58,36 +50,22 @@ export const GET = createPublicRoute(
 
     const { type, limit } = queryValidation.data;
 
-    // Build filter conditions
     const where: any = {
-      patientId: session.patientId,
+      patientId: context.session.patientId,
     };
 
     if (type) {
       where.documentType = type;
     }
 
-    // Fetch documents
     const documents = await prisma.document.findMany({
       where,
-      // TODO: uploadedByUser relation doesn't exist in Prisma schema yet
-      // include: {
-      //   uploadedByUser: {
-      //     select: {
-      //       id: true,
-      //       firstName: true,
-      //       lastName: true,
-      //       role: true,
-      //     },
-      //   },
-      // },
       orderBy: {
-        createdAt: 'desc', // Note: Document schema uses createdAt, not uploadedAt
+        createdAt: 'desc',
       },
       take: limit,
     });
 
-    // Group by type
     const documentsByType = documents.reduce(
       (acc, doc) => {
         if (!acc[doc.documentType]) {
@@ -99,14 +77,12 @@ export const GET = createPublicRoute(
       {} as Record<string, typeof documents>
     );
 
-    // Calculate total size
     const totalSize = documents.reduce((sum, doc) => sum + doc.fileSize, 0);
 
-    // HIPAA Audit Log: Patient accessed their own documents
     await createAuditLog({
       action: 'READ',
       resource: 'Document',
-      resourceId: session.patientId,
+      resourceId: context.session.patientId,
       details: {
         documentCount: documents.length,
         accessType: 'PATIENT_PORTAL_SELF_ACCESS',
@@ -119,7 +95,7 @@ export const GET = createPublicRoute(
 
     logger.info({
       event: 'patient_documents_fetched',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       count: documents.length,
       totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
     });
@@ -145,36 +121,11 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_documents_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar documentos.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'Documents' } }
 );
 
-// TODO: POST handler disabled - needs schema update to match Prisma Document model
+// @todo(document-schema): Re-enable POST handler after aligning with Prisma Document model fields
 // The current implementation references fields (title, description, fileUrl, etc.) that don't exist in the schema
 // Document schema has: documentHash, fileName, fileType, fileSize, storageUrl, etc.
 /*

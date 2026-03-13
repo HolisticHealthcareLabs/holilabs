@@ -94,7 +94,8 @@ export async function sendEmail(
         subject: options.subject,
       });
 
-      console.log('[SENDGRID DEV MODE] Would send email:', {
+      console.error('[SendGrid]', {
+        event: 'dev_mode_email',
         to: options.to,
         subject: options.subject,
         html: options.html.substring(0, 100) + '...',

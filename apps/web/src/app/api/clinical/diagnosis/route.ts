@@ -20,7 +20,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { trackUsage } from '@/lib/ai/usage-tracker';
 import { prisma } from '@/lib/prisma';
 import {
@@ -33,6 +33,7 @@ import { symptomDiagnosisEngine } from '@/lib/clinical/engines/symptom-diagnosis
 import type { SymptomInput, PatientContext } from '@holilabs/shared-types';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { CLINICAL_DISCLAIMER } from '@/lib/clinical/safety-envelope';
 
 export const dynamic = 'force-dynamic';
 
@@ -257,6 +258,17 @@ export const POST = createProtectedRoute(
       }
     }
 
+    // IDOR Protection: Verify clinician has access to this patient
+    if (body.patientId) {
+      const hasAccess = await verifyPatientAccess(userId, body.patientId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { success: false, error: 'Access denied to this patient record' },
+          { status: 403 }
+        );
+      }
+    }
+
     // 4. Check user's subscription tier and quota
     const subscriptionTier = await prisma.subscriptionTier.findUnique({
       where: { userId: userId },
@@ -405,7 +417,6 @@ export const POST = createProtectedRoute(
       success: true,
     }, req);
 
-    // 12. Return diagnosis with processing metadata
     return NextResponse.json({
       success: true,
       diagnosis,
@@ -415,10 +426,16 @@ export const POST = createProtectedRoute(
         fallbackReason: result.fallbackReason,
         urgency: result.data.urgency,
       },
+      disclaimer: CLINICAL_DISCLAIMER,
+      provenance: {
+        model: result.method === 'ai' ? 'claude' : 'deterministic-fallback',
+        version: '2.0.0',
+        timestamp: new Date().toISOString(),
+      },
       usage: {
         provider: result.method === 'ai' ? 'claude' : 'deterministic-fallback',
         tokens: result.aiLatencyMs ? 1500 : 0,
-        cost: result.method === 'ai' ? 0.005 : 0, // Estimated
+        cost: result.method === 'ai' ? 0.005 : 0,
         responseTime,
       },
       quotaInfo: {

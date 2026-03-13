@@ -65,7 +65,7 @@ function isValidCronIP(ip: string | null): boolean {
  * GET /api/cron/execute-reminders
  * Execute all due scheduled reminders
  */
-export async function GET(request: NextRequest) {
+async function getExecuteReminders(request: NextRequest) {
   const startTime = Date.now();
   let retryCount = 0;
   const maxRetries = 3;

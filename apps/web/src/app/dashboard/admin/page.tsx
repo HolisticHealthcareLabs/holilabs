@@ -1,22 +1,24 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-
+import { useTranslations } from 'next-intl';
 import DashboardLayout from '@/components/DashboardLayout';
 
 export default function AdminPage() {
+  const t = useTranslations('dashboard.adminPanel');
+
   return (
     <DashboardLayout>
       <div className="p-4 md:p-8">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">Administración</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-6">{t('title')}</h2>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Sistema</p>
-                <p className="text-2xl font-bold text-primary">Activo</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('systemCard')}</p>
+                <p className="text-2xl font-bold text-primary">{t('systemActive')}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
@@ -29,7 +31,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Almacenamiento</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('storageCard')}</p>
                 <p className="text-2xl font-bold text-primary">2.4 GB</p>
               </div>
               <svg className="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 20 20">
@@ -43,7 +45,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Usuarios Activos</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('activeUsersCard')}</p>
                 <p className="text-2xl font-bold text-primary">8</p>
               </div>
               <svg className="w-12 h-12 text-accent" fill="currentColor" viewBox="0 0 20 20">
@@ -65,8 +67,8 @@ export default function AdminPage() {
               </svg>
             </div>
             <div>
-              <div className="font-semibold text-gray-900">Waitlist</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Lead approvals</div>
+              <div className="font-semibold text-gray-900">{t('waitlist')}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('leadApprovals')}</div>
             </div>
           </a>
           <a
@@ -79,8 +81,8 @@ export default function AdminPage() {
               </svg>
             </div>
             <div>
-              <div className="font-semibold text-gray-900">BAA Management</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">HIPAA Agreements</div>
+              <div className="font-semibold text-gray-900">{t('baaManagement')}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('hipaaAgreements')}</div>
             </div>
           </a>
           <a
@@ -93,8 +95,8 @@ export default function AdminPage() {
               </svg>
             </div>
             <div>
-              <div className="font-semibold text-gray-900">Audit Logs</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">View system logs</div>
+              <div className="font-semibold text-gray-900">{t('auditLogsLink')}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('viewSystemLogs')}</div>
             </div>
           </a>
           <a
@@ -108,8 +110,8 @@ export default function AdminPage() {
               </svg>
             </div>
             <div>
-              <div className="font-semibold text-gray-900">Privacy Policy</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">GDPR/LGPD/HIPAA</div>
+              <div className="font-semibold text-gray-900">{t('privacyPolicy')}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('gdprLgpdHipaa')}</div>
             </div>
           </a>
           <a
@@ -124,8 +126,8 @@ export default function AdminPage() {
               </svg>
             </div>
             <div>
-              <div className="font-semibold text-gray-900">DPA</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Data Processing</div>
+              <div className="font-semibold text-gray-900">{t('dpa')}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('dataProcessing')}</div>
             </div>
           </a>
         </div>
@@ -138,24 +140,24 @@ export default function AdminPage() {
               <svg className="w-6 h-6 mr-2 text-accent" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              Seguridad y Cumplimiento
+              {t('securityCompliance')}
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm font-medium">HIPAA Compliance</span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
+                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{t('active')}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm font-medium">GDPR Compliance</span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
+                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{t('active')}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm font-medium">LGPD Compliance (Brasil)</span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
+                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{t('active')}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium">Cifrado End-to-End</span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
+                <span className="text-sm font-medium">End-to-End Encryption</span>
+                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{t('active')}</span>
               </div>
             </div>
           </div>
@@ -166,24 +168,24 @@ export default function AdminPage() {
               <svg className="w-6 h-6 mr-2 text-accent" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
               </svg>
-              Configuración de Des-identificación
+              {t('deidentificationSettings')}
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <span className="text-sm font-medium">Método Safe Harbor</span>
-                <span className="px-3 py-1 bg-primary text-white rounded-full text-xs font-bold">Activo</span>
+                <span className="text-sm font-medium">{t('safeHarborMethod')}</span>
+                <span className="px-3 py-1 bg-primary text-white rounded-full text-xs font-bold">{t('active')}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium">18 Identificadores HIPAA</span>
-                <span className="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-bold">Supresos</span>
+                <span className="text-sm font-medium">{t('hipaaIdentifiers')}</span>
+                <span className="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-xs font-bold">{t('suppressed')}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium">Pseudonimización</span>
-                <span className="px-3 py-1 bg-primary text-white rounded-full text-xs font-bold">Habilitado</span>
+                <span className="text-sm font-medium">{t('pseudonymization')}</span>
+                <span className="px-3 py-1 bg-primary text-white rounded-full text-xs font-bold">{t('enabled')}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium">Generalización de Datos</span>
-                <span className="px-3 py-1 bg-primary text-white rounded-full text-xs font-bold">Habilitado</span>
+                <span className="text-sm font-medium">{t('dataGeneralization')}</span>
+                <span className="px-3 py-1 bg-primary text-white rounded-full text-xs font-bold">{t('enabled')}</span>
               </div>
             </div>
           </div>
@@ -195,21 +197,21 @@ export default function AdminPage() {
                 <path d="M13 7H7v6h6V7z" />
                 <path fillRule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2zM5 5h10v10H5V5z" clipRule="evenodd" />
               </svg>
-              Modelos de IA
+              {t('aiModels')}
             </h3>
             <div className="space-y-3">
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Claude 3.5 Sonnet</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{t('active')}</span>
                 </div>
                 {/* Decorative - low contrast intentional for metadata */}
-                <div className="text-xs text-gray-500 dark:text-gray-400">Consultas médicas generales</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('generalMedicalQueries')}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Differential Privacy Engine</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Activo</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{t('active')}</span>
                 </div>
                 {/* Decorative - low contrast intentional for metadata */}
                 <div className="text-xs text-gray-500 dark:text-gray-400">ε = 1.0, δ = 1e-5</div>
@@ -223,26 +225,26 @@ export default function AdminPage() {
               <svg className="w-6 h-6 mr-2 text-accent" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
               </svg>
-              Registro de Auditoría
+              {t('auditRegistry')}
             </h3>
             <div className="space-y-2">
               <div className="p-3 border-l-4 border-green-500 bg-gray-50 rounded">
                 {/* Decorative - low contrast intentional for timestamps */}
-                <div className="text-xs text-gray-500 dark:text-gray-400">Hoy, 14:32</div>
-                <div className="text-sm font-medium">Documento subido exitosamente</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Paciente VBQ-MG-4554-T2D</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Today, 14:32</div>
+                <div className="text-sm font-medium">{t('documentUploaded')}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Patient VBQ-MG-4554-T2D</div>
               </div>
               <div className="p-3 border-l-4 border-blue-500 bg-gray-50 rounded">
                 {/* Decorative - low contrast intentional for timestamps */}
-                <div className="text-xs text-gray-500 dark:text-gray-400">Hoy, 13:15</div>
-                <div className="text-sm font-medium">Consulta de IA realizada</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Paciente VBQ-CS-6069-PIM</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Today, 13:15</div>
+                <div className="text-sm font-medium">{t('aiConsultation')}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Patient VBQ-CS-6069-PIM</div>
               </div>
               <div className="p-3 border-l-4 border-purple-500 bg-gray-50 rounded">
                 {/* Decorative - low contrast intentional for timestamps */}
-                <div className="text-xs text-gray-500 dark:text-gray-400">Hoy, 11:47</div>
-                <div className="text-sm font-medium">Acceso a billetera digital</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Paciente VBQ-AR-3039-ASM</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Today, 11:47</div>
+                <div className="text-sm font-medium">{t('digitalWalletAccess')}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Dr. Rossi → Patient VBQ-AR-3039-ASM</div>
               </div>
             </div>
           </div>

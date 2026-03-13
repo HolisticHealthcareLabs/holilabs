@@ -159,9 +159,7 @@ export class S3Transport extends Writable {
       this.totalLogsSent += logsToUpload.length;
 
       // Log success (to console, not to S3 to avoid recursion)
-      console.log(
-        `[S3Transport] Uploaded ${logsToUpload.length} logs to s3://${BUCKET_NAME}/${key} (total: ${this.totalLogsSent})`
-      );
+      console.error('[S3Transport]', { event: 'uploaded', count: logsToUpload.length, key, totalSent: this.totalLogsSent });
     } catch (error) {
       console.error('[S3Transport] Failed to upload logs to S3:', error);
 

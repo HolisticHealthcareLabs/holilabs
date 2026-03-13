@@ -471,6 +471,46 @@ export async function checkCostAlerts(
 }
 
 /**
+ * Aggregate COGS per provider for a time period.
+ * Powers the CFO dashboard "Provider COGS" widget.
+ */
+export async function getProviderCOGS(
+  startDate: Date,
+  endDate: Date,
+  workspaceId?: string
+): Promise<{ provider: string; totalCost: number; totalTokens: number; requestCount: number }[]> {
+  const where: Record<string, unknown> = {
+    createdAt: { gte: startDate, lte: endDate },
+  };
+
+  if (workspaceId) {
+    where.clinicId = workspaceId;
+  }
+
+  const grouped = await prisma.aIUsageLog.groupBy({
+    by: ['provider'],
+    where,
+    _sum: {
+      estimatedCost: true,
+      totalTokens: true,
+    },
+    _count: {
+      id: true,
+    },
+    orderBy: {
+      _sum: { estimatedCost: 'desc' },
+    },
+  });
+
+  return grouped.map((row) => ({
+    provider: row.provider,
+    totalCost: row._sum.estimatedCost ?? 0,
+    totalTokens: row._sum.totalTokens ?? 0,
+    requestCount: row._count.id,
+  }));
+}
+
+/**
  * Export cost comparison between providers
  */
 export function compareProviderCosts(tokenCount: number = 10000): {
@@ -511,15 +551,11 @@ export function compareProviderCosts(tokenCount: number = 10000): {
  * Pretty print cost comparison
  */
 export function printCostComparison(): void {
-  console.log('\n💰 AI Provider Cost Comparison (per 10k tokens):\n');
-
   const comparison = compareProviderCosts(10000);
 
-  comparison.forEach(c => {
-    console.log(
-      `  ${c.provider.padEnd(10)} | $${c.costPer10kTokens.toFixed(4)} | ${c.costSavingsVsClaude}`
-    );
-  });
+  const lines = comparison.map(c =>
+    `  ${c.provider.padEnd(10)} | $${c.costPer10kTokens.toFixed(4)} | ${c.costSavingsVsClaude}`
+  );
 
-  console.log('');
+  console.error('[AIUsageTracker]', { event: 'cost_comparison', per10kTokens: lines });
 }

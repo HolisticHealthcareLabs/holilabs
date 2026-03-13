@@ -123,15 +123,8 @@ export function AIInsights({
   }, []);
 
   // Handle action clicks
-  const handleAction = (insightId: string, action: any) => {
-    console.log('Action clicked:', {
-      insightId,
-      actionType: action.actionType,
-      metadata: action.metadata,
-    });
-
+  const handleAction = (_insightId: string, _action: any) => {
     // TODO: Implement action handlers based on actionType
-    // e.g., navigate to patient, start protocol, order lab, etc.
   };
 
   const [filter, setFilter] = useState<'all' | 'clinical' | 'operational' | 'financial'>('all');

@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -35,6 +36,7 @@ export default function LabResultsClient({
   initialResults,
   patientName,
 }: LabResultsClientProps) {
+  const t = useTranslations('portal.labResults');
   const [selectedTest, setSelectedTest] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -124,10 +126,10 @@ export default function LabResultsClient({
       <div className="text-center py-12">
         <div className="text-6xl mb-4">🧪</div>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          No hay resultados de laboratorio
+          {t('noResults')}
         </h3>
         <p className="text-gray-600 dark:text-gray-300">
-          Tus resultados aparecerán aquí cuando tu médico los cargue al sistema.
+          {t('noResultsDesc')}
         </p>
       </div>
     );
@@ -141,7 +143,7 @@ export default function LabResultsClient({
           {/* Category Filter */}
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Categoría
+              {t('categoryLabel')}
             </label>
             <select
               value={filterCategory}
@@ -150,7 +152,7 @@ export default function LabResultsClient({
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
-                  {cat === 'all' ? 'Todas las categorías' : cat}
+                  {cat === 'all' ? t('allCategories') : cat}
                 </option>
               ))}
             </select>
@@ -159,18 +161,18 @@ export default function LabResultsClient({
           {/* Status Filter */}
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Estado
+              {t('statusLabel')}
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="all">Todos los estados</option>
-              <option value="normal">Normal</option>
-              <option value="high">Alto</option>
-              <option value="low">Bajo</option>
-              <option value="critical">Crítico</option>
+              <option value="all">{t('allStatuses')}</option>
+              <option value="normal">{t('statusNormalLabel')}</option>
+              <option value="high">{t('statusHighLabel')}</option>
+              <option value="low">{t('statusLowLabel')}</option>
+              <option value="critical">{t('statusCriticalLabel')}</option>
             </select>
           </div>
         </div>
@@ -227,7 +229,7 @@ export default function LabResultsClient({
                 <div className="relative pt-2">
                   {/* Decorative - low contrast intentional for reference range text */}
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                    <span>Rango: {result.referenceMin} - {result.referenceMax} {result.unit}</span>
+                    <span>{t('rangeLabel', { min: result.referenceMin, max: result.referenceMax, unit: result.unit })}</span>
                   </div>
                   <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
@@ -258,7 +260,7 @@ export default function LabResultsClient({
                     <span className="text-blue-600 dark:text-blue-400 mt-0.5">💬</span>
                     <div>
                       <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1">
-                        Comentario del médico:
+                        {t('doctorComment')}
                       </p>
                       <p className="text-sm text-blue-800 dark:text-blue-200">
                         {result.doctorNotes}
@@ -274,7 +276,7 @@ export default function LabResultsClient({
                   onClick={() => setSelectedTest(result.testName)}
                   className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium text-sm"
                 >
-                  📈 Ver Tendencia ({groupedResults[result.testName].length} resultados)
+                  {t('viewTrend', { count: groupedResults[result.testName].length })}
                 </button>
               )}
             </motion.div>
@@ -302,7 +304,7 @@ export default function LabResultsClient({
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Tendencia: {selectedTest}
+                    {t('trendTitle')} {selectedTest}
                   </h2>
                   <button
                     onClick={() => setSelectedTest(null)}

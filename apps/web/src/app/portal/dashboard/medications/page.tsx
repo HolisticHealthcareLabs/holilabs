@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -54,6 +55,7 @@ interface MedicationsResponse {
 
 export default function MedicationsPage() {
   const router = useRouter();
+  const t = useTranslations('portal.medications');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeMedications, setActiveMedications] = useState<Medication[]>([]);
@@ -116,16 +118,16 @@ export default function MedicationsPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver al Dashboard
+            {t('backToDashboard')}
           </button>
 
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              = Mis Medicamentos
+              ?? {t('title')}
             </h1>
             <p className="text-gray-600">
               {summary.active} medicamento{summary.active !== 1 ? 's' : ''} activo
-              {summary.active !== 1 ? 's' : ''} · {summary.inactive} inactivo{summary.inactive !== 1 ? 's' : ''}
+              {summary.active !== 1 ? 's' : ''} � {summary.inactive} inactivo{summary.inactive !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -148,7 +150,7 @@ export default function MedicationsPage() {
             <div className="flex items-center gap-3 mb-4">
               <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
               <h3 className="text-lg font-bold text-gray-900">
-                  Medicamentos que requieren renovación
+                � Medicamentos que requieren renovaci�n
               </h3>
             </div>
             <div className="space-y-3">
@@ -165,7 +167,7 @@ export default function MedicationsPage() {
                     onClick={() => handleMedicationClick(medication.id)}
                     className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                   >
-                    Solicitar renovación
+                    Solicitar renovaci�n
                   </button>
                 </div>
               ))}
@@ -187,7 +189,7 @@ export default function MedicationsPage() {
                 No tienes medicamentos activos
               </h3>
               <p className="text-gray-600">
-                Los medicamentos prescritos aparecerán aquí
+                Los medicamentos prescritos aparecer�n aqu�
               </p>
             </div>
           ) : (

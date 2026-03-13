@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { HeartPulse, XCircle, Loader2, Shield, ShieldCheck } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { maskPHI, PHI_TOKEN_REGEX } from '@/lib/deid';
 import { useTranscriptAudio, type AudioLanguage } from './useTranscriptAudio';
 import { AudioWaveform } from './AudioWaveform';
@@ -104,14 +105,15 @@ function AudioToggleButton({
   isMuted: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations('portal.transcriptPane');
   return (
     <motion.button
       onClick={onToggle}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
-      aria-label={isMuted ? 'Unmute audio playback' : 'Mute audio playback'}
+      aria-label={isMuted ? t('unmuteAudio') : t('muteAudio')}
       aria-pressed={isMuted}
-      title={isMuted ? 'Audio muted — click to unmute' : 'Audio on — click to mute'}
+      title={isMuted ? t('audioMuted') : t('audioOn')}
       className={`
         flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
         text-base transition-colors
@@ -146,6 +148,7 @@ export function TranscriptPane({
   onRevokeConsent,
   volume = 0,
 }: TranscriptPaneProps) {
+  const t = useTranslations('portal.transcriptPane');
   const consentMissing = !consentRecord.timestamp;
   const buttonDisabled = disabled || isFinalizing || consentMissing;
   // Ambient audio playback: reads each chunk aloud, Doctor vs Patient voices
@@ -166,7 +169,7 @@ export function TranscriptPane({
         <div className="flex items-center gap-2.5">
           <h2 className="text-xs font-semibold uppercase tracking-wider
                          text-slate-500 dark:text-slate-400">
-            Live Meeting Notes
+            {t('liveMeetingNotes')}
           </h2>
           {isRecording && (
             <div className="flex items-center gap-3">
@@ -216,12 +219,12 @@ export function TranscriptPane({
           <p className="text-sm not-italic font-sans
                         text-slate-400 dark:text-slate-600 italic">
             {disabled
-              ? 'Select a patient above to begin recording.'
+              ? t('selectPatient')
               : consentMissing
-                ? 'Grant patient consent below to enable recording.'
+                ? t('grantConsent')
                 : isRecording
-                  ? 'Awaiting transcription...'
-                  : 'Press Start Recording to begin the live transcript.'}
+                  ? t('awaitingTranscription')
+                  : t('pressStart')}
           </p>
         ) : (
           <>
@@ -262,7 +265,7 @@ export function TranscriptPane({
         role="region"
         aria-label="Patient consent control"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             {consentRecord.granted ? (
               <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
@@ -271,15 +274,15 @@ export function TranscriptPane({
             )}
             <div>
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Recording Authorization
+                {t('recordingAuthorization')}
               </p>
               {consentRecord.timestamp ? (
                 <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
-                  Authorized at {new Date(consentRecord.timestamp).toLocaleTimeString()} via {consentRecord.method}
+                  {t('authorizedAt', { time: new Date(consentRecord.timestamp).toLocaleTimeString(), method: consentRecord.method })}
                 </p>
               ) : (
                 <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-                  Patient authorization is required prior to audio capture
+                  {t('authorizationRequired')}
                 </p>
               )}
             </div>
@@ -299,12 +302,12 @@ export function TranscriptPane({
                 transition-colors
                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
               "
-              aria-label="Revoke patient consent"
+              aria-label={t('revoke')}
             >
-              Revoke
+              {t('revoke')}
             </button>
           ) : (
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 w-full sm:w-auto">
               <button
                 onClick={() => onGrantConsent('verbal')}
                 className="
@@ -316,9 +319,9 @@ export function TranscriptPane({
                   transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
                 "
-                aria-label="Record verbal patient consent"
+                aria-label={t('verbal')}
               >
-                Verbal
+                {t('verbal')}
               </button>
               <button
                 onClick={() => onGrantConsent('digital')}
@@ -331,14 +334,27 @@ export function TranscriptPane({
                   transition-colors
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
                 "
-                aria-label="Record digital patient consent"
+                aria-label={t('digital')}
               >
-                Digital
+                {t('digital')}
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Verbal consent prompt — guides clinician through informed consent statement */}
+      {consentRecord.method === 'verbal' && consentRecord.granted && !isRecording && (
+        <div className="flex-shrink-0 rounded-xl p-3 bg-blue-50/50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
+          <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1.5">{t('verbalConsentTitle')}</p>
+          <p className="text-[11px] text-blue-800 dark:text-blue-200 leading-relaxed italic">
+            {t('verbalConsentText')}
+          </p>
+          <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-1.5">
+            {t('confirmVerbalAgreement')}
+          </p>
+        </div>
+      )}
 
       {/* Button row: Record/Stop + Audio toggle */}
       <div className="flex-shrink-0 relative">
@@ -355,7 +371,7 @@ export function TranscriptPane({
             "
             role="tooltip"
           >
-            Awaiting Patient Authorization
+            {t('awaitingAuthorization')}
           </div>
         )}
 
@@ -381,18 +397,18 @@ export function TranscriptPane({
               }
             `}
             aria-label={
-              consentMissing ? 'Recording locked: authorization required' :
-              isFinalizing   ? 'Finalizing audio' :
-              isRecording    ? 'Stop recording'   : 'Start recording'
+              consentMissing ? t('recordingLocked') :
+              isFinalizing   ? t('finalizingAudio') :
+              isRecording    ? t('stopRecording')   : t('startRecording')
             }
             aria-pressed={isRecording}
           >
             {isFinalizing ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Finalizing...</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> {t('finalizing')}</>
             ) : isRecording ? (
-              <><XCircle className="w-4 h-4" /> Stop Recording</>
+              <><XCircle className="w-4 h-4" /> {t('stopRecording')}</>
             ) : (
-              <><HeartPulse className="w-4 h-4" /> Start Recording</>
+              <><HeartPulse className="w-4 h-4" /> {t('startRecording')}</>
             )}
           </motion.button>
 

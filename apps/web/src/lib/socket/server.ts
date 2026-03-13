@@ -26,7 +26,7 @@ export interface SocketConfig {
  */
 export function initSocketServer(httpServer: HTTPServer, config?: SocketConfig): SocketIOServer {
   if (io) {
-    console.log('✓ Socket.IO server already initialized');
+    console.error('[SocketServer]', { event: 'already_initialized' });
     return io;
   }
 
@@ -42,7 +42,7 @@ export function initSocketServer(httpServer: HTTPServer, config?: SocketConfig):
 
   // Connection handling
   io.on('connection', (socket) => {
-    console.log(`✓ Client connected: ${socket.id}`);
+    console.error('[SocketServer]', { event: 'client_connected', socketId: socket.id });
 
     // Handle authentication
     socket.on('authenticate', (data: { userId: string; token?: string }) => {
@@ -55,7 +55,7 @@ export function initSocketServer(httpServer: HTTPServer, config?: SocketConfig):
       // Store user info on socket
       (socket as any).userId = userId;
 
-      console.log(`✓ User ${userId} authenticated and joined room: ${userRoom}`);
+      console.error('[SocketServer]', { event: 'user_authenticated', userId, room: userRoom });
       socket.emit('authenticated', { success: true, userId });
     });
 
@@ -65,7 +65,7 @@ export function initSocketServer(httpServer: HTTPServer, config?: SocketConfig):
       const roomName = createRoomName(roomType, resourceId);
 
       socket.join(roomName);
-      console.log(`✓ Client ${socket.id} joined room: ${roomName}`);
+      console.error('[SocketServer]', { event: 'room_joined', socketId: socket.id, room: roomName });
       socket.emit('room_joined', { roomName });
     });
 
@@ -75,13 +75,13 @@ export function initSocketServer(httpServer: HTTPServer, config?: SocketConfig):
       const roomName = createRoomName(roomType, resourceId);
 
       socket.leave(roomName);
-      console.log(`✓ Client ${socket.id} left room: ${roomName}`);
+      console.error('[SocketServer]', { event: 'room_left', socketId: socket.id, room: roomName });
       socket.emit('room_left', { roomName });
     });
 
     // Handle disconnection
     socket.on('disconnect', (reason) => {
-      console.log(`✗ Client disconnected: ${socket.id}, reason: ${reason}`);
+      console.error('[SocketServer]', { event: 'client_disconnected', socketId: socket.id, reason });
     });
 
     // Handle errors
@@ -90,7 +90,7 @@ export function initSocketServer(httpServer: HTTPServer, config?: SocketConfig):
     });
   });
 
-  console.log('✓ Socket.IO server initialized');
+  console.error('[SocketServer]', { event: 'initialized' });
   return io;
 }
 
@@ -113,7 +113,7 @@ export function emitToUser(userId: string, event: SocketEvent, notification: Soc
   const userRoom = createRoomName(SocketRoom.USER, userId);
   io.to(userRoom).emit(event, notification);
 
-  console.log(`→ Emitted ${event} to user ${userId}`);
+  console.error('[SocketServer]', { event: 'emit_to_user', socketEvent: event, userId });
 }
 
 /**
@@ -128,7 +128,7 @@ export function emitToRoom(roomType: SocketRoom, resourceId: string, event: Sock
   const roomName = createRoomName(roomType, resourceId);
   io.to(roomName).emit(event, notification);
 
-  console.log(`→ Emitted ${event} to room ${roomName}`);
+  console.error('[SocketServer]', { event: 'emit_to_room', socketEvent: event, room: roomName });
 }
 
 /**
@@ -141,7 +141,7 @@ export function emitToAll(event: SocketEvent, notification: SocketNotification) 
   }
 
   io.emit(event, notification);
-  console.log(`→ Emitted ${event} to all users`);
+  console.error('[SocketServer]', { event: 'emit_to_all', socketEvent: event });
 }
 
 /**
@@ -157,7 +157,7 @@ export function emitToUsers(userIds: string[], event: SocketEvent, notification:
     emitToUser(userId, event, notification);
   });
 
-  console.log(`→ Emitted ${event} to ${userIds.length} users`);
+  console.error('[SocketServer]', { event: 'emit_to_users', socketEvent: event, count: userIds.length });
 }
 
 /**
@@ -190,7 +190,7 @@ export function disconnectAll() {
   io.close();
   io = null;
 
-  console.log('✓ All Socket.IO connections closed');
+  console.error('[SocketServer]', { event: 'all_connections_closed' });
 }
 
 // Export types

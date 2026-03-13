@@ -13,15 +13,15 @@ import logger from '@/lib/logger';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { requireSecret } from '@/lib/security/require-secret';
 
 // Validation schema
 const VerifyMagicLinkSchema = z.object({
   token: z.string().min(1, 'Token es requerido'),
 });
 
-// JWT secret
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET || 'fallback-secret'
+  requireSecret('NEXTAUTH_SECRET')
 );
 
 // Session duration: 7 days

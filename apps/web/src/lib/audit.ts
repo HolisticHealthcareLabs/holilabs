@@ -401,3 +401,66 @@ export {
   getAuditChainStats,
   generateComplianceReport,
 } from './security/audit-chain';
+
+/**
+ * Compute field-level diff between two records.
+ * Returns only the fields that changed, with before/after values.
+ * Sensitive fields (passwords, hashes) are excluded from the diff.
+ */
+const DIFF_EXCLUDED_FIELDS = new Set([
+  'passwordHash', 'dataHash', 'entryHash', 'previousHash',
+  'updatedAt', 'createdAt',
+]);
+
+export function computeFieldDiff(
+  before: Record<string, unknown>,
+  after: Record<string, unknown>
+): Record<string, { before: unknown; after: unknown }> {
+  const diff: Record<string, { before: unknown; after: unknown }> = {};
+
+  const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
+
+  for (const key of allKeys) {
+    if (DIFF_EXCLUDED_FIELDS.has(key)) continue;
+
+    const bVal = before[key];
+    const aVal = after[key];
+
+    if (JSON.stringify(bVal) !== JSON.stringify(aVal)) {
+      diff[key] = { before: bVal ?? null, after: aVal ?? null };
+    }
+  }
+
+  return diff;
+}
+
+/**
+ * Create an audit log entry with field-level diff details.
+ * Computes the diff between before and after states and includes it
+ * in the audit log details.
+ */
+export async function createAuditLogWithDiff(
+  data: AuditLogData & {
+    beforeState: Record<string, unknown>;
+    afterState: Record<string, unknown>;
+  },
+  request?: NextRequest
+): Promise<void> {
+  const diff = computeFieldDiff(data.beforeState, data.afterState);
+  const changedFields = Object.keys(diff);
+
+  if (changedFields.length === 0) return;
+
+  return createAuditLog(
+    {
+      ...data,
+      details: {
+        ...data.details,
+        changedFields,
+        fieldDiff: diff,
+        changeCount: changedFields.length,
+      },
+    },
+    request
+  );
+}

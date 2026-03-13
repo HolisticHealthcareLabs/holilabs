@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import {
   AlertTriangle,
   Clock,
@@ -33,44 +34,51 @@ interface EscalationCounts {
   resolved: number;
 }
 
-const STATUS_CONFIG: Record<EscalationStatus, { label: string; color: string; bg: string; border: string }> = {
-  OPEN: { label: 'Open', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
-  BREACHED: { label: 'Breached', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200' },
-  RESOLVED: { label: 'Resolved', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
+const STATUS_STYLES: Record<EscalationStatus, { color: string; bg: string; border: string }> = {
+  OPEN:     { color: 'text-amber-700', bg: 'bg-amber-50',  border: 'border-amber-200' },
+  BREACHED: { color: 'text-red-700',   bg: 'bg-red-50',    border: 'border-red-200' },
+  RESOLVED: { color: 'text-green-700', bg: 'bg-green-50',  border: 'border-green-200' },
 };
 
-function StatusBadge({ status }: { status: EscalationStatus }) {
-  const config = STATUS_CONFIG[status];
+function StatusBadge({ status, label }: { status: EscalationStatus; label: string }) {
+  const styles = STATUS_STYLES[status];
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${config.bg} ${config.color} border ${config.border}`}>
-      {config.label}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${styles.bg} ${styles.color} border ${styles.border}`}>
+      {label}
     </span>
   );
 }
 
-function formatDeadline(deadline: string, status: EscalationStatus) {
-  const date = new Date(deadline);
-  const now = new Date();
-  const diffMs = date.getTime() - now.getTime();
-
-  if (status === 'RESOLVED') {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  }
-
-  if (diffMs < 0) {
-    const overdue = Math.abs(diffMs);
-    const hours = Math.floor(overdue / (1000 * 60 * 60));
-    const minutes = Math.floor((overdue % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m overdue`;
-  }
-
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hours}h ${minutes}m remaining`;
-}
-
 export default function EscalationsPage() {
+  const t = useTranslations('portal.escalations');
   const { data: session } = useSession();
+
+  const STATUS_LABELS: Record<EscalationStatus, string> = {
+    OPEN:     t('open'),
+    BREACHED: t('slaBreached'),
+    RESOLVED: t('resolved'),
+  };
+
+  const formatDeadline = (deadline: string, status: EscalationStatus) => {
+    const date = new Date(deadline);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+
+    if (status === 'RESOLVED') {
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    if (diffMs < 0) {
+      const overdue = Math.abs(diffMs);
+      const hours = Math.floor(overdue / (1000 * 60 * 60));
+      const minutes = Math.floor((overdue % (1000 * 60 * 60)) / (1000 * 60));
+      return t('overdue', { hours, minutes });
+    }
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return t('remaining', { hours, minutes });
+  };
   const [escalations, setEscalations] = useState<EscalationRecord[]>([]);
   const [counts, setCounts] = useState<EscalationCounts>({ open: 0, breached: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
@@ -126,10 +134,10 @@ export default function EscalationsPage() {
   };
 
   const tabs: Array<{ key: EscalationStatus | 'ALL'; label: string; count: number }> = [
-    { key: 'ALL', label: 'All', count: counts.open + counts.breached + counts.resolved },
-    { key: 'OPEN', label: 'Open', count: counts.open },
-    { key: 'BREACHED', label: 'Breached', count: counts.breached },
-    { key: 'RESOLVED', label: 'Resolved', count: counts.resolved },
+    { key: 'ALL', label: t('all'), count: counts.open + counts.breached + counts.resolved },
+    { key: 'OPEN', label: t('open'), count: counts.open },
+    { key: 'BREACHED', label: t('slaBreached'), count: counts.breached },
+    { key: 'RESOLVED', label: t('resolved'), count: counts.resolved },
   ];
 
   if (loading) {
@@ -137,7 +145,7 @@ export default function EscalationsPage() {
       <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-500">Loading escalations...</p>
+          <p className="text-gray-500">{t('loading')}</p>
         </div>
       </div>
     );
@@ -150,10 +158,10 @@ export default function EscalationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ShieldAlert className="w-6 h-6 text-amber-600" />
-            Escalation Queue
+            {t('title')}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Follow-up reminders requiring attention
+            {t('subtitle')}
           </p>
         </div>
         <button
@@ -161,7 +169,7 @@ export default function EscalationsPage() {
           className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          {t('refresh')}
         </button>
       </div>
 
@@ -172,21 +180,21 @@ export default function EscalationsPage() {
             <Clock className="w-4 h-4 text-amber-600" />
             <span className="text-2xl font-bold text-amber-700">{counts.open}</span>
           </div>
-          <p className="text-xs text-amber-600 font-medium">Open</p>
+          <p className="text-xs text-amber-600 font-medium">{t('open')}</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 mb-1">
             <AlertTriangle className="w-4 h-4 text-red-600" />
             <span className="text-2xl font-bold text-red-700">{counts.breached}</span>
           </div>
-          <p className="text-xs text-red-600 font-medium">SLA Breached</p>
+          <p className="text-xs text-red-600 font-medium">{t('slaBreached')}</p>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 mb-1">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
             <span className="text-2xl font-bold text-green-700">{counts.resolved}</span>
           </div>
-          <p className="text-xs text-green-600 font-medium">Resolved</p>
+          <p className="text-xs text-green-600 font-medium">{t('resolved')}</p>
         </div>
       </div>
 
@@ -211,12 +219,7 @@ export default function EscalationsPage() {
       {escalations.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <ShieldAlert className="w-12 h-12 mx-auto mb-3 opacity-40" />
-          <p className="text-lg font-medium">No escalations</p>
-          <p className="text-sm mt-1">
-            {activeTab === 'ALL'
-              ? 'No follow-up reminders have been escalated.'
-              : `No ${activeTab.toLowerCase()} escalations.`}
-          </p>
+          <p className="text-lg font-medium">{t('noEscalations')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -229,7 +232,7 @@ export default function EscalationsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <StatusBadge status={esc.status} />
+                    <StatusBadge status={esc.status} label={STATUS_LABELS[esc.status]} />
                     <span className="text-sm font-medium text-gray-900">
                       {esc.scheduledReminder.templateName}
                     </span>
@@ -245,10 +248,10 @@ export default function EscalationsPage() {
                   <div className="flex items-center gap-4 text-xs text-gray-400">
                     {esc.patient && (
                       <span>
-                        Patient: {esc.patient.firstName} {esc.patient.lastName}
+                        {t('patient')}: {esc.patient.firstName} {esc.patient.lastName}
                       </span>
                     )}
-                    <span>Attempt #{esc.attempt}</span>
+                    <span>{t('attempt', { n: esc.attempt })}</span>
                     <span
                       className={
                         esc.status === 'BREACHED'
@@ -262,7 +265,7 @@ export default function EscalationsPage() {
                     </span>
                     {esc.resolvedByUser && (
                       <span className="text-green-600">
-                        Resolved by {esc.resolvedByUser.firstName} {esc.resolvedByUser.lastName}
+                        {t('resolved')}: {esc.resolvedByUser.firstName} {esc.resolvedByUser.lastName}
                       </span>
                     )}
                   </div>
@@ -280,7 +283,7 @@ export default function EscalationsPage() {
                     disabled={resolvingId === esc.id}
                     className="shrink-0 px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-500 disabled:opacity-50 rounded-lg transition-colors"
                   >
-                    Resolve
+                    {t('resolve')}
                   </button>
                 )}
               </div>
@@ -293,11 +296,11 @@ export default function EscalationsPage() {
       {showResolveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Resolve Escalation</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('resolveTitle')}</h3>
             <textarea
               value={resolutionText}
               onChange={(e) => setResolutionText(e.target.value)}
-              placeholder="Resolution notes (optional)"
+              placeholder={t('resolutionPlaceholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none resize-none"
             />
@@ -306,14 +309,14 @@ export default function EscalationsPage() {
                 onClick={() => { setShowResolveModal(false); setSelectedId(null); }}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleResolve}
                 disabled={resolvingId !== null}
                 className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-500 disabled:opacity-50 rounded-lg"
               >
-                {resolvingId ? 'Resolving...' : 'Confirm Resolve'}
+                {resolvingId ? t('resolving') : t('confirmResolve')}
               </button>
             </div>
           </div>

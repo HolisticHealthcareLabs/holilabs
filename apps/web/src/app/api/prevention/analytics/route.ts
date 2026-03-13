@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -241,7 +242,7 @@ export const GET = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error fetching prevention analytics:', error);
+    logger.error('Error fetching prevention analytics:', error);
 
     return NextResponse.json(
       {

@@ -14,6 +14,7 @@ export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -50,6 +51,7 @@ interface Medication {
 }
 
 export default function MedicationsPage() {
+  const t = useTranslations('portal.medications');
   const [medications, setMedications] = useState<Medication[]>([]);
   const [activeMedications, setActiveMedications] = useState<Medication[]>([]);
   const [inactiveMedications, setInactiveMedications] = useState<Medication[]>([]);
@@ -69,7 +71,7 @@ export default function MedicationsPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Error al cargar medicamentos');
+        throw new Error(data.error || t('loadError'));
       }
 
       setMedications(data.data.medications);
@@ -77,7 +79,7 @@ export default function MedicationsPage() {
       setInactiveMedications(data.data.inactiveMedications);
       setNeedsRefill(data.data.needsRefill);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('retry'));
     } finally {
       setIsLoading(false);
     }
@@ -135,14 +137,14 @@ export default function MedicationsPage() {
             />
           </svg>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Error al cargar medicamentos
+            {t('loadError')}
           </h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={fetchMedications}
             className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
           >
-            Reintentar
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -156,10 +158,10 @@ export default function MedicationsPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-          Mis Medicamentos
+          {t('title')}
         </h1>
         <p className="text-gray-600">
-          Administra tus medicamentos y prescripciones
+          {t('summary', { active: activeMedications.length, inactive: inactiveMedications.length })}
         </p>
       </div>
 
@@ -193,17 +195,17 @@ export default function MedicationsPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-bold text-yellow-900 mb-2">
-                ⚠️ Medicamentos que necesitan renovación
+                {t('refillAlert')}
               </h3>
               <p className="text-sm text-yellow-800 mb-3">
-                {needsRefill.length} medicamento{needsRefill.length !== 1 ? 's' : ''} se{needsRefill.length !== 1 ? 'n' : ''} terminan pronto. Contacta a tu médico para renovar.
+                {needsRefill.length} {t('refillContact')}
               </p>
               <div className="space-y-2">
                 {needsRefill.map((med) => (
                   <div key={med.id} className="flex items-center gap-2 text-sm text-yellow-900">
                     <span className="font-semibold">{med.name}</span>
                     <span className="text-yellow-700">
-                      • {getDaysUntilEnd(med.prescription!.endDate)} días restantes
+                      • {t('daysLeft', { count: getDaysUntilEnd(med.prescription!.endDate) })}
                     </span>
                   </div>
                 ))}
@@ -224,7 +226,7 @@ export default function MedicationsPage() {
             <span className="text-2xl">💊</span>
             <span className="text-3xl font-bold">{activeMedications.length}</span>
           </div>
-          <p className="text-sm font-medium">Activos</p>
+          <p className="text-sm font-medium">{t('statsActive')}</p>
         </motion.div>
 
         <motion.div
@@ -237,7 +239,7 @@ export default function MedicationsPage() {
             <span className="text-2xl">📋</span>
             <span className="text-3xl font-bold">{medications.length}</span>
           </div>
-          <p className="text-sm font-medium">Total</p>
+          <p className="text-sm font-medium">{t('statsTotal')}</p>
         </motion.div>
 
         <motion.div
@@ -250,7 +252,7 @@ export default function MedicationsPage() {
             <span className="text-2xl">🔄</span>
             <span className="text-3xl font-bold">{needsRefill.length}</span>
           </div>
-          <p className="text-sm font-medium">Renovación</p>
+          <p className="text-sm font-medium">{t('statsRefill')}</p>
         </motion.div>
 
         <motion.div
@@ -265,7 +267,7 @@ export default function MedicationsPage() {
               {new Set(medications.map((m) => m.prescriber.id)).size}
             </span>
           </div>
-          <p className="text-sm font-medium">Prescriptores</p>
+          <p className="text-sm font-medium">{t('statsPrescribers')}</p>
         </motion.div>
       </div>
 
@@ -279,7 +281,7 @@ export default function MedicationsPage() {
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          Activos ({activeMedications.length})
+          {t('tabActive', { count: activeMedications.length })}
         </button>
         <button
           onClick={() => setActiveTab('inactive')}
@@ -289,7 +291,7 @@ export default function MedicationsPage() {
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          Inactivos ({inactiveMedications.length})
+          {t('tabInactive', { count: inactiveMedications.length })}
         </button>
       </div>
 
@@ -321,13 +323,13 @@ export default function MedicationsPage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {activeTab === 'active'
-                ? 'No tienes medicamentos activos'
-                : 'No hay medicamentos inactivos'}
+                ? t('noActiveMeds')
+                : t('noInactiveMeds')}
             </h3>
             <p className="text-gray-600">
               {activeTab === 'active'
-                ? 'Los medicamentos prescritos aparecerán aquí'
-                : 'Los medicamentos descontinuados aparecerán aquí'}
+                ? t('noActiveMedsDesc')
+                : t('noInactiveMedsDesc')}
             </p>
           </motion.div>
         ) : (
@@ -381,7 +383,7 @@ export default function MedicationsPage() {
                     </div>
                     {needsRefillAlert && (
                       <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
-                        ⚠️ Renovar pronto
+                        {t('renewSoon')}
                       </span>
                     )}
                   </div>
@@ -390,7 +392,7 @@ export default function MedicationsPage() {
                   {medication.instructions && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                       <p className="text-sm font-semibold text-blue-900 mb-1">
-                        📋 Instrucciones
+                        {t('instructionsLabel')}
                       </p>
                       <p className="text-sm text-blue-800">{medication.instructions}</p>
                     </div>
@@ -407,7 +409,7 @@ export default function MedicationsPage() {
                         Dr. {medication.prescriber.firstName} {medication.prescriber.lastName}
                       </p>
                       <p className="text-xs text-gray-600">
-                        {medication.prescriber.specialty || 'Medicina General'}
+                        {medication.prescriber.specialty || t('generalMedicine')}
                       </p>
                     </div>
                   </div>
@@ -418,7 +420,7 @@ export default function MedicationsPage() {
                       {/* Decorative - low contrast intentional for field labels */}
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <p className="text-gray-500 mb-1">Inicio</p>
+                          <p className="text-gray-500 mb-1">{t('startLabel')}</p>
                           <p className="font-semibold text-gray-900">
                             {format(new Date(medication.prescription.startDate), 'dd/MMM/yyyy', {
                               locale: es,
@@ -426,7 +428,7 @@ export default function MedicationsPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500 mb-1">Vencimiento</p>
+                          <p className="text-gray-500 mb-1">{t('expiryLabel')}</p>
                           <p
                             className={`font-semibold ${
                               needsRefillAlert ? 'text-yellow-600' : 'text-gray-900'
@@ -441,13 +443,13 @@ export default function MedicationsPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500 mb-1">Renovaciones</p>
+                          <p className="text-gray-500 mb-1">{t('refillsLabel')}</p>
                           <p className="font-semibold text-gray-900">
                             {medication.prescription.refillsRemaining}
                           </p>
                         </div>
                         <div>
-                          <p className="text-gray-500 mb-1">Estado</p>
+                          <p className="text-gray-500 mb-1">{t('status')}</p>
                           <span
                             className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
                               medication.prescription.status === 'ACTIVE'
@@ -455,7 +457,7 @@ export default function MedicationsPage() {
                                 : 'bg-gray-100 text-gray-700'
                             }`}
                           >
-                            {medication.prescription.status === 'ACTIVE' ? 'Activa' : 'Inactiva'}
+                            {medication.prescription.status === 'ACTIVE' ? t('statusActiveLabel') : t('statusInactiveLabel')}
                           </span>
                         </div>
                       </div>
@@ -466,7 +468,7 @@ export default function MedicationsPage() {
                   {medication.sideEffects && (
                     <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
                       <p className="text-xs font-semibold text-red-900 mb-1">
-                        ⚠️ Efectos secundarios posibles
+                        {t('sideEffectsLabel')}
                       </p>
                       <p className="text-xs text-red-800">{medication.sideEffects}</p>
                     </div>
@@ -481,24 +483,24 @@ export default function MedicationsPage() {
       {/* Info Card */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
         <h3 className="text-sm font-semibold text-blue-900 mb-3">
-          💡 Consejos para el manejo de medicamentos
+          💡 {t('tipsTitle')}
         </h3>
         <ul className="space-y-2 text-sm text-blue-800">
           <li className="flex items-start gap-2">
             <span className="text-blue-600">•</span>
-            <span>Toma tus medicamentos a la misma hora todos los días</span>
+            <span>{t('tip1')}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600">•</span>
-            <span>Configura alarmas como recordatorio (próximamente disponible)</span>
+            <span>{t('tip2')}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600">•</span>
-            <span>Solicita renovaciones con al menos 7 días de anticipación</span>
+            <span>{t('tip3')}</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-blue-600">•</span>
-            <span>Contacta a tu médico si experimentas efectos secundarios</span>
+            <span>{t('tip4')}</span>
           </li>
         </ul>
       </div>

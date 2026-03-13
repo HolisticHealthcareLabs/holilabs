@@ -16,7 +16,6 @@ export const GET = createProtectedRoute(
       const recordingId = context.params?.id;
 
       // Fetch recording with all related data
-      // TODO: recordingSession model doesn't exist - using scribeSession instead
       const recording = await prisma.scribeSession.findUnique({
         where: { id: recordingId },
         include: {
@@ -31,7 +30,6 @@ export const GET = createProtectedRoute(
           patient: {
             select: {
               id: true,
-              // TODO: patientId field doesn't exist - using mrn instead
               mrn: true,
               firstName: true,
               lastName: true,

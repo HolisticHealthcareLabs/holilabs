@@ -118,7 +118,7 @@ DEEPGRAM_API_KEY (needs rotation - old key exposed)
 
 ### 3. Exposed API Keys (URGENT)
 These keys were found in git history and MUST be rotated:
-- Resend: `re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu`
+- Resend: `<REDACTED-REVOKE-AND-REGENERATE>`
 - Anthropic: `sk-ant-api03-EWTQVhNAL...`
 - Deepgram: `70b3a1428255db754512e34eafad42a18c02311c`
 - Twilio Auth Token (potentially exposed)

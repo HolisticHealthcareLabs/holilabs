@@ -78,8 +78,6 @@ export function useTaskRealtime(
   // Handle task created event
   const handleTaskCreated = useCallback(
     (event: TaskEvent) => {
-      console.log('[Tasks] Real-time task created:', event);
-
       setRecentTaskEvents((prev) => {
         const newEvents = [event, ...prev].slice(0, 100);
         return newEvents;
@@ -93,8 +91,6 @@ export function useTaskRealtime(
   // Handle task updated event
   const handleTaskUpdated = useCallback(
     (event: TaskEvent) => {
-      console.log('[Tasks] Real-time task updated:', event);
-
       setRecentTaskEvents((prev) => {
         // Update existing event or add new one
         const existing = prev.findIndex((e) => e.id === event.id);
@@ -114,10 +110,7 @@ export function useTaskRealtime(
   // Handle task completed event
   const handleTaskCompleted = useCallback(
     (event: TaskEvent) => {
-      console.log('[Tasks] Real-time task completed:', event);
-
       setRecentTaskEvents((prev) => {
-        // Update existing event or add new one
         const existing = prev.findIndex((e) => e.id === event.id);
         if (existing >= 0) {
           const updated = [...prev];
@@ -135,8 +128,6 @@ export function useTaskRealtime(
   // Handle task dismissed event
   const handleTaskDismissed = useCallback(
     (event: TaskEvent) => {
-      console.log('[Tasks] Real-time task dismissed:', event);
-
       setRecentTaskEvents((prev) => {
         const existing = prev.findIndex((e) => e.id === event.id);
         if (existing >= 0) {
@@ -155,8 +146,6 @@ export function useTaskRealtime(
   // Handle task deleted event
   const handleTaskDeleted = useCallback(
     (event: TaskEvent) => {
-      console.log('[Tasks] Real-time task deleted:', event);
-
       setRecentTaskEvents((prev) => {
         // Remove the deleted task from events
         return prev.filter((e) => e.id !== event.id);
@@ -239,7 +228,6 @@ export function useTaskRealtime(
         unsubDeleted,
       ];
 
-      console.log('[Tasks] Real-time subscriptions initialized for user:', userId);
     } catch (error) {
       console.error('[Tasks] Socket initialization error:', error);
     }

@@ -3,9 +3,11 @@
  * Self-service appointment scheduling for patients
  */
 
+import { getTranslations } from 'next-intl/server';
 import SelfServiceBooking from '@/components/appointments/SelfServiceBooking';
 
-export default function AppointmentBookingPage() {
+export default async function AppointmentBookingPage() {
+  const t = await getTranslations('portal.schedule');
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-5xl mx-auto">
@@ -18,11 +20,11 @@ export default function AppointmentBookingPage() {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Dashboard
+            {t('backToDashboard')}
           </a>
-          <h1 className="text-3xl font-bold text-gray-900">Book an Appointment</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           <p className="text-gray-600 mt-2">
-            Schedule a visit with your healthcare provider in just a few clicks
+            {t('subtitle')}
           </p>
         </div>
 

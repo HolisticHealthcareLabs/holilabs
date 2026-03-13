@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,7 @@ interface Prescription {
 }
 
 export default function PatientPrescriptionsPage() {
+  const t = useTranslations('portal.prescriptions');
   const [patientId, setPatientId] = useState<string | null>(null);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +123,7 @@ export default function PatientPrescriptionsPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
           {/* Decorative - low contrast intentional for loading message */}
-          <p className="text-gray-600 dark:text-gray-400">Loading your prescriptions...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('loading')}</p>
         </div>
       </div>
     );
@@ -133,7 +135,7 @@ export default function PatientPrescriptionsPage() {
         <div className="max-w-2xl mx-auto bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-xl p-8 text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-yellow-900 dark:text-yellow-300 mb-2">
-            Unable to Load Prescriptions
+            {t('errorTitle')}
           </h2>
           <p className="text-yellow-700 dark:text-yellow-400">{error}</p>
         </div>
@@ -146,11 +148,10 @@ export default function PatientPrescriptionsPage() {
       {/* Header */}
       <div className="max-w-5xl mx-auto mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          My Prescriptions
+          {t('title')}
         </h1>
-        {/* Decorative - low contrast intentional for page description */}
         <p className="text-gray-600 dark:text-gray-400">
-          View and track your prescriptions from your healthcare provider
+          {t('subtitle')}
         </p>
       </div>
 

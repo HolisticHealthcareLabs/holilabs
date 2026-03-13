@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { VerificationMethod, VerificationResult, VerificationStatus } from '@prisma/client';
 import { verifyNPI } from '@/lib/nppes/npi-verification';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 /**
  * POST /api/credentials/[id]/verify
@@ -101,14 +102,14 @@ export const POST = createProtectedRoute(
       verification,
     });
   } catch (error: any) {
-    console.error('Error initiating verification:', error);
+    logger.error('Error initiating verification:', error);
     return NextResponse.json(
       { error: 'Failed to initiate verification' },
       { status: 500 }
     );
   }
   },
-  { roles: ['ADMIN'] }
+  { roles: ['ADMIN'], audit: { action: 'READ', resource: 'CredentialVerification' } }
 );
 
 /**
@@ -245,7 +246,7 @@ async function attemptAutoVerification(
 
     // Simulate State Board verification
     if (method === VerificationMethod.STATE_BOARD_API && credential.credentialType === 'MEDICAL_LICENSE') {
-      // TODO: Integrate with state-specific medical board APIs
+      // @todo(credentialing-apis): Integrate with state-specific medical board APIs
       // Each state has different APIs and requirements
       return {
         status: VerificationResult.PENDING,
@@ -257,7 +258,7 @@ async function attemptAutoVerification(
 
     // Simulate ABMS verification for board certifications
     if (method === VerificationMethod.ABMS_VERIFICATION && credential.credentialType === 'BOARD_CERTIFICATION') {
-      // TODO: Integrate with ABMS API (https://www.abms.org/)
+      // @todo(credentialing-apis): Integrate with ABMS API (https://www.abms.org/)
       return {
         status: VerificationResult.PENDING,
         matchScore: null,
@@ -274,7 +275,7 @@ async function attemptAutoVerification(
       discrepancies: null,
     };
   } catch (error) {
-    console.error('Auto-verification error:', error);
+    logger.error('Auto-verification error:', error);
     return {
       status: VerificationResult.ERROR,
       matchScore: null,

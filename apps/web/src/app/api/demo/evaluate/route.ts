@@ -12,6 +12,7 @@ import { CDSEngine } from '@/lib/cds/engines/cds-engine';
 import { evaluateDOACRule } from '@/lib/clinical/safety/doac-evaluator';
 import { DEMO_SCENARIOS, SCENARIO_IDS } from '@/lib/demo/demo-scenarios';
 import type { CDSAlert } from '@/lib/cds/types';
+import logger from '@/lib/logger';
 
 // ─── In-memory rate limiter ──────────────────────────────────────────────────
 
@@ -144,7 +145,7 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
       },
     });
   } catch (error) {
-    console.error('[Demo Evaluate] Error:', error);
+    logger.error('[Demo Evaluate] Error:', error);
     return NextResponse.json(
       { success: false, error: 'Evaluation unavailable. Please try again.' },
       { status: 500 }

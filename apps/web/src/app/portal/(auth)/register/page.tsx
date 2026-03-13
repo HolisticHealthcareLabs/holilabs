@@ -15,12 +15,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { Input, PasswordInput } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { validatePassword } from '@/lib/auth/password-validation';
 
 export default function PatientRegisterPage() {
   const router = useRouter();
+  const t = useTranslations('portal.register');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -48,12 +50,12 @@ export default function PatientRegisterPage() {
   };
 
   const getStrengthLabel = () => {
-    if (strength === 0) return 'Muy Débil';
-    if (strength === 1) return 'Débil';
-    if (strength === 2) return 'Aceptable';
-    if (strength === 3) return 'Buena';
-    if (strength === 4) return 'Fuerte';
-    return 'Excelente';
+    if (strength === 0) return t('strengthVeryWeak');
+    if (strength === 1) return t('strengthWeak');
+    if (strength === 2) return t('strengthFair');
+    if (strength === 3) return t('strengthGood');
+    if (strength === 4) return t('strengthStrong');
+    return t('strengthExcellent');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,19 +64,17 @@ export default function PatientRegisterPage() {
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('passwordsDontMatch'));
       return;
     }
 
-    // Validate password strength
     if (!passwordValidation.valid) {
-      setError('La contraseña debe cumplir todos los requisitos');
+      setError(t('passwordRequirements'));
       return;
     }
 
-    // Validate terms acceptance
     if (!acceptTerms) {
-      setError('Debes aceptar los términos y condiciones');
+      setError(t('mustAcceptTerms'));
       return;
     }
 
@@ -110,14 +110,14 @@ export default function PatientRegisterPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-          <h1 className="text-2xl font-bold text-gray-900">Cuenta creada</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('accountCreated')}</h1>
           <p className="mt-2 text-gray-700">
-            Revisa tu correo para verificar tu cuenta.
+            {t('checkEmail')}
           </p>
 
           {successInfo.emailConfigured === false ? (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              El servicio de email no está configurado en este entorno. Usa el enlace de verificación abajo (solo dev).
+              {t('emailNotConfigured')}
             </div>
           ) : null}
 
@@ -138,7 +138,7 @@ export default function PatientRegisterPage() {
           ) : null}
 
           <Button className="mt-6" variant="primary" fullWidth onClick={() => router.push('/portal/login')}>
-            Ir a iniciar sesión
+            {t('goToLogin')}
           </Button>
         </div>
       </div>
@@ -162,8 +162,8 @@ export default function PatientRegisterPage() {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <h1 className="text-3xl font-bold text-gray-900">Crear Cuenta</h1>
-          <p className="text-gray-600 mt-2">Únete a Holi Labs</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-600 mt-2">{t('subtitle')}</p>
         </div>
 
         {/* Registration Card */}
@@ -179,14 +179,14 @@ export default function PatientRegisterPage() {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Nombre"
+                label={t('firstName')}
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 required
                 placeholder="María"
               />
               <Input
-                label="Apellido"
+                label={t('lastName')}
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 required
@@ -196,7 +196,7 @@ export default function PatientRegisterPage() {
 
             {/* Email */}
             <Input
-              label="Correo Electrónico"
+              label={t('email')}
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -206,7 +206,7 @@ export default function PatientRegisterPage() {
 
             {/* Date of Birth */}
             <Input
-              label="Fecha de Nacimiento"
+              label={t('dateOfBirth')}
               type="date"
               value={formData.dateOfBirth}
               onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
@@ -215,7 +215,7 @@ export default function PatientRegisterPage() {
 
             {/* Phone (Optional) */}
             <Input
-              label="Teléfono (opcional)"
+              label={t('phone')}
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -224,7 +224,7 @@ export default function PatientRegisterPage() {
 
             {/* Password */}
             <PasswordInput
-              label="Contraseña"
+              label={t('password')}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
@@ -235,7 +235,7 @@ export default function PatientRegisterPage() {
             {formData.password && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Seguridad:</span>
+                  <span className="text-gray-600">{t('strengthLabel')}</span>
                   <span className={`font-semibold ${
                     strength >= 4 ? 'text-green-600' :
                     strength >= 3 ? 'text-blue-600' :
@@ -259,19 +259,19 @@ export default function PatientRegisterPage() {
                 {/* Password Requirements */}
                 <div className="text-xs space-y-1 mt-3">
                   <div className={passwordErrors.includes('At least 8 characters') ? 'text-gray-400' : 'text-green-600'}>
-                    {passwordErrors.includes('At least 8 characters') ? '○' : '✓'} Mínimo 8 caracteres
+                    {passwordErrors.includes('At least 8 characters') ? '○' : '✓'} {t('reqMinChars')}
                   </div>
                   <div className={passwordErrors.includes('One uppercase letter') ? 'text-gray-400' : 'text-green-600'}>
-                    {passwordErrors.includes('One uppercase letter') ? '○' : '✓'} Una letra mayúscula
+                    {passwordErrors.includes('One uppercase letter') ? '○' : '✓'} {t('reqUppercase')}
                   </div>
                   <div className={passwordErrors.includes('One lowercase letter') ? 'text-gray-400' : 'text-green-600'}>
-                    {passwordErrors.includes('One lowercase letter') ? '○' : '✓'} Una letra minúscula
+                    {passwordErrors.includes('One lowercase letter') ? '○' : '✓'} {t('reqLowercase')}
                   </div>
                   <div className={passwordErrors.includes('One number') ? 'text-gray-400' : 'text-green-600'}>
-                    {passwordErrors.includes('One number') ? '○' : '✓'} Un número
+                    {passwordErrors.includes('One number') ? '○' : '✓'} {t('reqNumber')}
                   </div>
                   <div className={passwordErrors.includes('One special character (@$!%*?&)') ? 'text-gray-400' : 'text-green-600'}>
-                    {passwordErrors.includes('One special character (@$!%*?&)') ? '○' : '✓'} Un carácter especial (@$!%*?&)
+                    {passwordErrors.includes('One special character (@$!%*?&)') ? '○' : '✓'} {t('reqSpecial')}
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function PatientRegisterPage() {
 
             {/* Confirm Password */}
             <PasswordInput
-              label="Confirmar Contraseña"
+              label={t('confirmPassword')}
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               required
@@ -295,13 +295,13 @@ export default function PatientRegisterPage() {
                 className="w-4 h-4 mt-1 rounded border-gray-300 text-green-600 focus:ring-green-500"
               />
               <span className="text-sm text-gray-700">
-                Acepto los{' '}
+                {t('acceptTerms')}{' '}
                 <a href="/terms" target="_blank" className="text-green-600 hover:underline">
-                  términos y condiciones
+                  {t('termsAndConditions')}
                 </a>{' '}
-                y la{' '}
+                {t('and')}{' '}
                 <a href="/privacy" target="_blank" className="text-green-600 hover:underline">
-                  política de privacidad
+                  {t('privacyPolicy')}
                 </a>
               </span>
             </label>
@@ -314,19 +314,19 @@ export default function PatientRegisterPage() {
               fullWidth
               loading={loading}
             >
-              Crear Cuenta
+              {t('createAccountBtn')}
             </Button>
           </form>
 
           {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              ¿Ya tienes cuenta?{' '}
+              {t('alreadyHaveAccount')}{' '}
               <a
                 href="/portal/login"
                 className="font-semibold text-green-600 hover:text-green-700"
               >
-                Inicia sesión
+                {t('signIn')}
               </a>
             </p>
           </div>
@@ -337,7 +337,7 @@ export default function PatientRegisterPage() {
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
-          <span>Tus datos están protegidos con cifrado HIPAA</span>
+          <span>{t('securityBadge')}</span>
         </div>
       </motion.div>
     </div>

@@ -5,20 +5,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const { id } = params;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const id = request.nextUrl.pathname.split('/').at(-1);
 
     if (!id) {
       return NextResponse.json(
@@ -30,7 +24,6 @@ export const GET = createPublicRoute(
       );
     }
 
-    // Fetch medication with full details
     const medication = await prisma.medication.findUnique({
       where: { id },
       include: {
@@ -56,11 +49,10 @@ export const GET = createPublicRoute(
       );
     }
 
-    // Verify the medication belongs to the authenticated patient
-    if (medication.patientId !== session.patientId) {
+    if (medication.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_medication_access_attempt',
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         requestedMedicationId: id,
         actualMedicationPatientId: medication.patientId,
       });
@@ -74,13 +66,12 @@ export const GET = createPublicRoute(
       );
     }
 
-    // HIPAA Audit Log: Patient accessed medication detail
     await createAuditLog({
       action: 'READ',
       resource: 'Medication',
       resourceId: medication.id,
       details: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         medicationId: medication.id,
         medicationName: medication.name,
         isActive: medication.isActive,
@@ -97,31 +88,6 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_medication_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar medicamento.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'Medication' } }
 );

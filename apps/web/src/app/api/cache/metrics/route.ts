@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { getCacheClient } from '@/lib/cache/redis-client';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export const GET = createProtectedRoute(
       try {
         redisHealthy = await cache.ping();
       } catch (error) {
-        console.error('[Cache Metrics] Redis ping failed:', error);
+        logger.error('[Cache Metrics] Redis ping failed:', error);
       }
 
       return NextResponse.json({
@@ -69,7 +70,7 @@ export const GET = createProtectedRoute(
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error fetching cache metrics:', error);
+      logger.error('Error fetching cache metrics:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to fetch cache metrics' });
     }
   },
@@ -92,7 +93,7 @@ export const POST = createProtectedRoute(
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error resetting cache metrics:', error);
+      logger.error('Error resetting cache metrics:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to reset cache metrics' });
     }
   },

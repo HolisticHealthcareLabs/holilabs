@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -75,6 +76,7 @@ const documentTypeColors = {
 
 export default function DocumentsPage() {
   const router = useRouter();
+  const t = useTranslations('portal.documents');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -179,13 +181,13 @@ export default function DocumentsPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver al Dashboard
+            {t('backToDashboard')}
           </button>
 
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                📁 Mis Documentos
+                📁 {t('title')}
               </h1>
               <p className="text-gray-600">
                 {summary.total} documento{summary.total !== 1 ? 's' : ''} · {summary.totalSizeMB} MB en total
@@ -197,7 +199,7 @@ export default function DocumentsPage() {
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"
             >
               <PlusIcon className="h-5 w-5" />
-              Subir Documento
+              {t('uploadDocument')}
             </button>
           </div>
         </div>

@@ -40,7 +40,7 @@ async function handler(
   request: NextRequest,
   context: ApiContext,
 ): Promise<NextResponse> {
-  const { id: patientId } = (context.params ?? {}) as { id: string };
+  const { id: patientId } = (context.params ?? ({} as any)) as { id: string };
 
   // ── Parse body ──────────────────────────────────────────────────────────────
   let body: {

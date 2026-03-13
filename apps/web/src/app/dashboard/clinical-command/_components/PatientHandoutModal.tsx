@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, MessageSquare, Mail, Stethoscope } from 'lucide-react';
 
@@ -48,9 +49,9 @@ Sua equipe de saúde`;
 type DeliveryMethod = 'app' | 'whatsapp' | 'email';
 
 const DELIVERY_OPTIONS: Array<{ value: DeliveryMethod; label: string; Icon: React.FC<{ className?: string }> }> = [
-  { value: 'app',       label: 'Patient App',  Icon: Stethoscope },
-  { value: 'whatsapp',  label: 'WhatsApp',     Icon: MessageSquare },
-  { value: 'email',     label: 'Email',        Icon: Mail },
+  { value: 'app',       label: 'patientApp',  Icon: Stethoscope },
+  { value: 'whatsapp',  label: 'whatsApp',     Icon: MessageSquare },
+  { value: 'email',     label: 'emailLabel',   Icon: Mail },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +68,7 @@ interface PatientHandoutModalProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProps) {
+  const t = useTranslations('dashboard.clinicalCommand');
   const [delivery, setDelivery]       = useState<DeliveryMethod>('app');
   const [content,  setContent]        = useState(MOCK_HANDOUT);
   const [sent,     setSent]           = useState(false);
@@ -134,10 +136,10 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                 <div>
                   <h2 className="text-base font-semibold text-white flex items-center gap-2">
                     <MessageSquare className="w-4 h-4 text-cyan-400" />
-                    Outbound Communication
+                    {t('outboundCommunication')}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Review and send a patient-friendly summary
+                    {t('reviewAndSendSummary')}
                   </p>
                 </div>
                 <button
@@ -161,7 +163,7 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                     htmlFor="handout-content"
                     className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block mb-1.5"
                   >
-                    Message Preview (editable)
+                    {t('messagePreview')}
                   </label>
                   <textarea
                     id="handout-content"
@@ -182,7 +184,7 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                 {/* Delivery method */}
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                    Delivery Method
+                    {t('deliveryMethod')}
                   </p>
                   <div className="flex gap-2">
                     {DELIVERY_OPTIONS.map(({ value, label, Icon }) => (
@@ -201,7 +203,7 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                         `}
                       >
                         <Icon className="w-3.5 h-3.5" />
-                        {label}
+                        {t(label)}
                       </button>
                     ))}
                   </div>
@@ -219,7 +221,7 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500
                   "
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <motion.button
                   onClick={handleSend}
@@ -239,9 +241,9 @@ export function PatientHandoutModal({ isOpen, onClose }: PatientHandoutModalProp
                   `}
                 >
                   {sent ? (
-                    <><CheckCircle2 className="w-4 h-4" /> Sent!</>
+                    <><CheckCircle2 className="w-4 h-4" /> {t('sent')}</>
                   ) : (
-                    <>Approve &amp; Send to Patient</>
+                    <>{t('approveAndSend')}</>
                   )}
                 </motion.button>
               </div>

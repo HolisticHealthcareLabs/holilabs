@@ -87,7 +87,7 @@ export const POST = createProtectedRoute(
         if (resourceType === 'Patient') {
           syncEventId = await syncService.pushPatient(localId!);
         } else {
-          // TODO: Implement other resource types
+          // @todo(fhir-resource-types): Implement push for non-Patient resource types
           return NextResponse.json(
             { success: false, error: `Push for ${resourceType} not yet implemented` },
             { status: 501 }
@@ -98,7 +98,7 @@ export const POST = createProtectedRoute(
         if (resourceType === 'Patient') {
           syncEventId = await syncService.pullPatient(fhirResourceId!, localPatientId);
         } else {
-          // TODO: Implement other resource types
+          // @todo(fhir-resource-types): Implement pull for non-Patient resource types
           return NextResponse.json(
             { success: false, error: `Pull for ${resourceType} not yet implemented` },
             { status: 501 }

@@ -9,46 +9,35 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
-// Query parameters schema
 const AppointmentsQuerySchema = z.object({
   status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'CONFIRMED', 'CHECKED_IN', 'IN_PROGRESS', 'RESCHEDULED']).optional(),
   upcoming: z.preprocess(
     (v) => (v === null || v === undefined || v === '' ? undefined : v),
     z.coerce.boolean().optional()
   ),
-  // NOTE: request.nextUrl.searchParams.get('limit') returns null when absent.
-  // z.coerce.number() would turn null into 0, failing min(1) and causing a 400
-  // even when the client passes no query params.
   limit: z.preprocess(
     (v) => (v === null || v === undefined || v === '' ? undefined : v),
     z.coerce.number().int().min(1).max(100).default(50)
   ),
 });
 
-// Create appointment request schema
 const CreateAppointmentSchema = z.object({
   reason: z.string().min(10, 'Describe el motivo de la consulta (mínimo 10 caracteres)'),
-  preferredDate: z.string(), // ISO date
+  preferredDate: z.string(),
   preferredTime: z.enum(['MORNING', 'AFTERNOON', 'EVENING']),
   type: z.enum(['IN_PERSON', 'VIRTUAL', 'PHONE']).default('IN_PERSON'),
   notes: z.string().optional(),
   urgency: z.enum(['ROUTINE', 'URGENT', 'EMERGENCY']).default('ROUTINE'),
 });
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse query parameters
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const searchParams = request.nextUrl.searchParams;
     const queryValidation = AppointmentsQuerySchema.safeParse({
       status: searchParams.get('status'),
@@ -69,9 +58,8 @@ export const GET = createPublicRoute(
 
     const { status, upcoming, limit } = queryValidation.data;
 
-    // Build filter conditions
     const where: any = {
-      patientId: session.patientId,
+      patientId: context.session.patientId,
     };
 
     if (status) {
@@ -94,7 +82,6 @@ export const GET = createPublicRoute(
       }
     }
 
-    // Fetch appointments
     const appointments = await prisma.appointment.findMany({
       where,
       include: {
@@ -114,7 +101,6 @@ export const GET = createPublicRoute(
       take: limit,
     });
 
-    // Separate into upcoming and past
     const now = new Date();
     const upcomingAppointments = appointments.filter(
       (apt) =>
@@ -126,13 +112,12 @@ export const GET = createPublicRoute(
         ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(apt.status)
     );
 
-    // HIPAA Audit Log: Patient accessed their appointments list
     await createAuditLog({
       action: 'READ',
       resource: 'Appointment',
-      resourceId: session.patientId,
+      resourceId: context.session.patientId,
       details: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         count: appointments.length,
         upcoming: upcomingAppointments.length,
         past: pastAppointments.length,
@@ -158,42 +143,12 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_appointments_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar las citas.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'Appointments' } }
 );
 
-export const POST = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse and validate request body
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const body = await request.json();
     const validation = CreateAppointmentSchema.safeParse(body);
 
@@ -211,12 +166,10 @@ export const POST = createPublicRoute(
     const { reason, preferredDate, preferredTime, type, notes, urgency } =
       validation.data;
 
-    // Map VIRTUAL to TELEHEALTH for Prisma schema compatibility
     const appointmentType = type === 'VIRTUAL' ? 'TELEHEALTH' : type;
 
-    // Get patient's assigned clinician
     const patient = await prisma.patient.findUnique({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       select: {
         assignedClinicianId: true,
         assignedClinician: {
@@ -240,10 +193,8 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Parse preferred date
     const requestedDate = new Date(preferredDate);
 
-    // Set approximate time based on preference
     let appointmentStart = new Date(requestedDate);
     if (preferredTime === 'MORNING') {
       appointmentStart.setHours(9, 0, 0, 0);
@@ -253,9 +204,8 @@ export const POST = createPublicRoute(
       appointmentStart.setHours(17, 0, 0, 0);
     }
 
-    const appointmentEnd = new Date(appointmentStart.getTime() + 30 * 60 * 1000); // 30 min duration
+    const appointmentEnd = new Date(appointmentStart.getTime() + 30 * 60 * 1000);
 
-    // Create appointment request with SCHEDULED status
     const descParts = [
       notes || `Solicitud de ${type === 'VIRTUAL' ? 'consulta virtual' : type === 'PHONE' ? 'consulta telefónica' : 'consulta presencial'}`,
       urgency !== 'ROUTINE' ? `[Urgencia: ${urgency}]` : '',
@@ -263,7 +213,7 @@ export const POST = createPublicRoute(
 
     const appointment = await prisma.appointment.create({
       data: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         clinicianId: patient.assignedClinicianId,
         title: reason,
         description: descParts,
@@ -284,11 +234,10 @@ export const POST = createPublicRoute(
       },
     });
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
-        userEmail: session.email,
+        userId: context.session.userId,
+        userEmail: context.session.email,
         ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
         action: 'CREATE',
         resource: 'Appointment',
@@ -303,7 +252,7 @@ export const POST = createPublicRoute(
 
     logger.info({
       event: 'appointment_requested',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       appointmentId: appointment.id,
       type,
       urgency,
@@ -317,31 +266,6 @@ export const POST = createPublicRoute(
       },
       { status: 201 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'appointment_request_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al solicitar la cita.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'CREATE', resource: 'Appointment' } }
 );

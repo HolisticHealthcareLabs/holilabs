@@ -83,7 +83,7 @@ RESEND_API_KEY="[REDACTED]"
 **Hardcoded Token:**
 ```typescript
 // Line 3
-* Run: LOGTAIL_SOURCE_TOKEN="ppRsuAAsrT4hR8Uw8HAY4UCu" NODE_ENV=production pnpm tsx src/lib/__tests__/betterstack-logger.test.ts
+* Run: LOGTAIL_SOURCE_TOKEN="<REDACTED-REVOKE-AND-REGENERATE>" NODE_ENV=production pnpm tsx src/lib/__tests__/betterstack-logger.test.ts
 ```
 
 **Risk Assessment:**
@@ -159,8 +159,8 @@ const PATIENTS = [
 **Exposed Secrets:**
 ```markdown
 # Line 255-256
-DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"
-RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
+DEID_SECRET="<REDACTED-REVOKE-AND-REGENERATE>"
+RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"
 ```
 
 **Risk:** MEDIUM
@@ -188,7 +188,7 @@ RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
 **Exposed Secrets:**
 ```markdown
 # Line 61
-RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
+RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"
 ```
 
 **Risk:** MEDIUM (same key as above)
@@ -278,7 +278,7 @@ RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
 ### IMMEDIATE ACTIONS (Do Today)
 
 1. **Revoke Exposed API Keys**
-   - [ ] Resend API Key: `re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu`
+   - [ ] Resend API Key: `<REDACTED-REVOKE-AND-REGENERATE>`
      - Revoke at: https://resend.com/api-keys
      - Generate new key
      - Update .env.local with new key
@@ -289,7 +289,7 @@ RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
      ```
      - Update in .env.local
 
-   - [ ] BetterStack Token: `ppRsuAAsrT4hR8Uw8HAY4UCu` (if real)
+   - [ ] BetterStack Token: `<REDACTED-REVOKE-AND-REGENERATE>` (if real)
      - Revoke at: https://betterstack.com/logs
 
 2. **Clean Documentation Files**

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { rxnormService } from '@/lib/clinical';
 import { openFDAService } from '@/lib/clinical';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,7 @@ export const GET = createProtectedRoute(
             },
         });
     } catch (error) {
-        console.error('Drug lookup error:', error);
+        logger.error('Drug lookup error:', error);
         return NextResponse.json(
             { success: false, error: 'Failed to look up drug' },
             { status: 500 }
@@ -151,7 +152,7 @@ export const POST = createProtectedRoute(
             },
         });
     } catch (error) {
-        console.error('Interaction check error:', error);
+        logger.error('Interaction check error:', error);
         return NextResponse.json(
             { success: false, error: 'Failed to check interactions' },
             { status: 500 }

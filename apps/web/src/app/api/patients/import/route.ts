@@ -233,7 +233,7 @@ export const POST = createProtectedRoute(
         // ============================================================================
         try {
           // @ts-ignore - dataQualityEvent model not yet in Prisma schema
-          await prisma.dataQualityEvent.createMany({
+          await (prisma as any).dataQualityEvent.createMany({
             data: validationErrors.map(error => ({
               source: 'CSV_IMPORT',
               errorType: error.split(':')[1]?.trim() || 'VALIDATION_ERROR',
@@ -426,7 +426,7 @@ export const POST = createProtectedRoute(
           // ============================================================================
           try {
             // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-            await prisma.userBehaviorEvent.create({
+            await (prisma as any).userBehaviorEvent.create({
               data: {
                 userId: context.user.id,
                 eventType: 'BULK_IMPORT_SUCCESS',
@@ -470,7 +470,7 @@ export const POST = createProtectedRoute(
           // ============================================================================
           try {
             // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-            await prisma.userBehaviorEvent.create({
+            await (prisma as any).userBehaviorEvent.create({
               data: {
                 userId: context.user.id,
                 eventType: 'BULK_IMPORT_FAILURE',
@@ -485,7 +485,7 @@ export const POST = createProtectedRoute(
 
             // Track as data quality event
             // @ts-ignore - dataQualityEvent model not yet in Prisma schema
-            await prisma.dataQualityEvent.create({
+            await (prisma as any).dataQualityEvent.create({
               data: {
                 source: 'CSV_IMPORT',
                 errorType: 'BATCH_INSERT_FAILED',

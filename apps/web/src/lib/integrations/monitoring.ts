@@ -86,7 +86,7 @@ export function getRxNavHealth(): APIHealthStatus {
   } else {
     if (downtimeTracker.rxnav) {
       const downtime = Date.now() - downtimeTracker.rxnav;
-      console.log(`[Monitoring] RxNav API recovered after ${Math.round(downtime / 1000)}s downtime`);
+      console.error('[Monitoring]', { event: 'rxnav_recovered', downtimeSeconds: Math.round(downtime / 1000) });
       downtimeTracker.rxnav = null;
     }
   }
@@ -140,24 +140,25 @@ export function logSystemHealth(): void {
     down: '❌',
   };
 
-  console.log(`${statusEmoji[health.overall]} [Monitoring] System Health: ${health.overall.toUpperCase()}`);
-  console.log(`  RxNav API: ${statusEmoji[health.services.rxnav.status]} ${health.services.rxnav.status.toUpperCase()}`);
-  console.log(`    Success Rate: ${(health.services.rxnav.successRate * 100).toFixed(1)}%`);
-  console.log(`    Cache Hit Rate: ${(health.services.rxnav.cacheHitRate * 100).toFixed(1)}%`);
-  console.log(`    Avg Latency: ${Math.round(health.services.rxnav.averageLatency)}ms`);
-  console.log(`    Total Calls: ${health.services.rxnav.totalCalls}`);
-
-  if (health.services.rxnav.lastError) {
-    console.log(`    Last Error: ${health.services.rxnav.lastError}`);
-    console.log(`    Last Error Time: ${health.services.rxnav.lastErrorTime}`);
-  }
+  console.error('[Monitoring]', {
+    event: 'health_check',
+    overall: health.overall,
+    rxnav: {
+      status: health.services.rxnav.status,
+      successRate: health.services.rxnav.successRate,
+      cacheHitRate: health.services.rxnav.cacheHitRate,
+      avgLatencyMs: Math.round(health.services.rxnav.averageLatency),
+      totalCalls: health.services.rxnav.totalCalls,
+      lastError: health.services.rxnav.lastError,
+    },
+  });
 }
 
 /**
  * Start periodic health checks
  */
 export function startHealthMonitoring(): void {
-  console.log('[Monitoring] Starting health monitoring...');
+  console.error('[Monitoring]', { event: 'monitoring_start' });
 
   // Initial health check
   logSystemHealth();

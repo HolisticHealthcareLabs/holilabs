@@ -11,11 +11,12 @@ import { getCurrentUser } from '@/lib/auth/server';
 import { InvoicePDF, type InvoiceData } from '@/lib/invoices/pdf-generator';
 import { generateCFDIQRCode } from '@/lib/invoices/cfdi-generator';
 import { createPublicRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 const prisma = new PrismaClient();
 
 export const GET = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
+  async (request: NextRequest, context: any) => {
   try {
     // Verify authentication
     const user = await getCurrentUser();
@@ -27,7 +28,7 @@ export const GET = createPublicRoute(
       );
     }
 
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const invoiceId = params.id;
 
     // Fetch invoice with all relations
@@ -119,7 +120,7 @@ export const GET = createPublicRoute(
       },
     });
   } catch (error) {
-    console.error('Error generating invoice PDF:', error);
+    logger.error('Error generating invoice PDF:', error);
     return NextResponse.json(
       { error: 'Error al generar el PDF' },
       { status: 500 }

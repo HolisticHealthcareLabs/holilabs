@@ -28,14 +28,10 @@ export const dynamic = 'force-dynamic';
  */
 async function getCronHealth(request: NextRequest) {
   try {
-    // Authentication check
-    // TODO: Uncomment when auth is needed
+    // @todo(cron-auth): Enable auth guard — currently open for monitoring bootstrap
     // const session = await getServerSession();
     // if (!session || session.user.role !== 'ADMIN') {
-    //   return NextResponse.json(
-    //     { error: 'Unauthorized' },
-    //     { status: 401 }
-    //   );
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
     const monitor = CronMonitor.getInstance();
@@ -102,7 +98,7 @@ async function getCronHealth(request: NextRequest) {
  * GET /api/cron/health?job=<jobName>
  * Returns detailed health metrics and history for a specific job
  */
-export async function POST(request: NextRequest) {
+async function postCronHealthDetails(request: NextRequest) {
   try {
     const body = await request.json();
     const { jobName, limit = 10 } = body;

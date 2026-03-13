@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,7 +117,7 @@ export const POST = createProtectedRoute(
 
       return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
     } catch (error) {
-      console.error('Error exporting billing data:', error);
+      logger.error('Error exporting billing data:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to export billing data' });
     }
   },

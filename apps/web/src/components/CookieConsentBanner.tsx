@@ -30,9 +30,8 @@ const DEFAULT_PREFERENCES: CookiePreferences = {
 };
 
 // Placeholder for analytics integration
-const applyConsentToServices = (prefs: CookiePreferences) => {
+const applyConsentToServices = (_prefs: CookiePreferences) => {
   if (typeof window !== 'undefined') {
-    console.log('[CookieConsent] Applying preferences:', prefs);
     // Future: Initialize Google Analytics, Hotjar, etc. here
   }
 };

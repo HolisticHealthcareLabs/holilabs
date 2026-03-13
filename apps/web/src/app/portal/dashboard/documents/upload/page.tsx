@@ -1,7 +1,6 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-
 /**
  * Document Upload Page
  * Upload medical documents with drag-and-drop support
@@ -9,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   ChevronLeftIcon,
   CloudArrowUpIcon,
@@ -28,21 +28,23 @@ interface UploadFile {
   error?: string;
 }
 
-const documentTypeLabels: Record<DocumentType, string> = {
-  LAB_RESULT: 'Resultados de Laboratorio',
-  IMAGING: 'Imágenes Médicas',
-  PRESCRIPTION: 'Recetas',
-  INSURANCE: 'Seguros',
-  CONSENT: 'Consentimientos',
-  OTHER: 'Otros',
-};
-
 export default function DocumentUploadPage() {
+  const t = useTranslations('portal.documentUpload');
+  const tDocs = useTranslations('portal.documents');
   const router = useRouter();
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [documentType, setDocumentType] = useState<DocumentType>('OTHER');
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  const documentTypeLabels: Record<DocumentType, string> = {
+    LAB_RESULT: tDocs('typeLab'),
+    IMAGING: tDocs('typeImaging'),
+    PRESCRIPTION: tDocs('typePrescription'),
+    INSURANCE: tDocs('typeInsurance'),
+    CONSENT: tDocs('typeConsent'),
+    OTHER: tDocs('typeOther'),
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -91,15 +93,12 @@ export default function DocumentUploadPage() {
     formData.append('documentType', documentType);
 
     try {
-      // Update status to uploading
       setFiles(prev =>
         prev.map(f => (f.id === uploadFile.id ? { ...f, status: 'uploading' } : f))
       );
 
-      // Create XMLHttpRequest for progress tracking
       const xhr = new XMLHttpRequest();
 
-      // Track upload progress
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
           const progress = Math.round((e.loaded / e.total) * 100);
@@ -109,7 +108,6 @@ export default function DocumentUploadPage() {
         }
       });
 
-      // Handle completion
       await new Promise((resolve, reject) => {
         xhr.addEventListener('load', () => {
           if (xhr.status >= 200 && xhr.status < 300) {
@@ -126,7 +124,6 @@ export default function DocumentUploadPage() {
         xhr.send(formData);
       });
 
-      // Mark as success
       setFiles(prev =>
         prev.map(f =>
           f.id === uploadFile.id ? { ...f, status: 'success', progress: 100 } : f
@@ -137,7 +134,7 @@ export default function DocumentUploadPage() {
       setFiles(prev =>
         prev.map(f =>
           f.id === uploadFile.id
-            ? { ...f, status: 'error', error: 'Error al subir archivo' }
+            ? { ...f, status: 'error', error: t('uploadError') }
             : f
         )
       );
@@ -154,7 +151,6 @@ export default function DocumentUploadPage() {
 
     setUploading(false);
 
-    // If all successful, show success message and redirect
     const allSuccess = files.every(f => f.status === 'success');
     if (allSuccess) {
       setTimeout(() => {
@@ -170,6 +166,7 @@ export default function DocumentUploadPage() {
   };
 
   const canUpload = files.length > 0 && files.some(f => f.status === 'pending');
+  const pendingCount = files.filter(f => f.status === 'pending').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
@@ -181,21 +178,21 @@ export default function DocumentUploadPage() {
             className="flex items-center text-gray-600 hover:text-blue-600 mb-4 transition-colors"
           >
             <ChevronLeftIcon className="h-5 w-5 mr-1" />
-            Volver a Documentos
+            {t('backBtn')}
           </button>
 
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Subir Documentos
+            {t('title')}
           </h1>
           <p className="text-gray-600">
-            Carga documentos médicos, resultados de laboratorio, o recetas
+            {t('subtitle')}
           </p>
         </div>
 
         {/* Document Type Selector */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tipo de Documento
+            {t('typeLabel')}
           </label>
           <select
             value={documentType}
@@ -227,10 +224,10 @@ export default function DocumentUploadPage() {
           </div>
 
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Arrastra archivos aquí
+            {t('dragTitle')}
           </h3>
           <p className="text-gray-600 mb-4">
-            o haz clic para seleccionar archivos
+            {t('dragSubtitle')}
           </p>
 
           <input
@@ -245,12 +242,12 @@ export default function DocumentUploadPage() {
             htmlFor="file-upload"
             className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all cursor-pointer"
           >
-            Seleccionar Archivos
+            {t('selectFiles')}
           </label>
 
           {/* Decorative - low contrast intentional for file format hints */}
           <p className="text-xs text-gray-500 mt-4">
-            Formatos soportados: PDF, JPG, PNG, DOC, DOCX (máx. 10MB por archivo)
+            {t('formatHint')}
           </p>
         </div>
 
@@ -258,7 +255,7 @@ export default function DocumentUploadPage() {
         {files.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Archivos Seleccionados ({files.length})
+              {t('filesTitle', { count: files.length })}
             </h3>
 
             <div className="space-y-3">
@@ -322,7 +319,7 @@ export default function DocumentUploadPage() {
                       onClick={() => uploadFile(file)}
                       className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                     >
-                      Reintentar
+                      {t('retry')}
                     </button>
                   )}
                 </div>
@@ -336,14 +333,14 @@ export default function DocumentUploadPage() {
                 disabled={!canUpload || uploading}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
               >
-                {uploading ? 'Subiendo...' : `Subir ${files.filter(f => f.status === 'pending').length} Archivo(s)`}
+                {uploading ? t('uploading') : t('uploadBtn', { count: pendingCount })}
               </button>
               <button
                 onClick={() => setFiles([])}
                 disabled={uploading}
                 className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
-                Limpiar Todo
+                {t('clearAll')}
               </button>
             </div>
           </div>

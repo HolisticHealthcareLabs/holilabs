@@ -9,11 +9,13 @@ import { FastifyPluginAsync } from 'fastify';
 // This code needs to be refactored to work with Supabase or removed
 
 const authRoutes: FastifyPluginAsync = async (server) => {
-  // MVP: Simple hardcoded auth for "Ghost" demo
   server.post('/login', async (request, reply) => {
+    if (process.env.NODE_ENV === 'production') {
+      return reply.code(501).send({ error: 'Legacy auth disabled in production. Use NextAuth.' });
+    }
+
     const { email, password } = request.body as any;
 
-    // Hardcoded credentials for MVP
     if (email === 'admin@holilabs.io' && password === 'admin') {
       return reply.send({
         token: 'holi-admin-token-' + Date.now(),
@@ -21,7 +23,6 @@ const authRoutes: FastifyPluginAsync = async (server) => {
       });
     }
 
-    // Also allow the demo clinician
     if (email === 'demo-clinician@holilabs.xyz' && password === 'Demo123!@#') {
       return reply.send({
         token: 'holi-demo-token-' + Date.now(),

@@ -13,8 +13,10 @@ import {
   Calendar,
   Eye,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ShareProfilePage() {
+  const t = useTranslations('portal.shareProfile');
   // Demo user ID (in production, get from session/auth)
   const userId = 'cmh9q9dwv000014gb4knsv48j';
   const [copied, setCopied] = useState(false);
@@ -50,10 +52,8 @@ export default function ShareProfilePage() {
   };
 
   const handleShareViaEmail = () => {
-    const subject = encodeURIComponent('Book an Appointment with Me');
-    const body = encodeURIComponent(
-      `Hi,\n\nI'd like to invite you to book an appointment with me directly through my online booking page:\n\n${bookingLink}\n\nBest regards`
-    );
+    const subject = encodeURIComponent(t('emailSubject'));
+    const body = encodeURIComponent(t('emailBody', { link: bookingLink }));
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
 
@@ -81,7 +81,7 @@ export default function ShareProfilePage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-            <p className="text-gray-600 mt-4">Loading profile...</p>
+            <p className="text-gray-600 mt-4">{t('loading')}</p>
           </div>
         </div>
       </div>
@@ -93,10 +93,8 @@ export default function ShareProfilePage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Share Your Profile</h1>
-          <p className="text-gray-600">
-            Share your booking link with patients to let them schedule appointments directly
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('shareDesc')}</p>
         </div>
 
         {/* Profile Preview Card */}
@@ -109,7 +107,7 @@ export default function ShareProfilePage() {
                 {doctor.isVerified && (
                   <div className="inline-flex items-center bg-white/20 rounded-full px-3 py-1 text-sm">
                     <Shield className="w-4 h-4 mr-2" />
-                    {doctor.verifiedCredentials} Verified Credentials
+                    {t('verifiedCredentials', { count: doctor.verifiedCredentials })}
                   </div>
                 )}
               </div>
@@ -118,7 +116,7 @@ export default function ShareProfilePage() {
                 className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors flex items-center backdrop-blur-sm border border-white/30"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                Preview
+                {t('preview')}
               </button>
             </div>
           </div>
@@ -128,7 +126,7 @@ export default function ShareProfilePage() {
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <Share2 className="w-5 h-5 mr-2 text-green-600" />
-            Your Booking Link
+            {t('bookingLink')}
           </h2>
 
           <div className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -141,12 +139,12 @@ export default function ShareProfilePage() {
                 {copied ? (
                   <>
                     <CheckCheck className="w-4 h-4 text-green-600 mr-2" />
-                    <span className="text-green-600 text-sm">Copied!</span>
+                    <span className="text-green-600 text-sm">{t('copied')}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4 mr-2" />
-                    <span className="text-sm">Copy</span>
+                    <span className="text-sm">{t('copy')}</span>
                   </>
                 )}
               </button>
@@ -160,7 +158,7 @@ export default function ShareProfilePage() {
               className="flex items-center justify-center space-x-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Mail className="w-5 h-5 text-gray-600" />
-              <span className="font-medium text-gray-700">Share via Email</span>
+              <span className="font-medium text-gray-700">{t('shareViaEmail')}</span>
             </button>
 
             <button
@@ -168,7 +166,7 @@ export default function ShareProfilePage() {
               className="flex items-center justify-center space-x-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <MessageSquare className="w-5 h-5 text-gray-600" />
-              <span className="font-medium text-gray-700">Share via SMS</span>
+              <span className="font-medium text-gray-700">{t('shareViaSMS')}</span>
             </button>
 
             <button
@@ -176,7 +174,7 @@ export default function ShareProfilePage() {
               className="flex items-center justify-center space-x-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <MessageSquare className="w-5 h-5 text-gray-600" />
-              <span className="font-medium text-gray-700">Share via WhatsApp</span>
+              <span className="font-medium text-gray-700">{t('shareViaWhatsApp')}</span>
             </button>
 
             <button
@@ -184,47 +182,45 @@ export default function ShareProfilePage() {
               className="flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <ExternalLink className="w-5 h-5" />
-              <span className="font-medium">Open Link</span>
+              <span className="font-medium">{t('openLink')}</span>
             </button>
           </div>
         </div>
 
         {/* Find Doctor Link */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Doctor Directory</h2>
-          <p className="text-gray-600 mb-4">
-            You're also listed in our public doctor directory where patients can search and find you.
-          </p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('doctorDirectory')}</h2>
+          <p className="text-gray-600 mb-4">{t('directoryDesc')}</p>
           <a
             href={findDoctorLink}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center text-green-600 hover:text-green-700 font-medium"
           >
-            View Directory
+            {t('viewDirectory')}
             <ExternalLink className="w-4 h-4 ml-2" />
           </a>
         </div>
 
         {/* Tips Card */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">Tips for Sharing</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">{t('sharingTips')}</h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start">
               <Calendar className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Add this link to your email signature</span>
+              <span>{t('tip1')}</span>
             </li>
             <li className="flex items-start">
               <Calendar className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Share it on your social media profiles</span>
+              <span>{t('tip2')}</span>
             </li>
             <li className="flex items-start">
               <Calendar className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Include it in your business cards and marketing materials</span>
+              <span>{t('tip3')}</span>
             </li>
             <li className="flex items-start">
               <Calendar className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Send it directly to patients after consultations</span>
+              <span>{t('tip4')}</span>
             </li>
           </ul>
         </div>

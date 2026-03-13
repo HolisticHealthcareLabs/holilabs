@@ -6,17 +6,13 @@ export const dynamic = 'force-dynamic';
  *
  * License management and team-collaboration view for workspace owners.
  * Access is restricted to users with role ADMIN or LICENSE_OWNER.
- *
- * Matches the ElevenLabs-inspired workspaces UI:
- *  - Workspace card (name · plan · member count)
- *  - "Create New Workspace" action
- *  - Workspace Invites section
  */
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,12 +35,12 @@ interface PendingInvite {
 const ALLOWED_ROLES = new Set(['ADMIN', 'LICENSE_OWNER']);
 
 // ─── Gear icon button ─────────────────────────────────────────────────────────
-function GearButton({ onClick }: { onClick?: () => void }) {
+function GearButton({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label="Workspace settings"
+      aria-label={label}
       className="
         w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
         text-gray-400 hover:text-gray-700 hover:bg-gray-100
@@ -58,7 +54,15 @@ function GearButton({ onClick }: { onClick?: () => void }) {
 }
 
 // ─── Workspace card ───────────────────────────────────────────────────────────
-function WorkspaceCard({ workspace }: { workspace: WorkspaceRecord }) {
+function WorkspaceCard({ workspace, currentLabel, memberSingular, memberPlural, planInfo, gearLabel }: {
+  workspace: WorkspaceRecord;
+  currentLabel: string;
+  memberSingular: string;
+  memberPlural: string;
+  planInfo: (plan: string, count: number, memberLabel: string) => string;
+  gearLabel: string;
+}) {
+  const memberLabel = workspace.memberCount === 1 ? memberSingular : memberPlural;
   return (
     <div className="flex items-center justify-between px-4 py-4 rounded-xl border border-gray-200 bg-white">
       <div className="min-w-0">
@@ -66,8 +70,7 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceRecord }) {
           {workspace.name}
         </p>
         <p className="text-xs text-gray-500 mt-0.5">
-          {workspace.plan} plan &bull; {workspace.memberCount}{' '}
-          {workspace.memberCount === 1 ? 'member' : 'members'}
+          {planInfo(workspace.plan, workspace.memberCount, memberLabel)}
         </p>
       </div>
 
@@ -78,17 +81,22 @@ function WorkspaceCard({ workspace }: { workspace: WorkspaceRecord }) {
             bg-gray-100 text-gray-500
             select-none
           ">
-            Current Workspace
+            {currentLabel}
           </span>
         )}
-        <GearButton />
+        <GearButton label={gearLabel} />
       </div>
     </div>
   );
 }
 
 // ─── Invite row ───────────────────────────────────────────────────────────────
-function InviteRow({ invite }: { invite: PendingInvite }) {
+function InviteRow({ invite, declineLabel, acceptLabel, invitedByText }: {
+  invite: PendingInvite;
+  declineLabel: string;
+  acceptLabel: string;
+  invitedByText: string;
+}) {
   return (
     <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 bg-white">
       <div className="min-w-0">
@@ -96,7 +104,7 @@ function InviteRow({ invite }: { invite: PendingInvite }) {
           {invite.workspaceName}
         </p>
         <p className="text-xs text-gray-500 mt-0.5">
-          Invited by {invite.invitedBy} · expires {invite.expiresAt}
+          {invitedByText}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 ml-4">
@@ -108,7 +116,7 @@ function InviteRow({ invite }: { invite: PendingInvite }) {
             hover:bg-gray-50 transition-colors
           "
         >
-          Decline
+          {declineLabel}
         </button>
         <button
           type="button"
@@ -118,7 +126,7 @@ function InviteRow({ invite }: { invite: PendingInvite }) {
             hover:bg-gray-700 transition-colors
           "
         >
-          Accept
+          {acceptLabel}
         </button>
       </div>
     </div>
@@ -127,10 +135,10 @@ function InviteRow({ invite }: { invite: PendingInvite }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function WorkspacesPage() {
+  const t = useTranslations('dashboard.workspaces');
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // ── RBAC guard ──────────────────────────────────────────────────────────────
   const userRole = String(
     (session?.user as { role?: string } | undefined)?.role ?? ''
   ).toUpperCase();
@@ -153,7 +161,6 @@ export default function WorkspacesPage() {
     }
   }, [status, userRole, router]);
 
-  // ── Local state (demo data — replace with API calls) ────────────────────────
   const [workspaces] = useState<WorkspaceRecord[]>([
     {
       id:          'ws-default',
@@ -169,7 +176,6 @@ export default function WorkspacesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
 
-  // ── Render guards ───────────────────────────────────────────────────────────
   if (status === 'loading' || !ALLOWED_ROLES.has(userRole)) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
@@ -180,12 +186,10 @@ export default function WorkspacesPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ── Settings header ────────────────────────────────────────────────── */}
       <header className="border-b border-gray-200 px-6 py-4">
-        <h1 className="text-sm font-semibold text-gray-900">Settings</h1>
+        <h1 className="text-sm font-semibold text-gray-900">{t('settingsHeader')}</h1>
       </header>
 
-      {/* ── Tab bar ────────────────────────────────────────────────────────── */}
       <nav className="border-b border-gray-200 px-6">
         <div className="flex gap-8">
           <a
@@ -196,7 +200,7 @@ export default function WorkspacesPage() {
               border-b-2 border-transparent
             "
           >
-            Profile
+            {t('profileTab')}
           </a>
           <span
             aria-current="page"
@@ -205,22 +209,17 @@ export default function WorkspacesPage() {
               border-b-2 border-gray-900
             "
           >
-            Workspaces
+            {t('workspacesTab')}
           </span>
         </div>
       </nav>
 
-      {/* ── Page body ──────────────────────────────────────────────────────── */}
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-8">
 
-        {/* ── Workspaces section ───────────────────────────────────────────── */}
         <section>
-          <div className="
-            rounded-xl border border-gray-200 bg-white overflow-hidden
-          ">
-            {/* Section header */}
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-900">Workspaces</h2>
+              <h2 className="text-sm font-semibold text-gray-900">{t('workspacesTitle')}</h2>
               <button
                 type="button"
                 onClick={() => setShowCreateModal(true)}
@@ -232,23 +231,31 @@ export default function WorkspacesPage() {
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400
                 "
               >
-                Create New Workspace
+                {t('createNewWorkspace')}
               </button>
             </div>
 
-            {/* Workspace list */}
             <div className="p-4 space-y-2">
               {workspaces.map((ws) => (
-                <WorkspaceCard key={ws.id} workspace={ws} />
+                <WorkspaceCard
+                  key={ws.id}
+                  workspace={ws}
+                  currentLabel={t('currentWorkspace')}
+                  memberSingular={t('memberSingular')}
+                  memberPlural={t('memberPlural')}
+                  planInfo={(plan, count, memberLabel) =>
+                    t('planInfo', { plan, count, memberLabel })
+                  }
+                  gearLabel={t('workspaceSettings')}
+                />
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── Workspace Invites section ────────────────────────────────────── */}
         <section>
           <h2 className="text-base font-semibold text-gray-900 mb-4">
-            Workspace Invites
+            {t('workspaceInvites')}
           </h2>
 
           {invites.length === 0 ? (
@@ -257,20 +264,25 @@ export default function WorkspacesPage() {
               px-5 py-6 text-center
             ">
               <p className="text-sm text-gray-400">
-                You have no pending workspace invites.
+                {t('noPendingInvites')}
               </p>
             </div>
           ) : (
             <div className="space-y-2">
               {invites.map((inv) => (
-                <InviteRow key={inv.id} invite={inv} />
+                <InviteRow
+                  key={inv.id}
+                  invite={inv}
+                  declineLabel={t('decline')}
+                  acceptLabel={t('accept')}
+                  invitedByText={t('invitedBy', { name: inv.invitedBy, date: inv.expiresAt })}
+                />
               ))}
             </div>
           )}
         </section>
       </main>
 
-      {/* ── Create workspace modal (lightweight) ─────────────────────────── */}
       {showCreateModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
@@ -278,11 +290,11 @@ export default function WorkspacesPage() {
         >
           <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
             <h3 className="text-base font-semibold text-gray-900 mb-4">
-              Create New Workspace
+              {t('createWorkspaceTitle')}
             </h3>
 
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Workspace name
+              {t('workspaceNameLabel')}
             </label>
             <input
               type="text"
@@ -308,13 +320,12 @@ export default function WorkspacesPage() {
                   hover:bg-gray-50 transition-colors
                 "
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="button"
                 disabled={!newWorkspaceName.trim()}
                 onClick={() => {
-                  // TODO: POST /api/workspace with newWorkspaceName
                   setShowCreateModal(false);
                   setNewWorkspaceName('');
                 }}
@@ -326,7 +337,7 @@ export default function WorkspacesPage() {
                   transition-colors
                 "
               >
-                Create
+                {t('create')}
               </button>
             </div>
           </div>

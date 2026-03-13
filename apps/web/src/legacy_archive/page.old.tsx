@@ -149,8 +149,7 @@ export default function Dashboard() {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
-        const data = await response.json();
-        console.log('PDF data:', data);
+        await response.json();
         alert('PDF export coming soon! Use CSV for now.');
       }
 

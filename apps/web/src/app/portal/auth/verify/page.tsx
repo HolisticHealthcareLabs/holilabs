@@ -11,11 +11,13 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations('portal.authVerify');
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +27,7 @@ function VerifyContent() {
 
       if (!token) {
         setStatus('error');
-        setError('Enlace inválido. Por favor, solicita uno nuevo.');
+        setError(t('invalidLink'));
         return;
       }
 
@@ -42,7 +44,7 @@ function VerifyContent() {
 
         if (!response.ok || !data.success) {
           setStatus('error');
-          setError(data.error || 'No se pudo verificar el enlace.');
+          setError(data.error || t('verifyFailed'));
           return;
         }
 
@@ -53,12 +55,12 @@ function VerifyContent() {
         }, 1500);
       } catch (err) {
         setStatus('error');
-        setError('Error de conexión. Por favor, intenta de nuevo.');
+        setError(t('connectionError'));
       }
     };
 
     verifyToken();
-  }, [searchParams, router]);
+  }, [searchParams, router, t]);
 
   if (status === 'error') {
     return (
@@ -90,7 +92,7 @@ function VerifyContent() {
             </div>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              Error al verificar
+              {t('errorTitle')}
             </h2>
             <p className="text-gray-600 mb-6">{error}</p>
 
@@ -98,7 +100,7 @@ function VerifyContent() {
               onClick={() => router.push('/portal/login')}
               className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
             >
-              Volver al inicio de sesión
+              {t('backToLogin')}
             </button>
           </div>
         </motion.div>
@@ -141,10 +143,10 @@ function VerifyContent() {
             </div>
 
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              ¡Inicio de sesión exitoso!
+              {t('successTitle')}
             </h2>
             <p className="text-gray-600 mb-6">
-              Redirigiendo a tu portal...
+              {t('successSubtitle')}
             </p>
 
             {/* Loading Spinner */}
@@ -208,10 +210,10 @@ function VerifyContent() {
           </div>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            Verificando tu enlace...
+            {t('verifyingTitle')}
           </h2>
           <p className="text-gray-600">
-            Por favor, espera un momento mientras verificamos tu identidad de forma segura.
+            {t('verifyingSubtitle')}
           </p>
 
           {/* Security Animation */}

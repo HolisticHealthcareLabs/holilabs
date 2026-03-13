@@ -59,7 +59,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
       default:
         // Fallback to console log in development
         if (process.env.NODE_ENV === 'development') {
-          console.log('📧 [EMAIL] Would send:', {
+          console.error('[EmailService]', {
             to: options.to,
             subject: options.subject,
             from,

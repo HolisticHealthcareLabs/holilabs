@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 
@@ -19,6 +20,7 @@ interface BAARecord {
 }
 
 export default function BusinessAssociateAgreementPage() {
+  const t = useTranslations('dashboard.baa');
   const [showNewBAAForm, setShowNewBAAForm] = useState(false);
 
   // Mock data - in production, fetch from API
@@ -48,13 +50,13 @@ export default function BusinessAssociateAgreementPage() {
   const getStatusBadge = (status: BAAStatus) => {
     switch (status) {
       case 'signed':
-        return <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">Firmado</span>;
+        return <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold">{t('statusSigned')}</span>;
       case 'pending_signature':
-        return <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">Pendiente</span>;
+        return <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">{t('statusPending')}</span>;
       case 'expired':
-        return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold">Expirado</span>;
+        return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold">{t('statusExpired')}</span>;
       case 'not_started':
-        return <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-bold">No Iniciado</span>;
+        return <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-bold">{t('statusNotStarted')}</span>;
     }
   };
 
@@ -65,7 +67,7 @@ export default function BusinessAssociateAgreementPage() {
 
   const handleSendBAA = (record: BAARecord) => {
     // In production, this would send an email with the BAA to the organization
-    alert(`BAA sent to ${record.email}`);
+    alert(t('baaSentTo', { email: record.email }));
   };
 
   return (
@@ -74,7 +76,7 @@ export default function BusinessAssociateAgreementPage() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-3xl font-bold text-gray-800">Business Associate Agreement (BAA)</h2>
+            <h2 className="text-3xl font-bold text-gray-800">{t('title')}</h2>
             <button
               onClick={() => setShowNewBAAForm(!showNewBAAForm)}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
@@ -82,11 +84,11 @@ export default function BusinessAssociateAgreementPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Nuevo BAA
+              {t('newBAA')}
             </button>
           </div>
           <p className="text-gray-600 dark:text-gray-400">
-            Gestiona los Business Associate Agreements (BAA) requeridos por HIPAA para organizaciones de salud.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -97,11 +99,9 @@ export default function BusinessAssociateAgreementPage() {
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             <div>
-              <h3 className="text-sm font-semibold text-blue-800 mb-1">¿Qué es un BAA?</h3>
+              <h3 className="text-sm font-semibold text-blue-800 mb-1">{t('whatIsBaa')}</h3>
               <p className="text-sm text-blue-700">
-                Un Business Associate Agreement es un contrato requerido por HIPAA (45 CFR § 164.504(e)) entre
-                una Entidad Cubierta (tu organización) y un Business Associate (Holi Labs). El BAA establece
-                las responsabilidades y salvaguardas para proteger la Información de Salud Protegida (PHI).
+                {t('baaDescription')}
               </p>
             </div>
           </div>
@@ -110,12 +110,12 @@ export default function BusinessAssociateAgreementPage() {
         {/* New BAA Form */}
         {showNewBAAForm && (
           <div className="mb-6 bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Generar Nuevo BAA</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">{t('generateNewBaa')}</h3>
             <form className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre de la Organización *
+                    {t('organizationName')}
                   </label>
                   <input
                     type="text"
@@ -126,7 +126,7 @@ export default function BusinessAssociateAgreementPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Persona de Contacto *
+                    {t('contactPerson')}
                   </label>
                   <input
                     type="text"
@@ -137,7 +137,7 @@ export default function BusinessAssociateAgreementPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email de Contacto *
+                    {t('contactEmail')}
                   </label>
                   <input
                     type="email"
@@ -148,7 +148,7 @@ export default function BusinessAssociateAgreementPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono
+                    {t('phone')}
                   </label>
                   <input
                     type="tel"
@@ -159,7 +159,7 @@ export default function BusinessAssociateAgreementPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dirección de la Organización *
+                  {t('organizationAddress')}
                 </label>
                 <input
                   type="text"
@@ -173,14 +173,14 @@ export default function BusinessAssociateAgreementPage() {
                   type="submit"
                   className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
                 >
-                  Generar y Enviar BAA
+                  {t('generateAndSend')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowNewBAAForm(false)}
                   className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
                 >
-                  Cancelar
+                  {t('cancel')}
                 </button>
               </div>
             </form>
@@ -195,36 +195,35 @@ export default function BusinessAssociateAgreementPage() {
                 <svg className="w-6 h-6 mr-2 text-primary" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                 </svg>
-                Plantilla de BAA
+                {t('baaTemplate')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Descarga la plantilla oficial del Business Associate Agreement de Holi Labs.
-                Esta plantilla incluye todas las provisiones requeridas por HIPAA (45 CFR § 164.504(e)).
+                {t('baaTemplateDesc')}
               </p>
               <div className="space-y-2 text-sm text-gray-700 mb-4">
                 <div className="flex items-start">
                   <svg className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span>Cumplimiento total con HIPAA, HITECH Act</span>
+                  <span>{t('hipaaCompliant')}</span>
                 </div>
                 <div className="flex items-start">
                   <svg className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span>Incluye Anexos de Seguridad y Subprocesadores</span>
+                  <span>{t('includesAnnexes')}</span>
                 </div>
                 <div className="flex items-start">
                   <svg className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span>Procedimientos de notificación de brechas</span>
+                  <span>{t('breachNotification')}</span>
                 </div>
                 <div className="flex items-start">
                   <svg className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span>Salvaguardas técnicas, físicas y administrativas</span>
+                  <span>{t('safeguards')}</span>
                 </div>
               </div>
             </div>
@@ -236,7 +235,7 @@ export default function BusinessAssociateAgreementPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Descargar Plantilla
+                {t('downloadTemplate')}
               </button>
               <Link
                 href="/legal/data-processing-agreement"
@@ -247,7 +246,7 @@ export default function BusinessAssociateAgreementPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                Ver DPA
+                {t('viewDpa')}
               </Link>
             </div>
           </div>
@@ -256,23 +255,23 @@ export default function BusinessAssociateAgreementPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total BAAs</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('totalBaas')}</div>
             <div className="text-3xl font-bold text-primary">{baaRecords.length}</div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Firmados</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('signed')}</div>
             <div className="text-3xl font-bold text-green-600">
               {baaRecords.filter(r => r.status === 'signed').length}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pendientes</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('pending')}</div>
             <div className="text-3xl font-bold text-yellow-600">
               {baaRecords.filter(r => r.status === 'pending_signature').length}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Expirados</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('expired')}</div>
             <div className="text-3xl font-bold text-red-600">
               {baaRecords.filter(r => r.status === 'expired').length}
             </div>
@@ -282,7 +281,7 @@ export default function BusinessAssociateAgreementPage() {
         {/* BAA Records Table */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-800">Registros de BAA</h3>
+            <h3 className="text-xl font-bold text-gray-800">{t('baaRecords')}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -290,25 +289,25 @@ export default function BusinessAssociateAgreementPage() {
                 <tr>
                   {/* Decorative - low contrast intentional for table headers with uppercase tracking-wider */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Organización
+                    {t('organization')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Contacto
+                    {t('contact')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Estado
+                    {t('status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Fecha Solicitada
+                    {t('requestedDate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Fecha Firmada
+                    {t('signedDate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Expiración
+                    {t('expiration')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Acciones
+                    {t('actions')}
                   </th>
                 </tr>
               </thead>
@@ -379,7 +378,7 @@ export default function BusinessAssociateAgreementPage() {
 
         {/* Legal Resources */}
         <div className="mt-6 bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Recursos Legales</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-4">{t('legalResources')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link
               href="/legal/privacy-policy"
@@ -391,7 +390,7 @@ export default function BusinessAssociateAgreementPage() {
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                 </svg>
                 <div>
-                  <div className="font-semibold text-gray-900">Privacy Policy</div>
+                  <div className="font-semibold text-gray-900">{t('privacyPolicy')}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">GDPR, LGPD, HIPAA</div>
                 </div>
               </div>
@@ -406,8 +405,8 @@ export default function BusinessAssociateAgreementPage() {
                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                 </svg>
                 <div>
-                  <div className="font-semibold text-gray-900">Terms of Service</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Términos de uso</div>
+                  <div className="font-semibold text-gray-900">{t('termsOfService')}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('termsOfService')}</div>
                 </div>
               </div>
             </Link>
@@ -422,8 +421,8 @@ export default function BusinessAssociateAgreementPage() {
                   <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                 </svg>
                 <div>
-                  <div className="font-semibold text-gray-900">Cookie Policy</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Política de cookies</div>
+                  <div className="font-semibold text-gray-900">{t('cookiePolicy')}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{t('cookiePolicy')}</div>
                 </div>
               </div>
             </Link>

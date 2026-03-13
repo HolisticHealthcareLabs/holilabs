@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import { isOverrideReasonCode, type OverrideReasonCode } from '@/lib/governance/shared-types';
 import ConsoleTour from '@/components/onboarding/ConsoleTour';
 
@@ -26,6 +27,7 @@ export default function ValidationConsolePage() {
   const CODE_CONTROL_STORAGE_KEY = 'holilabs:cortex:console:code-controls:v1';
   const LEGACY_SELECTED_CODES_KEY = 'holilabs:console:selectedCodes';
   const { data: session } = useSession();
+  const t = useTranslations('dashboard.console');
   type FilterState = {
     country: string;
     site: string;
@@ -527,7 +529,7 @@ export default function ValidationConsolePage() {
             </div>
             <div className="leading-tight">
               <div className="font-semibold tracking-wide text-sm text-gray-900 dark:text-gray-100">
-                Cortex <span className="text-gray-500 dark:text-gray-300 font-normal">Assurance Layer</span>
+                Cortex <span className="text-gray-500 dark:text-gray-300 font-normal">{t('assuranceLayer')}</span>
               </div>
             </div>
           </div>
@@ -537,11 +539,11 @@ export default function ValidationConsolePage() {
               href="/download"
               className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
             >
-              Download agent
+              {t('downloadAgent')}
             </a>
             <div className="hidden sm:flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              SYSTEM OPTIMAL
+              {t('systemOptimal')}
             </div>
           </div>
         </div>
@@ -577,9 +579,9 @@ export default function ValidationConsolePage() {
         <div data-tour="code-focus" className="max-w-[1600px] mx-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">Code focus controls</div>
+              <div className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">{t('codeFocusControls')}</div>
               <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                Admins and doctors can tune which ICD/CPT/protocol codes are prioritized in this console view.
+                {t('codeFocusDesc')}
               </p>
               {activePreset && (
                 <p className="mt-1 text-[11px] text-blue-700 dark:text-blue-300">
@@ -606,7 +608,7 @@ export default function ValidationConsolePage() {
                     onClick={() => addCode(codeDraft)}
                     className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold"
                   >
-                    Add code
+                    {t('addCode')}
                   </button>
                   <button
                     onClick={() => {
@@ -617,7 +619,7 @@ export default function ValidationConsolePage() {
                     }}
                     className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-xs font-semibold"
                   >
-                    Manage presets
+                    {t('managePresets')}
                   </button>
                   {activePreset && (
                     <button
@@ -630,14 +632,14 @@ export default function ValidationConsolePage() {
                 </>
               ) : (
                 <span className="text-xs text-amber-600 dark:text-amber-300 font-medium">
-                  Read-only: role {userRole || 'UNKNOWN'} cannot edit. Ask an admin or doctor.
+                  {t('readOnlyRole', { role: userRole || 'UNKNOWN' })}
                 </span>
               )}
             </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {selectedCodes.length === 0 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">No code filters applied.</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t('noCodeFilters')}</span>
             )}
             {selectedCodes.map((code) => (
               <span
@@ -661,7 +663,7 @@ export default function ValidationConsolePage() {
                 onClick={clearCodeSelection}
                 className="ml-1 text-xs text-gray-600 dark:text-gray-300 underline underline-offset-2 hover:text-gray-900 dark:hover:text-gray-100"
               >
-                Clear all
+                {t('clearAll')}
               </button>
             )}
           </div>
@@ -672,7 +674,7 @@ export default function ValidationConsolePage() {
         <div className="lg:col-span-4 flex flex-col gap-6">
           <div data-tour="trust-score" className="p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">Global Trust Score</h3>
+              <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-[0.2em]">{t('globalTrustScore')}</h3>
               <span className="text-emerald-700 dark:text-emerald-300 text-xs font-mono bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
                 ▲ 0.2% vs last week
               </span>
@@ -741,7 +743,7 @@ export default function ValidationConsolePage() {
           <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
-                Top Override Reasons
+                {t('topOverrideReasons')}
               </h3>
               <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
                 n={overrideReasonRanking.denominator} overrides
@@ -796,7 +798,7 @@ export default function ValidationConsolePage() {
 
         <div data-tour="validation-stream" className="lg:col-span-8 flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
           <div className="h-12 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 flex items-center justify-between bg-gray-50 dark:bg-gray-800/80">
-            <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">Live Validation Stream</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">{t('liveValidationStream')}</span>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
               <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">LIVE • ENCRYPTED</span>
@@ -807,7 +809,7 @@ export default function ValidationConsolePage() {
             {filteredLogs.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 gap-4">
                 <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 animate-spin-slow" />
-                <span className="text-sm font-mono tracking-widest">WAITING FOR SIGNALS...</span>
+                <span className="text-sm font-mono tracking-widest">{t('waitingForSignals')}</span>
               </div>
             ) : (
               <div className="flex flex-col">
@@ -822,7 +824,7 @@ export default function ValidationConsolePage() {
 
       <div id="metric-definitions" className="px-4 sm:px-6 pb-8 max-w-[1600px] mx-auto">
         <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-600 dark:text-gray-300 mb-2">KPI Definition Hooks</div>
+          <div className="text-xs font-bold uppercase tracking-[0.2em] text-gray-600 dark:text-gray-300 mb-2">{t('kpiDefinitionHooks')}</div>
           <div className="text-xs text-gray-600 dark:text-gray-300">
             KPI cards render manifest-backed metric IDs, formulas, and query references for auditable governance definitions.
           </div>
@@ -851,13 +853,13 @@ export default function ValidationConsolePage() {
             ref={modalRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Manage Code Presets"
+            aria-label={t('manageCodePresets')}
             tabIndex={-1}
             className="relative w-full max-w-2xl rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl outline-none"
           >
             <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Manage Code Presets</h3>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('manageCodePresets')}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                   Switch Cardiology, Pediatrics, or Oncology workflows in one click.
                 </p>

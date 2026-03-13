@@ -512,7 +512,7 @@ async function getGovernanceStatsHandler(
     const since = new Date(Date.now() - timeRangeMs);
 
     // Query with any type
-    const logs: any[] = await (prisma as any).governanceLog.findMany({
+    const logs: any[] = await prisma.governanceLog.findMany({
         where: { createdAt: { gte: since } },
     });
 

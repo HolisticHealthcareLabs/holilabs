@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import ChatThread from '@/components/chat/ChatThread';
 import MessageInput from '@/components/chat/MessageInput';
@@ -39,6 +40,7 @@ interface Conversation {
 }
 
 export default function PatientMessagesPage() {
+  const t = useTranslations('portal.messagesPage');
   const router = useRouter();
 
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -159,7 +161,7 @@ export default function PatientMessagesPage() {
   // Typing indicators
   const handleTyping = () => {
     if (conversation && patientId) {
-      emitTypingStart(conversation.clinicianId, patientId, patientName || 'Paciente');
+      emitTypingStart(conversation.clinicianId, patientId, patientName || t('patientFallback'));
     }
   };
 
@@ -176,7 +178,7 @@ export default function PatientMessagesPage() {
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
           </div>
-          <p className="text-gray-600 font-medium">Cargando mensajes...</p>
+          <p className="text-gray-600 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -197,10 +199,10 @@ export default function PatientMessagesPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            No hay conversaciones
+            {t('noConversations')}
           </h2>
           <p className="text-gray-600 mb-6">
-            Tu médico te enviará un mensaje cuando esté disponible
+            {t('noConversationsDesc')}
           </p>
         </div>
       </div>
@@ -226,11 +228,11 @@ export default function PatientMessagesPage() {
               <h2 className="text-lg font-bold text-gray-900">
                 {conversation.clinicianName}
               </h2>
-              <p className="text-sm text-gray-600">Tu médico</p>
+              <p className="text-sm text-gray-600">{t('yourDoctor')}</p>
             </div>
             <div className="flex items-center gap-2 text-sm text-green-600">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="font-medium">En línea</span>
+              <span className="font-medium">{t('online')}</span>
             </div>
           </div>
         </div>
@@ -252,7 +254,7 @@ export default function PatientMessagesPage() {
           onSend={handleSendMessage}
           onTyping={handleTyping}
           onStopTyping={handleStopTyping}
-          placeholder="Escribe un mensaje..."
+          placeholder={t('placeholder')}
         />
       </div>
     </div>

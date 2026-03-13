@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
   Bell,
@@ -64,25 +65,26 @@ interface Pagination {
   totalPages: number;
 }
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'DUE', label: 'Pendiente' },
-  { value: 'OVERDUE', label: 'Atrasado' },
-  { value: 'SCHEDULED', label: 'Programado' },
-  { value: 'COMPLETED', label: 'Completado' },
-  { value: 'DISMISSED', label: 'Descartado' },
-  { value: 'DECLINED', label: 'Rechazado' },
-];
+const STATUS_OPTIONS_KEYS = [
+  { value: '', key: 'allStatuses' },
+  { value: 'DUE', key: 'statusDue' },
+  { value: 'OVERDUE', key: 'statusOverdue' },
+  { value: 'SCHEDULED', key: 'statusScheduled' },
+  { value: 'COMPLETED', key: 'statusCompleted' },
+  { value: 'DISMISSED', key: 'statusDismissed' },
+  { value: 'DECLINED', key: 'statusDeclined' },
+] as const;
 
-const PRIORITY_OPTIONS = [
-  { value: '', label: 'Todas las prioridades' },
-  { value: 'CRITICAL', label: 'Critica' },
-  { value: 'HIGH', label: 'Alta' },
-  { value: 'MEDIUM', label: 'Media' },
-  { value: 'LOW', label: 'Baja' },
-];
+const PRIORITY_OPTIONS_KEYS = [
+  { value: '', key: 'allPriorities' },
+  { value: 'CRITICAL', key: 'priorityCritical' },
+  { value: 'HIGH', key: 'priorityHigh' },
+  { value: 'MEDIUM', key: 'priorityMedium' },
+  { value: 'LOW', key: 'priorityLow' },
+] as const;
 
 export default function RemindersPage() {
+  const t = useTranslations('portal.preventionReminders');
   const router = useRouter();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, overdue: 0, upcoming: 0, completedThisMonth: 0 });
@@ -236,10 +238,10 @@ export default function RemindersPage() {
               <Bell className="w-8 h-8 text-amber-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Recordatorios de Prevención
+                  {t('title')}
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Gestiona recordatorios de cuidado preventivo para todos los pacientes
+                  {t('subtitle')}
                 </p>
               </div>
             </div>
@@ -253,7 +255,7 @@ export default function RemindersPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por paciente, titulo, o tipo..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -284,8 +286,8 @@ export default function RemindersPage() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    {STATUS_OPTIONS_KEYS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{t(opt.key)}</option>
                     ))}
                   </select>
                 </div>
@@ -298,8 +300,8 @@ export default function RemindersPage() {
                     onChange={(e) => setPriorityFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    {PRIORITY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    {PRIORITY_OPTIONS_KEYS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{t(opt.key)}</option>
                     ))}
                   </select>
                 </div>

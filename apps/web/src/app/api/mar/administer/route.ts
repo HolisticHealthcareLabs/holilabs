@@ -125,7 +125,7 @@ export const POST = createProtectedRoute(
 
     // If adverse reaction, create urgent notification
     if (adverseReaction) {
-      // TODO: Send urgent notification to physician and pharmacy
+      // @todo(adverse-reaction-alerts): Send urgent notification to physician and pharmacy
       logger.warn({
         event: 'mar_adverse_reaction_reported',
         patientMRN: administration.patient.mrn,
@@ -192,7 +192,7 @@ export const GET = createProtectedRoute(
 
       const hours = shiftHours[shift as keyof typeof shiftHours];
       if (hours) {
-        // TODO: Add hour-based filtering (requires raw query or JS filtering)
+        // @todo(shift-filtering): Add hour-based filtering via raw query or post-query JS filter
       }
     }
 

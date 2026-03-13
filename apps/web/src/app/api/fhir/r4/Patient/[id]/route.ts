@@ -8,11 +8,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { toFHIRPatient, validateFHIRPatient } from '@/lib/fhir/patient-mapper';
 import { auditView } from '@/lib/audit';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 // Force dynamic rendering - prevents build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -82,7 +83,6 @@ export const GET = createProtectedRoute(
       },
     });
 
-    // Patient not found - return FHIR OperationOutcome
     if (!patient) {
       const outcome = createOperationOutcome(
         'error',
@@ -98,13 +98,23 @@ export const GET = createProtectedRoute(
       });
     }
 
+    // IDOR Protection: Verify clinician has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user?.id || '', patient.id);
+    if (!hasAccess) {
+      const outcome = createOperationOutcome('error', 'forbidden', 'Access denied to this patient record');
+      return NextResponse.json(outcome, {
+        status: 403,
+        headers: { 'Content-Type': 'application/fhir+json; charset=utf-8' },
+      });
+    }
+
     // Convert internal Patient model to FHIR R4 Patient resource
     const fhirPatient = toFHIRPatient(patient);
 
     // Validate FHIR resource (optional quality check)
     const validationErrors = validateFHIRPatient(fhirPatient);
     if (validationErrors.length > 0) {
-      console.warn('FHIR validation warnings:', {
+      logger.warn('FHIR validation warnings:', {
         patientId: patient.id,
         errors: validationErrors,
       });
@@ -129,7 +139,7 @@ export const GET = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('FHIR Patient GET error:', {
+    logger.error('FHIR Patient GET error:', {
       patientId: context.params?.id,
       error: error instanceof Error ? error.message : String(error),
     });

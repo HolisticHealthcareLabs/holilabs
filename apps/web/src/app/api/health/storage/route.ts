@@ -9,6 +9,7 @@ import { S3Client, HeadBucketCommand, PutObjectCommand, DeleteObjectCommand } fr
 import crypto from 'crypto';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
 import { createPublicRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -142,7 +143,7 @@ async function getStorageHealth() {
       },
     });
   } catch (error) {
-    console.error('Storage health check error:', error);
+    logger.error('Storage health check error:', error);
     return NextResponse.json({
       status: 'error',
       service: 'storage',

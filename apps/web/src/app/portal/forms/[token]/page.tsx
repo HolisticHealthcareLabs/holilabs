@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -46,6 +47,7 @@ interface FormData {
 }
 
 export default function PatientFormPage() {
+  const t = useTranslations('portal.forms');
   const params = useParams();
   const router = useRouter();
   const token = (params?.token as string) || '';
@@ -70,11 +72,11 @@ export default function PatientFormPage() {
 
       if (!response.ok) {
         if (response.status === 404) {
-          setError('Formulario no encontrado o expirado');
+          setError(t('notFound'));
         } else if (response.status === 410) {
-          setError('Este formulario ya ha sido completado');
+          setError(t('completed'));
         } else {
-          setError('Error al cargar el formulario');
+          setError(t('loadError'));
         }
         return;
       }
@@ -83,7 +85,7 @@ export default function PatientFormPage() {
       setFormData(data.form);
       setResponses(data.form.responses || {});
     } catch (err) {
-      setError('Error de conexión. Por favor, intenta de nuevo.');
+      setError(t('connectionError'));
       console.error('Error fetching form:', err);
     } finally {
       setLoading(false);
@@ -131,7 +133,7 @@ export default function PatientFormPage() {
     setFieldError(null);
 
     if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
-      setFieldError('Este campo es requerido');
+      setFieldError(t('required'));
       return false;
     }
 
@@ -139,18 +141,18 @@ export default function PatientFormPage() {
       if (field.validation.pattern && typeof value === 'string') {
         const regex = new RegExp(field.validation.pattern);
         if (!regex.test(value)) {
-          setFieldError(field.validation.message || 'Formato inválido');
+          setFieldError(field.validation.message || t('invalidFormat'));
           return false;
         }
       }
 
       if (field.validation.min !== undefined && value < field.validation.min) {
-        setFieldError(`El valor mínimo es ${field.validation.min}`);
+        setFieldError(`Min: ${field.validation.min}`);
         return false;
       }
 
       if (field.validation.max !== undefined && value > field.validation.max) {
-        setFieldError(`El valor máximo es ${field.validation.max}`);
+        setFieldError(`Max: ${field.validation.max}`);
         return false;
       }
     }
@@ -259,7 +261,7 @@ export default function PatientFormPage() {
             className="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none transition-colors"
             autoFocus
           >
-            <option value="">Selecciona una opción</option>
+            <option value="">{t('selectPlaceholder')}</option>
             {field.options?.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -323,7 +325,7 @@ export default function PatientFormPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando formulario...</p>
+          <p className="text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -343,13 +345,13 @@ export default function PatientFormPage() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('loadError')}</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => router.push('/')}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            Volver al inicio
+            {t('goHome')}
           </button>
         </div>
       </div>
@@ -379,11 +381,11 @@ export default function PatientFormPage() {
           <div>
             <h1 className="text-lg font-bold text-gray-900">{formData.template.title}</h1>
             {/* Decorative - low contrast intentional for patient info subheader and autosave status */}
-            <p className="text-sm text-gray-500">Para: {formData.patient.firstName} {formData.patient.lastName}</p>
+            <p className="text-sm text-gray-500">{t('forLabel')} {formData.patient.firstName} {formData.patient.lastName}</p>
           </div>
           <div className="text-right">
-            <div className="text-sm font-medium text-blue-600">{progress}% completado</div>
-            {saving && <div className="text-xs text-gray-500">Guardando...</div>}
+            <div className="text-sm font-medium text-blue-600">{progress}{t('progressLabel')}</div>
+            {saving && <div className="text-xs text-gray-500">{t('saving')}</div>}
           </div>
         </div>
       </div>
@@ -413,7 +415,7 @@ export default function PatientFormPage() {
               {/* Question Number */}
               {/* Decorative - low contrast intentional for question number metadata */}
               <div className="text-sm text-gray-500 mb-2">
-                Pregunta {currentSectionIndex + 1}.{currentFieldIndex + 1}
+                {t('questionLabel')} {currentSectionIndex + 1}.{currentFieldIndex + 1}
               </div>
 
               {/* Field Label */}
@@ -446,14 +448,14 @@ export default function PatientFormPage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Atrás
+                  {t('previous')}
                 </button>
 
                 <button
                   onClick={handleNext}
                   className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-600/30 flex items-center gap-2"
                 >
-                  Siguiente
+                  {t('next')}
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -466,7 +468,7 @@ export default function PatientFormPage() {
           <div className="mt-6 text-center">
             {/* Decorative - low contrast intentional for keyboard shortcut helper text */}
             <p className="text-sm text-gray-500">
-              Presiona <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">Enter</kbd> para continuar
+              {t('pressEnter')} <kbd className="px-2 py-1 bg-gray-200 rounded text-xs font-mono">{t('pressEnterKey')}</kbd> {t('pressEnterSuffix')}
             </p>
           </div>
         </div>

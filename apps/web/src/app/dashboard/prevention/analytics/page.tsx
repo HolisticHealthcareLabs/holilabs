@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   BarChart3,
   TrendingUp,
@@ -77,6 +78,7 @@ interface AnalyticsData {
 }
 
 export default function PreventionAnalyticsPage() {
+  const t = useTranslations('dashboard.prevention.analytics');
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,8 +138,8 @@ export default function PreventionAnalyticsPage() {
         setError(result.error || 'Failed to load analytics');
       }
     } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError('Failed to connect to server. Please try again.');
+      console.error('[PreventionAnalytics]', { event: 'fetch_analytics_error', error: err instanceof Error ? err.message : String(err) });
+      setError(t('errorConnect'));
     } finally {
       setLoading(false);
     }
@@ -260,7 +262,7 @@ export default function PreventionAnalyticsPage() {
 
       alert('CSV exportado exitosamente');
     } catch (error) {
-      console.error('Error exporting CSV:', error);
+      console.error('[PreventionAnalytics]', { event: 'export_csv_error', error: error instanceof Error ? error.message : String(error) });
       alert('Error al exportar CSV. Por favor intente de nuevo.');
     } finally {
       setIsExporting(false);
@@ -364,7 +366,7 @@ export default function PreventionAnalyticsPage() {
 
       alert('PDF exportado exitosamente');
     } catch (error) {
-      console.error('Error exporting PDF:', error);
+      console.error('[PreventionAnalytics]', { event: 'export_pdf_error', error: error instanceof Error ? error.message : String(error) });
       alert('Error al exportar PDF. Por favor intente de nuevo.');
     } finally {
       setIsExporting(false);
@@ -405,7 +407,7 @@ export default function PreventionAnalyticsPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Cargando analíticas...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('loadingAnalytics')}</p>
         </div>
       </div>
     );
@@ -424,7 +426,7 @@ export default function PreventionAnalyticsPage() {
                 onClick={fetchAnalytics}
                 className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                Reintentar
+                {t('retry')}
               </button>
             </div>
           </div>
@@ -447,10 +449,10 @@ export default function PreventionAnalyticsPage() {
               <BarChart3 className="w-8 h-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Analíticas de Prevención
+                  {t('title')}
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Métricas y tendencias de protocolos de prevención • Holi Labs
+                  {t('subtitle')}
                 </p>
               </div>
             </div>
@@ -460,7 +462,7 @@ export default function PreventionAnalyticsPage() {
                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
               >
                 <Filter className="w-4 h-4" />
-                <span>Filtros</span>
+                <span>{t('filters')}</span>
               </button>
               <button
                 onClick={exportToCSV}
@@ -470,12 +472,12 @@ export default function PreventionAnalyticsPage() {
                 {isExporting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Exportando...</span>
+                    <span>{t('exporting')}</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    <span>Exportar CSV</span>
+                    <span>{t('exportCsv')}</span>
                   </>
                 )}
               </button>
@@ -487,12 +489,12 @@ export default function PreventionAnalyticsPage() {
                 {isExporting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Exportando...</span>
+                    <span>{t('exporting')}</span>
                   </>
                 ) : (
                   <>
                     <FileText className="w-4 h-4" />
-                    <span>Exportar PDF</span>
+                    <span>{t('exportPdf')}</span>
                   </>
                 )}
               </button>
@@ -501,7 +503,7 @@ export default function PreventionAnalyticsPage() {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
               >
                 <Activity className="w-4 h-4" />
-                <span>Actualizar</span>
+                <span>{t('refresh')}</span>
               </button>
             </div>
           </div>
@@ -512,7 +514,7 @@ export default function PreventionAnalyticsPage() {
               <div className="flex items-end space-x-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fecha Desde
+                    {t('dateFrom')}
                   </label>
                   <input
                     type="date"
@@ -523,7 +525,7 @@ export default function PreventionAnalyticsPage() {
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fecha Hasta
+                    {t('dateTo')}
                   </label>
                   <input
                     type="date"
@@ -536,13 +538,13 @@ export default function PreventionAnalyticsPage() {
                   onClick={applyDateFilter}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
-                  Aplicar
+                  {t('apply')}
                 </button>
                 <button
                   onClick={clearDateFilter}
                   className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
                 >
-                  Limpiar
+                  {t('clear')}
                 </button>
               </div>
             </div>
@@ -564,7 +566,7 @@ export default function PreventionAnalyticsPage() {
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {analytics.overview.totalPlans}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Planes de Prevención</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('preventionPlans')}</div>
           </div>
 
           {/* Active Plans */}
@@ -581,7 +583,7 @@ export default function PreventionAnalyticsPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {analytics.overview.totalPlans > 0
                 ? `${Math.round((analytics.overview.activePlans / analytics.overview.totalPlans) * 100)}% del total`
-                : 'Sin datos'}
+                : t('noData')}
             </div>
           </div>
 
@@ -596,7 +598,7 @@ export default function PreventionAnalyticsPage() {
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {analytics.overview.completionRate}%
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Tasa de Completitud</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('completionRate')}</div>
           </div>
 
           {/* Average Days */}
@@ -610,7 +612,7 @@ export default function PreventionAnalyticsPage() {
             <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
               {analytics.overview.averageDaysToComplete}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Días para Completar</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{t('daysToComplete')}</div>
           </div>
         </div>
 
@@ -619,7 +621,7 @@ export default function PreventionAnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Actividad Reciente
+                {t('recentActivity')}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {analytics.recentActivity.period}
@@ -630,13 +632,13 @@ export default function PreventionAnalyticsPage() {
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {analytics.recentActivity.newPlans}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Nuevos Planes</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('newPlans')}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {analytics.recentActivity.completions}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Completados</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('completed')}</div>
               </div>
             </div>
           </div>
@@ -646,7 +648,7 @@ export default function PreventionAnalyticsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
             <TrendingUp className="w-5 h-5 text-purple-600" />
-            <span>Insights y Recomendaciones</span>
+            <span>{t('insightsTitle')}</span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Completion Rate Insight */}
@@ -786,7 +788,7 @@ export default function PreventionAnalyticsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
               <Activity className="w-5 h-5" />
-              <span>Planes por Estado</span>
+              <span>{t('plansByStatus')}</span>
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -842,7 +844,7 @@ export default function PreventionAnalyticsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
               <Target className="w-5 h-5" />
-              <span>Planes por Tipo</span>
+              <span>{t('plansByType')}</span>
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -890,7 +892,7 @@ export default function PreventionAnalyticsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
               <CheckCircle2 className="w-5 h-5" />
-              <span>Metas por Categoría</span>
+              <span>{t('goalsByCategory')}</span>
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
@@ -943,7 +945,7 @@ export default function PreventionAnalyticsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
               <TrendingUp className="w-5 h-5" />
-              <span>Intervenciones Más Comunes</span>
+              <span>{t('topInterventions')}</span>
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
@@ -992,7 +994,7 @@ export default function PreventionAnalyticsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mt-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
               <Calendar className="w-5 h-5" />
-              <span>Tendencia de Creación de Planes</span>
+              <span>{t('planCreationTrend')}</span>
             </h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart
@@ -1052,7 +1054,7 @@ export default function PreventionAnalyticsPage() {
           {Object.keys(analytics.completionReasons).length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Motivos de Completitud
+                {t('completionReasons')}
               </h3>
               <div className="space-y-3">
                 {Object.entries(analytics.completionReasons).map(([reason, count]) => (
@@ -1073,7 +1075,7 @@ export default function PreventionAnalyticsPage() {
           {Object.keys(analytics.deactivationReasons).length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Motivos de Desactivación
+                {t('deactivationReasons')}
               </h3>
               <div className="space-y-3">
                 {Object.entries(analytics.deactivationReasons).map(([reason, count]) => (

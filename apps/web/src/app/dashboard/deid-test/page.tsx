@@ -3,9 +3,11 @@ export const dynamic = 'force-dynamic';
 
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import DashboardLayout from '@/components/DashboardLayout';
 
 export default function DeidTestPage() {
+  const t = useTranslations('portal.deidTest');
   const [inputText, setInputText] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -64,10 +66,10 @@ Portal del paciente: https://portal-pacientes.hospital.mx/maria-gonzalez`;
       <div className="p-8 max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Prueba de Des-identificación HIPAA
+            {t('title')}
           </h1>
           <p className="text-gray-600">
-            Método Safe Harbor - Detección de 18 identificadores HIPAA
+            {t('subtitle')}
           </p>
         </div>
 
@@ -75,19 +77,19 @@ Portal del paciente: https://portal-pacientes.hospital.mx/maria-gonzalez`;
           {/* Input */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Texto Original (PHI)</h2>
+              <h2 className="text-xl font-bold text-gray-800">{t('originalText')}</h2>
               <button
                 onClick={() => setInputText(samplePHI)}
                 className="text-sm text-accent hover:text-primary transition font-semibold"
               >
-                Cargar Ejemplo
+                {t('loadSample')}
               </button>
             </div>
 
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ingrese texto con información de salud protegida (PHI)..."
+              placeholder={t('inputPlaceholder')}
               className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent resize-none font-mono text-sm"
             />
 
@@ -96,13 +98,13 @@ Portal del paciente: https://portal-pacientes.hospital.mx/maria-gonzalez`;
               disabled={!inputText || loading}
               className="mt-4 w-full bg-accent text-white py-3 rounded-lg font-semibold hover:bg-primary transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Des-identificando...' : 'Des-identificar Texto'}
+              {loading ? t('deidentifying') : t('deidentify')}
             </button>
           </div>
 
           {/* Output */}
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Resultado Des-identificado</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">{t('deidentifiedResult')}</h2>
 
             {error && (
               <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
@@ -115,7 +117,7 @@ Portal del paciente: https://portal-pacientes.hospital.mx/maria-gonzalez`;
                 {/* De-identified text */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Texto Des-identificado
+                    {t('deidentifiedText')}
                   </label>
                   <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg h-64 overflow-y-auto font-mono text-sm whitespace-pre-wrap">
                     {result.deidentified}
@@ -128,26 +130,26 @@ Portal del paciente: https://portal-pacientes.hospital.mx/maria-gonzalez`;
                     <div className="text-3xl font-bold text-blue-600">
                       {result.summary.totalDetected}
                     </div>
-                    <div className="text-sm text-gray-600">PHI Detectado</div>
+                    <div className="text-sm text-gray-600">{t('phiDetected')}</div>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <div className="text-3xl font-bold text-green-600">
                       {(result.summary.confidenceScore * 100).toFixed(1)}%
                     </div>
-                    <div className="text-sm text-gray-600">Confianza</div>
+                    <div className="text-sm text-gray-600">{t('confidence')}</div>
                   </div>
                   <div className="bg-purple-50 p-4 rounded-lg">
                     <div className="text-3xl font-bold text-purple-600">
                       {Object.keys(result.summary.byType).length}
                     </div>
-                    <div className="text-sm text-gray-600">Tipos</div>
+                    <div className="text-sm text-gray-600">{t('types')}</div>
                   </div>
                 </div>
 
                 {/* By Type */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Identificadores Detectados por Tipo
+                    {t('detectedByType')}
                   </label>
                   <div className="space-y-2">
                     {Object.entries(result.summary.byType).map(([type, count]) => (
@@ -167,10 +169,10 @@ Portal del paciente: https://portal-pacientes.hospital.mx/maria-gonzalez`;
                 {/* Metadata */}
                 <div className="p-4 bg-gray-50 border border-gray-300 rounded-lg">
                   <div className="text-xs text-gray-600 space-y-1">
-                    <div><strong>Método:</strong> {result.metadata.method}</div>
-                    <div><strong>Versión:</strong> {result.metadata.version}</div>
-                    <div><strong>Timestamp:</strong> {new Date(result.metadata.timestamp).toLocaleString('es-MX')}</div>
-                    <div><strong>Reversible:</strong> {result.tokenMapExport ? 'Sí (token map exportado)' : 'No'}</div>
+                    <div><strong>{t('method')}:</strong> {result.metadata.method}</div>
+                    <div><strong>{t('version')}:</strong> {result.metadata.version}</div>
+                    <div><strong>{t('timestamp')}:</strong> {new Date(result.metadata.timestamp).toLocaleString()}</div>
+                    <div><strong>{t('reversible')}:</strong> {result.tokenMapExport ? t('yes') : t('no')}</div>
                   </div>
                 </div>
 
@@ -182,8 +184,7 @@ Portal del paciente: https://portal-pacientes.hospital.mx/maria-gonzalez`;
                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
                       <div className="text-sm text-yellow-800">
-                        <strong>Token Map Generado:</strong> El mapa de tokens cifrado ha sido generado.
-                        En producción, este debe ser almacenado de forma segura para permitir re-identificación autorizada.
+                        {t('tokenMapWarning')}
                       </div>
                     </div>
                   </div>

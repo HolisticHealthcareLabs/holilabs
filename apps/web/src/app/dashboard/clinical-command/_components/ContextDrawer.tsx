@@ -1,11 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  RotateCcw,
-  Layers,
+  RotateCw,
   ChevronRight,
   ShieldCheck,
   Trash2,
@@ -24,28 +24,28 @@ const CATEGORY_CONFIG: Record<
   { label: string; accent: string; chipBg: string; chipBorder: string; chipText: string }
 > = {
   'ICD-10': {
-    label: 'ICD-10 Conditions',
+    label: 'icd10Conditions',
     accent: 'text-amber-600 dark:text-amber-400',
     chipBg: 'bg-amber-50 dark:bg-amber-500/10',
     chipBorder: 'border-amber-200 dark:border-amber-500/25',
     chipText: 'text-amber-800 dark:text-amber-300',
   },
   ATC: {
-    label: 'ATC Medications',
+    label: 'atcMedications',
     accent: 'text-blue-600 dark:text-blue-400',
     chipBg: 'bg-blue-50 dark:bg-blue-500/10',
     chipBorder: 'border-blue-200 dark:border-blue-500/25',
     chipText: 'text-blue-800 dark:text-blue-300',
   },
   LOINC: {
-    label: 'LOINC Labs',
+    label: 'loincLabs',
     accent: 'text-emerald-600 dark:text-emerald-400',
     chipBg: 'bg-emerald-50 dark:bg-emerald-500/10',
     chipBorder: 'border-emerald-200 dark:border-emerald-500/25',
     chipText: 'text-emerald-800 dark:text-emerald-300',
   },
   SNOMED: {
-    label: 'SNOMED Findings',
+    label: 'snomedFindings',
     accent: 'text-violet-600 dark:text-violet-400',
     chipBg: 'bg-violet-50 dark:bg-violet-500/10',
     chipBorder: 'border-violet-200 dark:border-violet-500/25',
@@ -100,6 +100,7 @@ export function ContextDrawer({
   onRejectEntity,
   onRestoreEntity,
 }: ContextDrawerProps) {
+  const t = useTranslations('dashboard.clinicalCommand');
   const activeEntities = useMemo(
     () => entities.filter((e) => e.status === 'active'),
     [entities],
@@ -159,7 +160,7 @@ export function ContextDrawer({
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-cyan-500" />
                 <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-                  Clinical Context
+                  {t('clinicalContext')}
                 </h2>
                 {activeEntities.length > 0 && (
                   <span className="
@@ -168,7 +169,7 @@ export function ContextDrawer({
                     text-cyan-700 dark:text-cyan-400
                     border border-cyan-200 dark:border-cyan-500/25
                   ">
-                    {activeEntities.length} active
+                    {t('activeCount', { count: activeEntities.length })}
                   </span>
                 )}
               </div>
@@ -192,11 +193,11 @@ export function ContextDrawer({
             <div className="flex-1 overflow-y-auto min-h-0 px-5 py-4 space-y-5">
               {activeEntities.length === 0 && rejectedEntities.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <Layers className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                  <ShieldCheck className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                   <p className="text-sm text-slate-400 dark:text-slate-500 text-center">
-                    No entities extracted yet.
+                    {t('noEntitiesYet')}
                     <br />
-                    Start recording to populate clinical context.
+                    {t('startRecordingContext')}
                   </p>
                 </div>
               )}
@@ -219,7 +220,7 @@ export function ContextDrawer({
                     <div className="flex items-center gap-2 mb-2.5">
                       <ChevronRight className={`w-3 h-3 ${config.accent}`} />
                       <h3 className={`text-[11px] font-bold uppercase tracking-wider ${config.accent}`}>
-                        {config.label}
+                        {t(config.label)}
                       </h3>
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         ({items.length})
@@ -277,7 +278,7 @@ export function ContextDrawer({
                                 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-400
                               "
                               aria-label={`Reject entity: ${entity.label}`}
-                              title="Reject: exclude from AI context"
+                              title={t('rejectEntityHint')}
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -303,7 +304,7 @@ export function ContextDrawer({
                     <div className="flex items-center gap-2 mb-2.5">
                       <Trash2 className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                       <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Discarded Context
+                        {t('discardedContext')}
                       </h3>
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         ({rejectedEntities.length})
@@ -311,8 +312,7 @@ export function ContextDrawer({
                     </div>
 
                     <p className="text-[10px] text-slate-400 dark:text-slate-600 mb-2.5">
-                      These entities have been excluded from AI reasoning.
-                      Restore to re-include them.
+                      {t('discardedContextDesc')}
                     </p>
 
                     <div className="flex flex-wrap gap-1.5">
@@ -356,9 +356,9 @@ export function ContextDrawer({
                                 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400
                               "
                               aria-label={`Restore entity: ${entity.label}`}
-                              title="Restore: re-include in AI context"
+                              title={t('restoreEntityHint')}
                             >
-                              <RotateCcw className="w-3 h-3" />
+                              <RotateCw className="w-3 h-3" />
                             </button>
                           </motion.div>
                         ))}
@@ -376,9 +376,7 @@ export function ContextDrawer({
               bg-slate-50/50 dark:bg-slate-800/30
             ">
               <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed">
-                Entities are extracted in real-time by AI. Rejected entities are
-                flagged and excluded from downstream context. All actions are
-                auditable per LGPD Art. 37.
+                {t('contextFooter')}
               </p>
             </div>
           </motion.aside>

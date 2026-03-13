@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import { FormCategory } from '@prisma/client';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export const GET = createProtectedRoute(
 
       return NextResponse.json({ success: true, templates }, { status: 200 });
     } catch (error) {
-      console.error('Error fetching form templates:', error);
+      logger.error('Error fetching form templates:', error);
       return NextResponse.json(
         { error: 'Failed to fetch form templates' },
         { status: 500 }
@@ -84,7 +85,7 @@ export const POST = createProtectedRoute(
         { status: 201 }
       );
     } catch (error) {
-      console.error('Error creating form template:', error);
+      logger.error('Error creating form template:', error);
       return NextResponse.json(
         { error: 'Failed to create form template' },
         { status: 500 }

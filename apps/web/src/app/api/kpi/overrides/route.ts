@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { getOverrideReasons, validateFilterState } from '@/lib/kpi';
+import logger from '@/lib/logger';
 
 export const GET = createProtectedRoute(
   async (req: NextRequest, context: any) => {
@@ -28,7 +29,7 @@ export const GET = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('[KPI Overrides] API Error:', error);
+    logger.error('[KPI Overrides] API Error:', error);
     return NextResponse.json(
       {
         success: false,

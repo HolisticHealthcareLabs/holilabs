@@ -7,6 +7,8 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import {
   Shield,
   Search,
@@ -49,6 +51,7 @@ interface Stats {
 }
 
 export default function PreventionAuditPage() {
+  const t = useTranslations('portal.preventionAudit');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -173,11 +176,11 @@ export default function PreventionAuditPage() {
         <div className="flex items-center space-x-3 mb-2">
           <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Registro de Auditoría
+            {t('title')}
           </h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400">
-          Historial completo de actividades relacionadas con prevención
+          {t('subtitle')}
         </p>
       </div>
 
@@ -188,7 +191,7 @@ export default function PreventionAuditPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total de Registros
+                  {t('totalRecords')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {stats.totalLogs.toLocaleString()}
@@ -202,7 +205,7 @@ export default function PreventionAuditPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tipos de Acción
+                  {t('actionTypes')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {stats.actionBreakdown.length}
@@ -216,7 +219,7 @@ export default function PreventionAuditPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Usuarios Activos
+                  {t('activeUsers')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {stats.userBreakdown.length}
@@ -230,7 +233,7 @@ export default function PreventionAuditPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tipos de Recurso
+                  {t('resourceTypes')}
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                   {stats.resourceBreakdown.length}
@@ -250,13 +253,13 @@ export default function PreventionAuditPage() {
             className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             <Filter className="w-5 h-5" />
-            <span className="font-medium">Filtros</span>
+            <span className="font-medium">{t('filters')}</span>
           </button>
           <button
             onClick={resetFilters}
             className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
-            Limpiar filtros
+            {t('clearFilters')}
           </button>
         </div>
 
@@ -271,11 +274,11 @@ export default function PreventionAuditPage() {
                 onChange={(e) => setFilters({ ...filters, action: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Todas</option>
-                <option value="CREATE">Crear</option>
-                <option value="READ">Leer</option>
-                <option value="UPDATE">Actualizar</option>
-                <option value="DELETE">Eliminar</option>
+                <option value="">{t('all')}</option>
+                <option value="CREATE">{t('create')}</option>
+                <option value="READ">{t('read')}</option>
+                <option value="UPDATE">{t('update')}</option>
+                <option value="DELETE">{t('delete')}</option>
               </select>
             </div>
 

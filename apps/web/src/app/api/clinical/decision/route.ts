@@ -19,7 +19,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import {
   processClinicalDecision,
   processDiagnosisOnly,
@@ -28,6 +28,7 @@ import {
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import { CLINICAL_DISCLAIMER } from '@/lib/clinical/safety-envelope';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,6 +117,12 @@ interface ClinicalDecisionResponse {
     latencyMs: number;
     fallbackUsed: boolean;
   };
+  disclaimer?: string;
+  provenance?: {
+    model: string;
+    version: string;
+    timestamp: string;
+  };
   error?: string;
 }
 
@@ -124,7 +131,7 @@ interface ClinicalDecisionResponse {
 // ═══════════════════════════════════════════════════════════════
 
 export const POST = createProtectedRoute(
-  async (req: NextRequest): Promise<NextResponse<ClinicalDecisionResponse>> => {
+  async (req: NextRequest, context: { user?: { id: string } }): Promise<NextResponse<ClinicalDecisionResponse>> => {
     const startTime = Date.now();
 
     try {
@@ -143,6 +150,15 @@ export const POST = createProtectedRoute(
     }
 
     const { patientId, aiScribeOutput, mode, icd10Code } = validationResult.data;
+
+    // IDOR Protection: Verify clinician has access to this patient
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { success: false, error: 'Access denied to this patient record' },
+        { status: 403 }
+      );
+    }
 
     // 3. Check patient exists
     const patient = await prisma.patient.findUnique({
@@ -209,6 +225,12 @@ export const POST = createProtectedRoute(
             latencyMs: Date.now() - startTime,
             fallbackUsed: diagnosisResult.method === 'fallback',
           },
+          disclaimer: CLINICAL_DISCLAIMER,
+          provenance: {
+            model: diagnosisResult.method === 'ai' ? 'claude' : 'deterministic-fallback',
+            version: '2.0.0',
+            timestamp: new Date().toISOString(),
+          },
         };
         break;
       }
@@ -235,6 +257,12 @@ export const POST = createProtectedRoute(
             latencyMs: Date.now() - startTime,
             fallbackUsed: treatmentResult.method === 'fallback',
           },
+          disclaimer: CLINICAL_DISCLAIMER,
+          provenance: {
+            model: treatmentResult.method === 'ai' ? 'claude' : 'deterministic-fallback',
+            version: '2.0.0',
+            timestamp: new Date().toISOString(),
+          },
         };
         break;
       }
@@ -242,6 +270,10 @@ export const POST = createProtectedRoute(
       case 'full':
       default: {
         const decision = await processClinicalDecision(patientId, aiScribeOutput);
+
+        const fullFallbackUsed =
+          decision.processingMethods.diagnosis === 'fallback' ||
+          decision.processingMethods.treatments.includes('fallback');
 
         response = {
           success: true,
@@ -259,9 +291,13 @@ export const POST = createProtectedRoute(
           metadata: {
             mode: 'full',
             latencyMs: Date.now() - startTime,
-            fallbackUsed:
-              decision.processingMethods.diagnosis === 'fallback' ||
-              decision.processingMethods.treatments.includes('fallback'),
+            fallbackUsed: fullFallbackUsed,
+          },
+          disclaimer: CLINICAL_DISCLAIMER,
+          provenance: {
+            model: fullFallbackUsed ? 'hybrid-with-fallback' : 'claude',
+            version: '2.0.0',
+            timestamp: decision.timestamp,
           },
         };
         break;

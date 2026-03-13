@@ -1,11 +1,12 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-
 import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useTranslations } from 'next-intl';
 
 export default function DocIntelligencePage() {
+  const t = useTranslations('portal.docIntelligence');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [textInput, setTextInput] = useState('');
   const [documentType, setDocumentType] = useState('general');
@@ -111,12 +112,8 @@ Cédula: 12345678`;
     <DashboardLayout>
       <div className="p-8 max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Inteligencia de Documentos Clínicos
-          </h1>
-          <p className="text-gray-600">
-            Extracción de PDF → Des-identificación HIPAA → Análisis con Claude 3.5 Sonnet
-          </p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Input Section */}
@@ -126,7 +123,7 @@ Cédula: 12345678`;
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Subir Documento PDF
+                  {t('fileUploadLabel')}
                 </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-accent transition cursor-pointer">
                   <input
@@ -142,9 +139,9 @@ Cédula: 12345678`;
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                     <p className="text-gray-600">
-                      {selectedFile ? selectedFile.name : 'Hacer clic o arrastrar PDF'}
+                      {selectedFile ? selectedFile.name : t('fileClickOrDrag')}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Máximo 10MB</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('fileMaxSize')}</p>
                   </label>
                 </div>
               </div>
@@ -153,7 +150,7 @@ Cédula: 12345678`;
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-semibold text-gray-700">
-                    O Pegar Texto
+                    {t('orPasteText')}
                   </label>
                   <button
                     type="button"
@@ -163,7 +160,7 @@ Cédula: 12345678`;
                     }}
                     className="text-sm text-accent hover:text-primary transition font-semibold"
                   >
-                    Cargar Ejemplo
+                    {t('loadSample')}
                   </button>
                 </div>
                 <textarea
@@ -172,7 +169,7 @@ Cédula: 12345678`;
                     setTextInput(e.target.value);
                     setSelectedFile(null); // Clear file if text entered
                   }}
-                  placeholder="Pegar nota clínica, resultados de laboratorio, etc..."
+                  placeholder={t('pasteTextPlaceholder')}
                   className="w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent resize-none text-sm font-mono"
                   disabled={loading}
                 />
@@ -182,7 +179,7 @@ Cédula: 12345678`;
             {/* Document Type */}
             <div className="mb-6">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Tipo de Documento
+                {t('documentType')}
               </label>
               <select
                 value={documentType}
@@ -190,11 +187,11 @@ Cédula: 12345678`;
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
                 disabled={loading}
               >
-                <option value="general">General</option>
-                <option value="lab_results">Resultados de Laboratorio</option>
-                <option value="consultation_notes">Notas de Consulta</option>
-                <option value="discharge_summary">Resumen de Alta</option>
-                <option value="prescription">Prescripción</option>
+                <option value="general">{t('docTypeGeneral')}</option>
+                <option value="lab_results">{t('docTypeLabResults')}</option>
+                <option value="consultation_notes">{t('docTypeConsultation')}</option>
+                <option value="discharge_summary">{t('docTypeDischarge')}</option>
+                <option value="prescription">{t('docTypePrescription')}</option>
               </select>
             </div>
 
@@ -203,7 +200,7 @@ Cédula: 12345678`;
               disabled={loading || (!selectedFile && !textInput)}
               className="w-full bg-accent text-white py-4 rounded-lg font-semibold hover:bg-primary transition disabled:opacity-50 disabled:cursor-not-allowed text-lg"
             >
-              {loading ? 'Procesando...' : 'Analizar Documento'}
+              {loading ? t('analyzing') : t('analyze')}
             </button>
           </form>
         </div>
@@ -220,7 +217,7 @@ Cédula: 12345678`;
           <div className="space-y-6">
             {/* Processing Steps */}
             <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">✓ Procesamiento Completado</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">✓ {t('processingComplete')}</h2>
               <div className="flex items-center space-x-4">
                 {result.metadata.processingSteps.map((step: string, i: number) => (
                   <div key={i} className="flex items-center">
@@ -246,7 +243,7 @@ Cédula: 12345678`;
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Análisis de IA Clínica</h2>
+                  <h2 className="text-2xl font-bold text-gray-800">{t('aiAnalysis')}</h2>
                   <p className="text-sm text-gray-600">Claude 3.5 Sonnet</p>
                 </div>
               </div>
@@ -272,32 +269,32 @@ Cédula: 12345678`;
 
             {/* De-identification Stats */}
             <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Des-identificación HIPAA</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">{t('deidentification')}</h2>
 
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="text-3xl font-bold text-blue-600">
                     {result.deidentification.phiDetected}
                   </div>
-                  <div className="text-sm text-gray-600">PHI Detectado</div>
+                  <div className="text-sm text-gray-600">{t('phiDetected')}</div>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg">
                   <div className="text-3xl font-bold text-green-600">
                     {(result.deidentification.confidenceScore * 100).toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-600">Confianza</div>
+                  <div className="text-sm text-gray-600">{t('confidence')}</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <div className="text-3xl font-bold text-purple-600">
                     {Object.keys(result.deidentification.byType).length}
                   </div>
-                  <div className="text-sm text-gray-600">Tipos</div>
+                  <div className="text-sm text-gray-600">{t('types')}</div>
                 </div>
               </div>
 
               <details className="cursor-pointer">
                 <summary className="text-sm font-semibold text-gray-700 mb-2 hover:text-accent">
-                  Ver Texto Des-identificado →
+                  {t('viewDeidentified')}
                 </summary>
                 <div className="mt-3 p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto font-mono text-xs">
                   {result.deidentification.deidentifiedText}
@@ -325,7 +322,7 @@ Cédula: 12345678`;
         {loading && (
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-accent mb-4" />
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Procesando Documento...</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">{t('processingTitle')}</h3>
             <div className="space-y-2 text-gray-600">
               <p>⏳ Extrayendo texto del documento</p>
               <p>🔒 Des-identificando información sensible</p>

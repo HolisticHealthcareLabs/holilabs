@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { enqueuePatientDossierJob } from '@/lib/patients/dossier-queue';
@@ -18,6 +18,11 @@ export const GET = createProtectedRoute(
   async (_req: NextRequest, context: any) => {
     const patientId = context.params?.id as string | undefined;
     if (!patientId) return NextResponse.json({ error: 'Patient ID required' }, { status: 400 });
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+    }
 
     const patient = await prisma.patient.findFirst({
       where: { id: patientId, assignedClinicianId: context.user.id },
@@ -57,6 +62,11 @@ export const POST = createProtectedRoute(
   async (req: NextRequest, context: any) => {
     const patientId = context.params?.id as string | undefined;
     if (!patientId) return NextResponse.json({ error: 'Patient ID required' }, { status: 400 });
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
+    }
 
     const patient = await prisma.patient.findFirst({
       where: { id: patientId, assignedClinicianId: context.user.id },

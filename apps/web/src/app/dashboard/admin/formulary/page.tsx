@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -20,6 +21,7 @@ import {
 const ORG_ID = 'default-org';
 
 export default function FormularyManagementPage() {
+  const t = useTranslations('dashboard.formulary');
   const [searchTerm, setSearchTerm] = useState('');
   const [drugs, setDrugs] = useState<DrugProductSearchResult[]>([]);
   const [rules, setRules] = useState<FormularyRuleWithDrugs[]>([]);
@@ -97,10 +99,10 @@ export default function FormularyManagementPage() {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-          Formulary & Protocol Management
+          {t('title')}
         </h1>
         <p className="text-zinc-500 dark:text-zinc-400">
-          Manage preferred medications and reduce patient financial toxicity.
+          {t('subtitle')}
         </p>
       </div>
 
@@ -111,12 +113,12 @@ export default function FormularyManagementPage() {
             <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
               <CurrencyDollarIcon className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium text-zinc-500">Est. Patient Savings</span>
+            <span className="text-sm font-medium text-zinc-500">{t('estPatientSavings')}</span>
           </div>
           <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             R$ {totalSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </div>
-          <div className="text-xs text-emerald-500 mt-1">From active rules</div>
+          <div className="text-xs text-emerald-500 mt-1">{t('fromActiveRules')}</div>
         </div>
 
         <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
@@ -124,10 +126,10 @@ export default function FormularyManagementPage() {
             <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
               <ShieldCheckIcon className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium text-zinc-500">Adherence Rate</span>
+            <span className="text-sm font-medium text-zinc-500">{t('adherenceRate')}</span>
           </div>
           <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">—</div>
-          <div className="text-xs text-blue-500 mt-1">Within formulary guidelines</div>
+          <div className="text-xs text-blue-500 mt-1">{t('withinGuidelines')}</div>
         </div>
 
         <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
@@ -135,10 +137,10 @@ export default function FormularyManagementPage() {
             <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
               <MagnifyingGlassIcon className="w-5 h-5" />
             </div>
-            <span className="text-sm font-medium text-zinc-500">Active Rules</span>
+            <span className="text-sm font-medium text-zinc-500">{t('activeRules')}</span>
           </div>
           <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{rules.length}</div>
-          <div className="text-xs text-zinc-500 mt-1">Across therapeutic classes</div>
+          <div className="text-xs text-zinc-500 mt-1">{t('acrossClasses')}</div>
         </div>
       </div>
 
@@ -148,7 +150,7 @@ export default function FormularyManagementPage() {
         <div className="lg:col-span-1 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              Drug Catalog
+              {t('drugCatalog')}
             </h2>
           </div>
 
@@ -156,7 +158,7 @@ export default function FormularyManagementPage() {
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
               type="text"
-              placeholder="Search by name or generic..."
+              placeholder={t('searchDrugs')}
               className="w-full pl-9 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -198,7 +200,7 @@ export default function FormularyManagementPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              Active Protocols
+              {t('activeProtocols')}
             </h2>
             <button
               onClick={() => setIsCreatingRule(true)}
@@ -206,7 +208,7 @@ export default function FormularyManagementPage() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <PlusIcon className="w-4 h-4" />
-              Create Rule
+              {t('createRule')}
             </button>
           </div>
 
@@ -219,13 +221,13 @@ export default function FormularyManagementPage() {
             >
               <div className="flex justify-between items-start">
                 <h3 className="font-medium text-blue-900 dark:text-blue-100">
-                  New Protocol for {selectedDrug.name}
+                  {t('newProtocolFor', { name: selectedDrug.name })}
                 </h3>
                 <button
                   onClick={() => setIsCreatingRule(false)}
                   className="text-blue-500 hover:text-blue-700 text-sm"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               </div>
 
@@ -237,7 +239,7 @@ export default function FormularyManagementPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-zinc-500">Rule Type</label>
+                  <label className="text-xs font-medium text-zinc-500">{t('ruleType')}</label>
                   <select
                     className="w-full p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm"
                     value={ruleType}
@@ -251,14 +253,14 @@ export default function FormularyManagementPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-zinc-500">
-                    Preferred Alternative
+                    {t('preferredAlternative')}
                   </label>
                   <select
                     className="w-full p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm"
                     value={preferredDrugId}
                     onChange={(e) => setPreferredDrugId(e.target.value)}
                   >
-                    <option value="">Select alternative...</option>
+                    <option value="">{t('selectAlternative')}</option>
                     {sameClassDrugs.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name} (R$ {(d.marketPrice ?? 0).toFixed(2)})
@@ -271,7 +273,7 @@ export default function FormularyManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-zinc-500">
-                    Est. Savings (R$) per prescription
+                    {t('estSavings')}
                   </label>
                   <input
                     type="number"
@@ -287,11 +289,11 @@ export default function FormularyManagementPage() {
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-zinc-500">
-                  Clinical Rationale (Visible to Doctor)
+                  {t('clinicalRationale')}
                 </label>
                 <textarea
                   className="w-full p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm h-20 resize-none"
-                  placeholder="e.g., First-line therapy requires trial of generic statin..."
+                  placeholder={t('clinicalRationalePlaceholder')}
                   value={clinicalRationale}
                   onChange={(e) => setClinicalRationale(e.target.value)}
                 />
@@ -303,7 +305,7 @@ export default function FormularyManagementPage() {
                   disabled={isSaving}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
                 >
-                  {isSaving ? 'Saving...' : 'Save Protocol'}
+                  {isSaving ? t('saving') : t('saveProtocol')}
                 </button>
               </div>
             </motion.div>
@@ -343,7 +345,7 @@ export default function FormularyManagementPage() {
                   <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     Saves R$ {(rule.costSavingEstimate ?? 0).toFixed(2)}
                   </div>
-                  <div className="text-xs text-zinc-500">per prescription</div>
+                  <div className="text-xs text-zinc-500">{t('perPrescription')}</div>
                 </div>
               </div>
             ))}

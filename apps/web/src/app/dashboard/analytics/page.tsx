@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
-  Users, Stethoscope, FileText, DollarSign,
+  User as Users, Stethoscope, FileText,
   TrendingUp, TrendingDown, Minus,
   Download, Calendar,
 } from 'lucide-react';
+import { DEMO_CLAIMS, DEMO_APPOINTMENTS, getDemoAnalyticsData, getDemoBillingStats } from '@/lib/demo/dashboard-mocks';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,6 +75,8 @@ type UnknownRecord = Record<string, unknown>;
 // ---------------------------------------------------------------------------
 
 function generateMockData(): AnalyticsData {
+  const overview = getDemoAnalyticsData();
+  const billingStats = getDemoBillingStats('BR');
   const chartData: ChartPoint[] = Array.from({ length: 30 }, (_, i) => {
     const day = i + 1;
     const month = day <= 28 ? '02' : '03';
@@ -104,42 +108,41 @@ function generateMockData(): AnalyticsData {
 
   return {
     overview: {
-      totalPatients: 247,
-      activePatients: 186,
-      totalConsultations: 423,
-      totalPrescriptions: 315,
-      revenue: 125430,
-      avgConsultationTime: 32,
+      totalPatients: overview.totalPatients,
+      activePatients: overview.activePatients,
+      totalConsultations: overview.totalConsultations,
+      totalPrescriptions: overview.totalPrescriptions,
+      revenue: overview.revenue,
+      avgConsultationTime: overview.avgConsultationTime,
     },
     trends: {
-      patientsGrowth: 12.5,
-      consultationsGrowth: 8.3,
-      revenueGrowth: 18.7,
+      patientsGrowth: 6.5,
+      consultationsGrowth: 9.1,
+      revenueGrowth: billingStats.approvalRate,
     },
     chartData,
     topDiagnoses: [
-      { code: 'I10', name: 'Essential Hypertension', count: 42 },
-      { code: 'E11.9', name: 'Type 2 Diabetes Mellitus', count: 31 },
-      { code: 'I48.91', name: 'Atrial Fibrillation', count: 24 },
-      { code: 'I50.9', name: 'Heart Failure', count: 19 },
-      { code: 'E78.5', name: 'Dyslipidemia', count: 17 },
-      { code: 'N18.3', name: 'CKD Stage 3', count: 14 },
-      { code: 'I25.10', name: 'Coronary Artery Disease', count: 11 },
-      { code: 'E03.9', name: 'Hypothyroidism', count: 9 },
+      { code: 'I10', name: 'Essential Hypertension', count: 3 },
+      { code: 'I48.91', name: 'Atrial Fibrillation', count: 2 },
+      { code: 'N18.3', name: 'CKD Stage 3', count: 2 },
+      { code: 'I50.9', name: 'Heart Failure', count: 1 },
+      { code: 'E78.5', name: 'Dyslipidemia', count: 1 },
+      { code: 'R07.89', name: 'Chest Tightness', count: 1 },
+      { code: 'R00.2', name: 'Palpitations', count: 1 },
+      { code: 'Z95.5', name: 'History of Coronary Stent', count: 1 },
     ],
     demographics: [
-      { ageGroup: '18-35', count: 38, percentage: 15 },
-      { ageGroup: '36-50', count: 62, percentage: 25 },
-      { ageGroup: '51-65', count: 84, percentage: 34 },
-      { ageGroup: '66-80', count: 48, percentage: 19 },
-      { ageGroup: '80+', count: 15, percentage: 7 },
+      { ageGroup: '18-35', count: 0, percentage: 0 },
+      { ageGroup: '36-50', count: 2, percentage: 33 },
+      { ageGroup: '51-65', count: 2, percentage: 33 },
+      { ageGroup: '66-80', count: 1, percentage: 17 },
+      { ageGroup: '80+', count: 1, percentage: 17 },
     ],
     appointmentTypes: [
-      { type: 'Follow-up Visit', count: 178, percentage: 42 },
-      { type: 'New Patient', count: 89, percentage: 21 },
-      { type: 'Urgent / Same-day', count: 68, percentage: 16 },
-      { type: 'Procedure', count: 51, percentage: 12 },
-      { type: 'Telehealth', count: 37, percentage: 9 },
+      { type: 'Follow-up Visit', count: 3, percentage: 50 },
+      { type: 'New Patient', count: 1, percentage: 17 },
+      { type: 'Urgent / Same-day', count: 1, percentage: 17 },
+      { type: 'Procedure', count: 1, percentage: 16 },
     ],
     heatmap,
   };
@@ -317,7 +320,8 @@ function normalizeAnalyticsData(input: unknown, fallback: AnalyticsData): Analyt
 type TimeRange = '7d' | '30d' | '90d';
 
 export default function AnalyticsPage() {
-  const { t } = useLanguage();
+  const t = useTranslations('dashboard.analytics');
+  const router = useRouter();
   const [data, setData] = useState<AnalyticsData>(() => generateMockData());
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
@@ -373,10 +377,10 @@ export default function AnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div className="header-entrance">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Analytics
+            {t('title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Practice performance metrics and clinical trends
+            {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -385,7 +389,7 @@ export default function AnalyticsPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            {t('exportCsv')}
           </button>
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
             {(['7d', '30d', '90d'] as const).map((r) => (
@@ -408,38 +412,42 @@ export default function AnalyticsPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <KPICard
-          icon={Users} label="Total Patients" value={String(overview.totalPatients)}
-          sub={`${overview.activePatients} active`}
+          icon={Users} label={t('totalPatients')} value={String(overview.totalPatients)}
+          sub={t('active', { count: overview.activePatients })}
           growth={trends.patientsGrowth}
           accent="text-blue-600 dark:text-blue-400" border="border-blue-200/60 dark:border-blue-500/20"
-          iconBg="bg-blue-50 dark:bg-blue-500/10" index={1}
+          iconBg="bg-blue-50 dark:bg-blue-500/10" index={1} onClick={() => router.push('/dashboard/patients')}
+          openLabel={t('open')}
         />
         <KPICard
-          icon={Stethoscope} label="Consultations" value={String(overview.totalConsultations)}
-          sub={`~${overview.avgConsultationTime} min avg`}
+          icon={Stethoscope} label={t('consultations')} value={String(overview.totalConsultations)}
+          sub={t('avgMin', { min: overview.avgConsultationTime })}
           growth={trends.consultationsGrowth}
           accent="text-emerald-600 dark:text-emerald-400" border="border-emerald-200/60 dark:border-emerald-500/20"
-          iconBg="bg-emerald-50 dark:bg-emerald-500/10" index={2}
+          iconBg="bg-emerald-50 dark:bg-emerald-500/10" index={2} onClick={() => router.push('/dashboard/my-day')}
+          openLabel={t('open')}
         />
         <KPICard
-          icon={FileText} label="Prescriptions" value={String(overview.totalPrescriptions)}
-          sub={`${(overview.totalPrescriptions / Math.max(overview.totalConsultations, 1)).toFixed(1)} per visit`}
+          icon={FileText} label={t('prescriptions')} value={String(overview.totalPrescriptions)}
+          sub={t('perVisit', { count: (overview.totalPrescriptions / Math.max(overview.totalConsultations, 1)).toFixed(1) })}
           accent="text-violet-600 dark:text-violet-400" border="border-violet-200/60 dark:border-violet-500/20"
-          iconBg="bg-violet-50 dark:bg-violet-500/10" index={3}
+          iconBg="bg-violet-50 dark:bg-violet-500/10" index={3} onClick={() => router.push('/dashboard/clinical-command')}
+          openLabel={t('open')}
         />
         <KPICard
-          icon={DollarSign} label="Revenue" value={formatCurrency(overview.revenue)}
-          sub="Current period"
+          icon={TrendingUp} label={t('revenue')} value={formatCurrency(overview.revenue)}
+          sub={t('currentPeriod')}
           growth={trends.revenueGrowth}
           accent="text-amber-600 dark:text-amber-400" border="border-amber-200/60 dark:border-amber-500/20"
-          iconBg="bg-amber-50 dark:bg-amber-500/10" index={4}
+          iconBg="bg-amber-50 dark:bg-amber-500/10" index={4} onClick={() => router.push('/dashboard/billing')}
+          openLabel={t('open')}
         />
       </div>
 
       {/* Trend Chart */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.consultationTrend')}</h2>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('consultationTrend')}</h2>
           <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
             <Calendar className="w-3 h-3" />
             Last {timeRange === '7d' ? '7' : timeRange === '30d' ? '30' : '90'} days
@@ -455,7 +463,7 @@ export default function AnalyticsPage() {
         {/* Top Diagnoses */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Top Diagnoses (ICD-10)</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('topDiagnoses')}</h2>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {data.topDiagnoses.slice(0, 6).map((dx, i) => (
@@ -476,7 +484,7 @@ export default function AnalyticsPage() {
         {/* Demographics */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.patientDemographics')}</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('patientDemographics')}</h2>
           </div>
           <div className="px-5 py-4 space-y-3">
             {data.demographics.map((band) => (
@@ -501,23 +509,23 @@ export default function AnalyticsPage() {
         {/* Appointment Types */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.visitTypes')}</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('visitTypes')}</h2>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {data.appointmentTypes.map((t) => (
-              <div key={t.type} className="flex items-center gap-3 px-5 py-3">
+            {data.appointmentTypes.map((apt) => (
+              <div key={apt.type} className="flex items-center gap-3 px-5 py-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-gray-200">{t.type}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200">{apt.type}</p>
                   <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1 mt-1.5">
                     <div
                       className="h-1 rounded-full bg-violet-500 dark:bg-violet-400 transition-all duration-500"
-                      style={{ width: `${t.percentage}%` }}
+                      style={{ width: `${apt.percentage}%` }}
                     />
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-bold tabular-nums text-gray-700 dark:text-gray-300">{t.count}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500">{t.percentage}%</p>
+                  <p className="text-sm font-bold tabular-nums text-gray-700 dark:text-gray-300">{apt.count}</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">{apt.percentage}%</p>
                 </div>
               </div>
             ))}
@@ -528,8 +536,8 @@ export default function AnalyticsPage() {
       {/* Activity Heatmap */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('dashboard.analytics.clinicHeatmap')}</h2>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('dashboard.analytics.heatmapDescription')}</p>
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('clinicHeatmap')}</h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('heatmapDescription')}</p>
         </div>
         <div className="p-5 overflow-x-auto">
           <div className="inline-block min-w-full">
@@ -592,6 +600,8 @@ function KPICard({
   border,
   iconBg,
   index = 1,
+  onClick,
+  openLabel,
 }: {
   icon: React.FC<{ className?: string }>;
   label: string;
@@ -602,9 +612,16 @@ function KPICard({
   border: string;
   iconBg: string;
   index?: number;
+  onClick?: () => void;
+  openLabel?: string;
 }) {
   return (
-    <div className={`rounded-2xl border bg-white dark:bg-gray-900 p-4 overflow-hidden min-w-0 card-entrance card-entrance-${index} hover:scale-[1.02] hover:shadow-md transition-all duration-200 ${border}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-2xl border bg-white dark:bg-gray-900 p-4 overflow-hidden min-w-0 card-entrance card-entrance-${index} hover:scale-[1.02] hover:shadow-md transition-all duration-200 ${border} text-left cursor-pointer`}
+      title={onClick && openLabel ? `${openLabel} ${label}` : label}
+    >
       <div className="flex items-center justify-between mb-2.5">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
           <Icon className={`w-4 h-4 ${accent}`} />
@@ -615,7 +632,10 @@ function KPICard({
         {label}
       </p>
       <p className={`text-base sm:text-xl lg:text-2xl font-bold tabular-nums truncate leading-tight ${accent}`}>{value}</p>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">{sub}</p>
-    </div>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{sub}</p>
+        {onClick && openLabel && <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">{openLabel}</span>}
+      </div>
+    </button>
   );
 }

@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import logger from '@/lib/logger';
 
 const ROLES = ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] as const;
 
@@ -139,14 +140,14 @@ The witness confirms the patient's identity and voluntary consent.
         },
       });
     } catch (error) {
-      console.error('Error creating witnessed consent:', error);
+      logger.error('Error creating witnessed consent:', error);
       return NextResponse.json(
         { error: 'Failed to create witnessed consent' },
         { status: 500 }
       );
     }
   },
-  { roles: [...ROLES] }
+  { roles: [...ROLES], audit: { action: 'CREATE', resource: 'WitnessedConsent' } }
 );
 
 /**
@@ -206,12 +207,12 @@ export const GET = createProtectedRoute(
         },
       });
     } catch (error) {
-      console.error('Error fetching witnessed consent:', error);
+      logger.error('Error fetching witnessed consent:', error);
       return NextResponse.json(
         { error: 'Failed to fetch witnessed consent' },
         { status: 500 }
       );
     }
   },
-  { roles: [...ROLES] }
+  { roles: [...ROLES], audit: { action: 'READ', resource: 'WitnessedConsent' } }
 );

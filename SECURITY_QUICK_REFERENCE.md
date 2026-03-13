@@ -33,9 +33,9 @@ Need to revoke and redact
 ## Exposed Keys to Revoke
 
 ```
-RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"
-DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"
-LOGTAIL_SOURCE_TOKEN="ppRsuAAsrT4hR8Uw8HAY4UCu"
+RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"
+DEID_SECRET="<REDACTED-REVOKE-AND-REGENERATE>"
+LOGTAIL_SOURCE_TOKEN="<REDACTED-REVOKE-AND-REGENERATE>"
 ```
 
 **Plus keys in .env.local (if production):**
@@ -52,7 +52,7 @@ TWILIO_AUTH_TOKEN="[REDACTED]"
 
 ```bash
 # 1. Revoke exposed keys
-# - https://resend.com/api-keys → Revoke re_hvh5qDG6...
+# - https://resend.com/api-keys → Revoke the exposed key
 # - Regenerate DEID_SECRET: openssl rand -hex 32
 
 # 2. Delete backup file

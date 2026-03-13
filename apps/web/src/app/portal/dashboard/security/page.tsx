@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -34,6 +35,7 @@ interface LoginHistory {
 
 export default function SecurityPage() {
   const router = useRouter();
+  const t = useTranslations('portal.security');
   const [loading, setLoading] = useState(true);
   const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
   const [securityEvents, setSecurityEvents] = useState<any[]>([]);

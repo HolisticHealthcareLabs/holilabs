@@ -4,18 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { sendTestNotification } from '@/lib/notifications/send-push';
-import { createPublicRoute } from '@/lib/api/middleware';
 
-export const POST = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Send test push notification
-    const result = await sendTestNotification(session.userId);
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const result = await sendTestNotification(context.session.userId);
 
     if (result.success) {
       return NextResponse.json({
@@ -35,17 +29,6 @@ export const POST = createPublicRoute(
         { status: 500 }
       );
     }
-  } catch (error) {
-    console.error('Test push notification error:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to send test notification',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'CREATE', resource: 'TestPush' } }
 );

@@ -286,11 +286,7 @@ export const PATCH = createProtectedRoute(
       },
     });
 
-    // TODO: Send notification based on status change
-    // - NOTIFIED: Send slot availability notification to patient
-    // - ACCEPTED: Send confirmation and next steps
-    // - DECLINED: Update queue and notify next patient
-    // - CONVERTED: Send appointment confirmation
+    // @todo(waiting-list-notifications): Send status-specific notifications (NOTIFIED/ACCEPTED/DECLINED/CONVERTED)
 
     return NextResponse.json({
       success: true,
@@ -370,7 +366,7 @@ export const DELETE = createProtectedRoute(
       },
     });
 
-    // TODO: Notify patient that they've been removed from waiting list
+    // @todo(waiting-list-notifications): Notify patient of removal from waiting list
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
   Settings,
@@ -70,46 +71,27 @@ const DEFAULT_PREFERENCES: Preferences = {
   },
 };
 
-const NOTIFICATION_TYPES: Array<{
+const NOTIFICATION_TYPE_KEYS: Array<{
   key: keyof Omit<Preferences, 'quietHours'>;
-  label: string;
-  description: string;
+  labelKey: string;
+  descKey: string;
 }> = [
-  {
-    key: 'conditionDetected',
-    label: 'Condición Detectada',
-    description: 'Cuando se detecta una nueva condición preventiva en un paciente',
-  },
-  {
-    key: 'screeningReminder',
-    label: 'Recordatorio de Tamizaje',
-    description: 'Recordatorios antes de la fecha programada de tamizaje',
-  },
-  {
-    key: 'screeningOverdue',
-    label: 'Tamizaje Atrasado',
-    description: 'Cuando un tamizaje supera su fecha límite',
-  },
-  {
-    key: 'screeningResult',
-    label: 'Resultado de Tamizaje',
-    description: 'Cuando llegan resultados de un tamizaje preventivo',
-  },
-  {
-    key: 'planUpdated',
-    label: 'Plan Actualizado',
-    description: 'Cuando se actualiza un plan de prevención',
-  },
+  { key: 'conditionDetected', labelKey: 'conditionDetectedLabel', descKey: 'conditionDetectedDesc' },
+  { key: 'screeningReminder', labelKey: 'screeningReminderLabel', descKey: 'screeningReminderDesc' },
+  { key: 'screeningOverdue', labelKey: 'screeningOverdueLabel', descKey: 'screeningOverdueDesc' },
+  { key: 'screeningResult', labelKey: 'screeningResultLabel', descKey: 'screeningResultDesc' },
+  { key: 'planUpdated', labelKey: 'planUpdatedLabel', descKey: 'planUpdatedDesc' },
 ];
 
 const CHANNEL_CONFIG = [
-  { key: 'in_app' as const, label: 'En App', icon: Monitor },
-  { key: 'push' as const, label: 'Push', icon: Smartphone },
-  { key: 'email' as const, label: 'Email', icon: Mail },
-  { key: 'sms' as const, label: 'SMS', icon: MessageSquare },
+  { key: 'in_app' as const, labelKey: 'inApp', icon: Monitor },
+  { key: 'push' as const, labelKey: 'push', icon: Smartphone },
+  { key: 'email' as const, labelKey: 'email', icon: Mail },
+  { key: 'sms' as const, labelKey: 'sms', icon: MessageSquare },
 ];
 
 export default function PreventionSettingsPage() {
+  const t = useTranslations('portal.preventionSettings');
   const router = useRouter();
   const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES);
   const [quietHours, setQuietHours] = useState<QuietHours>({
@@ -221,7 +203,7 @@ export default function PreventionSettingsPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Cargando preferencias...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('loading')}</p>
         </div>
       </div>
     );
@@ -244,10 +226,10 @@ export default function PreventionSettingsPage() {
                 <Settings className="w-8 h-8 text-gray-600 dark:text-gray-400" />
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Preferencias de Notificaciones
+                    {t('title')}
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Configura cómo y cuándo recibir notificaciones de prevención
+                    {t('subtitle')}
                   </p>
                 </div>
               </div>
@@ -261,12 +243,12 @@ export default function PreventionSettingsPage() {
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Guardando...</span>
+                  <span>{t('saving')}</span>
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Guardar</span>
+                  <span>{t('saveSettings')}</span>
                 </>
               )}
             </button>
@@ -295,16 +277,16 @@ export default function PreventionSettingsPage() {
             <div className="flex items-center space-x-2">
               <Bell className="w-5 h-5 text-blue-600" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Tipos de Notificación
+                {t('notificationTypes')}
               </h2>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Activa o desactiva notificaciones y selecciona los canales para cada tipo
+              {t('channels')}
             </p>
           </div>
 
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {NOTIFICATION_TYPES.map((notifType) => {
+            {NOTIFICATION_TYPE_KEYS.map((notifType) => {
               const pref = preferences[notifType.key];
               return (
                 <div key={notifType.key} className="p-6">
@@ -312,7 +294,7 @@ export default function PreventionSettingsPage() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {notifType.label}
+                          {t(notifType.labelKey)}
                         </h3>
                         <button
                           onClick={() => toggleNotificationType(notifType.key)}
@@ -328,7 +310,7 @@ export default function PreventionSettingsPage() {
                         </button>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {notifType.description}
+                        {t(notifType.descKey)}
                       </p>
                     </div>
                   </div>
@@ -350,7 +332,7 @@ export default function PreventionSettingsPage() {
                             }`}
                           >
                             <Icon className="w-4 h-4" />
-                            <span>{channel.label}</span>
+                            <span>{t(channel.labelKey)}</span>
                           </button>
                         );
                       })}
@@ -369,10 +351,10 @@ export default function PreventionSettingsPage() {
               <Moon className="w-5 h-5 text-indigo-600" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Horas de Silencio
+                  {t('quietHoursTitle')}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-                  Pausar notificaciones durante horarios específicos
+                  {t('quietHoursDesc')}
                 </p>
               </div>
             </div>
@@ -394,7 +376,7 @@ export default function PreventionSettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Hora de Inicio
+                  {t('quietHoursFrom')}
                 </label>
                 <input
                   type="time"
@@ -405,7 +387,7 @@ export default function PreventionSettingsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Hora de Fin
+                  {t('quietHoursTo')}
                 </label>
                 <input
                   type="time"

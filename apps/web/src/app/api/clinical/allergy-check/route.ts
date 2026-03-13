@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-import { createProtectedRoute } from '@/lib/api/middleware';
+import { createProtectedRoute, verifyPatientAccess } from '@/lib/api/middleware';
 
 /**
  * Allergy Contraindication Checker
@@ -48,7 +48,7 @@ interface AllergyAlert {
 }
 
 export const POST = createProtectedRoute(
-  async (request: NextRequest) => {
+  async (request: NextRequest, context: { user?: { id: string } }) => {
     const body = await request.json();
     const { patientId, medications } = body;
 
@@ -57,6 +57,11 @@ export const POST = createProtectedRoute(
         { error: 'Patient ID and medications array are required' },
         { status: 400 }
       );
+    }
+
+    const hasAccess = await verifyPatientAccess(context.user!.id, patientId);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied to this patient record' }, { status: 403 });
     }
 
     // Fetch patient allergies

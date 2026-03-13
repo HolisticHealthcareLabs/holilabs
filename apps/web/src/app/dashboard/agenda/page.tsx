@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { format } from 'date-fns';
@@ -67,6 +68,7 @@ interface AppointmentWithDetails {
 }
 
 export default function AgendaPage() {
+  const t = useTranslations('dashboard.agenda');
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -104,7 +106,7 @@ export default function AgendaPage() {
         setSituations(data.data.situations);
       }
     } catch (error) {
-      console.error('Error fetching situations:', error);
+      console.error('[Agenda]', { event: 'fetch_situations_error', error: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -134,11 +136,11 @@ export default function AgendaPage() {
 
         setAppointments(appointmentsWithDates);
       } else {
-        setError(data.error || 'Error al cargar citas');
+        setError(data.error || t('loadError'));
       }
     } catch (error) {
-      console.error('Error fetching appointments:', error);
-      setError('Error al conectar con el servidor');
+      console.error('[Agenda]', { event: 'fetch_appointments_error', error: error instanceof Error ? error.message : String(error) });
+      setError(t('connectionError'));
     } finally {
       setLoading(false);
     }
@@ -176,8 +178,8 @@ export default function AgendaPage() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Error al actualizar el estado');
+      console.error('[Agenda]', { event: 'update_status_error', error: error instanceof Error ? error.message : String(error) });
+        alert(t('statusUpdateError'));
     }
   };
 
@@ -203,7 +205,7 @@ export default function AgendaPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('✅ Notificación enviada exitosamente');
+        alert(t('notificationSent'));
         // Update follow-up count in local state
         if (followUpNumber > 0) {
           setAppointments((prev) =>
@@ -218,8 +220,8 @@ export default function AgendaPage() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error sending notification:', error);
-      alert('Error al enviar notificación');
+      console.error('[Agenda]', { event: 'send_notification_error', error: error instanceof Error ? error.message : String(error) });
+      alert(t('notificationError'));
     }
   };
 
@@ -257,8 +259,8 @@ export default function AgendaPage() {
       // Refresh appointments
       fetchAppointments();
     } catch (error) {
-      console.error('Error updating situations:', error);
-      alert('Error al actualizar situaciones');
+      console.error('[Agenda]', { event: 'update_situations_error', error: error instanceof Error ? error.message : String(error) });
+      alert(t('situationUpdateError'));
     }
   };
 
@@ -279,13 +281,13 @@ export default function AgendaPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('💰 Notificación de pago enviada exitosamente');
+        alert(t('paymentNotificationSent'));
       } else {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error sending payment notification:', error);
-      alert('Error al enviar notificación de pago');
+      console.error('[Agenda]', { event: 'send_payment_notification_error', error: error instanceof Error ? error.message : String(error) });
+      alert(t('paymentNotificationError'));
     }
   };
 
@@ -294,7 +296,7 @@ export default function AgendaPage() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('loading')}</p>
         </div>
       </div>
     );
@@ -305,13 +307,13 @@ export default function AgendaPage() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl max-w-md">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Error</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('error')}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <button
             onClick={() => fetchAppointments()}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -329,11 +331,11 @@ export default function AgendaPage() {
                 href="/dashboard"
                 className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                ← Back
+                {'← ' + t('back')}
               </Link>
               <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                📅 Agenda
+                {'📅 ' + t('title')}
               </h1>
             </div>
 
@@ -341,7 +343,7 @@ export default function AgendaPage() {
               {/* Quick Stats */}
               <div className="hidden md:flex items-center space-x-6 px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full">
                 <div className="text-center">
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Today</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{t('today')}</div>
                   <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {
                       appointments.filter(
@@ -352,7 +354,7 @@ export default function AgendaPage() {
                 </div>
                 <div className="h-8 w-px bg-gray-300 dark:bg-gray-600" />
                 <div className="text-center">
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Total</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{t('total')}</div>
                   <div className="text-lg font-bold text-gray-900 dark:text-white">
                     {appointments.length}
                   </div>
@@ -364,7 +366,7 @@ export default function AgendaPage() {
                 href="/dashboard/agenda/new"
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all font-semibold"
               >
-                + New
+                {t('newAppointment')}
               </Link>
             </div>
           </div>

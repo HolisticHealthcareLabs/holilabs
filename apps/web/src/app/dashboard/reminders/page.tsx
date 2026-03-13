@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import {
   Calendar, Send, AlertTriangle, Clock,
@@ -26,17 +27,18 @@ interface Stats {
   } | null;
 }
 
-const TAB_CONFIG: Array<{ id: Tab; label: string; Icon: typeof FileText }> = [
-  { id: 'templates', label: 'Templates', Icon: FileText },
-  { id: 'scheduled', label: 'Scheduled', Icon: Calendar },
-  { id: 'sent', label: 'Sent', Icon: CheckCircle2 },
-  { id: 'failed', label: 'Failed', Icon: AlertTriangle },
-];
-
 export default function RemindersPage() {
+  const t = useTranslations('reminders');
   const [activeTab, setActiveTab] = useState<Tab>('templates');
   const [stats, setStats] = useState<Stats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+
+  const TAB_CONFIG: Array<{ id: Tab; label: string; Icon: typeof FileText }> = [
+    { id: 'templates', label: t('tabs.templates'), Icon: FileText },
+    { id: 'scheduled', label: t('tabs.scheduled'), Icon: Calendar },
+    { id: 'sent', label: t('tabs.sent'), Icon: CheckCircle2 },
+    { id: 'failed', label: t('tabs.failed'), Icon: AlertTriangle },
+  ];
 
   useEffect(() => {
     fetchStats();
@@ -50,8 +52,8 @@ export default function RemindersPage() {
       if (data.success) {
         setStats(data.data);
       }
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
+    } catch {
+      // Stats unavailable -- show zeros
     } finally {
       setLoadingStats(false);
     }
@@ -72,10 +74,10 @@ export default function RemindersPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Inbox
+            {t('title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Reminder templates, scheduled messages, and delivery tracking
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -84,7 +86,7 @@ export default function RemindersPage() {
         <div className="rounded-2xl border border-blue-200/60 dark:border-blue-500/20 bg-white dark:bg-gray-900 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Scheduled</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{t('stats.scheduled')}</span>
           </div>
           {loadingStats ? (
             <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -98,7 +100,7 @@ export default function RemindersPage() {
         <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-500/20 bg-white dark:bg-gray-900 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Sent Today</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{t('stats.sentToday')}</span>
           </div>
           {loadingStats ? (
             <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -108,7 +110,7 @@ export default function RemindersPage() {
                 {stats?.sentToday ?? 0}
               </p>
               <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
-                {stats?.successRate ?? 100}% success rate
+                {stats?.successRate ?? 100}% {t('stats.successRate')}
               </p>
             </>
           )}
@@ -117,7 +119,7 @@ export default function RemindersPage() {
         <div className="rounded-2xl border border-red-200/60 dark:border-red-500/20 bg-white dark:bg-gray-900 p-4">
           <div className="flex items-center gap-2 mb-2">
             <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Failed</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{t('stats.failed')}</span>
           </div>
           {loadingStats ? (
             <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -131,7 +133,7 @@ export default function RemindersPage() {
         <div className="rounded-2xl border border-violet-200/60 dark:border-violet-500/20 bg-white dark:bg-gray-900 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Next</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{t('stats.next')}</span>
           </div>
           {loadingStats ? (
             <div className="h-8 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -145,7 +147,7 @@ export default function RemindersPage() {
               </p>
             </>
           ) : (
-            <p className="text-sm text-gray-400 dark:text-gray-500">None scheduled</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500">{t('stats.noneScheduled')}</p>
           )}
         </div>
       </div>

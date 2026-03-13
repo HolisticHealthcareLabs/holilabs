@@ -99,9 +99,6 @@ export default function QuickActionsTile({
   const handleAction = (actionId: string) => {
     if (onAction) {
       onAction(actionId);
-    } else {
-      console.log('Quick action:', actionId);
-      // Handle action default behavior
     }
   };
 

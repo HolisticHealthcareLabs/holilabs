@@ -5,22 +5,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-    const patientId = session.patientId;
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const patientId = context.session.patientId;
 
-    // Fetch lab results
     const labResults = await prisma.labResult.findMany({
       where: {
         patientId,
@@ -42,9 +37,7 @@ export const GET = createPublicRoute(
       },
     });
 
-    // Transform results to match frontend interface
     const transformedResults = labResults.map((result) => {
-      // Parse referenceRange to extract min/max
       let referenceMin = 0;
       let referenceMax = 100;
       if (result.referenceRange) {
@@ -71,7 +64,6 @@ export const GET = createPublicRoute(
       };
     });
 
-    // HIPAA Audit Log: Patient accessed their own lab results
     await createAuditLog({
       action: 'READ',
       resource: 'LabResult',
@@ -89,21 +81,6 @@ export const GET = createPublicRoute(
       results: transformedResults,
       count: transformedResults.length,
     });
-  } catch (error) {
-    logger.error({
-      event: 'portal_lab_results_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar los resultados de laboratorio.',
-        results: [],
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'LabResults' } }
 );

@@ -131,7 +131,7 @@ export function useMicrophoneSTT({
       };
 
       socket.onerror = (e) => {
-        console.error('Deepgram WebSocket error:', e);
+        console.error('[useMicrophoneSTT]', { event: 'deepgram_ws_error', error: String(e) });
         setError('Speech recognition connection error');
         stopListening();
       };
@@ -143,7 +143,7 @@ export function useMicrophoneSTT({
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Microphone access denied';
       setError(msg);
-      console.error('[useMicrophoneSTT] startListening error:', err);
+      console.error('[useMicrophoneSTT]', { event: 'start_listening_error', error: err instanceof Error ? err.message : String(err) });
       stopListening();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,7 +177,7 @@ export function useMicrophoneSTT({
     streamRef.current = null;
 
     if (audioContextRef.current) {
-      audioContextRef.current.close().catch(console.error);
+      audioContextRef.current.close().catch((err) => console.error('[useMicrophoneSTT]', { event: 'audio_context_close_error', error: String(err) }));
     }
     audioContextRef.current = null;
   }, []);

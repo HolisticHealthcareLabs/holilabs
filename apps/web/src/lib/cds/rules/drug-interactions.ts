@@ -230,7 +230,7 @@ export async function checkDrugInteractionsWithAPI(
     const interactions = await rxNavClient.checkMultipleInteractions(medications);
 
     const elapsed = Date.now() - startTime;
-    console.log(`[Drug Interactions] RxNav API returned ${interactions.length} interactions in ${elapsed}ms`);
+    console.error('[DrugInteractions]', { event: 'rxnav_response', count: interactions.length, elapsedMs: elapsed });
 
     // If API returned results, use them
     if (interactions.length > 0) {
@@ -240,7 +240,7 @@ export async function checkDrugInteractionsWithAPI(
     // If no interactions found, still check hardcoded database as supplement
     const fallbackInteractions = checkDrugInteractionsHardcoded(medications);
     if (fallbackInteractions.length > 0) {
-      console.log(`[Drug Interactions] Supplementing with ${fallbackInteractions.length} hardcoded interactions`);
+      console.error('[DrugInteractions]', { event: 'fallback_supplement', count: fallbackInteractions.length });
       return fallbackInteractions;
     }
 

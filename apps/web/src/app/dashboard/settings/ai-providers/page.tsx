@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -103,6 +104,7 @@ const ProviderCardSkeleton: React.FC<{ index: number }> = ({ index }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function AIProvidersSettingsPage() {
+  const t = useTranslations('portal.aiProviders');
   const [workspaceId, setWorkspaceId]               = useState<string | null>(null);
   const [isLoadingWorkspace, setIsLoadingWorkspace]  = useState(true);
   const [isLoadingConfigs,   setIsLoadingConfigs]    = useState(false);
@@ -177,20 +179,25 @@ export default function AIProvidersSettingsPage() {
     setErrors((p) => ({ ...p, [provider]: '' }));
     setSuccess((p) => ({ ...p, [provider]: false }));
 
-    // Fire the persist request but don't block the demo UX on the outcome.
-    // The backend may reject (DB not configured for demo workspace) — the
-    // clinician should always see the optimistic success state.
+    let ok = true;
     try {
-      await fetch('/api/workspace/llm-config', {
+      const response = await fetch('/api/workspace/llm-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ workspaceId, provider, apiKey: key }),
       });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setErrors((p) => ({ ...p, [provider]: toFriendlyError(data.error) }));
+        setSaving((p) => ({ ...p, [provider]: false }));
+        ok = false;
+      }
     } catch {
       // Network error — still apply optimistic update below.
     }
 
-    // Optimistic update: mark provider as configured regardless of backend response.
+    if (!ok) return;
+
     setConfigs((prev) => ({
       ...prev,
       [provider]: {
@@ -234,10 +241,9 @@ export default function AIProvidersSettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <h1 className="text-2xl font-semibold text-white mb-1">AI Providers</h1>
+        <h1 className="text-2xl font-semibold text-white mb-1">{t('title')}</h1>
         <p className="text-slate-400 text-sm mb-8">
-          Configure BYOK keys for your workspace. Keys are encrypted at rest (AES-256-GCM)
-          and never returned as plaintext.
+          {t('encryptionNote')}
         </p>
       </motion.div>
 
@@ -251,7 +257,7 @@ export default function AIProvidersSettingsPage() {
             className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-4 py-3 text-amber-300 text-sm mb-6"
             role="alert"
           >
-            No active workspace. Associate your user with a workspace to configure keys.
+            {t('noWorkspace')}
           </motion.div>
         )}
       </AnimatePresence>
@@ -312,7 +318,7 @@ export default function AIProvidersSettingsPage() {
                           focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800
                         `}
                       >
-                        Revoke
+                        {t('revokeKey')}
                       </button>
                     )}
                   </div>
@@ -329,7 +335,7 @@ export default function AIProvidersSettingsPage() {
                       >
                         <div className="mt-3 flex items-center justify-between gap-3 pt-3 border-t border-slate-700/60">
                           <p className="text-xs text-slate-400">
-                            Confirm revocation of {meta.label} key?
+                            {t('confirmRevoke', { label: meta.label })}
                           </p>
                           <div className="flex gap-2 flex-shrink-0">
                             <button
@@ -342,7 +348,7 @@ export default function AIProvidersSettingsPage() {
                                 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-800
                               `}
                             >
-                              Revoke
+                              {t('revokeKey')}
                             </button>
                             <button
                               onClick={() => setConfirmRevoke(null)}
@@ -354,7 +360,7 @@ export default function AIProvidersSettingsPage() {
                                 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-800
                               `}
                             >
-                              Cancel
+                              {t('cancel')}
                             </button>
                           </div>
                         </div>
@@ -408,7 +414,7 @@ export default function AIProvidersSettingsPage() {
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3V4a10 10 0 100 20v-2a8 8 0 01-8-8z" />
                             </motion.svg>
-                          ) : 'Save'}
+                          ) : t('saveKeyBtn')}
                         </motion.button>
                       </div>
 
@@ -437,7 +443,7 @@ export default function AIProvidersSettingsPage() {
                             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
                               <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            Key saved successfully.
+                            {t('keySaved')}
                           </motion.p>
                         )}
                       </AnimatePresence>
@@ -451,7 +457,7 @@ export default function AIProvidersSettingsPage() {
                           focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-400 rounded
                         `}
                       >
-                        Get API key ↗
+                        {t('getApiKey')}
                       </a>
                     </div>
                   )}

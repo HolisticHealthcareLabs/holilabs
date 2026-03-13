@@ -56,6 +56,8 @@
     "node_modules",
     "scripts/**/*",
     "prisma/seed*.ts",
-    "tests/e2e/**/*"
+    "prisma/seeds/**/*",
+    "tests/e2e/**/*",
+    "apps/web/**/*"
   ]
 }

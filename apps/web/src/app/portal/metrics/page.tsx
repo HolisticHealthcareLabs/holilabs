@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 
 type TrendDirection = 'up' | 'down' | 'stable';
@@ -46,6 +47,7 @@ interface MetricsData {
 }
 
 export default function MetricsPage() {
+  const t = useTranslations('portal.metricsPage');
   const [data, setData] = useState<MetricsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,12 +64,12 @@ export default function MetricsPage() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Error al cargar métricas');
+        throw new Error(result.error || t('errorTitle'));
       }
 
       setData(result.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('errorTitle'));
     } finally {
       setLoading(false);
     }
@@ -160,7 +162,7 @@ export default function MetricsPage() {
               />
             </svg>
           </div>
-          <p className="text-gray-600 dark:text-gray-300 font-medium">Cargando métricas...</p>
+          <p className="text-gray-600 dark:text-gray-300 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -186,14 +188,14 @@ export default function MetricsPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
-            Error al cargar
+            {t('errorTitle')}
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">{error}</p>
           <button
             onClick={() => fetchMetrics()}
             className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
           >
-            Reintentar
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -208,10 +210,10 @@ export default function MetricsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Mis Métricas de Salud
+            {t('title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Monitorea tus signos vitales y tendencias de salud
+            {t('subtitle')}
           </p>
         </div>
 
@@ -228,12 +230,12 @@ export default function MetricsPage() {
               }`}
             >
               {days === 7
-                ? 'Última semana'
+                ? t('lastWeek')
                 : days === 14
-                  ? '2 semanas'
+                  ? t('twoWeeks')
                   : days === 30
-                    ? 'Último mes'
-                    : '3 meses'}
+                    ? t('lastMonth')
+                    : t('threeMonths')}
             </button>
           ))}
         </div>
@@ -257,10 +259,10 @@ export default function MetricsPage() {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              No hay datos de métricas
+              {t('noData')}
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Los signos vitales se registran durante tus consultas médicas.
+              {t('noDataDesc')}
             </p>
           </div>
         ) : (
@@ -289,7 +291,7 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Presión Arterial</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('bloodPressure')}</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.bloodPressure.systolic || '-'}/
                         {data?.summary.bloodPressure.diastolic || '-'}
@@ -325,7 +327,7 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Frecuencia Cardíaca</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('heartRate')}</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.heartRate.value || '-'}
                       </p>
@@ -360,7 +362,7 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Temperatura</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('temperature')}</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.temperature.value || '-'}
                       </p>
@@ -395,7 +397,7 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Saturación O₂</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('oxygenSat')}</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.oxygenSaturation.value || '-'}
                       </p>
@@ -422,7 +424,7 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Frecuencia Resp.</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('respiratoryRate')}</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.respiratoryRate.value || '-'}
                       </p>
@@ -449,7 +451,7 @@ export default function MetricsPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Peso</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{t('weight')}</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {data?.summary.weight.value || '-'}
                       </p>
@@ -465,26 +467,20 @@ export default function MetricsPage() {
             {/* Info Card */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
               <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">
-                📊 Sobre tus métricas
+                {t('aboutTitle')}
               </h3>
               <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 dark:text-blue-400">•</span>
-                  <span>
-                    Los signos vitales se registran durante tus consultas médicas
-                  </span>
+                  <span>{t('tip1')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 dark:text-blue-400">•</span>
-                  <span>
-                    Las tendencias te ayudan a ver cómo evoluciona tu salud
-                  </span>
+                  <span>{t('tip2')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 dark:text-blue-400">•</span>
-                  <span>
-                    Consulta con tu médico si notas cambios significativos
-                  </span>
+                  <span>{t('tip3')}</span>
                 </li>
               </ul>
             </div>

@@ -293,7 +293,7 @@ export const POST = createProtectedRoute(
       // ============================================================================
       try {
         // @ts-ignore - dataQualityEvent model not yet in Prisma schema
-        await prisma.dataQualityEvent.createMany({
+        await (prisma as any).dataQualityEvent.createMany({
           data: validationErrors.map(error => ({
             source: 'FHIR_R4_IMPORT',
             errorType: 'FHIR_VALIDATION_ERROR',
@@ -366,7 +366,7 @@ export const POST = createProtectedRoute(
       // ============================================================================
       try {
         // @ts-ignore - dataQualityEvent model not yet in Prisma schema
-        await prisma.dataQualityEvent.create({
+        await (prisma as any).dataQualityEvent.create({
           data: {
             source: 'FHIR_R4_IMPORT',
             errorType: 'FHIR_MAPPING_ERROR',
@@ -406,7 +406,7 @@ export const POST = createProtectedRoute(
       // ============================================================================
       try {
         // @ts-ignore - dataQualityEvent model not yet in Prisma schema
-        await prisma.dataQualityEvent.create({
+        await (prisma as any).dataQualityEvent.create({
           data: {
             source: 'FHIR_R4_IMPORT',
             errorType: 'FHIR_MAPPING_ERROR',

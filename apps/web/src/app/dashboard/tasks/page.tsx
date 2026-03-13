@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import TaskManagementPanel from '@/components/tasks/TaskManagementPanel';
 
 interface TaskStats {
@@ -12,6 +13,7 @@ interface TaskStats {
 }
 
 export default function TasksPage() {
+  const t = useTranslations('dashboard.tasks');
   const [stats, setStats] = useState<TaskStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,8 +41,8 @@ export default function TasksPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Task Management</h1>
-          <p className="text-gray-600">Manage your daily tasks and priorities</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Statistics Cards */}
@@ -58,11 +60,11 @@ export default function TasksPage() {
                 className="bg-white rounded-xl shadow-lg p-6 border border-blue-100"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-600">Total Pending</h3>
+                  <h3 className="text-sm font-medium text-gray-600">{t('totalPending')}</h3>
                   <span className="text-2xl">📋</span>
                 </div>
                 <p className="text-3xl font-bold text-blue-600">{stats?.totalPending || 0}</p>
-                <p className="text-xs text-gray-500 mt-2">Active tasks</p>
+                <p className="text-xs text-gray-500 mt-2">{t('activeTasks')}</p>
               </motion.div>
 
               <motion.div
@@ -72,11 +74,11 @@ export default function TasksPage() {
                 className="bg-white rounded-xl shadow-lg p-6 border border-red-100"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-600">Urgent</h3>
+                  <h3 className="text-sm font-medium text-gray-600">{t('urgent')}</h3>
                   <span className="text-2xl">🔴</span>
                 </div>
                 <p className="text-3xl font-bold text-red-600">{stats?.urgent || 0}</p>
-                <p className="text-xs text-gray-500 mt-2">Requires immediate attention</p>
+                <p className="text-xs text-gray-500 mt-2">{t('requiresAttention')}</p>
               </motion.div>
 
               <motion.div
@@ -86,11 +88,11 @@ export default function TasksPage() {
                 className="bg-white rounded-xl shadow-lg p-6 border border-green-100"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-600">Due Today</h3>
+                  <h3 className="text-sm font-medium text-gray-600">{t('dueToday')}</h3>
                   <span className="text-2xl">📅</span>
                 </div>
                 <p className="text-3xl font-bold text-green-600">{stats?.dueToday || 0}</p>
-                <p className="text-xs text-gray-500 mt-2">Tasks due today</p>
+                <p className="text-xs text-gray-500 mt-2">{t('tasksDueToday')}</p>
               </motion.div>
 
               <motion.div
@@ -100,11 +102,11 @@ export default function TasksPage() {
                 className="bg-white rounded-xl shadow-lg p-6 border border-orange-100"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-600">Overdue</h3>
+                  <h3 className="text-sm font-medium text-gray-600">{t('overdue')}</h3>
                   <span className="text-2xl">⚠️</span>
                 </div>
                 <p className="text-3xl font-bold text-orange-600">{stats?.overdue || 0}</p>
-                <p className="text-xs text-gray-500 mt-2">Past due date</p>
+                <p className="text-xs text-gray-500 mt-2">{t('pastDueDate')}</p>
               </motion.div>
             </>
           )}
@@ -122,27 +124,27 @@ export default function TasksPage() {
           transition={{ delay: 0.5 }}
           className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6"
         >
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 Quick Tips</h3>
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 {t('quickTips')}</h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>Priority Colors:</strong> Red (Urgent), Orange (High), Blue (Normal), Gray (Low)</span>
+              <span>{t('tipPriority')}</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>Start:</strong> Mark a task as "In Progress" to track active work</span>
+              <span>{t('tipStart')}</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>Complete:</strong> Mark tasks as done when finished</span>
+              <span>{t('tipComplete')}</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>Dismiss:</strong> Remove tasks that are no longer relevant</span>
+              <span>{t('tipDismiss')}</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2">•</span>
-              <span><strong>Auto-generated:</strong> Some tasks are automatically created by the system based on patient activity</span>
+              <span>{t('tipAutoGenerated')}</span>
             </li>
           </ul>
         </motion.div>

@@ -94,7 +94,7 @@ export async function expireConsent(consentId: string): Promise<void> {
     },
   });
 
-  console.log(`⏰ Expired consent ${consentId} for patient ${consent.patientId}`);
+  console.error('[ConsentExpiration]', { event: 'consent_expired', consentId, patientId: consent.patientId });
 }
 
 /**

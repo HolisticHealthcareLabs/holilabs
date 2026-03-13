@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { reviewQueueService } from '@/lib/services/review-queue.service';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,7 +72,7 @@ export const PATCH = createProtectedRoute(
         data: item,
       });
     } catch (error) {
-      console.error('Error updating review queue item:', error);
+      logger.error('Error updating review queue item:', error);
       return safeErrorResponse(error, { userMessage: 'Failed to update review queue item' });
     }
   },

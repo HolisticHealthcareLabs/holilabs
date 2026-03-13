@@ -4,18 +4,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 import { parse, addMinutes, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
+import logger from '@/lib/logger';
 
 const bookingSchema = z.object({
   clinicianId: z.string().cuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
-  time: z.string().regex(/^\d{2}:\d{2}$/), // HH:mm
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
   type: z.enum(['IN_PERSON', 'TELEHEALTH', 'PHONE']),
   reason: z.string().min(3).max(500),
   notes: z.string().max(1000).optional(),
@@ -23,19 +23,28 @@ const bookingSchema = z.object({
 
 const APPOINTMENT_DURATION_MINUTES = 30;
 
-export const POST = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse request body
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const body = await request.json();
-    const validated = bookingSchema.parse(body);
 
-    // Get patient info
+    try {
+      var validated = bookingSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid booking data',
+            details: error.errors,
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+
     const patient = await prisma.patient.findUnique({
-      where: { id: session.patientId },
+      where: { id: context.session.patientId },
       select: {
         id: true,
         firstName: true,
@@ -52,7 +61,6 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Get clinician info
     const clinician = await prisma.user.findUnique({
       where: { id: validated.clinicianId },
       select: {
@@ -71,7 +79,6 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Parse datetime
     const startTime = parse(
       `${validated.date} ${validated.time}`,
       'yyyy-MM-dd HH:mm',
@@ -79,7 +86,6 @@ export const POST = createPublicRoute(
     );
     const endTime = addMinutes(startTime, APPOINTMENT_DURATION_MINUTES);
 
-    // Check if slot is still available (race condition protection)
     const conflictingAppointment = await prisma.appointment.findFirst({
       where: {
         clinicianId: validated.clinicianId,
@@ -119,7 +125,6 @@ export const POST = createPublicRoute(
       );
     }
 
-    // Generate title based on type
     const typeLabels = {
       IN_PERSON: 'Consulta Presencial',
       TELEHEALTH: 'Consulta Virtual',
@@ -128,10 +133,9 @@ export const POST = createPublicRoute(
 
     const title = `${typeLabels[validated.type]} - ${validated.reason}`;
 
-    // Create appointment
     const appointment = await prisma.appointment.create({
       data: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         clinicianId: validated.clinicianId,
         title,
         description: validated.notes || null,
@@ -160,10 +164,9 @@ export const POST = createPublicRoute(
       },
     });
 
-    // Create audit log
     await prisma.auditLog.create({
       data: {
-        userId: session.userId,
+        userId: context.session.userId,
         userEmail: patient.email,
         action: 'CREATE',
         resource: 'Appointment',
@@ -179,15 +182,13 @@ export const POST = createPublicRoute(
       },
     });
 
-    // Format date for notifications
     const formattedDate = format(startTime, "EEEE, d 'de' MMMM 'a las' HH:mm", {
       locale: es,
     });
 
-    // Send confirmation notification to patient
     await prisma.notification.create({
       data: {
-        recipientId: session.patientId,
+        recipientId: context.session.patientId,
         recipientType: 'PATIENT',
         type: 'APPOINTMENT_CONFIRMED',
         title: 'Cita confirmada',
@@ -198,7 +199,6 @@ export const POST = createPublicRoute(
       },
     });
 
-    // Send notification to clinician
     await prisma.notification.create({
       data: {
         recipientId: clinician.id,
@@ -212,11 +212,9 @@ export const POST = createPublicRoute(
       },
     });
 
-    // Track analytics events (NO PHI!)
-    // Track from patient's perspective
     await trackEvent(
       ServerAnalyticsEvents.PORTAL_APPOINTMENT_BOOKED,
-      session.userId,
+      context.session.userId,
       {
         type: validated.type,
         hasNotes: !!validated.notes,
@@ -224,7 +222,6 @@ export const POST = createPublicRoute(
       }
     );
 
-    // Track from clinician's perspective
     await trackEvent(
       ServerAnalyticsEvents.APPOINTMENT_CREATED,
       clinician.id,
@@ -253,28 +250,6 @@ export const POST = createPublicRoute(
       },
       message: 'Appointment booked successfully',
     });
-  } catch (error) {
-    console.error('Appointment booking error:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid booking data',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to book appointment',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'CREATE', resource: 'Appointment' } }
 );

@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import WaitingRoom from '@/components/video/WaitingRoom';
 import VideoRoom from '@/components/video/VideoRoom';
@@ -27,6 +28,7 @@ export default function PatientVideoCallPage({
 }: {
   params: Promise<{ appointmentId: string }>;
 }) {
+  const t = useTranslations('portal.video');
   const resolvedParams = use(params);
   const [isInCall, setIsInCall] = useState(false);
   const [appointmentData, setAppointmentData] = useState<AppointmentData | null>(null);
@@ -41,12 +43,12 @@ export default function PatientVideoCallPage({
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch appointment');
+          throw new Error(data.error || t('loadError'));
         }
 
         setAppointmentData(data.data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load appointment');
+        setError(err instanceof Error ? err.message : t('loadError'));
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +72,7 @@ export default function PatientVideoCallPage({
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando cita...</p>
+          <p className="text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -87,7 +89,7 @@ export default function PatientVideoCallPage({
             </svg>
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">Error</h3>
-          <p className="text-gray-600 mb-6">{error || 'No se pudo cargar la cita'}</p>
+          <p className="text-gray-600 mb-6">{error || t('loadError')}</p>
           <button
             onClick={() => router.push('/portal/appointments')}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"

@@ -17,6 +17,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface Message {
   id: string;
@@ -42,6 +43,7 @@ interface GeneratedForm {
 }
 
 export default function AIFormCreatorPage() {
+  const t = useTranslations('dashboard.aiFormCreator');
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -87,7 +89,6 @@ export default function AIFormCreatorPage() {
     setIsLoading(true);
 
     try {
-      // Call AI endpoint to get response and form generation
       const response = await fetch('/api/ai/forms/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,7 +110,6 @@ export default function AIFormCreatorPage() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // If AI generated a complete form, show it
       if (data.generatedForm) {
         setGeneratedForm(data.generatedForm);
         setShowPreview(true);
@@ -119,7 +119,7 @@ export default function AIFormCreatorPage() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'system',
-        content: '❌ Error al comunicarse con el asistente. Por favor, intenta de nuevo.',
+        content: `❌ ${t('commError')}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -154,25 +154,21 @@ export default function AIFormCreatorPage() {
 
       if (!response.ok) throw new Error('Failed to save template');
 
-      const data = await response.json();
-
-      // Show success message
       const successMessage: Message = {
         id: Date.now().toString(),
         role: 'system',
-        content: `✅ ¡Formulario "${generatedForm.title}" guardado exitosamente!\n\nAhora puedes enviarlo a tus pacientes desde la página de formularios.`,
+        content: `✅ ${t('savedSuccess', { title: generatedForm.title })}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, successMessage]);
       setShowPreview(false);
 
-      // Redirect after 2 seconds
       setTimeout(() => {
         router.push('/dashboard/forms');
       }, 2000);
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Error al guardar el formulario. Por favor, intenta de nuevo.');
+      alert(t('saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -195,10 +191,10 @@ export default function AIFormCreatorPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <span>🤖</span>
-                <span>Asistente AI de Formularios</span>
+                <span>{t('title')}</span>
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                Crea formularios personalizados de manera conversacional
+                {t('subtitle')}
               </p>
             </div>
           </div>
@@ -207,7 +203,7 @@ export default function AIFormCreatorPage() {
               onClick={() => setShowPreview(!showPreview)}
               className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
             >
-              {showPreview ? '💬 Ver Chat' : '👁️ Ver Formulario'}
+              {showPreview ? `💬 ${t('viewChat')}` : `👁️ ${t('viewForm')}`}
             </button>
           )}
         </div>
@@ -243,12 +239,12 @@ export default function AIFormCreatorPage() {
                         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                           AI
                         </div>
-                        <span className="text-xs text-gray-500 font-medium">Asistente</span>
+                        <span className="text-xs text-gray-500 font-medium">{t('assistant')}</span>
                       </div>
                     )}
                     <div className="whitespace-pre-wrap">{message.content}</div>
                     <div className={`text-xs mt-2 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-400'}`}>
-                      {message.timestamp.toLocaleTimeString('es-MX', {
+                      {message.timestamp.toLocaleTimeString(undefined, {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -292,7 +288,7 @@ export default function AIFormCreatorPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Describe el formulario que necesitas..."
+                  placeholder={t('inputPlaceholder')}
                   disabled={isLoading}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
                 />
@@ -302,11 +298,11 @@ export default function AIFormCreatorPage() {
                 disabled={!input.trim() || isLoading}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/30 font-medium"
               >
-                {isLoading ? '...' : 'Enviar'}
+                {isLoading ? '...' : t('send')}
               </button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              💡 Tip: Sé específico sobre el tipo de información que necesitas recopilar
+              💡 {t('tip')}
             </p>
           </div>
         </div>
@@ -316,13 +312,13 @@ export default function AIFormCreatorPage() {
           <div className="w-full lg:w-1/2 border-l border-gray-200 bg-white overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Vista Previa del Formulario</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('formPreview')}</h2>
                 <button
                   onClick={handleSaveTemplate}
                   disabled={isSaving}
                   className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-green-600/30 font-medium"
                 >
-                  {isSaving ? '💾 Guardando...' : '💾 Guardar Template'}
+                  {isSaving ? `💾 ${t('saving')}` : `💾 ${t('saveTemplate')}`}
                 </button>
               </div>
 
@@ -354,7 +350,7 @@ export default function AIFormCreatorPage() {
                         />
                       ) : field.type === 'select' ? (
                         <select className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" disabled>
-                          <option>Seleccionar...</option>
+                          <option>{t('selectOption')}</option>
                           {field.options?.map((opt, idx) => (
                             <option key={idx}>{opt}</option>
                           ))}

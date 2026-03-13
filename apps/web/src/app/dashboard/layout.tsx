@@ -20,7 +20,7 @@ import {
   Users,
   Inbox,
   Activity,
-  FileCheck,
+  FileText,
   BarChart3,
   ShieldCheck,
   Settings2,
@@ -75,10 +75,29 @@ const DASHBOARD_MODULE_PRELOADERS = [
 function DashboardBrand({
   showWordmark = true,
   className = '',
+  isEphemeral = false,
 }: {
   showWordmark?: boolean;
   className?: string;
+  isEphemeral?: boolean;
 }) {
+  if (isEphemeral) {
+    return (
+      <Link href="/dashboard/my-day" className={`flex min-w-0 items-center gap-2.5 ${className}`.trim()}>
+        <img
+          src="/demo/hospital-logo.png"
+          alt="Hospital Demo"
+          className="h-7 w-auto shrink-0 object-contain dark:brightness-0 dark:invert"
+        />
+        {showWordmark && (
+          <span className="whitespace-nowrap text-sm font-semibold leading-none tracking-[-0.02em]">
+            Hospital Demo
+          </span>
+        )}
+      </Link>
+    );
+  }
+
   return (
     <Link href="/dashboard/my-day" className={`flex min-w-0 items-center gap-2 ${className}`.trim()}>
       <svg
@@ -140,6 +159,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const sidebarPeekCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isLaunchingEncounter, setIsLaunchingEncounter] = useState(false);
+  const [isEphemeral, setIsEphemeral] = useState(false);
   const { locale, t } = useLanguage();
   const { usageStats, bumpUsage, getMostUsed } = useToolUsageTracker();
   const hasWarmedDashboardModulesRef = useRef(false);
@@ -196,6 +216,17 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     syncViewportState();
     window.addEventListener('resize', syncViewportState);
     return () => window.removeEventListener('resize', syncViewportState);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/workspace/current')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.isEphemeral) setIsEphemeral(true);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -318,6 +349,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    let cancelled = false;
+    fetch('/api/workspace/current')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.isEphemeral) setIsEphemeral(true);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [status]);
+
   const sidebarGroups: SidebarNavGroup[] = [
     {
       heading: t('dashboard.sidebar.clinicalWorkspace'),
@@ -332,7 +375,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       heading: t('dashboard.sidebar.revenueOps'),
       items: [
         { key: 'command-center', label: t('dashboard.sidebar.commandCenter'), href: '/dashboard/command-center', icon: Activity },
-        { key: 'claims-intelligence', label: t('dashboard.sidebar.claimsIntelligence'), href: '/dashboard/billing', icon: FileCheck },
+        { key: 'claims-intelligence', label: t('dashboard.sidebar.claimsIntelligence'), href: '/dashboard/billing', icon: FileText },
         { key: 'analytics', label: t('dashboard.sidebar.analytics'), href: '/dashboard/analytics', icon: BarChart3 },
       ],
     },
@@ -423,6 +466,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <DashboardBrand
                   showWordmark
                   className="text-gray-900 dark:text-white"
+                  isEphemeral={isEphemeral}
                 />
               ) : (
                 <div className="w-8 h-8" aria-hidden="true" />
@@ -436,8 +480,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   }
                 }}
                 className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-                title={showCollapsedSidebar ? 'Expand sidebar' : 'Collapse sidebar'}
-                aria-label={showCollapsedSidebar ? 'Expand sidebar' : 'Close sidebar'}
+                title={showCollapsedSidebar ? t('dashboard.sidebar.expandSidebar') : t('dashboard.sidebar.collapseSidebar')}
+                aria-label={showCollapsedSidebar ? t('dashboard.sidebar.expandSidebar') : t('dashboard.sidebar.closeSidebar')}
               >
                 {showCollapsedSidebar ? (
                   <PanelLeftOpen className="w-4 h-4" />
@@ -455,7 +499,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   <button
                     type="button"
                     onClick={handleStartEncounter}
-                    aria-label="Start Visit"
+                    aria-label={t('dashboard.sidebar.startVisit')}
                     className={`
                       inline-flex items-center justify-center
                       bg-gray-900 text-white dark:bg-white dark:text-gray-900
@@ -494,15 +538,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         : 'w-full rounded-xl px-2.5 py-2'
                       }
                     `}
-                    aria-label="Search Patients"
+                    aria-label={t('dashboard.sidebar.searchPatients')}
                   >
                     <Search className="w-4 h-4 shrink-0" />
-                    {!showCollapsedSidebar && <span className="text-[13px] flex-1 text-left truncate">Search Patients...</span>}
+                    {!showCollapsedSidebar && <span className="text-[13px] flex-1 text-left truncate">{t('dashboard.sidebar.searchPatients')}</span>}
                   </button>
                   {showCollapsedSidebar && (
                     <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[60] opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
                       <div className="whitespace-nowrap rounded-lg bg-gray-900 dark:bg-gray-700 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg">
-                        Search Patients
+                        {t('dashboard.sidebar.searchPatients')}
                       </div>
                     </div>
                   )}
@@ -689,16 +733,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         {/* Main Content */}
         <div className={(showCollapsedSidebar ? 'lg:pl-[68px]' : 'lg:pl-[248px]') + ' min-h-[100dvh] flex flex-col bg-white dark:bg-gray-950'}>
           {/* Top Mobile Header */}
-          <header className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
+          <header className="lg:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800/50 sticky top-0 z-30 shadow-sm dark:shadow-none">
             <div className="flex items-center justify-between h-16 px-4">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                aria-label="Open navigation menu"
+                className="p-2 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.10] rounded-lg transition-colors"
+                aria-label={t('dashboard.sidebar.openNavigation')}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <PanelLeftOpen className="w-5 h-5" />
               </button>
               <div className="flex-1" aria-hidden="true" />
               <div className="flex items-center gap-2">
@@ -714,7 +756,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Desktop Header */}
-          <header className="hidden lg:block bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-30">
+          <header className="hidden lg:block bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800/50 shadow-sm dark:shadow-none sticky top-0 z-30">
             <div className="flex items-center justify-between h-14 px-6">
               {/* Role badge */}
               <div className="flex items-center gap-2">

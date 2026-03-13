@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 
 // Field Types
@@ -53,33 +54,34 @@ interface FormTemplate {
 }
 
 const FIELD_TYPES: { type: FieldType; label: string; icon: string; description: string }[] = [
-  { type: 'text', label: 'Texto Corto', icon: '📝', description: 'Línea simple de texto' },
-  { type: 'textarea', label: 'Texto Largo', icon: '📄', description: 'Múltiples líneas de texto' },
-  { type: 'select', label: 'Selección Única', icon: '📋', description: 'Lista desplegable' },
-  { type: 'checkbox', label: 'Casillas', icon: '☑️', description: 'Múltiples opciones' },
-  { type: 'radio', label: 'Opción Única', icon: '🔘', description: 'Una de varias opciones' },
-  { type: 'date', label: 'Fecha', icon: '📅', description: 'Selector de fecha' },
-  { type: 'number', label: 'Número', icon: '🔢', description: 'Valor numérico' },
-  { type: 'email', label: 'Email', icon: '📧', description: 'Dirección de correo' },
-  { type: 'phone', label: 'Teléfono', icon: '📞', description: 'Número telefónico' },
-  { type: 'file', label: 'Archivo', icon: '📎', description: 'Carga de archivos' },
+  { type: 'text', label: 'shortText', icon: '📝', description: 'shortTextDesc' },
+  { type: 'textarea', label: 'longText', icon: '📄', description: 'longTextDesc' },
+  { type: 'select', label: 'singleSelect', icon: '📋', description: 'singleSelectDesc' },
+  { type: 'checkbox', label: 'checkboxes', icon: '☑️', description: 'checkboxesDesc' },
+  { type: 'radio', label: 'singleOption', icon: '🔘', description: 'singleOptionDesc' },
+  { type: 'date', label: 'date', icon: '📅', description: 'dateDesc' },
+  { type: 'number', label: 'number', icon: '🔢', description: 'numberDesc' },
+  { type: 'email', label: 'emailField', icon: '📧', description: 'emailFieldDesc' },
+  { type: 'phone', label: 'phoneField', icon: '📞', description: 'phoneFieldDesc' },
+  { type: 'file', label: 'fileField', icon: '📎', description: 'fileFieldDesc' },
 ];
 
 const CATEGORIES = [
-  { value: 'CONSENT', label: 'Consentimiento' },
-  { value: 'HIPAA_AUTHORIZATION', label: 'HIPAA' },
-  { value: 'MEDICAL_HISTORY', label: 'Historia Médica' },
-  { value: 'TREATMENT_CONSENT', label: 'Consentimiento de Tratamiento' },
-  { value: 'FINANCIAL_AGREEMENT', label: 'Acuerdo Financiero' },
-  { value: 'INSURANCE_INFORMATION', label: 'Información de Seguro' },
-  { value: 'REFERRAL', label: 'Referencia' },
-  { value: 'CUSTOM', label: 'Personalizado' },
+  { value: 'CONSENT', label: 'consent' },
+  { value: 'HIPAA_AUTHORIZATION', label: 'hipaa' },
+  { value: 'MEDICAL_HISTORY', label: 'medicalHistory' },
+  { value: 'TREATMENT_CONSENT', label: 'treatmentConsent' },
+  { value: 'FINANCIAL_AGREEMENT', label: 'financialAgreement' },
+  { value: 'INSURANCE_INFORMATION', label: 'insuranceInfo' },
+  { value: 'REFERRAL', label: 'referralCat' },
+  { value: 'CUSTOM', label: 'custom' },
 ];
 
 export default function FormBuilderPage() {
   const router = useRouter();
+  const t = useTranslations('dashboard.formBuilder');
   const [template, setTemplate] = useState<FormTemplate>({
-    title: 'Nuevo Formulario',
+    title: '',
     description: '',
     category: 'CUSTOM',
     estimatedMinutes: 10,
@@ -96,11 +98,11 @@ export default function FormBuilderPage() {
     const newField: FormField = {
       id: `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
-      label: `${FIELD_TYPES.find(ft => ft.type === type)?.label} ${template.fields.length + 1}`,
+      label: `${t(FIELD_TYPES.find(ft => ft.type === type)?.label ?? '')} ${template.fields.length + 1}`,
       placeholder: '',
       helpText: '',
       required: false,
-      options: type === 'select' || type === 'checkbox' || type === 'radio' ? ['Opción 1', 'Opción 2'] : undefined,
+      options: type === 'select' || type === 'checkbox' || type === 'radio' ? [t('optionN', { n: 1 }), t('optionN', { n: 2 })] : undefined,
     };
 
     setTemplate(prev => ({
@@ -140,7 +142,7 @@ export default function FormBuilderPage() {
     const duplicated: FormField = {
       ...field,
       id: `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      label: `${field.label} (copia)`,
+      label: `${field.label} ${t('copyLabel')}`,
     };
 
     const fieldIndex = template.fields.findIndex(f => f.id === field.id);
@@ -153,12 +155,12 @@ export default function FormBuilderPage() {
   // Save template
   const saveTemplate = async () => {
     if (!template.title.trim()) {
-      alert('Por favor, ingresa un título para el formulario');
+      alert(t('alertTitleRequired'));
       return;
     }
 
     if (template.fields.length === 0) {
-      alert('Por favor, agrega al menos un campo al formulario');
+      alert(t('alertFieldsRequired'));
       return;
     }
 
@@ -182,7 +184,7 @@ export default function FormBuilderPage() {
       router.push('/dashboard/forms?success=created');
     } catch (error) {
       console.error('Error saving template:', error);
-      alert('Error al guardar el formulario. Por favor, intenta de nuevo.');
+      alert(t('alertSaveError'));
     } finally {
       setIsSaving(false);
     }
@@ -213,10 +215,10 @@ export default function FormBuilderPage() {
                 value={template.title}
                 onChange={(e) => setTemplate(prev => ({ ...prev, title: e.target.value }))}
                 className="text-2xl font-bold text-gray-900 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 -ml-2"
-                placeholder="Nombre del formulario"
+                placeholder={t('formNamePlaceholder')}
               />
               <p className="text-sm text-gray-500 mt-0.5 ml-2">
-                {template.fields.length} campos • ~{template.estimatedMinutes} min
+                {t('fieldsAndTime', { count: template.fields.length, minutes: template.estimatedMinutes })}
               </p>
             </div>
           </div>
@@ -226,7 +228,7 @@ export default function FormBuilderPage() {
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
             >
               <span>{showPreview ? '✏️' : '👁️'}</span>
-              <span>{showPreview ? 'Editar' : 'Vista Previa'}</span>
+              <span>{showPreview ? t('edit') : t('preview')}</span>
             </button>
             <Button
               onClick={saveTemplate}
@@ -234,7 +236,7 @@ export default function FormBuilderPage() {
               disabled={isSaving}
               size="md"
             >
-              {isSaving ? 'Guardando...' : '💾 Guardar Formulario'}
+              {isSaving ? t('saving') : `💾 ${t('saveForm')}`}
             </Button>
           </div>
         </div>
@@ -250,34 +252,34 @@ export default function FormBuilderPage() {
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <span>⚙️</span>
-                  <span>Configuración</span>
+                  <span>{t('settings')}</span>
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Categoría</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{t('category')}</label>
                     <select
                       value={template.category}
                       onChange={(e) => setTemplate(prev => ({ ...prev, category: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       {CATEGORIES.map(cat => (
-                        <option key={cat.value} value={cat.value}>{cat.label}</option>
+                        <option key={cat.value} value={cat.value}>{t(cat.label)}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{t('description')}</label>
                     <textarea
                       value={template.description}
                       onChange={(e) => setTemplate(prev => ({ ...prev, description: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={2}
-                      placeholder="Describe el propósito de este formulario..."
+                      placeholder={t('descriptionPlaceholder')}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Tiempo estimado (minutos)
+                      {t('estimatedMinutes')}
                     </label>
                     <input
                       type="number"
@@ -295,7 +297,7 @@ export default function FormBuilderPage() {
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <span>🧩</span>
-                  <span>Tipos de Campo</span>
+                  <span>{t('fieldTypes')}</span>
                 </h3>
                 <div className="space-y-2">
                   {FIELD_TYPES.map((fieldType) => (
@@ -310,9 +312,9 @@ export default function FormBuilderPage() {
                         <div className="text-2xl">{fieldType.icon}</div>
                         <div className="flex-1">
                           <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                            {fieldType.label}
+                            {t(fieldType.label)}
                           </div>
-                          <div className="text-xs text-gray-500">{fieldType.description}</div>
+                          <div className="text-xs text-gray-500">{t(fieldType.description)}</div>
                         </div>
                         <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -339,10 +341,10 @@ export default function FormBuilderPage() {
                   )}
                   <div className="flex items-center gap-4 mt-4">
                     <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                      {CATEGORIES.find(c => c.value === template.category)?.label}
+                      {t(CATEGORIES.find(c => c.value === template.category)?.label ?? '')}
                     </span>
                     <span className="text-sm text-gray-500">
-                      ⏱️ ~{template.estimatedMinutes} minutos
+                      {t('previewEstimatedTime', { minutes: template.estimatedMinutes })}
                     </span>
                   </div>
                 </div>
@@ -350,7 +352,7 @@ export default function FormBuilderPage() {
                 {template.fields.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="text-6xl mb-4">📝</div>
-                    <p className="text-gray-500">No hay campos en este formulario</p>
+                    <p className="text-gray-500">{t('noFieldsInForm')}</p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -377,14 +379,14 @@ export default function FormBuilderPage() {
                 <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
                   <div className="text-6xl mb-4">🎨</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Comienza a construir tu formulario
+                    {t('startBuildingTitle')}
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    Selecciona campos de la paleta a la izquierda para agregar al formulario
+                    {t('startBuildingDesc')}
                   </p>
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
                     <span>💡</span>
-                    <span>Tip: Puedes reordenar campos arrastrándolos</span>
+                    <span>{t('reorderTip')}</span>
                   </div>
                 </div>
               ) : (
@@ -430,7 +432,7 @@ export default function FormBuilderPage() {
                                   )}
                                 </div>
                                 <div className="text-xs text-gray-500 mt-0.5">
-                                  {FIELD_TYPES.find(ft => ft.type === field.type)?.label}
+                                  {t(FIELD_TYPES.find(ft => ft.type === field.type)?.label ?? '')}
                                 </div>
                                 {field.helpText && (
                                   <div className="text-xs text-gray-600 mt-1">{field.helpText}</div>
@@ -445,7 +447,7 @@ export default function FormBuilderPage() {
                                     duplicateField(field);
                                   }}
                                   className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                  title="Duplicar"
+                                  title={t('duplicate')}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -454,12 +456,12 @@ export default function FormBuilderPage() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (confirm('¿Eliminar este campo?')) {
+                                    if (confirm(t('confirmDelete'))) {
                                       deleteField(field.id);
                                     }
                                   }}
                                   className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Eliminar"
+                                  title={t('deleteField')}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -486,7 +488,7 @@ export default function FormBuilderPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                   <span>{getFieldIcon(selectedField.type)}</span>
-                  <span>Propiedades del Campo</span>
+                  <span>{t('fieldProperties')}</span>
                 </h3>
                 <button
                   onClick={() => setSelectedField(null)}
@@ -502,27 +504,27 @@ export default function FormBuilderPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Etiqueta del Campo *
+                    {t('fieldLabel')}
                   </label>
                   <input
                     type="text"
                     value={selectedField.label}
                     onChange={(e) => updateField(selectedField.id, { label: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ej: Nombre completo"
+                    placeholder={t('fieldLabelPlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Texto de Ayuda
+                    {t('helpText')}
                   </label>
                   <input
                     type="text"
                     value={selectedField.helpText || ''}
                     onChange={(e) => updateField(selectedField.id, { helpText: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Ej: Incluye segundo nombre si aplica"
+                    placeholder={t('helpTextPlaceholder')}
                   />
                 </div>
 
@@ -530,21 +532,21 @@ export default function FormBuilderPage() {
                   selectedField.type === 'email' || selectedField.type === 'number') && (
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Placeholder
+                      {t('placeholder')}
                     </label>
                     <input
                       type="text"
                       value={selectedField.placeholder || ''}
                       onChange={(e) => updateField(selectedField.id, { placeholder: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Ej: Juan Pérez González"
+                      placeholder={t('placeholderExample')}
                     />
                   </div>
                 )}
 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">Campo Requerido</span>
+                    <span className="text-sm font-medium text-gray-700">{t('requiredField')}</span>
                     {selectedField.required && (
                       <span className="text-xs text-red-600 font-medium">*</span>
                     )}
@@ -568,16 +570,16 @@ export default function FormBuilderPage() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-xs font-medium text-gray-700">
-                        Opciones
+                        {t('options')}
                       </label>
                       <button
                         onClick={() => {
-                          const newOptions = [...(selectedField.options || []), `Opción ${(selectedField.options?.length || 0) + 1}`];
+                          const newOptions = [...(selectedField.options || []), t('optionN', { n: (selectedField.options?.length || 0) + 1 })];
                           updateField(selectedField.id, { options: newOptions });
                         }}
                         className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        + Agregar
+                        {t('addOption')}
                       </button>
                     </div>
                     <div className="space-y-2">
@@ -613,10 +615,10 @@ export default function FormBuilderPage() {
                 {/* Validation */}
                 {selectedField.type === 'number' && (
                   <div className="space-y-3">
-                    <label className="block text-xs font-medium text-gray-700">Validación</label>
+                    <label className="block text-xs font-medium text-gray-700">{t('validation')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Mínimo</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('minimum')}</label>
                         <input
                           type="number"
                           value={selectedField.validation?.min || ''}
@@ -627,7 +629,7 @@ export default function FormBuilderPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Máximo</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('maximum')}</label>
                         <input
                           type="number"
                           value={selectedField.validation?.max || ''}
@@ -647,12 +649,12 @@ export default function FormBuilderPage() {
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold text-gray-900 flex items-center gap-2">
                     <span>🔀</span>
-                    <span>Lógica Condicional</span>
+                    <span>{t('conditionalLogic')}</span>
                   </h4>
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-900">
-                    Muestra este campo solo si se cumple una condición específica
+                    {t('conditionalLogicDesc')}
                   </p>
                   {template.fields.filter(f => f.id !== selectedField.id).length > 0 ? (
                     <div className="mt-3 space-y-2">
@@ -675,12 +677,12 @@ export default function FormBuilderPage() {
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">Sin condición</option>
+                        <option value="">{t('noCondition')}</option>
                         {template.fields
                           .filter(f => f.id !== selectedField.id)
                           .map(f => (
                             <option key={f.id} value={f.id}>
-                              Mostrar si "{f.label}"...
+                              {t('showIf', { label: f.label })}
                             </option>
                           ))}
                       </select>
@@ -699,11 +701,11 @@ export default function FormBuilderPage() {
                             })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value="equals">es igual a</option>
-                            <option value="notEquals">no es igual a</option>
-                            <option value="contains">contiene</option>
-                            <option value="isEmpty">está vacío</option>
-                            <option value="isNotEmpty">no está vacío</option>
+                            <option value="equals">{t('equals')}</option>
+                            <option value="notEquals">{t('notEquals')}</option>
+                            <option value="contains">{t('contains')}</option>
+                            <option value="isEmpty">{t('isEmpty')}</option>
+                            <option value="isNotEmpty">{t('isNotEmpty')}</option>
                           </select>
 
                           {!['isEmpty', 'isNotEmpty'].includes(selectedField.conditionalLogic.showIf.operator) && (
@@ -727,7 +729,7 @@ export default function FormBuilderPage() {
                     </div>
                   ) : (
                     <p className="text-xs text-blue-700 mt-2">
-                      Agrega más campos para crear lógica condicional
+                      {t('addMoreFieldsHint')}
                     </p>
                   )}
                 </div>

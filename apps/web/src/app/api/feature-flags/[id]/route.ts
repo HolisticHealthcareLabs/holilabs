@@ -26,7 +26,7 @@ const updateFlagSchema = z.object({
 
 export const GET = createProtectedRoute(
   async (req: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const { id } = params;
 
     const flag = await prisma.featureFlag.findUnique({
@@ -42,12 +42,13 @@ export const GET = createProtectedRoute(
   {
     roles: ['ADMIN'],
     skipCsrf: true,
+    audit: { action: 'READ', resource: 'FeatureFlag' },
   }
 );
 
 export const PUT = createProtectedRoute(
   async (req: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const { id } = params;
 
     const body = await req.json();
@@ -101,12 +102,13 @@ export const PUT = createProtectedRoute(
   },
   {
     roles: ['ADMIN'],
+    audit: { action: 'UPDATE', resource: 'FeatureFlag' },
   }
 );
 
 export const DELETE = createProtectedRoute(
   async (req: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const { id } = params;
 
     const flag = await prisma.featureFlag.findUnique({
@@ -144,5 +146,6 @@ export const DELETE = createProtectedRoute(
   },
   {
     roles: ['ADMIN'],
+    audit: { action: 'DELETE', resource: 'FeatureFlag' },
   }
 );

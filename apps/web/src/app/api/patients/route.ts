@@ -163,7 +163,7 @@ export const GET = createProtectedRoute(
       // ============================================================================
       try {
         // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-        await prisma.userBehaviorEvent.create({
+        await (prisma as any).userBehaviorEvent.create({
           data: {
             userId: context.user.id,
             eventType: 'PATIENT_LIST_VIEW',
@@ -549,7 +549,7 @@ Registration Date: ${new Date().toISOString()}
     try {
       const now = new Date();
       // @ts-ignore - userBehaviorEvent model not yet in Prisma schema
-      await prisma.userBehaviorEvent.create({
+      await (prisma as any).userBehaviorEvent.create({
         data: {
           userId: assignedClinicianId,
           eventType: 'PATIENT_CREATED',

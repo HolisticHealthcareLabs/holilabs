@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { getToolsByCategory, searchTools, getAllRegisteredTools } from '@/lib/mcp';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,7 +74,7 @@ export const GET = createProtectedRoute(
             },
         });
     } catch (error) {
-        console.error('Error fetching tools:', error);
+        logger.error('Error fetching tools:', error);
         return NextResponse.json(
             {
                 success: false,
@@ -146,7 +147,7 @@ export const POST = createProtectedRoute(
             validatedInput: validation.data,
         });
     } catch (error) {
-        console.error('Error validating tool:', error);
+        logger.error('Error validating tool:', error);
         return NextResponse.json(
             { success: false, error: 'Failed to validate tool' },
             { status: 500 }

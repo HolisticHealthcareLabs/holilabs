@@ -139,8 +139,8 @@ export const POST = createProtectedRoute(
       userName: context.user?.name || context.user?.email,
     });
 
-    // TODO: Send calendar invites (Google Calendar/Outlook integration)
-    // TODO: Send SMS/Email reminders
+    // @todo(calendar-integration): Send Google Calendar/Outlook invites
+    // @todo(appointment-reminders): Send SMS/Email reminders for new appointments
 
     return NextResponse.json(
       {

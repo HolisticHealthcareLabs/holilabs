@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from '@/lib/auth';
 import { authOptions } from '@/lib/auth';
 import { createAuditLog } from '@/lib/audit';
-import type { UserRole } from '@prisma/client';
+type UserRole = 'ADMIN' | 'PHYSICIAN' | 'NURSE' | 'RECEPTIONIST' | 'LAB_TECH' | 'PHARMACIST' | 'CLINICIAN' | 'STAFF' | 'RESEARCHER' | 'PATIENT';
 
 /**
  * Permission format: "resource:action"
@@ -149,8 +149,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 
   // Researcher - limited PHI access for approved research
   RESEARCHER: [
-    'patient:read', // De-identified data access only
-    'audit:read', // Can view audit logs for research
+    'patient:read',
+    'audit:read',
+    'settings:read',
+  ],
+
+  PATIENT: [
+    'patient:read',
     'settings:read',
   ],
 };

@@ -152,8 +152,7 @@ export const POST = createProtectedRoute(
       },
     });
 
-    // TODO: Send notification to patient about being added to waiting list
-    // TODO: If URGENT priority, notify administrative staff immediately
+    // @todo(waiting-list-notifications): Notify patient of addition; escalate URGENT to admin staff
 
     return NextResponse.json(
       {

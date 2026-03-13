@@ -284,9 +284,7 @@ export default function DashboardCommandCenter() {
             />
             <AIInsights
               maxHeight="600px"
-              onInsightAction={(id, action) => {
-                console.log(`Insight ${id} ${action}`);
-              }}
+              onInsightAction={(_id, _action) => {}}
               showConfidence={true}
               showEvidence={true}
             />
@@ -297,9 +295,7 @@ export default function DashboardCommandCenter() {
             {showNotificationsPanel && (
               <SmartNotifications
                 maxHeight="500px"
-                onNotificationClick={(notification) => {
-                  console.log('Notification clicked:', notification);
-                }}
+                onNotificationClick={(_notification) => {}}
                 onDismiss={(id) => {
                   setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
                 }}
@@ -313,9 +309,7 @@ export default function DashboardCommandCenter() {
             {/* Focus Timer */}
             {widgets.find((w) => w.id === 'focus-timer')?.enabled && (
               <FocusTimer
-                onComplete={() => {
-                  console.log('Focus session complete!');
-                }}
+                onComplete={() => {}}
               />
             )}
           </div>

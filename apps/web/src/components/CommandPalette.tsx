@@ -118,8 +118,6 @@ export function CommandPalette({ customCommands = [] }: CommandPaletteProps) {
       category: 'actions',
       icon: DocumentTextIcon,
       action: () => {
-        // This would open a modal or navigate
-        console.log('Create new note');
         closeAndTrack('action-new-note');
       },
       keywords: ['note', 'soap', 'documentation'],
@@ -145,8 +143,6 @@ export function CommandPalette({ customCommands = [] }: CommandPaletteProps) {
       category: 'actions',
       icon: SparklesIcon,
       action: () => {
-        // This would trigger the template picker
-        console.log('Open template picker');
         closeAndTrack('action-templates');
       },
       keywords: ['template', 'macro', 'shortcut'],

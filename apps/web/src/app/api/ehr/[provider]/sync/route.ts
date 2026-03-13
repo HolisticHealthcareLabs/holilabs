@@ -46,7 +46,7 @@ export const POST = createProtectedRoute(
   async (request: NextRequest, context: any) => {
     try {
     const startTime = Date.now();
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const provider = params.provider;
 
     if (!VALID_PROVIDERS.includes(provider as EhrProviderId)) {

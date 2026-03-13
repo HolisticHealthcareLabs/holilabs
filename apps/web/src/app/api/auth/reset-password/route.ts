@@ -16,6 +16,7 @@ import { getClientIp, getUserAgent } from '@/lib/auth/session-security';
 import logger from '@/lib/logger';
 import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createAuditLog } from '@/lib/audit';
 
 // Request password reset schema
 const RequestResetSchema = z.object({
@@ -47,6 +48,9 @@ const ValidateTokenSchema = z.object({
  */
 export const POST = createPublicRoute(async (request: NextRequest) => {
   try {
+    const rateLimitResponse = await checkRateLimit(request, 'passwordReset');
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await request.json();
 
     // Validate request
@@ -75,6 +79,17 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
     } else {
       result = await passwordResetService.requestPatientReset(email, ipAddress, userAgent);
     }
+
+    await createAuditLog(
+      {
+        action: 'UPDATE',
+        resource: 'PasswordReset',
+        resourceId: email,
+        details: { userType, phase: 'request' },
+        success: true,
+      },
+      request,
+    );
 
     // Always return 200 to prevent email enumeration
     return NextResponse.json(
@@ -110,6 +125,9 @@ export const POST = createPublicRoute(async (request: NextRequest) => {
  */
 export const PUT = createPublicRoute(async (request: NextRequest) => {
   try {
+    const rateLimitResponse = await checkRateLimit(request, 'passwordReset');
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await request.json();
 
     // Validate request
@@ -147,6 +165,17 @@ export const PUT = createPublicRoute(async (request: NextRequest) => {
         { status: 400 }
       );
     }
+
+    await createAuditLog(
+      {
+        action: 'UPDATE',
+        resource: 'PasswordReset',
+        resourceId: 'token-redacted',
+        details: { userType, phase: 'reset' },
+        success: true,
+      },
+      request,
+    );
 
     return NextResponse.json({
       success: true,

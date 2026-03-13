@@ -232,7 +232,7 @@ async function processFhirSyncJob(
 
     // TODO: Add FHIRSyncEvent model to Prisma schema
     // Find the sync event associated with this job
-    // const syncEvent = await prisma.fHIRSyncEvent.findFirst({
+    // const syncEvent = await (prisma as any).fHIRSyncEvent.findFirst({
     //   where: {
     //     resourceType,
     //     resourceId: direction === 'OUTBOUND' ? localId : fhirResourceId!,
@@ -243,7 +243,7 @@ async function processFhirSyncJob(
     const syncEvent: { id: string } | null = null; // Placeholder until model is added
 
     // if (syncEvent) {
-    //   await prisma.fHIRSyncEvent.update({
+    //   await (prisma as any).fHIRSyncEvent.update({
     //     where: { id: syncEvent.id },
     //     data: { status: 'IN_PROGRESS' },
     //   });
@@ -323,7 +323,7 @@ async function processFhirSyncJob(
         // Mark sync as complete
         // TODO: Uncomment when FHIRSyncEvent model is added to Prisma schema
         // if (syncEvent) {
-        //   await prisma.fHIRSyncEvent.update({
+        //   await (prisma as any).fHIRSyncEvent.update({
         //     where: { id: syncEvent.id },
         //     data: {
         //       status: 'SYNCED',
@@ -417,7 +417,7 @@ async function processFhirSyncJob(
         // Mark sync as complete
         // TODO: Uncomment when FHIRSyncEvent model is added to Prisma schema
         // if (syncEvent) {
-        //   await prisma.fHIRSyncEvent.update({
+        //   await (prisma as any).fHIRSyncEvent.update({
         //     where: { id: syncEvent.id },
         //     data: {
         //       status: 'SYNCED',

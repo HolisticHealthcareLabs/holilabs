@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import logger from '@/lib/logger';
 
 /**
  * GET /api/credentials/[id]/status
@@ -88,12 +89,12 @@ export const GET = createProtectedRoute(
       history: credential.verificationHistory,
     });
   } catch (error: any) {
-    console.error('Error fetching credential status:', error);
+    logger.error('Error fetching credential status:', error);
     return NextResponse.json(
       { error: 'Failed to fetch credential status' },
       { status: 500 }
     );
   }
   },
-  { roles: ['ADMIN'] }
+  { roles: ['ADMIN'], audit: { action: 'READ', resource: 'CredentialStatus' } }
 );

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import SendFormModal from '@/components/forms/SendFormModal';
 import { NotificationTemplateEditor } from '@/components/templates/NotificationTemplateEditor';
 import {
@@ -69,16 +70,17 @@ const CHANNEL_LABELS: Record<string, string> = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  REMINDER: 'Recordatorio',
-  CONFIRMATION: 'Confirmación',
-  CANCELLATION: 'Cancelación',
-  RESCHEDULE: 'Reagendamiento',
-  PAYMENT_REMINDER: 'Pago',
-  FOLLOW_UP: 'Seguimiento',
-  CUSTOM: 'Personalizado',
+  REMINDER: 'Reminder',
+  CONFIRMATION: 'Confirmation',
+  CANCELLATION: 'Cancellation',
+  RESCHEDULE: 'Reschedule',
+  PAYMENT_REMINDER: 'Payment',
+  FOLLOW_UP: 'Follow-up',
+  CUSTOM: 'Custom',
 };
 
 export default function FormsPage() {
+  const t = useTranslations('dashboard.formsList');
   const searchParams = useSearchParams();
 
   // Tab state - Initialize from query parameter if present
@@ -125,7 +127,7 @@ export default function FormsPage() {
       const data = await response.json();
       setFormTemplates(data.templates || []);
     } catch (error) {
-      console.error('Error fetching form templates:', error);
+      console.error('[Forms]', { event: 'fetch_form_templates_error', error: error instanceof Error ? error.message : String(error) });
     } finally {
       setFormLoading(false);
     }
@@ -143,11 +145,11 @@ export default function FormsPage() {
       if (data.success && data.data) {
         setNotificationTemplates(data.data.templates);
       } else {
-        setNotificationError(data.error || 'Error al cargar plantillas');
+        setNotificationError(data.error || t('loadError'));
       }
     } catch (error) {
-      console.error('Error fetching notification templates:', error);
-      setNotificationError('Error al conectar con el servidor');
+      console.error('[Forms]', { event: 'fetch_notification_templates_error', error: error instanceof Error ? error.message : String(error) });
+      setNotificationError(t('loadErrorServer'));
     } finally {
       setNotificationLoading(false);
     }
@@ -162,7 +164,7 @@ export default function FormsPage() {
         setDoctors(data.data.users || []);
       }
     } catch (error) {
-      console.error('Error fetching doctors:', error);
+      console.error('[Forms]', { event: 'fetch_doctors_error', error: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -197,7 +199,7 @@ export default function FormsPage() {
         setEditingNotificationTemplate(null);
         fetchNotificationTemplates();
       } else {
-        throw new Error(data.error || 'Error al guardar plantilla');
+        throw new Error(data.error || 'Error saving template');
       }
     } catch (error: any) {
       throw error;
@@ -205,7 +207,7 @@ export default function FormsPage() {
   };
 
   const handleDeleteNotificationTemplate = async (templateId: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta plantilla? Esta acción no se puede deshacer.')) {
+    if (!confirm(t('deleteConfirm'))) {
       return;
     }
 
@@ -222,8 +224,8 @@ export default function FormsPage() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error deleting template:', error);
-      alert('Error al eliminar plantilla');
+      console.error('[Forms]', { event: 'delete_template_error', error: error instanceof Error ? error.message : String(error) });
+      alert(t('deleteError'));
     }
   };
 
@@ -287,15 +289,15 @@ export default function FormsPage() {
             }}
             className="text-gray-600 hover:text-gray-900 transition-colors mb-4"
           >
-            ← Volver a Plantillas
+            {t('backToTemplates')}
           </button>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {editingNotificationTemplate ? '✏️ Editar Plantilla' : '➕ Nueva Plantilla'}
+            {editingNotificationTemplate ? `✏️ ${t('editTemplateTitle')}` : `➕ ${t('newTemplateTitle')}`}
           </h1>
           <p className="text-gray-600">
             {editingNotificationTemplate
-              ? 'Actualiza el contenido y configuración de la plantilla'
-              : 'Crea una nueva plantilla de notificación para tus pacientes'}
+              ? t('editTemplateDesc')
+              : t('newTemplateDesc')}
           </p>
         </div>
 
@@ -325,9 +327,9 @@ export default function FormsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Formularios y Plantillas</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           <p className="text-gray-500 mt-1">
-            Gestiona tus formularios de pacientes y plantillas de notificación
+            {t('subtitle')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -337,21 +339,21 @@ export default function FormsPage() {
                 href="/dashboard/forms/sent"
                 className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               >
-                📊 Formularios Enviados
+                📊 {t('sentFormsBtn')}
               </Link>
               <Link
                 href="/dashboard/forms/builder"
                 className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-medium shadow-lg shadow-purple-600/30 flex items-center gap-2"
               >
                 <span>🎨</span>
-                <span>Form Builder</span>
+                <span>{t('formBuilder')}</span>
               </Link>
               <Link
                 href="/dashboard/forms/create-with-ai"
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium shadow-lg shadow-blue-600/30 flex items-center gap-2"
               >
                 <span>🤖</span>
-                <span>Crear con AI</span>
+                <span>{t('createWithAI')}</span>
               </Link>
             </>
           )}
@@ -361,7 +363,7 @@ export default function FormsPage() {
               className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all font-semibold flex items-center space-x-2"
             >
               <PlusIcon className="h-5 w-5" />
-              <span>Nueva Plantilla</span>
+              <span>{t('newTemplate')}</span>
             </button>
           )}
         </div>
@@ -378,7 +380,7 @@ export default function FormsPage() {
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            📋 Formularios de Pacientes
+            📋 {t('patientFormsTab')}
           </button>
           <button
             onClick={() => setActiveTab('notifications')}
@@ -388,7 +390,7 @@ export default function FormsPage() {
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            💬 Plantillas de Notificación
+            💬 {t('notificationTemplatesTab')}
           </button>
         </div>
       </div>
@@ -417,7 +419,7 @@ export default function FormsPage() {
                   </svg>
                   <input
                     type="text"
-                    placeholder="Buscar formularios..."
+                    placeholder={t('searchForms')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -437,7 +439,7 @@ export default function FormsPage() {
                         : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    {cat === 'all' ? 'Todos' : cat.replace('_', ' ')}
+                    {cat === 'all' ? t('all') : cat.replace('_', ' ')}
                   </button>
                 ))}
               </div>
@@ -449,7 +451,7 @@ export default function FormsPage() {
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Total Plantillas</p>
+                  <p className="text-sm text-gray-500">{t('totalTemplates')}</p>
                   <p className="text-3xl font-bold text-gray-900 mt-1">{formTemplates.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">
@@ -460,7 +462,7 @@ export default function FormsPage() {
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Formularios Enviados</p>
+                  <p className="text-sm text-gray-500">{t('sentFormsCount')}</p>
                   <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-2xl">
@@ -471,7 +473,7 @@ export default function FormsPage() {
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Completados</p>
+                  <p className="text-sm text-gray-500">{t('completed')}</p>
                   <p className="text-3xl font-bold text-gray-900 mt-1">0</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl">
@@ -497,9 +499,9 @@ export default function FormsPage() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No se encontraron formularios</h3>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">{t('noFormsFound')}</h3>
               <p className="mt-2 text-sm text-gray-500">
-                Intenta ajustar tus filtros de búsqueda
+                {t('adjustFilters')}
               </p>
             </div>
           ) : (
@@ -519,7 +521,7 @@ export default function FormsPage() {
                       <div>
                         {template.isBuiltIn && (
                           <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded mb-1">
-                            Pre-construido
+                            {t('preBuilt')}
                           </span>
                         )}
                       </div>
@@ -567,7 +569,7 @@ export default function FormsPage() {
                           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                         />
                       </svg>
-                      <span>{template.usageCount || 0} enviados</span>
+                      <span>{template.usageCount || 0} {t('send').toLowerCase()}</span>
                     </div>
                   </div>
 
@@ -580,7 +582,7 @@ export default function FormsPage() {
                       }}
                       className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-lg shadow-blue-600/30"
                     >
-                      📤 Enviar
+                      📤 {t('send')}
                     </button>
                     <button
                       onClick={() => alert('Vista previa próximamente')}
@@ -621,29 +623,29 @@ export default function FormsPage() {
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium text-gray-700">
-                  Nivel:
+                  {t('levelLabel')}
                 </span>
                 <select
                   value={filterLevel}
                   onChange={(e) => setFilterLevel(e.target.value as any)}
                   className="px-3 py-1.5 border border-gray-300 bg-white text-gray-900 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="ALL">Todos</option>
-                  <option value="CLINIC">Clínica</option>
-                  <option value="DOCTOR">Doctor</option>
+                  <option value="ALL">{t('allLevels')}</option>
+                  <option value="CLINIC">{t('clinicLevel')}</option>
+                  <option value="DOCTOR">{t('doctorLevel')}</option>
                 </select>
               </div>
 
               <div className="flex items-center space-x-2">
                 <span className="text-sm font-medium text-gray-700">
-                  Canal:
+                  {t('channelLabel')}
                 </span>
                 <select
                   value={filterChannel}
                   onChange={(e) => setFilterChannel(e.target.value)}
                   className="px-3 py-1.5 border border-gray-300 bg-white text-gray-900 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="ALL">Todos</option>
+                  <option value="ALL">{t('allChannels')}</option>
                   {Object.entries(CHANNEL_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
@@ -653,7 +655,9 @@ export default function FormsPage() {
               </div>
 
               <div className="ml-auto text-sm text-gray-600">
-                {filteredNotificationTemplates.length} plantilla{filteredNotificationTemplates.length !== 1 ? 's' : ''}
+                {filteredNotificationTemplates.length !== 1
+                  ? t('templatesCount', { count: filteredNotificationTemplates.length })
+                  : t('templatesCountSingular', { count: filteredNotificationTemplates.length })}
               </div>
             </div>
           </div>
@@ -663,16 +667,16 @@ export default function FormsPage() {
             <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
               <div className="text-6xl mb-4">📝</div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                No hay plantillas
+                {t('noTemplatesTitle')}
               </h3>
               <p className="text-gray-600 mb-6">
-                Crea tu primera plantilla de notificación para empezar
+                {t('noTemplatesDesc')}
               </p>
               <button
                 onClick={handleCreateNotificationTemplate}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:scale-105 transition-all font-semibold"
               >
-                + Crear Primera Plantilla
+                {t('createFirstTemplate')}
               </button>
             </div>
           ) : (
@@ -690,7 +694,7 @@ export default function FormsPage() {
                       </h3>
                       {template.isDefault && (
                         <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">
-                          ⭐ Predeterminada
+                          ⭐ {t('default')}
                         </span>
                       )}
                     </div>
@@ -703,7 +707,7 @@ export default function FormsPage() {
                         {CHANNEL_LABELS[template.channel] || template.channel}
                       </span>
                       <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded">
-                        {template.level === 'CLINIC' ? '🏥 Clínica' : '👨‍⚕️ Doctor'}
+                        {template.level === 'CLINIC' ? `🏥 ${t('clinicLevel')}` : `👨‍⚕️ ${t('doctorLevel')}`}
                       </span>
                     </div>
                   </div>
@@ -718,7 +722,7 @@ export default function FormsPage() {
                   {/* Stats */}
                   <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
                     <div className="flex items-center justify-between text-xs text-gray-600">
-                      <span>Usado {template.usageCount} veces</span>
+                      <span>{t('usedCount', { count: template.usageCount })}</span>
                       {template.isActive ? (
                         <CheckCircleIcon className="h-4 w-4 text-green-600" />
                       ) : (
@@ -734,7 +738,7 @@ export default function FormsPage() {
                       className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center space-x-1"
                     >
                       <PencilIcon className="h-4 w-4" />
-                      <span>Editar</span>
+                      <span>{t('edit')}</span>
                     </button>
                     <button
                       onClick={() => handleDeleteNotificationTemplate(template.id)}

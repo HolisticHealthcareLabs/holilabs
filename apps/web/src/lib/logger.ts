@@ -33,7 +33,6 @@ const consoleLogger: LoggerLike = {
 };
 
 function getServerModule(): any {
-  // Important: keep this `require` inside a function so the client bundle never touches it.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   return require('./logger.server');
 }

@@ -172,11 +172,10 @@ async function checkSupabase(): Promise<HealthCheckResult> {
 /**
  * Main health check handler
  */
-export async function GET() {
+async function getReady() {
   const startTime = Date.now();
 
   try {
-    // Run all health checks in parallel
     const checks = await Promise.all([
       checkDatabase(),
       checkRedis(),

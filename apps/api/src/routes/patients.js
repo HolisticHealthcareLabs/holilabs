@@ -11,7 +11,10 @@ const patientRoutes = async (server) => {
     server.post('/create_token', async (request, reply) => {
         try {
             const body = CreateTokenSchema.parse(request.body);
-            const saltKey = process.env.SALT_ROTATION_KEY || 'default-salt';
+            if (!process.env.SALT_ROTATION_KEY) {
+                throw new Error('[SECURITY FATAL] SALT_ROTATION_KEY is not set. Refusing to pseudonymize.');
+            }
+            const saltKey = process.env.SALT_ROTATION_KEY;
             // Pseudonymize
             const { tokenId, pointerHash } = (0, deid_1.pseudonymize)(body.subjectKeys, saltKey);
             // Get org from auth (stub - in production, extract from JWT)

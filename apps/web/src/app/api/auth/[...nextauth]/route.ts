@@ -17,8 +17,11 @@ import { createPublicRoute } from '@/lib/api/middleware';
 import { GET as _GET, POST as _POST } from '@/lib/auth/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 
+const authGet = _GET as (...args: any[]) => Promise<Response>;
+const authPost = _POST as (...args: any[]) => Promise<Response>;
+
 export const GET = createPublicRoute(async (request: NextRequest, context: any) => {
-  return _GET(request, context);
+  return authGet(request, context);
 });
 
 export const POST = createPublicRoute(async (request: NextRequest, context: any) => {
@@ -29,5 +32,5 @@ export const POST = createPublicRoute(async (request: NextRequest, context: any)
     if (rateLimitResponse) return rateLimitResponse;
   }
 
-  return _POST(request, context);
+  return authPost(request, context);
 });

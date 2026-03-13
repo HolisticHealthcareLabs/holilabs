@@ -14,6 +14,7 @@ import {
   autoGenerateScreeningReminders,
 } from '@/lib/prevention/screening-triggers';
 import { z } from 'zod';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,7 +96,7 @@ export const POST = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error generating screening reminders:', error);
+    logger.error('Error generating screening reminders:', error);
 
     return NextResponse.json(
       {
@@ -147,7 +148,7 @@ export const GET = createProtectedRoute(
       },
     });
   } catch (error) {
-    console.error('Error fetching due screenings:', error);
+    logger.error('Error fetching due screenings:', error);
 
     return NextResponse.json(
       {

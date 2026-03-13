@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 
 interface WaitlistEntry {
   id: string;
@@ -16,6 +17,7 @@ interface WaitlistEntry {
 }
 
 export default function AdminWaitlistPage() {
+  const t = useTranslations('dashboard.waitlist');
   const { data: session } = useSession();
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,8 +44,8 @@ export default function AdminWaitlistPage() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 8000);
-    return () => clearTimeout(t);
+    const tid = setTimeout(() => setToast(null), 8000);
+    return () => clearTimeout(tid);
   }, [toast]);
 
   const handleApprove = async (id: string) => {
@@ -54,7 +56,7 @@ export default function AdminWaitlistPage() {
       if (!res.ok) throw new Error(data.error || 'Approval failed');
 
       setToast({
-        message: `Approved! Onboarding link ready.`,
+        message: t('approvedOnboarding'),
         link: data.onboardingLink,
       });
 
@@ -86,7 +88,7 @@ export default function AdminWaitlistPage() {
   if (session?.user?.role !== 'ADMIN') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-gray-500 text-sm">Admin access required.</p>
+        <p className="text-gray-500 text-sm">{t('adminRequired')}</p>
       </div>
     );
   }
@@ -109,7 +111,7 @@ export default function AdminWaitlistPage() {
                 onClick={() => { navigator.clipboard.writeText(toast.link!); }}
                 className="mt-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
               >
-                Copy link
+                {t('copyLink')}
               </button>
             </div>
           )}
@@ -119,25 +121,25 @@ export default function AdminWaitlistPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-          Waitlist
+          {t('title')}
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Review and approve incoming leads for Track A onboarding.
+          {t('subtitle')}
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</p>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('total')}</p>
           <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{entries.length}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-          <p className="text-xs font-medium text-amber-600 uppercase tracking-wider">Pending</p>
+          <p className="text-xs font-medium text-amber-600 uppercase tracking-wider">{t('pending')}</p>
           <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{pendingCount}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-          <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider">Approved</p>
+          <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider">{t('approved')}</p>
           <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{approvedCount}</p>
         </div>
       </div>
@@ -154,19 +156,19 @@ export default function AdminWaitlistPage() {
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-sm text-gray-500">No waitlist entries yet.</p>
+            <p className="text-sm text-gray-500">{t('noEntries')}</p>
           </div>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700">
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Email</th>
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Name</th>
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Company</th>
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Plan</th>
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Status</th>
-                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Date</th>
-                <th className="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">Action</th>
+                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">{t('emailCol')}</th>
+                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">{t('nameCol')}</th>
+                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">{t('companyCol')}</th>
+                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">{t('planCol')}</th>
+                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">{t('statusCol')}</th>
+                <th className="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">{t('dateCol')}</th>
+                <th className="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-3">{t('actionCol')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -197,7 +199,7 @@ export default function AdminWaitlistPage() {
                         disabled={approvingId === entry.id}
                         className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50 transition-colors"
                       >
-                        {approvingId === entry.id ? 'Approving...' : 'Approve'}
+                        {approvingId === entry.id ? t('approving') : t('approve')}
                       </button>
                     ) : (
                       <span className="text-xs text-gray-400">—</span>

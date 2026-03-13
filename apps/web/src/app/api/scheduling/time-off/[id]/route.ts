@@ -257,8 +257,7 @@ export const PATCH = createProtectedRoute(
       },
     });
 
-    // TODO: Send notification to clinician if status changed
-    // TODO: If approved, notify patients with affected appointments
+    // @todo(time-off-notifications): Notify clinician on status change; notify patients if approved
 
     return NextResponse.json({
       success: true,
@@ -352,7 +351,7 @@ export const DELETE = createProtectedRoute(
       },
     });
 
-    // TODO: Notify patients with affected appointments that provider is back
+    // @todo(time-off-notifications): Notify patients that provider is back available
 
     return NextResponse.json({
       success: true,

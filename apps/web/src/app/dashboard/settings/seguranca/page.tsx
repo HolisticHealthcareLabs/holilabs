@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { startRegistration } from '@simplewebauthn/browser';
 import type { RegistrationResponseJSON } from '@simplewebauthn/browser';
@@ -20,35 +21,14 @@ interface Credential {
 type RegistrationStep = 'idle' | 'preparing' | 'waiting' | 'verifying';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Clinic-friendly error messages
-// ─────────────────────────────────────────────────────────────────────────────
-
-function toFriendlyError(err: unknown): string {
-  if (err instanceof Error) {
-    if (err.name === 'NotAllowedError') {
-      return 'Registro cancelado. Tente novamente quando estiver pronto.';
-    }
-    // Never expose raw error messages or technical strings to doctors
-  }
-  return 'Não foi possível registrar o dispositivo. Tente novamente ou contate o suporte.';
-}
-
-const REGISTRATION_STEP_LABELS: Record<RegistrationStep, string | null> = {
-  idle:      null,
-  preparing: 'Preparando registro seguro…',
-  waiting:   'Aguardando confirmação biométrica…',
-  verifying: 'Verificando dispositivo…',
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Skeleton subcomponent
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CredentialSkeleton: React.FC = () => (
+const CredentialSkeleton: React.FC<{ ariaLabel: string }> = ({ ariaLabel }) => (
   <div
     className="animate-pulse space-y-2"
     aria-busy="true"
-    aria-label="Carregando dispositivos…"
+    aria-label={ariaLabel}
   >
     {[0, 1].map((i) => (
       <div
@@ -66,20 +46,34 @@ const CredentialSkeleton: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Device type label
-// ─────────────────────────────────────────────────────────────────────────────
-
-function deviceTypeLabel(type: string): string {
-  if (type === 'singleDevice') return 'Dispositivo único';
-  if (type === 'multiDevice') return 'Multi-dispositivo';
-  return type;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // SegurancaSettingsPage
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SegurancaSettingsPage() {
+  const t = useTranslations('dashboard.seguranca');
+  const tCommon = useTranslations('common');
+
+  const getStepLabel = (step: RegistrationStep): string | null => {
+    if (step === 'idle') return null;
+    if (step === 'preparing') return t('preparing');
+    if (step === 'waiting') return t('waitingBiometric');
+    return t('verifyingDevice');
+  };
+
+  const deviceTypeLabel = (type: string): string => {
+    if (type === 'singleDevice') return t('singleDevice');
+    if (type === 'multiDevice') return t('multiDevice');
+    return type;
+  };
+
+  const toFriendlyError = (err: unknown): string => {
+    if (err instanceof Error) {
+      if (err.name === 'NotAllowedError') {
+        return t('registrationCancelled');
+      }
+    }
+    return t('registrationError');
+  };
   const [credentials,          setCredentials]          = useState<Credential[]>([]);
   const [isLoadingCredentials, setIsLoadingCredentials] = useState(true);
   const [registrationStep,     setRegistrationStep]     = useState<RegistrationStep>('idle');
@@ -91,7 +85,7 @@ export default function SegurancaSettingsPage() {
   const [confirmRevoke, setConfirmRevoke] = useState<string | null>(null);
 
   const isRegistering = registrationStep !== 'idle';
-  const stepLabel     = REGISTRATION_STEP_LABELS[registrationStep];
+  const stepLabel     = getStepLabel(registrationStep);
 
   // ── Load credentials ──────────────────────────────────────────────────────
   const loadCredentials = useCallback(async () => {
@@ -143,7 +137,7 @@ export default function SegurancaSettingsPage() {
       const verRes = await fetch('/api/auth/webauthn/verify-registration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...response, deviceName: deviceName.trim() || 'Dispositivo' }),
+        body: JSON.stringify({ ...response, deviceName: deviceName.trim() || 'Device' }),
       });
 
       if (!verRes.ok) {
@@ -151,7 +145,7 @@ export default function SegurancaSettingsPage() {
         throw new Error(body.error ?? 'server_error');
       }
 
-      setMessage('Dispositivo registrado com sucesso.');
+      setMessage(t('deviceRegistered'));
       setDeviceName('');
       loadCredentials();
     } catch (err) {
@@ -180,27 +174,27 @@ export default function SegurancaSettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <h1 className="text-2xl font-semibold text-white mb-1">Segurança</h1>
+        <h1 className="text-2xl font-semibold text-white mb-1">{t('title')}</h1>
         <p className="text-slate-400 text-sm mb-8">
-          Gerencie dispositivos biométricos para assinatura de prescrições (LGPD art. 7 / NOM-024).
+          {t('subtitle')}
         </p>
       </motion.div>
 
       {/* ── Registered credentials ─────────────────────────────────────────── */}
       <section className="mb-8">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
-          Dispositivos registrados
+          {t('registeredDevices')}
         </h2>
 
         {isLoadingCredentials ? (
-          <CredentialSkeleton />
+          <CredentialSkeleton ariaLabel={t('loadingDevices')} />
         ) : credentials.length === 0 ? (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-slate-500 text-sm"
           >
-            Nenhum dispositivo registrado. Registre um abaixo.
+            {t('noDevices')}
           </motion.p>
         ) : (
           <div className="space-y-2">
@@ -217,21 +211,21 @@ export default function SegurancaSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-white text-sm font-medium">
-                        {cred.name ?? 'Dispositivo'}
+                        {cred.name ?? t('device')}
                       </p>
                       <p className="text-slate-500 text-xs mt-0.5">
                         {deviceTypeLabel(cred.deviceType)}
-                        {' · Registrado em '}
-                        {new Date(cred.createdAt).toLocaleDateString('pt-BR')}
+                        {' · ' + t('registeredOn') + ' '}
+                        {new Date(cred.createdAt).toLocaleDateString()}
                         {cred.lastUsedAt &&
-                          ` · Último uso ${new Date(cred.lastUsedAt).toLocaleDateString('pt-BR')}`}
+                          ` · ${t('lastUsed')} ${new Date(cred.lastUsedAt).toLocaleDateString()}`}
                       </p>
                     </div>
 
                     {confirmRevoke !== cred.id && (
                       <button
                         onClick={() => setConfirmRevoke(cred.id)}
-                        aria-label={`Revogar ${cred.name ?? 'dispositivo'}`}
+                        aria-label={`${t('revoke')} ${cred.name ?? t('device')}`}
                         className={`
                           text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded
                           hover:bg-red-500/10 transition-colors
@@ -239,7 +233,7 @@ export default function SegurancaSettingsPage() {
                           focus-visible:ring-offset-1 focus-visible:ring-offset-slate-800
                         `}
                       >
-                        Revogar
+                        {t('revoke')}
                       </button>
                     )}
                   </div>
@@ -256,7 +250,7 @@ export default function SegurancaSettingsPage() {
                       >
                         <div className="mt-2 flex items-center justify-between gap-3 pt-2.5 border-t border-slate-700/60">
                           <p className="text-xs text-slate-400 leading-tight">
-                            Remover <strong className="text-slate-300">{cred.name ?? 'dispositivo'}</strong>? Esta ação é permanente.
+                            {t('removeDevice', { name: cred.name ?? t('singleDevice') })}
                           </p>
                           <div className="flex gap-2 flex-shrink-0">
                             <button
@@ -269,7 +263,7 @@ export default function SegurancaSettingsPage() {
                                 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-800
                               `}
                             >
-                              Confirmar
+                              {t('confirm')}
                             </button>
                             <button
                               onClick={() => setConfirmRevoke(null)}
@@ -281,7 +275,7 @@ export default function SegurancaSettingsPage() {
                                 focus-visible:ring-offset-1 focus-visible:ring-offset-slate-800
                               `}
                             >
-                              Cancelar
+                              {tCommon('cancel')}
                             </button>
                           </div>
                         </div>
@@ -303,18 +297,18 @@ export default function SegurancaSettingsPage() {
         className="rounded-xl bg-slate-800 border border-slate-700 p-5"
       >
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
-          Registrar dispositivo
+          {t('registerDevice')}
         </h2>
 
         <div className="space-y-3">
           <input
             type="text"
-            placeholder="Nome do dispositivo (ex: MacBook Pro)"
+            placeholder={t('deviceNamePlaceholder')}
             value={deviceName}
             onChange={(e) => setDeviceName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !isRegistering && handleRegister()}
             disabled={isRegistering}
-            aria-label="Nome do dispositivo"
+            aria-label={t('deviceNamePlaceholder')}
             className={`
               w-full rounded-lg bg-slate-900 border border-slate-600 text-white text-sm
               px-3 py-2 placeholder-slate-500
@@ -370,10 +364,10 @@ export default function SegurancaSettingsPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3V4a10 10 0 100 20v-2a8 8 0 01-8-8z" />
                 </motion.svg>
-                Registrando…
+                {t('registering')}
               </span>
             ) : (
-              'Registrar com biometria'
+              t('registerWithBiometrics')
             )}
           </motion.button>
 

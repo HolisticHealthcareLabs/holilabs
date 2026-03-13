@@ -154,9 +154,9 @@ These issues still require manual action:
 ```
 
 **Exposed Secrets:**
-- `RESEND_API_KEY="re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu"` ← **REVOKE IMMEDIATELY**
-- `DEID_SECRET="0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4"` ← **ROTATE**
-- `LOGTAIL_SOURCE_TOKEN="ppRsuAAsrT4hR8Uw8HAY4UCu"` ← **VERIFY IF REAL**
+- `RESEND_API_KEY="<REDACTED-REVOKE-AND-REGENERATE>"` ← **REVOKE IMMEDIATELY**
+- `DEID_SECRET="<REDACTED-REVOKE-AND-REGENERATE>"` ← **ROTATE**
+- `LOGTAIL_SOURCE_TOKEN="<REDACTED-REVOKE-AND-REGENERATE>"` ← **VERIFY IF REAL**
 
 #### 2. ⚠️ Backup File Not Gitignored
 
@@ -358,7 +358,7 @@ npx web-push generate-vapid-keys
    ```bash
    # 1. Resend API Key
    # Go to: https://resend.com/api-keys
-   # Revoke: re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu
+   # Revoke: <REDACTED-REVOKE-AND-REGENERATE>
    # Generate new key and update .env.local
 
    # 2. Regenerate DEID_SECRET

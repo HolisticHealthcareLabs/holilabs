@@ -10,6 +10,7 @@ import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/api/middleware', () => ({
   createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -24,6 +25,7 @@ jest.mock('@/lib/audit', () => ({
 
 const { POST, GET } = require('../route');
 const { prisma } = require('@/lib/prisma');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
 
 const mockContext = {
   user: { id: 'clinician-1', email: 'dr@holilabs.com', role: 'CLINICIAN' },
@@ -33,6 +35,7 @@ const mockContext = {
 describe('POST /api/clinical/allergy-check', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
   });
 
   it('returns empty alerts when patient has no allergies', async () => {
@@ -106,6 +109,7 @@ describe('POST /api/clinical/allergy-check', () => {
 describe('GET /api/clinical/allergy-check', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
   });
 
   it('returns patient allergies when patientId provided', async () => {

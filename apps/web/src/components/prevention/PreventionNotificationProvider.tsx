@@ -123,12 +123,8 @@ export default function PreventionNotificationProvider({
     autoConnect,
     events: preventionEvents,
     onNotification: handleNotification,
-    onConnect: () => {
-      console.log('✓ Prevention notifications connected');
-    },
-    onDisconnect: () => {
-      console.log('✗ Prevention notifications disconnected');
-    },
+    onConnect: () => {},
+    onDisconnect: () => {},
     onError: (error) => {
       console.error('Prevention notification error:', error);
       showToast({

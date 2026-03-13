@@ -20,6 +20,7 @@ import {
 } from '@/lib/encryption';
 import { uploadToR2, generateStorageKey } from '@/lib/storage/r2-client';
 import { createAuditLog } from '@/lib/audit';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -169,7 +170,7 @@ export const POST = createProtectedRoute(
       { status: 201 }
     );
   } catch (error) {
-    console.error('Document upload error:', error);
+    logger.error('Document upload error:', error);
     return NextResponse.json(
       {
         error: 'Failed to upload document',

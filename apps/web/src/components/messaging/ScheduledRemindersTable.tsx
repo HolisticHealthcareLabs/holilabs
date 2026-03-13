@@ -107,7 +107,7 @@ export default function ScheduledRemindersTable({ onUpdate }: ScheduledReminders
   if (reminders.length === 0) {
     return (
       <div className="text-center py-16">
-        <div className="text-6xl mb-4">📅</div>
+        <div className="text-6xl mb-4 text-gray-300 dark:text-gray-600">—</div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
           No scheduled reminders yet
         </h3>

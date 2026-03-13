@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus, Shield, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { CredentialCard } from '@/components/credentials/CredentialCard';
 import { CredentialForm, CredentialFormData } from '@/components/credentials/CredentialForm';
 import { CredentialUpload } from '@/components/credentials/CredentialUpload';
 
 export default function CredentialsPage() {
+  const t = useTranslations('dashboard.credentials');
   const [credentials, setCredentials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -32,10 +34,10 @@ export default function CredentialsPage() {
       if (data.success) {
         setCredentials(data.credentials || []);
       } else {
-        setError('Failed to load credentials');
+        setError(t('failedToLoad'));
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load credentials');
+      setError(err.message || t('failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -65,16 +67,16 @@ export default function CredentialsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Credential added successfully!');
+        setSuccess(t('addedSuccess'));
         setShowAddForm(false);
         setUploadedDoc(null);
         fetchCredentials(); // Refresh list
         setTimeout(() => setSuccess(null), 5000);
       } else {
-        setError(data.error || 'Failed to add credential');
+        setError(data.error || t('failedToAdd'));
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to add credential');
+      setError(err.message || t('failedToAdd'));
     }
   };
 
@@ -90,14 +92,14 @@ export default function CredentialsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess('Verification initiated successfully!');
+        setSuccess(t('verificationInitiated'));
         fetchCredentials(); // Refresh list
         setTimeout(() => setSuccess(null), 5000);
       } else {
-        setError(data.error || 'Failed to initiate verification');
+        setError(data.error || t('failedToVerify'));
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to initiate verification');
+      setError(err.message || t('failedToVerify'));
     }
   };
 
@@ -116,9 +118,9 @@ export default function CredentialsPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Credential Verification</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
               <p className="text-gray-600 mt-1">
-                Manage and verify your professional credentials
+                {t('subtitle')}
               </p>
             </div>
             {!showAddForm && !showUpload && (
@@ -127,7 +129,7 @@ export default function CredentialsPage() {
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                Add Credential
+                {t('addCredential')}
               </button>
             )}
           </div>
@@ -137,7 +139,7 @@ export default function CredentialsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Credentials</p>
+                  <p className="text-sm text-gray-600">{t('totalCredentials')}</p>
                   <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
                 </div>
                 <Shield className="w-8 h-8 text-gray-400" />
@@ -147,7 +149,7 @@ export default function CredentialsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Verified</p>
+                  <p className="text-sm text-gray-600">{t('verified')}</p>
                   <p className="text-2xl font-bold text-green-600 mt-1">{stats.verified}</p>
                 </div>
                 <CheckCircle2 className="w-8 h-8 text-green-400" />
@@ -157,7 +159,7 @@ export default function CredentialsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pending</p>
+                  <p className="text-sm text-gray-600">{t('pending')}</p>
                   <p className="text-2xl font-bold text-yellow-600 mt-1">{stats.pending}</p>
                 </div>
                 <Clock className="w-8 h-8 text-yellow-400" />
@@ -167,7 +169,7 @@ export default function CredentialsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Needs Review</p>
+                  <p className="text-sm text-gray-600">{t('needsReview')}</p>
                   <p className="text-2xl font-bold text-orange-600 mt-1">{stats.needsReview}</p>
                 </div>
                 <AlertCircle className="w-8 h-8 text-orange-400" />
@@ -222,21 +224,21 @@ export default function CredentialsPage() {
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-            <p className="text-gray-600 mt-4">Loading credentials...</p>
+            <p className="text-gray-600 mt-4">{t('loading')}</p>
           </div>
         ) : credentials.length === 0 ? (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No credentials yet</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('noCredentials')}</h3>
             <p className="text-gray-600 mb-6">
-              Start by adding your professional credentials for verification
+              {t('noCredentialsDesc')}
             </p>
             <button
               onClick={() => setShowUpload(true)}
               className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Add Your First Credential
+              {t('addFirstCredential')}
             </button>
           </div>
         ) : (
@@ -245,9 +247,7 @@ export default function CredentialsPage() {
               <CredentialCard
                 key={credential.id}
                 credential={credential}
-                onView={(id) => {
-                  // TODO: Implement credential detail view
-                  console.log('View credential:', id);
+                onView={(_id) => {
                 }}
                 onVerify={handleVerify}
               />
@@ -258,24 +258,24 @@ export default function CredentialsPage() {
         {/* Info Section */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <h3 className="text-base font-semibold text-blue-900 mb-2">
-            Why verify your credentials?
+            {t('whyVerify')}
           </h3>
           <ul className="space-y-2 text-sm text-blue-800">
             <li className="flex items-start">
               <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Build trust with patients and healthcare organizations</span>
+              <span>{t('trustBenefit')}</span>
             </li>
             <li className="flex items-start">
               <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Required for regulatory compliance (HIPAA, state licensing)</span>
+              <span>{t('complianceBenefit')}</span>
             </li>
             <li className="flex items-start">
               <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Automatic verification with state and national databases</span>
+              <span>{t('autoBenefit')}</span>
             </li>
             <li className="flex items-start">
               <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-              <span>Display verified badges on your profile</span>
+              <span>{t('badgeBenefit')}</span>
             </li>
           </ul>
         </div>

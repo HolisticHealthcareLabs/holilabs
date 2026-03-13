@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
+import { useTranslations } from 'next-intl';
 
 export default function FormsError({
   error,
@@ -10,6 +11,8 @@ export default function FormsError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('dashboard.formsError');
+
   useEffect(() => {
     if (typeof Sentry !== 'undefined' && Sentry.captureException) {
       Sentry.captureException(error);
@@ -29,10 +32,10 @@ export default function FormsError({
         </div>
 
         <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">
-          Error en Formularios
+          {t('title')}
         </h2>
         <p className="text-gray-600 text-center mb-6">
-          No se pudieron cargar los formularios. Intenta nuevamente.
+          {t('description')}
         </p>
 
         <div className="flex flex-col gap-3">
@@ -40,13 +43,13 @@ export default function FormsError({
             onClick={reset}
             className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium"
           >
-            Reintentar
+            {t('retry')}
           </button>
           <button
             onClick={() => window.location.href = '/dashboard'}
             className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
           >
-            Volver al Dashboard
+            {t('backToDashboard')}
           </button>
         </div>
       </div>

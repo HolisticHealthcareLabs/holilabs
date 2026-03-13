@@ -2,6 +2,7 @@
 
 import { FileText, Save, AlertTriangle, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Temporal SOAP alignment
@@ -41,6 +42,7 @@ interface SoapFieldProps {
 }
 
 function SoapField({ label, color, content, unlocked }: SoapFieldProps) {
+  const t = useTranslations('dashboard.clinicalCommand');
   return (
     <div className="flex flex-col">
       <span className={`text-sm font-extrabold uppercase tracking-widest flex-shrink-0 pb-1.5 leading-none ${color}`}>
@@ -65,7 +67,7 @@ function SoapField({ label, color, content, unlocked }: SoapFieldProps) {
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
           />
           <span className="text-[11px] text-slate-400 dark:text-slate-600 italic select-none">
-            Listening…
+            {t('soapListening')}
           </span>
         </div>
       )}
@@ -88,6 +90,7 @@ const SKELETON_SECTIONS = [
 ] as const;
 
 function SoapSkeleton() {
+  const t = useTranslations('dashboard.clinicalCommand');
   return (
     <div
       className="flex flex-col gap-5 pb-2"
@@ -132,7 +135,7 @@ function SoapSkeleton() {
         transition={{ delay: 0.6, duration: 0.3 }}
         className="text-[10px] text-center text-slate-400 dark:text-slate-600 pt-1"
       >
-        AI is structuring the clinical encounter...
+        {t('soapStructuring')}
       </motion.p>
     </div>
   );
@@ -150,6 +153,7 @@ function SoapErrorBanner({
   error: string;
   onRetry: () => void;
 }) {
+  const t = useTranslations('dashboard.clinicalCommand');
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -173,7 +177,7 @@ function SoapErrorBanner({
       </div>
       <div className="text-center space-y-1">
         <p className="text-sm font-semibold text-slate-900 dark:text-white">
-          Generation Failed
+          {t('soapGenerationFailed')}
         </p>
         <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
           {error}
@@ -190,7 +194,7 @@ function SoapErrorBanner({
         "
       >
         <RefreshCw className="w-3.5 h-3.5" />
-        Retry Generation
+        {t('soapRetryGeneration')}
       </button>
     </motion.div>
   );
@@ -219,19 +223,20 @@ export function SoapNotePane({
   soapError = null,
   onRetry,
 }: SoapNotePaneProps) {
+  const t = useTranslations('dashboard.clinicalCommand');
   const isPopulating = segmentCount > 0;
   const hasError     = !!soapError;
   const canSign      = patientSelected && isCompleted;
 
   // Status label for the header
   const statusLabel = isGeneratingSoap
-    ? 'Generating...'
+    ? t('soapGenerating')
     : isCompleted
-      ? 'Complete'
+      ? t('soapComplete')
       : hasError
-        ? 'Error'
+        ? t('soapError')
         : isPopulating
-          ? 'Auto-fill active'
+          ? t('soapAutoFill')
           : null;
 
   const statusColor = isGeneratingSoap
@@ -253,7 +258,7 @@ export function SoapNotePane({
         <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
         <h2 className="text-xs font-semibold uppercase tracking-wider
                        text-slate-500 dark:text-slate-400">
-          SOAP Note
+          {t('soapNote')}
         </h2>
         {statusLabel ? (
           <span className={`ml-auto text-[10px] font-medium ${statusColor}`}>
@@ -261,7 +266,7 @@ export function SoapNotePane({
           </span>
         ) : (
           <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-600">
-            Awaiting transcript...
+            {t('soapAwaiting')}
           </span>
         )}
       </div>
@@ -275,25 +280,25 @@ export function SoapNotePane({
             <SoapErrorBanner error={soapError} onRetry={onRetry} />
             <div className="flex flex-col gap-5 pb-2 opacity-60">
               <SoapField
-                label="S - Subjective"
+                label={t('soapSubjective')}
                 color="text-cyan-600 dark:text-cyan-500"
                 content={CONTENT.S}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.S}
               />
               <SoapField
-                label="O - Objective"
+                label={t('soapObjective')}
                 color="text-emerald-600 dark:text-emerald-500"
                 content={CONTENT.O}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.O}
               />
               <SoapField
-                label="A - Assessment"
+                label={t('soapAssessment')}
                 color="text-amber-600 dark:text-amber-500"
                 content={CONTENT.A}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.A}
               />
               <SoapField
-                label="P - Plan"
+                label={t('soapPlan')}
                 color="text-rose-600 dark:text-rose-500"
                 content={CONTENT.P}
                 unlocked={segmentCount >= SOAP_THRESHOLDS.P}
@@ -303,25 +308,25 @@ export function SoapNotePane({
         ) : (
           <div className="flex flex-col gap-5 pb-2">
             <SoapField
-              label="S - Subjective"
+              label={t('soapSubjective')}
               color="text-cyan-600 dark:text-cyan-500"
               content={CONTENT.S}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.S}
             />
             <SoapField
-              label="O - Objective"
+              label={t('soapObjective')}
               color="text-emerald-600 dark:text-emerald-500"
               content={CONTENT.O}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.O}
             />
             <SoapField
-              label="A - Assessment"
+              label={t('soapAssessment')}
               color="text-amber-600 dark:text-amber-500"
               content={CONTENT.A}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.A}
             />
             <SoapField
-              label="P - Plan"
+              label={t('soapPlan')}
               color="text-rose-600 dark:text-rose-500"
               content={CONTENT.P}
               unlocked={isCompleted || segmentCount >= SOAP_THRESHOLDS.P}
@@ -349,14 +354,14 @@ export function SoapNotePane({
           }
         `}
         title={
-          !patientSelected    ? 'Select a patient first'
-          : isGeneratingSoap  ? 'SOAP generation in progress'
-          : !isCompleted      ? 'Complete recording to generate SOAP note'
-          : 'Sign and bill this encounter'
+          !patientSelected    ? t('selectPatientFirst')
+          : isGeneratingSoap  ? t('soapInProgress')
+          : !isCompleted      ? t('completeRecording')
+          : t('signAndBillEncounter')
         }
       >
         <Save className="w-4 h-4" />
-        Sign &amp; Bill
+        {t('signAndBill')}
       </motion.button>
     </div>
   );

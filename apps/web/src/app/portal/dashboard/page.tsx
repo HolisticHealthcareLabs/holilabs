@@ -16,17 +16,18 @@ export const dynamic = 'force-dynamic';
 
 import { redirect } from 'next/navigation';
 import { getCurrentPatient } from '@/lib/auth/patient-session';
+import { getTranslations } from 'next-intl/server';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import PatientOnboardingWizard from '@/components/portal/PatientOnboardingWizard';
 import MedicationAdherenceTracker from '@/components/medications/MedicationAdherenceTracker';
 import PatientToolkit from '@/components/portal/PatientToolkit';
 
-function getGreeting() {
+function getGreetingKey() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 19) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'goodMorning' as const;
+  if (hour < 19) return 'goodAfternoon' as const;
+  return 'goodEvening' as const;
 }
 
 async function fetchDashboardStats(patientUserId: string) {
@@ -70,7 +71,8 @@ export default async function PatientDashboardPage() {
     redirect('/portal/login');
   }
 
-  const greeting = getGreeting();
+  const t = await getTranslations('portal.dashboard');
+  const greeting = t(getGreetingKey());
   const firstName = patientUser.patient.firstName;
 
   // Fetch real dashboard stats
@@ -98,7 +100,7 @@ export default async function PatientDashboardPage() {
           <div className="w-24 h-24 rounded-full border-4 border-amber-400 bg-white flex items-center justify-center text-5xl hover:scale-110 hover:border-amber-500 hover:shadow-lg hover:shadow-amber-200 transition-all duration-300">
             📊
           </div>
-          <span className="text-sm font-semibold text-gray-700">Dashboard</span>
+          <span className="text-sm font-semibold text-gray-700">{t('dashboard')}</span>
         </a>
 
         <div className="flex items-center gap-12">
@@ -107,7 +109,7 @@ export default async function PatientDashboardPage() {
             <div className="w-24 h-24 rounded-full border-4 border-amber-400 bg-white flex items-center justify-center text-5xl hover:scale-110 hover:border-amber-500 hover:shadow-lg hover:shadow-amber-200 transition-all duration-300">
               🔬
             </div>
-            <span className="text-sm font-semibold text-gray-700">Toolkit</span>
+            <span className="text-sm font-semibold text-gray-700">{t('toolkit')}</span>
           </a>
 
           {/* Contacts - with submenu */}
@@ -132,7 +134,7 @@ export default async function PatientDashboardPage() {
                 </a>
               </div>
             </div>
-            <span className="text-sm font-semibold text-gray-700">Contacts</span>
+            <span className="text-sm font-semibold text-gray-700">{t('contacts')}</span>
           </div>
         </div>
       </div>
@@ -163,10 +165,10 @@ export default async function PatientDashboardPage() {
             </div>
             <span className="text-2xl font-bold text-gray-900">{stats.notifications.unread}</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Notifications</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">{t('notifications')}</h3>
           {/* Decorative - low contrast intentional for notification status helper text */}
           <p className="text-xs text-gray-500">
-            {stats.notifications.unread > 0 ? `${stats.notifications.unread} unread` : 'All caught up'}
+            {stats.notifications.unread > 0 ? t('unreadCount', { count: stats.notifications.unread }) : t('allCaughtUp')}
           </p>
         </a>
 
@@ -190,9 +192,9 @@ export default async function PatientDashboardPage() {
             </div>
             <span className="text-2xl font-bold text-gray-900">{stats.documents.total}</span>
           </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Documents</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">{t('documents')}</h3>
           {/* Decorative - low contrast intentional for upload helper text */}
-          <p className="text-xs text-gray-500">Click to upload</p>
+          <p className="text-xs text-gray-500">{t('clickToUpload')}</p>
         </a>
       </div>
 
@@ -207,12 +209,12 @@ export default async function PatientDashboardPage() {
           {/* Upcoming Appointments */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Upcoming Appointments</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('upcomingAppointments')}</h2>
               <a
                 href="/portal/appointments"
                 className="text-sm font-semibold text-green-600 hover:text-green-700"
               >
-                View all →
+                {t('viewAll')}
               </a>
             </div>
 
@@ -235,8 +237,8 @@ export default async function PatientDashboardPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Follow-up visit</h3>
-                  <p className="text-sm text-gray-600 mt-1">Dr. Juan Pérez - General Medicine</p>
+                  <h3 className="font-semibold text-gray-900">{t('followUpVisit')}</h3>
+                  <p className="text-sm text-gray-600 mt-1">Dr. Juan Pérez - {t('generalMedicine')}</p>
                   {/* Decorative - low contrast intentional for appointment metadata (date and time) */}
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
@@ -264,7 +266,7 @@ export default async function PatientDashboardPage() {
                   </div>
                 </div>
                 <span className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                  In 3 days
+                  {t('inThreeDays')}
                 </span>
               </div>
 
@@ -286,7 +288,7 @@ export default async function PatientDashboardPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Laboratory - Blood test</h3>
+                  <h3 className="font-semibold text-gray-900">{t('laboratoryBloodTest')}</h3>
                   <p className="text-sm text-gray-600 mt-1">Lab. Central - Dr. María López</p>
                   {/* Decorative - low contrast intentional for consultation metadata (date and time) */}
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
@@ -315,7 +317,7 @@ export default async function PatientDashboardPage() {
                   </div>
                 </div>
                 <span className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                  In 7 days
+                  {t('inSevenDays')}
                 </span>
               </div>
             </div>
@@ -329,7 +331,7 @@ export default async function PatientDashboardPage() {
         <div className="space-y-6">
           {/* Quick Actions */}
           <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{t('quickActions')}</h2>
             <div className="space-y-2">
               <a
                 href="/portal/dashboard/appointments/schedule"
@@ -340,7 +342,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Book Appointment</span>
+                <span className="font-medium text-gray-900">{t('bookAppointment')}</span>
               </a>
 
               <a
@@ -352,7 +354,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">View Notifications</span>
+                <span className="font-medium text-gray-900">{t('viewNotifications')}</span>
               </a>
 
               <a
@@ -364,7 +366,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Upload Document</span>
+                <span className="font-medium text-gray-900">{t('uploadDocument')}</span>
               </a>
 
               <a
@@ -376,7 +378,7 @@ export default async function PatientDashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 </div>
-                <span className="font-medium text-gray-900">Send Message</span>
+                <span className="font-medium text-gray-900">{t('sendMessage')}</span>
               </a>
             </div>
           </div>
@@ -387,10 +389,10 @@ export default async function PatientDashboardPage() {
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <span className="text-lg">💡</span>
               </div>
-              <h3 className="font-bold text-gray-900">Daily Tip</h3>
+              <h3 className="font-bold text-gray-900">{t('dailyTip')}</h3>
             </div>
             <p className="text-sm text-gray-700">
-              Take your medications at the same time daily to maintain consistent levels.
+              {t('dailyTipText')}
             </p>
           </div>
         </div>

@@ -132,7 +132,7 @@ export default function ThemeToggle() {
         onClick={cycleTheme}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+        className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.10] transition-all duration-200 border border-gray-200 dark:border-white/[0.10] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
         aria-label={`Current theme: ${getThemeLabel()}. Click to cycle themes. Keyboard shortcut: ${
           typeof navigator !== 'undefined' && typeof navigator.platform === 'string' && navigator.platform.includes('Mac')
             ? 'Cmd'
@@ -161,7 +161,7 @@ export default function ThemeToggle() {
 
       {/* Theme indicator badge (optional visual cue) */}
       {theme === 'auto' && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse" />
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-gray-950 animate-pulse" />
       )}
 
       {/* CSS for smooth animations */}

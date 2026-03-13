@@ -33,6 +33,7 @@ jest.mock('@/lib/cache/patient-context-cache', () => ({
 }));
 
 jest.mock('@/lib/logger', () => ({
+  __esModule: true,
   logger: {
     info: jest.fn(),
     error: jest.fn(),

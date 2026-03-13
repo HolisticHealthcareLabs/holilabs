@@ -6,29 +6,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createAuditLog } from '@/lib/audit';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export const POST = createPublicRoute(
-  async (request: NextRequest, context: { params?: Promise<{ id: string }> | { id: string } }) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    const params = await Promise.resolve(context.params ?? {});
-    const { id } = params;
+export const POST = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
+    const { id } = context.params;
 
     if (!id) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Record ID is required',
-        },
+        { success: false, error: 'Record ID is required' },
         { status: 400 }
       );
     }
@@ -63,28 +54,22 @@ export const POST = createPublicRoute(
 
     if (!record) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Registro no encontrado.',
-        },
+        { success: false, error: 'Registro no encontrado.' },
         { status: 404 }
       );
     }
 
     // Verify the record belongs to the authenticated patient
-    if (record.patientId !== session.patientId) {
+    if (record.patientId !== context.session.patientId) {
       logger.warn({
         event: 'unauthorized_record_export_attempt',
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         requestedRecordId: id,
         actualRecordPatientId: record.patientId,
       });
 
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No tienes permiso para exportar este registro.',
-        },
+        { success: false, error: 'No tienes permiso para exportar este registro.' },
         { status: 403 }
       );
     }
@@ -98,7 +83,7 @@ export const POST = createPublicRoute(
       resource: 'SOAPNote',
       resourceId: record.id,
       details: {
-        patientId: session.patientId,
+        patientId: context.session.patientId,
         recordId: record.id,
         clinicianId: record.clinicianId,
         exportFormat: 'HTML',
@@ -107,10 +92,6 @@ export const POST = createPublicRoute(
       },
       success: true,
     });
-
-    // For now, return HTML that can be converted to PDF on client side
-    // In production, you would use a library like puppeteer or pdfkit
-    // or a service like DocRaptor to generate the PDF server-side
 
     return new NextResponse(html, {
       status: 200,
@@ -122,33 +103,11 @@ export const POST = createPublicRoute(
         )}.html"`,
       },
     });
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_record_export_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al exportar registro médico.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  {
+    rateLimit: { windowMs: 60 * 1000, maxRequests: 30 },
+    audit: { action: 'EXPORT', resource: 'Record' },
+  }
 );
 
 /**

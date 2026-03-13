@@ -103,8 +103,8 @@ describe('Suite 3 — Audit Trail', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Re-set $transaction implementation every time since clearAllMocks doesn't guarantee it
-    txCreate = (prisma as any)._txCreate as jest.Mock;
-    txQueryRaw = (prisma as any)._txQueryRaw as jest.Mock;
+    txCreate = prisma._txCreate as jest.Mock;
+    txQueryRaw = prisma._txQueryRaw as jest.Mock;
     prisma.$transaction.mockImplementation((fn: any) => fn({
       $queryRaw: txQueryRaw,
       auditLog: { create: txCreate },

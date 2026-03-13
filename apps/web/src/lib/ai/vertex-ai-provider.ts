@@ -48,7 +48,8 @@ export class VertexAIProvider implements AIProvider {
     if (this.client) return this.client;
 
     try {
-      const { VertexAI } = await import('@google-cloud/vertexai');
+      // Dynamic import — @google-cloud/vertexai is optional, only needed when AI_GEMINI_BACKEND=vertex
+      const { VertexAI } = await (Function('return import("@google-cloud/vertexai")')() as Promise<any>);
       const vertexAI = new VertexAI({
         project: this.project,
         location: this.location,

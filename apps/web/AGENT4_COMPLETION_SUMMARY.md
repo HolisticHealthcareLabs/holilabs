@@ -257,17 +257,17 @@ The following secrets were found in documentation files and should be revoked:
 ```bash
 # 1. Resend API Key (CRITICAL)
 # Location: RED_TEAM_REPORT.md, IMMEDIATE_ACTION_PLAN.md, SECURITY_AUDIT_SUMMARY.md
-# Value: re_hvh5qDG6_MTrQWGJw38ZbifzRnaTf5JRu
+# Value: <REDACTED-REVOKE-AND-REGENERATE>
 # Action: https://resend.com/api-keys → Revoke → Generate new → Update .env.local
 
 # 2. DEID Secret (HIGH)
 # Location: RED_TEAM_REPORT.md, .env.local.backup
-# Value: 0cf812898a2ed9a946fc4b1eb4747d428cb14ed9517dec6b43dee29869f495c4
+# Value: <REDACTED-REVOKE-AND-REGENERATE>
 # Action: openssl rand -hex 32 → Update .env.local
 
 # 3. BetterStack Token (VERIFY)
 # Location: betterstack-logger.test.ts, RED_TEAM_REPORT.md
-# Value: ppRsuAAsrT4hR8Uw8HAY4UCu
+# Value: <REDACTED-REVOKE-AND-REGENERATE>
 # Action: Verify if real → If so, revoke at https://betterstack.com/logs
 ```
 

@@ -14,11 +14,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 export default function PatientForgotPasswordPage() {
   const router = useRouter();
+  const t = useTranslations('portal.forgotPassword');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -71,9 +73,9 @@ export default function PatientForgotPasswordPage() {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <h1 className="text-3xl font-bold text-gray-900">¿Olvidaste tu contraseña?</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           <p className="text-gray-600 mt-2">
-            Te enviaremos un enlace para restablecer tu contraseña
+            {t('subtitle')}
           </p>
         </div>
 
@@ -89,17 +91,15 @@ export default function PatientForgotPasswordPage() {
               </div>
 
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                ¡Correo enviado!
+                {t('emailSent')}
               </h2>
 
-              <p className="text-gray-600 mb-6">
-                Si existe una cuenta con el correo <strong>{email}</strong>, recibirás instrucciones para restablecer tu contraseña.
-              </p>
+              <p className="text-gray-600 mb-6" dangerouslySetInnerHTML={{ __html: t('emailSentDescription', { email }) }} />
 
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm text-left">
-                <p className="font-semibold mb-1">📧 Revisa tu bandeja de entrada</p>
+                <p className="font-semibold mb-1">📧 {t('checkInbox')}</p>
                 <p className="text-xs">
-                  El correo puede tardar unos minutos en llegar. No olvides revisar tu carpeta de spam.
+                  {t('checkInboxDescription')}
                 </p>
               </div>
 
@@ -107,7 +107,7 @@ export default function PatientForgotPasswordPage() {
                 onClick={() => router.push('/portal/login')}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
               >
-                Volver al inicio de sesión
+                {t('backToLogin')}
               </button>
             </div>
           ) : (
@@ -121,14 +121,14 @@ export default function PatientForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Input
-                  label="Correo Electrónico"
+                  label={t('email')}
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoFocus
-                  placeholder="tu@correo.com"
-                  helperText="Ingresa el correo asociado a tu cuenta"
+                  placeholder={t('emailPlaceholder')}
+                  helperText={t('emailHelper')}
                 />
 
                 <Button
@@ -138,7 +138,7 @@ export default function PatientForgotPasswordPage() {
                   fullWidth
                   loading={loading}
                 >
-                  Enviar enlace de restablecimiento
+                  {t('sendResetLink')}
                 </Button>
               </form>
 
@@ -148,7 +148,7 @@ export default function PatientForgotPasswordPage() {
                   onClick={() => router.push('/portal/login')}
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
-                  ← Volver al inicio de sesión
+                  ← {t('backToLogin')}
                 </button>
               </div>
             </>
@@ -161,7 +161,7 @@ export default function PatientForgotPasswordPage() {
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
-            <span>El enlace de restablecimiento expira en 1 hora</span>
+            <span>{t('linkExpiry')}</span>
           </div>
         </div>
       </motion.div>

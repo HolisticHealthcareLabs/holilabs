@@ -231,16 +231,10 @@ Data Protection Officer: dpo@holilabs.com
       text: emailText,
     });
 
-    console.log('[Deletion Email] Queued for:', email, 'Email ID:', emailId);
+    console.error('[DeletionEmail]', { event: 'queued', emailId });
 
-    // Log in development for debugging
     if (process.env.NODE_ENV === 'development') {
-      console.log('\n=== DELETION CONFIRMATION EMAIL ===');
-      console.log('To:', email);
-      console.log('Subject:', emailSubject);
-      console.log('Confirmation URL:', confirmationUrl);
-      console.log('Email ID:', emailId);
-      console.log('===================================\n');
+      console.error('[DeletionEmail]', { event: 'dev_debug', to: email, subject: emailSubject, confirmationUrl, emailId });
     }
   } catch (error) {
     console.error('[Deletion Email] Failed to queue email:', error);
@@ -398,15 +392,10 @@ Data Protection Officer: dpo@holilabs.com
       text: emailText,
     });
 
-    console.log('[Deletion Completed Email] Queued for:', email, 'Email ID:', emailId);
+    console.error('[DeletionEmail]', { event: 'completed_queued', emailId });
 
-    // Log in development for debugging
     if (process.env.NODE_ENV === 'development') {
-      console.log('\n=== DELETION COMPLETED EMAIL ===');
-      console.log('To:', email);
-      console.log('Subject:', emailSubject);
-      console.log('Email ID:', emailId);
-      console.log('===================================\n');
+      console.error('[DeletionEmail]', { event: 'dev_debug_completed', to: email, subject: emailSubject, emailId });
     }
   } catch (error) {
     console.error('[Deletion Completed Email] Failed to queue email:', error);

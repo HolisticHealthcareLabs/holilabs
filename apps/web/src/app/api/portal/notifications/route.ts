@@ -2,18 +2,14 @@
  * Notifications API
  *
  * GET /api/portal/notifications - Get patient's notifications
- * POST /api/portal/notifications/[id]/read - Mark notification as read
- * DELETE /api/portal/notifications/[id] - Delete notification
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePatientSession } from '@/lib/auth/patient-session';
+import { createPatientPortalRoute, type PatientPortalContext } from '@/lib/api/patient-portal-middleware';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { createPublicRoute } from '@/lib/api/middleware';
 import { z } from 'zod';
 
-// Query parameters schema
 const NotificationsQuerySchema = z.object({
   limit: z.preprocess(
     (v) => (v === null || v === undefined || v === '' ? undefined : v),
@@ -26,13 +22,8 @@ const NotificationsQuerySchema = z.object({
   type: z.string().optional(),
 });
 
-export const GET = createPublicRoute(
-  async (request: NextRequest) => {
-  try {
-    // Authenticate patient
-    const session = await requirePatientSession();
-
-    // Parse query parameters
+export const GET = createPatientPortalRoute(
+  async (request: NextRequest, context: PatientPortalContext) => {
     const searchParams = request.nextUrl.searchParams;
     const queryValidation = NotificationsQuerySchema.safeParse({
       limit: searchParams.get('limit'),
@@ -53,9 +44,8 @@ export const GET = createPublicRoute(
 
     const { limit, unreadOnly, type } = queryValidation.data;
 
-    // Build filter conditions
     const where: any = {
-      recipientId: session.patientId,
+      recipientId: context.session.patientId,
       recipientType: 'PATIENT',
     };
 
@@ -67,7 +57,6 @@ export const GET = createPublicRoute(
       where.type = type;
     }
 
-    // Fetch notifications
     const notifications = await prisma.notification.findMany({
       where,
       orderBy: {
@@ -76,10 +65,9 @@ export const GET = createPublicRoute(
       take: limit,
     });
 
-    // Count unread notifications
     const unreadCount = await prisma.notification.count({
       where: {
-        recipientId: session.patientId,
+        recipientId: context.session.patientId,
         recipientType: 'PATIENT',
         isRead: false,
       },
@@ -87,7 +75,7 @@ export const GET = createPublicRoute(
 
     logger.info({
       event: 'patient_notifications_fetched',
-      patientId: session.patientId,
+      patientId: context.session.patientId,
       count: notifications.length,
       unreadCount,
     });
@@ -103,31 +91,6 @@ export const GET = createPublicRoute(
       },
       { status: 200 }
     );
-  } catch (error) {
-    // Check if it's an auth error
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No autorizado. Por favor, inicia sesión.',
-        },
-        { status: 401 }
-      );
-    }
-
-    logger.error({
-      event: 'patient_notifications_fetch_error',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al cargar notificaciones.',
-      },
-      { status: 500 }
-    );
-  }
   },
-  { rateLimit: { windowMs: 60 * 1000, maxRequests: 30 } }
+  { audit: { action: 'READ', resource: 'Notifications' } }
 );

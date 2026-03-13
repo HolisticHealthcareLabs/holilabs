@@ -21,7 +21,7 @@ export const POST = createProtectedRoute(
       include: {
         appointment: {
           include: {
-            clinician: true, // TODO: Fixed - clinician is already a User, no nested 'user' relation exists
+            clinician: true,
           },
         },
       },

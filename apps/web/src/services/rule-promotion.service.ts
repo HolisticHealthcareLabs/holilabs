@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Octokit } from 'octokit';
 import { env } from '@/lib/env';
+import logger from '@/lib/logger';
 
 interface SimplifiedRule {
     condition: string;
@@ -40,7 +41,7 @@ export class RulePromotionService {
 
         // In prototype phase, we might relax these
         if (cluster.frequency < MIN_FREQUENCY) {
-            console.log(`Cluster ${clusterId} frequency ${cluster.frequency} below threshold ${MIN_FREQUENCY}`);
+            logger.debug('[RulePromotion] cluster_below_threshold', { clusterId, frequency: cluster.frequency, threshold: MIN_FREQUENCY });
             return null;
         }
 
@@ -111,8 +112,8 @@ Please review and merge to deploy to staging.
             // 4. Create PR
 
             // For this prototype, we'll just log what we WOULD do because we don't have a real repo to hit
-            console.log(`[MOCK] Creating PR on ${owner}/${repo} branch ${branchName}`);
-            console.log(`[MOCK] PR Body: ${body}`);
+            logger.debug('[RulePromotion] mock_pr_creation', { owner, repo, branchName });
+            logger.debug('[RulePromotion] mock_pr_body', { body });
 
             return `https://github.com/${owner}/${repo}/pull/new/${branchName}`;
 

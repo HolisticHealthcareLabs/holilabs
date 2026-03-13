@@ -25,7 +25,7 @@ const VALID_PROVIDERS: EhrProviderId[] = ['epic', 'cerner', 'athena', 'medplum']
  */
 export const GET = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const provider = params.provider;
 
     if (!VALID_PROVIDERS.includes(provider as EhrProviderId)) {
@@ -77,7 +77,7 @@ export const GET = createProtectedRoute(
  */
 export const DELETE = createProtectedRoute(
   async (request: NextRequest, context: any) => {
-    const params = await Promise.resolve(context.params ?? {});
+    const params = await Promise.resolve(context.params ?? ({} as any));
     const provider = params.provider;
 
     if (!VALID_PROVIDERS.includes(provider as EhrProviderId)) {

@@ -198,7 +198,7 @@ function getScreeningEvidence(screeningType: string): string {
 }
 
 export const GET = createProtectedRoute(
-  async (request: NextRequest, context: { params?: { patientId?: string } }) => {
+  async (request: NextRequest, context: any) => {
     const patientId = context.params?.patientId;
     if (!patientId) {
       return NextResponse.json({ error: 'Patient ID required' }, { status: 400 });

@@ -8,6 +8,11 @@
 
 import { NextRequest } from 'next/server';
 
+jest.mock('@/lib/api/middleware', () => ({
+  createProtectedRoute: (handler: any) => handler,
+  verifyPatientAccess: jest.fn().mockResolvedValue(true),
+}));
+
 jest.mock('@/lib/auth/auth', () => ({
   auth: jest.fn(),
 }));
@@ -18,6 +23,11 @@ jest.mock('@/lib/security/require-secret', () => ({
 
 jest.mock('@/lib/audit', () => ({
   createAuditLog: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@/lib/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() },
 }));
 
 jest.mock('@/lib/prisma', () => ({
@@ -33,6 +43,7 @@ jest.mock('@/lib/prisma', () => ({
 
 const { auth } = require('@/lib/auth/auth');
 const { prisma } = require('@/lib/prisma');
+const { verifyPatientAccess } = require('@/lib/api/middleware');
 const { POST } = require('../route');
 
 const mockContext = {
@@ -56,6 +67,7 @@ describe('POST /api/clinical/decision-support', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (verifyPatientAccess as jest.Mock).mockResolvedValue(true);
     (auth as jest.Mock).mockResolvedValue({ user: { id: 'clinician-1' } });
     (prisma.patient.findUnique as jest.Mock).mockResolvedValue(mockPatient);
     (prisma.user.findFirst as jest.Mock).mockResolvedValue(null);
@@ -104,7 +116,7 @@ describe('POST /api/clinical/decision-support', () => {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const response = await POST(request);
+    const response = await POST(request, mockContext);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -123,7 +135,7 @@ describe('POST /api/clinical/decision-support', () => {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const response = await POST(request);
+    const response = await POST(request, mockContext);
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -141,7 +153,7 @@ describe('POST /api/clinical/decision-support', () => {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const response = await POST(request);
+    const response = await POST(request, mockContext);
     const data = await response.json();
 
     expect(response.status).toBe(200);

@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { icd11Service } from '@/lib/clinical';
 import { internationalGuidelinesService } from '@/lib/clinical';
+import logger from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -150,7 +151,7 @@ export const GET = createProtectedRoute(
           });
       }
     } catch (error) {
-      console.error('International standards API error:', error);
+      logger.error('International standards API error:', error);
       return NextResponse.json(
         { success: false, error: 'Failed to query international standards' },
         { status: 500 }
@@ -211,7 +212,7 @@ export const POST = createProtectedRoute(
 
       return NextResponse.json(validation);
     } catch (error) {
-      console.error('Validation error:', error);
+      logger.error('Validation error:', error);
       return NextResponse.json(
         { success: false, error: 'Validation failed' },
         { status: 500 }

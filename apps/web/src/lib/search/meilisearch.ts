@@ -130,7 +130,7 @@ export async function initializeMeilisearch() {
       },
     });
 
-    console.log('✅ Meilisearch initialized successfully');
+    console.error('[Meilisearch]', { event: 'initialized' });
     return true;
   } catch (error) {
     console.error('❌ Failed to initialize Meilisearch:', error);
@@ -325,7 +325,7 @@ export async function reindexAllPatients(prisma: any, batchSize: number = 100) {
   try {
     // Get total count
     const totalPatients = await prisma.patient.count();
-    console.log(`🔄 Reindexing ${totalPatients} patients...`);
+    console.error('[Meilisearch]', { event: 'reindexing_patients', count: totalPatients });
 
     // Process in batches
     let processed = 0;
@@ -374,10 +374,10 @@ export async function reindexAllPatients(prisma: any, batchSize: number = 100) {
       await indexPatients(documents);
 
       processed += patients.length;
-      console.log(`  ✓ Indexed ${processed}/${totalPatients} patients`);
+      console.error('[Meilisearch]', { event: 'patient_batch_indexed', processed, total: totalPatients });
     }
 
-    console.log('✅ Reindexing complete');
+    console.error('[Meilisearch]', { event: 'patient_reindex_complete' });
     return true;
   } catch (error) {
     console.error('❌ Failed to reindex patients:', error);
@@ -480,7 +480,7 @@ export async function initializeMessageIndex() {
       },
     });
 
-    console.log('✅ Message search index initialized successfully');
+    console.error('[Meilisearch]', { event: 'message_index_initialized' });
     return true;
   } catch (error) {
     console.error('❌ Failed to initialize message search index:', error);
@@ -631,7 +631,7 @@ export async function reindexAllMessages(prisma: any, batchSize: number = 100) {
     const totalMessages = await prisma.message.count({
       where: { archivedAt: null },
     });
-    console.log(`🔄 Reindexing ${totalMessages} messages...`);
+    console.error('[Meilisearch]', { event: 'reindexing_messages', count: totalMessages });
 
     // Process in batches
     let processed = 0;
@@ -688,10 +688,10 @@ export async function reindexAllMessages(prisma: any, batchSize: number = 100) {
       await indexMessages(documents);
 
       processed += messages.length;
-      console.log(`  ✓ Indexed ${processed}/${totalMessages} messages`);
+      console.error('[Meilisearch]', { event: 'message_batch_indexed', processed, total: totalMessages });
     }
 
-    console.log('✅ Message reindexing complete');
+    console.error('[Meilisearch]', { event: 'message_reindex_complete' });
     return true;
   } catch (error) {
     console.error('❌ Failed to reindex messages:', error);

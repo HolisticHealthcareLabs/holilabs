@@ -32,8 +32,6 @@ export async function updateAppointmentStatus(
     return { success: false, error: `Invalid status: ${newStatus}` };
   }
 
-  console.log(`[Schedule] Appointment ${appointmentId} status changed to ${newStatus} by ${session.user.id} (${role})`);
-
   return { success: true, message: `Status updated to ${newStatus}` };
 }
 
@@ -58,8 +56,6 @@ export async function nudgeProvider(params: {
   if (!params.noteId) {
     return { success: false, error: 'Invalid note ID' };
   }
-
-  console.log(`[Schedule] Nudge sent to ${params.providerName} for note ${params.noteId} by ${session.user.id} (${role})`);
 
   return { success: true, message: `Reminder sent to ${params.providerName}` };
 }
