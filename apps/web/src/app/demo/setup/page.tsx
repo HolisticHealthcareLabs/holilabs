@@ -640,7 +640,7 @@ export default function DemoSetupPage() {
             </p>
             <div className="flex items-center gap-2 text-[11px] text-white/30">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {language === 'pt' ? 'Personalizando seu command center...' : language === 'es' ? 'Personalizando tu command center...' : 'Tailoring your command center...'}
+              {language === 'pt' ? 'Personalizando seu painel clínico...' : language === 'es' ? 'Personalizando tu panel clínico...' : 'Tailoring your command center...'}
             </div>
           </motion.div>
         )}
