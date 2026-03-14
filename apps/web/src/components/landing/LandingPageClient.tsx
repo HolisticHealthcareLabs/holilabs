@@ -8,6 +8,7 @@ import { Hero } from '@/components/landing/Hero';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { Roadmap } from '@/components/landing/Roadmap';
 import { DataMoat } from '@/components/landing/DataMoat';
+import { PatientDataRights } from '@/components/landing/PatientDataRights';
 import { DemoRequest } from '@/components/landing/DemoRequest';
 import { Footer } from '@/components/landing/Footer';
 
@@ -27,6 +28,7 @@ export function LandingPageClient() {
           <HowItWorks />
           <Roadmap />
           <DataMoat />
+          <PatientDataRights />
           <DemoRequest />
         </main>
 

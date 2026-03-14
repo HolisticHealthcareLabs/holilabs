@@ -71,6 +71,15 @@ type LandingCopy = {
     }>;
     flywheel: string;
   };
+  patientDataRights: {
+    kicker: string;
+    title: string;
+    subtitle: string;
+    rights: Array<{ title: string; body: string }>;
+    lawBadgeLabel: string;
+    laws: string[];
+    lawNote: string;
+  };
   demo: {
     title: string;
     subtitle: string;
@@ -270,6 +279,40 @@ const landingCopy: Record<Locale, LandingCopy> = {
         },
       ],
       flywheel: 'Every physician validation strengthens the guardrail.',
+    },
+    patientDataRights: {
+      kicker: 'For your patients',
+      title: 'Your patients own their data. Always.',
+      subtitle: 'We built Holi Labs with patient rights at the core — not as an afterthought. Your patients have full visibility and control over everything their clinical record contains.',
+      rights: [
+        {
+          title: 'Full Data Ownership',
+          body: 'Patients own their clinical history. No lock-in. Data can be exported, transferred, or deleted at any time — no questions asked.',
+        },
+        {
+          title: 'Portable Health Record',
+          body: 'One-click export in standard FHIR R4 format. Patients can take their complete record to any doctor, clinic, or system in the world.',
+        },
+        {
+          title: 'Granular Consent Controls',
+          body: 'Patients choose exactly what data each provider can see. Research, marketing, and telehealth access are separate toggles — never bundled.',
+        },
+        {
+          title: 'Right to Erasure',
+          body: 'Patients can request complete deletion of their data at any time. We execute cryptographic erasure within 30 days, with a certificate of deletion.',
+        },
+        {
+          title: '30-Year Audit History',
+          body: 'Every access to a patient\'s record is logged with timestamp, who accessed it, and why. Patients can see exactly who has viewed their data.',
+        },
+        {
+          title: 'Access Revocation',
+          body: 'Patients can revoke a provider\'s access to their record at any time — instantly and without needing to contact anyone.',
+        },
+      ],
+      lawBadgeLabel: 'Compliant with',
+      laws: ['LGPD (Brazil)', 'HIPAA (US)', 'LPDP (Argentina)', 'GDPR-aligned', 'ANPD Guidelines', 'ANVISA RDC 657'],
+      lawNote: 'Patient data rights are not just good practice — they are the law in every market we operate. We exceed minimum requirements in all of them.',
     },
     demo: {
       title: 'Join the consensus.',
@@ -504,6 +547,40 @@ const landingCopy: Record<Locale, LandingCopy> = {
       ],
       flywheel: 'Cada validación médica fortalece el guardarriel.',
     },
+    patientDataRights: {
+      kicker: 'Para tus pacientes',
+      title: 'Tus pacientes son dueños de sus datos. Siempre.',
+      subtitle: 'Construimos Holi Labs con los derechos del paciente en el núcleo — no como algo secundario. Tus pacientes tienen visibilidad y control total sobre todo lo que contiene su expediente clínico.',
+      rights: [
+        {
+          title: 'Propiedad Total de Datos',
+          body: 'Los pacientes son dueños de su historial clínico. Sin bloqueos. Los datos pueden exportarse, transferirse o eliminarse en cualquier momento.',
+        },
+        {
+          title: 'Expediente Portable',
+          body: 'Exportación con un clic en formato FHIR R4 estándar. Los pacientes pueden llevar su expediente completo a cualquier médico, clínica o sistema del mundo.',
+        },
+        {
+          title: 'Controles de Consentimiento Granulares',
+          body: 'Los pacientes eligen exactamente qué datos puede ver cada proveedor. Investigación, marketing y acceso a telemedicina son opciones separadas — nunca agrupadas.',
+        },
+        {
+          title: 'Derecho al Olvido',
+          body: 'Los pacientes pueden solicitar la eliminación completa de sus datos en cualquier momento. Ejecutamos el borrado criptográfico en 30 días con certificado de eliminación.',
+        },
+        {
+          title: 'Historial de Auditoría de 30 Años',
+          body: 'Cada acceso al expediente de un paciente se registra con marca de tiempo, quién accedió y por qué. Los pacientes pueden ver exactamente quién ha visto sus datos.',
+        },
+        {
+          title: 'Revocación de Acceso',
+          body: 'Los pacientes pueden revocar el acceso de un proveedor a su expediente en cualquier momento — de forma instantánea y sin necesidad de contactar a nadie.',
+        },
+      ],
+      lawBadgeLabel: 'Cumple con',
+      laws: ['LGPD (Brasil)', 'HIPAA (EE.UU.)', 'LPDP (Argentina)', 'Alineado con GDPR', 'Directrices ANPD', 'ANVISA RDC 657'],
+      lawNote: 'Los derechos de datos del paciente no son solo buena práctica — son la ley en todos los mercados en los que operamos. Superamos los requisitos mínimos en todos ellos.',
+    },
     demo: {
       title: 'Únete al consenso.',
       subtitle:
@@ -736,6 +813,40 @@ const landingCopy: Record<Locale, LandingCopy> = {
         },
       ],
       flywheel: 'Cada validação médica fortalece o guardrail.',
+    },
+    patientDataRights: {
+      kicker: 'Para seus pacientes',
+      title: 'Seus pacientes são donos dos seus dados. Sempre.',
+      subtitle: 'Construímos o Holi Labs com os direitos do paciente no núcleo — não como algo secundário. Seus pacientes têm visibilidade e controle total sobre tudo que o prontuário deles contém.',
+      rights: [
+        {
+          title: 'Propriedade Total dos Dados',
+          body: 'Pacientes são donos do seu histórico clínico. Sem aprisionamento. Os dados podem ser exportados, transferidos ou excluídos a qualquer momento, sem burocracia.',
+        },
+        {
+          title: 'Prontuário Portátil',
+          body: 'Exportação com um clique em formato FHIR R4 padrão. Pacientes podem levar seu prontuário completo para qualquer médico, clínica ou sistema do mundo.',
+        },
+        {
+          title: 'Controles de Consentimento Granulares',
+          body: 'Pacientes escolhem exatamente quais dados cada profissional pode ver. Pesquisa, marketing e acesso à telemedicina são opções separadas — nunca agrupadas.',
+        },
+        {
+          title: 'Direito ao Esquecimento',
+          body: 'Pacientes podem solicitar a exclusão completa dos seus dados a qualquer momento. Executamos o apagamento criptográfico em 30 dias com certificado de exclusão.',
+        },
+        {
+          title: 'Histórico de Auditoria de 30 Anos',
+          body: 'Cada acesso ao prontuário de um paciente é registrado com data, hora, quem acessou e por quê. Pacientes podem ver exatamente quem visualizou seus dados.',
+        },
+        {
+          title: 'Revogação de Acesso',
+          body: 'Pacientes podem revogar o acesso de um profissional ao seu prontuário a qualquer momento — instantaneamente e sem precisar entrar em contato com ninguém.',
+        },
+      ],
+      lawBadgeLabel: 'Em conformidade com',
+      laws: ['LGPD (Brasil)', 'HIPAA (EUA)', 'LPDP (Argentina)', 'Alinhado ao GDPR', 'Diretrizes ANPD', 'ANVISA RDC 657'],
+      lawNote: 'Os direitos de dados do paciente não são apenas boa prática — são lei em todos os mercados em que atuamos. Superamos os requisitos mínimos em todos eles.',
     },
     demo: {
       title: 'Junte-se ao consenso.',
