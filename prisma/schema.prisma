@@ -25,6 +25,7 @@ model User {
 
   // Authentication
   passwordHash        String?
+  signingPinHash      String? // bcrypt hash of 4-6 digit prescription-signing PIN
   username            String?  @unique
   onboardingCompleted Boolean  @default(false)
   permissions         String[] @default([])

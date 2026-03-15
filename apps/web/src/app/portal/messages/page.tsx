@@ -85,47 +85,45 @@ export default function PatientMessagesPage() {
     fetchConversation();
   }, []);
 
-  // Initialize Socket.io
+  // Initialize Socket.io with server-verified auth token (not raw patientId)
   useEffect(() => {
     if (!patientId || !conversation) return;
 
-    // TODO: initSocket requires authToken parameter - using patientId as temporary token
-    initSocket(patientId);
-    connectSocket(patientId, 'PATIENT');
+    let cancelled = false;
 
-    const socket = getSocket();
-    if (!socket) return;
+    async function setupSocket() {
+      await connectSocket(patientId!, 'PATIENT');
+      if (cancelled) return;
 
-    // Join conversation room
-    joinConversation(conversation.clinicianId);
+      const sock = getSocket();
+      if (!sock) return;
 
-    // Listen for new messages
-    socket.on('new_message', (message: Message) => {
-      setMessages((prev) => [...prev, message]);
+      joinConversation(conversation!.clinicianId);
 
-      // Mark as read
-      fetch(`/api/messages/${conversation.clinicianId}`, {
-        method: 'PATCH',
+      sock.on('new_message', (message: Message) => {
+        setMessages((prev) => [...prev, message]);
+        fetch(`/api/messages/${conversation!.clinicianId}`, { method: 'PATCH' });
       });
-    });
 
-    // Listen for typing indicators
-    socket.on('user_typing', ({ userId }: { userId: string }) => {
-      if (userId === conversation.clinicianId) {
-        setIsTyping(true);
-      }
-    });
+      sock.on('user_typing', ({ userId }: { userId: string }) => {
+        if (userId === conversation!.clinicianId) setIsTyping(true);
+      });
 
-    socket.on('user_stopped_typing', ({ userId }: { userId: string }) => {
-      if (userId === conversation.clinicianId) {
-        setIsTyping(false);
-      }
-    });
+      sock.on('user_stopped_typing', ({ userId }: { userId: string }) => {
+        if (userId === conversation!.clinicianId) setIsTyping(false);
+      });
+    }
+
+    setupSocket();
 
     return () => {
-      socket.off('new_message');
-      socket.off('user_typing');
-      socket.off('user_stopped_typing');
+      cancelled = true;
+      const sock = getSocket();
+      if (sock) {
+        sock.off('new_message');
+        sock.off('user_typing');
+        sock.off('user_stopped_typing');
+      }
       leaveConversation(conversation.clinicianId);
     };
   }, [patientId, conversation]);

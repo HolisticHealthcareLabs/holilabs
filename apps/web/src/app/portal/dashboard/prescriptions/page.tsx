@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/lib/auth/AuthProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,26 +32,55 @@ interface Prescription {
 
 export default function PatientPrescriptionsPage() {
   const t = useTranslations('portal.prescriptions');
-  const [patientId, setPatientId] = useState<string | null>(null);
+  const { patientId, loading: authLoading } = useAuth();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'history'>('active');
 
   useEffect(() => {
-    // TODO: Replace with proper patient portal authentication using NextAuth or session
-    // For now, this is a placeholder - patient authentication needs to be implemented
-    setError('Patient authentication not yet implemented');
-    setLoading(false);
-  }, []);
+    if (authLoading) return;
+    if (!patientId) {
+      setError('Unable to verify patient identity. Please sign in again.');
+      setLoading(false);
+      return;
+    }
+    loadPrescriptions();
+  }, [authLoading, patientId]);
 
-  const loadPrescriptions = async (patientId: string) => {
+  const loadPrescriptions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/prescriptions?patientId=${patientId}`);
+      setError(null);
+      const response = await fetch('/api/portal/medications');
       if (response.ok) {
         const data = await response.json();
-        setPrescriptions(data.data || []);
+        const meds = data.data?.medications || [];
+        const mapped: Prescription[] = meds
+          .filter((med: any) => med.prescription)
+          .map((med: any) => ({
+            id: med.prescription.id,
+            medications: [med],
+            diagnosis: '',
+            instructions: med.instructions || '',
+            status: med.prescription.status || 'PENDING',
+            signedAt: med.prescription.signedAt || '',
+            createdAt: med.createdAt || '',
+            sentToPharmacy: false,
+            pharmacyId: null,
+            prescriptionHash: '',
+            clinician: med.prescriber
+              ? {
+                  id: med.prescriber.id,
+                  firstName: med.prescriber.firstName,
+                  lastName: med.prescriber.lastName,
+                  licenseNumber: '',
+                }
+              : { id: '', firstName: 'Your', lastName: 'Provider', licenseNumber: '' },
+          }));
+        setPrescriptions(mapped);
+      } else if (response.status === 401) {
+        setError('Session expired. Please sign in again.');
       } else {
         setError('Failed to load prescriptions');
       }

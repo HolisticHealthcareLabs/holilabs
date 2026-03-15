@@ -169,10 +169,18 @@ export default function NotificationSettingsPage() {
   const handleSavePreferences = async () => {
     setLoading(true);
     try {
-      // TODO: Save preferences to backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert(t('alertSaveSuccess'));
+      const response = await fetch('/api/portal/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationPreferences: preferences }),
+      });
+      if (response.ok) {
+        alert(t('alertSaveSuccess'));
+      } else {
+        alert(t('alertSaveError'));
+      }
     } catch (error) {
+      logger.error('Error saving notification preferences:', error);
       alert(t('alertSaveError'));
     } finally {
       setLoading(false);

@@ -1,8 +1,10 @@
 name: Deploy to GCP Production
 
 on:
-  push:
-    branches: [main]
+  # push trigger disabled — DigitalOcean is the active production target.
+  # Re-enable when migrating to GCP Cloud Run per infra/gcp/DECOMMISSION_DIGITALOCEAN.md
+  # push:
+  #   branches: [main]
   workflow_dispatch:
     inputs:
       confirm:

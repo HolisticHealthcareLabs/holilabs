@@ -1,0 +1,89 @@
+name: Scheduled Cron Jobs
+
+# Runs cron jobs via HTTP against the production app.
+# These replace vercel.json crons which only fire on Vercel.
+
+on:
+  schedule:
+    # execute-reminders: every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+env:
+  APP_URL: https://holilabs.xyz
+  CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Execute reminders (every run)
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/execute-reminders" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 || true
+
+      - name: Process email queue (every run)
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/process-email-queue" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 || true
+
+      - name: Check escalations (every run)
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/escalations" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 || true
+
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Only run the daily jobs at ~02:00 UTC (check the minute of the scheduled run)
+    if: github.event.schedule == '*/5 * * * *' && false
+    steps: []
+
+  # Daily jobs run on a separate schedule
+  daily-2am:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Screening triggers
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/screening-triggers" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            --max-time 60 || true
+
+      - name: Expire consents
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/expire-consents" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            --max-time 60 || true
+
+      - name: Send consent reminders
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/send-consent-reminders" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            --max-time 30 || true
+
+      - name: Send appointment reminders
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/send-appointment-reminders" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            --max-time 30 || true
+
+      - name: Aggregate corrections
+        run: |
+          curl -sf -X POST "${APP_URL}/api/jobs/aggregate-corrections" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            --max-time 60 || true
+
+      - name: Cleanup ephemeral workspaces
+        run: |
+          curl -sf -X POST "${APP_URL}/api/cron/cleanup-ephemeral" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            --max-time 60 || true

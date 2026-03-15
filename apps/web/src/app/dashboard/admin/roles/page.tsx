@@ -37,11 +37,49 @@ const MOCK_TEAM: TeamMember[] = [
 export default function RolesAdminPage() {
   const { data: session } = useSession();
   const t = useTranslations('dashboard.admin');
+  // TODO: Replace MOCK_TEAM with a real GET /api/admin/team call
   const [team, setTeam] = useState<TeamMember[]>(MOCK_TEAM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<string>('STAFF');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const isOwner = session?.user?.role === 'LICENSE_OWNER' || session?.user?.role === 'ADMIN';
+
+  const handleSendInvitation = async () => {
+    if (!inviteEmail.trim()) return;
+    setInviteLoading(true);
+    setInviteMessage(null);
+    try {
+      const response = await fetch('/api/admin/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          role: inviteRole,
+          createdBy: session?.user?.id,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setInviteMessage({ type: 'success', text: `Invitation sent to ${inviteEmail}` });
+        setInviteEmail('');
+        setInviteRole('STAFF');
+        setTimeout(() => {
+          setShowInvite(false);
+          setInviteMessage(null);
+        }, 2000);
+      } else {
+        setInviteMessage({ type: 'error', text: data.error || 'Failed to send invitation' });
+      }
+    } catch {
+      setInviteMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -165,14 +203,19 @@ export default function RolesAdminPage() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+              {inviteMessage && (
+                <div className={`mb-3 px-3 py-2 rounded-lg text-sm ${inviteMessage.type === 'success' ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300' : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300'}`}>
+                  {inviteMessage.text}
+                </div>
+              )}
               <div className="space-y-3">
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">{t('email')}</label>
-                  <input type="email" placeholder="colleague@clinic.com" className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40" />
+                  <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="colleague@clinic.com" className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">{t('role')}</label>
-                  <select className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40">
+                  <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500/40">
                     {Object.entries(ROLE_CONFIG).filter(([k]) => k !== 'LICENSE_OWNER').map(([k, v]) => (
                       <option key={k} value={k}>{t(v.labelKey)}</option>
                     ))}
@@ -180,8 +223,8 @@ export default function RolesAdminPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-5">
-                <button onClick={() => setShowInvite(false)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t('cancel')}</button>
-                <button className="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 transition-colors">{t('sendInvitation')}</button>
+                <button onClick={() => { setShowInvite(false); setInviteMessage(null); }} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t('cancel')}</button>
+                <button onClick={handleSendInvitation} disabled={inviteLoading || !inviteEmail.trim()} className="px-4 py-2 text-sm font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{inviteLoading ? 'Sending...' : t('sendInvitation')}</button>
               </div>
             </div>
           </div>

@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
-import { uploadFile, type MulterFile } from '@/lib/storage/file-storage';
+import { uploadEncryptedFile } from '@/lib/storage/cloud-storage';
 import logger from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -48,21 +48,13 @@ export const POST = createProtectedRoute(
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Create MulterFile object
-    const multerFile: MulterFile = {
-      fieldname: 'file',
-      originalname: file.name,
-      encoding: '7bit',
-      mimetype: file.type,
-      buffer: buffer,
-      size: buffer.length,
-    };
-
-    // Upload to storage
-    const result = await uploadFile(multerFile, {
+    // Upload to R2 cloud storage (encrypted, HIPAA compliant)
+    const result = await uploadEncryptedFile(buffer, {
+      fileName: file.name,
+      mimeType: file.type,
       userId,
-      userType: 'clinician',
-      generateThumbnail: true,
+      patientId: formData.get('patientId') as string || undefined,
+      category: (formData.get('category') as string) || 'general',
     });
 
     logger.info({
