@@ -1,0 +1,16 @@
+export default function ContactPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Contact Us</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">Have a question or need to reach our team?</p>
+        <a
+          href="mailto:support@holilabs.com"
+          className="inline-flex items-center px-6 py-3 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold hover:opacity-90 transition-opacity"
+        >
+          Email Us
+        </a>
+      </div>
+    </div>
+  );
+}

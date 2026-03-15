@@ -21,6 +21,7 @@ import {
   MapPinIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import { logger } from '@/lib/logger';
 
 interface LoginHistory {
@@ -36,59 +37,56 @@ interface LoginHistory {
 export default function SecurityPage() {
   const router = useRouter();
   const t = useTranslations('portal.security');
+  const { patientId, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
   const [securityEvents, setSecurityEvents] = useState<any[]>([]);
   const [currentSession, setCurrentSession] = useState<any>(null);
 
   useEffect(() => {
-    fetchSecurityData();
-  }, []);
+    if (authLoading) return;
+    if (patientId) {
+      fetchSecurityData();
+    } else {
+      setLoading(false);
+    }
+  }, [authLoading, patientId]);
 
   const fetchSecurityData = async () => {
     try {
       setLoading(true);
 
-      // TODO: Implement actual API endpoint
-      // For now, showing mock data
+      const response = await fetch(`/api/portal/access-log?patientId=${patientId}`);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      if (!response.ok) {
+        setLoading(false);
+        return;
+      }
 
-      // Mock current session
-      setCurrentSession({
-        id: 'current',
-        ipAddress: '192.168.1.100',
-        userAgent: navigator.userAgent,
-        location: 'Ciudad de México, México',
-        lastActivity: new Date().toISOString(),
-        deviceType: 'desktop',
-      });
+      const data = await response.json();
+      const logs = data.data || [];
 
-      // Mock login history (last 10 logins)
-      const mockHistory: LoginHistory[] = Array.from({ length: 10 }, (_, i) => ({
-        id: `login-${i}`,
-        timestamp: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-        ipAddress: `192.168.1.${100 + i}`,
-        userAgent: navigator.userAgent,
-        location: i % 3 === 0 ? 'Ciudad de México, México' : i % 3 === 1 ? 'Guadalajara, México' : 'Monterrey, México',
-        success: i !== 5, // One failed attempt
-        deviceType: i % 2 === 0 ? 'desktop' : 'mobile',
-      }));
+      if (logs.length > 0) {
+        const mapped: LoginHistory[] = logs.map((log: any) => ({
+          id: log.id,
+          timestamp: log.timestamp,
+          ipAddress: log.ipAddress || 'Unknown',
+          userAgent: navigator.userAgent,
+          location: undefined,
+          success: true,
+          deviceType: 'desktop' as const,
+        }));
+        setLoginHistory(mapped);
 
-      setLoginHistory(mockHistory);
-
-      // Mock security events
-      setSecurityEvents([
-        {
-          id: 'event-1',
-          type: 'password_changed',
-          title: 'Contraseña cambiada',
-          description: 'Tu contraseña fue actualizada exitosamente',
-          timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          severity: 'info',
-        },
-      ]);
+        setCurrentSession({
+          id: 'current',
+          ipAddress: logs[0]?.ipAddress || 'Unknown',
+          userAgent: navigator.userAgent,
+          location: undefined,
+          lastActivity: new Date().toISOString(),
+          deviceType: 'desktop',
+        });
+      }
 
     } catch (error) {
       logger.error('Error fetching security data:', error);
@@ -251,6 +249,12 @@ export default function SecurityPage() {
             Historial de Inicios de Sesión
           </h2>
 
+          {loginHistory.length === 0 ? (
+            <div className="text-center py-8">
+              <ShieldCheckIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No login history available</p>
+            </div>
+          ) : (
           <div className="space-y-3">
             {loginHistory.map((login) => (
               <div
@@ -302,6 +306,7 @@ export default function SecurityPage() {
               </div>
             ))}
           </div>
+          )}
         </div>
 
         {/* Info Box */}

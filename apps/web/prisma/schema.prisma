@@ -39,6 +39,7 @@ model User {
 
   // Security
   passwordHash   String? // Optional for OAuth-only users
+  signingPinHash String? // bcrypt hash of 4-6 digit prescription-signing PIN
   mfaEnabled     Boolean   @default(false)
   mfaServiceSid  String? // Twilio Verify Service SID
   mfaPhoneNumber String? // Encrypted phone number for MFA

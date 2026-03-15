@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import { Plus, Shield, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { CredentialCard } from '@/components/credentials/CredentialCard';
@@ -8,6 +9,7 @@ import { CredentialForm, CredentialFormData } from '@/components/credentials/Cre
 import { CredentialUpload } from '@/components/credentials/CredentialUpload';
 
 export default function CredentialsPage() {
+  const { data: session } = useSession();
   const t = useTranslations('dashboard.credentials');
   const [credentials, setCredentials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,13 +19,13 @@ export default function CredentialsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Demo user ID (in production, get from session/auth)
-  const userId = 'demo-user-id';
+  const userId = session?.user?.id ?? '';
 
-  // Fetch credentials
   useEffect(() => {
-    fetchCredentials();
-  }, []);
+    if (userId) {
+      fetchCredentials();
+    }
+  }, [userId]);
 
   const fetchCredentials = async () => {
     try {

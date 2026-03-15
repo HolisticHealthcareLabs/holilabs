@@ -17,7 +17,7 @@ const r2Client = new S3Client({
   },
 });
 
-const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'patient-documents';
+const BUCKET_NAME = process.env.R2_BUCKET || process.env.R2_BUCKET_NAME || 'patient-documents';
 
 /**
  * Upload encrypted file to R2

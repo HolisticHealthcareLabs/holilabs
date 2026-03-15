@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import crypto from 'crypto';
+import { compare } from 'bcryptjs';
 import { trackEvent, ServerAnalyticsEvents } from '@/lib/analytics/server-analytics';
 import { logger } from '@/lib/logger';
 import { safeErrorResponse } from '@/lib/api/safe-error-response';
@@ -88,8 +89,6 @@ export const POST = createProtectedRoute(
 
       // Verify PIN if using PIN method
       if (body.signatureMethod === 'pin') {
-        // @todo(pin-verification): Verify PIN against user's stored hashed PIN
-        logger.warn({ event: 'unimplemented_feature', feature: 'pin_verification', prescriptionId });
         if (!/^\d{4,6}$/.test(body.signatureData)) {
           return NextResponse.json(
             { error: 'Invalid PIN format. Must be 4-6 digits.' },
@@ -97,13 +96,31 @@ export const POST = createProtectedRoute(
           );
         }
 
-        // Hash the PIN for storage
-        const hashedPin = crypto
+        const signer = await prisma.user.findUnique({
+          where: { id: context.user.id },
+          select: { signingPinHash: true },
+        });
+
+        if (!signer?.signingPinHash) {
+          return NextResponse.json(
+            { error: 'PIN not configured — set up your signing PIN in Settings' },
+            { status: 400 }
+          );
+        }
+
+        const pinValid = await compare(body.signatureData, signer.signingPinHash);
+        if (!pinValid) {
+          logger.warn({ event: 'invalid_signing_pin', userId: context.user.id, prescriptionId });
+          return NextResponse.json(
+            { error: 'Invalid PIN' },
+            { status: 403 }
+          );
+        }
+
+        body.signatureData = crypto
           .createHash('sha256')
           .update(body.signatureData)
           .digest('hex');
-
-        body.signatureData = hashedPin;
       }
 
       // Generate prescription hash if not already set
