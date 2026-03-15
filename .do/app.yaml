@@ -153,6 +153,8 @@ services:
 
       - key: VAPID_EMAIL
         value: mailto:notifications@holilabs.xyz
+      - key: VAPID_SUBJECT
+        value: mailto:notifications@holilabs.xyz
         scope: RUN_TIME
 
       # Twilio (optional)
@@ -212,6 +214,9 @@ services:
         type: SECRET
 
       # Search (Meilisearch)
+      - key: MEILI_HOST
+        value: ${MEILI_HOST}
+        scope: RUN_TIME
       - key: MEILI_MASTER_KEY
         value: ${MEILI_MASTER_KEY}
         scope: RUN_TIME

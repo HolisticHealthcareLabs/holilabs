@@ -51,6 +51,15 @@ Set these secrets in the DigitalOcean App Platform dashboard before the first de
 6. [ ] Verify `/demo/setup` returns 200 on production URL
 7. [ ] Verify `/api/health/ready` returns `{ status: 'healthy' }`
 
+## Known Limitations — Disclose to Users at Launch
+
+These features work at the UI level but have backend stubs. Document these in your release notes.
+
+| Feature | Limitation | Status |
+|---------|-----------|--------|
+| E-Prescribing → Pharmacy | Prescription is signed and saved, but NOT transmitted to a real pharmacy network (NCPDP/Surescripts). Patient must take the PDF to a pharmacy. | `@todo(pharmacy-integration)` |
+| Clinician License Verification | UI shows "automatically verified" but no real CFM/CONFEMED/NPPES API call is made. License verification is manual/deferred. | `@todo(credentialing-apis)` |
+
 ## Post-Deploy Verification
 
 - [ ] Demo flow: `/demo/setup` → select specialty → launch → dashboard loads with specialty data

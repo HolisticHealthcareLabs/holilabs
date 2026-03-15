@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Medication {
   id: string;
@@ -24,6 +25,7 @@ export default function EPrescribingDrawer({
   patientId,
   clinicianId,
 }: EPrescribingDrawerProps) {
+  const { toast } = useToast();
   const [commandInput, setCommandInput] = useState('');
   const [parsedPrescription, setParsedPrescription] = useState<any>(null);
   const [pin, setPin] = useState('');
@@ -130,7 +132,10 @@ export default function EPrescribingDrawer({
       }
 
       // Success
-      alert('✅ Receta firmada y enviada exitosamente');
+      toast({
+        title: 'Receta enviada',
+        description: 'Receta firmada y enviada exitosamente.',
+      });
 
       // Reset form
       setCommandInput('');
@@ -141,8 +146,11 @@ export default function EPrescribingDrawer({
 
       onClose();
     } catch (error: any) {
-      console.error('Error creating prescription:', error);
-      alert('❌ Error al crear receta: ' + error.message);
+      toast({
+        title: 'Error al crear receta',
+        description: error.message || 'Ocurrió un error inesperado.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
