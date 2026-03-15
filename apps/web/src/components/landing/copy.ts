@@ -79,6 +79,20 @@ type LandingCopy = {
     lawBadgeLabel: string;
     laws: string[];
     lawNote: string;
+    manifesto: { quote: string; body: string };
+    research: {
+      title: string;
+      body: string;
+      toggleLabel: string;
+      studies: string[];
+      disclaimer: string;
+    };
+    futureGen: {
+      title: string;
+      body: string;
+      timeline: Array<{ label: string; desc: string }>;
+    };
+    comingSoon: string;
   };
   demo: {
     title: string;
@@ -313,6 +327,32 @@ const landingCopy: Record<Locale, LandingCopy> = {
       lawBadgeLabel: 'Compliant with',
       laws: ['LGPD (Brazil)', 'HIPAA (US)', 'LPDP (Argentina)', 'GDPR-aligned', 'ANPD Guidelines', 'ANVISA RDC 657'],
       lawNote: 'Patient data rights are not just good practice — they are the law in every market we operate. We exceed minimum requirements in all of them.',
+      manifesto: {
+        quote: 'Health data is the most valuable asset a person will ever generate. It should benefit the person who generated it — not the platform that stored it.',
+        body: 'That is a founding belief at Holi Labs. We are building toward a world where patients can choose to contribute their de-identified data to science, participate in prevention research, and create a health legacy that protects the people who come after them — all on their own terms, revocable at any time.',
+      },
+      research: {
+        title: 'Contribute to Science',
+        body: 'Patients who opt in can contribute de-identified data to prevention research and clinical studies. You choose which studies, which data categories, and for how long. Your care is never conditional on participation.',
+        toggleLabel: 'Research participation — active',
+        studies: [
+          'LATAM Cardiovascular Prevention Study',
+          'Type 2 Diabetes Early Detection Protocol',
+          'Oncology Biomarker Discovery — LGPD Compliant',
+        ],
+        disclaimer: 'All contributions are de-identified before leaving your record. You can withdraw from any study at any time.',
+      },
+      futureGen: {
+        title: 'A Legacy for Future Generations',
+        body: 'Your prevention history, family health patterns, and lifelong biomarkers — consented and de-identified — could protect the children and grandchildren of people you will never meet.',
+        timeline: [
+          { label: 'You', desc: 'Your 30-year prevention record, owned and controlled by you' },
+          { label: 'Your family', desc: 'Shared patterns help your children catch conditions earlier' },
+          { label: 'Your community', desc: 'Anonymized population data informs regional protocols' },
+          { label: 'Future medicine', desc: 'Longitudinal cohorts that no dataset in the world currently has' },
+        ],
+      },
+      comingSoon: 'Data trust infrastructure, research participation rewards, and health data portability across borders — on the roadmap for 2026.',
     },
     demo: {
       title: 'Join the consensus.',
@@ -580,6 +620,32 @@ const landingCopy: Record<Locale, LandingCopy> = {
       lawBadgeLabel: 'Cumple con',
       laws: ['LGPD (Brasil)', 'HIPAA (EE.UU.)', 'LPDP (Argentina)', 'Alineado con GDPR', 'Directrices ANPD', 'ANVISA RDC 657'],
       lawNote: 'Los derechos de datos del paciente no son solo buena práctica — son la ley en todos los mercados en los que operamos. Superamos los requisitos mínimos en todos ellos.',
+      manifesto: {
+        quote: 'Los datos de salud son el activo más valioso que una persona generará en su vida. Deberían beneficiar a quien los generó — no a la plataforma que los almacenó.',
+        body: 'Esa es una creencia fundacional en Holi Labs. Estamos construyendo un mundo donde los pacientes puedan elegir contribuir sus datos de-identificados a la ciencia, participar en investigación de prevención y crear un legado de salud que proteja a quienes vengan después de ellos — todo en sus propios términos, revocable en cualquier momento.',
+      },
+      research: {
+        title: 'Contribuir a la Ciencia',
+        body: 'Los pacientes que optan por participar pueden contribuir datos de-identificados a investigación de prevención y estudios clínicos. Eliges qué estudios, qué categorías de datos y por cuánto tiempo. Tu atención nunca está condicionada a la participación.',
+        toggleLabel: 'Participación en investigación — activa',
+        studies: [
+          'Estudio LATAM de Prevención Cardiovascular',
+          'Protocolo de Detección Temprana de Diabetes Tipo 2',
+          'Descubrimiento de Biomarcadores en Oncología — Conforme a LPDP',
+        ],
+        disclaimer: 'Todas las contribuciones son de-identificadas antes de salir de tu expediente. Puedes retirarte de cualquier estudio en cualquier momento.',
+      },
+      futureGen: {
+        title: 'Un Legado para las Generaciones Futuras',
+        body: 'Tu historial de prevención, patrones de salud familiar y biomarcadores de toda una vida — con consentimiento y de-identificados — podrían proteger a los hijos y nietos de personas que nunca conocerás.',
+        timeline: [
+          { label: 'Tú', desc: 'Tu expediente de prevención de 30 años, en tu propiedad y bajo tu control' },
+          { label: 'Tu familia', desc: 'Los patrones compartidos ayudan a tus hijos a detectar condiciones antes' },
+          { label: 'Tu comunidad', desc: 'Los datos poblacionales anónimos informan protocolos regionales' },
+          { label: 'La medicina del futuro', desc: 'Cohortes longitudinales que ningún conjunto de datos en el mundo tiene actualmente' },
+        ],
+      },
+      comingSoon: 'Infraestructura de fideicomiso de datos, recompensas por participación en investigación y portabilidad de datos de salud entre fronteras — en la hoja de ruta para 2026.',
     },
     demo: {
       title: 'Únete al consenso.',
@@ -847,6 +913,32 @@ const landingCopy: Record<Locale, LandingCopy> = {
       lawBadgeLabel: 'Em conformidade com',
       laws: ['LGPD (Brasil)', 'HIPAA (EUA)', 'LPDP (Argentina)', 'Alinhado ao GDPR', 'Diretrizes ANPD', 'ANVISA RDC 657'],
       lawNote: 'Os direitos de dados do paciente não são apenas boa prática — são lei em todos os mercados em que atuamos. Superamos os requisitos mínimos em todos eles.',
+      manifesto: {
+        quote: 'Os dados de saúde são o ativo mais valioso que uma pessoa vai gerar em toda a sua vida. Eles deveriam beneficiar quem os gerou — não a plataforma que os armazenou.',
+        body: 'Essa é uma crença fundacional do Holi Labs. Estamos construindo um mundo onde os pacientes possam escolher contribuir seus dados desidentificados para a ciência, participar de pesquisas de prevenção e criar um legado de saúde que proteja as pessoas que vierem depois deles — tudo nos seus próprios termos, revogável a qualquer momento.',
+      },
+      research: {
+        title: 'Contribuir para a Ciência',
+        body: 'Pacientes que optam por participar podem contribuir dados desidentificados para pesquisas de prevenção e estudos clínicos. Você escolhe quais estudos, quais categorias de dados e por quanto tempo. Seu atendimento nunca é condicional à participação.',
+        toggleLabel: 'Participação em pesquisas — ativa',
+        studies: [
+          'Estudo LATAM de Prevenção Cardiovascular',
+          'Protocolo de Detecção Precoce de Diabetes Tipo 2',
+          'Descoberta de Biomarcadores em Oncologia — Conforme à LGPD',
+        ],
+        disclaimer: 'Todas as contribuições são desidentificadas antes de saírem do seu prontuário. Você pode se retirar de qualquer estudo a qualquer momento.',
+      },
+      futureGen: {
+        title: 'Um Legado para as Gerações Futuras',
+        body: 'Seu histórico de prevenção, padrões de saúde familiar e biomarcadores de toda uma vida — com consentimento e desidentificados — poderiam proteger os filhos e netos de pessoas que você nunca conhecerá.',
+        timeline: [
+          { label: 'Você', desc: 'Seu prontuário de prevenção de 30 anos, de sua propriedade e sob seu controle' },
+          { label: 'Sua família', desc: 'Padrões compartilhados ajudam seus filhos a detectar condições mais cedo' },
+          { label: 'Sua comunidade', desc: 'Dados populacionais anônimos informam protocolos regionais' },
+          { label: 'A medicina do futuro', desc: 'Coortes longitudinais que nenhum conjunto de dados no mundo possui atualmente' },
+        ],
+      },
+      comingSoon: 'Infraestrutura de fideicomisso de dados, recompensas por participação em pesquisas e portabilidade de dados de saúde entre fronteiras — no roadmap para 2026.',
     },
     demo: {
       title: 'Junte-se ao consenso.',
