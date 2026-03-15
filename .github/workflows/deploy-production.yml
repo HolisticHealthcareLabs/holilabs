@@ -146,7 +146,11 @@ jobs:
         run: |
           cd apps/web
           echo "⚠️ IMPORTANT: Verify migrations are safe before deployment"
-          pnpm prisma migrate status || true
+          pnpm prisma migrate status
+          if [ $? -ne 0 ]; then
+            echo "❌ Pending migrations detected. Run 'pnpm prisma migrate deploy' before deploying."
+            exit 1
+          fi
 
   # Production deployment
   deploy:
