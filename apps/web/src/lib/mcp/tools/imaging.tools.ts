@@ -39,6 +39,23 @@ const GetDicomUrlSchema = z.object({
     includeReport: z.boolean().default(true).describe('Include radiologist report URL'),
 });
 
+const UpdateImagingOrderSchema = z.object({
+    studyId: z.string().describe('The imaging study ID to update'),
+    modality: z.string().optional().describe('Updated modality (X-Ray, CT, MRI, Ultrasound)'),
+    bodyPart: z.string().optional().describe('Updated body part'),
+    description: z.string().optional().describe('Updated study description'),
+    indication: z.string().optional().describe('Updated clinical indication'),
+    status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'REPORTED', 'CANCELLED']).optional().describe('Updated status'),
+    orderingDoctor: z.string().optional().describe('Updated ordering doctor'),
+    referringDoctor: z.string().optional().describe('Updated referring doctor'),
+    performingFacility: z.string().optional().describe('Updated performing facility'),
+    findings: z.string().optional().describe('Updated findings from radiologist'),
+    impression: z.string().optional().describe('Updated radiologist impression'),
+    isAbnormal: z.boolean().optional().describe('Update abnormal flag'),
+    scheduledDate: z.string().optional().describe('Updated scheduled date (ISO 8601)'),
+    notes: z.string().optional().describe('Updated notes'),
+});
+
 const ShareStudySchema = z.object({
     studyId: z.string().describe('The imaging study ID'),
     recipientEmail: z.string().email().describe('Email of the recipient (external provider)'),
@@ -323,6 +340,85 @@ async function getDicomUrlHandler(input: z.infer<typeof GetDicomUrlSchema>, cont
     }
 }
 
+async function updateImagingOrderHandler(input: z.infer<typeof UpdateImagingOrderSchema>, context: MCPContext): Promise<MCPResult> {
+    try {
+        const existingStudy = await prisma.imagingStudy.findFirst({
+            where: { id: input.studyId },
+            include: { patient: { select: { id: true, assignedClinicianId: true } } },
+        });
+
+        if (!existingStudy) {
+            return { success: false, error: 'Imaging study not found', data: null };
+        }
+
+        if (existingStudy.patient?.assignedClinicianId !== context.clinicianId) {
+            return { success: false, error: 'Access denied', data: null };
+        }
+
+        const updateData: Record<string, any> = {};
+        if (input.modality !== undefined) updateData.modality = input.modality;
+        if (input.bodyPart !== undefined) updateData.bodyPart = input.bodyPart;
+        if (input.description !== undefined) updateData.description = input.description;
+        if (input.indication !== undefined) updateData.indication = input.indication;
+        if (input.status !== undefined) updateData.status = input.status;
+        if (input.orderingDoctor !== undefined) updateData.orderingDoctor = input.orderingDoctor;
+        if (input.referringDoctor !== undefined) updateData.referringDoctor = input.referringDoctor;
+        if (input.performingFacility !== undefined) updateData.performingFacility = input.performingFacility;
+        if (input.findings !== undefined) updateData.findings = input.findings;
+        if (input.impression !== undefined) updateData.impression = input.impression;
+        if (input.isAbnormal !== undefined) updateData.isAbnormal = input.isAbnormal;
+        if (input.scheduledDate !== undefined) updateData.scheduledDate = new Date(input.scheduledDate);
+        if (input.notes !== undefined) updateData.notes = input.notes;
+
+        if (Object.keys(updateData).length === 0) {
+            return { success: false, error: 'No update fields provided', data: null };
+        }
+
+        const updatedStudy: any = await prisma.imagingStudy.update({
+            where: { id: input.studyId },
+            data: updateData,
+        });
+
+        logger.info({
+            event: 'mcp_tool_executed',
+            tool: 'update_imaging_order',
+            studyId: input.studyId,
+            updatedFields: Object.keys(updateData),
+            agentId: context.agentId,
+        });
+
+        return {
+            success: true,
+            data: {
+                studyId: updatedStudy.id,
+                patientId: updatedStudy.patientId,
+                modality: updatedStudy.modality,
+                bodyPart: updatedStudy.bodyPart,
+                description: updatedStudy.description,
+                indication: updatedStudy.indication,
+                status: updatedStudy.status,
+                orderingDoctor: updatedStudy.orderingDoctor,
+                referringDoctor: updatedStudy.referringDoctor,
+                performingFacility: updatedStudy.performingFacility,
+                findings: updatedStudy.findings,
+                impression: updatedStudy.impression,
+                isAbnormal: updatedStudy.isAbnormal,
+                scheduledDate: updatedStudy.scheduledDate?.toISOString(),
+                notes: updatedStudy.notes,
+                updatedAt: updatedStudy.updatedAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        logger.error({
+            event: 'mcp_tool_error',
+            tool: 'update_imaging_order',
+            error: error.message,
+            agentId: context.agentId,
+        });
+        return { success: false, error: error.message, data: null };
+    }
+}
+
 async function shareStudyHandler(input: z.infer<typeof ShareStudySchema>, context: MCPContext): Promise<MCPResult> {
     try {
         const study = await prisma.imagingStudy.findUnique({
@@ -462,6 +558,14 @@ export const imagingTools: MCPTool[] = [
         inputSchema: GetDicomUrlSchema,
         requiredPermissions: ['lab:read'],
         handler: getDicomUrlHandler,
+    },
+    {
+        name: 'update_imaging_order',
+        description: 'Update an existing imaging study/order. Can update modality, body part, status, findings, impression, scheduling, and other fields.',
+        category: 'lab',
+        inputSchema: UpdateImagingOrderSchema,
+        requiredPermissions: ['lab:write'],
+        handler: updateImagingOrderHandler,
     },
     {
         name: 'share_study',
