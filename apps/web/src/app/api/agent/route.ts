@@ -252,6 +252,13 @@ const TOOL_ROUTES: Record<string, { method: string; path: string }> = {
   'get-clinical-note-versions': { method: 'GET', path: '/api/clinical-notes/{id}/versions' },
 
   // ═══════════════════════════════════════════════════════════════════
+  // ROLE ADMIN TOOLS (RBAC Management)
+  // ═══════════════════════════════════════════════════════════════════
+  'list-role-assignments': { method: 'GET', path: '/api/admin/roles' },
+  'grant-role': { method: 'POST', path: '/api/admin/roles' },
+  'revoke-role': { method: 'DELETE', path: '/api/admin/roles/{id}' },
+
+  // ═══════════════════════════════════════════════════════════════════
   // SYSTEM HEALTH & STATUS TOOLS
   // ═══════════════════════════════════════════════════════════════════
   'get-health-status': { method: 'GET', path: '/api/health' },
