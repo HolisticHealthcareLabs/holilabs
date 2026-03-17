@@ -22,6 +22,12 @@ export interface MCPContext {
 
     /** Optional: The clinic/organization ID for multi-tenant isolation */
     clinicId?: string;
+
+    /** Optional: Idempotency key for deduplicating create_* mutations */
+    idempotencyKey?: string;
+
+    /** Optional: Trace ID for distributed tracing / observability */
+    traceId?: string;
 }
 
 /**
