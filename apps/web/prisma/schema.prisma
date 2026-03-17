@@ -8327,3 +8327,21 @@ model PatientCommPreference {
   @@index([patientId])
   @@map("patient_comm_preferences")
 }
+
+// ============================================================================
+// AGENT IDEMPOTENCY (Mutation Deduplication)
+// ============================================================================
+
+/// Prevents duplicate mutations when agents retry failed tool calls.
+/// Entries expire after 24h and can be cleaned up via a scheduled job.
+model AgentIdempotencyLog {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  toolName       String
+  result         Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  @@index([expiresAt])
+  @@map("agent_idempotency_logs")
+}
