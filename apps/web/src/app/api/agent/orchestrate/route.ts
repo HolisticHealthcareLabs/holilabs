@@ -58,7 +58,8 @@ async function executeToolWithTimeout(
   toolCall: ToolCall,
   baseUrl: string,
   cookies: string | null,
-  timeout: number
+  timeout: number,
+  extraHeaders?: Record<string, string>
 ): Promise<ToolResult> {
   const startTime = Date.now();
   const id = toolCall.id || `tool-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -72,6 +73,7 @@ async function executeToolWithTimeout(
       headers: {
         'Content-Type': 'application/json',
         ...(cookies ? { Cookie: cookies } : {}),
+        ...(extraHeaders || {}),
       },
       body: JSON.stringify({
         tool: toolCall.tool,
@@ -118,10 +120,11 @@ async function executeParallel(
   tools: ToolCall[],
   baseUrl: string,
   cookies: string | null,
-  timeout: number
+  timeout: number,
+  extraHeaders?: Record<string, string>
 ): Promise<ToolResult[]> {
   return Promise.all(
-    tools.map((tool) => executeToolWithTimeout(tool, baseUrl, cookies, timeout))
+    tools.map((tool) => executeToolWithTimeout(tool, baseUrl, cookies, timeout, extraHeaders))
   );
 }
 
@@ -132,12 +135,13 @@ async function executeSequential(
   tools: ToolCall[],
   baseUrl: string,
   cookies: string | null,
-  timeout: number
+  timeout: number,
+  extraHeaders?: Record<string, string>
 ): Promise<ToolResult[]> {
   const results: ToolResult[] = [];
 
   for (const tool of tools) {
-    const result = await executeToolWithTimeout(tool, baseUrl, cookies, timeout);
+    const result = await executeToolWithTimeout(tool, baseUrl, cookies, timeout, extraHeaders);
     results.push(result);
 
     // Stop on first failure if sequential mode
@@ -209,23 +213,30 @@ export async function POST(request: NextRequest) {
   // 4. Extract request context
   const baseUrl = request.nextUrl.origin;
   const cookies = request.headers.get('cookie');
+  const idempotencyKey = request.headers.get('x-idempotency-key') || undefined;
+  const traceId = request.headers.get('x-trace-id') || undefined;
 
-  // 5. Execute tools based on mode
+  // 5. Build extra headers for idempotency / tracing
+  const extraHeaders: Record<string, string> = {};
+  if (idempotencyKey) extraHeaders['x-idempotency-key'] = idempotencyKey;
+  if (traceId) extraHeaders['x-trace-id'] = traceId;
+
+  // 6. Execute tools based on mode
   let results: ToolResult[];
 
   if (mode === 'sequential') {
-    results = await executeSequential(tools, baseUrl, cookies, timeout);
+    results = await executeSequential(tools, baseUrl, cookies, timeout, extraHeaders);
   } else {
-    results = await executeParallel(tools, baseUrl, cookies, timeout);
+    results = await executeParallel(tools, baseUrl, cookies, timeout, extraHeaders);
   }
 
-  // 6. Calculate summary metrics
+  // 7. Calculate summary metrics
   const totalDuration = Date.now() - orchestrationStart;
   const successCount = results.filter((r) => r.success).length;
   const failureCount = results.length - successCount;
   const toolDurationSum = results.reduce((sum, r) => sum + r.duration, 0);
 
-  // 7. Return aggregated response
+  // 8. Return aggregated response
   return NextResponse.json({
     mode,
     totalTools: results.length,
