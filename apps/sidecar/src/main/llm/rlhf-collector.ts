@@ -95,6 +95,17 @@ export interface EncounterContext {
     formType?: 'prescription' | 'order_set' | 'medication_reconciliation' | 'discharge';
 }
 
+export type RejectionCategory =
+    | 'DOSE_ADJUSTMENT'
+    | 'CONTRAINDICATION_MISS'
+    | 'INTERACTION_MISS'
+    | 'FALSE_POSITIVE'
+    | 'FALSE_NEGATIVE'
+    | 'CONTEXT_ERROR'
+    | 'BILLING_ERROR'
+    | 'REGULATORY_OVERRIDE'
+    | 'CLINICAL_JUDGMENT';
+
 export interface FeedbackRecord {
     id: string;
     timestamp: Date;
@@ -122,10 +133,55 @@ export interface FeedbackRecord {
     // Ground Truth (for training)
     correctRiskLevel?: 'low' | 'medium' | 'high';
 
+    // Taxonomy
+    rejectionCategory?: RejectionCategory;
+
     // Quality Signals
     wasEscalatedToSupervisor?: boolean;
     supervisorAgreed?: boolean;
     adverseEventReported?: boolean;
+}
+
+export interface GlosaFeedbackRecord {
+    id: string;
+    timestamp: Date;
+    sessionId: string;
+    tussCode: string;
+    icd10Code: string;
+    billedAmount: number;
+    glosaCode: string;
+    glosaAmount: number;
+    glosaRecovered: number;
+    appealStrategy: string;
+    originalPredictionId: string;
+    insurerCode: string;
+    insurerProtocol: string;
+}
+
+export interface DPOPair {
+    prompt: string;
+    chosen: string;
+    rejected: string;
+    metadata: {
+        feedbackId: string;
+        timestamp: string;
+        drugClass: string;
+        ageRange: string;
+        encounterType: string;
+    };
+}
+
+export interface DPOExport {
+    version: string;
+    exportedAt: Date;
+    pairCount: number;
+    pairs: DPOPair[];
+    datasetStats: {
+        uniqueDrugClasses: number;
+        ageRangeDistribution: Record<string, number>;
+        encounterTypeDistribution: Record<string, number>;
+        overriddenRecordCount: number;
+    };
 }
 
 export interface TrainingExport {
@@ -147,14 +203,19 @@ export class RLHFCollector {
     private db: Database.Database;
     private sessionId: string;
 
-    constructor(sessionId: string) {
+    constructor(sessionId: string, dbDir?: string) {
         this.sessionId = sessionId;
 
-        // Store in user data directory
-        const dbPath = path.join(
-            app.getPath('userData'),
-            'rlhf-feedback-v2.db'
-        );
+        // Store in user data directory (or test directory if provided)
+        let dbPath: string;
+        if (dbDir) {
+            dbPath = path.join(dbDir, 'rlhf-feedback-v2.db');
+        } else {
+            dbPath = path.join(
+                app.getPath('userData'),
+                'rlhf-feedback-v2.db'
+            );
+        }
 
         this.db = new Database(dbPath);
         this.initializeSchema();
@@ -173,8 +234,8 @@ export class RLHFCollector {
         patient_context, medication_context, interaction_context, encounter_context,
         llm_risk_level, llm_confidence, llm_reasoning, llm_latency_ms, llm_model_version,
         doctor_action, override_justification, modification_details, time_to_decision_ms,
-        correct_risk_level, was_escalated, supervisor_agreed, adverse_event_reported
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        correct_risk_level, rejection_category, was_escalated, supervisor_agreed, adverse_event_reported
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
         stmt.run(
@@ -193,6 +254,7 @@ export class RLHFCollector {
             feedback.modificationDetails || null,
             feedback.timeToDecisionMs || null,
             feedback.correctRiskLevel || null,
+            feedback.rejectionCategory || null,
             feedback.wasEscalatedToSupervisor ? 1 : 0,
             feedback.supervisorAgreed ? 1 : 0,
             feedback.adverseEventReported ? 1 : 0
@@ -255,6 +317,7 @@ export class RLHFCollector {
             modificationDetails: row.modification_details,
             timeToDecisionMs: row.time_to_decision_ms,
             correctRiskLevel: row.correct_risk_level,
+            rejectionCategory: row.rejection_category,
             wasEscalatedToSupervisor: !!row.was_escalated,
             supervisorAgreed: !!row.supervisor_agreed,
             adverseEventReported: !!row.adverse_event_reported,
@@ -279,6 +342,162 @@ export class RLHFCollector {
                     'indication', 'isNewPrescription', 'isDoseChange'
                 ]
             }
+        };
+    }
+
+    /**
+     * Export as DPO (Direct Preference Optimization) pairs for RLHF
+     * Only includes records where doctor overrode AND ground truth is available
+     */
+    exportAsDPOPairs(since?: Date): DPOExport {
+        let query = `
+            SELECT * FROM feedback
+            WHERE doctor_action = 'overridden'
+            AND correct_risk_level IS NOT NULL
+        `;
+        const params: (string | number)[] = [];
+
+        if (since) {
+            query += ' AND timestamp >= ?';
+            params.push(since.toISOString());
+        }
+
+        query += ' ORDER BY timestamp ASC';
+
+        const rows = this.db.prepare(query).all(...params) as any[];
+
+        const pairs: DPOPair[] = [];
+        const drugClasses = new Set<string>();
+        const ageRanges: Record<string, number> = {};
+        const encounterTypes: Record<string, number> = {};
+
+        rows.forEach(row => {
+            const patient = JSON.parse(row.patient_context);
+            const medication = JSON.parse(row.medication_context);
+            const encounter = JSON.parse(row.encounter_context);
+
+            const prompt = this.buildDPOPrompt(patient, medication, encounter);
+            const llmRisk = row.llm_risk_level;
+            const correctRisk = row.correct_risk_level;
+
+            // LLM's choice (what it predicted)
+            const llmChoice = JSON.stringify({
+                risk_level: llmRisk,
+                confidence: row.llm_confidence,
+            });
+
+            // Doctor's choice (ground truth)
+            const doctorChoice = JSON.stringify({
+                risk_level: correctRisk,
+                justification: row.override_justification,
+            });
+
+            // Create pair: doctor's choice as preferred, LLM's choice as rejected
+            pairs.push({
+                prompt,
+                chosen: doctorChoice,
+                rejected: llmChoice,
+                metadata: {
+                    feedbackId: row.id,
+                    timestamp: row.timestamp,
+                    drugClass: medication.drugClass || 'unknown',
+                    ageRange: patient.ageRange,
+                    encounterType: encounter.encounterType,
+                },
+            });
+
+            // Collect stats
+            if (medication.drugClass) drugClasses.add(medication.drugClass);
+            ageRanges[patient.ageRange] = (ageRanges[patient.ageRange] || 0) + 1;
+            encounterTypes[encounter.encounterType] = (encounterTypes[encounter.encounterType] || 0) + 1;
+        });
+
+        return {
+            version: '1.0.0',
+            exportedAt: new Date(),
+            pairCount: pairs.length,
+            pairs,
+            datasetStats: {
+                uniqueDrugClasses: drugClasses.size,
+                ageRangeDistribution: ageRanges,
+                encounterTypeDistribution: encounterTypes,
+                overriddenRecordCount: rows.length,
+            },
+        };
+    }
+
+    /**
+     * Record a glosa feedback event
+     */
+    recordGlosaFeedback(feedback: Omit<GlosaFeedbackRecord, 'id' | 'timestamp' | 'sessionId'>): string {
+        const id = this.generateId();
+        const timestamp = new Date().toISOString();
+
+        const stmt = this.db.prepare(`
+            INSERT INTO glosa_feedback (
+                id, timestamp, session_id,
+                tuss_code, icd10_code, billed_amount,
+                glosa_code, glosa_amount, glosa_recovered,
+                appeal_strategy, original_prediction_id,
+                insurer_code, insurer_protocol
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        stmt.run(
+            id, timestamp, this.sessionId,
+            feedback.tussCode, feedback.icd10Code, feedback.billedAmount,
+            feedback.glosaCode, feedback.glosaAmount, feedback.glosaRecovered,
+            feedback.appealStrategy, feedback.originalPredictionId,
+            feedback.insurerCode, feedback.insurerProtocol
+        );
+
+        return id;
+    }
+
+    /**
+     * Get comprehensive glosa statistics
+     */
+    getGlosaStats(): {
+        totalGlosas: number;
+        recoveredCount: number;
+        recoveryRate: number;
+        totalDeniedBRL: number;
+        totalRecoveredBRL: number;
+        topGlosaCodes: Array<{ code: string; count: number }>;
+        avgRecoveryTimeMs: number;
+    } {
+        const stats = this.db.prepare(`
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN glosa_recovered > 0 THEN 1 ELSE 0 END) as recovered,
+                SUM(glosa_amount) as total_denied,
+                SUM(glosa_recovered) as total_recovered,
+                AVG(CAST((julianday('now') - julianday(timestamp)) * 24 * 60 * 60 * 1000 AS INTEGER)) as avg_time_ms
+            FROM glosa_feedback
+        `).get() as any;
+
+        const total = stats.total || 0;
+        const recovered = stats.recovered || 0;
+
+        const topCodes = this.db.prepare(`
+            SELECT glosa_code, COUNT(*) as count
+            FROM glosa_feedback
+            GROUP BY glosa_code
+            ORDER BY count DESC
+            LIMIT 10
+        `).all() as any[];
+
+        return {
+            totalGlosas: total,
+            recoveredCount: recovered,
+            recoveryRate: total > 0 ? (recovered / total) * 100 : 0,
+            totalDeniedBRL: stats.total_denied || 0,
+            totalRecoveredBRL: stats.total_recovered || 0,
+            topGlosaCodes: topCodes.map((row: any) => ({
+                code: row.glosa_code,
+                count: row.count,
+            })),
+            avgRecoveryTimeMs: Math.round(stats.avg_time_ms || 0),
         };
     }
 
@@ -399,38 +618,71 @@ export class RLHFCollector {
         id TEXT PRIMARY KEY,
         timestamp TEXT NOT NULL,
         session_id TEXT NOT NULL,
-        
+
         -- Rich Context (JSON)
         patient_context TEXT NOT NULL,
         medication_context TEXT NOT NULL,
         interaction_context TEXT,
         encounter_context TEXT NOT NULL,
-        
+
         -- LLM Prediction
         llm_risk_level TEXT NOT NULL,
         llm_confidence INTEGER NOT NULL,
         llm_reasoning TEXT NOT NULL,
         llm_latency_ms INTEGER NOT NULL,
         llm_model_version TEXT,
-        
+
         -- Doctor Decision
         doctor_action TEXT NOT NULL,
         override_justification TEXT,
         modification_details TEXT,
         time_to_decision_ms INTEGER,
-        
+
         -- Ground Truth
         correct_risk_level TEXT,
-        
+
+        -- Taxonomy
+        rejection_category TEXT,
+
         -- Quality Signals
         was_escalated INTEGER DEFAULT 0,
         supervisor_agreed INTEGER DEFAULT 0,
         adverse_event_reported INTEGER DEFAULT 0
       );
-      
+
       CREATE INDEX IF NOT EXISTS idx_feedback_timestamp ON feedback(timestamp);
       CREATE INDEX IF NOT EXISTS idx_feedback_doctor_action ON feedback(doctor_action);
       CREATE INDEX IF NOT EXISTS idx_feedback_adverse ON feedback(adverse_event_reported);
+    `);
+
+        // Add rejection_category column if it doesn't exist (idempotency check)
+        const tableInfo = this.db.prepare(`PRAGMA table_info(feedback)`).all() as any[];
+        const hasRejectionCategory = tableInfo.some(col => col.name === 'rejection_category');
+        if (!hasRejectionCategory) {
+            this.db.exec(`ALTER TABLE feedback ADD COLUMN rejection_category TEXT;`);
+        }
+
+        // Create glosa_feedback table
+        this.db.exec(`
+      CREATE TABLE IF NOT EXISTS glosa_feedback (
+        id TEXT PRIMARY KEY,
+        timestamp TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        tuss_code TEXT NOT NULL,
+        icd10_code TEXT NOT NULL,
+        billed_amount REAL NOT NULL,
+        glosa_code TEXT NOT NULL,
+        glosa_amount REAL NOT NULL,
+        glosa_recovered REAL NOT NULL DEFAULT 0,
+        appeal_strategy TEXT NOT NULL,
+        original_prediction_id TEXT NOT NULL,
+        insurer_code TEXT NOT NULL,
+        insurer_protocol TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_glosa_timestamp ON glosa_feedback(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_glosa_code ON glosa_feedback(glosa_code);
+      CREATE INDEX IF NOT EXISTS idx_glosa_insurer ON glosa_feedback(insurer_code);
     `);
     }
 
@@ -477,6 +729,35 @@ export class RLHFCollector {
         prompt += `\n**Setting**: ${enc.encounterType}`;
         if (enc.specialty) prompt += ` (${enc.specialty})`;
         if (enc.acuityLevel) prompt += ` - ${enc.acuityLevel}`;
+
+        return prompt;
+    }
+
+    private buildDPOPrompt(patient: PatientContext, medication: MedicationContext, encounter: EncounterContext): string {
+        let prompt = `Assess clinical risk for the following medication order:\n\n`;
+        prompt += `**Medication**: ${medication.genericName}`;
+        if (medication.doseValue && medication.doseUnit) prompt += ` ${medication.doseValue}${medication.doseUnit}`;
+        if (medication.frequency) prompt += ` ${medication.frequency}`;
+        if (medication.route) prompt += ` (${medication.route})`;
+        prompt += `\n`;
+
+        if (medication.drugClass) prompt += `**Drug Class**: ${medication.drugClass}\n`;
+        if (medication.indication) prompt += `**Indication**: ${medication.indication}\n`;
+
+        prompt += `\n**Patient**:\n`;
+        prompt += `- Age: ${patient.ageRange}\n`;
+        if (patient.sex) prompt += `- Sex: ${patient.sex}\n`;
+        if (patient.weightRange) prompt += `- Weight: ${patient.weightRange}\n`;
+
+        if (patient.renalFunction && patient.renalFunction !== 'normal') prompt += `- Renal: ${patient.renalFunction}\n`;
+        if (patient.hepaticFunction && patient.hepaticFunction !== 'normal') prompt += `- Hepatic: ${patient.hepaticFunction}\n`;
+
+        if (patient.allergyCategories?.length) prompt += `- Allergies: ${patient.allergyCategories.join(', ')}\n`;
+        if (patient.comorbidityCategories?.length) prompt += `- Comorbidities: ${patient.comorbidityCategories.join(', ')}\n`;
+
+        prompt += `\n**Setting**: ${encounter.encounterType}`;
+        if (encounter.specialty) prompt += ` (${encounter.specialty})`;
+        if (encounter.acuityLevel) prompt += ` - ${encounter.acuityLevel}`;
 
         return prompt;
     }
