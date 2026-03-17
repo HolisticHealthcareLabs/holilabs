@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import type { MCPContext, MCPResult, MCPTool } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // SCHEMAS
@@ -138,6 +139,8 @@ async function getStudyHandler(input: z.infer<typeof GetStudySchema>, context: M
 
 async function listSeriesHandler(input: z.infer<typeof ListSeriesSchema>, context: MCPContext): Promise<MCPResult> {
     try {
+        await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
         // Build where clause
         const where: any = {
             patientId: input.patientId,

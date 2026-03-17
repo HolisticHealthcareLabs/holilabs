@@ -28,6 +28,7 @@ import {
     type DeleteMessageInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // TOOL: create_conversation
@@ -37,6 +38,8 @@ async function createConversationHandler(
     input: CreateConversationInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'GENERAL_CONSULTATION');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {

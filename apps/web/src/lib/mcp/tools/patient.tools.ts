@@ -22,6 +22,7 @@ import {
     type GetPatientConditionsInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // TOOL: get_patient
@@ -31,6 +32,8 @@ async function getPatientHandler(
     input: GetPatientInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Get patient with related data using any type for complex relations
     const patient: any = await prisma.patient.findFirst({
         where: {
@@ -160,6 +163,8 @@ async function getPatientMedicationsHandler(
     input: GetPatientMedicationsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId, assignedClinicianId: context.clinicianId },
     });
@@ -209,6 +214,8 @@ async function getPatientAllergiesHandler(
     input: GetPatientAllergiesInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId, assignedClinicianId: context.clinicianId },
     });
@@ -250,6 +257,8 @@ async function getPatientConditionsHandler(
     input: GetPatientConditionsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId, assignedClinicianId: context.clinicianId },
     });

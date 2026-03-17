@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // SPECIALTY DEFINITIONS
@@ -55,6 +56,8 @@ export const referralTools: MCPTool[] = [
         requiredPermissions: ['patient:read', 'referral:write'],
         handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             try {
+                await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
                 // Verify patient exists
                 const patient = await prisma.patient.findUnique({
                     where: { id: input.patientId },
