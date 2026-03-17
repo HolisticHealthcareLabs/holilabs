@@ -9,6 +9,7 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 import type { TrafficLightResult, ChatMessage, EHRFingerprint } from '../types';
+import type { PipelineOutput } from '../main/agents/pipeline-orchestrator';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // API EXPOSED TO RENDERER
@@ -144,6 +145,21 @@ const electronAPI = {
     ipcRenderer.on('permissions:required', listener);
     return () => ipcRenderer.removeListener('permissions:required', listener);
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // CLINICAL PIPELINE (Unit 5)
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  evaluatePipeline: (input: any): Promise<{ success: boolean; result?: PipelineOutput; error?: string }> =>
+    ipcRenderer.invoke('pipeline:evaluate', input),
+
+  getPipelineStatus: (): Promise<{
+    contextAgent: string;
+    safetyAgent: string;
+    billingAgent: string;
+    orchestrator: string;
+    edgeNode: string;
+  }> => ipcRenderer.invoke('pipeline:status'),
 };
 
 // Expose API to renderer
