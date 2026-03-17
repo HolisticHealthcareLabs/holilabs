@@ -14,6 +14,7 @@ import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { createHash } from 'crypto';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 import { verifyRecordingConsent } from '@/lib/consent/recording-consent';
 
 // =============================================================================
@@ -152,6 +153,8 @@ async function startRecordingSessionHandler(
     context: MCPContext
 ): Promise<MCPResult> {
     const { patientId, appointmentId, accessReason, accessPurpose } = input;
+
+    await verifyConsentForAgentAccess(patientId, 'DATA_RESEARCH');
 
     // Verify patient access
     const patient = await prisma.patient.findFirst({

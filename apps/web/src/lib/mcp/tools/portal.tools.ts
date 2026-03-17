@@ -58,6 +58,7 @@ import {
     type UpdateInsuranceInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // TOOL: get_notifications
@@ -543,6 +544,8 @@ async function getPortalAppointmentsHandler(
     input: GetPortalAppointmentsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const { page = 1, limit = 20 } = input;
     const skip = (page - 1) * limit;
 
@@ -639,6 +642,8 @@ async function requestAppointmentChangeHandler(
     input: RequestAppointmentChangeInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {
@@ -790,6 +795,8 @@ async function getPortalMedicationsHandler(
     input: GetPortalMedicationsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const { page = 1, limit = 20 } = input;
     const skip = (page - 1) * limit;
 
@@ -877,6 +884,8 @@ async function requestMedicationRefillHandler(
     input: RequestMedicationRefillInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {
@@ -1001,6 +1010,8 @@ async function getPortalLabResultsHandler(
     input: GetPortalLabResultsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const { page = 1, limit = 20 } = input;
     const skip = (page - 1) * limit;
 
@@ -1096,6 +1107,8 @@ async function getPortalDocumentsHandler(
     input: GetPortalDocumentsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const { page = 1, limit = 20 } = input;
     const skip = (page - 1) * limit;
 
@@ -1174,6 +1187,8 @@ async function shareDocumentWithPatientHandler(
     input: ShareDocumentWithPatientInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {
@@ -1276,6 +1291,8 @@ async function getPortalMessagesHandler(
     input: GetPortalMessagesInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'GENERAL_CONSULTATION');
+
     const { page = 1, limit = 20 } = input;
     const skip = (page - 1) * limit;
 
@@ -1365,6 +1382,8 @@ async function sendPortalMessageHandler(
     input: SendPortalMessageInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'GENERAL_CONSULTATION');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {
@@ -1737,6 +1756,8 @@ async function getPortalHealthSummaryHandler(
     input: GetPortalHealthSummaryInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {
@@ -1888,6 +1909,8 @@ async function updatePortalContactInfoHandler(
     input: UpdatePortalContactInfoInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {
@@ -1991,6 +2014,8 @@ async function requestFamilyAccessHandler(
     context: MCPContext
 ): Promise<MCPResult> {
     try {
+        await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
         // Verify patient exists
         const patient = await prisma.patient.findUnique({
             where: { id: input.patientId },
@@ -2116,6 +2141,8 @@ async function getFamilyMembersHandler(
     context: MCPContext
 ): Promise<MCPResult> {
     try {
+        await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
         // Build where clause
         const where: any = {
             patientId: input.patientId,
@@ -2213,6 +2240,8 @@ async function updateInsuranceHandler(
     context: MCPContext
 ): Promise<MCPResult> {
     try {
+        await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
         // Verify patient exists
         const patient = await prisma.patient.findUnique({
             where: { id: input.patientId },

@@ -26,6 +26,7 @@ import {
     type UpdateLabResultInput,
 } from '../schemas/tool-schemas';
 import type { MCPContext, MCPResult, MCPTool } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // LAB PANELS (Common lab order bundles)
@@ -138,6 +139,7 @@ async function getLabResultsRawHandler(input: any, context: MCPContext): Promise
     const { patientId, orderId, startDate, limit } = input;
 
     try {
+        await verifyConsentForAgentAccess(patientId, 'DATA_RESEARCH');
         // Verify patient access
         const patient = await prisma.patient.findFirst({
             where: { id: patientId, assignedClinicianId: context.clinicianId },
@@ -221,6 +223,7 @@ async function createLabOrderHandler(input: any, context: MCPContext): Promise<M
     }
 
     try {
+        await verifyConsentForAgentAccess(patientId, 'DATA_RESEARCH');
         // Verify patient access
         const patient = await prisma.patient.findFirst({
             where: { id: patientId, assignedClinicianId: context.clinicianId },
@@ -309,6 +312,8 @@ async function createLabResultHandler(
     context: MCPContext
 ): Promise<MCPResult> {
     try {
+        await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
         // Verify patient access
         const patient = await prisma.patient.findFirst({
             where: { id: input.patientId, assignedClinicianId: context.clinicianId },
@@ -653,6 +658,8 @@ export const labOrderTools: MCPTool[] = [
         requiredPermissions: ['patient:read'],
         handler: async (input: any, context: MCPContext): Promise<MCPResult> => {
             try {
+                await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
                 // Verify patient access
                 const patient = await prisma.patient.findFirst({
                     where: { id: input.patientId, assignedClinicianId: context.clinicianId },

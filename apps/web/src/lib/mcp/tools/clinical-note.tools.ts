@@ -18,6 +18,7 @@ import {
     type DeleteClinicalNoteInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 import crypto from 'crypto';
 
 // Map our schema types to Prisma NoteType enum
@@ -38,6 +39,8 @@ async function createClinicalNoteHandler(
     input: CreateClinicalNoteInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId, assignedClinicianId: context.clinicianId },
@@ -106,6 +109,8 @@ async function getClinicalNotesHandler(
     input: GetClinicalNotesInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId, assignedClinicianId: context.clinicianId },
