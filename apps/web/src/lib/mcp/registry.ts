@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import { redactObject } from '@/lib/security/redact-phi';
 import { patientTools } from './tools/patient.tools';
 import { patientCrudTools } from './tools/patient-crud.tools';
 import { governanceTools } from './tools/governance.tools';
@@ -91,21 +92,21 @@ class MCPToolRegistry implements MCPRegistry {
 
         for (const tool of allTools) {
             if (this.tools.has(tool.name)) {
-                logger.warn({
+                logger.warn(redactObject({
                     event: 'mcp_duplicate_tool',
                     tool: tool.name,
                     message: 'Tool name already registered, skipping duplicate',
-                });
+                }));
                 continue;
             }
             this.tools.set(tool.name, tool);
         }
 
-        logger.info({
+        logger.info(redactObject({
             event: 'mcp_registry_initialized',
             toolCount: this.tools.size,
             categories: [...new Set(allTools.map(t => t.category))],
-        });
+        }));
     }
 
     // =========================================================================
@@ -173,12 +174,12 @@ class MCPToolRegistry implements MCPRegistry {
         // Check permissions
         const permCheck = this.checkPermissions(tool, context);
         if (!permCheck.allowed) {
-            logger.warn({
+            logger.warn(redactObject({
                 event: 'mcp_permission_denied',
                 tool: toolName,
                 agentId: context.agentId,
                 missingPermissions: permCheck.missingPermissions,
-            });
+            }));
 
             return {
                 tool: toolName,
@@ -213,14 +214,14 @@ class MCPToolRegistry implements MCPRegistry {
         try {
             const result = await tool.handler(validation.data, context);
 
-            logger.info({
+            logger.info(redactObject({
                 event: 'mcp_tool_completed',
                 tool: toolName,
                 success: result.success,
                 executionTimeMs: Date.now() - startTime,
                 agentId: context.agentId,
                 clinicianId: context.clinicianId,
-            });
+            }));
 
             return {
                 tool: toolName,
@@ -230,12 +231,12 @@ class MCPToolRegistry implements MCPRegistry {
                 timestamp: new Date().toISOString(),
             };
         } catch (error) {
-            logger.error({
+            logger.error(redactObject({
                 event: 'mcp_tool_error',
                 tool: toolName,
                 error: error instanceof Error ? error.message : 'Unknown error',
                 agentId: context.agentId,
-            });
+            }));
 
             return {
                 tool: toolName,
