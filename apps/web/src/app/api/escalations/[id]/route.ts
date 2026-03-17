@@ -1,7 +1,7 @@
 /**
- * Escalation Resolve API Route
+ * Escalation Detail API Routes
  *
- * POST /api/escalations/[id]/resolve - Mark escalation as resolved
+ * PATCH /api/escalations/[id] - Assign or update escalation
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,21 +13,21 @@ import { z } from 'zod';
 export const dynamic = 'force-dynamic';
 
 // =============================================================================
-// POST /api/escalations/[id]/resolve - Resolve escalation
+// PATCH /api/escalations/[id] - Assign escalation
 // =============================================================================
 
-const ResolveBodySchema = z.object({
-    notes: z.string().optional(),
+const UpdateBodySchema = z.object({
+    assignedToId: z.string().uuid().describe('User ID to assign to'),
 });
 
-async function handlePost(
+async function handlePatch(
     req: NextRequest,
     context: any & { params: { id: string } }
 ) {
     const { id } = context.params;
-    const body = await req.json().catch(() => ({}));
+    const body = await req.json();
 
-    const parsed = ResolveBodySchema.safeParse(body);
+    const parsed = UpdateBodySchema.safeParse(body);
     if (!parsed.success) {
         return NextResponse.json(
             { error: `Invalid request body: ${parsed.error.errors.map(e => e.message).join(', ')}` },
@@ -43,39 +43,29 @@ async function handlePost(
         return NextResponse.json({ error: 'Escalation not found' }, { status: 404 });
     }
 
-    // Idempotent: if already resolved, return success
     if (escalation.status === 'RESOLVED') {
-        return NextResponse.json({
-            id: escalation.id,
-            status: escalation.status,
-            resolvedAt: escalation.resolvedAt,
-            message: 'Escalation was already resolved',
-        });
+        return NextResponse.json(
+            { error: 'Cannot assign resolved escalation' },
+            { status: 409 }
+        );
     }
 
     const updated: any = await prisma.escalation.update({
         where: { id },
         data: {
-            status: 'RESOLVED',
-            resolvedAt: new Date(),
-            resolvedBy: context.userId,
+            assignedToId: parsed.data.assignedToId,
+            assignedAt: new Date(),
+            status: 'ASSIGNED',
         },
         include: {
             patient: {
                 select: { id: true, firstName: true, lastName: true },
             },
+            assignedTo: {
+                select: { id: true, firstName: true, lastName: true, email: true },
+            },
         },
     });
-
-    if (parsed.data.notes) {
-        await (prisma.escalationNote as any).create({
-            data: {
-                escalationId: updated.id,
-                authorId: context.userId,
-                content: parsed.data.notes,
-            },
-        });
-    }
 
     await prisma.auditLog.create({
         data: {
@@ -87,18 +77,17 @@ async function handlePost(
             ipAddress: context.ipAddress || 'unknown',
             details: {
                 escalationId: updated.id,
+                assignedToId: parsed.data.assignedToId,
                 previousStatus: escalation.status,
-                newStatus: 'RESOLVED',
-                resolvedAt: updated.resolvedAt,
-                notes: parsed.data.notes,
+                newStatus: 'ASSIGNED',
             },
         },
     });
 
     logger.info({
-        event: 'api_escalations_resolve',
+        event: 'api_escalations_assign',
         escalationId: id,
-        resolvedAt: updated.resolvedAt,
+        assignedToId: parsed.data.assignedToId,
     });
 
     return NextResponse.json({
@@ -109,9 +98,10 @@ async function handlePost(
         category: updated.category,
         severity: updated.severity,
         status: updated.status,
-        resolvedAt: updated.resolvedAt,
-        resolvedBy: updated.resolvedBy,
+        assignedTo: updated.assignedTo,
+        assignedAt: updated.assignedAt,
+        slaDeadline: updated.slaDeadline,
     });
 }
 
-export const POST = createProtectedRoute({ roles: ['ADMIN'] })(handlePost);
+export const PATCH = createProtectedRoute({ roles: ['ADMIN'] })(handlePatch);

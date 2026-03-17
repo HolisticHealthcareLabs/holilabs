@@ -251,6 +251,14 @@ const TOOL_ROUTES: Record<string, { method: string; path: string }> = {
   'create-encounter-prescription': { method: 'POST', path: '/api/encounters/{id}/prescriptions' },
 
   // ═══════════════════════════════════════════════════════════════════
+  // ESCALATION MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════
+  'list-escalations':    { method: 'GET',   path: '/api/escalations' },
+  'create-escalation':   { method: 'POST',  path: '/api/escalations' },
+  'assign-escalation':   { method: 'PATCH', path: '/api/escalations/{id}' },
+  'resolve-escalation':  { method: 'POST',  path: '/api/escalations/{id}/resolve' },
+
+  // ═══════════════════════════════════════════════════════════════════
   // CLINICAL NOTES TOOLS (Full CRUD)
   // ═══════════════════════════════════════════════════════════════════
   'list-clinical-notes': { method: 'GET', path: '/api/clinical-notes' },
