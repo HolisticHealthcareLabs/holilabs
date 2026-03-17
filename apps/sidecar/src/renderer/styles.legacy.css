@@ -600,6 +600,11 @@ body {
   box-shadow: 0 0 12px var(--traffic-red-glow);
 }
 
+.traffic-indicator.indicator-grey .indicator-light {
+  background: #8e8e93;
+  box-shadow: 0 0 10px rgba(142, 142, 147, 0.5);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
    SCROLLBAR
    ═══════════════════════════════════════════════════════════════════════════════ */

@@ -282,7 +282,8 @@ const App: React.FC = () => {
         status={
           state.trafficLightResult?.color === 'RED' ? 'danger' :
             state.trafficLightResult?.color === 'YELLOW' ? 'caution' :
-              'valid'
+              state.trafficLightResult?.color === 'GREY' ? 'unknown' :
+                'valid'
         }
         confidence={state.trafficLightResult?.totalGlosaRisk ? (100 - (state.trafficLightResult.totalGlosaRisk.probability * 100)) : 100}
         message={
@@ -326,19 +327,20 @@ const App: React.FC = () => {
 
 
 interface TrafficLightIndicatorProps {
-  color: 'RED' | 'YELLOW' | 'GREEN';
+  color: 'RED' | 'YELLOW' | 'GREEN' | 'GREY';
   isEvaluating: boolean;
 }
 
 const TrafficLightIndicator: React.FC<TrafficLightIndicatorProps> = ({ color, isEvaluating }) => {
-  const colorClasses = {
+  const colorClasses: Record<string, string> = {
     RED: 'indicator-red',
     YELLOW: 'indicator-yellow',
     GREEN: 'indicator-green',
+    GREY: 'indicator-grey',
   };
 
   return (
-    <div className={`traffic-indicator ${colorClasses[color]} ${isEvaluating ? 'evaluating' : ''}`}>
+    <div className={`traffic-indicator ${colorClasses[color] || 'indicator-grey'} ${isEvaluating ? 'evaluating' : ''}`}>
       <span className="indicator-light" />
     </div>
   );
