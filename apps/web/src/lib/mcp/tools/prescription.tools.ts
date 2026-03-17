@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // SCHEMAS
@@ -242,6 +243,8 @@ async function refillMedicationHandler(
     input: RefillMedicationInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify medication exists and belongs to clinician's patient
     const medication: any = await prisma.medication.findFirst({
         where: { id: input.medicationId },
@@ -374,6 +377,8 @@ async function listPrescriptionsHandler(
     input: ListPrescriptionsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId, assignedClinicianId: context.clinicianId },

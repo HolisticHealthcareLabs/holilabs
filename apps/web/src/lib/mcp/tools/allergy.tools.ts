@@ -16,6 +16,7 @@ import {
     type DeleteAllergyInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // TOOL: create_allergy
@@ -25,6 +26,8 @@ async function createAllergyHandler(
     input: CreateAllergyInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {

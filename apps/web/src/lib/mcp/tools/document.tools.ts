@@ -23,6 +23,7 @@ import {
     type ShareDocumentInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -57,6 +58,8 @@ async function createDocumentHandler(
     input: CreateDocumentInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access
     const patient = await prisma.patient.findFirst({
         where: {
@@ -225,6 +228,8 @@ async function listDocumentsHandler(
     input: ListDocumentsInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     const { page = 1, limit = 20 } = input;
     const skip = (page - 1) * limit;
 

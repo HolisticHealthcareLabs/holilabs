@@ -31,6 +31,7 @@ import {
     type UpdateMedicationInput,
 } from '../schemas/tool-schemas';
 import type { MCPTool, MCPContext, MCPResult } from '../types';
+import { verifyConsentForAgentAccess } from '../consent-gate';
 
 // =============================================================================
 // PRIMITIVE SCHEMAS
@@ -77,6 +78,8 @@ async function createMedicationDraftHandler(
     input: CreateMedicationDraftInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     // Verify patient access only
     const patient = await prisma.patient.findFirst({
         where: { id: input.patientId, assignedClinicianId: context.clinicianId },
@@ -246,6 +249,8 @@ async function prescribeMedicationHandler(
     input: PrescribeMedicationInput,
     context: MCPContext
 ): Promise<MCPResult> {
+    await verifyConsentForAgentAccess(input.patientId, 'DATA_RESEARCH');
+
     logger.warn({
         event: 'deprecated_tool_called',
         tool: 'prescribe_medication',
