@@ -122,7 +122,7 @@ export interface AccessibilityNode {
 // TRAFFIC LIGHT (from web app)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN';
+export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN' | 'GREY';
 
 export interface TrafficLightSignal {
   ruleId: string;

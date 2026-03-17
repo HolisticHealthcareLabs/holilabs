@@ -19,7 +19,7 @@
 /**
  * Traffic light colors indicating action requirements
  */
-export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN';
+export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN' | 'GREY';
 
 /**
  * Categories of rules in the system
@@ -149,6 +149,8 @@ export interface TrafficLightResult {
     latencyMs: number;
     rulesEvaluated: number;
     patientIdHash?: string;
+    /** Present when color is GREY — describes the engine error */
+    error?: string;
   };
 }
 
