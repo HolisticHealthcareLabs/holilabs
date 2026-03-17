@@ -8,6 +8,8 @@ import { logger } from '@/lib/logger';
 import { redactObject } from '@/lib/security/redact-phi';
 import { writeAuditEntry } from '@/lib/audit/write-audit-entry';
 import { prisma } from '@/lib/prisma';
+import { agentEventBus, deriveAffectedEntities } from './agent-event-bus';
+import { wrapWithConsentCheck } from './middleware/consent-middleware';
 import { patientTools } from './tools/patient.tools';
 import { patientCrudTools } from './tools/patient-crud.tools';
 import { governanceTools } from './tools/governance.tools';
@@ -32,6 +34,7 @@ import { notificationTools } from './tools/notification.tools';
 import { searchTools as searchToolsModule } from './tools/search.tools';
 import { analyticsTools } from './tools/analytics.tools';
 import { clinicalDecisionTools } from './tools/clinical-decision.tools';
+import { roleAdminTools } from './tools/role-admin.tools';
 import type { MCPTool, MCPContext, MCPResult, MCPRegistry, MCPToolRequest, MCPToolResponse, PermissionCheckResult, MCPToolExample } from './types';
 import {
     getWorkflowTemplates,
@@ -90,6 +93,7 @@ class MCPToolRegistry implements MCPRegistry {
             ...searchToolsModule,
             ...analyticsTools,
             ...clinicalDecisionTools,
+            ...roleAdminTools,
         ];
 
         for (const tool of allTools) {
@@ -101,6 +105,15 @@ class MCPToolRegistry implements MCPRegistry {
                 }));
                 continue;
             }
+
+            // Wrap all tool handlers with consent middleware
+            const originalHandler = tool.handler;
+            const wrappedHandler = async (input: any, context: any) => {
+                const consentWrapped = await wrapWithConsentCheck(tool, originalHandler);
+                return consentWrapped(input, context);
+            };
+
+            tool.handler = wrappedHandler;
             this.tools.set(tool.name, tool);
         }
 
@@ -277,6 +290,19 @@ class MCPToolRegistry implements MCPRegistry {
                 clinicianId: context.clinicianId,
             }));
 
+            // Publish event for real-time UI sync
+            const affectedEntities = deriveAffectedEntities(toolName);
+            agentEventBus.publish({
+                type: 'tool_completed',
+                tool: toolName,
+                category: tool.category,
+                success: result.success,
+                affectedEntities: affectedEntities.length > 0 ? affectedEntities : undefined,
+                clinicianId: context.clinicianId,
+                agentId: context.agentId,
+                timestamp: new Date().toISOString(),
+            });
+
             writeAuditEntry({
                 action: `mcp.tool.${toolName}`,
                 resourceType: 'MCP_TOOL_EXECUTION',
@@ -305,6 +331,16 @@ class MCPToolRegistry implements MCPRegistry {
                 error: errorMessage,
                 agentId: context.agentId,
             }));
+
+            agentEventBus.publish({
+                type: 'tool_failed',
+                tool: toolName,
+                category: tool.category ?? 'unknown',
+                success: false,
+                clinicianId: context.clinicianId,
+                agentId: context.agentId,
+                timestamp: new Date().toISOString(),
+            });
 
             writeAuditEntry({
                 action: `mcp.tool.${toolName}.error`,

@@ -28,6 +28,12 @@ export interface MCPContext {
 
     /** Optional: Trace ID for distributed tracing / observability */
     traceId?: string;
+
+    /** Optional: Emergency override flag for break-glass access (2hr expiry, 3/24h rate limit) */
+    emergencyOverride?: boolean;
+
+    /** Optional: Clinical justification for emergency override (required if emergencyOverride is true) */
+    emergencyJustification?: string;
 }
 
 /**
@@ -69,7 +75,7 @@ export interface MCPTool {
     description: string;
 
     /** Tool category for organization */
-    category: 'patient' | 'clinical-note' | 'governance' | 'medication' | 'diagnosis' | 'clinical-decision' | 'appointment' | 'scheduling' | 'admin' | 'messaging' | 'document' | 'form' | 'portal' | 'notification' | 'lab' | 'billing' | 'referral' | 'settings' | 'ai' | 'consent' | 'scribe' | 'prevention' | 'search' | 'analytics';
+    category: 'patient' | 'clinical-note' | 'governance' | 'medication' | 'diagnosis' | 'clinical-decision' | 'appointment' | 'scheduling' | 'admin' | 'messaging' | 'document' | 'form' | 'portal' | 'notification' | 'lab' | 'billing' | 'referral' | 'settings' | 'ai' | 'consent' | 'scribe' | 'prevention' | 'search' | 'analytics' | 'role-admin';
 
     /** Zod schema for input validation */
     inputSchema: z.ZodType<any>;
