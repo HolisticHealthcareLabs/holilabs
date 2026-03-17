@@ -1,100 +1,42 @@
 /**
- * MCP Workflow Templates - Pre-built workflow templates for common clinical operations
+ * Workflow Registry
  *
- * Workflows define sequences of MCP tool calls that accomplish complex tasks.
- * The agent uses these templates as guides for multi-step operations.
+ * Central registry for all workflow templates.
+ * Provides access to pre-defined workflows for orchestration.
  */
 
-import { logger } from '@/lib/logger';
-import type { MCPContext, MCPResult } from '../types';
-import { registry } from '../registry';
-
-// =============================================================================
-// WORKFLOW TYPES
-// =============================================================================
+import type { WorkflowTemplate } from '../types';
+import { preventionScreeningWorkflow } from './prevention-workflow';
+import { clinicalDecisionWorkflow } from './cds-workflow';
+import { billingPreCheckWorkflow } from './billing-check-workflow';
 
 /**
- * A single step in a workflow
+ * Central registry of all workflow templates
  */
-export interface WorkflowStep {
-    /** The MCP tool to call */
-    toolName: string;
+const WORKFLOW_REGISTRY = new Map<string, WorkflowTemplate>([
+  ['prevention-screening', preventionScreeningWorkflow],
+  ['clinical-decision-support', clinicalDecisionWorkflow],
+  ['billing-pre-check', billingPreCheckWorkflow],
+]);
 
-    /** Description of what this step accomplishes */
-    description: string;
-
-    /** Map previous step outputs to this step's inputs */
-    inputMapping?: Record<string, string>;
-
-    /** Whether this step is optional (workflow can continue if it fails) */
-    optional?: boolean;
-
-    /** Condition to evaluate before running this step (JSON-Logic style) */
-    condition?: Record<string, any>;
+/**
+ * Get all registered workflow templates
+ */
+export function getWorkflowTemplates(): WorkflowTemplate[] {
+  return Array.from(WORKFLOW_REGISTRY.values());
 }
 
 /**
- * A workflow template defining a sequence of tool calls
+ * Get a workflow template by ID
  */
-export interface WorkflowTemplate {
-    /** Unique identifier for the workflow */
-    id: string;
-
-    /** Human-readable name */
-    name: string;
-
-    /** Description of what this workflow accomplishes */
-    description: string;
-
-    /** Ordered list of steps to execute */
-    steps: WorkflowStep[];
-
-    /** Workflow category */
-    category: 'clinical' | 'administrative' | 'billing';
-
-    /** Required initial inputs for the workflow */
-    requiredInputs?: string[];
-
-    /** Estimated time to complete in minutes */
-    estimatedDurationMinutes?: number;
-
-    /** Tags for searchability */
-    tags?: string[];
+export function getWorkflowById(id: string): WorkflowTemplate | undefined {
+  return WORKFLOW_REGISTRY.get(id);
 }
 
 /**
- * Result of a single workflow step
+ * Export workflow templates
  */
-export interface WorkflowStepResult {
-    stepIndex: number;
-    toolName: string;
-    success: boolean;
-    result: MCPResult;
-    executionTimeMs: number;
-    skipped?: boolean;
-    skipReason?: string;
-}
-
-/**
- * Result of executing a complete workflow
- */
-export interface WorkflowResult {
-    workflowId: string;
-    success: boolean;
-    completedSteps: number;
-    totalSteps: number;
-    stepResults: WorkflowStepResult[];
-    aggregatedData: Record<string, any>;
-    totalExecutionTimeMs: number;
-    error?: string;
-}
-
-// =============================================================================
-// WORKFLOW TEMPLATES
-// =============================================================================
-
-export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
-    // =========================================================================
+export { preventionScreeningWorkflow, clinicalDecisionWorkflow, billingPreCheckWorkflow };
     // CLINICAL WORKFLOWS
     // =========================================================================
     {
