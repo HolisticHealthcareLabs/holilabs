@@ -241,6 +241,15 @@ const TOOL_ROUTES: Record<string, { method: string; path: string }> = {
   'update-appointment-status': { method: 'PATCH', path: '/api/appointments/{id}/status' },
 
   // ═══════════════════════════════════════════════════════════════════
+  // ENCOUNTER TOOLS (Read + Update + Task Management)
+  // ═══════════════════════════════════════════════════════════════════
+  'list-encounters': { method: 'GET', path: '/api/encounters' },
+  'get-encounter': { method: 'GET', path: '/api/encounters/{id}' },
+  'update-encounter-status': { method: 'PATCH', path: '/api/encounters/{id}/status' },
+  'get-encounter-summary': { method: 'GET', path: '/api/encounters/{id}/summary' },
+  'create-encounter-prescription': { method: 'POST', path: '/api/encounters/{id}/prescriptions' },
+
+  // ═══════════════════════════════════════════════════════════════════
   // CLINICAL NOTES TOOLS (Full CRUD)
   // ═══════════════════════════════════════════════════════════════════
   'list-clinical-notes': { method: 'GET', path: '/api/clinical-notes' },

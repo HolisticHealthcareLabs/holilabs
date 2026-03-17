@@ -63,7 +63,7 @@ export interface MCPTool {
     description: string;
 
     /** Tool category for organization */
-    category: 'patient' | 'clinical-note' | 'governance' | 'medication' | 'diagnosis' | 'clinical-decision' | 'appointment' | 'scheduling' | 'admin' | 'messaging' | 'document' | 'form' | 'portal' | 'notification' | 'lab' | 'billing' | 'referral' | 'settings' | 'ai' | 'consent' | 'scribe' | 'prevention' | 'search' | 'analytics';
+    category: 'patient' | 'clinical-note' | 'governance' | 'medication' | 'diagnosis' | 'clinical-decision' | 'appointment' | 'scheduling' | 'admin' | 'messaging' | 'document' | 'form' | 'portal' | 'notification' | 'lab' | 'billing' | 'referral' | 'settings' | 'ai' | 'consent' | 'scribe' | 'prevention' | 'search' | 'analytics' | 'task';
 
     /** Zod schema for input validation */
     inputSchema: z.ZodType<any>;
