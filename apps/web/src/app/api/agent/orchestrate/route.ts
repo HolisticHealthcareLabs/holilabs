@@ -16,6 +16,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
+import { logger } from '@/lib/logger';
+import { redactObject } from '@/lib/security/redact-phi';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -98,6 +100,14 @@ async function executeToolWithTimeout(
     const duration = Date.now() - startTime;
 
     const isTimeout = error instanceof Error && error.name === 'AbortError';
+    const errorMessage = isTimeout ? 'Tool execution timed out' : (error instanceof Error ? error.message : 'Unknown error');
+
+    logger.error(redactObject({
+      event: 'orchestrate_tool_error',
+      tool: toolCall.tool,
+      error: errorMessage,
+      duration,
+    }));
 
     return {
       id,
@@ -106,7 +116,7 @@ async function executeToolWithTimeout(
       status: isTimeout ? 408 : 500,
       data: null,
       duration,
-      error: isTimeout ? 'Tool execution timed out' : (error instanceof Error ? error.message : 'Unknown error'),
+      error: errorMessage,
     };
   }
 }
@@ -224,6 +234,15 @@ export async function POST(request: NextRequest) {
   const successCount = results.filter((r) => r.success).length;
   const failureCount = results.length - successCount;
   const toolDurationSum = results.reduce((sum, r) => sum + r.duration, 0);
+
+  logger.info(redactObject({
+    event: 'orchestrate_completed',
+    mode,
+    totalTools: results.length,
+    successCount,
+    failureCount,
+    totalDuration,
+  }));
 
   // 7. Return aggregated response
   return NextResponse.json({
