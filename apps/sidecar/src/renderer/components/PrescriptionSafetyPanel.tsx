@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { TrafficLightResult } from '../../types';
 
 interface PrescriptionSafetyPanelProps {
   result: TrafficLightResult | null;
   loading: boolean;
   onCheck: () => void;
+  onOverride?: () => Promise<void>;
 }
 
 const COLOR_CONFIG = {
@@ -17,9 +18,24 @@ export const PrescriptionSafetyPanel: React.FC<PrescriptionSafetyPanelProps> = (
   result,
   loading,
   onCheck,
+  onOverride,
 }) => {
+  const [isOverrideSubmitting, setIsOverrideSubmitting] = useState(false);
   const color = result?.color ?? 'GREEN';
   const cfg = COLOR_CONFIG[color] ?? COLOR_CONFIG.GREEN;
+  const showOverride = result?.canOverride && (color === 'RED' || color === 'YELLOW') && onOverride;
+
+  const handleOverride = async () => {
+    if (!onOverride) return;
+    setIsOverrideSubmitting(true);
+    try {
+      await onOverride();
+    } catch (err) {
+      console.error('[PrescriptionSafetyPanel] Override failed:', err);
+    } finally {
+      setIsOverrideSubmitting(false);
+    }
+  };
 
   return (
     <div
@@ -108,11 +124,29 @@ export const PrescriptionSafetyPanel: React.FC<PrescriptionSafetyPanelProps> = (
         </div>
       )}
 
+      {/* Override Button */}
+      {showOverride && (
+        <div className="px-4 pt-3 border-t border-white/10">
+          <button
+            onClick={handleOverride}
+            disabled={isOverrideSubmitting}
+            className="w-full bg-amber-600 text-white rounded-full py-2 text-xs font-semibold tracking-wide hover:bg-amber-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isOverrideSubmitting ? 'Submitting…' : 'Override with Justification'}
+          </button>
+          {result.overrideRequires && (
+            <div className="text-[9px] text-white/30 font-mono text-center mt-1">
+              Requires: {result.overrideRequires}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* CTA Button */}
       <div className="px-4 py-3 border-t border-white/10">
         <button
           onClick={onCheck}
-          disabled={loading}
+          disabled={loading || isOverrideSubmitting}
           className="w-full bg-white text-black rounded-full py-2 text-xs font-semibold tracking-wide hover:bg-white/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? 'Evaluating…' : 'Check New Prescription'}
