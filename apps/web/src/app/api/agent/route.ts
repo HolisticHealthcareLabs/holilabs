@@ -259,6 +259,16 @@ const TOOL_ROUTES: Record<string, { method: string; path: string }> = {
   'resolve-escalation':  { method: 'POST',  path: '/api/escalations/{id}/resolve' },
 
   // ═══════════════════════════════════════════════════════════════════
+  // WORKSPACE + COMPLIANCE
+  // ═══════════════════════════════════════════════════════════════════
+  'get-workspace':               { method: 'GET',    path: '/api/workspace/current' },
+  'get-workspace-llm-config':    { method: 'GET',    path: '/api/workspace/llm-config' },
+  'set-workspace-llm-config':    { method: 'POST',   path: '/api/workspace/llm-config' },
+  'delete-workspace-llm-config': { method: 'DELETE',  path: '/api/workspace/llm-config' },
+  'verify-audit-chain':          { method: 'POST',   path: '/api/compliance/audit-chain/verify' },
+  'get-compliance-report':       { method: 'GET',    path: '/api/compliance/report' },
+
+  // ═══════════════════════════════════════════════════════════════════
   // CLINICAL NOTES TOOLS (Full CRUD)
   // ═══════════════════════════════════════════════════════════════════
   'list-clinical-notes': { method: 'GET', path: '/api/clinical-notes' },
