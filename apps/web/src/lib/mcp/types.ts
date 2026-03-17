@@ -146,3 +146,41 @@ export interface PermissionCheckResult {
     allowed: boolean;
     missingPermissions: string[];
 }
+
+/**
+ * Workflow step definition
+ */
+export interface WorkflowStep {
+    id: string;
+    tool: string;
+    description: string;
+    inputMapping: Record<string, any>;
+    dependsOn?: string[];
+    optional?: boolean;
+    timeout?: number;
+}
+
+/**
+ * Input parameter definition for workflow
+ */
+export interface WorkflowInputParameter {
+    type: string;
+    format?: string;
+    required: boolean;
+    description?: string;
+}
+
+/**
+ * Workflow template definition
+ */
+export interface WorkflowTemplate {
+    id: string;
+    name: string;
+    description: string;
+    category: 'clinical' | 'billing' | 'administrative' | 'patient-engagement';
+    version: string;
+    requiredInputs: Record<string, WorkflowInputParameter>;
+    steps: WorkflowStep[];
+    outputMapping: Record<string, any>;
+    parallelGroups?: string[][];
+}

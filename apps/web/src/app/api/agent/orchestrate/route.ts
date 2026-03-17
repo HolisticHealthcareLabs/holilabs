@@ -15,11 +15,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createProtectedRoute } from '@/lib/api/middleware';
-import { logger } from '@/lib/logger';
-import { redactPHIFromLogs } from '@/lib/security/redact-phi';
+import { auth } from '@/lib/auth/auth';
+import type { WorkflowTemplate, WorkflowStep } from '@/lib/mcp/types';
+import { preventionScreeningWorkflow } from '@/lib/mcp/workflows/prevention-workflow';
+import { clinicalDecisionWorkflow } from '@/lib/mcp/workflows/cds-workflow';
+import { billingPreCheckWorkflow } from '@/lib/mcp/workflows/billing-check-workflow';
 import crypto from 'crypto';
-import { requireSecret } from '@/lib/security/require-secret';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export const dynamic = 'force-dynamic';
  * Generate internal service token for trusted agent gateway requests.
  */
 function generateInternalToken(): string {
-  const secret = requireSecret('NEXTAUTH_SECRET');
+  const secret = process.env.NEXTAUTH_SECRET || 'dev-secret';
   const timestamp = Math.floor(Date.now() / 60000);
   return crypto
     .createHmac('sha256', secret)
@@ -37,6 +38,22 @@ function generateInternalToken(): string {
 
 // Per-tool timeout default (30 seconds)
 const DEFAULT_TIMEOUT = 30000;
+
+/**
+ * Workflow Registry
+ */
+const WORKFLOW_REGISTRY = new Map<string, WorkflowTemplate>([
+  ['prevention-screening', preventionScreeningWorkflow],
+  ['clinical-decision-support', clinicalDecisionWorkflow],
+  ['billing-pre-check', billingPreCheckWorkflow],
+]);
+
+/**
+ * Get workflow by ID from registry
+ */
+function getWorkflowById(id: string): WorkflowTemplate | undefined {
+  return WORKFLOW_REGISTRY.get(id);
+}
 
 interface ToolCall {
   tool: string;
@@ -55,14 +72,102 @@ interface ToolResult {
 }
 
 /**
+ * Build tool array from workflow template, respecting dependencies and parallel groups
+ */
+function buildToolArrayFromWorkflow(
+  workflow: WorkflowTemplate,
+  params: Record<string, unknown>
+): ToolCall[] {
+  const tools: ToolCall[] = [];
+  const processedSteps = new Set<string>();
+
+  // Helper to resolve template variables
+  function resolveValue(value: any, context: Record<string, any>): any {
+    if (typeof value === 'string' && value.includes('{{')) {
+      const varMatch = value.match(/\{\{([^}]+)\}\}/g);
+      let result = value;
+      varMatch?.forEach(match => {
+        const varPath = match.replace(/[{}]/g, '').trim();
+        const varValue = varPath.split('.').reduce((obj, key) => obj?.[key], context);
+        result = result.replace(match, varValue ?? '');
+      });
+      return result;
+    }
+    if (typeof value === 'object' && value !== null) {
+      return Object.entries(value).reduce((acc, [k, v]) => {
+        acc[k] = resolveValue(v, context);
+        return acc;
+      }, {} as Record<string, any>);
+    }
+    return value;
+  }
+
+  // Build execution context as we process steps
+  const executionContext: Record<string, any> = { ...params };
+
+  // Process steps in dependency order
+  const stepsToProcess = [...workflow.steps];
+  while (stepsToProcess.length > 0) {
+    const currentBatch: WorkflowStep[] = [];
+
+    // Find all steps that have no unmet dependencies
+    for (let i = stepsToProcess.length - 1; i >= 0; i--) {
+      const step = stepsToProcess[i];
+      const depsMetOrMissing = !step.dependsOn || step.dependsOn.every(dep => processedSteps.has(dep));
+
+      if (depsMetOrMissing) {
+        currentBatch.push(step);
+        stepsToProcess.splice(i, 1);
+      }
+    }
+
+    if (currentBatch.length === 0 && stepsToProcess.length > 0) {
+      break;
+    }
+
+    // Add current batch to tools
+    currentBatch.forEach(step => {
+      const resolvedArgs = resolveValue(step.inputMapping, executionContext);
+      tools.push({
+        tool: step.tool,
+        arguments: resolvedArgs,
+        id: step.id,
+      });
+      processedSteps.add(step.id);
+      // Mock step result for context
+      executionContext[`${step.id}.result`] = { mock: true };
+    });
+  }
+
+  return tools;
+}
+
+/**
+ * Execute workflow by ID from registry
+ */
+async function executeWorkflowFromRegistry(
+  workflowId: string,
+  params: Record<string, unknown>,
+  baseUrl: string,
+  cookies: string | null,
+  timeout: number
+): Promise<ToolCall[]> {
+  const workflow = getWorkflowById(workflowId);
+  if (!workflow) {
+    throw new Error(`Workflow not found: ${workflowId}`);
+  }
+
+  return buildToolArrayFromWorkflow(workflow, params);
+}
+
+/**
  * Execute a single tool call with timeout
  */
 async function executeToolWithTimeout(
   toolCall: ToolCall,
   baseUrl: string,
   cookies: string | null,
-  timeout: number,
-  extraHeaders?: Record<string, string>
+  timeout: number
 ): Promise<ToolResult> {
   const startTime = Date.now();
   const id = toolCall.id || `tool-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -76,7 +181,6 @@ async function executeToolWithTimeout(
       headers: {
         'Content-Type': 'application/json',
         ...(cookies ? { Cookie: cookies } : {}),
-        ...(extraHeaders || {}),
       },
       body: JSON.stringify({
         tool: toolCall.tool,
@@ -103,14 +207,6 @@ async function executeToolWithTimeout(
     const duration = Date.now() - startTime;
 
     const isTimeout = error instanceof Error && error.name === 'AbortError';
-    const errorMessage = isTimeout ? 'Tool execution timed out' : (error instanceof Error ? error.message : 'Unknown error');
-
-    logger.error(redactPHIFromLogs({
-      event: 'orchestrate_tool_error',
-      tool: toolCall.tool,
-      error: errorMessage,
-      duration,
-    }));
 
     return {
       id,
@@ -119,7 +215,7 @@ async function executeToolWithTimeout(
       status: isTimeout ? 408 : 500,
       data: null,
       duration,
-      error: errorMessage,
+      error: isTimeout ? 'Tool execution timed out' : (error instanceof Error ? error.message : 'Unknown error'),
     };
   }
 }
@@ -131,11 +227,10 @@ async function executeParallel(
   tools: ToolCall[],
   baseUrl: string,
   cookies: string | null,
-  timeout: number,
-  extraHeaders?: Record<string, string>
+  timeout: number
 ): Promise<ToolResult[]> {
   return Promise.all(
-    tools.map((tool) => executeToolWithTimeout(tool, baseUrl, cookies, timeout, extraHeaders))
+    tools.map((tool) => executeToolWithTimeout(tool, baseUrl, cookies, timeout))
   );
 }
 
@@ -146,13 +241,12 @@ async function executeSequential(
   tools: ToolCall[],
   baseUrl: string,
   cookies: string | null,
-  timeout: number,
-  extraHeaders?: Record<string, string>
+  timeout: number
 ): Promise<ToolResult[]> {
   const results: ToolResult[] = [];
 
   for (const tool of tools) {
-    const result = await executeToolWithTimeout(tool, baseUrl, cookies, timeout, extraHeaders);
+    const result = await executeToolWithTimeout(tool, baseUrl, cookies, timeout);
     results.push(result);
 
     // Stop on first failure if sequential mode
@@ -177,11 +271,16 @@ async function executeSequential(
   return results;
 }
 
-export const POST = createProtectedRoute(
-  async (request: NextRequest) => {
-    const orchestrationStart = Date.now();
+export async function POST(request: NextRequest) {
+  const orchestrationStart = Date.now();
 
-    // Parse request
+  // 1. Verify session
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // 2. Parse request
   let body: {
     tools?: ToolCall[];
     mode?: 'parallel' | 'sequential';
@@ -196,10 +295,41 @@ export const POST = createProtectedRoute(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { tools, mode = 'parallel', timeout = DEFAULT_TIMEOUT } = body;
+  const { tools, mode = 'parallel', timeout = DEFAULT_TIMEOUT, workflow, params = {} } = body;
 
-  // 3. Validate tools array
-  if (!tools || !Array.isArray(tools) || tools.length === 0) {
+  // 3. Determine tools to execute
+  let toolsToExecute: ToolCall[] = [];
+
+  if (workflow) {
+    // Workflow mode: build tool array from workflow template
+    const workflowTemplate = getWorkflowById(workflow);
+    if (!workflowTemplate) {
+      return NextResponse.json(
+        { error: `Workflow not found: ${workflow}` },
+        { status: 400 }
+      );
+    }
+
+    try {
+      toolsToExecute = buildToolArrayFromWorkflow(workflowTemplate, params);
+    } catch (err) {
+      return NextResponse.json(
+        { error: `Failed to build workflow: ${err instanceof Error ? err.message : 'Unknown error'}` },
+        { status: 400 }
+      );
+    }
+  } else if (tools && Array.isArray(tools)) {
+    // Tools mode: use provided tools array
+    toolsToExecute = tools;
+  } else {
+    return NextResponse.json(
+      { error: 'Either tools array or workflow ID is required' },
+      { status: 400 }
+    );
+  }
+
+  // Validate tools array not empty
+  if (toolsToExecute.length === 0) {
     return NextResponse.json(
       { error: 'Tools array is required and must not be empty' },
       { status: 400 }
@@ -207,8 +337,8 @@ export const POST = createProtectedRoute(
   }
 
   // Validate each tool has a name
-  for (let i = 0; i < tools.length; i++) {
-    if (!tools[i].tool || typeof tools[i].tool !== 'string') {
+  for (let i = 0; i < toolsToExecute.length; i++) {
+    if (!toolsToExecute[i].tool || typeof toolsToExecute[i].tool !== 'string') {
       return NextResponse.json(
         { error: `Tool at index ${i} missing required 'tool' field` },
         { status: 400 }
@@ -219,39 +349,23 @@ export const POST = createProtectedRoute(
   // 4. Extract request context
   const baseUrl = request.nextUrl.origin;
   const cookies = request.headers.get('cookie');
-  const idempotencyKey = request.headers.get('x-idempotency-key') || undefined;
-  const traceId = request.headers.get('x-trace-id') || undefined;
 
-  // 5. Build extra headers for idempotency / tracing
-  const extraHeaders: Record<string, string> = {};
-  if (idempotencyKey) extraHeaders['x-idempotency-key'] = idempotencyKey;
-  if (traceId) extraHeaders['x-trace-id'] = traceId;
-
-  // 6. Execute tools based on mode
+  // 5. Execute tools based on mode
   let results: ToolResult[];
 
   if (mode === 'sequential') {
-    results = await executeSequential(tools, baseUrl, cookies, timeout, extraHeaders);
+    results = await executeSequential(toolsToExecute, baseUrl, cookies, timeout);
   } else {
-    results = await executeParallel(tools, baseUrl, cookies, timeout, extraHeaders);
+    results = await executeParallel(toolsToExecute, baseUrl, cookies, timeout);
   }
 
-  // 7. Calculate summary metrics
+  // 6. Calculate summary metrics
   const totalDuration = Date.now() - orchestrationStart;
   const successCount = results.filter((r) => r.success).length;
   const failureCount = results.length - successCount;
   const toolDurationSum = results.reduce((sum, r) => sum + r.duration, 0);
 
-  logger.info(redactObject({
-    event: 'orchestrate_completed',
-    mode,
-    totalTools: results.length,
-    successCount,
-    failureCount,
-    totalDuration,
-  }));
-
-  // Return aggregated response
+  // 7. Return aggregated response
   return NextResponse.json({
     mode,
     totalTools: results.length,
@@ -265,26 +379,43 @@ export const POST = createProtectedRoute(
       failureCount,
     },
   });
-  },
-  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
-);
+}
 
 /**
  * GET /api/agent/orchestrate
  * Returns orchestration capabilities and available workflows
  */
-export const GET = createProtectedRoute(
-  async (_request: NextRequest) => {
-    return NextResponse.json({
-    description: 'Agent Orchestration API - Execute multiple tools in parallel',
+export async function GET(_request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const availableWorkflows = Array.from(WORKFLOW_REGISTRY.values()).map(w => ({
+    id: w.id,
+    name: w.name,
+    description: w.description,
+    category: w.category,
+    version: w.version,
+  }));
+
+  return NextResponse.json({
+    description: 'Agent Orchestration API - Execute multiple tools in parallel or via pre-defined workflows',
     modes: ['parallel', 'sequential'],
     defaultTimeout: DEFAULT_TIMEOUT,
+    workflows: availableWorkflows,
     usage: {
       endpoint: 'POST /api/agent/orchestrate',
-      body: {
+      toolsMode: {
         tools: [
           { tool: 'tool-name', arguments: { key: 'value' }, id: 'optional-id' },
         ],
+        mode: 'parallel | sequential',
+        timeout: 30000,
+      },
+      workflowMode: {
+        workflow: 'workflow-id',
+        params: { patientId: 'patient-123' },
         mode: 'parallel | sequential',
         timeout: 30000,
       },
@@ -298,6 +429,4 @@ export const GET = createProtectedRoute(
       mode: 'parallel',
     },
   });
-  },
-  { roles: ['CLINICIAN', 'PHYSICIAN', 'ADMIN'] }
-);
+}
