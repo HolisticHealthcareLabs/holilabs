@@ -16,6 +16,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
+import { logger } from '@/lib/logger';
+import { redactPHIFromLogs } from '@/lib/security/redact-phi';
 import crypto from 'crypto';
 import { requireSecret } from '@/lib/security/require-secret';
 
@@ -99,6 +101,14 @@ async function executeToolWithTimeout(
     const duration = Date.now() - startTime;
 
     const isTimeout = error instanceof Error && error.name === 'AbortError';
+    const errorMessage = isTimeout ? 'Tool execution timed out' : (error instanceof Error ? error.message : 'Unknown error');
+
+    logger.error(redactPHIFromLogs({
+      event: 'orchestrate_tool_error',
+      tool: toolCall.tool,
+      error: errorMessage,
+      duration,
+    }));
 
     return {
       id,
@@ -107,7 +117,7 @@ async function executeToolWithTimeout(
       status: isTimeout ? 408 : 500,
       data: null,
       duration,
-      error: isTimeout ? 'Tool execution timed out' : (error instanceof Error ? error.message : 'Unknown error'),
+      error: errorMessage,
     };
   }
 }
@@ -221,7 +231,20 @@ export const POST = createProtectedRoute(
   const failureCount = results.length - successCount;
   const toolDurationSum = results.reduce((sum, r) => sum + r.duration, 0);
 
+<<<<<<< HEAD
   // Return aggregated response
+=======
+  logger.info(redactObject({
+    event: 'orchestrate_completed',
+    mode,
+    totalTools: results.length,
+    successCount,
+    failureCount,
+    totalDuration,
+  }));
+
+  // 7. Return aggregated response
+>>>>>>> worktree-agent-abaf958c
   return NextResponse.json({
     mode,
     totalTools: results.length,
