@@ -11,6 +11,7 @@
  */
 
 import logger from '@/lib/logger';
+import { getAllRegisteredTools } from '@/lib/mcp/registry';
 
 export type AIProvider = 'claude' | 'openai' | 'gemini' | 'ollama' | 'vllm' | 'together';
 
@@ -95,6 +96,61 @@ Given a confirmed diagnosis, provide:
 
 Follow evidence-based guidelines (ACP, IDSA, ESC, etc.).`,
 };
+
+// ============================================================================
+// AVAILABLE TOOLS — SYSTEM PROMPT INJECTION
+// ============================================================================
+
+/**
+ * Build a prompt section that lists all registered MCP tools grouped by category.
+ * Intended for injection into the agent system prompt so the LLM can reference
+ * specific tool names when recommending follow-up actions.
+ */
+export function buildAvailableToolsSection(): string {
+  const tools = getAllRegisteredTools();
+
+  if (tools.length === 0) {
+    return '';
+  }
+
+  const byCategory = new Map<string, { name: string; description: string }[]>();
+  for (const t of tools) {
+    const list = byCategory.get(t.category) ?? [];
+    list.push({ name: t.name, description: t.description });
+    byCategory.set(t.category, list);
+  }
+
+  const lines: string[] = [
+    '',
+    '## Available Tools',
+    'You have access to the following tools for patient care operations:',
+    '',
+  ];
+
+  byCategory.forEach((categoryTools, category) => {
+    lines.push(`### ${category}`);
+    for (const tool of categoryTools) {
+      lines.push(`- **${tool.name}**: ${tool.description}`);
+    }
+    lines.push('');
+  });
+
+  lines.push(
+    'When recommending follow-up actions, reference the specific tool name the clinician or agent should use.'
+  );
+
+  return lines.join('\n');
+}
+
+/**
+ * Assemble the full agent system prompt: base clinical prompt + available tools.
+ * Accepts an optional base prompt override; defaults to the general clinical prompt.
+ */
+export function buildAgentSystemPrompt(basePrompt?: string): string {
+  const base = basePrompt ?? ClinicalSystemPrompts.general;
+  const toolsSection = buildAvailableToolsSection();
+  return `${base}\n${toolsSection}`;
+}
 
 // ============================================================================
 // CLAUDE API (Anthropic) - Recommended for Healthcare
