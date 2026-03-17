@@ -2174,6 +2174,10 @@ model AuditLog {
   accessReason  AccessReason? // Mandatory for READ operations on PHI
   accessPurpose String?       @db.Text // Optional free-text justification
 
+  // Actor Classification (agent audit trail)
+  actorType  String?   // 'USER' | 'AGENT' | 'SYSTEM'
+  agentId    String?   // MCP agent identifier when actorType is 'AGENT'
+
   // Result
   success      Boolean @default(true)
   errorMessage String? @db.Text
