@@ -36,6 +36,7 @@ import { analyticsTools } from './tools/analytics.tools';
 import { clinicalDecisionTools } from './tools/clinical-decision.tools';
 import { roleAdminTools } from './tools/role-admin.tools';
 import { escalationTools } from './tools/escalation.tools';
+import { workspaceAdminTools } from './tools/workspace-admin.tools';
 import type { MCPTool, MCPContext, MCPResult, MCPRegistry, MCPToolRequest, MCPToolResponse, PermissionCheckResult, MCPToolExample } from './types';
 import {
     getWorkflowTemplates,
@@ -96,6 +97,7 @@ class MCPToolRegistry implements MCPRegistry {
             ...clinicalDecisionTools,
             ...roleAdminTools,
             ...escalationTools,
+            ...workspaceAdminTools,
         ];
 
         for (const tool of allTools) {
