@@ -125,6 +125,7 @@ model User {
   createdWorkspaces Workspace[]       @relation("WorkspaceCreatedBy")
 
   // Escalation Queue
+  assignedEscalations Escalation[] @relation("EscalationAssignee")
   resolvedEscalations Escalation[] @relation("EscalationResolvedBy")
 
   // BYOK API Keys
@@ -2189,6 +2190,14 @@ model AuditLog {
   previousHash String? // SHA-256 hash of previous entry, "GENESIS" for first
   entryHash    String? // SHA-256 hash of this entry including previousHash
 
+  // Hash Version & Extended Compliance Fields
+  hashVersion  Int     @default(1) @map("hash_version") // v1: 8-field hash, v2: 13-field hash (includes model/prompt/consent/legal/phi)
+  modelVersion String? @map("model_version") // LLM model identifier for agent executions
+  promptHash   String? @map("prompt_hash") // SHA-256 hash of LLM prompt (for reproducibility)
+  consentBasis String? @map("consent_basis") // Consent type granted (e.g., "explicit", "implicit", "emergency")
+  legalBasis   String? @map("legal_basis") // LGPD Art. 7 legal basis citation
+  phiAccessScore Float? @map("phi_access_score") // Risk score for this access (0.0-1.0, higher = more sensitive)
+
   @@index([userId])
   @@index([action])
   @@index([resourceId])
@@ -2197,6 +2206,7 @@ model AuditLog {
   @@index([entryHash])
   @@index([userId, timestamp])
   @@index([resourceId, timestamp])
+  @@index([hashVersion])
   @@map("audit_logs")
 }
 
@@ -4575,8 +4585,12 @@ enum RecurrencePattern {
 
 enum EscalationStatus {
   OPEN
-  BREACHED
+  ASSIGNED
+  IN_PROGRESS
   RESOLVED
+  BREACHED
+  ESCALATED_HIGHER
+  PAUSED
 }
 
 model Escalation {
@@ -4599,6 +4613,17 @@ model Escalation {
   // SLA tracking
   slaDeadline DateTime // When this escalation must be resolved by
 
+  // Assignment (state machine: OPEN → ASSIGNED)
+  assignedToId String?
+  assignedTo   User? @relation("EscalationAssignee", fields: [assignedToId], references: [id])
+  assignedAt   DateTime?
+
+  // Notification channels (default: in-app only)
+  notificationChannels String[] @default(["IN_APP"])
+
+  // Escalation level for routing
+  escalationLevel Int @default(1)
+
   // Resolution
   resolvedAt  DateTime?
   resolvedBy  String?
@@ -4613,6 +4638,7 @@ model Escalation {
   @@index([slaDeadline])
   @@index([patientId])
   @@index([scheduledReminderId])
+  @@index([assignedToId])
   @@map("escalations")
 }
 
