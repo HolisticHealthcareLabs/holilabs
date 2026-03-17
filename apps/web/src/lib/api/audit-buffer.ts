@@ -9,6 +9,9 @@ interface AuditEntry {
   resourceId: string;
   success: boolean;
   details?: Record<string, unknown>;
+  actorType?: string;
+  agentId?: string;
+  accessReason?: string;
 }
 
 const FLUSH_INTERVAL_MS = 5_000;

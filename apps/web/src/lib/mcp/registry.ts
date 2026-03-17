@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import { writeAuditEntry } from '@/lib/audit/write-audit-entry';
 import { patientTools } from './tools/patient.tools';
 import { patientCrudTools } from './tools/patient-crud.tools';
 import { governanceTools } from './tools/governance.tools';
@@ -222,6 +223,18 @@ class MCPToolRegistry implements MCPRegistry {
                 clinicianId: context.clinicianId,
             });
 
+            writeAuditEntry({
+                action: `mcp.tool.${toolName}`,
+                resourceType: 'MCP_TOOL_EXECUTION',
+                resourceId: toolName,
+                userId: context.clinicianId,
+                actorType: 'AGENT',
+                agentId: context.agentId,
+                accessReason: `Agent tool execution: ${toolName}`,
+                metadata: { toolName, sessionId: context.sessionId, success: true },
+                clinicId: context.clinicId,
+            });
+
             return {
                 tool: toolName,
                 success: result.success,
@@ -230,11 +243,25 @@ class MCPToolRegistry implements MCPRegistry {
                 timestamp: new Date().toISOString(),
             };
         } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
             logger.error({
                 event: 'mcp_tool_error',
                 tool: toolName,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: errorMessage,
                 agentId: context.agentId,
+            });
+
+            writeAuditEntry({
+                action: `mcp.tool.${toolName}.error`,
+                resourceType: 'MCP_TOOL_EXECUTION',
+                resourceId: toolName,
+                userId: context.clinicianId,
+                actorType: 'AGENT',
+                agentId: context.agentId,
+                accessReason: `Agent tool execution failed: ${toolName}`,
+                metadata: { toolName, sessionId: context.sessionId, success: false, error: errorMessage },
+                clinicId: context.clinicId,
             });
 
             return {
