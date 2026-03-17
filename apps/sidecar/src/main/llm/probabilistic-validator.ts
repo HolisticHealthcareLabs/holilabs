@@ -15,6 +15,7 @@
 
 import { OllamaClient } from './ollama-client';
 import { DeterministicValidator } from '../ontology/DeterministicValidator';
+import { sanitizePatientInput } from '../security/sanitize-patient-input';
 import type { TrafficLightSignal } from '../../types';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -225,6 +226,18 @@ export class ProbabilisticValidator {
             ? context.icd10Codes.join(', ')
             : 'Not provided';
 
+        const soapResult = sanitizePatientInput(context.soapNoteSnippet || '');
+        const billingResult = sanitizePatientInput(context.billingCode || '');
+        const diagnosisResult = sanitizePatientInput(context.diagnosis || '');
+
+        if (soapResult.injectionDetected || billingResult.injectionDetected || diagnosisResult.injectionDetected) {
+            console.warn('[ProbabilisticValidator] Prompt injection detected in patient input', {
+                soapPatterns: soapResult.detectedPatterns,
+                billingPatterns: billingResult.detectedPatterns,
+                diagnosisPatterns: diagnosisResult.detectedPatterns,
+            });
+        }
+
         return CLINICAL_ASSESSMENT_PROMPT
             .replace('{{medication_name}}', context.medication?.name || 'Unknown')
             .replace('{{dose}}', context.medication?.dose || 'Not specified')
@@ -234,10 +247,10 @@ export class ProbabilisticValidator {
             .replace('{{patient_weight}}', context.patientWeight?.toString() || 'Unknown')
             .replace('{{allergies}}', context.allergies?.join(', ') || 'None reported')
             .replace('{{current_meds}}', context.currentMedications?.join(', ') || 'None reported')
-            .replace('{{diagnosis}}', context.diagnosis || 'Not specified')
+            .replace('{{diagnosis}}', diagnosisResult.sanitized || 'Not specified')
             .replace('{{icd10_codes}}', icd10CodesStr)
-            .replace('{{soap_snippet}}', context.soapNoteSnippet || 'Not provided')
-            .replace('{{billing_code}}', context.billingCode || 'Not specified');
+            .replace('{{soap_snippet}}', soapResult.sanitized || 'Not provided')
+            .replace('{{billing_code}}', billingResult.sanitized || 'Not specified');
     }
 
     private parseResponse(response: string): Omit<ProbabilisticResult, 'latencyMs' | 'source'> | null {
