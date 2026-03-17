@@ -170,7 +170,28 @@ const HealthRow = ({ label, status }: any) => (
 
 const LogEntry = ({ result, index }: { result: TrafficLightResult, index: number }) => {
     const isRed = result.color === 'RED';
+    const isGrey = result.color === 'GREY';
     const signal = result.signals[0];
+
+    const colorClasses = isGrey
+        ? 'bg-slate-500/20 text-slate-400'
+        : isRed
+            ? 'bg-red-500/20 text-red-500'
+            : 'bg-emerald-500/20 text-emerald-500';
+
+    const icon = isGrey ? '?' : isRed ? '🛡️' : '✓';
+
+    const titleClasses = isGrey
+        ? 'text-slate-400'
+        : isRed
+            ? 'text-red-400'
+            : 'text-slate-200';
+
+    const title = isGrey
+        ? 'Unable to Assess Safety'
+        : isRed
+            ? 'Protocol Violation Detected'
+            : 'Validation Assured';
 
     return (
         <div className={`
@@ -185,15 +206,15 @@ const LogEntry = ({ result, index }: { result: TrafficLightResult, index: number
 
             <div className={`
          w-6 h-6 rounded flex items-center justify-center text-xs shrink-0 mt-0.5
-         ${isRed ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}
+         ${colorClasses}
        `}>
-                {isRed ? '🛡️' : '✓'}
+                {icon}
             </div>
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-sm font-medium ${isRed ? 'text-red-400' : 'text-slate-200'}`}>
-                        {isRed ? 'Protocol Violation Detected' : 'Validation Assured'}
+                    <span className={`text-sm font-medium ${titleClasses}`}>
+                        {title}
                     </span>
                     {signal?.category === 'CLINICAL' && (
                         <span className="text-[9px] px-1.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">

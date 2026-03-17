@@ -58,6 +58,7 @@ const COLOR_PRIORITY: Record<TrafficLightColor, number> = {
   RED: 3,
   YELLOW: 2,
   GREEN: 1,
+  GREY: 0,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -159,13 +160,11 @@ export class TrafficLightEngine {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 
-      // Return GREEN with error flag on failure (fail open for availability)
-      // In production, you might want to fail closed for critical actions
       return {
-        color: 'GREEN',
+        color: 'GREY' as TrafficLightColor,
         signals: [],
         canOverride: true,
-        needsChatAssistance: false,
+        needsChatAssistance: true,
         summary: {
           clinical: { red: 0, yellow: 0 },
           administrative: { red: 0, yellow: 0 },
@@ -176,6 +175,7 @@ export class TrafficLightEngine {
           latencyMs: Date.now() - startTime,
           rulesEvaluated: 0,
           patientIdHash: hashPatientId(context.patientId),
+          error: error instanceof Error ? error.message : 'Unknown error',
         },
       };
     }
