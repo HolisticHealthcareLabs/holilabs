@@ -30,6 +30,7 @@ import { ResourceGuard, ResourceState } from './resource-guard';
 // import { DeepgramService } from '../audio/deepgram-service';
 import { InputInjector } from './input-injector';
 import { OllamaManager } from './OllamaManager';
+import { PipelineOrchestrator, type PipelineInput } from './agents/pipeline-orchestrator';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GLOBALS
@@ -46,6 +47,7 @@ const visionModule = new VisionModule();
 const edgeClient = new EdgeNodeClient();
 const apiServer = new SidecarAPIServer(3002);
 const controlPlane = new ControlPlaneClient();
+const pipelineOrchestrator = new PipelineOrchestrator();
 
 async function ensureRequiredMacPermissions(): Promise<void> {
   if (process.platform !== 'darwin') return;
@@ -434,6 +436,33 @@ function setupIPC(): void {
 
   ipcMain.handle('scribe:get-resource-state', () => {
     return resourceGuard.getLastState();
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // CLINICAL PIPELINE (Unit 5)
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  ipcMain.handle('pipeline:evaluate', async (_event, input: PipelineInput) => {
+    try {
+      const result = await pipelineOrchestrator.execute(input);
+      return { success: true, result };
+    } catch (error) {
+      console.error('[Pipeline] Evaluation failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Pipeline evaluation failed',
+      };
+    }
+  });
+
+  ipcMain.handle('pipeline:status', async () => {
+    return {
+      contextAgent: 'ready',
+      safetyAgent: 'ready',
+      billingAgent: 'ready',
+      orchestrator: 'ready',
+      edgeNode: edgeClient.getStatus(),
+    };
   });
 }
 
