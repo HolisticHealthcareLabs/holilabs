@@ -38,6 +38,12 @@ export interface ChainedAuditData {
   accessPurpose?: string | null;
   success?: boolean;
   errorMessage?: string | null;
+  // Extended compliance fields (v2 hash)
+  modelVersion?: string | null;
+  promptHash?: string | null;
+  consentBasis?: string | null;
+  legalBasis?: string | null;
+  phiAccessScore?: number | null;
 }
 
 export interface ChainVerificationResult {
@@ -103,6 +109,12 @@ export async function createChainedAuditEntry(
       errorMessage: data.errorMessage,
       previousHash,
       timestamp: timestamp.toISOString(),
+      // v2 hash fields (for hashVersion=2 entries)
+      modelVersion: data.modelVersion ?? null,
+      promptHash: data.promptHash ?? null,
+      consentBasis: data.consentBasis ?? null,
+      legalBasis: data.legalBasis ?? null,
+      phiAccessScore: data.phiAccessScore ?? null,
     };
 
     const entryHash = createHash('sha256')
@@ -128,6 +140,12 @@ export async function createChainedAuditEntry(
         previousHash,
         entryHash,
         timestamp,
+        hashVersion: 2,
+        modelVersion: data.modelVersion,
+        promptHash: data.promptHash,
+        consentBasis: data.consentBasis,
+        legalBasis: data.legalBasis,
+        phiAccessScore: data.phiAccessScore,
       },
     });
 
@@ -200,6 +218,12 @@ export async function verifyAuditChain(
       timestamp: true,
       previousHash: true,
       entryHash: true,
+      hashVersion: true,
+      modelVersion: true,
+      promptHash: true,
+      consentBasis: true,
+      legalBasis: true,
+      phiAccessScore: true,
     },
   });
 
@@ -302,7 +326,11 @@ export async function verifyAuditChain(
     }
 
     // Verify entry hash matches computed hash
-    const entryData = {
+    // v1: 8-field hash (basic fields)
+    // v2: 13-field hash (includes model/prompt/consent/legal/phi)
+    const hashVersion = entry.hashVersion ?? 1;
+
+    const entryData: Record<string, unknown> = {
       userId: entry.userId,
       userEmail: entry.userEmail,
       ipAddress: entry.ipAddress,
@@ -319,6 +347,15 @@ export async function verifyAuditChain(
       previousHash: entry.previousHash,
       timestamp: entry.timestamp.toISOString(),
     };
+
+    // Add v2 fields if hashVersion=2
+    if (hashVersion === 2) {
+      entryData.modelVersion = entry.modelVersion ?? null;
+      entryData.promptHash = entry.promptHash ?? null;
+      entryData.consentBasis = entry.consentBasis ?? null;
+      entryData.legalBasis = entry.legalBasis ?? null;
+      entryData.phiAccessScore = entry.phiAccessScore ?? null;
+    }
 
     const recomputedHash = createHash('sha256')
       .update(JSON.stringify(entryData))

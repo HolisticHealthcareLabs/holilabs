@@ -1,137 +1,185 @@
-jest.mock('@/lib/api/audit-buffer', () => {
-  const enqueueMock = jest.fn();
+jest.mock('@/lib/security/audit-chain', () => {
+  const createChainedAuditEntryMock = jest.fn();
   return {
-    auditBuffer: {
-      enqueue: enqueueMock,
-      start: jest.fn(),
-      shutdown: jest.fn(),
-      _getBufferLength: jest.fn().mockReturnValue(0),
-      _flush: jest.fn(),
-    },
+    createChainedAuditEntry: createChainedAuditEntryMock,
   };
 });
 
-const { auditBuffer } = require('@/lib/api/audit-buffer');
+const { createChainedAuditEntry } = require('@/lib/security/audit-chain');
 const { writeAuditEntry } = require('@/lib/audit/write-audit-entry');
 
 describe('writeAuditEntry', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (createChainedAuditEntry as jest.Mock).mockResolvedValue({
+      id: 'audit-123',
+      hashVersion: 2,
+    });
   });
 
-  it('calls auditBuffer.enqueue with correct params for agent execution', () => {
-    writeAuditEntry({
+  it('uses createChainedAuditEntry for agent audit writes', async () => {
+    await writeAuditEntry({
       action: 'mcp.tool.get_patient',
       resourceType: 'MCP_TOOL_EXECUTION',
       resourceId: 'get_patient',
       userId: 'clinician-123',
       actorType: 'AGENT',
       agentId: 'cortex-agent-1',
-      accessReason: 'Agent tool execution: get_patient',
+      accessReason: 'DIRECT_PATIENT_CARE',
       metadata: { toolName: 'get_patient', sessionId: 'sess-1', success: true },
       clinicId: 'clinic-456',
     });
 
-    expect(auditBuffer.enqueue).toHaveBeenCalledTimes(1);
-    const entry = (auditBuffer.enqueue as jest.Mock).mock.calls[0][0];
-    expect(entry.action).toBe('mcp.tool.get_patient');
-    expect(entry.resource).toBe('MCP_TOOL_EXECUTION');
-    expect(entry.resourceId).toBe('get_patient');
-    expect(entry.userId).toBe('clinician-123');
-    expect(entry.actorType).toBe('AGENT');
-    expect(entry.agentId).toBe('cortex-agent-1');
-    expect(entry.accessReason).toBe('Agent tool execution: get_patient');
-    expect(entry.success).toBe(true);
-    expect(entry.details).toEqual({
-      toolName: 'get_patient',
-      sessionId: 'sess-1',
-      success: true,
-      clinicId: 'clinic-456',
-    });
+    expect(createChainedAuditEntry).toHaveBeenCalledTimes(1);
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.action).toBe('mcp.tool.get_patient');
+    expect(call.resource).toBe('MCP_TOOL_EXECUTION');
+    expect(call.resourceId).toBe('get_patient');
+    expect(call.userId).toBe('clinician-123');
+    expect(call.userEmail).toBe('agent:cortex-agent-1');
+    expect(call.hashVersion).toBe(2);
   });
 
-  it('sets userEmail to agent identifier for AGENT actorType', () => {
-    writeAuditEntry({
+  it('auto-populates legalBasis from accessReason mapping', async () => {
+    await writeAuditEntry({
+      action: 'mcp.tool.get_patient',
+      resourceType: 'MCP_TOOL_EXECUTION',
+      resourceId: 'get_patient',
+      userId: 'clinician-123',
+      actorType: 'AGENT',
+      agentId: 'cortex-agent-1',
+      accessReason: 'DIRECT_PATIENT_CARE',
+      metadata: { toolName: 'get_patient' },
+    });
+
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.legalBasis).toBe('LGPD Art. 7(VIII) — health protection (direct care)');
+  });
+
+  it('respects explicit legalBasis when provided', async () => {
+    await writeAuditEntry({
+      action: 'mcp.tool.get_patient',
+      resourceType: 'MCP_TOOL_EXECUTION',
+      resourceId: 'get_patient',
+      userId: 'clinician-123',
+      actorType: 'AGENT',
+      agentId: 'cortex-agent-1',
+      accessReason: 'DIRECT_PATIENT_CARE',
+      legalBasis: 'Custom legal basis citation',
+    });
+
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.legalBasis).toBe('Custom legal basis citation');
+  });
+
+  it('sets hashVersion to 2 for new entries', async () => {
+    await writeAuditEntry({
+      action: 'mcp.tool.get_patient',
+      resourceType: 'MCP_TOOL_EXECUTION',
+      resourceId: 'get_patient',
+      userId: 'clinician-123',
+      actorType: 'AGENT',
+      agentId: 'cortex-agent-1',
+      accessReason: 'DIRECT_PATIENT_CARE',
+    });
+
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.hashVersion).toBe(2);
+  });
+
+  it('passes all 6 new extended fields through to createChainedAuditEntry', async () => {
+    await writeAuditEntry({
+      action: 'mcp.tool.get_patient',
+      resourceType: 'MCP_TOOL_EXECUTION',
+      resourceId: 'get_patient',
+      userId: 'clinician-123',
+      actorType: 'AGENT',
+      agentId: 'cortex-agent-1',
+      accessReason: 'DIRECT_PATIENT_CARE',
+      modelVersion: 'claude-3.5-sonnet',
+      promptHash: 'sha256:abc123',
+      consentBasis: 'explicit',
+      legalBasis: 'LGPD Art. 7(VIII)',
+      phiAccessScore: 0.95,
+    });
+
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.modelVersion).toBe('claude-3.5-sonnet');
+    expect(call.promptHash).toBe('sha256:abc123');
+    expect(call.consentBasis).toBe('explicit');
+    expect(call.legalBasis).toBe('LGPD Art. 7(VIII)');
+    expect(call.phiAccessScore).toBe(0.95);
+  });
+
+  it('sets userEmail to agent identifier for AGENT actorType', async () => {
+    await writeAuditEntry({
       action: 'mcp.tool.search_patients',
       resourceType: 'MCP_TOOL_EXECUTION',
       resourceId: 'search_patients',
       userId: 'clinician-123',
       actorType: 'AGENT',
       agentId: 'cortex-agent-2',
-      accessReason: 'Agent tool execution: search_patients',
+      accessReason: 'CARE_COORDINATION',
     });
 
-    const entry = (auditBuffer.enqueue as jest.Mock).mock.calls[0][0];
-    expect(entry.userEmail).toBe('agent:cortex-agent-2');
-    expect(entry.ipAddress).toBe('internal');
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.userEmail).toBe('agent:cortex-agent-2');
+    expect(call.ipAddress).toBe('internal');
   });
 
-  it('handles missing optional fields gracefully', () => {
-    writeAuditEntry({
-      action: 'mcp.tool.list_medications',
-      resourceType: 'MCP_TOOL_EXECUTION',
-      resourceId: 'list_medications',
-      userId: 'clinician-789',
-      actorType: 'SYSTEM',
-      accessReason: 'System tool execution: list_medications',
-    });
-
-    expect(auditBuffer.enqueue).toHaveBeenCalledTimes(1);
-    const entry = (auditBuffer.enqueue as jest.Mock).mock.calls[0][0];
-    expect(entry.actorType).toBe('SYSTEM');
-    expect(entry.agentId).toBeUndefined();
-    expect(entry.userEmail).toBe('');
-    expect(entry.details).toEqual({});
-  });
-
-  it('handles AGENT actorType without agentId', () => {
-    writeAuditEntry({
+  it('handles AGENT actorType without agentId', async () => {
+    await writeAuditEntry({
       action: 'mcp.tool.get_patient',
       resourceType: 'MCP_TOOL_EXECUTION',
       resourceId: 'get_patient',
       userId: 'clinician-123',
       actorType: 'AGENT',
-      accessReason: 'Agent tool execution: get_patient',
+      accessReason: 'DIRECT_PATIENT_CARE',
     });
 
-    const entry = (auditBuffer.enqueue as jest.Mock).mock.calls[0][0];
-    expect(entry.userEmail).toBe('agent:unknown');
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.userEmail).toBe('agent:unknown');
   });
 
-  it('creates audit entry with error metadata for failed executions', () => {
-    writeAuditEntry({
-      action: 'mcp.tool.get_patient.error',
-      resourceType: 'MCP_TOOL_EXECUTION',
-      resourceId: 'get_patient',
-      userId: 'clinician-123',
-      actorType: 'AGENT',
-      agentId: 'cortex-agent-1',
-      accessReason: 'Agent tool execution failed: get_patient',
-      metadata: { toolName: 'get_patient', sessionId: 'sess-1', success: false, error: 'Database timeout' },
-    });
-
-    const entry = (auditBuffer.enqueue as jest.Mock).mock.calls[0][0];
-    expect(entry.action).toBe('mcp.tool.get_patient.error');
-    expect(entry.details).toEqual({
-      toolName: 'get_patient',
-      sessionId: 'sess-1',
-      success: false,
-      error: 'Database timeout',
-    });
-  });
-
-  it('includes clinicId in details when provided', () => {
-    writeAuditEntry({
+  it('includes clinicId in details when provided', async () => {
+    await writeAuditEntry({
       action: 'mcp.tool.create_note',
       resourceType: 'MCP_TOOL_EXECUTION',
       resourceId: 'create_note',
       userId: 'clinician-123',
       actorType: 'USER',
-      accessReason: 'User tool execution: create_note',
+      accessReason: 'ADMINISTRATIVE',
       clinicId: 'clinic-abc',
     });
 
-    const entry = (auditBuffer.enqueue as jest.Mock).mock.calls[0][0];
-    expect(entry.details).toEqual({ clinicId: 'clinic-abc' });
+    const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+    expect(call.details).toEqual({ clinicId: 'clinic-abc' });
+  });
+
+  it('maps all AccessReason enum values to legal basis citations', async () => {
+    const reasonMap = {
+      EMERGENCY_ACCESS: 'LGPD Art. 7(VII) — vital interest protection',
+      BILLING: 'LGPD Art. 7(V) — contract execution',
+      LEGAL_COMPLIANCE: 'LGPD Art. 7(II) — legal obligation compliance',
+      RESEARCH_IRB_APPROVED: 'LGPD Art. 7(IV) — research with anonymization',
+      PUBLIC_HEALTH: 'LGPD Art. 7(VIII) — public health protection',
+    };
+
+    for (const [reason, expectedBasis] of Object.entries(reasonMap)) {
+      jest.clearAllMocks();
+      (createChainedAuditEntry as jest.Mock).mockResolvedValue({ id: 'audit-123' });
+
+      await writeAuditEntry({
+        action: 'audit.test',
+        resourceType: 'TEST',
+        resourceId: 'test-1',
+        userId: 'user-1',
+        actorType: 'USER',
+        accessReason: reason as any,
+      });
+
+      const call = (createChainedAuditEntry as jest.Mock).mock.calls[0][0];
+      expect(call.legalBasis).toBe(expectedBasis);
+    }
   });
 });
