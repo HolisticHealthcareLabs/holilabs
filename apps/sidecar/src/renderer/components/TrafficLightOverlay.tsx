@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { TrafficLightSignal } from '../../types';
 
 interface TrafficLightProps {
-  status: 'valid' | 'caution' | 'danger';
+  status: 'valid' | 'caution' | 'danger' | 'unknown';
   confidence: number;
   message?: string;
   onExpand: () => void;
@@ -18,11 +18,11 @@ export const TrafficLightOverlay: React.FC<TrafficLightProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Status mapping
   const statusConfig = {
     valid: { glow: 'glow-green', icon: '✓', label: 'ASSURED' },
     caution: { glow: 'glow-yellow', icon: '!', label: 'CHECK' },
     danger: { glow: 'glow-red', icon: '✕', label: 'BLOCKED' },
+    unknown: { glow: 'glow-grey', icon: '?', label: 'UNKNOWN' },
   };
 
   // Deterministic Override: If the signal is CLINICAL (RxNorm/SNOMED), use a Shield

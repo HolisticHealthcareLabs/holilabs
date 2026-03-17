@@ -25,6 +25,11 @@
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.4);
 }
 
+.glow-grey {
+    background-color: #8e8e93;
+    box-shadow: 0 0 12px rgba(142, 142, 147, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
 /* Smooth Transitions */
 .smooth-expand {
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
