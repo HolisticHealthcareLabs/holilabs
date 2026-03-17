@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 import { patientTools } from './tools/patient.tools';
 import { patientCrudTools } from './tools/patient-crud.tools';
 import { governanceTools } from './tools/governance.tools';
@@ -209,9 +210,61 @@ class MCPToolRegistry implements MCPRegistry {
             };
         }
 
+        // Idempotency check for create_* mutations
+        const isMutationWithKey = context.idempotencyKey && toolName.startsWith('create_');
+        if (isMutationWithKey) {
+            const existing = await prisma.agentIdempotencyLog.findUnique({
+                where: { idempotencyKey: context.idempotencyKey },
+            });
+            if (existing) {
+                logger.info({
+                    event: 'mcp_idempotency_hit',
+                    tool: toolName,
+                    idempotencyKey: context.idempotencyKey,
+                    agentId: context.agentId,
+                });
+                return {
+                    tool: toolName,
+                    success: true,
+                    result: existing.result as MCPResult,
+                    executionTimeMs: Date.now() - startTime,
+                    timestamp: new Date().toISOString(),
+                };
+            }
+        }
+
         // Execute tool
         try {
             const result = await tool.handler(validation.data, context);
+
+            // Store idempotency record for create_* mutations
+            if (isMutationWithKey && result.success) {
+                try {
+                    await prisma.agentIdempotencyLog.create({
+                        data: {
+                            idempotencyKey: context.idempotencyKey!,
+                            toolName,
+                            result: result as any,
+                            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                        },
+                    });
+                } catch (error: any) {
+                    if (error?.code === 'P2002') {
+                        const existing = await prisma.agentIdempotencyLog.findUnique({
+                            where: { idempotencyKey: context.idempotencyKey },
+                        });
+                        if (existing) {
+                            return {
+                                tool: toolName,
+                                success: true,
+                                result: existing.result as MCPResult,
+                                executionTimeMs: Date.now() - startTime,
+                                timestamp: new Date().toISOString(),
+                            };
+                        }
+                    }
+                }
+            }
 
             logger.info({
                 event: 'mcp_tool_completed',
