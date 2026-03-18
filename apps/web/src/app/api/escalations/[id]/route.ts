@@ -104,4 +104,4 @@ async function handlePatch(
     });
 }
 
-export const PATCH = createProtectedRoute({ roles: ['ADMIN'] })(handlePatch);
+export const PATCH = createProtectedRoute(handlePatch, { roles: ['ADMIN'] });

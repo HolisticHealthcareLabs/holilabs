@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createProtectedRoute } from '@/lib/api/middleware';
 import { prisma } from '@/lib/prisma';
+import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 import { CyrusVetoError } from '@/lib/mcp/tools/role-admin.tools';
 
@@ -68,8 +69,8 @@ export const GET = createProtectedRoute(
     const assignments: any = await prisma.roleAssignment.findMany({
       where,
       include: {
-        grantee: { select: { id: true, email: true, name: true } },
-        grantor: { select: { id: true, email: true, name: true } },
+        grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
+        grantor: { select: { id: true, email: true, firstName: true, lastName: true } },
       },
       orderBy: { grantedAt: 'desc' },
     });
@@ -78,7 +79,9 @@ export const GET = createProtectedRoute(
       assignments: assignments.map((a: any) => ({
         id: a.id,
         granteeId: a.granteeId,
-        granteeName: a.grantee.name || a.grantee.email,
+        granteeName: a.grantee.firstName && a.grantee.lastName
+          ? `${a.grantee.firstName} ${a.grantee.lastName}`
+          : a.grantee.email,
         role: a.role,
         scope: a.scope,
         grantedAt: a.grantedAt.toISOString(),
@@ -134,7 +137,7 @@ export const POST = createProtectedRoute(
     // Check if grantee exists
     const grantee = await prisma.user.findUnique({
       where: { id: body.granteeId },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, firstName: true, lastName: true },
     });
 
     if (!grantee) {
@@ -149,13 +152,13 @@ export const POST = createProtectedRoute(
       data: {
         granteeId: body.granteeId,
         grantorId: context.user.id,
-        role: body.role,
+        role: body.role as UserRole,
         scope: body.scope,
         grantedAt: new Date(),
       },
       include: {
-        grantee: { select: { id: true, email: true, name: true } },
-        grantor: { select: { id: true, email: true, name: true } },
+        grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
+        grantor: { select: { id: true, email: true, firstName: true, lastName: true } },
       },
     });
 
@@ -163,7 +166,9 @@ export const POST = createProtectedRoute(
       {
         assignmentId: assignment.id,
         granteeId: assignment.granteeId,
-        granteeName: assignment.grantee.name || assignment.grantee.email,
+        granteeName: assignment.grantee.firstName && assignment.grantee.lastName
+          ? `${assignment.grantee.firstName} ${assignment.grantee.lastName}`
+          : assignment.grantee.email,
         role: assignment.role,
         scope: assignment.scope,
         grantedAt: assignment.grantedAt.toISOString(),

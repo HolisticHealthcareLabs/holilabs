@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslations } from 'next-intl';
 import {
-  Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
-  MoreHorizontal, X, User, UserPlus, AlertTriangle,
-  Heart, Shield, FlaskConical, FileText, Stethoscope,
-  Play, Clock, ChevronsUpDown,
+  Search, ChevronDown, ChevronLeft, ChevronRight,
+  X, User, Plus, AlertCircle,
+  CheckCircle2, Shield, FileText,
+  Play, Clock, Settings,
 } from 'lucide-react';
 import { filterRecordsForOrganization } from '../../../../../../packages/shared-kernel/src/types/auth';
 import { PatientEditDrawer } from './_components/PatientEditDrawer';
@@ -269,9 +269,9 @@ function SortableHeader({
     >
       {label}
       {isActive ? (
-        currentDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+        currentDir === 'asc' ? <ChevronDown className="w-3 h-3 rotate-180" /> : <ChevronDown className="w-3 h-3" />
       ) : (
-        <ChevronsUpDown className="w-3 h-3 opacity-40" />
+        <Settings className="w-3 h-3 opacity-40" />
       )}
     </button>
   );
@@ -350,7 +350,7 @@ function QuickLookDrawer({
           {/* Primary Dx */}
           <section>
             <div className="flex items-center gap-2 mb-2">
-              <Stethoscope className="w-3.5 h-3.5 text-gray-400" />
+              <Plus className="w-3.5 h-3.5 text-gray-400" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('primaryDiagnosis')}</span>
             </div>
             <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
@@ -362,7 +362,7 @@ function QuickLookDrawer({
           {/* Latest BP */}
           <section>
             <div className="flex items-center gap-2 mb-2">
-              <Heart className="w-3.5 h-3.5 text-rose-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-rose-400" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('latestBloodPressure')}</span>
             </div>
             <p className="text-lg font-bold tabular-nums text-gray-800 dark:text-gray-200">{patient.latestBP}</p>
@@ -371,7 +371,7 @@ function QuickLookDrawer({
           {/* Medications */}
           <section>
             <div className="flex items-center gap-2 mb-2">
-              <FlaskConical className="w-3.5 h-3.5 text-violet-400" />
+              <AlertCircle className="w-3.5 h-3.5 text-violet-400" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('activeMedications')}</span>
             </div>
             {patient.medications.length === 0 ? (
@@ -390,7 +390,7 @@ function QuickLookDrawer({
           {/* Allergies */}
           <section>
             <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+              <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t('allergies')}</span>
             </div>
             {patient.allergies.length === 0 ? (
@@ -630,7 +630,7 @@ export default function PatientsPage() {
               transition-colors
             "
           >
-            <UserPlus className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
             {t('addPatient')}
           </button>
         </div>
@@ -718,7 +718,7 @@ export default function PatientsPage() {
               onClick={() => setShowAddForm(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             >
-              <UserPlus className="w-3 h-3" />
+              <Plus className="w-3 h-3" />
               {t('registerNewPatient')}
             </button>
           </div>
@@ -782,7 +782,7 @@ export default function PatientsPage() {
                       onClick={() => setKebabOpenId(kebabOpenId === p.id ? null : p.id)}
                       className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 opacity-0 group-hover:opacity-100 transition-all"
                     >
-                      <MoreHorizontal className="w-4 h-4" />
+                      <X className="w-4 h-4" />
                     </button>
                     {kebabOpenId === p.id && (
                       <KebabMenu patient={p} onClose={() => setKebabOpenId(null)} onEdit={(pat) => { setEditPatient(pat); setKebabOpenId(null); }} />

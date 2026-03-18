@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { X, Save, User, Phone, Shield, Heart, Building2, AlertTriangle } from 'lucide-react';
+import { X, Save, User, Mail, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface PatientData {
   id: string;
@@ -42,11 +42,11 @@ type TabId = 'personal' | 'contact' | 'ids' | 'insurance' | 'emergency' | 'clini
 
 const TABS: { id: TabId; label: string; icon: typeof User }[] = [
   { id: 'personal', label: 'personal', icon: User },
-  { id: 'contact', label: 'contact', icon: Phone },
+  { id: 'contact', label: 'contact', icon: Mail },
   { id: 'ids', label: 'ids', icon: Shield },
-  { id: 'insurance', label: 'insurance', icon: Building2 },
-  { id: 'emergency', label: 'emergency', icon: AlertTriangle },
-  { id: 'clinical', label: 'clinical', icon: Heart },
+  { id: 'insurance', label: 'insurance', icon: CheckCircle2 },
+  { id: 'emergency', label: 'emergency', icon: AlertCircle },
+  { id: 'clinical', label: 'clinical', icon: CheckCircle2 },
 ];
 
 function Field({ label, value, onChange, type = 'text', placeholder, required }: {

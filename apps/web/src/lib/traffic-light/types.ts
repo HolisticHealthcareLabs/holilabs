@@ -19,7 +19,7 @@
 /**
  * Traffic light colors indicating action requirements
  */
-export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN' | 'GREY';
+export type TrafficLightColor = 'RED' | 'YELLOW' | 'GREEN';
 
 /**
  * Categories of rules in the system

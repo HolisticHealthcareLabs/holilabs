@@ -1,0 +1,69 @@
+[
+  {
+    "id": "b3a2f2b5-58ed-4b78-90e0-eb6a12eb4078",
+    "source_country": "BR",
+    "source_registry": "CFM",
+    "license_number": "CRM-SP 123456",
+    "full_name": "Maria Da Silva",
+    "specialties": [
+      "Cardiologia"
+    ],
+    "specialty_codes": [],
+    "status": "ACTIVE",
+    "state_region": "SP",
+    "city": null,
+    "hospital_affiliations": [],
+    "insurance_networks": [],
+    "education": [],
+    "languages": [],
+    "contact": {},
+    "raw_data": {},
+    "collected_at": "2026-03-17T23:13:00.208278+00:00",
+    "source_url": ""
+  },
+  {
+    "id": "08973818-0d3a-452b-ab68-bf3cd45be32a",
+    "source_country": "AR",
+    "source_registry": "REFEPS",
+    "license_number": "M.N. 98765",
+    "full_name": "Juan Carlos López",
+    "specialties": [
+      "Medicina Interna",
+      "Cardiología"
+    ],
+    "specialty_codes": [],
+    "status": "ACTIVE",
+    "state_region": "CABA",
+    "city": null,
+    "hospital_affiliations": [],
+    "insurance_networks": [],
+    "education": [],
+    "languages": [],
+    "contact": {},
+    "raw_data": {},
+    "collected_at": "2026-03-17T23:13:00.208305+00:00",
+    "source_url": ""
+  },
+  {
+    "id": "0ddc19fd-9c09-4336-a061-20ef3bead3b4",
+    "source_country": "CO",
+    "source_registry": "RETHUS",
+    "license_number": "TP-2024-001",
+    "full_name": "Ana María Rodríguez Gómez",
+    "specialties": [
+      "Pediatría"
+    ],
+    "specialty_codes": [],
+    "status": "ACTIVE",
+    "state_region": "Bogotá D.C.",
+    "city": null,
+    "hospital_affiliations": [],
+    "insurance_networks": [],
+    "education": [],
+    "languages": [],
+    "contact": {},
+    "raw_data": {},
+    "collected_at": "2026-03-17T23:13:00.208434+00:00",
+    "source_url": ""
+  }
+]

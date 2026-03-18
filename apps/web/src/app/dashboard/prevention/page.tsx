@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
-  Heart, Shield, Baby, Stethoscope, Ribbon, Droplets,
-  ChevronRight, Search, Filter,
+  CheckCircle2, Shield, Plus, AlertCircle, Star, AlertTriangle,
+  ChevronRight, Search, Settings,
 } from 'lucide-react';
 
 interface ProtocolTemplate {
@@ -26,7 +26,7 @@ const PROTOCOLS: ProtocolTemplate[] = [
     id: 'cardiovascular',
     name: 'Cardiovascular Prevention',
     specialty: 'Cardiology',
-    Icon: Heart,
+    Icon: CheckCircle2,
     description: 'Comprehensive protocol for cardiovascular disease prevention, risk stratification, and lipid management.',
     interventionCount: 5,
     screeningCount: 4,
@@ -38,7 +38,7 @@ const PROTOCOLS: ProtocolTemplate[] = [
     id: 'diabetes',
     name: 'Diabetes Prevention',
     specialty: 'Endocrinology',
-    Icon: Stethoscope,
+    Icon: AlertCircle,
     description: 'Type 2 diabetes prevention and management with HbA1c monitoring, retinopathy screening, and foot care.',
     interventionCount: 5,
     screeningCount: 5,
@@ -50,7 +50,7 @@ const PROTOCOLS: ProtocolTemplate[] = [
     id: 'cancer-screening',
     name: 'Cancer Screening',
     specialty: 'Oncology',
-    Icon: Ribbon,
+    Icon: Star,
     description: 'Evidence-based early detection protocols for breast, cervical, colorectal, and prostate cancers.',
     interventionCount: 5,
     screeningCount: 5,
@@ -62,7 +62,7 @@ const PROTOCOLS: ProtocolTemplate[] = [
     id: 'hypertension',
     name: 'Hypertension Management',
     specialty: 'Internal Medicine',
-    Icon: Droplets,
+    Icon: AlertTriangle,
     description: 'Comprehensive blood pressure control with ambulatory monitoring, medication optimization, and DASH diet guidance.',
     interventionCount: 5,
     screeningCount: 5,
@@ -74,7 +74,7 @@ const PROTOCOLS: ProtocolTemplate[] = [
     id: 'pediatrics',
     name: 'Preventive Pediatrics',
     specialty: 'Pediatrics',
-    Icon: Baby,
+    Icon: Plus,
     description: 'Vaccination schedules, developmental milestones tracking, growth monitoring, and accident prevention.',
     interventionCount: 5,
     screeningCount: 5,
@@ -160,7 +160,7 @@ export default function PreventionPage() {
           />
         </div>
         <div className="flex items-center gap-1.5 text-sm">
-          <Filter className="w-3.5 h-3.5 text-gray-400" />
+          <Settings className="w-3.5 h-3.5 text-gray-400" />
           <select
             value={selectedSpecialty}
             onChange={(e) => setSelectedSpecialty(e.target.value)}

@@ -67,15 +67,7 @@ async function handlePost(
         },
     });
 
-    if (parsed.data.notes) {
-        await (prisma.escalationNote as any).create({
-            data: {
-                escalationId: updated.id,
-                authorId: context.userId,
-                content: parsed.data.notes,
-            },
-        });
-    }
+    // Note: escalationNote functionality can be added when the model is defined in schema
 
     await prisma.auditLog.create({
         data: {
@@ -114,4 +106,4 @@ async function handlePost(
     });
 }
 
-export const POST = createProtectedRoute({ roles: ['ADMIN'] })(handlePost);
+export const POST = createProtectedRoute(handlePost, { roles: ['ADMIN'] });

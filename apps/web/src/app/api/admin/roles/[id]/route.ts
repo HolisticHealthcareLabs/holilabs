@@ -29,7 +29,7 @@ export const DELETE = createProtectedRoute(
     const assignment: any = await prisma.roleAssignment.findUnique({
       where: { id },
       include: {
-        grantee: { select: { id: true, email: true, name: true } },
+        grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
       },
     });
 
@@ -57,14 +57,16 @@ export const DELETE = createProtectedRoute(
         revokedAt: new Date(),
       },
       include: {
-        grantee: { select: { id: true, email: true, name: true } },
+        grantee: { select: { id: true, email: true, firstName: true, lastName: true } },
       },
     });
 
     return NextResponse.json({
       assignmentId: revoked.id,
       granteeId: revoked.granteeId,
-      granteeName: revoked.grantee.name || revoked.grantee.email,
+      granteeName: revoked.grantee.firstName && revoked.grantee.lastName
+        ? `${revoked.grantee.firstName} ${revoked.grantee.lastName}`
+        : revoked.grantee.email,
       role: revoked.role,
       revokedAt: revoked.revokedAt.toISOString(),
       message: `Role ${revoked.role} revoked from ${revoked.grantee.email}`,

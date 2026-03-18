@@ -8,7 +8,6 @@ import {
   Clock,
   CheckCircle2,
   RefreshCw,
-  Radar,
   X,
   Info,
 } from 'lucide-react';
@@ -164,14 +163,14 @@ export default function CommandCenterPage() {
       const json = await res.json();
       const data = Array.isArray(json.data) ? json.data : [];
       const tenantSafeData = data.filter(
-        (record): record is EscalationRecord =>
+        (record: any): record is EscalationRecord =>
           typeof record === 'object' &&
           record !== null &&
           typeof (record as { organizationId?: unknown }).organizationId === 'string'
       );
       if (tenantSafeData.length > 0) {
         const scopedData = filterRecordsForOrganization(tenantSafeData, activeOrganizationId);
-        setEscalations(scopedData);
+        setEscalations(scopedData as EscalationRecord[]);
       } else {
         setEscalations(scopedMockEscalations);
       }
@@ -218,7 +217,7 @@ export default function CommandCenterPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Radar className="w-6 h-6 text-violet-600" />
+            <RefreshCw className="w-6 h-6 text-violet-600" />
             {t('title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -312,7 +311,7 @@ export default function CommandCenterPage() {
           </div>
         ) : visibleEscalations.length === 0 ? (
           <div className="text-center py-16 text-gray-400 dark:text-gray-500">
-            <Radar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <RefreshCw className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm font-medium">{t('noEscalations')}</p>
           </div>
         ) : (
@@ -404,7 +403,7 @@ export default function CommandCenterPage() {
             {/* Drawer header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2.5">
-                <Radar className="w-5 h-5 text-violet-600" />
+                <RefreshCw className="w-5 h-5 text-violet-600" />
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">{t('escalationDetail')}</h3>
               </div>
               <button onClick={() => setDrawerEsc(null)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">

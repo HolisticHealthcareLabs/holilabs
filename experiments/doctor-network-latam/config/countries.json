@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "project": "doctor-network-latam",
+    "version": "0.1.0",
+    "updated": "2026-03-17"
+  },
+  "countries": {
+    "BR": {
+      "name": "Brazil",
+      "registry_name": "CFM — Conselho Federal de Medicina",
+      "registry_url": "https://portal.cfm.org.br/busca-medicos/",
+      "api_url": null,
+      "api_type": "web_scraping",
+      "rate_limit_rpm": 30,
+      "rate_limit_note": "Conservative — no official API, scrape respectfully",
+      "priority": "P0",
+      "collector": "brazil_cfm",
+      "states": [
+        "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
+        "MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR",
+        "SC","SP","SE","TO"
+      ],
+      "notes": "CFM Virtual web service may provide bulk listing. Third-party APIs (Infosimples) available as fallback.",
+      "estimated_doctors": 580000
+    },
+    "AR": {
+      "name": "Argentina",
+      "registry_name": "REFEPS — Red Federal de Registros de Profesionales de la Salud",
+      "registry_url": "https://sisa.msal.gov.ar/sisadoc/docs/050102/refeps_buscador_publico_profesionales.jsp",
+      "api_url": "https://sisa.msal.gov.ar/sisa/services/rest/profesional",
+      "api_type": "soap_xml",
+      "rate_limit_rpm": 60,
+      "rate_limit_note": "SOAP WS020 endpoint, documented",
+      "priority": "P0",
+      "collector": "argentina_refeps",
+      "provinces": [
+        "Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba",
+        "Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja",
+        "Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan",
+        "San Luis","Santa Cruz","Santa Fe","Santiago del Estero",
+        "Tierra del Fuego","Tucumán"
+      ],
+      "notes": "HL7 FHIR-based. Follows Mercosur Resolution 604/2005 minimum data matrix.",
+      "estimated_doctors": 190000
+    },
+    "CO": {
+      "name": "Colombia",
+      "registry_name": "RETHUS — Registro Único Nacional del Talento Humano en Salud",
+      "registry_url": "https://web.sispro.gov.co/THS/Cliente/ConsultasPublicas/ConsultaPublicaDeTHxIdentificacion.aspx",
+      "api_url": null,
+      "api_type": "web_scraping",
+      "rate_limit_rpm": 30,
+      "rate_limit_note": "Public citizen consultation portal. Third-party REST APIs available (Verifik).",
+      "priority": "P1",
+      "collector": "colombia_rethus",
+      "departments": [
+        "Amazonas","Antioquia","Arauca","Atlántico","Bolívar","Boyacá",
+        "Caldas","Caquetá","Casanare","Cauca","Cesar","Chocó","Córdoba",
+        "Cundinamarca","Guainía","Guaviare","Huila","La Guajira","Magdalena",
+        "Meta","Nariño","Norte de Santander","Putumayo","Quindío",
+        "Risaralda","San Andrés","Santander","Sucre","Tolima",
+        "Valle del Cauca","Vaupés","Vichada","Bogotá D.C."
+      ],
+      "notes": "Law 1164 of 2007 governs RETHUS. Includes sanctions data.",
+      "estimated_doctors": 120000
+    },
+    "CL": {
+      "name": "Chile",
+      "registry_name": "RNPI — Registro Nacional de Prestadores Individuales de Salud",
+      "registry_url": "https://rnpi.superdesalud.gob.cl/",
+      "api_url": "https://apis-portal.superdesalud.gob.cl/",
+      "api_type": "rest_api",
+      "rate_limit_rpm": 60,
+      "rate_limit_note": "Official developer portal available",
+      "priority": "P1",
+      "collector": "chile_rnpi",
+      "regions": [
+        "Arica y Parinacota","Tarapacá","Antofagasta","Atacama","Coquimbo",
+        "Valparaíso","Metropolitana","O'Higgins","Maule","Ñuble","Biobío",
+        "Araucanía","Los Ríos","Los Lagos","Aysén","Magallanes"
+      ],
+      "notes": "REST API with developer documentation. Best structured API in Mercosur.",
+      "estimated_doctors": 55000
+    },
+    "PY": {
+      "name": "Paraguay",
+      "registry_name": "DGCPE — Dirección General de Control de Profesiones",
+      "registry_url": "https://controldeprofesiones.mspbs.gov.py/consulta-registro-profesional/",
+      "api_url": null,
+      "api_type": "web_scraping",
+      "rate_limit_rpm": 20,
+      "rate_limit_note": "Web-only, be extra conservative",
+      "priority": "P2",
+      "collector": "paraguay_dgcpe",
+      "departments": [
+        "Asunción","Alto Paraguay","Alto Paraná","Amambay","Boquerón",
+        "Caaguazú","Caazapá","Canindeyú","Central","Concepción",
+        "Cordillera","Guairá","Itapúa","Misiones","Ñeembucú",
+        "Paraguarí","Presidente Hayes","San Pedro"
+      ],
+      "notes": "Limited public data. Web scraping only.",
+      "estimated_doctors": 15000
+    },
+    "UY": {
+      "name": "Uruguay",
+      "registry_name": "CMU — Colegio Médico del Uruguay / MSP",
+      "registry_url": "https://www.colegiomedico.org.uy/",
+      "api_url": null,
+      "api_type": "manual_research",
+      "rate_limit_rpm": 10,
+      "rate_limit_note": "No confirmed public search. May need direct contact.",
+      "priority": "P2",
+      "collector": "uruguay_cmu",
+      "departments": [
+        "Artigas","Canelones","Cerro Largo","Colonia","Durazno",
+        "Flores","Florida","Lavalleja","Maldonado","Montevideo",
+        "Paysandú","Río Negro","Rivera","Rocha","Salto",
+        "San José","Soriano","Tacuarembó","Treinta y Tres"
+      ],
+      "notes": "Least accessible registry. CMU created by Law 18.591 (2009). May require formal request.",
+      "estimated_doctors": 18000
+    },
+    "BO": {
+      "name": "Bolivia",
+      "registry_name": "SiREPRO — Sistema de Registro Profesional",
+      "registry_url": "https://sirepro.minsalud.gob.bo/",
+      "api_url": null,
+      "api_type": "web_scraping",
+      "rate_limit_rpm": 20,
+      "rate_limit_note": "Web-only, unclear public access level",
+      "priority": "P2",
+      "collector": "bolivia_sirepro",
+      "departments": [
+        "Beni","Chuquisaca","Cochabamba","La Paz","Oruro",
+        "Pando","Potosí","Santa Cruz","Tarija"
+      ],
+      "notes": "SiREPRO exists but public query access not confirmed. May need pilot testing.",
+      "estimated_doctors": 12000
+    }
+  }
+}

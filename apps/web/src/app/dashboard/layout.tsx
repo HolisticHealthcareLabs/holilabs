@@ -10,27 +10,12 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useToolUsageTracker } from '@/hooks/useToolUsageTracker';
 import { CinematicTransition } from '@/components/dashboard/CinematicTransition';
 import {
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
   Search,
   Plus,
   Loader2,
-  CalendarDays,
-  Sparkles,
-  Users,
-  Inbox,
-  Activity,
-  FileText,
-  BarChart3,
-  ShieldCheck,
-  Settings2,
-  User,
-  Lock,
-  SlidersHorizontal,
-  CreditCard,
-  Link2,
-  HelpCircle,
-  LogOut,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -150,7 +135,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [user, setUser] = useState<any>(null);
+  const [user, setPlus] = useState<any>(null);
   const [fatalError, setFatalError] = useState<{ message: string; stack?: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -250,7 +235,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     if (status === 'loading') return;
 
     if (status === 'authenticated') {
-      setUser(session.user);
+      setPlus(session.user);
       return;
     }
 
@@ -365,25 +350,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     {
       heading: t('dashboard.sidebar.clinicalWorkspace'),
       items: [
-        { key: 'my-day', label: t('dashboard.sidebar.myDay'), href: '/dashboard/my-day', icon: CalendarDays },
-        { key: 'clinical-copilot', label: t('dashboard.sidebar.coPilot'), href: '/dashboard/clinical-command', icon: Sparkles },
-        { key: 'patients', label: t('dashboard.sidebar.patients'), href: '/dashboard/patients', icon: Users },
-        { key: 'inbox', label: t('dashboard.sidebar.inbox'), href: '/dashboard/reminders', icon: Inbox, badge: '3' },
+        { key: 'my-day', label: t('dashboard.sidebar.myDay'), href: '/dashboard/my-day', icon: Plus },
+        { key: 'clinical-copilot', label: t('dashboard.sidebar.coPilot'), href: '/dashboard/clinical-command', icon: Plus },
+        { key: 'patients', label: t('dashboard.sidebar.patients'), href: '/dashboard/patients', icon: Plus },
+        { key: 'inbox', label: t('dashboard.sidebar.inbox'), href: '/dashboard/reminders', icon: Plus, badge: '3' },
       ],
     },
     {
       heading: t('dashboard.sidebar.revenueOps'),
       items: [
-        { key: 'command-center', label: t('dashboard.sidebar.commandCenter'), href: '/dashboard/command-center', icon: Activity },
-        { key: 'claims-intelligence', label: t('dashboard.sidebar.claimsIntelligence'), href: '/dashboard/billing', icon: FileText },
-        { key: 'analytics', label: t('dashboard.sidebar.analytics'), href: '/dashboard/analytics', icon: BarChart3 },
+        { key: 'command-center', label: t('dashboard.sidebar.commandCenter'), href: '/dashboard/command-center', icon: Plus },
+        { key: 'claims-intelligence', label: t('dashboard.sidebar.claimsIntelligence'), href: '/dashboard/billing', icon: Plus },
+        { key: 'analytics', label: t('dashboard.sidebar.analytics'), href: '/dashboard/analytics', icon: Plus },
       ],
     },
     {
       heading: t('dashboard.sidebar.administration'),
       items: [
-        { key: 'audit-compliance', label: t('dashboard.sidebar.auditCompliance'), href: '/dashboard/auditor', icon: ShieldCheck },
-        { key: 'settings-team', label: t('dashboard.sidebar.settingsTeam'), href: '/dashboard/settings', icon: Settings2 },
+        { key: 'audit-compliance', label: t('dashboard.sidebar.auditCompliance'), href: '/dashboard/auditor', icon: Plus },
+        { key: 'settings-team', label: t('dashboard.sidebar.settingsTeam'), href: '/dashboard/settings', icon: Plus },
       ],
     },
   ];
@@ -407,7 +392,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     await signOut({ redirect: true, callbackUrl: '/auth/login' });
   };
 
-  const handleStartEncounter = () => {
+  const handlePlustEncounter = () => {
     if (isLaunchingEncounter) return;
     setIsLaunchingEncounter(true);
     try {
@@ -484,9 +469,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 aria-label={showCollapsedSidebar ? t('dashboard.sidebar.expandSidebar') : t('dashboard.sidebar.closeSidebar')}
               >
                 {showCollapsedSidebar ? (
-                  <PanelLeftOpen className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4" />
                 ) : (
-                  <PanelLeftClose className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4" />
                 )}
               </button>
             </div>
@@ -494,11 +479,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             {/* Quick actions: floating + button + search */}
             <div className="px-2.5 py-2.5 border-b border-gray-100 dark:border-gray-700/50">
               <div className={`flex ${showCollapsedSidebar ? 'flex-col' : 'flex-row'} items-stretch gap-1.5`}>
-                {/* Floating + (Start Visit) */}
+                {/* Floating + (Plust Visit) */}
                 <div className={showCollapsedSidebar ? 'group/tip relative' : ''}>
                   <button
                     type="button"
-                    onClick={handleStartEncounter}
+                    onClick={handlePlustEncounter}
                     aria-label={t('dashboard.sidebar.startVisit')}
                     className={`
                       inline-flex items-center justify-center
@@ -631,7 +616,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             .animate-slideUp { animation: slideUp 0.15s ease-out; }
           `}</style>
 
-            {/* User Profile with Dropdown Menu */}
+            {/* Plus Profile with Dropdown Menu */}
             <div className={`relative mt-auto border-t border-gray-200 dark:border-gray-700 ${showCollapsedSidebar ? 'p-2' : 'p-3'}`}>
               {/* Profile Menu Dropdown - Expands Upward */}
               {profileMenuOpen && (
@@ -651,12 +636,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     {/* Navigation */}
                     <div className="px-1.5 py-1.5">
                       {[
-                        { href: '/dashboard/settings',                label: t('dashboard.profile.profile'),      Icon: User },
-                        { href: '/dashboard/settings?tab=security',   label: t('dashboard.profile.security'),     Icon: Lock },
-                        { href: '/dashboard/settings?tab=preferences',label: t('dashboard.profile.preferences'),  Icon: SlidersHorizontal },
-                        { href: '/dashboard/settings?tab=privacy',    label: t('dashboard.profile.privacyData'),  Icon: ShieldCheck },
-                        { href: '/dashboard/settings?tab=billing',    label: t('dashboard.profile.billing'),      Icon: CreditCard },
-                        { href: '/dashboard/settings?tab=integrations',label: t('dashboard.profile.integrations'),Icon: Link2 },
+                        { href: '/dashboard/settings',                label: t('dashboard.profile.profile'),      Icon: Plus },
+                        { href: '/dashboard/settings?tab=security',   label: t('dashboard.profile.security'),     Icon: Plus },
+                        { href: '/dashboard/settings?tab=preferences',label: t('dashboard.profile.preferences'),  Icon: Plus },
+                        { href: '/dashboard/settings?tab=privacy',    label: t('dashboard.profile.privacyData'),  Icon: Plus },
+                        { href: '/dashboard/settings?tab=billing',    label: t('dashboard.profile.billing'),      Icon: Plus },
+                        { href: '/dashboard/settings?tab=integrations',label: t('dashboard.profile.integrations'),Icon: Plus },
                       ].map((item) => (
                         <Link
                           key={item.href}
@@ -679,7 +664,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         onClick={() => setProfileMenuOpen(false)}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
                       >
-                        <HelpCircle className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <Plus className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                         <span className="text-[13px] font-medium text-gray-700 dark:text-gray-200">{t('dashboard.profile.helpSupport')}</span>
                       </Link>
 
@@ -690,7 +675,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         }}
                         className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       >
-                        <LogOut className="w-4 h-4 text-red-500 dark:text-red-400" />
+                        <X className="w-4 h-4 text-red-500 dark:text-red-400" />
                         <span className="text-[13px] font-medium text-red-600 dark:text-red-400">{t('dashboard.profile.signOut')}</span>
                       </button>
                     </div>
@@ -710,7 +695,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   <>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate">
-                        {user?.name || user?.email?.split('@')[0] || 'User'}
+                        {user?.name || user?.email?.split('@')[0] || 'Plus'}
                       </p>
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                     </div>
@@ -740,7 +725,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 className="p-2 text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.10] rounded-lg transition-colors"
                 aria-label={t('dashboard.sidebar.openNavigation')}
               >
-                <PanelLeftOpen className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5" />
               </button>
               <div className="flex-1" aria-hidden="true" />
               <div className="flex items-center gap-2">

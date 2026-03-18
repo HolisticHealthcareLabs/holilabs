@@ -434,5 +434,37 @@
     </track>
   </track_ownership>
 
+  <!-- ══════════════════════════════════════════
+       KNOWLEDGE LIBRARY — Tier 2 Access Rules
+       Source: JHU Carey MBA Program (2023-2026)
+       Index: KNOWLEDGE_INDEX.md
+       Documents: docs/knowledge/ (22 files)
+  ══════════════════════════════════════════ -->
+  <knowledge_sources>
+    <rule id="KS-001">
+      Before loading any Tier 2 document, apply Tier 1 decision tests
+      in MBA_FRAMEWORKS.md. Load Tier 2 only if Tier 1 is insufficient.
+    </rule>
+    <rule id="KS-002">
+      Maximum 2 knowledge documents loaded per reasoning step.
+      Prefer the most domain-specific document over general ones.
+    </rule>
+    <rule id="KS-003">
+      Cite all Tier 2 knowledge as:
+      "(MBA Knowledge Library: [Course Name], JHU Carey)"
+    </rule>
+    <domain_map>
+      <domain name="strategy_competitive"    agents="VICTOR,ARCHIE"  files="SP24_Strategic_Management.md, SP26_Digital_Transformation_of_Business.md"/>
+      <domain name="finance_unit_economics"  agents="GORDON"         files="SP25_Corporate_Finance.md, FA23_Business_Microeconomics.md"/>
+      <domain name="marketing_gtm"           agents="PAUL,VICTOR"    files="FA24_Marketing_Management.md, FA23_Negotiation.md"/>
+      <domain name="operations_projects"     agents="ARCHIE"         files="SP24_Operations_Management.md, SU23_Managing_Complex_Projects.md"/>
+      <domain name="data_analytics_ai"       agents="ARCHIE,ELENA"   files="SP24_Business_Analytics.md, FA25_Machine_Learning_for_Management.md, SU24_Data_Visualization.md"/>
+      <domain name="healthcare_systems"      agents="ELENA"          files="SP25_Fundamentals_of_Health_Care_Systems.md, SP25_Frameworks_for_Analyzing_Health_Care_Markets.md, FA25_Health_Analytics.md"/>
+      <domain name="health_law_compliance"   agents="RUTH,CYRUS"     files="SU24_Health_Care_Law_and_Regulation.md, SP25_Health_Information_Technology.md"/>
+      <domain name="leadership_teams"        agents="ARCHIE,PAUL"    files="SP24_Leadership_and_Organizational_Behavior.md, FA24_Effective_Teaming.md"/>
+      <domain name="social_impact"           agents="PAUL"           files="FA24_CityLab_Catalyst.md, FA24_City_Lab_Practicum.md"/>
+    </domain_map>
+  </knowledge_sources>
+
 </master_routing_table>
 ```

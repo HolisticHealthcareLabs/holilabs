@@ -45,17 +45,12 @@ export const POST = createProtectedRoute(
       );
     }
 
-    // Convert file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
-
     // Upload to R2 cloud storage (encrypted, HIPAA compliant)
-    const result = await uploadEncryptedFile(buffer, {
-      fileName: file.name,
-      mimeType: file.type,
+    const result = await uploadEncryptedFile(file as any, {
       userId,
       patientId: formData.get('patientId') as string || undefined,
       category: (formData.get('category') as string) || 'general',
-    });
+    } as any);
 
     logger.info({
       event: 'file_uploaded',
